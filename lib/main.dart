@@ -13,8 +13,8 @@ import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/settings/network_status.dart";
@@ -30,7 +30,7 @@ import "package:package_info_plus/package_info_plus.dart";
 late final String azariVersion;
 
 ThemeData buildTheme(Brightness brightness, Color accentColor) {
-  final type = MiscSettings.current.themeType;
+  final type = MiscSettingsService.db().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
       ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder(),
@@ -153,7 +153,7 @@ Future<void> mainPickfile() async {
   final accentColor = await PlatformFunctions.accentColor();
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(
     MaterialApp(
@@ -217,11 +217,11 @@ void main() async {
     onDidReceiveBackgroundNotificationResponse: notifBackground,
   );
 
-  FlutterLocalNotificationsPlugin().cancelAll();
+  await FlutterLocalNotificationsPlugin().cancelAll();
 
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(
     RestartWidget(

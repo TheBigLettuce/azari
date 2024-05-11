@@ -20,7 +20,7 @@ void themeChangeStart() {
 
 void selectTheme(
   BuildContext context,
-  MiscSettings miscSettings,
+  MiscSettingsData miscSettings,
   ThemeType value,
 ) {
   if (miscSettings.themeType == value) {
@@ -29,7 +29,7 @@ void selectTheme(
 
   _themeChange = true;
 
-  MiscSettings.setThemeType(value);
+  miscSettings.copy(themeType: value).save();
 
   RestartWidget.restartApp(context);
 }

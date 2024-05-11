@@ -45,8 +45,10 @@ class DartFileMover implements DownloadMoverPlug {
   SendPort _port;
 
   @override
-  void move(MoveOp op) {
+  Future<void> move(MoveOp op) {
     _port.send(op);
+
+    return Future.value();
   }
 }
 

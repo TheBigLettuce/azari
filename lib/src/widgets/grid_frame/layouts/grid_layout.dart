@@ -6,77 +6,46 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
-class GridLayout<T extends CellBase> implements GridLayouter<T> {
-  const GridLayout();
+class GridLayout<T extends CellBase> extends StatelessWidget {
+  const GridLayout({super.key});
 
   @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData settings,
-    GridFrameState<T> state,
-  ) {
-    return [
-      blueprint<T>(
-        context,
-        state.widget.functionality,
-        state.selection,
-        aspectRatio: settings.aspectRatio.value,
-        columns: settings.columns.number,
-        gridCell: (context, cell, idx) {
-          return GridCell.frameDefault(
-            context,
-            idx,
-            cell,
-            hideTitle: settings.hideName,
-            isList: isList,
-            imageAlign: Alignment.center,
-            animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-            state: state,
-          );
-        },
-      ),
-    ];
-  }
-
-  static Widget blueprint<T extends CellBase>(
-    BuildContext context,
-    GridFunctionality<T> functionality,
-    GridSelection<T> selection, {
-    required int columns,
-    required MakeCellFunc<T> gridCell,
-    required double aspectRatio,
-  }) {
+  Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
+    final extras = GridExtrasNotifier.of<T>(context);
+    final config = GridConfigurationNotifier.of(context);
 
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        childAspectRatio: aspectRatio,
-        crossAxisCount: columns,
+        childAspectRatio: config.aspectRatio.value,
+        crossAxisCount: config.columns.number,
       ),
-      itemCount: functionality.refreshingStatus.mutation.cellCount,
-      itemBuilder: (context, indx) {
-        final cell = getCell(indx);
+      itemCount: extras.functionality.refreshingStatus.mutation.cellCount,
+      itemBuilder: (context, idx) {
+        final cell = getCell(idx);
 
-        return WrapSelection(
-          selection: selection,
-          thisIndx: indx,
-          onPressed: cell.tryAsPressable(context, functionality, indx),
+        return WrapSelection<T>(
+          selection: extras.selection,
+          thisIndx: idx,
+          onPressed: cell.tryAsPressable(context, extras.functionality, idx),
           description: cell.description(),
-          functionality: functionality,
+          functionality: extras.functionality,
           selectFrom: null,
-          child: gridCell(context, cell, indx),
+          child: GridCell.frameDefault(
+            context,
+            idx,
+            cell,
+            hideTitle: config.hideName,
+            isList: false,
+            imageAlign: Alignment.center,
+            animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+          ),
         );
       },
     );
   }
-
-  @override
-  bool get isList => false;
 }

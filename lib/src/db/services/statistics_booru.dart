@@ -33,6 +33,17 @@ abstract class StatisticsBooruData {
 }
 
 abstract interface class StatisticsBooruService implements ServiceMarker {
+  factory StatisticsBooruService.db() => _currentDb.statisticsBooru;
+
+  static ImageViewStatistics asImageViewStatistics() {
+    final db = _currentDb.statisticsBooru;
+
+    return ImageViewStatistics(
+      swiped: () => db.current.add(swiped: 1).save(),
+      viewed: () => db.current.add(viewed: 1).save(),
+    );
+  }
+
   StatisticsBooruData get current;
 
   void add(StatisticsBooruData data);

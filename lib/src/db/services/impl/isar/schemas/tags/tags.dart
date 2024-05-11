@@ -5,48 +5,50 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/services/services.dart";
 import "package:isar/isar.dart";
 
 part "tags.g.dart";
 
+enum TagType {
+  normal,
+  pinned,
+  excluded;
+}
+
+// static void add(String tag) {
+//   PostTags.g.tagsDb.writeTxnSync(
+//     () => PostTags.g.tagsDb.pinnedTags.putSync(PinnedTag(tag)),
+//   );
+// }
+
+// static bool isPinned(String tag) {
+//   return PostTags.g.tagsDb.pinnedTags.getSync(fastHash(tag)) != null;
+// }
+
+// static void remove(String tag) {
+//   PostTags.g.tagsDb.writeTxnSync(
+//     () => PostTags.g.tagsDb.pinnedTags.deleteSync(fastHash(tag)),
+//   );
+// }
+
 @collection
-class Tag {
-  Tag({required this.tag, required this.isExcluded, required this.time});
-  Tag.string({required this.tag})
-      : isExcluded = false,
-        time = DateTime.now();
+class IsarTag extends TagData {
+  IsarTag({
+    required this.time,
+    required super.tag,
+    required super.type,
+  });
+
   Id? isarId;
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("isExcluded")])
-  final String tag;
-  final bool isExcluded;
   @Index()
   final DateTime time;
 
-  Tag trim() {
-    return Tag(tag: tag.trim(), isExcluded: isExcluded, time: time);
-  }
-
-  Tag copyWith({String? tag, bool? isExcluded, DateTime? time}) {
-    return Tag(
-      isExcluded: isExcluded ?? this.isExcluded,
-      tag: tag ?? this.tag,
-      time: time ?? this.time,
-    );
-  }
-}
-
-int fastHash(String string) {
-  var hash = 0xcbf29ce484222325;
-
-  var i = 0;
-  while (i < string.length) {
-    final codeUnit = string.codeUnitAt(i++);
-    hash ^= codeUnit >> 8;
-    hash *= 0x100000001b3;
-    hash ^= codeUnit & 0xFF;
-    hash *= 0x100000001b3;
-  }
-
-  return hash;
+  @override
+  IsarTag copy({String? tag, TagType? type}) => IsarTag(
+        type: type ?? this.type,
+        tag: tag ?? this.tag,
+        time: DateTime.now(),
+      );
 }

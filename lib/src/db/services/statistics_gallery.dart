@@ -45,6 +45,8 @@ abstract class StatisticsGalleryData {
 }
 
 abstract interface class StatisticsGalleryService implements ServiceMarker {
+  factory StatisticsGalleryService.db() => _currentDb.statisticsGallery;
+
   StatisticsGalleryData get current;
 
   void add(StatisticsGalleryData data);

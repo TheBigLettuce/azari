@@ -15,7 +15,7 @@ void selectBooru(BuildContext context, SettingsData settings, Booru value) {
 
   settings.copy(selectedBooru: value).save();
 
-  StatisticsBooru.addBooruSwitches();
+  StatisticsBooruService.db().current.add(booruSwitches: 1).save();
 
   RestartWidget.restartApp(context);
 }

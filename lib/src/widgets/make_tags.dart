@@ -10,13 +10,9 @@ import "dart:async";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/booru_tagging.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/load_tags.dart";
@@ -39,7 +35,7 @@ PopupMenuItem<void> launchGridSafeModeItem(
         radioDialog<SafeMode>(
           context,
           SafeMode.values.map((e) => (e, e.translatedString(context))),
-          SettingsService.currentData.safeMode,
+          SettingsService.db().current.safeMode,
           (value) => launchGrid(context, tag, value),
           title: AppLocalizations.of(context)!.chooseSafeMode,
           allowSingle: true,
@@ -48,14 +44,18 @@ PopupMenuItem<void> launchGridSafeModeItem(
       child: Text(AppLocalizations.of(context)!.launchWithSafeMode),
     );
 
-class DrawerTagsWidget extends StatefulWidget {
+class DrawerTagsWidget extends StatefulWidget with DbConnHandle<TagManager> {
   const DrawerTagsWidget(
     this.filename, {
     super.key,
     this.res,
     this.launchGrid,
     this.addRemoveTag = false,
+    required this.db,
   });
+
+  @override
+  final TagManager db;
   final DisassembleResult? res;
   final String filename;
   final void Function(BuildContext, String, [SafeMode?])? launchGrid;
@@ -65,18 +65,15 @@ class DrawerTagsWidget extends StatefulWidget {
   State<DrawerTagsWidget> createState() => _DrawerTagsWidgetState();
 }
 
-class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
+class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
+    with TagManagerDbScope<DrawerTagsWidget> {
   late final StreamSubscription<void>? _watcher;
-  late final BooruTagging? excluded;
 
   @override
   void initState() {
     super.initState();
-    excluded = widget.res == null
-        ? null
-        : TagManager.fromEnum(widget.res!.booru).excluded;
 
-    _watcher = excluded?.watch((_) {
+    _watcher = excluded.watch((_) {
       setState(() {});
     });
   }
@@ -89,24 +86,21 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
   }
 
   List<PopupMenuItem<void>> makeItems(BuildContext context, String tag) {
-    final t = Tag.string(tag: tag);
-
     return [
-      if (excluded != null)
-        PopupMenuItem(
-          onTap: () {
-            if (excluded!.exists(t)) {
-              excluded!.delete(t);
-            } else {
-              excluded!.add(t);
-            }
-          },
-          child: Text(
-            excluded!.exists(t)
-                ? AppLocalizations.of(context)!.removeFromExcluded
-                : AppLocalizations.of(context)!.addToExcluded,
-          ),
+      PopupMenuItem(
+        onTap: () {
+          if (excluded.exists(tag)) {
+            excluded.delete(tag);
+          } else {
+            excluded.add(tag);
+          }
+        },
+        child: Text(
+          excluded.exists(tag)
+              ? AppLocalizations.of(context)!.removeFromExcluded
+              : AppLocalizations.of(context)!.addToExcluded,
         ),
+      ),
       if (widget.launchGrid != null)
         launchGridSafeModeItem(
           context,
@@ -116,7 +110,9 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
       if (widget.addRemoveTag)
         PopupMenuItem(
           onTap: () {
-            PostTags.g.removeTag([widget.filename], tag);
+            DatabaseConnectionNotifier.of(context)
+                .localTags
+                .removeSingle([widget.filename], tag);
           },
           child: Text(
             AppLocalizations.of(context)!.delete,
@@ -124,16 +120,16 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
         ),
       PopupMenuItem(
         onTap: () {
-          if (PinnedTag.isPinned(tag)) {
-            PinnedTag.remove(tag);
+          if (pinned.exists(tag)) {
+            pinned.delete(tag);
           } else {
-            PinnedTag.add(tag);
+            pinned.add(tag);
           }
 
           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
         },
         child: Text(
-          PinnedTag.isPinned(tag)
+          pinned.exists(tag)
               ? AppLocalizations.of(context)!.unpinTag
               : AppLocalizations.of(context)!.pinTag,
         ),
@@ -151,7 +147,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
           label: Text(
             e,
             style: TextStyle(
-              color: excluded != null && excluded!.exists(Tag.string(tag: e))
+              color: excluded.exists(e)
                   ? Colors.red
                       .harmonizeWith(Theme.of(context).colorScheme.primary)
                       .withOpacity(0.9)

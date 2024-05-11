@@ -7,19 +7,15 @@
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class BooruGridActions {
   const BooruGridActions();
 
-  static GridAction<Post> hide(BuildContext context) {
+  static GridAction<Post> hide(
+      BuildContext context, HiddenBooruPostService hiddenPost) {
     return GridAction(
       Icons.hide_image_rounded,
       (selected) {
@@ -28,20 +24,22 @@ class BooruGridActions {
         }
 
         final toDelete = <(int, Booru)>[];
-        final toAdd = <HiddenBooruPost>[];
+        final toAdd = <HiddenBooruPostData>[];
 
         final booru = selected.first.booru;
 
         for (final cell in selected) {
-          if (HiddenBooruPost.isHidden(cell.id, booru)) {
+          if (hiddenPost.isHidden(cell.id, booru)) {
             toDelete.add((cell.id, booru));
           } else {
-            toAdd.add(HiddenBooruPost(booru, cell.id, cell.previewUrl));
+            toAdd.add(
+              HiddenBooruPostData.forDb(cell.previewUrl, cell.id, booru),
+            );
           }
         }
 
-        HiddenBooruPost.addAll(toAdd);
-        HiddenBooruPost.removeAll(toDelete);
+        hiddenPost.addAll(toAdd);
+        hiddenPost.removeAll(toDelete);
       },
       true,
     );
@@ -53,40 +51,24 @@ class BooruGridActions {
   ) {
     return GridAction(
       Icons.download,
-      (selected) {
-        final settings = SettingsService.currentData;
-
-        PostTags.g.addTagsPostAll(
-          selected.map((e) => (e.filename(), e.tags)),
-        );
-        Downloader.g.addAll(
-          selected.map(
-            (e) => DownloadFile.d(
-              url: e.fileUrl,
-              site: booru.url,
-              name: e.filename(),
-              thumbUrl: e.previewUrl,
-            ),
-          ),
-          settings,
-        );
-      },
+      (selected) => selected.downloadAll(context),
       true,
       animate: true,
     );
   }
 
   static GridAction<T> favorites<T extends Post>(
-    BuildContext context, {
+    BuildContext context,
+    FavoritePostService favoritePost, {
     bool showDeleteSnackbar = false,
   }) {
     return GridAction(
       Icons.favorite_border_rounded,
       (selected) {
-        IsarSettings.addRemoveFavorites(context, selected, showDeleteSnackbar);
-        for (final post in selected) {
-          LocalTagDictionary.addAll(post.tags);
-        }
+        favoritePost.addRemove(context, selected, showDeleteSnackbar);
+        // for (final post in selected) {
+        //   LocalTagDictionary.addAll(post.tags);
+        // }
       },
       true,
     );

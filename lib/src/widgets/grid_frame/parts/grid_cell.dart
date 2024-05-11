@@ -44,7 +44,6 @@ class GridCell<T extends CellBase> extends StatefulWidget {
     BuildContext context,
     int idx,
     T cell, {
-    required GridFrameState<T> state,
     required bool isList,
     required bool hideTitle,
     bool animated = false,

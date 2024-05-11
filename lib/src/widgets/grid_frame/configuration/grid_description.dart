@@ -17,7 +17,7 @@ class GridDescription<T extends CellBase> {
     this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
     this.asSliver = false,
-    this.settingsButton,
+    // this.settingsButton,
     this.inlineMenuButtonItems = false,
     this.menuButtonItems,
     this.footer,
@@ -63,7 +63,7 @@ class GridDescription<T extends CellBase> {
 
   final PreferredSizeWidget? footer;
 
-  final GridFrameSettingsButton? settingsButton;
+  // final GridFrameSettingsButton? settingsButton;
 
   /// Items added in the menu button's children, after the [searchWidget], or the page name
   /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,

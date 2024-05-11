@@ -7,9 +7,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_booru.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/pages/more/settings/settings_list.dart";
 import "package:gallery/src/widgets/restart_widget.dart";
@@ -42,9 +40,12 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     return SettingsSkeleton(
       AppLocalizations.of(context)!.settingsPageName,
       skeletonState,
-      child: const SliverPadding(
-        padding: EdgeInsets.only(bottom: 8),
-        sliver: SettingsList(sliver: true),
+      child: SliverPadding(
+        padding: const EdgeInsets.only(bottom: 8),
+        sliver: SettingsList(
+          sliver: true,
+          db: DatabaseConnectionNotifier.of(context),
+        ),
       ),
     );
   }

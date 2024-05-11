@@ -8,6 +8,7 @@
 import "package:flutter/material.dart";
 import "package:flutter/widgets.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/info_base/body/anime_genres.dart";
 import "package:gallery/src/pages/anime/info_base/body/body_padding.dart";
@@ -24,11 +25,15 @@ class MangaInfoBody extends StatefulWidget {
     required this.viewPadding,
     required this.api,
     required this.scrollController,
+    required this.db,
   });
+
   final MangaEntry entry;
   final MangaAPI api;
   final EdgeInsets viewPadding;
   final ScrollController scrollController;
+
+  final DbConn db;
 
   @override
   State<MangaInfoBody> createState() => _MangaInfoBodyState();
@@ -101,6 +106,7 @@ class _MangaInfoBodyState extends State<MangaInfoBody> {
               entry: entry,
               api: api,
               scrollController: widget.scrollController,
+              db: widget.db,
             ),
         ],
       ),

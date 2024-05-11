@@ -26,12 +26,16 @@ abstract class BlacklistedDirectoryData implements CellBase {
 }
 
 abstract interface class BlacklistedDirectoryService {
+  ResourceSource<BlacklistedDirectoryData> makeSource();
+
+  void addAll(List<GalleryDirectory> directories);
+
   void deleteAll(List<String> bucketIds);
 
   void clear();
 
   StreamSubscription<void> watch(
     void Function(void) f, [
-    bool fire = true,
+    bool fire = false,
   ]);
 }

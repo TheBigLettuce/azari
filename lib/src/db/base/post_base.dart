@@ -13,14 +13,12 @@ import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cached_db_values.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
@@ -35,6 +33,170 @@ import "package:mime/mime.dart" as mime;
 import "package:path/path.dart" as path_util;
 import "package:transparent_image/transparent_image.dart";
 import "package:url_launcher/url_launcher.dart";
+
+class PostCacheValues implements CacheElement {
+  // bool? _isHidden;
+
+  List<Sticker>? _stickers;
+  PostContentType? _type;
+
+  String? _url;
+
+  List<ImageViewAction>? _actions;
+
+  List<ImageViewAction> actions(BuildContext context, Post post) {
+    if (_actions != null) {
+      return _actions!;
+    }
+
+    final db = DatabaseConnectionNotifier.of(context);
+    final favorites = db.favoritePosts;
+    final hidden = db.hiddenBooruPost;
+
+    final isFavorite = favorites.isFavorite(post.id, post.booru);
+
+    return _actions = [
+      ImageViewAction(
+        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        (_) {
+          favorites.addRemove(context, [post], true);
+          // db.localTagDictionary.add(post.tags);
+        },
+        play: !isFavorite,
+        color: isFavorite
+            ? Colors.red.harmonizeWith(Theme.of(context).colorScheme.primary)
+            : null,
+        animate: true,
+      ),
+      if (post is FavoritePostData)
+        FavoritesActions.addToGroup<CellBase>(
+          context,
+          (selected) => (selected.first as FavoritePostData).group,
+          (selected, value, toPin) {
+            for (final FavoritePostData e in selected.cast()) {
+              e.group = value.isEmpty ? null : value;
+            }
+
+            favorites.addAllFileUrl(selected.cast());
+
+            Navigator.of(context, rootNavigator: true).pop();
+          },
+          false,
+        ).asImageView(post),
+      ImageViewAction(
+        Icons.download,
+        (_) => post.download(context),
+        animate: true,
+      ),
+      if (post is! FavoritePostData)
+        ImageViewAction(
+          Icons.hide_image_rounded,
+          (_) {
+            if (hidden.isHidden(post.id, post.booru)) {
+              hidden.removeAll([(post.id, post.booru)]);
+            } else {
+              hidden.addAll([
+                HiddenBooruPostData.forDb(post.previewUrl, post.id, post.booru),
+              ]);
+            }
+          },
+          color: hidden.isHidden(post.id, post.booru)
+              ? Theme.of(context).colorScheme.primary
+              : null,
+        ),
+    ];
+  }
+
+  String url(BuildContext context, Post post) {
+    if (_url != null) {
+      return _url!;
+    }
+
+    return _url = switch (SettingsService.db().current.quality) {
+      DisplayQuality.original => post.fileUrl,
+      DisplayQuality.sample => post.sampleUrl
+    };
+  }
+
+  // bool isHidden(BuildContext context, Post post) {
+  //   if (_isHidden != null) {
+  //     return _isHidden!;
+  //   }
+
+  //   return _isHidden = DatabaseConnectionNotifier.of(context)
+  //       .hiddenBooruPost
+  //       .isHidden(post.id, post.booru);
+  // }
+
+  PostContentType type(BuildContext context, Post post) {
+    if (_type != null) {
+      return _type!;
+    }
+
+    final url_ = url(context, post);
+
+    final type = mime.lookupMimeType(url_);
+    if (type == null) {
+      return _type = PostContentType.none;
+    }
+
+    final typeHalf = type.split("/");
+
+    if (typeHalf[0] == "image") {
+      return _type =
+          typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
+    } else if (typeHalf[0] == "video") {
+      return _type = PostContentType.video;
+    } else {
+      return _type = PostContentType.none;
+    }
+  }
+
+  List<Sticker> stickers(
+    BuildContext context,
+    bool excludeDuplicate,
+    Post post,
+  ) {
+    if (_stickers != null) {
+      return _stickers!;
+    }
+
+    if (excludeDuplicate) {
+      final icons = defaultStickersPost(
+        type(context, post),
+        context,
+        post.tags,
+        post.id,
+        post.booru,
+      );
+
+      return _stickers = icons.isEmpty ? const [] : icons;
+    }
+
+    final db = DatabaseConnectionNotifier.of(context);
+
+    final isHidden = db.hiddenBooruPost.isHidden(post.id, post.booru);
+
+    return _stickers = [
+      if (isHidden) const Sticker(Icons.hide_image_rounded),
+      if (post is! FavoritePostData &&
+          db.favoritePosts.isFavorite(post.id, post.booru))
+        const Sticker(Icons.favorite_rounded, important: true),
+      ...defaultStickersPost(
+        type(context, post),
+        context,
+        post.tags,
+        post.id,
+        post.booru,
+      ),
+    ];
+  }
+}
+
+class PostValuesCache with SimpleMapCache implements CachedDbValues {
+  factory PostValuesCache.of(BuildContext context) =>
+      ValuesCache.of<PostValuesCache>(context);
+}
 
 enum PostRating {
   general,
@@ -75,6 +237,7 @@ abstract class PostBase {
     required this.rating,
     required this.score,
     required this.createdAt,
+    this.isHidden = false,
   });
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
@@ -101,6 +264,9 @@ abstract class PostBase {
   final DateTime createdAt;
   @enumerated
   final Booru booru;
+
+  @ignore
+  final bool isHidden;
 }
 
 mixin DefaultPostPressable implements Pressable<Post> {
@@ -110,32 +276,81 @@ mixin DefaultPostPressable implements Pressable<Post> {
     GridFunctionality<Post> functionality,
     PostBase cell,
     int idx,
-  ) =>
-      ImageView.defaultForGrid<Post>(
-        context,
-        functionality,
-        const ImageViewDescription(
-          ignoreOnNearEnd: false,
-          statistics: ImageViewStatistics(
-            swiped: StatisticsBooru.addSwiped,
-            viewed: StatisticsBooru.addViewed,
-          ),
-        ),
-        idx,
-        _imageViewTags,
-        _watchTags,
-      );
+  ) {
+    final db = DatabaseConnectionNotifier.of(context);
+    final tagManager = TagManager.of(context);
 
-  List<ImageTag> _imageViewTags(Contentable c) => (c.widgets as PostBase)
-      .tags
-      .map((e) => ImageTag(e, PinnedTag.isPinned(e)))
-      .toList();
+    ImageView.defaultForGrid<Post>(
+      context,
+      functionality,
+      ImageViewDescription(
+        ignoreOnNearEnd: false,
+        statistics: StatisticsBooruService.asImageViewStatistics(),
+      ),
+      idx,
+      (c) => _imageViewTags(c, tagManager),
+      (c, f) => _watchTags(c, f, db.localTags),
+    );
+  }
+
+  List<ImageTag> _imageViewTags(Contentable c, TagManager tagManager) =>
+      (c.widgets as PostBase)
+          .tags
+          .map((e) => ImageTag(e, tagManager.pinned.exists(e)))
+          .toList();
 
   StreamSubscription<List<ImageTag>> _watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
+    LocalTagsService localTags,
   ) =>
-      PostTags.g.watchImagePinned((c.widgets as PostBase).tags, f);
+      localTags.watchImagePinned((c.widgets as PostBase).tags, f);
+}
+
+extension MultiplePostDownloadExt on List<Post> {
+  void downloadAll(BuildContext context) {
+    DownloadManager.of(context).addLocalTags(
+      map(
+        (e) => DownloadEntryTags.d(
+          tags: e.tags,
+          name: DisassembleResult.makeFilename(
+            e.booru,
+            e.fileDownloadUrl(),
+            e.md5,
+            e.id,
+          ),
+          url: e.fileDownloadUrl(),
+          thumbUrl: e.previewUrl,
+          site: e.booru.url,
+        ),
+      ),
+      SettingsService.db().current,
+      PostTags.fromContext(context),
+    );
+  }
+}
+
+extension PostDownloadExt on Post {
+  void download(BuildContext context) {
+    DownloadManager.of(context).addLocalTags(
+      [
+        DownloadEntryTags.d(
+          tags: tags,
+          name: DisassembleResult.makeFilename(
+            booru,
+            fileDownloadUrl(),
+            md5,
+            id,
+          ),
+          url: fileDownloadUrl(),
+          thumbUrl: previewUrl,
+          site: booru.url,
+        ),
+      ],
+      SettingsService.db().current,
+      PostTags.fromContext(context),
+    );
+  }
 }
 
 abstract mixin class Post
@@ -150,6 +365,11 @@ abstract mixin class Post
         Stickerable,
         Downloadable,
         Pressable<Post> {
+  PostCacheValues _cache(BuildContext context) => PostValuesCache.of(context)
+      .putIfAbsent(uniqueKey(), () => PostCacheValues());
+  String _makeName() =>
+      DisassembleResult.makeFilename(booru, fileDownloadUrl(), md5, id);
+
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -186,88 +406,12 @@ abstract mixin class Post
   }
 
   @override
-  List<ImageViewAction> actions(BuildContext context) {
-    final isFavorite = IsarSettings.isFavorite(id, booru);
-
-    return [
-      ImageViewAction(
-        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        (_) {
-          IsarSettings.addRemoveFavorites(context, [this], true);
-          LocalTagDictionary.addAll(tags);
-        },
-        play: !isFavorite,
-        color: isFavorite
-            ? Colors.red.harmonizeWith(Theme.of(context).colorScheme.primary)
-            : null,
-        animate: true,
-      ),
-      if (this is FavoriteBooru)
-        FavoritesActions.addToGroup<CellBase>(
-          context,
-          (selected) {
-            final g = (selected.first as FavoriteBooru).group;
-
-            for (final e in selected.cast<FavoriteBooru>().skip(1)) {
-              if (g != e.group) {
-                return null;
-              }
-            }
-
-            return g;
-          },
-          (selected, value, toPin) {
-            for (final FavoriteBooru e in selected.cast()) {
-              e.group = value.isEmpty ? null : value;
-            }
-
-            FavoriteBooru.addAllFileUrl(selected.cast());
-
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          false,
-        ).asImageView(this),
-      ImageViewAction(
-        Icons.download,
-        (_) {
-          final settings = SettingsService.currentData;
-          final name = PostTags.g.filename(booru, fileDownloadUrl(), md5, id);
-
-          PostTags.g.addTagsPostAll([(name, tags)]);
-          Downloader.g.add(
-            DownloadFile.d(
-              url: fileUrl,
-              site: booru.url,
-              name: name,
-              thumbUrl: previewUrl,
-            ),
-            settings,
-          );
-        },
-        animate: true,
-      ),
-      if (this is! FavoriteBooru)
-        ImageViewAction(
-          Icons.hide_image_rounded,
-          (_) {
-            if (HiddenBooruPost.isHidden(id, booru)) {
-              HiddenBooruPost.removeAll([(id, booru)]);
-            } else {
-              HiddenBooruPost.addAll([
-                HiddenBooruPost(booru, id, previewUrl),
-              ]);
-            }
-          },
-          color: HiddenBooruPost.isHidden(id, booru)
-              ? Theme.of(context).colorScheme.primary
-              : null,
-        ),
-    ];
-  }
+  List<ImageViewAction> actions(BuildContext context) =>
+      _cache(context).actions(context, this);
 
   @override
   ImageProvider<Object> thumbnail() {
-    if (HiddenBooruPost.isHidden(id, booru)) {
+    if (isHidden) {
       return _transparent;
     }
 
@@ -276,45 +420,30 @@ abstract mixin class Post
 
   @override
   Contentable content(BuildContext context) {
-    if (HiddenBooruPost.isHidden(id, booru)) {
+    final values = _cache(context);
+
+    if (isHidden) {
       return EmptyContent(this);
     }
 
-    final url = switch (SettingsService.currentData.quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
+    final url = values.url(context, this);
+
+    return switch (values.type(context, this)) {
+      PostContentType.none => EmptyContent(this),
+      PostContentType.video => NetVideo(
+          this,
+          path_util.extension(url) == ".zip" ? sampleUrl : url,
+        ),
+      PostContentType.gif => NetGif(this, NetworkImage(url)),
+      PostContentType.image => NetImage(this, NetworkImage(url)),
     };
-
-    final type = mime.lookupMimeType(url);
-    if (type == null) {
-      return EmptyContent(this);
-    }
-
-    final typeHalf = type.split("/");
-
-    if (typeHalf[0] == "image") {
-      final provider = NetworkImage(url);
-
-      return typeHalf[1] == "gif"
-          ? NetGif(this, provider)
-          : NetImage(this, provider);
-    } else if (typeHalf[0] == "video") {
-      return NetVideo(
-        this,
-        path_util.extension(url) == ".zip" ? sampleUrl : url,
-      );
-    } else {
-      return EmptyContent(this);
-    }
   }
 
   @override
   Key uniqueKey() => ValueKey(fileUrl);
 
   @override
-  String alias(bool isList) => isList
-      ? PostTags.g.filename(booru, fileDownloadUrl(), md5, id)
-      : id.toString();
+  String alias(bool isList) => isList ? _makeName() : id.toString();
 
   @override
   String fileDownloadUrl() {
@@ -325,57 +454,9 @@ abstract mixin class Post
     }
   }
 
-  PostContentType _type() {
-    final url = switch (SettingsService.currentData.quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
-    };
-
-    final type = mime.lookupMimeType(url);
-    if (type == null) {
-      return PostContentType.none;
-    }
-
-    final typeHalf = type.split("/");
-
-    if (typeHalf[0] == "image") {
-      return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
-    } else if (typeHalf[0] == "video") {
-      return PostContentType.video;
-    } else {
-      return PostContentType.none;
-    }
-  }
-
   @override
-  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
-    if (excludeDuplicate) {
-      final icons = defaultStickersPost(
-        _type(),
-        context,
-        tags,
-        id,
-        booru,
-      );
-
-      return icons.isEmpty ? const [] : icons;
-    }
-
-    final isHidden = HiddenBooruPost.isHidden(id, booru);
-
-    return [
-      if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (this is! FavoriteBooru && IsarSettings.isFavorite(id, booru))
-        const Sticker(Icons.favorite_rounded, important: true),
-      ...defaultStickersPost(
-        _type(),
-        context,
-        tags,
-        id,
-        booru,
-      ),
-    ];
-  }
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) =>
+      _cache(context).stickers(context, excludeDuplicate, this);
 }
 
 final _transparent = MemoryImage(kTransparentImage);

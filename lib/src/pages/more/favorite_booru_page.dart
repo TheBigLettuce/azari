@@ -10,20 +10,14 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
 import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/favorites.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/more/favorite_booru_actions.dart";
@@ -38,7 +32,6 @@ import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 
 class FavoriteBooruPage extends StatelessWidget {
   const FavoriteBooruPage({
@@ -65,11 +58,11 @@ class FavoriteBooruPage extends StatelessWidget {
     state.search.performSearch(t);
   }
 
-  GridFrame<FavoriteBooru> child(BuildContext context) {
-    return GridFrame<FavoriteBooru>(
+  GridFrame<FavoritePostData> child(BuildContext context) {
+    return GridFrame<FavoritePostData>(
       key: state.state.gridKey,
       layout: state.segments != null
-          ? SegmentLayout<FavoriteBooru>(
+          ? SegmentLayout<FavoritePostData>(
               Segments(
                 AppLocalizations.of(context)!.segmentsUncategorized,
                 injectedLabel: "",
@@ -120,7 +113,7 @@ class FavoriteBooruPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return wrapGridPage
         ? WrapGridPage(
-            child: GridSkeleton<FavoriteBooru>(
+            child: GridSkeleton<FavoritePostData>(
               state.state,
               (context) => child(context),
               canPop: true,
@@ -211,15 +204,15 @@ class _StringSegmentKey implements SegmentKey {
 
 mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   late final StreamSubscription<void> favoritesWatcher;
-  late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
+  late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
 
-  MiscSettings miscSettings = MiscSettings.current;
+  MiscSettingsData miscSettings = MiscSettingsService.db().current;
 
   Map<SegmentKey, int>? segments;
 
   bool segmented = false;
 
-  late final loader = LinearIsarLoader<FavoriteBooru>(
+  late final loader = LinearIsarLoader<FavoritePostData>(
       FavoriteBooruSchema, Dbs.g.main, (offset, limit, s, sort, mode) {
     if (mode == FilteringMode.group) {
       if (s.isEmpty) {
@@ -420,23 +413,9 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     search.prewarmResults();
   }
 
-  Future<void> download(int i) async {
-    final p = loader.getCell(i);
+  void download(int i) => loader.getCell(i).download(context);
 
-    PostTags.g.addTagsPost(p.filename(), p.tags, true);
-
-    return Downloader.g.add(
-      DownloadFile.d(
-        url: p.fileDownloadUrl(),
-        site: state.settings.selectedBooru.url,
-        name: p.filename(),
-        thumbUrl: p.previewUrl,
-      ),
-      state.settings,
-    );
-  }
-
-  GridAction<FavoriteBooru> _groupButton(BuildContext context) {
+  GridAction<FavoritePostData> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(
       context,
       (selected) {
@@ -463,7 +442,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     );
   }
 
-  List<GridAction<FavoriteBooru>> gridActions() {
+  List<GridAction<FavoritePostData>> gridActions() {
     return [
       BooruGridActions.download(context, state.settings.selectedBooru),
       _groupButton(context),

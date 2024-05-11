@@ -40,6 +40,7 @@ abstract interface class DirectoryMetadataService implements ServiceMarker {
   SegmentCapability caps(String specialLabel);
 
   DirectoryMetadataData? get(String id);
+  DirectoryMetadataData getOrCreate(String id);
 
   Future<bool> canAuth(String id, String reason);
 

@@ -6,8 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 class PageDescription {
   const PageDescription({
@@ -20,5 +20,5 @@ class PageDescription {
   final List<Widget> slivers;
   final List<Widget> appIcons;
   final SearchAndFocus? search;
-  final GridFrameSettingsButton? settingsButton;
+  final GridSettingsButton? settingsButton;
 }

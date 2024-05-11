@@ -7,33 +7,59 @@
 
 part of "search_filter_grid.dart";
 
-class _SearchWidget<T extends CellBase> extends StatefulWidget {
-  const _SearchWidget({
+class FilteringSearchWidget<T extends CellBase> extends StatefulWidget {
+  const FilteringSearchWidget({
     super.key,
-    required this.instance,
-    required this.count,
     required this.hint,
+    required this.filter,
+    required this.textController,
+    this.addItems,
+    required this.localTagDictionary,
+    required this.focusNode,
   });
 
-  final SearchFilterGrid<T> instance;
   final String? hint;
-  final int? count;
+
+  final ChainedFilterResourceSource<T> filter;
+
+  final TextEditingController textController;
+  final List<Widget>? addItems;
+  final LocalTagDictionaryService localTagDictionary;
+
+  final FocusNode focusNode;
 
   @override
-  State<_SearchWidget<T>> createState() => __SearchWidgetState();
+  State<FilteringSearchWidget<T>> createState() =>
+      _FilteringSearchWidgetState();
 }
 
-class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
-  late int count = widget.count ?? 0;
+class _FilteringSearchWidgetState<T extends CellBase>
+    extends State<FilteringSearchWidget<T>> {
+  ChainedFilterResourceSource<T> get filter => widget.filter;
+  TextEditingController get textController => widget.textController;
 
-  void update(int count) {
-    this.count = count;
+  late final StreamSubscription<void> _watcher;
+  FocusNode get focusNode => widget.focusNode;
 
-    setState(() {});
+  @override
+  void initState() {
+    super.initState();
+
+    _watcher = filter.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+    focusNode.dispose();
+
+    super.dispose();
   }
 
   List<Widget> _addItems() => [
-        if (widget.instance._state.filteringModes.isNotEmpty)
+        if (filter.allowedFilteringModes.isNotEmpty)
           IconButton(
             onPressed: () {
               showModalBottomSheet<void>(
@@ -44,59 +70,39 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
                 builder: (context) {
                   return SafeArea(
                     child: _FilteringWidget(
-                      selectSorting: (e) {
-                        widget.instance._state.filter.setSortingMode(e);
-                        widget.instance._onChanged(
-                          widget.instance.searchTextController.text,
-                          true,
-                        );
-                      },
-                      currentSorting:
-                          widget.instance._state.filter.currentSortingMode,
-                      enabledSorting: widget.instance._state.sortingModes,
-                      select: (e) {
-                        final res = widget.instance.setFilteringMode(e);
-                        if (res != e) {
-                          return e;
-                        }
-
-                        widget.instance._searchVirtual = false;
-                        widget.instance._onChanged(
-                          widget.instance.searchTextController.text,
-                          true,
-                        );
-
-                        return e;
-                      },
-                      currentFilter: widget.instance._currentFilterMode,
-                      enabledModes: widget.instance._state.filteringModes,
+                      selectSorting: (e) => filter.sortingMode = e,
+                      currentSorting: filter.sortingMode,
+                      enabledSorting: filter.allowedSortingModes,
+                      select: (e) => filter.filteringMode = e,
+                      currentFilter: filter.filteringMode,
+                      enabledModes: filter.allowedFilteringModes,
                     ),
                   );
                 },
               );
             },
-            icon: Icon(widget.instance._currentFilterMode.icon),
+            icon: Icon(filter.filteringMode.icon),
             padding: EdgeInsets.zero,
           ),
-        if (widget.instance.addItems != null) ...widget.instance.addItems!,
+        if (widget.addItems != null) ...widget.addItems!,
       ];
 
+  void onChanged() => filter.clearRefresh();
+
   Widget _autocompleteWidget() => AutocompleteWidget(
-        widget.instance.searchTextController,
+        textController,
         (p0) {},
         (p0) {},
         () {
-          widget.instance._state.mainFocus.requestFocus();
+          focusNode.unfocus();
+          // widget.instance._state.mainFocus.requestFocus();
         },
-        widget.instance._localTagCompleteFunc,
-        widget.instance.searchFocus,
+        widget.localTagDictionary.complete,
+        focusNode,
         swapSearchIcon: true,
-        searchCount: count,
+        searchCount: filter.count,
         addItems: _addItems(),
-        onChanged: () {
-          widget.instance
-              ._onChanged(widget.instance.searchTextController.text, true);
-        },
+        onChanged: onChanged,
         customHint: widget.hint,
         searchTextOverride: AppLocalizations.of(context)!.filterHint,
         noUnfocus: true,
@@ -105,18 +111,17 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return switch (widget.instance._currentFilterMode) {
+    return switch (filter.filteringMode) {
       FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
       FilteringMode() => makeSearchBar(
           context,
           swapSearchIcon: true,
           disable: false,
-          focusNode: widget.instance.searchFocus,
+          focusNode: focusNode,
           addItems: _addItems(),
-          count: count,
-          textController: widget.instance.searchTextController,
-          onChanged: () => widget.instance
-              ._onChanged(widget.instance.searchTextController.text, false),
+          count: filter.count,
+          textController: textController,
+          onChanged: onChanged,
           searchTextOverride: AppLocalizations.of(context)!.filterHint,
           customHint: widget.hint,
           onSubmit: (_) {},
@@ -223,4 +228,9 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
       ),
     );
   }
+}
+
+class _ScrollHack extends ScrollController {
+  @override
+  bool get hasClients => false;
 }

@@ -5,136 +5,130 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
-import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
-import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 part "search_widget.dart";
 
 /// Search mixin which filters the elements on a grid.
-class SearchFilterGrid<T extends CellBase> {
-  SearchFilterGrid(this._state, this.addItems);
+// class _SearchFilterGrid<T extends CellBase> {
+//   _SearchFilterGrid(this._state, this.addItems, this._localTagCompleteFunc);
 
-  final TextEditingController searchTextController = TextEditingController();
-  final FocusNode searchFocus = FocusNode();
+//   final TextEditingController searchTextController = TextEditingController();
+//   final FocusNode searchFocus = FocusNode();
 
-  final List<Widget>? addItems;
-  final GlobalKey<__SearchWidgetState> _key = GlobalKey();
+//   final List<Widget>? addItems;
+//   final GlobalKey<_FilteringSearchWidgetState> _key = GlobalKey();
+//   final Future<List<BooruTag>> Function(String string) _localTagCompleteFunc;
 
-  final GridSkeletonStateFilter<T> _state;
+//   final GridSkeletonStateFilter<T> _state;
 
-  late FilteringMode _currentFilterMode = _state.defaultMode;
-  bool _searchVirtual = false;
-  Future<List<BooruTag>> Function(String string) _localTagCompleteFunc =
-      PostTags.g.completeLocalTag;
+//   late FilteringMode _currentFilterMode = _state.defaultMode;
+//   bool _searchVirtual = false;
 
-  void _onChanged(String value, bool direct) {
-    final interf = _state.refreshingStatus.mutation;
-    _state.hook(_currentFilterMode);
+//   void _onChanged(String value, bool direct) {
+//     final interf = _state.refreshingStatus.mutation;
+//     _state.hook(_currentFilterMode);
 
-    if (!_state.filter.empty) {
-      _state.gridKey.currentState?.enableAnimationsFor();
-    }
+//     if (!_state.filter.empty) {
+//       _state.gridKey.currentState?.enableAnimationsFor();
+//     }
 
-    final res =
-        _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
+//     final res =
+//         _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
-    interf.cellCount = res.count;
+//     interf.cellCount = res.count;
 
-    _key.currentState?.update(res.count);
-  }
+//     _key.currentState?.update(res.count);
+//   }
 
-  void performSearch(String s, [bool orDirectly = false]) {
-    if (orDirectly) {
-      if (_key.currentState == null) {
-        prewarmResults();
+//   void performSearch(String s, [bool orDirectly = false]) {
+//     if (orDirectly) {
+//       if (_key.currentState == null) {
+//         prewarmResults();
 
-        return;
-      }
-    }
+//         return;
+//       }
+//     }
 
-    searchTextController.text = s;
-    _onChanged(s, true);
-  }
+//     searchTextController.text = s;
+//     _onChanged(s, true);
+//   }
 
-  void prewarmResults() {
-    // final sorting = _state.hook(_currentFilterMode);
+//   void prewarmResults() {
+//     // final sorting = _state.hook(_currentFilterMode);
 
-    // _state.filter.setSortingMode(sorting);
+//     // _state.filter.setSortingMode(sorting);
 
-    final res = _state.filter.filter("", _currentFilterMode);
-    _state.refreshingStatus.mutation.cellCount = res.count;
+//     final res = _state.filter.filter("", _currentFilterMode);
+//     _state.refreshingStatus.mutation.cellCount = res.count;
 
-    // mutation.setSource(res.count, (i) {
-    //   final cell = res.cell(i);
-    //   return _state.transform(cell, sorting);
-    // });
-  }
+//     // mutation.setSource(res.count, (i) {
+//     //   final cell = res.cell(i);
+//     //   return _state.transform(cell, sorting);
+//     // });
+//   }
 
-  FilteringMode currentFilteringMode() {
-    return _currentFilterMode;
-  }
+//   FilteringMode currentFilteringMode() {
+//     return _currentFilterMode;
+//   }
 
-  FilteringMode setFilteringMode(FilteringMode f) {
-    if (_state.filteringModes.contains(f)) {
-      _currentFilterMode = f;
+//   FilteringMode setFilteringMode(FilteringMode f) {
+//     if (_state.filteringModes.contains(f)) {
+//       _currentFilterMode = f;
 
-      return f;
-    }
+//       return f;
+//     }
 
-    return _currentFilterMode;
-  }
+//     return _currentFilterMode;
+//   }
 
-  // ignore: use_setters_to_change_properties
-  void setLocalTagCompleteF(Future<List<BooruTag>> Function(String string) f) {
-    _localTagCompleteFunc = f;
-  }
+//   // ignore: use_setters_to_change_properties
+//   // void setLocalTagCompleteF(Future<List<BooruTag>> Function(String string) f) {
+//   //   _localTagCompleteFunc = f;
+//   // }
 
-  void _reset(bool resetFilterMode) {
-    searchTextController.clear();
-    _state.gridKey.currentState?.mutation.reset();
-    if (_state.filteringModes.isNotEmpty) {
-      _searchVirtual = false;
-      if (resetFilterMode) {
-        _currentFilterMode = _state.defaultMode;
-      }
-    }
-    _onChanged(searchTextController.text, true);
+//   void _reset(bool resetFilterMode) {
+//     searchTextController.clear();
+//     _state.gridKey.currentState?.mutation.reset();
+//     if (_state.filteringModes.isNotEmpty) {
+//       _searchVirtual = false;
+//       if (resetFilterMode) {
+//         _currentFilterMode = _state.defaultMode;
+//       }
+//     }
+//     _onChanged(searchTextController.text, true);
 
-    _key.currentState
-        ?.update(_state.gridKey.currentState?.mutation.cellCount ?? 0);
-  }
+//     _key.currentState
+//         ?.update(_state.gridKey.currentState?.mutation.cellCount ?? 0);
+//   }
 
-  void markSearchVirtual() {
-    _searchVirtual = true;
-  }
+//   void markSearchVirtual() {
+//     _searchVirtual = true;
+//   }
 
-  void resetSearch([bool resetFilterMode = true]) {
-    _reset(resetFilterMode);
-  }
+//   void resetSearch([bool resetFilterMode = true]) {
+//     _reset(resetFilterMode);
+//   }
 
-  void dispose() {
-    searchTextController.dispose();
-    searchFocus.dispose();
-  }
+//   void dispose() {
+//     searchTextController.dispose();
+//     searchFocus.dispose();
+//   }
 
-  Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
-      _SearchWidget<T>(
-        key: _key,
-        instance: this,
-        hint: hint,
-        count: count,
-      );
-}
-
-class _ScrollHack extends ScrollController {
-  @override
-  bool get hasClients => false;
-}
+//   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
+//       FilteringSearchWidget<T>(
+//         key: _key,
+//         instance: this,
+//         hint: hint,
+//         count: count,
+//       );
+// }

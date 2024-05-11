@@ -19,6 +19,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     this.limitedSize = false,
     required this.child,
   });
+
   final GridSelection<T> selection;
   final List<int>? selectFrom;
   final int thisIndx;

@@ -7,8 +7,8 @@
 
 part of "../impl.dart";
 
-const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
-const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
+// const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
+// const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
 const kPrimaryGridSchemas = [
   GridStateSchema,
   TagSchema,
@@ -19,7 +19,8 @@ const kPrimaryGridSchemas = [
 late final _Dbs _dbs;
 
 class _Dbs {
-  const _Dbs._({
+  _Dbs._({
+    required this.localTags,
     required this.blacklisted,
     required this.directory,
     required this.main,
@@ -29,8 +30,14 @@ class _Dbs {
     required this.thumbnail,
   });
 
+  final _currentBooruDbs = <Booru, Isar>{};
+
+  Isar booru(Booru booru) =>
+      _currentBooruDbs.putIfAbsent(booru, () => _DbsOpen.primaryGrid(booru));
+
   final Isar main;
   final Isar anime;
+  final Isar localTags;
   final Isar? thumbnail;
   final Isar blacklisted;
 
@@ -97,20 +104,20 @@ abstract class _DbsOpen {
         name: "localTags",
       );
 
-  static Isar androidGalleryDirectories([bool temporary = true]) =>
-      Isar.openSync(
-        kDirectoriesSchemas,
-        directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
-        inspector: false,
-        name: temporary ? _microsecSinceEpoch() : "systemGalleryDirectories",
-      );
+  // static Isar androidGalleryDirectories([bool temporary = true]) =>
+  //     Isar.openSync(
+  //       kDirectoriesSchemas,
+  //       directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
+  //       inspector: false,
+  //       name: temporary ? _microsecSinceEpoch() : "systemGalleryDirectories",
+  //     );
 
-  static Isar androidGalleryFiles() => Isar.openSync(
-        kFilesSchemas,
-        directory: _dbs.temporaryDbDir,
-        inspector: false,
-        name: _microsecSinceEpoch(),
-      );
+  // static Isar androidGalleryFiles() => Isar.openSync(
+  //       kFilesSchemas,
+  //       directory: _dbs.temporaryDbDir,
+  //       inspector: false,
+  //       name: _microsecSinceEpoch(),
+  //     );
 
   // ignore: strict_raw_type
   static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(

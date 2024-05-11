@@ -10,8 +10,7 @@ import "dart:math";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 
@@ -22,17 +21,23 @@ class ChapterTile extends StatefulWidget {
     required this.entry,
     required this.api,
     required this.finishRead,
+    required this.db,
   });
+
   final MangaChapter chapter;
   final MangaEntry entry;
   final MangaAPI api;
   final void Function() finishRead;
+
+  final ReadMangaChaptersService db;
 
   @override
   State<ChapterTile> createState() => _ChapterTileState();
 }
 
 class _ChapterTileState extends State<ChapterTile> {
+  ReadMangaChaptersService get readChapters => widget.db;
+
   late final StreamSubscription<int?> watcher;
 
   int? progress;
@@ -41,7 +46,7 @@ class _ChapterTileState extends State<ChapterTile> {
   void initState() {
     super.initState();
 
-    watcher = ReadMangaChapter.watchChapter(
+    watcher = readChapters.watchChapter(
       (i) {
         setState(() {
           progress = i;
@@ -51,7 +56,7 @@ class _ChapterTileState extends State<ChapterTile> {
       chapterId: widget.chapter.id,
     );
 
-    progress = ReadMangaChapter.progress(
+    progress = readChapters.progress(
       siteMangaId: widget.entry.id.toString(),
       chapterId: widget.chapter.id,
     );
@@ -70,7 +75,7 @@ class _ChapterTileState extends State<ChapterTile> {
       items: [
         PopupMenuItem(
           onTap: () {
-            ReadMangaChapter.setProgress(
+            readChapters.setProgress(
               widget.chapter.pages,
               chapterNumber: widget.chapter.chapter,
               chapterName: widget.chapter.title,
@@ -84,7 +89,7 @@ class _ChapterTileState extends State<ChapterTile> {
         ),
         PopupMenuItem(
           onTap: () {
-            ReadMangaChapter.delete(
+            readChapters.delete(
               siteMangaId: widget.entry.id.toString(),
               chapterId: widget.chapter.id,
             );
@@ -116,7 +121,7 @@ class _ChapterTileState extends State<ChapterTile> {
                 ? null
                 : () {
                     if (progress == null) {
-                      ReadMangaChapter.setProgress(
+                      readChapters.setProgress(
                         1,
                         chapterNumber: widget.chapter.chapter,
                         chapterName: widget.chapter.title,
@@ -125,7 +130,7 @@ class _ChapterTileState extends State<ChapterTile> {
                       );
                     }
 
-                    ReadMangaChapter.launchReader(
+                    readChapters.launchReader(
                       context,
                       ReaderData(
                         chapterNumber: widget.chapter.chapter,

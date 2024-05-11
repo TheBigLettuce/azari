@@ -61,7 +61,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
 class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   bool _isAppbarShown = true;
   bool _isPaused = false;
-  double? _loadingProgress = 1.0;
+  double? _loadingProgress = 1;
 
   bool _isTagsRefreshing = false;
 
@@ -206,8 +206,7 @@ class __TagWatchersState extends State<_TagWatchers> {
   void initState() {
     super.initState();
 
-    res = PostTags.g
-        .dissassembleFilename(widget.currentCell.widgets.alias(true))
+    res = DisassembleResult.fromFilename(widget.currentCell.widgets.alias(true))
         .maybeValue();
 
     tagWatcher = widget.watchTags?.call(widget.currentCell, (t) {

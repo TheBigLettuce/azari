@@ -8,7 +8,7 @@
 part of "services.dart";
 
 extension SettingsDataExt on SettingsData {
-  void save() => SettingsService.db.add(this);
+  void save() => SettingsService.db().add(this);
 }
 
 abstract interface class SettingsPath {
@@ -51,7 +51,7 @@ abstract class SettingsData {
   final bool showWelcomePage;
 
   @ignore
-  SettingsService get s;
+  SettingsService get s => _currentDb.settings;
 
   SettingsData copy({
     SettingsPath? path,
@@ -66,6 +66,8 @@ abstract class SettingsData {
 abstract interface class SettingsService implements ServiceMarker {
   const SettingsService();
 
+  factory SettingsService.db() => _currentDb.settings;
+
   SettingsData get current;
 
   void add(SettingsData data);
@@ -78,7 +80,4 @@ abstract interface class SettingsService implements ServiceMarker {
     required String pickDirectory,
     required String validDirectory,
   });
-
-  static SettingsService get db => _currentDb.settings;
-  static SettingsData get currentData => db.current;
 }

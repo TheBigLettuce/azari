@@ -7,6 +7,19 @@
 
 part of "download_manager.dart";
 
+class DownloadEntryTags extends DownloadEntry {
+  const DownloadEntryTags.d({
+    required this.tags,
+    required super.name,
+    required super.url,
+    required super.thumbUrl,
+    required super.site,
+    super.status,
+  }) : super.d();
+
+  final List<String> tags;
+}
+
 class DownloadEntry {
   const DownloadEntry._({
     required this.name,

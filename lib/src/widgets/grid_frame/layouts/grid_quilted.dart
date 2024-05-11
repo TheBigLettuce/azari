@@ -7,78 +7,50 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
-class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
-  const GridQuiltedLayout();
+class GridQuiltedLayout<T extends CellBase> extends StatelessWidget {
+  const GridQuiltedLayout({
+    super.key,
+    required this.randomNumber,
+  });
+
+  final int randomNumber;
 
   @override
-  bool get isList => false;
-
-  @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData settings,
-    GridFrameState<T> state,
-  ) {
-    return [
-      blueprint<T>(
-        context,
-        state.mutation,
-        state.widget.functionality,
-        state.selection,
-        randomNumber: state.widget.description.gridSeed,
-        gridCell: (context, cell, idx) => GridCell.frameDefault(
-          context,
-          idx,
-          cell,
-          imageAlign: Alignment.topCenter,
-          hideTitle: settings.hideName,
-          isList: isList,
-          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-          state: state,
-        ),
-        columns: settings.columns,
-      ),
-    ];
-  }
-
-  static Widget blueprint<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridFunctionality<T> functionality,
-    GridSelection<T> selection, {
-    required MakeCellFunc<T> gridCell,
-    required int randomNumber,
-    required GridColumn columns,
-  }) {
+  Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
+    final extras = GridExtrasNotifier.of<T>(context);
+    final config = GridConfigurationNotifier.of(context);
 
     return SliverGrid.builder(
-      itemCount: state.cellCount,
+      itemCount: extras.functionality.refreshingStatus.mutation.cellCount,
       gridDelegate: SliverQuiltedGridDelegate(
-        crossAxisCount: columns.number,
+        crossAxisCount: config.columns.number,
         repeatPattern: QuiltedGridRepeatPattern.inverted,
-        pattern: columns.pattern(randomNumber),
+        pattern: config.columns.pattern(randomNumber),
       ),
-      itemBuilder: (context, indx) {
-        final cell = getCell(indx);
+      itemBuilder: (context, idx) {
+        final cell = getCell(idx);
 
         return WrapSelection(
-          thisIndx: indx,
+          thisIndx: idx,
           description: cell.description(),
-          selection: selection,
-          onPressed: cell.tryAsPressable(context, functionality, indx),
-          functionality: functionality,
+          selection: extras.selection,
+          onPressed: cell.tryAsPressable(context, extras.functionality, idx),
+          functionality: extras.functionality,
           selectFrom: null,
-          child: gridCell(context, cell, indx),
+          child: GridCell.frameDefault(
+            context,
+            idx,
+            cell,
+            imageAlign: Alignment.topCenter,
+            hideTitle: config.hideName,
+            isList: false,
+            animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+          ),
         );
       },
     );

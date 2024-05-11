@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -14,209 +16,93 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:local_auth/local_auth.dart";
 
-class SegmentLayout<T extends CellBase>
-    implements GridLayouter<T>, GridLayoutBehaviour {
-  const SegmentLayout(
-    this.segments,
-    this.defaultSettings, {
-    this.suggestionPrefix = const [],
+class SegmentLayout<T extends CellBase> extends StatefulWidget {
+  const SegmentLayout({
+    super.key,
+    required this.segments,
+    required this.suggestionPrefix,
+    required this.getCell,
+    required this.gridSeed,
+    required this.mutation,
   });
 
   final Segments<T> segments;
   final List<String> suggestionPrefix;
+  final T Function(int) getCell;
+  final GridMutationInterface mutation;
+
+  final int gridSeed;
 
   @override
-  bool get isList => false;
+  State<SegmentLayout<T>> createState() => _SegmentLayoutState();
+}
+
+class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
+  Segments<T> get segments => widget.segments;
+  List<String> get suggestionPrefix => widget.suggestionPrefix;
+  GridMutationInterface get mutation => widget.mutation;
+  T Function(int) get getCell => widget.getCell;
+
+  late final StreamSubscription<int> _watcher;
+
+  List<_SegmentType> _data = [];
+  List<int>? predefined;
 
   @override
-  final GridSettingsData Function() defaultSettings;
+  void initState() {
+    super.initState();
 
-  @override
-  GridLayouter<J> makeFor<J extends CellBase>(GridSettingsData settings) {
-    return SegmentLayout(
-      segments,
-      defaultSettings,
-      suggestionPrefix: suggestionPrefix,
-    ) as GridLayouter<J>;
+    _makeSegments();
+
+    _watcher = mutation.listenCount((_) {
+      _makeSegments();
+
+      setState(() {});
+    });
   }
 
   @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData settings,
-    GridFrameState<T> state,
-  ) {
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
+
+  void _makeSegments() {
     if (segments.prebuiltSegments != null) {
-      return prototype(
-        context,
-        segments,
-        state.mutation,
-        state.selection,
-        settings.columns,
-        functionality: state.widget.functionality,
-        aspectRatio: settings.aspectRatio.value,
-        refreshingStatus: state.refreshingStatus,
-        gridSeed: state.widget.description.gridSeed,
-        gridCell: (context, idx, cell, blur) {
-          return GridCell.frameDefault(
-            context,
-            idx,
-            cell,
-            imageAlign: Alignment.topCenter,
-            blur: blur,
-            hideTitle: settings.hideName,
-            isList: isList,
-            state: state,
-          );
-        },
-      );
+      _data = _genSegPredef();
+    } else {
+      final ret = _genSegFnc();
+      _data = ret.$1;
+      predefined = ret.$2;
     }
-    final (s, _) = _segmentsFnc<T>(
-      context,
-      segments,
-      state.mutation,
-      state.selection,
-      settings.columns,
-      gridSeed: 1,
-      functionality: state.widget.functionality,
-      aspectRatio: settings.aspectRatio.value,
-      refreshingStatus: state.refreshingStatus,
-      suggestionPrefix: suggestionPrefix,
-      gridCell: (context, idx, cell, blur) {
-        return GridCell.frameDefault(
-          context,
-          idx,
-          cell,
-          isList: isList,
-          blur: blur,
-          imageAlign: Alignment.topCenter,
-          hideTitle: settings.hideName,
-          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-          state: state,
-        );
-      },
-    );
-
-    return s;
   }
 
-  static List<Widget> prototype<T extends CellBase>(
-    BuildContext context,
-    Segments<T> segments,
-    GridMutationInterface state,
-    GridSelection<T> selection,
-    GridColumn columns, {
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> functionality,
-    required GridCell<T> Function(BuildContext, int idx, T, bool blur) gridCell,
-    required double aspectRatio,
-    required int gridSeed,
-  }) {
-    final getCell = CellProvider.of<T>(context);
-
-    final segRows = <_SegmentType>[];
-
-    if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(
-        _HeaderWithCells<T>(
-          _SegSticky(
-            segments.injectedLabel,
-            null,
-            unstickable: false,
-          ),
-          segments.injectedSegments.map((e) => (e, false)).toList(),
-          const {SegmentModifier.sticky},
-        ),
-      );
-    }
-
-    int prevCount = 0;
-    for (final e in segments.prebuiltSegments!.entries) {
-      segRows.add(
-        _HeaderWithIdx(
-          _SegSticky(
-            e.key.translatedString(context),
-            segments.onLabelPressed == null
-                ? null
-                : () {
-                    if (segments.limitLabelChildren != null &&
-                        segments.limitLabelChildren != 0 &&
-                        !segments.limitLabelChildren!.isNegative) {
-                      segments.onLabelPressed!(
-                        e.key.translatedString(context),
-                        List.generate(
-                          e.value > segments.limitLabelChildren!
-                              ? segments.limitLabelChildren!
-                              : e.value,
-                          (index) => index + prevCount,
-                        ).map((e) => getCell(e)).toList(),
-                      );
-
-                      return;
-                    }
-
-                    final cells = <T>[];
-
-                    for (final i in List.generate(
-                      e.value,
-                      (index) => index + prevCount,
-                    )) {
-                      cells.add(getCell(i - 1));
-                    }
-
-                    segments.onLabelPressed!(e.key.toString(), cells);
-                  },
-          ),
-          List.generate(e.value, (index) => index + prevCount),
-          const {SegmentModifier.sticky},
-        ),
+  void onLabelPressed(String key, List<int> value) {
+    if (segments.limitLabelChildren != null &&
+        segments.limitLabelChildren != 0 &&
+        !segments.limitLabelChildren!.isNegative) {
+      segments.onLabelPressed!(
+        key,
+        value
+            .take(segments.limitLabelChildren!)
+            .map((e) => getCell(e))
+            .toList(),
       );
 
-      prevCount += e.value;
+      return;
     }
 
-    return _defaultBuilder(
-      context,
-      segRows,
-      null,
-      refreshingStatus: refreshingStatus,
-      functionality: functionality,
-      gridCell: gridCell,
-      segments: segments,
-      columns: columns,
-      selection: selection,
-      gridSeed: gridSeed,
-      aspectRatio: aspectRatio,
-    );
+    segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
   }
 
-  static (List<Widget>, List<int>) _segmentsFnc<T extends CellBase>(
-    BuildContext context,
-    Segments<T> segments,
-    GridMutationInterface state,
-    GridSelection<T> selection,
-    GridColumn columns, {
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> functionality,
-    required GridCell<T> Function(BuildContext, int idx, T cell, bool blur)
-        gridCell,
-    required int gridSeed,
-    required List<String> suggestionPrefix,
-    required double aspectRatio,
-  }) {
-    if (state.cellCount == 0) {
-      return (const [], const []);
-    }
-
+  (List<_SegmentType>, List<int>) _genSegFnc() {
     final caps = segments.caps;
 
     final segRows = <_SegmentType>[];
@@ -228,7 +114,7 @@ class SegmentLayout<T extends CellBase>
 
     final List<(T, bool)> suggestionCells = [];
 
-    for (var i = 0; i < state.cellCount; i++) {
+    for (var i = 0; i < mutation.cellCount; i++) {
       final cell = getCell(i);
 
       if (segments.displayFirstCellInSpecial && suggestionPrefix.isNotEmpty) {
@@ -331,24 +217,6 @@ class SegmentLayout<T extends CellBase>
       }
     }
 
-    void onLabelPressed(String key, List<int> value) {
-      if (segments.limitLabelChildren != null &&
-          segments.limitLabelChildren != 0 &&
-          !segments.limitLabelChildren!.isNegative) {
-        segments.onLabelPressed!(
-          key,
-          value
-              .take(segments.limitLabelChildren!)
-              .map((e) => getCell(e))
-              .toList(),
-        );
-
-        return;
-      }
-
-      segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
-    }
-
     segMap.removeWhere((key, value) {
       if (value.$1.length == 1 && !value.$2.contains(SegmentModifier.sticky)) {
         if (value.$2.contains(SegmentModifier.blur)) {
@@ -421,191 +289,296 @@ class SegmentLayout<T extends CellBase>
 
     predefined.addAll(unsegmented);
 
-    return (
-      _defaultBuilder(
-        context,
-        segRows,
-        predefined,
-        refreshingStatus: refreshingStatus,
-        functionality: functionality,
-        gridCell: gridCell,
-        columns: columns,
-        gridSeed: gridSeed,
-        segments: segments,
-        selection: selection,
-        aspectRatio: aspectRatio,
-      ),
-      predefined
-    );
+    return (segRows, predefined);
   }
 
-  static List<Widget> _defaultBuilder<T extends CellBase>(
-    BuildContext context,
-    List<_SegmentType> segmentList,
-    List<int>? predefined, {
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> functionality,
-    required Segments<T> segments,
-    required GridColumn columns,
-    required GridSelection<T> selection,
-    required int gridSeed,
-    required GridCell<T> Function(BuildContext, int idx, T cell, bool blur)
-        gridCell,
-    required double aspectRatio,
-  }) {
+  List<_SegmentType> _genSegPredef() {
+    final segRows = <_SegmentType>[];
+
+    if (segments.injectedSegments.isNotEmpty) {
+      segRows.add(
+        _HeaderWithCells<T>(
+          _SegSticky(
+            segments.injectedLabel,
+            null,
+            unstickable: false,
+          ),
+          segments.injectedSegments.map((e) => (e, false)).toList(),
+          const {SegmentModifier.sticky},
+        ),
+      );
+    }
+
+    int prevCount = 0;
+    for (final e in segments.prebuiltSegments!.entries) {
+      segRows.add(
+        _HeaderWithIdx(
+          _SegSticky(
+            e.key.translatedString(context),
+            segments.onLabelPressed == null
+                ? null
+                : () {
+                    if (segments.limitLabelChildren != null &&
+                        segments.limitLabelChildren != 0 &&
+                        !segments.limitLabelChildren!.isNegative) {
+                      segments.onLabelPressed!(
+                        e.key.translatedString(context),
+                        List.generate(
+                          e.value > segments.limitLabelChildren!
+                              ? segments.limitLabelChildren!
+                              : e.value,
+                          (index) => index + prevCount,
+                        ).map((e) => getCell(e)).toList(),
+                      );
+
+                      return;
+                    }
+
+                    final cells = <T>[];
+
+                    for (final i in List.generate(
+                      e.value,
+                      (index) => index + prevCount,
+                    )) {
+                      cells.add(getCell(i - 1));
+                    }
+
+                    segments.onLabelPressed!(e.key.toString(), cells);
+                  },
+          ),
+          List.generate(e.value, (index) => index + prevCount),
+          const {SegmentModifier.sticky},
+        ),
+      );
+
+      prevCount += e.value;
+    }
+
+    return segRows;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final extras = GridExtrasNotifier.of<T>(context);
+    final config = GridConfigurationNotifier.of(context);
+
+    return SegmentLayoutBody(
+      data: _data,
+      predefined: predefined,
+      gridSeed: widget.gridSeed,
+      selection: extras.selection,
+      segments: segments,
+      gridFunctionality: extras.functionality,
+      config: config,
+    );
+  }
+}
+
+class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
+  const SegmentLayoutBody({
+    super.key,
+    required this.data,
+    required this.gridSeed,
+    required this.selection,
+    required this.predefined,
+    required this.segments,
+    required this.gridFunctionality,
+    required this.config,
+  });
+
+  final List<_SegmentType> data;
+  final int gridSeed;
+  final GridSelection<T> selection;
+  final List<int>? predefined;
+  final Segments<T> segments;
+  final GridFunctionality<T> gridFunctionality;
+  final GridSettingsData config;
+
+  @override
+  Widget build(BuildContext context) {
     final slivers = <Widget>[];
 
-    for (final e in segmentList) {
+    for (final e in data) {
       slivers.add(
         switch (e) {
-          _HeaderWithIdx() => _segmentedRowHeaderIdxs(
-              context,
-              refreshingStatus.mutation,
-              selection,
-              e,
+          _HeaderWithIdx() => _SegRowHIdx<T>(
+              selection: selection,
+              val: e,
               gridSeed: gridSeed,
-              gridCell,
               predefined: predefined,
-              gridFunctionality: functionality,
-              refreshingStatus: refreshingStatus,
+              gridFunctionality: gridFunctionality,
               segments: segments,
-              columns: columns,
-              aspectRatio: aspectRatio,
+              config: config,
             ),
-          _HeaderWithCells<T>() => _segmentedRowHeaderCells<T>(
-              context,
-              refreshingStatus.mutation,
-              selection,
-              e,
-              gridCell,
-              gridFunctionality: functionality,
-              refreshingStatus: refreshingStatus,
+          _HeaderWithCells<T>() => _SegRowHCell<T>(
+              selection: selection,
+              val: e,
+              gridFunctionality: gridFunctionality,
               segments: segments,
-              columns: columns,
-              aspectRatio: aspectRatio,
+              config: config,
             ),
           _HeaderWithCells<CellBase>() => throw UnimplementedError(),
         },
       );
     }
 
-    return slivers;
+    return SliverMainAxisGroup(slivers: slivers);
   }
+}
 
-  static Widget _segmentedRowHeaderIdxs<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridSelection<T> selection,
-    _HeaderWithIdx val,
-    GridCell<T> Function(BuildContext, int idx, T cell, bool blur) gridCell, {
-    required GridColumn columns,
-    List<int>? predefined,
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> gridFunctionality,
-    required Segments<T> segments,
-    required int gridSeed,
-    required double aspectRatio,
-  }) {
+class _SegRowHCell<T extends CellBase> extends StatelessWidget {
+  const _SegRowHCell({
+    super.key,
+    required this.selection,
+    required this.val,
+    required this.gridFunctionality,
+    required this.segments,
+    required this.config,
+  });
+
+  final GridSelection<T> selection;
+  final _HeaderWithCells<T> val;
+  final GridFunctionality<T> gridFunctionality;
+  final Segments<T> segments;
+  final GridSettingsData config;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentCard(
+      selection: selection,
+      columns: config.columns,
+      gridFunctionality: gridFunctionality,
+      segments: segments,
+      aspectRatio: config.aspectRatio.value,
+      segmentLabel: val.header,
+      modifiers: val.modifiers,
+      sliver: SliverGrid.builder(
+        itemCount: val.cells.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: config.columns.number,
+          childAspectRatio: config.aspectRatio.value,
+        ),
+        itemBuilder: (context, idx) {
+          final cell = val.cells[idx];
+
+          return WrapSelection<T>(
+            selection: selection,
+            description: cell.$1.description(),
+            onPressed:
+                cell.$1.tryAsPressable<T>(context, gridFunctionality, idx),
+            functionality: gridFunctionality,
+            selectFrom: null,
+            thisIndx: -1,
+            child: GridCell.frameDefault<T>(
+              context,
+              -1,
+              cell.$1,
+              blur: cell.$2,
+              isList: false,
+              imageAlign: Alignment.topCenter,
+              hideTitle: config.hideName,
+              animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
+  const _SegRowHIdx({
+    super.key,
+    required this.selection,
+    required this.val,
+    this.predefined,
+    required this.gridFunctionality,
+    required this.segments,
+    required this.gridSeed,
+    required this.config,
+  });
+
+  final GridSelection<T> selection;
+  final _HeaderWithIdx val;
+  final List<int>? predefined;
+  final GridFunctionality<T> gridFunctionality;
+  final Segments<T> segments;
+  final int gridSeed;
+  final GridSettingsData config;
+
+  @override
+  Widget build(BuildContext context) {
     final toBlur = val.modifiers.contains(SegmentModifier.blur);
     final getCell = CellProvider.of<T>(context);
 
-    return _defaultSegmentCard(
-      context,
-      state,
-      selection,
-      columns: columns,
+    return SegmentCard(
+      selection: selection,
+      columns: config.columns,
       gridFunctionality: gridFunctionality,
-      refreshingStatus: refreshingStatus,
       segments: segments,
-      aspectRatio: aspectRatio,
+      aspectRatio: config.aspectRatio.value,
       segmentLabel: val.header,
       modifiers: val.modifiers,
       sliver: SliverGrid.builder(
         itemCount: val.list.length,
         gridDelegate: SliverQuiltedGridDelegate(
-          crossAxisCount: columns.number,
+          crossAxisCount: config.columns.number,
           repeatPattern: QuiltedGridRepeatPattern.inverted,
-          pattern: columns.pattern(gridSeed),
+          pattern: config.columns.pattern(gridSeed),
         ),
-        itemBuilder: (context, index) {
-          final realIdx = val.list[index];
+        itemBuilder: (context, idx) {
+          final realIdx = val.list[idx];
           final cell = getCell(realIdx);
 
           return WrapSelection<T>(
             thisIndx: realIdx,
             description: cell.description(),
             selectFrom: predefined,
-            onPressed: cell.tryAsPressable(context, gridFunctionality, index),
+            onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
             functionality: gridFunctionality,
             selection: selection,
-            child: gridCell(context, realIdx, cell, toBlur),
+            child: GridCell.frameDefault(
+              context,
+              idx,
+              cell,
+              isList: false,
+              blur: toBlur,
+              imageAlign: Alignment.topCenter,
+              hideTitle: config.hideName,
+              animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+            ),
           );
         },
       ),
     );
   }
+}
 
-  static Widget _segmentedRowHeaderCells<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridSelection<T> selection,
-    _HeaderWithCells<T> val,
-    GridCell<T> Function(BuildContext, int idx, T cell, bool blur) gridCell, {
-    required GridColumn columns,
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> gridFunctionality,
-    required Segments<T> segments,
-    required double aspectRatio,
-  }) {
-    return _defaultSegmentCard(
-      context,
-      state,
-      selection,
-      columns: columns,
-      gridFunctionality: gridFunctionality,
-      refreshingStatus: refreshingStatus,
-      segments: segments,
-      aspectRatio: aspectRatio,
-      segmentLabel: val.header,
-      modifiers: val.modifiers,
-      sliver: SliverGrid.builder(
-        itemCount: val.cells.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns.number,
-          childAspectRatio: aspectRatio,
-        ),
-        itemBuilder: (context, index) {
-          final cell = val.cells[index];
+class SegmentCard<T extends CellBase> extends StatelessWidget {
+  const SegmentCard({
+    super.key,
+    required this.selection,
+    required this.columns,
+    required this.aspectRatio,
+    required this.gridFunctionality,
+    required this.segments,
+    required this.segmentLabel,
+    required this.modifiers,
+    required this.sliver,
+  });
 
-          return WrapSelection<T>(
-            selection: selection,
-            description: cell.$1.description(),
-            onPressed:
-                cell.$1.tryAsPressable<T>(context, gridFunctionality, index),
-            functionality: gridFunctionality,
-            selectFrom: null,
-            thisIndx: -1,
-            child: gridCell(context, -1, cell.$1, cell.$2),
-          );
-        },
-      ),
-    );
-  }
-  // Sliver;
+  final GridSelection<T> selection;
+  final GridColumn columns;
+  final double aspectRatio;
+  final GridFunctionality<T> gridFunctionality;
+  final Segments<T> segments;
+  final _SegSticky segmentLabel;
+  final Set<SegmentModifier> modifiers;
 
-  static Widget _defaultSegmentCard<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridSelection<T> selection, {
-    required GridColumn columns,
-    required double aspectRatio,
-    required GridRefreshingStatus<T> refreshingStatus,
-    required GridFunctionality<T> gridFunctionality,
-    required Segments<T> segments,
-    required _SegSticky segmentLabel,
-    required Set<SegmentModifier> modifiers,
-    required Widget sliver,
-  }) {
+  final Widget sliver;
+
+  @override
+  Widget build(BuildContext context) {
     final toSticky = modifiers.contains(SegmentModifier.sticky);
     final toBlur = modifiers.contains(SegmentModifier.blur);
     final toAuth = modifiers.contains(SegmentModifier.auth);
@@ -658,8 +631,10 @@ class SegmentLayout<T extends CellBase>
                                   );
                                 }
 
-                                HapticFeedback.vibrate();
-                                refreshingStatus.refresh();
+                                unawaited(HapticFeedback.vibrate());
+                                unawaited(
+                                  gridFunctionality.refreshingStatus.refresh(),
+                                );
                               },
                               child: Text(
                                 toSticky
@@ -694,8 +669,10 @@ class SegmentLayout<T extends CellBase>
                                 );
                               }
 
-                              HapticFeedback.vibrate();
-                              refreshingStatus.refresh();
+                              unawaited(HapticFeedback.vibrate());
+                              unawaited(
+                                gridFunctionality.refreshingStatus.refresh(),
+                              );
                             },
                             child: Text(
                               toBlur
@@ -735,8 +712,11 @@ class SegmentLayout<T extends CellBase>
                                         );
                                       }
 
-                                      HapticFeedback.vibrate();
-                                      refreshingStatus.refresh();
+                                      unawaited(HapticFeedback.vibrate());
+                                      unawaited(
+                                        gridFunctionality.refreshingStatus
+                                            .refresh(),
+                                      );
                                     },
                               child: Text(
                                 toAuth

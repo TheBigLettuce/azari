@@ -10,11 +10,7 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
@@ -25,7 +21,6 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
@@ -41,15 +36,24 @@ class MangaPage extends StatefulWidget {
     super.key,
     required this.procPop,
     this.wrapGridPage = false,
+    required this.db,
   });
+
   final void Function(bool) procPop;
   final bool wrapGridPage;
+
+  final DbConn db;
 
   @override
   State<MangaPage> createState() => _MangaPageState();
 }
 
 class _MangaPageState extends State<MangaPage> {
+  SavedMangaChaptersService get savedChapters => widget.db.savedMangaChapters;
+  ReadMangaChaptersService get readChapters => widget.db.readMangaChapters;
+  CompactMangaDataService get compactManga => widget.db.compactManga;
+  PinnedMangaService get pinnedManga => widget.db.pinnedManga;
+
   late final StreamSubscription<void> watcher;
 
   final data = <CompactMangaData>[];
@@ -73,7 +77,7 @@ class _MangaPageState extends State<MangaPage> {
   void initState() {
     super.initState();
 
-    watcher = ReadMangaChapter.watch((_) {
+    watcher = readChapters.watch((_) {
       if (inInner) {
         dirty = true;
       } else {
@@ -94,9 +98,9 @@ class _MangaPageState extends State<MangaPage> {
   Future<int> refresh() async {
     data.clear();
 
-    final l = ReadMangaChapter.lastRead(50);
+    final l = readChapters.lastRead(50);
     for (final e in l) {
-      final d = CompactMangaData.get(e.siteMangaId, api.site);
+      final d = compactManga.get(e.siteMangaId, api.site);
       if (d != null) {
         data.add(d);
       }
@@ -106,7 +110,7 @@ class _MangaPageState extends State<MangaPage> {
   }
 
   void _startReading(int i) {
-    final c = ReadMangaChapter.firstForId(data[i].mangaId);
+    final c = readChapters.firstForId(data[i].mangaId);
     assert(c != null);
     if (c == null) {
       return;
@@ -116,7 +120,8 @@ class _MangaPageState extends State<MangaPage> {
 
     inInner = true;
 
-    ReadMangaChapter.launchReader(
+    readChapters
+        .launchReader(
       context,
       ReaderData(
         api: api,
@@ -131,7 +136,8 @@ class _MangaPageState extends State<MangaPage> {
         onNextPage: (p, cell) {},
       ),
       addNextChapterButton: true,
-    ).then((value) {
+    )
+        .then((value) {
       _procReload();
     });
   }
@@ -173,6 +179,7 @@ class _MangaPageState extends State<MangaPage> {
         _PinnedMangaWidget(
           glue: GlueProvider.generateOf(context)(),
           controller: state.controller,
+          db: pinnedManga,
         ),
       ],
     );
@@ -182,7 +189,7 @@ class _MangaPageState extends State<MangaPage> {
         PageLabel(AppLocalizations.of(context)!.mangaReadingLabel),
         PageLabel(
           AppLocalizations.of(context)!.mangaPinnedLabel,
-          count: PinnedManga.count(),
+          count: pinnedManga.count,
         ),
       ];
 
@@ -418,19 +425,26 @@ class _ReadingLayout
   bool get isList => false;
 }
 
-class _PinnedMangaWidget extends StatefulWidget {
+class _PinnedMangaWidget extends StatefulWidget
+    with DbConnHandle<PinnedMangaService> {
   const _PinnedMangaWidget({
     required this.glue,
     required this.controller,
+    required this.db,
   });
+
   final SelectionGlue glue;
   final ScrollController controller;
+
+  @override
+  final PinnedMangaService db;
 
   @override
   State<_PinnedMangaWidget> createState() => _PinnedMangaWidgetState();
 }
 
-class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
+class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
+    with PinnedMangaDbScope<_PinnedMangaWidget> {
   late final StreamSubscription<void> watcher;
   final List<PinnedManga> data = [];
 
@@ -442,11 +456,11 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   void initState() {
     super.initState();
 
-    data.addAll(PinnedManga.getAll(-1));
+    data.addAll(getAll(-1));
 
-    watcher = PinnedManga.watch((_) {
+    watcher = watch((_) {
       data.clear();
-      data.addAll(PinnedManga.getAll(-1));
+      data.addAll(getAll(-1));
 
       state.refreshingStatus.mutation.cellCount = data.length;
       setState(() {});
@@ -487,16 +501,22 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
             GridAction(
               Icons.push_pin_rounded,
               (selected) {
-                PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
+                final deleted = deleteAll(
+                  selected
+                      .map((e) => (MangaStringId(e.mangaId), e.site))
+                      .toList(),
+                );
+
+                if (deleted.isEmpty) {
+                  return;
+                }
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(AppLocalizations.of(context)!.mangaUnpinned),
                     action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undoLabel,
-                      onPressed: () {
-                        PinnedManga.addAll(selected.cast(), true);
-                      },
+                      onPressed: () => reAdd(deleted),
                     ),
                   ),
                 );
@@ -521,6 +541,7 @@ class MangaPageDataNotifier extends InheritedWidget {
     required this.setInner,
     required super.child,
   });
+
   final Dio client;
   final void Function(bool) setInner;
 

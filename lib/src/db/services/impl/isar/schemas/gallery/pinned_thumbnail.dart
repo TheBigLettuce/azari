@@ -11,6 +11,6 @@ import "package:isar/isar.dart";
 part "pinned_thumbnail.g.dart";
 
 @collection
-class PinnedThumbnail extends PinnedThumbnailData {
-  const PinnedThumbnail(super.id, super.differenceHash, super.path);
+class IsarPinnedThumbnail extends PinnedThumbnailData {
+  const IsarPinnedThumbnail(super.id, super.differenceHash, super.path);
 }

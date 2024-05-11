@@ -12,25 +12,11 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_general.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/booru_tagging.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/bookmark_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -43,7 +29,6 @@ import "package:gallery/src/pages/more/tags/single_post.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -57,7 +42,6 @@ import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 import "package:url_launcher/url_launcher.dart";
 
 typedef OnBooruTagPressedFunc = void Function(
@@ -68,10 +52,12 @@ typedef OnBooruTagPressedFunc = void Function(
 );
 
 class _MainGridPagingState implements PagingEntry {
-  _MainGridPagingState(int initalCellCount, this.booru)
-      : mainGrid = DbsOpen.primaryGrid(booru),
-        tagManager = TagManager.fromEnum(booru),
-        client = BooruAPI.defaultClientForBooru(booru) {
+  _MainGridPagingState(
+    int initalCellCount,
+    this.booru,
+    this.tagManager,
+    this.mainGrid,
+  ) : client = BooruAPI.defaultClientForBooru(booru) {
     source = PostsSourceService.currentMain(api, tagManager.excluded, this);
     refreshingStatus = GridRefreshingStatus(
       initalCellCount,
@@ -81,8 +67,19 @@ class _MainGridPagingState implements PagingEntry {
     );
   }
 
+  factory _MainGridPagingState.prototype(
+    TagManager tagManager,
+    MainGridService mainGrid,
+    Booru booru,
+  ) =>
+      _MainGridPagingState(
+        mainGrid.postsInside,
+        booru,
+        tagManager,
+        mainGrid,
+      );
+
   final Booru booru;
-  final Isar mainGrid;
 
   @override
   bool reachedEnd = false;
@@ -91,87 +88,38 @@ class _MainGridPagingState implements PagingEntry {
   final TagManager tagManager;
   final Dio client;
   late final PostsSourceService source;
+  final MainGridService mainGrid;
 
   int? currentSkipped;
 
-  late final GridRefreshingStatus<Post> refreshingStatus;
-
-  GridState get _currentState {
-    GridState? state = mainGrid.gridStates.getByNameSync(mainGrid.name);
-    if (state == null) {
-      state = GridState(
-        tags: "",
-        name: mainGrid.name,
-        safeMode: SafeMode.normal,
-        time: DateTime.now(),
-        scrollOffset: 0,
-      );
-
-      mainGrid.writeTxnSync(() => mainGrid.gridStates.putSync(state!));
-    }
-
-    return state;
-  }
-
-  bool needToRefresh(Duration microseconds) =>
-      _currentState.time.isBefore(DateTime.now().subtract(microseconds));
-
   String? restoreSecondaryGrid;
 
-  @override
-  double get offset {
-    final offset = _currentState.scrollOffset;
-    if (offset.isNaN) {
-      return 0;
-    }
+  late final GridRefreshingStatus<Post> refreshingStatus;
 
-    return offset;
-  }
+  bool needToRefresh(Duration microseconds) => mainGrid.currentState.time
+      .isBefore(DateTime.now().subtract(microseconds));
 
   @override
-  void updateTime() {
-    final prev = _currentState;
-
-    mainGrid.writeTxnSync(
-      () => mainGrid.gridStates.putSync(prev.copy(time: DateTime.now())),
-    );
-  }
+  double get offset => mainGrid.currentState.scrollOffset;
 
   @override
-  int get page => mainGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+  void updateTime() =>
+      mainGrid.currentState.copy(time: DateTime.now()).save(mainGrid);
 
   @override
-  set page(int p) {
-    mainGrid.writeTxnSync(
-      () => mainGrid.gridBooruPagings.putSync(GridBooruPaging(p)),
-    );
-  }
+  int get page => mainGrid.page;
 
   @override
-  void setOffset(double o) {
-    final prev = _currentState;
+  set page(int p) => mainGrid.page = p;
 
-    mainGrid.writeTxnSync(
-      () => mainGrid.gridStates.putSync(
-        prev.copy(scrollOffset: o),
-      ),
-    );
-  }
+  @override
+  void setOffset(double o) =>
+      mainGrid.currentState.copy(scrollOffset: o).save(mainGrid);
 
   @override
   void dispose() {
     client.close();
     refreshingStatus.dispose();
-  }
-
-  static PagingEntry prototype() {
-    final settings = SettingsService.currentData;
-    final mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
-
-    return _MainGridPagingState(
-      mainGrid.postIsars.countSync(),
-      settings.selectedBooru,
-    );
   }
 }
 
@@ -180,17 +128,26 @@ class BooruPage extends StatefulWidget {
     super.key,
     required this.procPop,
     required this.pagingRegistry,
+    required this.db,
   });
 
   final PagingStateRegistry pagingRegistry;
 
   final void Function(bool) procPop;
 
+  final DbConn db;
+
   @override
   State<BooruPage> createState() => _BooruPageState();
 }
 
 class _BooruPageState extends State<BooruPage> {
+  GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
+  HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
+  FavoritePostService get favoritePosts => widget.db.favoritePosts;
+
+  PostsSourceService get source => pagingState.source;
+
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
@@ -219,10 +176,18 @@ class _BooruPageState extends State<BooruPage> {
 
     pagingState = widget.pagingRegistry.getOrRegister(
       state.settings.selectedBooru.string,
-      _MainGridPagingState.prototype,
+      () {
+        final mainGrid = widget.db.mainGrid(state.settings.selectedBooru);
+
+        return _MainGridPagingState.prototype(
+          mainGrid.tagManager,
+          mainGrid,
+          state.settings.selectedBooru,
+        );
+      },
     ) as _MainGridPagingState;
 
-    bookmarksWatcher = Dbs.g.main.gridStateBoorus.watchLazy().listen((_) {
+    bookmarksWatcher = gridStateBooru.watch((_) {
       setState(() {});
     });
 
@@ -248,7 +213,10 @@ class _BooruPageState extends State<BooruPage> {
 
     timeUpdater = Stream<void>.periodic(5.seconds).listen((event) {
       if (inForeground) {
-        StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
+        StatisticsGeneralService.db()
+            .current
+            .add(timeSpent: 5.seconds.inMilliseconds)
+            .save();
       }
     });
 
@@ -259,12 +227,13 @@ class _BooruPageState extends State<BooruPage> {
         header: _LatestAndExcluded(
           key: _tagsWidgetKey,
           api: pagingState.api,
+          db: favoritePosts,
           tagManager: pagingState.tagManager,
           onPressed: (tag, safeMode) {
             _onBooruTagPressed(
               context,
               pagingState.api.booru,
-              tag.tag,
+              tag,
               safeMode,
             );
           },
@@ -288,8 +257,7 @@ class _BooruPageState extends State<BooruPage> {
 
     if (pagingState.api.wouldBecomeStale &&
         pagingState.needToRefresh(const Duration(hours: 1))) {
-      pagingState.mainGrid
-          .writeTxnSync(() => pagingState.mainGrid.postIsars.clearSync());
+      source.clear();
       pagingState.refreshingStatus.mutation.cellCount = 0;
 
       pagingState.updateTime();
@@ -301,23 +269,18 @@ class _BooruPageState extends State<BooruPage> {
       setState(() {});
     });
 
-    blacklistedWatcher = HiddenBooruPost.watch((_) {
+    blacklistedWatcher = hiddenBooruPost.watch((_) {
       pagingState.refreshingStatus.mutation.notify();
     });
 
-    favoritesWatcher = Dbs.g.main.favoriteBoorus.watchLazy().listen((event) {
+    favoritesWatcher = favoritePosts.watch((event) {
       pagingState.refreshingStatus.mutation.notify();
     });
 
     if (pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        final e = Dbs.g.main.gridStateBoorus
-            .getByNameSync(pagingState.restoreSecondaryGrid!)!;
-
-        Dbs.g.main.writeTxnSync(
-          () => Dbs.g.main.gridStateBoorus
-              .putByNameSync(e.copy(time: DateTime.now())),
-        );
+        final e = gridStateBooru.get(pagingState.restoreSecondaryGrid!)!;
+        e.copy(time: DateTime.now()).save();
 
         Navigator.push(
           context,
@@ -364,24 +327,7 @@ class _BooruPageState extends State<BooruPage> {
     super.dispose();
   }
 
-  Future<void> _download(int i) async {
-    final p = pagingState.mainGrid.postIsars.getSync(i + 1);
-    if (p == null) {
-      return Future.value();
-    }
-
-    PostTags.g.addTagsPost(p.filename(), p.tags, true);
-
-    return Downloader.g.add(
-      DownloadFile.d(
-        url: p.fileDownloadUrl(),
-        site: pagingState.api.booru.url,
-        name: p.filename(),
-        thumbUrl: p.previewUrl,
-      ),
-      state.settings,
-    );
-  }
+  void _download(int i) => source.forIdx(i)?.download(context);
 
   final scrollController = ScrollController();
 
@@ -461,18 +407,22 @@ class _BooruPageState extends State<BooruPage> {
               description: GridDescription(
                 actions: [
                   BooruGridActions.download(context, pagingState.api.booru),
-                  BooruGridActions.favorites(context, showDeleteSnackbar: true),
-                  BooruGridActions.hide(context),
+                  BooruGridActions.favorites(
+                    context,
+                    favoritePosts,
+                    showDeleteSnackbar: true,
+                  ),
+                  BooruGridActions.hide(context, hiddenBooruPost),
                 ],
                 pages: PageSwitcherIcons(
                   [
                     PageIcon(
                       Icons.favorite_rounded,
-                      count: FavoriteBooru.count,
+                      count: favoritePosts.count,
                     ),
                     PageIcon(
                       Icons.bookmarks_rounded,
-                      count: Dbs.g.main.gridStateBoorus.countSync(),
+                      count: gridStateBooru.count,
                     ),
                   ],
                   (context, state, i) => switch (i) {
@@ -509,6 +459,7 @@ class _BooruPageState extends State<BooruPage> {
                             generateGlue: GlueProvider.generateOf(context),
                             saveSelectedPage: (s) =>
                                 pagingState.restoreSecondaryGrid = s,
+                            db: widget.db,
                           ),
                         ],
                       ),
@@ -577,11 +528,14 @@ class _LatestAndExcluded extends StatefulWidget {
     required this.onPressed,
     required this.tagManager,
     required this.api,
+    required this.db,
   });
 
   final TagManager tagManager;
   final BooruAPI api;
-  final void Function(Tag, SafeMode?) onPressed;
+  final void Function(String, SafeMode?) onPressed;
+
+  final FavoritePostService db;
 
   @override
   State<_LatestAndExcluded> createState() => __LatestAndExcludedState();
@@ -614,7 +568,8 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                         title: Text(
                           AppLocalizations.of(context)!.searchSinglePost,
                         ),
-                        content: SinglePost(tagManager: widget.tagManager),
+                        content: SinglePost(
+                            tagManager: widget.tagManager, db: widget.db),
                       );
                     },
                   ),
@@ -648,8 +603,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                             (s) {},
                             swapSearchIcon: false,
                             (s) {
-                              widget.tagManager.excluded
-                                  .add(Tag.string(tag: s));
+                              widget.tagManager.excluded.add(s);
 
                               Navigator.pop(context);
                             },

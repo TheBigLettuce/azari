@@ -34,7 +34,7 @@ mixin _BeforeYouContinueDialogMixin {
                     ),
                     TextButton(
                       onPressed: () {
-                        SettingsService.db.chooseDirectory(
+                        SettingsService.db().chooseDirectory(
                           (e) {},
                           emptyResult: localizations.emptyResult,
                           pickDirectory: localizations.pickDirectory,

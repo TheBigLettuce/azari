@@ -18,37 +18,20 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
 
-class GridSettingsButton extends StatefulWidget {
-  const GridSettingsButton(
-    this.gridSettings, {
-    super.key,
-    required this.onChanged,
-    required this.selectRatio,
-    required this.selectHideName,
-    required this.selectGridLayout,
-    required this.selectGridColumn,
-    this.watch,
-    this.safeMode,
-    this.selectSafeMode,
+class GridSettingsButton extends StatelessWidget {
+  const GridSettingsButton({
+    required this.add,
+    required this.watch,
+    this.header,
   });
 
-  final void Function() onChanged;
-  final GridSettingsData Function() gridSettings;
-  final void Function(GridAspectRatio?, GridSettingsData)? selectRatio;
-  final void Function(bool, GridSettingsData)? selectHideName;
-  final void Function(GridLayoutType?, GridSettingsData)? selectGridLayout;
-  final void Function(GridColumn?, GridSettingsData) selectGridColumn;
-  final SafeMode? safeMode;
-  final void Function(SafeMode?, GridSettingsData)? selectSafeMode;
-  final StreamSubscription<GridSettingsData> Function(
-    void Function(GridSettingsData) f,
-  )? watch;
+  final void Function(GridSettingsData) add;
 
-  @override
-  State<GridSettingsButton> createState() => _GridSettingsButtonState();
-}
+  final StreamSubscription<GridSettingsData>
+      Function(void Function(GridSettingsData) f, [bool fire]) watch;
 
-class _GridSettingsButtonState extends State<GridSettingsButton> {
+  final Widget? header;
+
   @override
   Widget build(BuildContext context) {
     return IconButton(
@@ -62,7 +45,11 @@ class _GridSettingsButtonState extends State<GridSettingsButton> {
           useRootNavigator: true,
           builder: (context) {
             return SafeArea(
-              child: _BottomSheetContent(button: widget),
+              child: _BottomSheetContent(
+                add: add,
+                watch: watch,
+                header: header,
+              ),
             );
           },
         );
@@ -303,125 +290,156 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   }
 }
 
-Widget _ratio(
-  BuildContext context,
-  GridAspectRatio aspectRatio,
-  void Function(GridAspectRatio?) select,
-) {
-  return SegmentedButtonGroup(
-    variant: SegmentedButtonVariant.segments,
-    select: select,
-    selected: aspectRatio,
-    values: GridAspectRatio.values
-        .map((e) => SegmentedButtonValue(e, e.value.toString())),
-    title: AppLocalizations.of(context)!.aspectRatio,
-  );
-}
+class SafeModeButton extends StatelessWidget {
+  const SafeModeButton({
+    super.key,
+    required this.safeMode,
+    this.selectSafeMode,
+  });
 
-Widget _columns(
-  BuildContext context,
-  GridColumn columns,
-  void Function(GridColumn?) select,
-) {
-  return SegmentedButtonGroup(
-    variant: SegmentedButtonVariant.segments,
-    select: select,
-    selected: columns,
-    values: GridColumn.values
-        .map((e) => SegmentedButtonValue(e, e.number.toString())),
-    title: AppLocalizations.of(context)!.gridColumns,
-  );
-}
+  final SafeMode safeMode;
+  final void Function(SafeMode?)? selectSafeMode;
 
-Widget _gridLayout(
-  BuildContext context,
-  GridLayoutType selectGridLayout,
-  void Function(GridLayoutType?) select,
-) {
-  return SegmentedButtonGroup(
-    variant: SegmentedButtonVariant.segments,
-    select: select,
-    selected: selectGridLayout,
-    values: GridLayoutType.values
-        .map((e) => SegmentedButtonValue(e, e.translatedString(context))),
-    title: AppLocalizations.of(context)!.layoutLabel,
-  );
-}
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      child: Text(AppLocalizations.of(context)!.safeModeSetting),
+      onPressed: () => radioDialog<SafeMode>(
+        context,
+        SafeMode.values.map((e) => (e, e.translatedString(context))),
+        safeMode,
+        (value) {
+          (selectSafeMode ??
+              (value) {
+                SettingsService.db().current.copy(safeMode: value).save();
+              })(value);
 
-Widget _safeMode(
-  BuildContext context,
-  SafeMode safeMode, {
-  void Function(SafeMode?)? selectSafeMode,
-}) {
-  return TextButton(
-    child: Text(AppLocalizations.of(context)!.safeModeSetting),
-    onPressed: () => radioDialog<SafeMode>(
-      context,
-      SafeMode.values.map((e) => (e, e.translatedString(context))),
-      safeMode,
-      (value) {
-        (selectSafeMode ??
-            (value) {
-              SettingsService.currentData.copy(safeMode: value).save();
-            })(value);
-
-        Navigator.pop(context);
-      },
-      title: AppLocalizations.of(context)!.safeModeSetting,
-    ),
-  );
-}
-
-Widget _hideName(
-  BuildContext context,
-  bool hideName,
-  void Function(bool) select,
-) {
-  return SwitchListTile(
-    contentPadding: EdgeInsets.zero,
-    title: Text(AppLocalizations.of(context)!.hideNames),
-    value: hideName,
-    onChanged: (_) => select(!hideName),
-  );
+          Navigator.pop(context);
+        },
+        title: AppLocalizations.of(context)!.safeModeSetting,
+      ),
+    );
+  }
 }
 
 class _BottomSheetContent extends StatefulWidget {
   const _BottomSheetContent({
-    required this.button,
+    required this.add,
+    required this.watch,
+    required this.header,
   });
-  final GridSettingsButton button;
+
+  final void Function(GridSettingsData) add;
+
+  final Widget? header;
+
+  final StreamSubscription<GridSettingsData>
+      Function(void Function(GridSettingsData) f, [bool fire]) watch;
 
   @override
   State<_BottomSheetContent> createState() => __BottomSheetContentState();
 }
 
 class __BottomSheetContentState extends State<_BottomSheetContent> {
-  GridSettingsButton get button => widget.button;
+  void Function(GridSettingsData) get add => widget.add;
 
-  StreamSubscription<GridSettingsData>? watcher;
+  late final StreamSubscription<GridSettingsData> watcher;
 
-  late GridSettingsData gridSettings = button.gridSettings();
+  GridSettingsData? _gridSettings;
 
   @override
   void initState() {
     super.initState();
 
-    watcher = button.watch?.call((newSettings) {
-      gridSettings = newSettings;
+    watcher = widget.watch(
+      (newSettings) {
+        _gridSettings = newSettings;
 
-      setState(() {});
-    });
+        setState(() {});
+      },
+      true,
+    );
   }
 
   @override
   void dispose() {
-    watcher?.cancel();
+    watcher.cancel();
 
     super.dispose();
   }
 
+  Widget _ratio(
+    BuildContext context,
+    GridAspectRatio aspectRatio,
+    void Function(GridAspectRatio?) select,
+  ) {
+    return SegmentedButtonGroup(
+      variant: SegmentedButtonVariant.segments,
+      select: select,
+      selected: aspectRatio,
+      values: GridAspectRatio.values
+          .map((e) => SegmentedButtonValue(e, e.value.toString())),
+      title: AppLocalizations.of(context)!.aspectRatio,
+    );
+  }
+
+  Widget _columns(
+    BuildContext context,
+    GridColumn columns,
+    void Function(GridColumn?) select,
+  ) {
+    return SegmentedButtonGroup(
+      variant: SegmentedButtonVariant.segments,
+      select: select,
+      selected: columns,
+      values: GridColumn.values
+          .map((e) => SegmentedButtonValue(e, e.number.toString())),
+      title: AppLocalizations.of(context)!.gridColumns,
+    );
+  }
+
+  Widget _gridLayout(
+    BuildContext context,
+    GridLayoutType selectGridLayout,
+    void Function(GridLayoutType?) select,
+  ) {
+    return SegmentedButtonGroup(
+      variant: SegmentedButtonVariant.segments,
+      select: select,
+      selected: selectGridLayout,
+      values: GridLayoutType.values
+          .map((e) => SegmentedButtonValue(e, e.translatedString(context))),
+      title: AppLocalizations.of(context)!.layoutLabel,
+    );
+  }
+
+  Widget _hideName(
+    BuildContext context,
+    bool hideName,
+    void Function(bool) select,
+  ) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(AppLocalizations.of(context)!.hideNames),
+      value: hideName,
+      onChanged: (_) => select(!hideName),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_gridSettings == null) {
+      return const SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: EdgeInsets.all(18),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       width: double.infinity,
       child: Padding(
@@ -436,34 +454,27 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
-              if (button.safeMode != null)
-                _safeMode(
-                  context,
-                  button.safeMode!,
-                  selectSafeMode: (s) {
-                    button.selectSafeMode!(s, gridSettings);
-                    button.onChanged();
-                  },
-                ),
-              if (button.selectHideName != null)
-                _hideName(context, gridSettings.hideName, (n) {
-                  button.selectHideName!(n, gridSettings);
-                  button.onChanged();
-                }),
-              if (button.selectGridLayout != null)
-                _gridLayout(context, gridSettings.layoutType, (t) {
-                  button.selectGridLayout!(t, gridSettings);
-                  button.onChanged();
-                }),
-              if (button.selectRatio != null)
-                _ratio(context, gridSettings.aspectRatio, (r) {
-                  button.selectRatio!(r, gridSettings);
-                  button.onChanged();
-                }),
-              _columns(context, gridSettings.columns, (c) {
-                button.selectGridColumn(c, gridSettings);
-                button.onChanged();
-              }),
+              if (widget.header != null) widget.header!,
+              _hideName(
+                context,
+                _gridSettings!.hideName,
+                (n) => add(_gridSettings!.copy(hideName: n)),
+              ),
+              _gridLayout(
+                context,
+                _gridSettings!.layoutType,
+                (t) => add(_gridSettings!.copy(layoutType: t)),
+              ),
+              _ratio(
+                context,
+                _gridSettings!.aspectRatio,
+                (r) => add(_gridSettings!.copy(aspectRatio: r)),
+              ),
+              _columns(
+                context,
+                _gridSettings!.columns,
+                (c) => add(_gridSettings!.copy(columns: c)),
+              ),
               const Padding(padding: EdgeInsets.only(bottom: 8)),
             ],
           ),

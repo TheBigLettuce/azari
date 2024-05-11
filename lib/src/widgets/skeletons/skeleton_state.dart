@@ -10,8 +10,6 @@ import "dart:math" as math;
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
@@ -56,30 +54,30 @@ class GridSkeletonState<T extends CellBase> extends SkeletonState {
   GridSkeletonState();
 
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
-  SettingsData settings = SettingsService.currentData;
+  SettingsData settings = SettingsService.db().current;
 }
 
-class GridSkeletonStateFilter<T extends CellBase>
-    extends GridSkeletonRefreshingState<T> {
-  GridSkeletonStateFilter({
-    required this.filter,
-    required this.transform,
-    this.hook = _doNothing,
-    this.filteringModes = const {},
-    this.sortingModes = const {},
-    this.defaultMode = FilteringMode.noFilter,
-    this.unsetFilteringModeOnReset = true,
-    super.initalCellCount = 0,
-    required super.clearRefresh,
-    super.next,
-  });
-  final FilterInterface<T> filter;
-  final Set<FilteringMode> filteringModes;
-  final Set<SortingMode> sortingModes;
-  final bool unsetFilteringModeOnReset;
-  final FilteringMode defaultMode;
-  final void Function(FilteringMode selected) hook;
-  final T Function(T cell) transform;
+// class GridSkeletonStateFilter<T extends CellBase>
+//     extends GridSkeletonRefreshingState<T> {
+//   GridSkeletonStateFilter({
+//     required this.filter,
+//     required this.transform,
+//     this.hook = _doNothing,
+//     this.filteringModes = const {},
+//     this.sortingModes = const {},
+//     this.defaultMode = FilteringMode.noFilter,
+//     this.unsetFilteringModeOnReset = true,
+//     super.initalCellCount = 0,
+//     required super.clearRefresh,
+//     super.next,
+//   });
+//   final FilterInterface<T> filter;
+//   final Set<FilteringMode> filteringModes;
+//   final Set<SortingMode> sortingModes;
+//   final bool unsetFilteringModeOnReset;
+//   final FilteringMode defaultMode;
+//   final void Function(FilteringMode selected) hook;
+//   final T Function(T cell) transform;
 
-  static void _doNothing(FilteringMode m) {}
-}
+//   static void _doNothing(FilteringMode m) {}
+// }

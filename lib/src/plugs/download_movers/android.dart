@@ -10,5 +10,5 @@ import "package:gallery/src/plugs/platform_functions.dart";
 
 class AndroidDownloadMover implements DownloadMoverPlug {
   @override
-  void move(MoveOp op) => PlatformFunctions.move(op);
+  Future<void> move(MoveOp op) => PlatformFunctions.move(op);
 }

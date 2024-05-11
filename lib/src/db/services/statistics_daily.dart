@@ -33,6 +33,8 @@ abstract class StatisticsDailyData {
 }
 
 abstract interface class StatisticsDailyService implements ServiceMarker {
+  factory StatisticsDailyService.db() => _currentDb.statisticsDaily;
+
   StatisticsDailyData get current;
 
   void add(StatisticsDailyData data);

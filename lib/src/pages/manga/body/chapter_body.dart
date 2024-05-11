@@ -17,7 +17,9 @@ class _ChapterBody extends StatefulWidget {
     required this.list,
     required this.settingsButton,
     required this.scrollController,
+    required this.db,
   });
+
   final MangaEntry entry;
   final void Function() onFinishRead;
   final void Function() onNextLoad;
@@ -27,11 +29,15 @@ class _ChapterBody extends StatefulWidget {
   final ScrollController scrollController;
   final Widget settingsButton;
 
+  final ReadMangaChaptersService db;
+
   @override
   State<_ChapterBody> createState() => __ChapterBodyState();
 }
 
 class __ChapterBodyState extends State<_ChapterBody> {
+  ReadMangaChaptersService get readChapters => widget.db;
+
   bool enabledScrolling = false;
   ReadMangaChapterData? _chapterStale;
 
@@ -49,7 +55,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
 
     widget.scrollController.addListener(_enableBlurOnScroll);
 
-    _chapterStale = ReadMangaChapter.firstForId(widget.entry.id.toString());
+    _chapterStale = readChapters.firstForId(widget.entry.id.toString());
   }
 
   @override
@@ -64,7 +70,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
       return;
     }
 
-    final firstForId = ReadMangaChapter.firstForId(widget.entry.id.toString());
+    final firstForId = readChapters.firstForId(widget.entry.id.toString());
 
     final r = firstForId?.chapterId ?? widget.list.first.$1.first.id;
     final n = firstForId?.chapterName ?? widget.list.first.$1.first.title;
@@ -73,7 +79,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
     if (firstForId == null) {
       final c = widget.list.first.$1.first;
 
-      ReadMangaChapter.setProgress(
+      readChapters.setProgress(
         1,
         chapterName: c.title,
         chapterNumber: c.chapter,
@@ -83,12 +89,12 @@ class __ChapterBodyState extends State<_ChapterBody> {
     }
 
     if (_chapterStale == null) {
-      _chapterStale = ReadMangaChapter.firstForId(widget.entry.id.toString());
+      _chapterStale = readChapters.firstForId(widget.entry.id.toString());
 
       setState(() {});
     }
 
-    ReadMangaChapter.launchReader(
+    readChapters.launchReader(
       context,
       ReaderData(
         api: widget.api,
@@ -160,6 +166,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
               key: ValueKey(chapter.id),
               finishRead: widget.onFinishRead,
               chapter: chapter,
+              db: widget.db,
               entry: widget.entry,
               api: widget.api,
             );

@@ -5,7 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:isar/isar.dart";
 
@@ -13,7 +12,7 @@ part "directory_metadata.g.dart";
 
 @collection
 class IsarDirectoryMetadata extends DirectoryMetadataData {
-  const IsarDirectoryMetadata(
+  IsarDirectoryMetadata(
     super.categoryName,
     super.time, {
     required super.blur,
@@ -21,7 +20,7 @@ class IsarDirectoryMetadata extends DirectoryMetadataData {
     required super.requireAuth,
   });
 
-  Id get isarId => fastHash(categoryName);
+  Id? isarId;
 
   @override
   IsarDirectoryMetadata copyBools({

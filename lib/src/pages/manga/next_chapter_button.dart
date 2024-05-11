@@ -6,8 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 
 enum SkipDirection {
@@ -25,7 +24,9 @@ class SkipChapterButton extends StatefulWidget {
     required this.reloadChapters,
     required this.direction,
     required this.mangaTitle,
+    required this.db,
   });
+
   final String mangaId;
   final String mangaTitle;
   final MangaAPI api;
@@ -34,11 +35,16 @@ class SkipChapterButton extends StatefulWidget {
   final void Function() reloadChapters;
   final SkipDirection direction;
 
+  final DbConn db;
+
   @override
   State<SkipChapterButton> createState() => SkipChapterButtonState();
 }
 
 class SkipChapterButtonState extends State<SkipChapterButton> {
+  SavedMangaChaptersService get savedChapters => widget.db.savedMangaChapters;
+  ReadMangaChaptersService get readChapters => widget.db.readMangaChapters;
+
   Future<void>? progress;
 
   final List<MangaChapter> chapters = [];
@@ -51,10 +57,11 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
   void initState() {
     super.initState();
 
-    final r = SavedMangaChapters.get(
+    final r = savedChapters.get(
       widget.mangaId,
       widget.api.site,
       null,
+      readChapters,
     );
 
     if (r != null) {
@@ -86,7 +93,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
         chapters.addAll(value);
         page += 1;
 
-        SavedMangaChapters.add(
+        savedChapters.add(
           widget.mangaId,
           widget.api.site,
           value,
@@ -94,7 +101,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
         );
 
         if (widget.direction == SkipDirection.right) {
-          ReadMangaChapter.setProgress(
+          readChapters.setProgress(
             original.pages,
             chapterNumber: original.chapter,
             chapterName: original.title,
@@ -119,7 +126,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
 
     widget.reloadChapters();
 
-    ReadMangaChapter.launchReader(
+    readChapters.launchReader(
       context,
       ReaderData(
         chapterNumber: chapterNumber,
@@ -169,7 +176,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
     final c = chapters[idx];
 
     if (widget.direction == SkipDirection.right) {
-      ReadMangaChapter.setProgress(
+      readChapters.setProgress(
         c.pages,
         chapterNumber: c.chapter,
         chapterName: c.title,

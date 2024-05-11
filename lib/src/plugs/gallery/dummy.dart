@@ -6,8 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
@@ -40,12 +39,12 @@ class _DummyDirectories implements GalleryAPIDirectories {
   void close() {}
 
   @override
-  SystemGalleryDirectory directCell(int i) {
+  GalleryDirectory directCell(int i) {
     throw UnimplementedError();
   }
 
   @override
-  GalleryAPIFiles files(SystemGalleryDirectory d) {
+  GalleryAPIFiles files(GalleryDirectory d) {
     throw UnimplementedError();
   }
 
@@ -60,10 +59,10 @@ class _DummyDirectories implements GalleryAPIDirectories {
   }
 }
 
-class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
+class _DummyFilter implements FilterInterface<GalleryDirectory> {
   const _DummyFilter();
   @override
-  FilterResult<SystemGalleryDirectory> filter(String s, FilteringMode mode) {
+  FilterResult<GalleryDirectory> filter(String s, FilteringMode mode) {
     return FilterResult((i) => throw UnimplementedError(), 0);
   }
 
@@ -83,7 +82,7 @@ class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
 class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
   const _DummyDirectoriesExtra();
   @override
-  void addBlacklisted(List<BlacklistedDirectory> bucketIds) {}
+  void addBlacklisted(List<BlacklistedDirectoryData> bucketIds) {}
 
   @override
   bool get currentlyHostingFiles => false;
@@ -92,7 +91,7 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
   Isar get db => throw UnimplementedError();
 
   @override
-  FilterInterface<SystemGalleryDirectory> get filter => const _DummyFilter();
+  FilterInterface<GalleryDirectory> get filter => const _DummyFilter();
 
   @override
   GalleryAPIFiles favorites() {
@@ -111,8 +110,8 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
 
   @override
   void setPassFilter(
-    (Iterable<SystemGalleryDirectory>, dynamic) Function(
-      Iterable<SystemGalleryDirectory> p1,
+    (Iterable<GalleryDirectory>, dynamic) Function(
+      Iterable<GalleryDirectory> p1,
       dynamic p2,
       bool p3,
     )? filter,

@@ -9,51 +9,21 @@ import "dart:developer";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/settings/global_progress.dart";
+import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:logging/logging.dart";
 
-mixin SystemGalleryDirectoryFileFunctionalityMixin {
-  Thumbnail? getThumbnail(int id) {
-    return Dbs.g.thumbnail!.thumbnails.getSync(id);
-  }
-
-  SystemGalleryDirectoryFile decode(Object result) {
-    result as List<Object?>;
-
-    final id = result[0]! as int;
-    final name = result[2]! as String;
-
-    return SystemGalleryDirectoryFile(
-      isOriginal: PostTags.g.isOriginal(name),
-      isDuplicate: RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*").hasMatch(name),
-      isFavorite: FavoriteFile.isFavorite(id),
-      tagsFlat: PostTags.g.getTagsPost(name).join(" "),
-      id: id,
-      bucketId: result[1]! as String,
-      name: name,
-      originalUri: result[3]! as String,
-      lastModified: result[4]! as int,
-      height: result[5]! as int,
-      width: result[6]! as int,
-      size: result[7]! as int,
-      isVideo: result[8]! as bool,
-      isGif: result[9]! as bool,
-    );
-  }
-
+mixin GalleryFileFunctionalityMixin {
   List<Sticker> defaultStickers(
     BuildContext? context,
-    SystemGalleryDirectoryFile file,
+    GalleryFile file,
   ) {
     return [
       if (file.isVideo) Sticker(FilteringMode.video.icon),
@@ -104,7 +74,9 @@ Future<void> loadNetworkThumb(
   String filename,
   int id,
   String groupNotifString,
-  String notifChannelName, [
+  String notifChannelName,
+  ThumbnailService thumbnails,
+  PinnedThumbnailService pinnedThumbnails, [
   bool addToPinned = true,
 ]) async {
   if (GlobalProgress.isThumbLoadingLocked()) {
@@ -113,7 +85,7 @@ Future<void> loadNetworkThumb(
 
   GlobalProgress.lockThumbLoading();
 
-  if (Dbs.g.thumbnail!.pinnedThumbnails.getSync(id) != null) {
+  if (pinnedThumbnails.get(id) != null) {
     GlobalProgress.unlockThumbLoading();
     return;
   }
@@ -125,9 +97,10 @@ Future<void> loadNetworkThumb(
     groupNotifString,
     notifChannelName,
   );
+
   notif.update(0, filename);
 
-  final res = PostTags.g.dissassembleFilename(filename).maybeValue();
+  final res = DisassembleResult.fromFilename(filename).maybeValue();
   if (res != null) {
     final client = BooruAPI.defaultClientForBooru(res.booru);
     final api = BooruAPI.fromEnum(res.booru, client, EmptyPageSaver());
@@ -137,13 +110,8 @@ Future<void> loadNetworkThumb(
 
       final t = await PlatformFunctions.saveThumbNetwork(post.previewUrl, id);
 
-      Dbs.g.thumbnail!
-          .writeTxnSync(() => Dbs.g.thumbnail!.thumbnails.deleteSync(id));
-
-      Dbs.g.thumbnail!.writeTxnSync(
-        () => Dbs.g.thumbnail!.pinnedThumbnails
-            .putSync(PinnedThumbnail(id, t.differenceHash, t.path)),
-      );
+      thumbnails.delete(id);
+      pinnedThumbnails.add(id, t.path, t.differenceHash);
     } catch (e) {
       log("video thumb 2", level: Level.WARNING.value, error: e);
     }

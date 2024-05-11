@@ -7,59 +7,34 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
-class ListLayout<T extends CellBase> implements GridLayouter<T> {
-  const ListLayout({this.hideThumbnails = false});
+class ListLayout<T extends CellBase> extends StatelessWidget {
+  const ListLayout({
+    super.key,
+    required this.hideThumbnails,
+  });
 
   final bool hideThumbnails;
 
   @override
-  bool get isList => true;
-
-  @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData settings,
-    GridFrameState<T> state,
-  ) {
-    return [
-      blueprint<T>(
-        context,
-        state.mutation,
-        state.widget.functionality,
-        state.selection,
-        hideThumbnails: hideThumbnails,
-      ),
-    ];
-  }
-
-  static Widget blueprint<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridFunctionality<T> functionality,
-    GridSelection<T> selection, {
-    required bool hideThumbnails,
-  }) {
+  Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
+    final extras = GridExtrasNotifier.of<T>(context);
 
     return SliverPadding(
       padding: const EdgeInsets.only(right: 8, left: 8),
       sliver: SliverList.builder(
-        itemCount: state.cellCount,
+        itemCount: extras.functionality.refreshingStatus.mutation.cellCount,
         itemBuilder: (context, index) {
           final cell = getCell(index);
 
-          return _tile(
-            context,
-            functionality,
-            selection,
+          return DefaultListTile(
+            functionality: extras.functionality,
+            selection: extras.selection,
             cell: cell,
             index: index,
             hideThumbnails: hideThumbnails,
@@ -68,15 +43,26 @@ class ListLayout<T extends CellBase> implements GridLayouter<T> {
       ),
     );
   }
+}
 
-  static Widget _tile<T extends CellBase>(
-    BuildContext context,
-    GridFunctionality<T> functionality,
-    GridSelection<T> selection, {
-    required int index,
-    required T cell,
-    required bool hideThumbnails,
-  }) {
+class DefaultListTile<T extends CellBase> extends StatelessWidget {
+  const DefaultListTile({
+    super.key,
+    required this.functionality,
+    required this.selection,
+    required this.index,
+    required this.cell,
+    required this.hideThumbnails,
+  });
+
+  final GridFunctionality<T> functionality;
+  final GridSelection<T> selection;
+  final int index;
+  final T cell;
+  final bool hideThumbnails;
+
+  @override
+  Widget build(BuildContext context) {
     final thumbnail = cell.tryAsThumbnailable();
 
     return WrapSelection(

@@ -9,5 +9,5 @@ import "package:gallery/src/plugs/download_movers.dart";
 
 class DummyMover implements DownloadMoverPlug {
   @override
-  void move(MoveOp op) {}
+  Future<void> move(MoveOp op) => Future.value();
 }

@@ -44,10 +44,12 @@ class LoadTags extends StatelessWidget {
 
                         final notifier = TagRefreshNotifier.maybeOf(context);
 
-                        PostTags.g
+                        final postTags = PostTags.fromContext(context);
+
+                        postTags
                             .loadFromDissassemble(filename, res)
                             .then((value) {
-                          PostTags.g.addTagsPost(filename, value, true);
+                          postTags.addTagsPost(filename, value, true);
                           notifier?.call();
                           chooseGalleryPlug().notify(null);
                         }).whenComplete(() => setIsRefreshing?.call(false));

@@ -12,7 +12,7 @@ import "package:gallery/src/db/services/impl/isar/foundation/isar_filter.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/gallery_directory.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:gallery/src/db/tags/post_tags.dart";

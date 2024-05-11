@@ -7,65 +7,35 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
-class GridMasonryLayout<T extends CellBase> implements GridLayouter<T> {
-  const GridMasonryLayout();
+class GridMasonryLayout<T extends CellBase> extends StatelessWidget {
+  const GridMasonryLayout({
+    super.key,
+    required this.randomNumber,
+  });
+
+  final double randomNumber;
 
   @override
-  bool get isList => false;
-
-  @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData settings,
-    GridFrameState<T> state,
-  ) {
-    return [
-      blueprint<T>(
-        context,
-        state.mutation,
-        state.widget.functionality,
-        state.selection,
-        columns: settings.columns.number,
-        gridCell: (context, cell, idx) => GridCell.frameDefault(
-          context,
-          idx,
-          cell,
-          imageAlign: Alignment.center,
-          hideTitle: settings.hideName,
-          isList: isList,
-          state: state,
-        ),
-        aspectRatio: settings.aspectRatio.value,
-        randomNumber: state.widget.description.gridSeed,
-      ),
-    ];
-  }
-
-  static Widget blueprint<T extends CellBase>(
-    BuildContext context,
-    GridMutationInterface state,
-    GridFunctionality<T> functionality,
-    GridSelection<T> selection, {
-    required MakeCellFunc<T> gridCell,
-    required double aspectRatio,
-    required int randomNumber,
-    required int columns,
-  }) {
-    final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) / columns;
+  Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
+    final extras = GridExtrasNotifier.of<T>(context);
+    final config = GridConfigurationNotifier.of(context);
+
+    final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
+        config.columns.number;
 
     return SliverMasonryGrid(
-      delegate: SliverChildBuilderDelegate(childCount: state.cellCount,
-          (context, indx) {
-        final cell = getCell(indx);
+      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: config.columns.number,
+      ),
+      delegate: SliverChildBuilderDelegate(
+          childCount: extras.functionality.refreshingStatus.mutation.cellCount,
+          (context, idx) {
+        final cell = getCell(idx);
 
         // final cell = state.getCell(indx);
 
@@ -89,27 +59,33 @@ class GridMasonryLayout<T extends CellBase> implements GridLayouter<T> {
 
         // final int i = ((randomNumber + indx) % 5 + n1) * n2;
 
-        final rem = ((randomNumber + indx) % 11) * 0.5;
+        final rem = ((randomNumber + idx) % 11) * 0.5;
+        final maxHeight = (size / config.aspectRatio.value) +
+            (rem *
+                    (size *
+                        (0.037 + (config.columns.number / 100) - rem * 0.01)))
+                .toInt();
 
         return ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: (size / aspectRatio) +
-                (rem * (size * (0.037 + (columns / 100) - rem * 0.01))).toInt(),
-          ),
+          constraints: BoxConstraints(maxHeight: maxHeight),
           child: WrapSelection(
-            selection: selection,
-            thisIndx: indx,
-            onPressed: cell.tryAsPressable(context, functionality, indx),
+            selection: extras.selection,
+            thisIndx: idx,
+            onPressed: cell.tryAsPressable(context, extras.functionality, idx),
             description: cell.description(),
-            functionality: functionality,
+            functionality: extras.functionality,
             selectFrom: null,
-            child: gridCell(context, cell, indx),
+            child: GridCell.frameDefault(
+              context,
+              idx,
+              cell,
+              imageAlign: Alignment.center,
+              hideTitle: config.hideName,
+              isList: false,
+            ),
           ),
         );
       }),
-      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-      ),
     );
   }
 }

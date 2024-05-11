@@ -7,16 +7,9 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
@@ -28,24 +21,30 @@ class BlacklistedPostsPage extends StatefulWidget {
     super.key,
     required this.generateGlue,
     required this.conroller,
+    required this.db,
   });
+
   final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
   final ScrollController conroller;
+
+  final HiddenBooruPostService db;
 
   @override
   State<BlacklistedPostsPage> createState() => BlacklistedPostsPageState();
 }
 
 class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
-  late final state = GridSkeletonRefreshingState<HiddenBooruPost>(
+  HiddenBooruPostService get hiddenBooruPost => widget.db;
+
+  late final state = GridSkeletonRefreshingState<HiddenBooruPostData>(
     initalCellCount: list.length,
     clearRefresh: SynchronousGridRefresh(() {
-      list = HiddenBooruPost.getAll();
+      list = hiddenBooruPost.all;
 
       return list.length;
     }),
   );
-  List<HiddenBooruPost> list = <HiddenBooruPost>[];
+  List<HiddenBooruPostData> list = [];
 
   @override
   void dispose() {
@@ -54,25 +53,21 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
     super.dispose();
   }
 
-  GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
-        aspectRatio: GridAspectRatio.one,
-        columns: GridColumn.two,
-        layoutType: GridLayoutType.list,
-        hideName: false,
-      );
-
   @override
   Widget build(BuildContext context) {
     return GlueProvider(
       generate: widget.generateGlue,
-      child: GridFrame<HiddenBooruPost>(
+      child: GridFrame<HiddenBooruPostData>(
         key: state.gridKey,
         getCell: (i) => list[i],
         overrideController: widget.conroller,
-        layout: _ListLayout(
-          HideBlacklistedImagesNotifier.of(context),
-          _gridSettingsBase,
-        ),
+        slivers: [
+          Builder(
+            builder: (context) => ListLayout(
+              hideThumbnails: HideBlacklistedImagesNotifier.of(context),
+            ),
+          ),
+        ],
         functionality: GridFunctionality(
           selectionGlue: widget.generateGlue(),
           refreshingStatus: state.refreshingStatus,
@@ -85,14 +80,11 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
             GridAction(
               Icons.photo,
               (selected) {
-                HiddenBooruPost.removeAll(
-                  selected
-                      .cast<HiddenBooruPost>()
-                      .map((e) => (e.postId, e.booru))
-                      .toList(),
+                hiddenBooruPost.removeAll(
+                  selected.map((e) => (e.postId, e.booru)).toList(),
                 );
 
-                list = HiddenBooruPost.getAll();
+                list = hiddenBooruPost.all;
 
                 state.refreshingStatus.mutation.cellCount = list.length;
               },
@@ -105,20 +97,5 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         ),
       ),
     );
-  }
-}
-
-class _ListLayout implements GridLayoutBehaviour {
-  const _ListLayout(this.hideThumbnails, this.fnc);
-
-  final bool hideThumbnails;
-  final GridSettingsBase Function() fnc;
-
-  @override
-  GridSettingsBase Function() get defaultSettings => fnc;
-
-  @override
-  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
-    return ListLayout<T>(hideThumbnails: hideThumbnails);
   }
 }

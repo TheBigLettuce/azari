@@ -12,6 +12,7 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/notifications.dart";
@@ -46,6 +47,8 @@ class DownloadManager with _StatisticsTimer {
 
   ValueKey<int> get widgetKey => ValueKey(_notificationId);
   Iterable<DownloadHandle> get handles => _aliveEntries.values;
+
+  factory DownloadManager.of(BuildContext context) {}
 
   // String downloadDescription(DownloadFile f) {
   //   if (_hasCancelKey(f.url)) {
@@ -167,6 +170,12 @@ class DownloadManager with _StatisticsTimer {
 
     _db.deleteAll(removed);
   }
+
+  void addLocalTags(
+    Iterable<DownloadEntryTags> downloads,
+    SettingsData settings,
+    PostTags postTags,
+  ) {}
 
   void addAll(Iterable<DownloadEntry> downloads, SettingsData settings) {
     if (settings.path.isEmpty) {
@@ -367,7 +376,7 @@ class DownloadManager with _StatisticsTimer {
     _DownloadEntry entry, {
     required String filePath,
   }) async {
-    final settings = SettingsService.currentData;
+    final settings = SettingsService.db().current;
 
     await moverPlug.move(
       MoveOp(

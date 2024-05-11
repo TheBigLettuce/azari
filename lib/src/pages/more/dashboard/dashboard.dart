@@ -7,23 +7,25 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key});
+  const Dashboard({super.key, required this.db});
+
+  final LocalTagsService db;
 
   @override
   State<Dashboard> createState() => _DashboardState();
 }
 
 class _DashboardState extends State<Dashboard> {
-  final gallery = StatisticsGallery.current;
-  final booru = StatisticsBooru.current;
-  final general = StatisticsGeneral.current;
-  final postTagsCount = PostTags.g.savedTagsCount().toString();
+  final gallery = StatisticsGalleryService.db().current;
+  final booru = StatisticsBooruService.db().current;
+  final general = StatisticsGeneralService.db().current;
+  late final postTagsCount = widget.db.count.toString();
 
   final state = SkeletonState();
 
@@ -55,8 +57,9 @@ class _DashboardState extends State<Dashboard> {
                   children: [
                     DashboardCard(
                       subtitle: AppLocalizations.of(context)!.cardTimeSpent,
-                      title: AppLocalizations.of(context)!
-                          .hoursShort(general.timeSpent.milliseconds.inHours),
+                      title: AppLocalizations.of(context)!.hoursShort(
+                        Duration(milliseconds: general.timeSpent).inHours,
+                      ),
                     ),
                     DashboardCard(
                       subtitle: AppLocalizations.of(context)!.cardScrollerUp,
@@ -73,7 +76,7 @@ class _DashboardState extends State<Dashboard> {
                     DashboardCard(
                       subtitle: AppLocalizations.of(context)!.cardDownloadTime,
                       title: AppLocalizations.of(context)!.hoursShort(
-                        general.timeDownload.milliseconds.inHours,
+                        Duration(milliseconds: general.timeDownload).inHours,
                       ),
                     ),
                     DashboardCard(

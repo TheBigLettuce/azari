@@ -10,7 +10,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/statistics/daily_statistics.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard.dart";
 import "package:gallery/src/pages/more/downloads.dart";
@@ -55,7 +55,10 @@ class MorePage extends StatelessWidget {
                         context,
                         MaterialPageRoute<void>(
                           builder: (context) {
-                            return const Dashboard();
+                            return Dashboard(
+                              db: DatabaseConnectionNotifier.of(context)
+                                  .localTags,
+                            );
                           },
                         ),
                       );
@@ -133,7 +136,10 @@ class MorePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DailyStatistics.current.swipedBoth.toString(),
+                        StatisticsDailyService.db()
+                            .current
+                            .swipedBoth
+                            .toString(),
                         style: theme.textTheme.titleLarge?.copyWith(
                           color: color,
                         ),

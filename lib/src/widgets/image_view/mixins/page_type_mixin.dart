@@ -10,6 +10,7 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/parts/video/photo_gallery_page_video.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
@@ -117,6 +118,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
                 key: key,
                 url: uri,
                 localVideo: local,
+                db: DatabaseConnectionNotifier.of(context).videoSettings,
               ),
       );
 

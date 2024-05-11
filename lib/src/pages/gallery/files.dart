@@ -11,18 +11,13 @@ import "dart:math" as math;
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/files.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_gallery.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -30,15 +25,12 @@ import "package:gallery/src/pages/booru/booru_search_page.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/gallery/files_filters.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
@@ -65,6 +57,8 @@ class GalleryFiles extends StatefulWidget {
     required this.bucketId,
     required this.secure,
     required this.generateGlue,
+    required this.db,
+    required this.tagManager,
   });
 
   final String dirName;
@@ -74,145 +68,194 @@ class GalleryFiles extends StatefulWidget {
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final bool secure;
 
+  final DbConn db;
+  final TagManager tagManager;
+
   @override
   State<GalleryFiles> createState() => _GalleryFilesState();
 }
 
 class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
+  FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
+  LocalTagsService get localTags => widget.db.localTags;
+  GridMutationInterface get mutation => state.refreshingStatus.mutation;
+
+  GalleryAPIFiles get api => widget.api;
+
+  AppLifecycleListener? _listener;
+  StreamSubscription<void>? _subscription;
+
+  late final postTags = PostTags(localTags, widget.db.localTagDictionary);
+
   static const _log = LogTarget.gallery;
 
   final plug = chooseGalleryPlug();
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
 
-  late final GalleryFilesExtra extra = widget.api.getExtra()
-    ..setRefreshingStatusCallback((i, inRefresh, empty) {
-      if (empty) {
-        state.refreshingStatus.mutation.cellCount = 0;
+  // late final GalleryFilesExtra extra = widget.api.getExtra()
+  //   ..setRefreshingStatusCallback((i, inRefresh, empty) {
+  //     if (empty) {
+  //       state.refreshingStatus.mutation.cellCount = 0;
 
-        Navigator.of(context).pop();
+  //       Navigator.of(context).pop();
 
-        return;
-      }
+  //       return;
+  //     }
 
-      state.gridKey.currentState?.selection.reset();
+  //     state.gridKey.currentState?.selection.reset();
 
-      if (!inRefresh) {
-        mutation.isRefreshing = false;
+  //     if (!inRefresh) {
+  //       mutation.isRefreshing = false;
 
-        search.performSearch(search.searchTextController.text);
+  //       search.performSearch(search.searchTextController.text);
 
-        setState(() {});
-      }
-    })
-    ..setRefreshGridCallback(() {
-      if (!mutation.isRefreshing) {
-        mutation.isRefreshing = true;
-        widget.api.refresh();
-      }
-    })
-    ..setPassFilter((cells, data, end) {
-      final filterMode = search.currentFilteringMode();
+  //       setState(() {});
+  //     }
+  //   })
+  //   ..setRefreshGridCallback(() {
+  //     if (!mutation.isRefreshing) {
+  //       mutation.isRefreshing = true;
+  //       widget.api.refresh();
+  //     }
+  //   })
+  //   ..setPassFilter((cells, data, end) {
+  //     final filterMode = search.currentFilteringMode();
 
-      return switch (filterMode) {
-        FilteringMode.favorite => FileFilters.favorite(cells),
-        FilteringMode.untagged => FileFilters.untagged(cells),
-        FilteringMode.tag =>
-          FileFilters.tag(cells, search.searchTextController.text),
-        FilteringMode.tagReversed =>
-          FileFilters.tagReversed(cells, search.searchTextController.text),
-        FilteringMode.video => FileFilters.video(cells),
-        FilteringMode.gif => FileFilters.gif(cells),
-        FilteringMode.duplicate => FileFilters.duplicate(cells),
-        FilteringMode.original => FileFilters.original(cells),
-        FilteringMode.same => FileFilters.same(
-            context,
-            cells,
-            data,
-            extra,
-            getCell: (i) => widget.api.directCell(i - 1, true),
-            performSearch: () =>
-                search.performSearch(search.searchTextController.text),
-            end: end,
-          ),
-        FilteringMode() => (cells, data),
-      };
-    });
+  //     return switch (filterMode) {
+  //       FilteringMode.favorite => FileFilters.favorite(cells),
+  //       FilteringMode.untagged => FileFilters.untagged(cells),
+  //       FilteringMode.tag =>
+  //         FileFilters.tag(cells, search.searchTextController.text),
+  //       FilteringMode.tagReversed =>
+  //         FileFilters.tagReversed(cells, search.searchTextController.text),
+  //       FilteringMode.video => FileFilters.video(cells),
+  //       FilteringMode.gif => FileFilters.gif(cells),
+  //       FilteringMode.duplicate => FileFilters.duplicate(cells),
+  //       FilteringMode.original => FileFilters.original(cells),
+  //       FilteringMode.same => FileFilters.same(
+  //           context,
+  //           cells,
+  //           data,
+  //           extra,
+  //           getCell: (i) => widget.api.directCell(i - 1, true),
+  //           performSearch: () =>
+  //               search.performSearch(search.searchTextController.text),
+  //           end: end,
+  //         ),
+  //       FilteringMode() => (cells, data),
+  //     };
+  //   });
 
-  late final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state =
-      GridSkeletonStateFilter(
-    clearRefresh: extra.supportsDirectRefresh
-        ? AsyncGridRefresh(() async {
-            final i = await widget.api.refresh();
+  late final ChainedFilterResourceSource<GalleryFile> filter;
 
-            search.performSearch(search.searchTextController.text);
+  late final GridSkeletonRefreshingState<GalleryFile> state =
+      GridSkeletonRefreshingState(
+    clearRefresh: RetainedGridRefresh(_refresh),
+    // transform: (cell) {
+    //   if (state.filter.currentSortingMode == SortingMode.size ||
+    //       search.currentFilteringMode() == FilteringMode.same) {
+    //     cell.injectedStickers.add(cell.sizeSticker(cell.size));
+    //   }
 
-            return i;
-          })
-        : RetainedGridRefresh(_refresh),
-    transform: (cell) {
-      if (state.filter.currentSortingMode == SortingMode.size ||
-          search.currentFilteringMode() == FilteringMode.same) {
-        cell.injectedStickers.add(cell.sizeSticker(cell.size));
-      }
+    //   return cell;
+    // },
+    // sortingModes: {
+    //   SortingMode.none,
+    //   SortingMode.size,
+    // },
+    // hook: (selected) {
+    //   if (selected == FilteringMode.favorite) {
+    //     _switcherKey.currentState?.setPage(1);
+    //   } else {
+    //     _switcherKey.currentState?.setPage(0);
+    //   }
 
-      return cell;
-    },
-    sortingModes: {
-      SortingMode.none,
-      SortingMode.size,
-    },
-    hook: (selected) {
-      if (selected == FilteringMode.favorite) {
-        _switcherKey.currentState?.setPage(1);
-      } else {
-        _switcherKey.currentState?.setPage(0);
-      }
+    //   if (selected == FilteringMode.same) {
+    //     StatisticsGalleryService.db().current.add(sameFiltered: 1).save();
+    //   }
 
-      if (selected == FilteringMode.same) {
-        StatisticsGallery.addSameFiltered();
-      }
+    //   if (selected == FilteringMode.tag ||
+    //       selected == FilteringMode.tagReversed) {
+    //     search.markSearchVirtual();
+    //   }
 
-      if (selected == FilteringMode.tag ||
-          selected == FilteringMode.tagReversed) {
-        search.markSearchVirtual();
-      }
-
-      setState(() {});
-    },
-    filter: extra.filter,
-    filteringModes: {
-      FilteringMode.noFilter,
-      if (!extra.isFavorites) FilteringMode.favorite,
-      FilteringMode.original,
-      FilteringMode.duplicate,
-      FilteringMode.same,
-      FilteringMode.tag,
-      FilteringMode.tagReversed,
-      FilteringMode.untagged,
-      FilteringMode.gif,
-      FilteringMode.video,
-    },
+    //   setState(() {});
+    // },
+    // filter: extra.filter,
+    // filteringModes: {
+    //   FilteringMode.noFilter,
+    //   if (!extra.isFavorites) FilteringMode.favorite,
+    //   FilteringMode.original,
+    //   FilteringMode.duplicate,
+    //   FilteringMode.same,
+    //   FilteringMode.tag,
+    //   FilteringMode.tagReversed,
+    //   FilteringMode.untagged,
+    //   FilteringMode.gif,
+    //   FilteringMode.video,
+    // },
   );
 
-  GridMutationInterface get mutation => state.refreshingStatus.mutation;
+  // late final SearchFilterGrid<GalleryFile> search;
 
-  late final SearchFilterGrid<SystemGalleryDirectoryFile> search;
-
-  AppLifecycleListener? _listener;
-  StreamSubscription<void>? _subscription;
+  final searchTextController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+
+    filter = ChainedFilterResourceSource(
+      api.source,
+      ListStorage(),
+      fn: (e, filteringMode, sortingMode) => switch (filteringMode) {
+        FilteringMode.favorite => e.isFavorite,
+        FilteringMode.untagged => e.tagsFlat.isEmpty,
+        FilteringMode.tag => e.tagsFlat.contains(searchTextController.text),
+        FilteringMode.tagReversed =>
+          !e.tagsFlat.contains(searchTextController.text),
+        FilteringMode.video => e.isVideo,
+        FilteringMode.gif => e.isGif,
+        FilteringMode.duplicate => e.isDuplicate,
+        FilteringMode.original => e.isOriginal,
+        // FilteringMode.same => true,
+        // FileFilters.same(
+        //     context,
+        //     cells,
+        //     data,
+        //     extra,
+        //     getCell: (i) => widget.api.directCell(i - 1, true),
+        //     performSearch: () =>
+        //         search.performSearch(search.searchTextController.text),
+        //     end: end,
+        //   ),
+        FilteringMode() => true,
+      },
+      allowedFilteringModes: {
+        FilteringMode.noFilter,
+        if (api.type != GalleryFilesPageType.favorites) FilteringMode.favorite,
+        FilteringMode.original,
+        FilteringMode.duplicate,
+        FilteringMode.same,
+        FilteringMode.tag,
+        FilteringMode.tagReversed,
+        FilteringMode.untagged,
+        FilteringMode.gif,
+        FilteringMode.video,
+      },
+      allowedSortingModes: const {
+        SortingMode.none,
+        SortingMode.size,
+      },
+      initialFilteringMode: FilteringMode.noFilter,
+      initialSortingMode: SortingMode.none,
+    );
 
     settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
 
       setState(() {});
     });
-
-    search = SearchFilterGrid(state, null);
 
     if (widget.secure) {
       _listener = AppLifecycleListener(
@@ -245,8 +288,10 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     _listener?.dispose();
     settingsWatcher.cancel();
 
-    widget.api.close();
-    search.dispose();
+    searchTextController.dispose();
+    filter.destroy();
+
+    api.close();
     state.dispose();
 
     PlatformFunctions.hideRecents(false);
@@ -288,8 +333,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
     Navigator.pop(context);
 
-    search.setFilteringMode(FilteringMode.tag);
-    search.performSearch(tag);
+    filter.filteringMode = FilteringMode.tag;
   }
 
   bool _filterFavorites(BuildContext context, int page) {
@@ -307,15 +351,11 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
         return false;
       case 2:
-        search
-          ..setFilteringMode(FilteringMode.favorite)
-          ..performSearch(search.searchTextController.text);
+        filter.filteringMode = FilteringMode.favorite;
 
         return true;
       default:
-        search
-          ..setFilteringMode(FilteringMode.noFilter)
-          ..performSearch(search.searchTextController.text);
+        filter.filteringMode = FilteringMode.noFilter;
 
         return true;
     }
@@ -328,17 +368,18 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     return WrapGridPage(
       addScaffold: widget.callback != null,
       provided: widget.generateGlue,
-      child: GridSkeleton<SystemGalleryDirectoryFile>(
+      child: GridSkeleton<GalleryFile>(
         state,
         (context) => GridFrame(
           key: state.gridKey,
-          layout: const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
-          getCell: (i) => state.transform(widget.api.directCell(i)),
+          // layout: const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
+          // getCell:  (i) => state.transform(widget.api.directCell(i)),
+          getCell: filter.forIdxUnsafe,
           functionality: GridFunctionality(
             registerNotifiers: (child) {
               return FilesDataNotifier(
                 actions: this,
-                state: state,
+                // state: state,
                 plug: plug,
                 api: widget.api,
                 nestedCallback: widget.callback,
@@ -348,12 +389,12 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 ),
               );
             },
-            watchLayoutSettings: GridSettingsFiles.watch,
+            // watchLayoutSettings: GridSettingsFiles.watch,
+
             backButton: CallbackGridBackButton(
               onPressed: () {
-                final filterMode = search.currentFilteringMode();
-                if (filterMode != FilteringMode.noFilter) {
-                  search.resetSearch();
+                if (filter.filteringMode != FilteringMode.noFilter) {
+                  filter.filteringMode = FilteringMode.noFilter;
                   return;
                 }
                 Navigator.pop(context);
@@ -363,17 +404,24 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
             refreshingStatus: state.refreshingStatus,
             search: OverrideGridSearchWidget(
               SearchAndFocus(
-                search.searchWidget(context, hint: widget.dirName),
+                FilteringSearchWidget(
+                  hint: widget.dirName,
+                  filter: filter,
+                  textController: searchTextController,
+                  localTagDictionary: widget.db.localTagDictionary,
+                  focusNode: focusNode,
+                ),
                 search.searchFocus,
               ),
             ),
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(
-            overrideEmptyWidgetNotice:
-                extra.isFavorites ? "Some files can't be shown" : null,
+            overrideEmptyWidgetNotice: api.type.isFavorites()
+                ? "Some files can't be shown"
+                : null, // TODO: change
             showPageSwitcherAsHeader: true,
-            pages: extra.isFavorites
+            pages: api.type.isFavorites()
                 ? null
                 : PageSwitcherToggable(
                     [
@@ -388,26 +436,37 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                   ),
             actions: widget.callback != null
                 ? const []
-                : extra.isTrash
+                : api.type.isTrash()
                     ? [
                         restoreFromTrash(),
                       ]
                     : [
-                        if (extra.isFavorites) setFavoritesThumbnailAction(),
+                        if (api.type.isFavorites())
+                          setFavoritesThumbnailAction(widget.db.miscSettings),
                         if (MiscSettings.current.filesExtendedActions) ...[
                           bulkRename(),
-                          saveTagsAction(plug),
-                          addTag(context, () {
-                            state.gridKey.currentState?.refreshSequence();
-                          }),
+                          saveTagsAction(plug, postTags, localTags),
+                          addTag(
+                            context,
+                            state.refreshingStatus.refresh,
+                            localTags,
+                          ),
                         ],
-                        addToFavoritesAction(null, plug),
+                        addToFavoritesAction(null, plug, favoriteFiles),
                         deleteAction(),
-                        copyAction(state, plug),
-                        moveAction(state, plug),
+                        copyAction(
+                          plug,
+                          widget.tagManager,
+                          favoriteFiles,
+                        ),
+                        moveAction(
+                          plug,
+                          widget.tagManager,
+                          favoriteFiles,
+                        ),
                       ],
             menuButtonItems: [
-              if (widget.callback == null && extra.isTrash)
+              if (widget.callback == null && api.type.isTrash())
                 IconButton(
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true).push(
@@ -453,21 +512,25 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
               if (widget.callback != null)
                 IconButton(
                   onPressed: () {
-                    if (state.gridKey.currentState?.mutation.isRefreshing !=
-                        false) {
+                    if (state.refreshingStatus.mutation.isRefreshing) {
                       return;
                     }
 
-                    final upTo = state.gridKey.currentState?.mutation.cellCount;
-                    if (upTo == null) {
-                      return;
-                    }
+                    final upTo = state.refreshingStatus.mutation.cellCount;
 
                     try {
                       final n = math.Random.secure().nextInt(upTo);
 
-                      widget.callback
-                          ?.call(state.gridKey.currentState!.widget.getCell(n));
+                      final gridState = state.gridKey.currentState;
+                      if (gridState != null) {
+                        final cell = gridState.widget.getCell(n);
+                        cell.onPress(
+                          context,
+                          gridState.widget.functionality,
+                          cell,
+                          n,
+                        );
+                      }
                     } catch (e, trace) {
                       _log.logDefaultImportant(
                         "getting random number".errorMessage(e),
@@ -485,21 +548,21 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                   icon: const Icon(Icons.casino_outlined),
                 ),
             ],
-            settingsButton: GridFrameSettingsButton(
-              selectRatio: (ratio, settings) => (settings as GridSettingsFiles)
-                  .copy(aspectRatio: ratio)
-                  .save(),
-              selectHideName: (hideNames, settings) =>
-                  (settings as GridSettingsFiles)
-                      .copy(hideName: hideNames)
-                      .save(),
-              selectGridLayout: (layoutType, settings) =>
-                  (settings as GridSettingsFiles)
-                      .copy(layoutType: layoutType)
-                      .save(),
-              selectGridColumn: (columns, settings) =>
-                  (settings as GridSettingsFiles).copy(columns: columns).save(),
-            ),
+            // settingsButton: GridFrameSettingsButton(
+            //   selectRatio: (ratio, settings) => (settings as GridSettingsFiles)
+            //       .copy(aspectRatio: ratio)
+            //       .save(),
+            //   selectHideName: (hideNames, settings) =>
+            //       (settings as GridSettingsFiles)
+            //           .copy(hideName: hideNames)
+            //           .save(),
+            //   selectGridLayout: (layoutType, settings) =>
+            //       (settings as GridSettingsFiles)
+            //           .copy(layoutType: layoutType)
+            //           .save(),
+            //   selectGridColumn: (columns, settings) =>
+            //       (settings as GridSettingsFiles).copy(columns: columns).save(),
+            // ),
             inlineMenuButtonItems: true,
             bottomWidget: widget.callback != null
                 ? CopyMovePreview.hintWidget(
@@ -512,15 +575,15 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
             gridSeed: state.gridSeed,
           ),
         ),
-        canPop: search.currentFilteringMode() == FilteringMode.noFilter &&
-            search.searchTextController.text.isEmpty,
+        canPop: filter.filteringMode == FilteringMode.noFilter &&
+            searchTextController.text.isEmpty,
         onPop: (pop) {
-          final filterMode = search.currentFilteringMode();
-          if (search.searchTextController.text.isNotEmpty) {
-            search.performSearch("");
+          if (searchTextController.text.isNotEmpty) {
+            searchTextController.clear();
+            // search.performSearch("");
             return;
-          } else if (filterMode != FilteringMode.noFilter) {
-            search.resetSearch();
+          } else if (filter.filteringMode != FilteringMode.noFilter) {
+            filter.filteringMode = FilteringMode.noFilter;
           }
         },
       ),
@@ -535,21 +598,21 @@ class FilesDataNotifier extends InheritedWidget {
     required this.actions,
     required this.nestedCallback,
     required this.plug,
-    required this.state,
+    // required this.state,
     required super.child,
   });
 
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? nestedCallback;
   final FilesActionsMixin actions;
-  final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state;
+  // final GridSkeletonStateFilter<GalleryFile> state;
   final GalleryPlug plug;
 
   static (
     GalleryAPIFiles,
     CallbackDescriptionNested?,
     FilesActionsMixin,
-    GridSkeletonStateFilter<SystemGalleryDirectoryFile>,
+    // GridSkeletonStateFilter<GalleryFile>,
     GalleryPlug,
   ) of(BuildContext context) {
     final widget =
@@ -559,7 +622,7 @@ class FilesDataNotifier extends InheritedWidget {
       widget!.api,
       widget.nestedCallback,
       widget.actions,
-      widget.state,
+      // widget.state,
       widget.plug,
     );
   }
@@ -569,6 +632,8 @@ class FilesDataNotifier extends InheritedWidget {
       api != oldWidget.api ||
       nestedCallback != oldWidget.nestedCallback ||
       actions != oldWidget.actions ||
-      plug != oldWidget.plug ||
-      state != oldWidget.state;
+      plug != oldWidget.plug
+      // ||
+      // state != oldWidget.state
+      ;
 }

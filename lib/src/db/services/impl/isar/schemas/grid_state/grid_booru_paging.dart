@@ -10,8 +10,8 @@ import "package:isar/isar.dart";
 part "grid_booru_paging.g.dart";
 
 @collection
-class GridBooruPaging {
-  const GridBooruPaging(this.page);
+class IsarGridBooruPaging {
+  const IsarGridBooruPaging(this.page);
 
   Id get id => 0;
 

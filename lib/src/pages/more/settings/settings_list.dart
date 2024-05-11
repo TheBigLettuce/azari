@@ -11,10 +11,7 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
@@ -29,8 +26,12 @@ class SettingsList extends StatefulWidget {
   const SettingsList({
     super.key,
     required this.sliver,
+    required this.db,
   });
+
   final bool sliver;
+
+  final DbConn db;
 
   @override
   State<SettingsList> createState() => _SettingsListState();
@@ -38,10 +39,12 @@ class SettingsList extends StatefulWidget {
 
 class _SettingsListState extends State<SettingsList> {
   late final StreamSubscription<SettingsData?> _watcher;
-  late final StreamSubscription<MiscSettings?> _miscWatcher;
+  late final StreamSubscription<MiscSettingsData?> _miscWatcher;
 
-  SettingsData _settings = SettingsService.currentData;
-  MiscSettings? _miscSettings = MiscSettings.current;
+  DbConn get db => widget.db;
+
+  SettingsData _settings = SettingsService.db().current;
+  MiscSettingsData _miscSettings = MiscSettingsService.db().current;
 
   Future<int>? thumbnailCount =
       Platform.isAndroid ? PlatformFunctions.thumbCacheSize() : null;
@@ -59,9 +62,9 @@ class _SettingsListState extends State<SettingsList> {
       });
     });
 
-    _miscWatcher = MiscSettings.watch((s) {
+    _miscWatcher = _miscSettings.s.watch((s) {
       setState(() {
-        _miscSettings = s;
+        _miscSettings = s!;
       });
     });
   }
@@ -106,7 +109,7 @@ class _SettingsListState extends State<SettingsList> {
             title: Text(localizations.downloadDirectorySetting),
             subtitle: Text(_settings.path.pathDisplay),
             onTap: () async {
-              await SettingsService.db.chooseDirectory(
+              await SettingsService.db().chooseDirectory(
                 showDialog,
                 emptyResult: localizations.emptyResult,
                 pickDirectory: localizations.pickDirectory,
@@ -135,15 +138,15 @@ class _SettingsListState extends State<SettingsList> {
           onTap: () => radioDialog(
             context,
             ThemeType.values.map((e) => (e, e.translatedString(context))),
-            _miscSettings!.themeType,
+            _miscSettings.themeType,
             (value) {
               if (value != null) {
-                selectTheme(context, _miscSettings!, value);
+                selectTheme(context, _miscSettings, value);
               }
             },
             title: localizations.settingsTheme,
           ),
-          subtitle: Text(_miscSettings!.themeType.translatedString(context)),
+          subtitle: Text(_miscSettings.themeType.translatedString(context)),
         ),
         ListTile(
           title: Text(localizations.imageDisplayQualitySetting),
@@ -244,7 +247,7 @@ class _SettingsListState extends State<SettingsList> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          Thumbnail.clear();
+                                          db.thumbnails.clear();
 
                                           PlatformFunctions.clearCachedThumbs();
 
@@ -303,7 +306,7 @@ class _SettingsListState extends State<SettingsList> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          PinnedThumbnail.clear();
+                                          db.pinnedThumbnails.clear();
 
                                           PlatformFunctions.clearCachedThumbs(
                                             true,
@@ -336,8 +339,11 @@ class _SettingsListState extends State<SettingsList> {
             },
           ),
         SwitchListTile(
-          value: _miscSettings!.filesExtendedActions,
-          onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
+          value: _miscSettings.filesExtendedActions,
+          onChanged: (value) => MiscSettingsService.db()
+              .current
+              .copy(filesExtendedActions: value)
+              .save(),
           title: Text(localizations.extendedFilesGridActions),
         ),
         MenuWrapper(
@@ -358,8 +364,11 @@ class _SettingsListState extends State<SettingsList> {
           ),
         ),
         SwitchListTile(
-          value: _miscSettings!.animeAlwaysLoadFromNet,
-          onChanged: (value) => MiscSettings.setAnimeAlwaysLoadFromNet(value),
+          value: _miscSettings.animeAlwaysLoadFromNet,
+          onChanged: (value) => MiscSettingsService.db()
+              .current
+              .copy(animeAlwaysLoadFromNet: value)
+              .save(),
           title: Text(localizations.animeAlwaysOnline),
         ),
         ListTile(

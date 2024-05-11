@@ -13,6 +13,21 @@ mixin PinnedManga
         CellBase,
         Thumbnailable,
         Pressable<PinnedManga> {
+  static PinnedManga forDb({
+    required String mangaId,
+    required MangaMeta site,
+    required String thumbUrl,
+    required String title,
+  }) =>
+      switch (_currentDb) {
+        ServicesImplTable.isar => IsarPinnedManga(
+            mangaId: mangaId,
+            site: site,
+            thumbUrl: thumbUrl,
+            title: title,
+          ),
+      };
+
   @override
   CellStaticData description() => const CellStaticData(
         alignTitleToTopLeft: true,
@@ -45,6 +60,7 @@ mixin PinnedManga
           return MangaInfoPage(
             id: MangaStringId(cell.mangaId),
             api: api,
+            db: DatabaseConnectionNotifier.of(context),
           );
         },
       ),
@@ -68,11 +84,15 @@ mixin PinnedMangaDbScope<W extends DbConnHandle<PinnedMangaService>>
   List<PinnedManga> getAll(int limit) => widget.db.getAll(limit);
 
   @override
-  void addAll(List<MangaEntry> l, [bool saveId = false]) =>
-      widget.db.addAll(l, saveId);
+  void addAll(List<MangaEntry> l) => widget.db.addAll(l);
 
   @override
-  void deleteAll(List<(MangaId, MangaMeta)> ids) => widget.db.deleteAll(ids);
+  void reAdd(List<PinnedManga> l) => widget.db.reAdd(l);
+
+  @override
+  List<PinnedManga> deleteAll(List<(MangaId, MangaMeta)> ids) =>
+      widget.db.deleteAll(ids);
+
   @override
   void deleteSingle(String mangaId, MangaMeta site) =>
       widget.db.deleteSingle(mangaId, site);
@@ -88,9 +108,10 @@ abstract interface class PinnedMangaService implements ServiceMarker {
 
   List<PinnedManga> getAll(int limit);
 
-  void addAll(List<MangaEntry> l, [bool saveId = false]);
+  void addAll(List<MangaEntry> l);
+  void reAdd(List<PinnedManga> l);
 
-  void deleteAll(List<(MangaId, MangaMeta)> ids);
+  List<PinnedManga> deleteAll(List<(MangaId, MangaMeta)> ids);
   void deleteSingle(String mangaId, MangaMeta site);
 
   StreamSubscription<void> watch(void Function(void) f);

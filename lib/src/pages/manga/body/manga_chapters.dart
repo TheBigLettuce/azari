@@ -23,18 +23,26 @@ class MangaChapters extends StatefulWidget {
     required this.entry,
     required this.api,
     required this.scrollController,
+    required this.db,
   });
+
   final MangaEntry entry;
   final MangaAPI api;
   final ScrollController scrollController;
+
+  final DbConn db;
 
   @override
   State<MangaChapters> createState() => _MangaChaptersState();
 }
 
 class _MangaChaptersState extends State<MangaChapters> {
+  ReadMangaChaptersService get readChapters => widget.db.readMangaChapters;
+  SavedMangaChaptersService get savedChapters => widget.db.savedMangaChapters;
+  ChaptersSettingsService get chapterSettings => widget.db.chaptersSettings;
+
   late final StreamSubscription<ChaptersSettingsData?> watcher;
-  ChaptersSettingsData settings = ChapterSettings.current;
+  late ChaptersSettingsData settings = chapterSettings.current;
 
   final List<(List<MangaChapter>, String)> list = [];
 
@@ -55,7 +63,7 @@ class _MangaChaptersState extends State<MangaChapters> {
   void initState() {
     super.initState();
 
-    watcher = ChapterSettings.watch((c) {
+    watcher = chapterSettings.watch((c) {
       settings = c!;
 
       reloadChapters();
@@ -63,16 +71,17 @@ class _MangaChaptersState extends State<MangaChapters> {
       setState(() {});
     });
 
-    if (SavedMangaChapters.count(
+    if (savedChapters.count(
           widget.entry.id.toString(),
           widget.entry.site,
         ) !=
         0) {
       _future = () async {
-        final chpt = SavedMangaChapters.get(
+        final chpt = savedChapters.get(
           widget.entry.id.toString(),
           widget.entry.site,
           settings,
+          readChapters,
         );
 
         if (chpt == null) {
@@ -95,10 +104,11 @@ class _MangaChaptersState extends State<MangaChapters> {
   }
 
   void reloadChapters() {
-    final chpt = SavedMangaChapters.get(
+    final chpt = savedChapters.get(
       widget.entry.id.toString(),
       widget.entry.site,
       settings,
+      readChapters,
     );
 
     if (chpt != null) {
@@ -134,7 +144,7 @@ class _MangaChaptersState extends State<MangaChapters> {
       if (value.isEmpty) {
         reachedEnd = true;
       } else {
-        SavedMangaChapters.add(
+        savedChapters.add(
           widget.entry.id.toString(),
           widget.entry.site,
           value,
@@ -160,7 +170,7 @@ class _MangaChaptersState extends State<MangaChapters> {
       page += 1;
 
       if (value.isNotEmpty) {
-        SavedMangaChapters.add(
+        savedChapters.add(
           widget.entry.id.toString(),
           widget.entry.site,
           value,
@@ -190,7 +200,9 @@ class _MangaChaptersState extends State<MangaChapters> {
           return [
             PopupMenuItem<void>(
               onTap: () {
-                ChapterSettings.setHideRead(!settings.hideRead);
+                chapterSettings.current
+                    .copy(hideRead: !settings.hideRead)
+                    .save();
               },
               child: settings.hideRead
                   ? Text(AppLocalizations.of(context)!.mangaShowRead)
@@ -198,7 +210,7 @@ class _MangaChaptersState extends State<MangaChapters> {
             ),
             PopupMenuItem<void>(
               onTap: () {
-                SavedMangaChapters.clear(
+                savedChapters.clear(
                   widget.entry.id.toString(),
                   widget.entry.site,
                 );
@@ -260,6 +272,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                     ),
                   )
                 : null,
+            db: readChapters,
           );
         } else if (reachedEnd && list.isEmpty) {
           return const SliverToBoxAdapter(

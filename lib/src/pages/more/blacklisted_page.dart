@@ -9,64 +9,82 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/blacklisted_posts.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 
 class BlacklistedPage extends StatefulWidget {
   const BlacklistedPage({
     super.key,
     required this.generateGlue,
+    required this.db,
   });
+
   final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
+
+  final DbConn db;
 
   @override
   State<BlacklistedPage> createState() => _BlacklistedPageState();
 }
 
 class _BlacklistedPageState extends State<BlacklistedPage> {
+  BlacklistedDirectoryService get blacklistedDirectory =>
+      widget.db.blacklistedDirectories;
+
   late final StreamSubscription<void> blacklistedWatcher;
-  final loader = LinearIsarLoader<BlacklistedDirectory>(
-    BlacklistedDirectorySchema,
-    Dbs.g.blacklisted,
-    (offset, limit, s, sort, mode) => Dbs.g.blacklisted.blacklistedDirectorys
-        .filter()
-        .nameContains(s, caseSensitive: false)
-        .offset(offset)
-        .limit(limit)
-        .findAllSync(),
-  );
-  late final state = GridSkeletonStateFilter<BlacklistedDirectory>(
-    filter: loader.filter,
-    transform: (cell) => cell,
-    clearRefresh: SynchronousGridRefresh(loader.count),
+
+  // final loader = LinearIsarLoader<BlacklistedDirectoryData>(
+  //   BlacklistedDirectorySchema,
+  //   Dbs.g.blacklisted,
+  //   (offset, limit, s, sort, mode) => Dbs.g.blacklisted.blacklistedDirectorys
+  //       .filter()
+  //       .nameContains(s, caseSensitive: false)
+  //       .offset(offset)
+  //       .limit(limit)
+  //       .findAllSync(),
+  // );
+
+  late final state = GridSkeletonRefreshingState<BlacklistedDirectoryData>(
+    clearRefresh: SynchronousGridRefresh(() => filter.count),
   );
 
-  late final SearchFilterGrid<BlacklistedDirectory> search;
+  late final ChainedFilterResourceSource<BlacklistedDirectoryData> filter;
+  final searchTextController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    search = SearchFilterGrid(state, null);
 
-    blacklistedWatcher = BlacklistedDirectory.watch((event) {
-      search.performSearch(search.searchTextController.text);
+    filter = ChainedFilterResourceSource(
+      _original,
+      ListStorage(),
+      fn: (e, filteringMode, sortingMode) =>
+          e.name.contains(searchTextController.text),
+      allowedFilteringModes: const {},
+      allowedSortingModes: const {},
+      initialFilteringMode: FilteringMode.noFilter,
+      initialSortingMode: SortingMode.none,
+    );
+
+    // blacklistedDirectory.
+
+    blacklistedWatcher = blacklistedDirectory.watch((event) {
+      filter.clearRefresh();
+      // search.performSearch(search.searchTextController.text);
       setState(() {});
     });
   }
@@ -75,7 +93,9 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   void dispose() {
     blacklistedWatcher.cancel();
     state.dispose();
-    search.dispose();
+    searchTextController.dispose();
+
+    filter.destroy();
 
     super.dispose();
   }
@@ -88,9 +108,9 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
       provided: widget.generateGlue,
       child: GridSkeleton(
         state,
-        (context) => GridFrame<BlacklistedDirectory>(
+        (context) => GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
-          layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list),
+          slivers: const [ListLayout(hideThumbnails: false)],
           getCell: loader.getCell,
           functionality: GridFunctionality(
             registerNotifiers: (child) => HideBlacklistedImagesNotifier(
@@ -130,6 +150,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                   BlacklistedPostsPage(
                     generateGlue: widget.generateGlue,
                     conroller: state.controller,
+                    db: widget.db.hiddenBooruPost,
                   ),
                 ],
               ),
@@ -139,11 +160,8 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               GridAction(
                 Icons.restore_page,
                 (selected) {
-                  BlacklistedDirectory.deleteAll(
-                    selected
-                        .cast<BlacklistedDirectory>()
-                        .map((e) => e.bucketId)
-                        .toList(),
+                  blacklistedDirectory.deleteAll(
+                    selected.map((e) => e.bucketId).toList(),
                   );
                 },
                 true,
@@ -152,7 +170,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             menuButtonItems: [
               IconButton(
                 onPressed: () {
-                  BlacklistedDirectory.clear();
+                  blacklistedDirectory.clear();
                   chooseGalleryPlug().notify(null);
                 },
                 icon: const Icon(Icons.delete),

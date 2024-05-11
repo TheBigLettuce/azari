@@ -13,13 +13,9 @@ import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/settings.dart";
-import "package:gallery/src/db/tags/booru_tagging.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
 import "package:permission_handler/permission_handler.dart";
@@ -30,9 +26,13 @@ class SinglePost extends StatefulWidget {
     super.key,
     required this.tagManager,
     this.overrideLeading,
+    required this.db,
   });
+
   final TagManager tagManager;
   final Widget? overrideLeading;
+
+  final FavoritePostService db;
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -54,7 +54,7 @@ class _SinglePostState extends State<SinglePost> {
   void initState() {
     super.initState();
 
-    final booru = SettingsService.currentData.selectedBooru;
+    final booru = SettingsService.db().current.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
     booruApi = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
   }
@@ -100,27 +100,17 @@ class _SinglePostState extends State<SinglePost> {
 
       final key = GlobalKey<ImageViewState>();
 
-      final favoritesWatcher = FavoriteBooru.watch((event) {
+      final favoritesWatcher = widget.db.watch((event) {
         key.currentState?.setState(() {});
       });
 
-      ImageView.launchWrapped(
+      return ImageView.launchWrapped(
         // ignore: use_build_context_synchronously
         context,
         1,
         (context, __) => value.content(context),
         key: key,
-        download: (_) {
-          Downloader.g.add(
-            DownloadFile.d(
-              url: value.fileDownloadUrl(),
-              site: booru.booru.url,
-              name: value.filename(),
-              thumbUrl: value.previewUrl,
-            ),
-            SettingsService.currentData,
-          );
-        },
+        download: (_) => value.download(context),
       ).then((value) => favoritesWatcher.cancel());
     } catch (e, trace) {
       try {

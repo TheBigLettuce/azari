@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/widgets.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/plugs/gallery.dart";
 
 class CallbackDescription {
   const CallbackDescription(
@@ -17,7 +17,7 @@ class CallbackDescription {
     required this.joinable,
     required this.suggestFor,
   });
-  final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
+  final Future<void> Function(GalleryDirectory? chosen, String? newDir) c;
   final String description;
   final List<String> suggestFor;
   final IconData icon;
@@ -26,7 +26,7 @@ class CallbackDescription {
 
   final bool joinable;
 
-  void call(SystemGalleryDirectory? chosen, String? newDir) {
+  void call(GalleryDirectory? chosen, String? newDir) {
     c(chosen, newDir);
   }
 }

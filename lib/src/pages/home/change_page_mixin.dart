@@ -8,7 +8,7 @@
 part of "../home.dart";
 
 mixin _ChangePageMixin on State<Home> {
-  late final Isar mainGrid;
+  // late final Isar mainGrid;
 
   final pagingRegistry = PagingStateRegistry();
 
@@ -41,12 +41,12 @@ mixin _ChangePageMixin on State<Home> {
   }
 
   void initChangePage(_AnimatedIconsMixin icons, SettingsData settings) {
-    mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
+    // mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
   }
 
   void disposeChangePage() {
     if (!themeIsChanging) {
-      mainGrid.close().then((value) => restartOver());
+      // mainGrid.close().then((value) => restartOver());
       pagingRegistry.dispose();
     } else {
       themeChangeOver();
@@ -162,6 +162,7 @@ mixin _ChangePageMixin on State<Home> {
               navigatorKey: mangaKey,
               child: MangaPage(
                 procPop: (pop) => _procPop(icons, pop),
+                db: DatabaseConnectionNotifier.of(context),
               ),
             ),
           kAnimePageRoute => AnimePage(

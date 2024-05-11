@@ -127,7 +127,7 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
               curve: Easing.emphasizedAccelerate,
             );
 
-            StatisticsGeneral.addScrolledUp();
+            StatisticsGeneralService.db().current.add(scrolledUp: 1).save();
           },
           child: const Icon(Icons.arrow_upward),
         ),

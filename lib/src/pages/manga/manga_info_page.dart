@@ -7,8 +7,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart";
@@ -28,10 +27,14 @@ class MangaInfoPage extends StatefulWidget {
     required this.id,
     required this.api,
     this.entry,
+    required this.db,
   });
+
   final MangaId id;
   final MangaAPI api;
   final MangaEntry? entry;
+
+  final DbConn db;
 
   @override
   State<MangaInfoPage> createState() => _MangaInfoPageState();
@@ -39,12 +42,15 @@ class MangaInfoPage extends StatefulWidget {
 
 class _MangaInfoPageState extends State<MangaInfoPage>
     with TickerProviderStateMixin {
+  CompactMangaDataService get compactManga => widget.db.compactManga;
+  PinnedMangaService get pinnedManga => widget.db.pinnedManga;
+
   final state = SkeletonState();
   final scrollController = ScrollController();
   double? score;
   Future<void>? scoreFuture;
 
-  late bool isPinned = PinnedManga.exist(widget.id.toString(), widget.api.site);
+  late bool isPinned = pinnedManga.exist(widget.id.toString(), widget.api.site);
 
   @override
   void initState() {
@@ -76,9 +82,9 @@ class _MangaInfoPageState extends State<MangaInfoPage>
     }
 
     return widget.api.single(widget.id).then((value) {
-      isPinned = PinnedManga.exist(value.id.toString(), value.site);
-      CompactMangaData.addAll([
-        CompactMangaData(
+      isPinned = pinnedManga.exist(value.id.toString(), value.site);
+      compactManga.addAll([
+        CompactMangaData.forDb(
           mangaId: value.id.toString(),
           site: value.site,
           thumbUrl: value.thumbUrl,
@@ -128,23 +134,16 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                   IconButton(
                     onPressed: () {
                       if (isPinned) {
-                        PinnedManga.deleteSingle(
+                        pinnedManga.deleteSingle(
                           entry.id.toString(),
                           entry.site,
                         );
                       } else {
-                        PinnedManga.addAll([
-                          PinnedManga(
-                            mangaId: entry.id.toString(),
-                            site: entry.site,
-                            thumbUrl: entry.thumbUrl,
-                            title: entry.title,
-                          ),
-                        ]);
+                        pinnedManga.addAll([entry]);
                       }
 
                       isPinned =
-                          PinnedManga.exist(entry.id.toString(), entry.site);
+                          pinnedManga.exist(entry.id.toString(), entry.site);
 
                       setState(() {});
                     },
@@ -265,6 +264,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                       entry: entry,
                       scrollController: scrollController,
                       viewPadding: MediaQuery.viewPaddingOf(context),
+                      db: widget.db,
                     ),
                   ],
                 ),

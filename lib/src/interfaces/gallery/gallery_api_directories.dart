@@ -5,45 +5,52 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "dart:async";
+
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
-import "package:isar/isar.dart";
+import "package:gallery/src/plugs/gallery.dart";
+
+enum GalleryFilesPageType {
+  normal,
+  trash,
+  favorites;
+
+  bool isFavorites() => this == favorites;
+  bool isTrash() => this == trash;
+}
 
 abstract class GalleryAPIDirectories {
-  SystemGalleryDirectory directCell(int i);
+  ResourceSource<GalleryDirectory> get source;
 
-  Future<int> refresh();
-  GalleryDirectoriesExtra asExtra();
-  GalleryAPIFiles files(SystemGalleryDirectory d);
+  GalleryAPIFiles? get bindFiles;
+
+  GalleryAPIFiles files(GalleryDirectory d, GalleryFilesPageType type);
+  GalleryAPIFiles joinedFiles(List<String> bucketIds);
 
   void close();
+
+  StreamSubscription<int> watch(void Function(int c) f);
 }
 
-abstract class GalleryDirectoriesExtra {
-  FilterInterface<SystemGalleryDirectory> get filter;
-  Isar get db;
+// abstract class GalleryDirectoriesExtra {
+//   bool get currentlyHostingFiles;
 
-  bool get currentlyHostingFiles;
+//   GalleryAPIFiles joinedDir(List<String> bucketIds);
+//   GalleryAPIFiles trash();
+//   GalleryAPIFiles favorites();
 
-  GalleryAPIFiles joinedDir(List<String> bucketIds);
-  GalleryAPIFiles trash();
-  GalleryAPIFiles favorites();
+//   void setRefreshGridCallback(void Function() callback);
+//   void setTemporarySet(void Function(int, bool) callback);
+//   void setRefreshingStatusCallback(
+//     void Function(int i, bool inRefresh, bool empty) callback,
+//   );
 
-  void addBlacklisted(List<BlacklistedDirectoryData> bucketIds);
-
-  void setRefreshGridCallback(void Function() callback);
-  void setTemporarySet(void Function(int, bool) callback);
-  void setRefreshingStatusCallback(
-    void Function(int i, bool inRefresh, bool empty) callback,
-  );
-
-  void setPassFilter(
-    (Iterable<SystemGalleryDirectory>, dynamic) Function(
-      Iterable<SystemGalleryDirectory>,
-      dynamic,
-      bool,
-    )? filter,
-  );
-}
+//   void setPassFilter(
+//     (Iterable<GalleryDirectory>, dynamic) Function(
+//       Iterable<GalleryDirectory>,
+//       dynamic,
+//       bool,
+//     )? filter,
+//   );
+// }

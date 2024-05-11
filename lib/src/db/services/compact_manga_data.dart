@@ -31,6 +31,21 @@ mixin CompactMangaData
         CellBase,
         Thumbnailable,
         Pressable<CompactMangaData> {
+  static CompactMangaData forDb({
+    required String mangaId,
+    required MangaMeta site,
+    required String title,
+    required String thumbUrl,
+  }) =>
+      switch (_currentDb) {
+        ServicesImplTable.isar => IsarCompactMangaData(
+            mangaId: mangaId,
+            site: site,
+            thumbUrl: thumbUrl,
+            title: title,
+          ),
+      };
+
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -61,6 +76,7 @@ mixin CompactMangaData
           return MangaInfoPage(
             id: MangaStringId(cell.mangaId),
             api: api,
+            db: DatabaseConnectionNotifier.of(context),
           );
         },
       ),

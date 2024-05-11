@@ -9,6 +9,7 @@ import "dart:async";
 import "dart:io" as io;
 import "dart:io";
 
+import "package:async/async.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -25,7 +26,6 @@ import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_meta
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/anime_discovery.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
@@ -50,23 +50,28 @@ import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_
 import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_general.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
+import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
@@ -143,25 +148,33 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
   const IsarLocalTagDictionaryService();
 
   @override
-  void addAll(List<String> tags) {
-    _Dbs.g.main.writeTxnSync(
-      () {
-        _Dbs.g.main.localTagDictionarys.putAllSync(
-          tags
-              .map(
-                (e) => LocalTagDictionary(
-                  e,
-                  (_Dbs.g.main.localTagDictionarys
-                              .getSync(fastHash(e))
-                              ?.frequency ??
-                          0) +
-                      1,
-                ),
-              )
-              .toList(),
-        );
-      },
+  void add(List<String> tags) {
+    _Dbs.g.localTags.isarLocalTagDictionarys.putAllSync(
+      tags
+          .map(
+            (e) => IsarLocalTagDictionary(
+              e,
+              (_Dbs.g.localTags.isarLocalTagDictionarys
+                          .getByTagSync(e)
+                          ?.frequency ??
+                      0) +
+                  1,
+            ),
+          )
+          .toList(),
     );
+  }
+
+  @override
+  Future<List<BooruTag>> complete(String string) async {
+    final result = _Dbs.g.localTags.isarLocalTagDictionarys
+        .filter()
+        .tagContains(string)
+        .sortByFrequencyDesc()
+        .limit(10)
+        .findAllSync();
+
+    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
   }
 }
 
@@ -682,12 +695,14 @@ class IsarDownloadFileService implements DownloadFileService {
   @override
   List<DownloadFileData> get inProgressAll => _Dbs.g.main.isarDownloadFiles
       .where()
-      .inProgressEqualTo(true)
+      .statusEqualTo(DownloadStatus.inProgress)
       .findAllSync();
 
   @override
-  List<DownloadFileData> get failedAll =>
-      _Dbs.g.main.isarDownloadFiles.where().isFailedEqualTo(true).findAllSync();
+  List<DownloadFileData> get failedAll => _Dbs.g.main.isarDownloadFiles
+      .where()
+      .statusEqualTo(DownloadStatus.failed)
+      .findAllSync();
 
   @override
   void saveAll(List<DownloadFileData> l) {
@@ -722,10 +737,8 @@ class IsarDownloadFileService implements DownloadFileService {
   @override
   DownloadFileData? next() {
     return _Dbs.g.main.isarDownloadFiles
-        .filter()
-        .inProgressEqualTo(false)
-        .and()
-        .isFailedEqualTo(false)
+        .where()
+        .statusEqualTo(DownloadStatus.onHold)
         .findFirstSync();
   }
 
@@ -746,10 +759,8 @@ class IsarDownloadFileService implements DownloadFileService {
     }
 
     return _Dbs.g.main.isarDownloadFiles
-        .filter()
-        .inProgressEqualTo(false)
-        .and()
-        .isFailedEqualTo(false)
+        .where()
+        .statusEqualTo(DownloadStatus.onHold)
         .sortByDateDesc()
         .limit(6 - minus)
         .findAllSync();
@@ -851,6 +862,17 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   const IsarBlacklistedDirectoryService();
 
   @override
+  void addAll(List<GalleryDirectory> directories) {
+    _Dbs.g.blacklisted.writeTxnSync(
+      () => _Dbs.g.blacklisted.isarBlacklistedDirectorys.putAllByBucketIdSync(
+        directories
+            .map((e) => IsarBlacklistedDirectory(e.bucketId, e.name))
+            .toList(),
+      ),
+    );
+  }
+
+  @override
   void clear() => _Dbs.g.blacklisted.writeTxnSync(
         () => _Dbs.g.blacklisted.isarBlacklistedDirectorys.clearSync(),
       );
@@ -866,11 +888,17 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   @override
   StreamSubscription<void> watch(
     void Function(void) f, [
-    bool fire = true,
+    bool fire = false,
   ]) =>
       _Dbs.g.blacklisted.isarBlacklistedDirectorys
           .watchLazy(fireImmediately: fire)
           .listen(f);
+
+  @override
+  ResourceSource<BlacklistedDirectoryData> makeSource() {
+    // TODO: implement makeSource
+    throw UnimplementedError();
+  }
 }
 
 class IsarDirectoryMetadataService implements DirectoryMetadataService {
@@ -935,6 +963,12 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
         );
       },
     );
+  }
+
+  @override
+  DirectoryMetadataData getOrCreate(String id) {
+    // TODO: implement getOrCreate
+    throw UnimplementedError();
   }
 }
 
@@ -1128,22 +1162,42 @@ class IsarPinnedThumbnailService implements PinnedThumbnailService {
   const IsarPinnedThumbnailService();
 
   @override
-  void clear() => _Dbs.g.thumbnail!
-      .writeTxnSync(() => _Dbs.g.thumbnail!.pinnedThumbnails.clearSync());
+  PinnedThumbnailData? get(int id) =>
+      _Dbs.g.thumbnail!.isarPinnedThumbnails.getSync(id);
 
   @override
-  bool delete(int id) => _Dbs.g.thumbnail!
-      .writeTxnSync(() => _Dbs.g.thumbnail!.pinnedThumbnails.deleteSync(id));
+  void clear() => _Dbs.g.thumbnail!
+      .writeTxnSync(() => _Dbs.g.thumbnail!.isarPinnedThumbnails.clearSync());
+
+  @override
+  bool delete(int id) => _Dbs.g.thumbnail!.writeTxnSync(
+        () => _Dbs.g.thumbnail!.isarPinnedThumbnails.deleteSync(id),
+      );
+
+  @override
+  void add(int id, String path, int differenceHash) {
+    _Dbs.g.thumbnail!.writeTxnSync(
+      () => _Dbs.g.thumbnail!.isarPinnedThumbnails
+          .putSync(IsarPinnedThumbnail(id, differenceHash, path)),
+    );
+  }
 }
 
 class IsarThumbnailService implements ThumbnailService {
   const IsarThumbnailService();
 
   @override
+  ThumbnailData? get(int id) => _Dbs.g.thumbnail!.isarThumbnails.getSync(id);
+
+  @override
   void clear() {
     _Dbs.g.thumbnail!
         .writeTxnSync(() => _Dbs.g.thumbnail!.isarThumbnails.clearSync());
   }
+
+  @override
+  void delete(int id) => _Dbs.g.thumbnail!
+      .writeTxnSync(() => _Dbs.g.thumbnail!.isarThumbnails.deleteSync(id));
 
   @override
   void addAll(List<ThumbId> l) {
@@ -1247,58 +1301,56 @@ class IsarPinnedMangaService implements PinnedMangaService {
   }
 
   @override
-  void addAll(List<MangaEntry> l, [bool saveId = false]) {
+  void addAll(List<MangaEntry> l) {
     if (l.isEmpty) {
       return;
     }
 
-    if (saveId) {
-      _Dbs.g.anime.writeTxnSync(
-        () => _Dbs.g.anime.isarPinnedMangas.putAllSync(
-          l
-              .map(
-                (e) => IsarPinnedManga(
-                  mangaId: e.id.toString(),
-                  site: e.site,
-                  thumbUrl: e.thumbUrl,
-                  title: e.title,
-                ),
-              )
-              .toList(),
-        ),
-      );
-
-      return;
-    }
-
     _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarPinnedMangas
-          .putAllByMangaIdSiteSync(l as List<IsarPinnedManga>),
+      () => _Dbs.g.anime.isarPinnedMangas.putAllByMangaIdSiteSync(
+        l
+            .map(
+              (e) => IsarPinnedManga(
+                mangaId: e.id.toString(),
+                site: e.site,
+                thumbUrl: e.thumbUrl,
+                title: e.title,
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 
-  // static void deleteAll(List<int> ids) {
-  //   if (ids.isEmpty) {
-  //     return;
-  //   }
-
-  //   Dbs.g.anime.writeTxnSync(
-  //     () => Dbs.g.anime.pinnedMangas.deleteAll(ids),
-  //   );
-  // }
+  @override
+  void reAdd(List<PinnedManga> l) => _Dbs.g.anime.writeTxnSync(
+        () => _Dbs.g.anime.isarPinnedMangas
+            .putAllByMangaIdSiteSync(l as List<IsarPinnedManga>),
+      );
 
   @override
-  void deleteAll(List<(MangaId, MangaMeta)> ids) {
+  List<PinnedManga> deleteAll(List<(MangaId, MangaMeta)> ids) {
     if (ids.isEmpty) {
-      return;
+      return const [];
     }
+
+    final mIds = ids.map((e) => e.$1.toString()).toList();
+    final sites = ids.map((e) => e.$2).toList();
+
+    final saved = _Dbs.g.anime.isarPinnedMangas
+        .getAllByMangaIdSiteSync(mIds, sites)
+        .where((element) => element != null)
+        .cast<PinnedManga>()
+        .toList();
 
     _Dbs.g.anime.writeTxnSync(
       () => _Dbs.g.anime.isarPinnedMangas.deleteAllByMangaIdSiteSync(
-        ids.map((e) => e.$1.toString()).toList(),
-        ids.map((e) => e.$2).toList(),
+        mIds,
+        sites,
       ),
     );
+
+    return saved;
   }
 
   @override
@@ -1482,20 +1534,7 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
                           child: child,
                         ),
                 ignoreLoadingBuilder: true,
-                download: (i) {
-                  final image = chapters[i];
-
-                  Downloader.g.add(
-                    DownloadFile.d(
-                      name:
-                          "$i / ${image.maxPages} - ${data.chapterId}.${image.url.split(".").last}",
-                      url: image.url,
-                      thumbUrl: image.url,
-                      site: data.mangaTitle,
-                    ),
-                    SettingsService.currentData,
-                  );
-                },
+                download: (i) => chapters[i].download(context, data, i),
                 onRightSwitchPageEnd: addNextChapterButton
                     ? () {
                         nextChapterKey.currentState?.findAndLaunchNext();
@@ -1673,10 +1712,16 @@ class IsarFilesGridSettingsData implements WatchableGridSettingsData {
   }
 
   @override
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData? p1) f,
-  ) =>
-      _Dbs.g.main.isarGridSettingsFiles.watchObject(0).listen(f);
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarGridSettingsFiles
+          .watchObject(0, fireImmediately: fire)
+          .map(
+            (event) => event ?? current,
+          )
+          .listen(f);
 }
 
 class IsarFavoritesGridSettingsData implements WatchableGridSettingsData {
@@ -1701,10 +1746,14 @@ class IsarFavoritesGridSettingsData implements WatchableGridSettingsData {
   }
 
   @override
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData? p1) f,
-  ) =>
-      _Dbs.g.main.isarGridSettingsFavorites.watchObject(0).listen(f);
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarGridSettingsFavorites
+          .watchObject(0)
+          .map((event) => event ?? current)
+          .listen(f);
 }
 
 class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
@@ -1729,10 +1778,14 @@ class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
   }
 
   @override
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData? p1) f,
-  ) =>
-      _Dbs.g.main.isarGridSettingsDirectories.watchObject(0).listen(f);
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarGridSettingsDirectories
+          .watchObject(0)
+          .map((event) => event ?? current)
+          .listen(f);
 }
 
 class IsarBooruGridSettingsData implements WatchableGridSettingsData {
@@ -1757,10 +1810,14 @@ class IsarBooruGridSettingsData implements WatchableGridSettingsData {
   }
 
   @override
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData? p1) f,
-  ) =>
-      _Dbs.g.main.isarGridSettingsBoorus.watchObject(0).listen(f);
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarGridSettingsBoorus
+          .watchObject(0)
+          .map((event) => event ?? current)
+          .listen(f);
 }
 
 class IsarAnimeDiscoveryGridSettingsData implements WatchableGridSettingsData {
@@ -1785,13 +1842,17 @@ class IsarAnimeDiscoveryGridSettingsData implements WatchableGridSettingsData {
   }
 
   @override
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData? p1) f,
-  ) =>
-      _Dbs.g.main.isarGridSettingsAnimeDiscoverys.watchObject(0).listen(f);
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarGridSettingsAnimeDiscoverys
+          .watchObject(0)
+          .map((event) => event ?? current)
+          .listen(f);
 }
 
-class IsarGridSettinsService implements GridSettinsService {
+class IsarGridSettinsService implements GridSettingsService {
   const IsarGridSettinsService();
 
   @override
@@ -1811,4 +1872,449 @@ class IsarGridSettinsService implements GridSettinsService {
 
   @override
   WatchableGridSettingsData get files => const IsarFilesGridSettingsData();
+}
+
+class IsarLocalTagsService implements LocalTagsService {
+  const IsarLocalTagsService();
+
+  @override
+  int get count => _Dbs.g.localTags.isarLocalTags.countSync();
+
+  /// Returns tags for the [filename], or empty list if there are none.
+  @override
+  List<String> get(String filename) {
+    return _Dbs.g.localTags.isarLocalTags.getByFilenameSync(filename)?.tags ??
+        [];
+  }
+
+  @override
+  void add(String filename, List<String> tags) {
+    _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.isarLocalTags
+          .putByFilenameSync(IsarLocalTags(filename, tags)),
+    );
+  }
+
+  @override
+  void addAll(List<LocalTagsData> tags) {
+    _Dbs.g.localTags.writeTxnSync(() {
+      _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(
+        tags as List<IsarLocalTags>,
+      );
+    });
+  }
+
+  @override
+  void addMultiple(List<String> filenames, String tag) {
+    if (filenames.isEmpty || tag.isEmpty) {
+      return;
+    }
+
+    final newTags = _Dbs.g.localTags.isarLocalTags
+        .getAllByFilenameSync(filenames)
+        .where((element) => element != null && !element.tags.contains(tag))
+        .map((e) => IsarLocalTags(e!.filename, _addAndSort(e.tags, tag)))
+        .toList();
+
+    if (newTags.isEmpty) {
+      return;
+    }
+
+    return _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags),
+    );
+  }
+
+  @override
+  void delete(String filename) {
+    _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.isarLocalTags.deleteByFilenameSync(filename),
+    );
+  }
+
+  @override
+  void removeSingle(List<String> filenames, String tag) {
+    final List<IsarLocalTags> newTags = [];
+
+    for (final e in _Dbs.g.localTags.isarLocalTags
+        .getAllByFilenameSync(filenames)
+        .cast<LocalTagsData>()) {
+      final idx = e.tags.indexWhere((element) => element == tag);
+      if (idx.isNegative) {
+        continue;
+      }
+
+      newTags.add(IsarLocalTags(e.filename, e.tags.toList()..removeAt(idx)));
+    }
+
+    return _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags),
+    );
+  }
+
+  @override
+  StreamSubscription<List<ImageTag>> watchImagePinned(
+    List<String> tags,
+    void Function(List<ImageTag>) f, {
+    String? withFilename,
+  }) {
+    if (withFilename != null) {
+      return StreamGroup.merge<List<IsarLocalTags>>([
+        _Dbs.g.localTags.isarLocalTags
+            .where()
+            .filenameEqualTo(withFilename)
+            .watch(),
+        _Dbs.g.localTags.isarTags.watchLazy().map((_) {
+          final t =
+              _Dbs.g.localTags.isarLocalTags.getByFilenameSync(withFilename);
+
+          return t != null ? [t] : const [];
+        }),
+      ]).map<List<ImageTag>>((event) {
+        if (event.isEmpty) {
+          return const [];
+        }
+
+        return event.first.tags
+            .map(
+              (e) => ImageTag(
+                e,
+                _Dbs.g.localTags.isarTags.getByTagTypeSync(e, TagType.pinned) !=
+                    null,
+              ),
+            )
+            .toList();
+      }).listen(f);
+    }
+
+    return _Dbs.g.localTags.isarTags.watchLazy().map<List<ImageTag>>((event) {
+      return tags
+          .map(
+            (e) => ImageTag(
+              e,
+              _Dbs.g.localTags.isarTags.getByTagTypeSync(e, TagType.pinned) !=
+                  null,
+            ),
+          )
+          .toList();
+    }).listen(f);
+  }
+
+  @override
+  StreamSubscription<List<LocalTagsData>> watch(
+    String filename,
+    void Function(List<LocalTagsData>) f,
+  ) =>
+      _Dbs.g.localTags.isarLocalTags
+          .where()
+          .filenameEqualTo(filename)
+          .watch()
+          .listen(f);
+
+  List<String> _addAndSort(List<String> tags, String addTag) {
+    final l = tags.toList() + [addTag];
+    l.sort();
+
+    return l;
+  }
+}
+
+class IsarDirectoryTagService implements DirectoryTagService {
+  const IsarDirectoryTagService();
+
+  @override
+  String? get(String bucketId) =>
+      _Dbs.g.localTags.directoryTags.getByBuckedIdSync(bucketId)?.tag;
+
+  @override
+  void add(Iterable<String> bucketIds, String tag) {
+    _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.directoryTags
+          .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()),
+    );
+  }
+
+  @override
+  void delete(Iterable<String> buckedIds) {
+    _Dbs.g.localTags.writeTxnSync(
+      () => _Dbs.g.localTags.directoryTags
+          .deleteAllByBuckedIdSync(buckedIds.toList()),
+    );
+  }
+}
+
+class IsarTagManager implements TagManager {
+  IsarTagManager(Booru booru)
+      : excluded = IsarBooruTagging(
+          mode: TagType.excluded,
+          currentBooru: _dbs.booru(booru),
+        ),
+        latest = IsarBooruTagging(
+          mode: TagType.normal,
+          currentBooru: _dbs.booru(booru),
+        ),
+        pinned = IsarBooruTagging(
+          mode: TagType.pinned,
+          currentBooru: _dbs.booru(booru),
+        );
+
+  IsarTagManager._db(Isar mainGrid)
+      : excluded = IsarBooruTagging(
+          mode: TagType.excluded,
+          currentBooru: mainGrid,
+        ),
+        latest = IsarBooruTagging(
+          mode: TagType.normal,
+          currentBooru: mainGrid,
+        ),
+        pinned = IsarBooruTagging(
+          mode: TagType.pinned,
+          currentBooru: mainGrid,
+        );
+
+  @override
+  final IsarBooruTagging excluded;
+  @override
+  final IsarBooruTagging latest;
+  @override
+  final IsarBooruTagging pinned;
+}
+
+class IsarBooruTagging implements BooruTagging {
+  const IsarBooruTagging({
+    required this.mode,
+    required this.currentBooru,
+  });
+
+  final TagType mode;
+  final Isar currentBooru;
+
+  @override
+  bool exists(String tag) =>
+      currentBooru.isarTags.getByTagTypeSync(tag, mode) != null;
+
+  @override
+  List<TagData> get(int i) {
+    if (i.isNegative) {
+      return currentBooru.isarTags
+          .filter()
+          .typeEqualTo(mode)
+          .sortByTimeDesc()
+          .findAllSync();
+    }
+
+    return currentBooru.isarTags
+        .filter()
+        .typeEqualTo(mode)
+        .sortByTimeDesc()
+        .limit(i)
+        .findAllSync();
+  }
+
+  @override
+  void add(String t) {
+    currentBooru.writeTxnSync(
+      () => currentBooru.isarTags.putByTagTypeSync(
+        IsarTag(time: DateTime.now(), tag: t, type: mode),
+      ),
+    );
+  }
+
+  @override
+  void delete(String t) {
+    currentBooru.writeTxnSync(
+      () => currentBooru.isarTags.deleteByTagTypeSync(t, mode),
+    );
+  }
+
+  @override
+  void clear() {
+    currentBooru.writeTxnSync(
+      () => currentBooru.isarTags.filter().typeEqualTo(mode).deleteAllSync(),
+    );
+  }
+
+  @override
+  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
+    return currentBooru.isarTags.watchLazy(fireImmediately: fire).listen(f);
+  }
+}
+
+class IsarGridStateBooruService implements GridStateBooruService {
+  const IsarGridStateBooruService();
+
+  @override
+  int get count => _Dbs.g.main.gridStateBoorus.countSync();
+
+  @override
+  List<GridStateBooru> get all =>
+      _Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
+
+  @override
+  void add(GridStateBooru state) {
+    _Dbs.g.main.gridStateBoorus.putByNameSync(state);
+  }
+
+  @override
+  GridStateBooru? get(String name) =>
+      _Dbs.g.main.gridStateBoorus.getByNameSync(name);
+
+  @override
+  void delete(String name) {
+    _Dbs.g.main.writeTxnSync(
+      () => _Dbs.g.main.gridStateBoorus.deleteByNameSync(
+        name,
+      ),
+    );
+  }
+
+  @override
+  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) =>
+      _Dbs.g.main.gridStateBoorus.watchLazy(fireImmediately: fire).listen(f);
+}
+
+class IsarSecondaryGridService implements SecondaryGridService {
+  const IsarSecondaryGridService._(
+    this._secondaryGrid,
+    this.tagManager,
+    this._mainGrid,
+  );
+
+  factory IsarSecondaryGridService.booru(Booru booru, String name) {
+    final dbMain = _Dbs.g.booru(booru);
+    final dbSecondary = _DbsOpen.secondaryGridName(name);
+
+    return IsarSecondaryGridService._(
+      dbSecondary,
+      IsarTagManager._db(dbMain),
+      dbMain,
+    );
+  }
+
+  final Isar _secondaryGrid;
+  final Isar _mainGrid;
+  @override
+  final IsarTagManager tagManager;
+
+  @override
+  int get page => _secondaryGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+
+  @override
+  set page(int p) {
+    _secondaryGrid.writeTxnSync(
+      () => _secondaryGrid.gridBooruPagings.putSync(IsarGridBooruPaging(p)),
+    );
+  }
+
+  @override
+  GridState get currentState {
+    GridState? state = _mainGrid.gridStates.getByNameSync(_secondaryGrid.name);
+    if (state == null) {
+      state = IsarGridState(
+        tags: "",
+        name: _secondaryGrid.name,
+        safeMode: SafeMode.normal,
+        time: DateTime.now(),
+        scrollOffset: 0,
+      );
+
+      _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(state!));
+    }
+
+    return state;
+  }
+
+  @override
+  set currentState(GridState state) {
+    _mainGrid.writeTxnSync(
+      () => _mainGrid.gridStates.putSync(state as IsarGridState),
+    );
+  }
+
+  @override
+  void destroy() => _secondaryGrid.close(deleteFromDisk: true);
+
+  @override
+  PostsSourceService<Post> makeSource(
+    BooruAPI api,
+    BooruTagging excluded,
+    PagingEntry entry,
+    String tags,
+    HiddenBooruPostService hiddenBooruPosts,
+  ) =>
+      IsarCurrentBooruSource(
+        db: _secondaryGrid,
+        api: api,
+        excluded: excluded,
+        entry: entry,
+        txPut: (db, l) => db.postIsars.putAllByIdBooruSync(l),
+        tags: tags,
+        hiddenBooru: hiddenBooruPosts,
+      );
+}
+
+class IsarMainGridService implements MainGridService {
+  const IsarMainGridService._(this._mainGrid, this.tagManager);
+
+  factory IsarMainGridService.booru(Booru booru) {
+    final db = _Dbs.g.booru(booru);
+
+    return IsarMainGridService._(db, IsarTagManager._db(db));
+  }
+
+  final Isar _mainGrid;
+  @override
+  final IsarTagManager tagManager;
+
+  @override
+  int get page => _mainGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+
+  @override
+  set page(int p) {
+    _mainGrid.writeTxnSync(
+      () => _mainGrid.gridBooruPagings.putSync(IsarGridBooruPaging(p)),
+    );
+  }
+
+  @override
+  GridState get currentState {
+    GridState? state = _mainGrid.gridStates.getByNameSync(_mainGrid.name);
+    if (state == null) {
+      state = IsarGridState(
+        tags: "",
+        name: _mainGrid.name,
+        safeMode: SafeMode.normal,
+        time: DateTime.now(),
+        scrollOffset: 0,
+      );
+
+      _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(state!));
+    }
+
+    return state;
+  }
+
+  @override
+  set currentState(GridState state) {
+    _mainGrid.writeTxnSync(
+      () => _mainGrid.gridStates.putSync(state as IsarGridState),
+    );
+  }
+
+  @override
+  PostsSourceService<Post> makeSource(
+    BooruAPI api,
+    BooruTagging excluded,
+    PagingEntry entry,
+    HiddenBooruPostService hiddenBooruPosts,
+  ) =>
+      IsarCurrentBooruSource(
+        db: _mainGrid,
+        api: api,
+        excluded: excluded,
+        entry: entry,
+        txPut: (db, l) => db.postIsars.putAllByIdBooruSync(l),
+        tags: "",
+        hiddenBooru: hiddenBooruPosts,
+      );
 }

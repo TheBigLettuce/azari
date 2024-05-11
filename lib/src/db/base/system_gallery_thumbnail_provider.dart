@@ -10,7 +10,7 @@ import "dart:ui";
 
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:transparent_image/transparent_image.dart";
 
@@ -23,22 +23,28 @@ ListTile addInfoTile({
   Widget? trailing,
 }) =>
     ListTile(
-      // textColor: colors.foregroundColor,
       title: Text(title),
       trailing: trailing,
       onTap: onPressed,
       subtitle: subtitle != null ? Text(subtitle) : null,
     );
 
-class SystemGalleryThumbnailProvider
-    extends ImageProvider<SystemGalleryThumbnailProvider> {
-  const SystemGalleryThumbnailProvider(this.id, this.tryPinned);
+class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
+  const GalleryThumbnailProvider(
+    this.id,
+    this.tryPinned,
+    this.pinnedThumbnails,
+    this.thumbnails,
+  );
 
   final int id;
   final bool tryPinned;
 
+  final PinnedThumbnailService pinnedThumbnails;
+  final ThumbnailService thumbnails;
+
   @override
-  Future<SystemGalleryThumbnailProvider> obtainKey(
+  Future<GalleryThumbnailProvider> obtainKey(
     ImageConfiguration configuration,
   ) {
     return SynchronousFuture(this);
@@ -46,7 +52,7 @@ class SystemGalleryThumbnailProvider
 
   @override
   ImageStreamCompleter loadImage(
-    SystemGalleryThumbnailProvider key,
+    GalleryThumbnailProvider key,
     ImageDecoderCallback decode,
   ) {
     return MultiFrameImageStreamCompleter(
@@ -56,7 +62,7 @@ class SystemGalleryThumbnailProvider
   }
 
   Future<Codec> _loadAsync(
-    SystemGalleryThumbnailProvider key,
+    GalleryThumbnailProvider key,
     ImageDecoderCallback decode,
   ) async {
     Future<File?> setFile() async {
@@ -71,7 +77,7 @@ class SystemGalleryThumbnailProvider
         return File(cachedThumb.path);
       }
 
-      final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
+      final thumb = thumbnails.get(id);
       if (thumb != null) {
         if (thumb.path.isEmpty || thumb.differenceHash == 0) {
           return null;
@@ -81,7 +87,7 @@ class SystemGalleryThumbnailProvider
       }
 
       if (tryPinned) {
-        final thumb = Dbs.g.thumbnail!.pinnedThumbnails.getSync(id);
+        final thumb = pinnedThumbnails.get(id);
         if (thumb != null &&
             thumb.differenceHash != 0 &&
             thumb.path.isNotEmpty) {
@@ -106,7 +112,7 @@ class SystemGalleryThumbnailProvider
       });
 
       final cachedThumb = await _thumbLoadingStatus[id]!;
-      Thumbnail.addAll([cachedThumb]);
+      thumbnails.addAll([cachedThumb]);
 
       if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
         return null;
@@ -139,7 +145,7 @@ class SystemGalleryThumbnailProvider
       return false;
     }
 
-    return other is SystemGalleryThumbnailProvider && other.id == id;
+    return other is GalleryThumbnailProvider && other.id == id;
   }
 
   @override

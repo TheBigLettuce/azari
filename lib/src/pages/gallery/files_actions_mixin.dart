@@ -10,7 +10,7 @@ part of "files.dart";
 mixin FilesActionsMixin on State<GalleryFiles> {
   Future<void> _deleteDialog(
     BuildContext context,
-    List<SystemGalleryDirectoryFile> selected,
+    List<GalleryFile> selected,
   ) {
     return Navigator.of(context, rootNavigator: true).push(
       DialogRoute(
@@ -31,7 +31,11 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                   PlatformFunctions.addToTrash(
                     selected.map((e) => e.originalUri).toList(),
                   );
-                  StatisticsGallery.addDeleted(selected.length);
+
+                  StatisticsGalleryService.db()
+                      .current
+                      .add(deleted: selected.length)
+                      .save();
                   Navigator.pop(context);
                 },
                 child: Text(AppLocalizations.of(context)!.yes),
@@ -49,7 +53,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> restoreFromTrash() {
+  GridAction<GalleryFile> restoreFromTrash() {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
@@ -61,7 +65,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> bulkRename() {
+  GridAction<GalleryFile> bulkRename() {
     return GridAction(
       Icons.edit,
       (selected) {
@@ -71,28 +75,33 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> saveTagsAction(GalleryPlug plug) {
+  GridAction<GalleryFile> saveTagsAction(
+    GalleryPlug plug,
+    PostTags postTags,
+    LocalTagsService localTags,
+  ) {
     return GridAction(
       Icons.tag_rounded,
       (selected) {
-        _saveTags(context, selected, plug);
+        _saveTags(context, selected, plug, postTags, localTags);
       },
       true,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> addTag(
+  GridAction<GalleryFile> addTag(
     BuildContext context,
     void Function() refresh,
+    LocalTagsService localTags,
   ) {
     return GridAction(
       Icons.new_label_rounded,
       (selected) {
         openAddTagDialog(context, (v, delete) {
           if (delete) {
-            PostTags.g.removeTag(selected.map((e) => e.name).toList(), v);
+            localTags.removeSingle(selected.map((e) => e.name).toList(), v);
           } else {
-            PostTags.g.addTag(selected.map((e) => e.name).toList(), v);
+            localTags.addMultiple(selected.map((e) => e.name).toList(), v);
           }
 
           refresh();
@@ -102,16 +111,17 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> addToFavoritesAction(
-    SystemGalleryDirectoryFile? f,
+  GridAction<GalleryFile> addToFavoritesAction(
+    GalleryFile? f,
     GalleryPlug plug,
+    FavoriteFileService favoriteFile,
   ) {
     final isFavorites = f != null && f.isFavorite;
 
     return GridAction(
       isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
       (selected) {
-        _favoriteOrUnfavorite(context, selected, plug);
+        _favoriteOrUnfavorite(context, selected, plug, favoriteFile);
       },
       false,
       color: isFavorites ? Colors.yellow.shade900 : null,
@@ -120,11 +130,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> setFavoritesThumbnailAction() {
+  GridAction<GalleryFile> setFavoritesThumbnailAction(
+    MiscSettingsService miscSettings,
+  ) {
     return GridAction(
       Icons.image_outlined,
       (selected) {
-        MiscSettings.setFavoritesThumbId(selected.first.id);
+        miscSettings.current.copy(favoritesThumbId: selected.first.id).save();
         setState(() {});
       },
       true,
@@ -132,7 +144,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> deleteAction() {
+  GridAction<GalleryFile> deleteAction() {
     return GridAction(
       Icons.delete,
       (selected) {
@@ -142,33 +154,49 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> copyAction(
-    GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
+  GridAction<GalleryFile> copyAction(
     GalleryPlug plug,
+    TagManager tagManager,
+    FavoriteFileService favoriteFile,
   ) {
     return GridAction(
       Icons.copy,
       (selected) {
-        moveOrCopyFnc(context, selected, false, state, plug);
+        moveOrCopyFnc(
+          context,
+          selected,
+          false,
+          plug,
+          tagManager,
+          favoriteFile,
+        );
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> moveAction(
-    GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
+  GridAction<GalleryFile> moveAction(
     GalleryPlug plug,
+    TagManager tagManager,
+    FavoriteFileService favoriteFile,
   ) {
     return GridAction(
       Icons.forward_rounded,
       (selected) {
-        moveOrCopyFnc(context, selected, true, state, plug);
+        moveOrCopyFnc(
+          context,
+          selected,
+          true,
+          plug,
+          tagManager,
+          favoriteFile,
+        );
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> chooseAction() {
+  GridAction<GalleryFile> chooseAction() {
     return GridAction(
       Icons.check,
       (selected) {
@@ -185,16 +213,17 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
   void moveOrCopyFnc(
     BuildContext context,
-    List<SystemGalleryDirectoryFile> selected,
+    List<GalleryFile> selected,
     bool move,
-    GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
     GalleryPlug plug,
+    TagManager tagManager,
+    FavoriteFileService favoriteFile,
   ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
     final List<String> searchPrefix = [];
     for (final tag in selected.first.tagsFlat.split(" ")) {
-      if (PinnedTag.isPinned(tag)) {
+      if (tagManager.pinned.exists(tag)) {
         searchPrefix.add(tag);
       }
     }
@@ -206,6 +235,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             showBackButton: true,
             procPop: (_) {},
             wrapGridPage: true,
+            db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
               icon: move ? Icons.forward_rounded : Icons.copy_rounded,
               move
@@ -230,7 +260,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                 }
 
                 if (chosen?.bucketId == "favorites") {
-                  _favoriteOrUnfavorite(context, selected, plug);
+                  _favoriteOrUnfavorite(context, selected, plug, favoriteFile);
                 } else if (chosen?.bucketId == "trash") {
                   if (!move) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -254,9 +284,15 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                   );
 
                   if (move) {
-                    StatisticsGallery.addMoved(selected.length);
+                    StatisticsGalleryService.db()
+                        .current
+                        .add(moved: selected.length)
+                        .save();
                   } else {
-                    StatisticsGallery.addCopied(selected.length);
+                    StatisticsGalleryService.db()
+                        .current
+                        .add(copied: selected.length)
+                        .save();
                   }
                 }
 
@@ -280,8 +316,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
   void _favoriteOrUnfavorite(
     BuildContext context,
-    List<SystemGalleryDirectoryFile> selected,
+    List<GalleryFile> selected,
     GalleryPlug plug,
+    FavoriteFileService favoriteFile,
   ) {
     final toDelete = <int>[];
     final toAdd = <int>[];
@@ -295,13 +332,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     }
 
     if (toAdd.isNotEmpty) {
-      FavoriteFile.addAll(toAdd);
+      favoriteFile.addAll(toAdd);
     }
 
     plug.notify(null);
 
     if (toDelete.isNotEmpty) {
-      FavoriteFile.deleteAll(toDelete);
+      favoriteFile.deleteAll(toDelete);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -309,7 +346,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           action: SnackBarAction(
             label: AppLocalizations.of(context)!.undoLabel,
             onPressed: () {
-              FavoriteFile.addAll(toDelete);
+              favoriteFile.addAll(toDelete);
 
               plug.notify(null);
             },
@@ -321,8 +358,10 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
   Future<void> _saveTags(
     BuildContext context,
-    List<SystemGalleryDirectoryFile> selected,
+    List<GalleryFile> selected,
     GalleryPlug plug,
+    PostTags postTags,
+    LocalTagsService localTags,
   ) async {
     if (_isSavingTags) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -346,8 +385,8 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     for (final (i, elem) in selected.indexed) {
       notifi.update(i, "$i/${selected.length}");
 
-      if (PostTags.g.getTagsPost(elem.name).isEmpty) {
-        await PostTags.g.getOnlineAndSaveTags(elem.name);
+      if (localTags.get(elem.name).isEmpty) {
+        await postTags.getOnlineAndSaveTags(elem.name);
       }
     }
     notifi.done();
@@ -357,7 +396,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
   void _changeName(
     BuildContext context,
-    List<SystemGalleryDirectoryFile> selected,
+    List<GalleryFile> selected,
   ) {
     if (selected.isEmpty) {
       return;

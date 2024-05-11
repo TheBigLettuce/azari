@@ -8,7 +8,7 @@
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/video_settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
 import "package:video_player/video_player.dart";
 
@@ -17,7 +17,10 @@ class VideoControls extends StatelessWidget {
     super.key,
     required this.controller,
     required this.setState,
+    required this.db,
   });
+
+  final VideoSettingsService db;
   final VideoPlayerController controller;
   final void Function(void Function()) setState;
 
@@ -55,7 +58,7 @@ class VideoControls extends StatelessWidget {
 
                       controller.setVolume(newVolume);
 
-                      VideoSettings.changeVolume(newVolume);
+                      db.current.copy(volume: newVolume).save();
 
                       setState(() {});
                     },
@@ -68,7 +71,7 @@ class VideoControls extends StatelessWidget {
                       final newLooping = !controller.value.isLooping;
 
                       controller.setLooping(newLooping);
-                      VideoSettings.changeLooping(newLooping);
+                      db.current.copy(looping: newLooping).save();
 
                       setState(() {});
                     },

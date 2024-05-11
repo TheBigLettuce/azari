@@ -8,6 +8,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
@@ -134,7 +135,7 @@ class _PostInfoState extends State<PostInfo> {
 
   Post get post => widget.post;
 
-  final settings = SettingsService.currentData;
+  final settings = SettingsService.db().current;
 
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
     OnBooruTagPressed.pressOf(
@@ -160,8 +161,12 @@ class _PostInfoState extends State<PostInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final filename = PostTags.g
-        .filename(post.booru, post.fileDownloadUrl(), post.md5, post.id);
+    final filename = DisassembleResult.makeFilename(
+      post.booru,
+      post.fileDownloadUrl(),
+      post.md5,
+      post.id,
+    );
 
     final localizations = AppLocalizations.of(context)!;
 
@@ -247,6 +252,7 @@ class _PostInfoState extends State<PostInfo> {
             filename,
             res: ImageTagsNotifier.resOf(context),
             launchGrid: _launchGrid,
+            db: TagManager.of(context),
           ),
         ],
       ],

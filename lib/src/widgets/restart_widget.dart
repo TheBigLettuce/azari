@@ -49,7 +49,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   void initState() {
     super.initState();
 
-    StatisticsDailyData sts = currentDb.statisticsDaily.current;
+    StatisticsDailyData sts = StatisticsDailyService.db().current;
 
     if (timeNow.day != sts.date.day ||
         timeNow.month != sts.date.month ||
@@ -82,11 +82,13 @@ class _RestartWidgetState extends State<RestartWidget> {
 
         if (stepsToSave >= _maxSteps || switchDate) {
           if (switchDate) {
-            currentDb.statisticsDaily.current
+            StatisticsDailyService.db()
+                .current
                 .copy(durationMillis: 1, swipedBoth: 0, date: timeNow)
                 .save();
           } else {
-            currentDb.statisticsDaily.current
+            StatisticsDailyService.db()
+                .current
                 .copy(durationMillis: currentDuration.inMilliseconds)
                 .save();
           }
@@ -144,7 +146,7 @@ class _RestartWidgetState extends State<RestartWidget> {
                 ? d.colorScheme.background
                 : l.colorScheme.background,
             child: widget
-                .child(d, l, SettingsService.currentData)
+                .child(d, l, SettingsService.db().current)
                 .animate(effects: [const FadeEffect()]),
           ),
         ),

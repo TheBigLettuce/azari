@@ -8,13 +8,11 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -23,19 +21,20 @@ import "package:local_auth/local_auth.dart";
 class SystemGalleryDirectoriesActions {
   const SystemGalleryDirectoriesActions();
 
-  static GridAction<SystemGalleryDirectory> blacklist(
+  static GridAction<GalleryDirectory> blacklist(
     BuildContext context,
-    GalleryDirectoriesExtra extra,
-    String Function(SystemGalleryDirectory) segment,
+    String Function(GalleryDirectory) segment,
+    DirectoryMetadataService directoryMetadata,
+    BlacklistedDirectoryService blacklistedDirectory,
   ) {
     return GridAction(
       Icons.hide_image_outlined,
       (selected) async {
-        final requireAuth = <SystemGalleryDirectory>[];
-        final noAuth = <SystemGalleryDirectory>[];
+        final requireAuth = <GalleryDirectory>[];
+        final noAuth = <GalleryDirectory>[];
 
         for (final e in selected) {
-          final m = DirectoryMetadata.get(segment(e));
+          final m = directoryMetadata.get(segment(e));
           if (m != null && m.requireAuth) {
             requireAuth.add(e);
           } else {
@@ -45,36 +44,31 @@ class SystemGalleryDirectoriesActions {
 
         if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
           final success = await LocalAuthentication()
-              .authenticate(localizedReason: "Hide directory");
+              .authenticate(localizedReason: "Hide directory"); // TODO: change
           if (!success) {
             return;
           }
         }
 
-        extra.addBlacklisted(
-          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-              .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-              .toList(),
+        blacklistedDirectory.addAll(
+          noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth,
         );
 
         if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text("Some directories require authentication"),
+              content: const Text(
+                  "Some directories require authentication"), // TODO: change
               action: SnackBarAction(
                 label: "Auth",
                 onPressed: () async {
-                  final success = await LocalAuthentication()
-                      .authenticate(localizedReason: "Hide directory");
+                  final success = await LocalAuthentication().authenticate(
+                      localizedReason: "Hide directory"); // TODO: change
                   if (!success) {
                     return;
                   }
 
-                  extra.addBlacklisted(
-                    requireAuth
-                        .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-                        .toList(),
-                  );
+                  blacklistedDirectory.addAll(requireAuth);
                 },
               ),
             ),
@@ -85,12 +79,13 @@ class SystemGalleryDirectoriesActions {
     );
   }
 
-  static GridAction<SystemGalleryDirectory> joinedDirectories(
+  static GridAction<GalleryDirectory> joinedDirectories(
     BuildContext context,
-    GalleryDirectoriesExtra extra,
+    GalleryAPIDirectories api,
     CallbackDescriptionNested? callback,
     SelectionGlue Function([Set<GluePreferences>])? generate,
-    String Function(SystemGalleryDirectory) segment,
+    String Function(GalleryDirectory) segment,
+    DirectoryMetadataService directoryMetadata,
   ) {
     return GridAction(
       Icons.merge_rounded,
@@ -101,10 +96,11 @@ class SystemGalleryDirectoriesActions {
               ? selected.first.name
               : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
           selected,
-          extra,
+          api,
           callback,
           generate,
           segment,
+          directoryMetadata,
         );
       },
       true,
@@ -114,16 +110,17 @@ class SystemGalleryDirectoriesActions {
   static Future<void> joinedDirectoriesFnc(
     BuildContext context,
     String label,
-    List<SystemGalleryDirectory> dirs,
-    GalleryDirectoriesExtra extra,
+    List<GalleryDirectory> dirs,
+    GalleryAPIDirectories api,
     CallbackDescriptionNested? callback,
     SelectionGlue Function([Set<GluePreferences>])? generate,
-    String Function(SystemGalleryDirectory) segment,
+    String Function(GalleryDirectory) segment,
+    DirectoryMetadataService directoryMetadata,
   ) async {
     bool requireAuth = false;
 
     for (final e in dirs) {
-      final auth = DirectoryMetadata.get(segment(e))?.requireAuth ?? false;
+      final auth = directoryMetadata.get(segment(e))?.requireAuth ?? false;
       if (auth) {
         requireAuth = true;
         break;
@@ -132,18 +129,18 @@ class SystemGalleryDirectoriesActions {
 
     if (requireAuth && canAuthBiometric) {
       final success = await LocalAuthentication()
-          .authenticate(localizedReason: "Join directories");
+          .authenticate(localizedReason: "Join directories"); // TODO: change
 
       if (!success) {
         return;
       }
     }
 
-    StatisticsGallery.addJoined();
+    StatisticsGalleryService.db().current.add(joined: 1).save();
 
-    final joined = extra.joinedDir(dirs.map((e) => e.bucketId).toList());
+    final joined = api.joinedFiles(dirs.map((e) => e.bucketId).toList());
 
-    Navigator.push(
+    return Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
         builder: (context) {
@@ -154,6 +151,8 @@ class SystemGalleryDirectoriesActions {
             callback: callback,
             dirName: label,
             bucketId: "joinedDir",
+            db: DatabaseConnectionNotifier.of(context),
+            tagManager: TagManager.of(context),
           );
         },
       ),

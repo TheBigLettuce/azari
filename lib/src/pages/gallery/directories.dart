@@ -10,15 +10,9 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/directories.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/services/settings.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
@@ -29,12 +23,12 @@ import "package:gallery/src/pages/more/favorite_booru_actions.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
@@ -50,6 +44,7 @@ class GalleryDirectories extends StatefulWidget {
     required this.procPop,
     this.wrapGridPage = false,
     this.showBackButton = false,
+    required this.db,
   }) : assert(!(callback != null && nestedCallback != null));
 
   final CallbackDescription? callback;
@@ -58,14 +53,17 @@ class GalleryDirectories extends StatefulWidget {
   final void Function(bool) procPop;
   final bool wrapGridPage;
 
-  static String segmentCell(String name, String bucketId) {
+  final DbConn db;
+
+  static String segmentCell(
+      String name, String bucketId, DirectoryTagService directoryTag) {
     for (final booru in Booru.values) {
       if (booru.url == name) {
         return "Booru";
       }
     }
 
-    final dirTag = PostTags.g.directoryTag(bucketId);
+    final dirTag = directoryTag.get(bucketId);
     if (dirTag != null) {
       return dirTag;
     }
@@ -78,56 +76,34 @@ class GalleryDirectories extends StatefulWidget {
 }
 
 class _GalleryDirectoriesState extends State<GalleryDirectories> {
-  static const _log = LogTarget.gallery;
-
-  late final StreamSubscription<SettingsData?> settingsWatcher;
-  late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
-  late final AppLifecycleListener lifecycleListener;
-
-  MiscSettings miscSettings = MiscSettings.current;
-
-  int galleryVersion = 0;
+  WatchableGridSettingsData get gridSettings =>
+      widget.db.gridSettings.directories;
+  DirectoryMetadataService get directoryMetadata => widget.db.directoryMetadata;
+  DirectoryTagService get directoryTags => widget.db.directoryTags;
+  FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
+  BlacklistedDirectoryService get blacklistedDirectories =>
+      widget.db.blacklistedDirectories;
 
   GridMutationInterface get mutation => state.refreshingStatus.mutation;
 
-  bool proceed = true;
-  late final extra = api.asExtra()
-    ..setRefreshGridCallback(() {
-      if (widget.callback != null) {
-        mutation.cellCount = 0;
-        mutation.isRefreshing = true;
-      } else {
-        if (!mutation.isRefreshing) {
-          _refresh();
-        }
-      }
-    });
+  static const _log = LogTarget.gallery;
 
-  late final GridSkeletonStateFilter<SystemGalleryDirectory> state =
-      GridSkeletonStateFilter(
-    clearRefresh: widget.callback != null
-        ? SynchronousGridRefresh(() {
-            PlatformFunctions.trashThumbId().then((value) {
-              try {
-                setState(() {
-                  trashThumbId = value;
-                });
-              } catch (_) {}
-            });
+  late final StreamSubscription<SettingsData?> settingsWatcher;
+  late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
+  late final AppLifecycleListener lifecycleListener;
 
-            return extra.db.systemGalleryDirectorys.countSync();
-          })
-        : RetainedGridRefresh(_refresh),
-    transform: (cell) => cell,
-    filter: extra.filter,
-    initalCellCount: widget.callback != null
-        ? extra.db.systemGalleryDirectorys.countSync()
-        : 0,
+  MiscSettingsData miscSettings = MiscSettingsService.db().current;
+
+  int galleryVersion = 0;
+
+  late final ChainedFilterResourceSource<GalleryDirectory> filter;
+
+  late final GridSkeletonRefreshingState<GalleryDirectory> state =
+      GridSkeletonRefreshingState(
+    clearRefresh: RetainedGridRefresh(_refresh),
   );
 
   final galleryPlug = chooseGalleryPlug();
-
-  late final SearchFilterGrid<SystemGalleryDirectory> search;
 
   late final api = galleryPlug.galleryApi(
     temporaryDb: widget.callback != null || widget.nestedCallback != null,
@@ -136,6 +112,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   bool isThumbsLoading = false;
 
   int? trashThumbId;
+
+  final searchFocus = FocusNode();
+  final searchTextController = TextEditingController();
 
   @override
   void initState() {
@@ -159,24 +138,28 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       setState(() {});
     });
 
-    miscSettingsWatcher = MiscSettings.watch((s) {
+    miscSettingsWatcher = miscSettings.s.watch((s) {
       miscSettings = s!;
 
       setState(() {});
     });
 
-    search = SearchFilterGrid(state, null);
-
-    if (widget.callback != null) {
-      search.performSearch("", true);
-
-      extra.setTemporarySet((i, end) {
-        if (end) {
-          mutation.isRefreshing = false;
-          search.performSearch(search.searchTextController.text);
+    filter = ChainedFilterResourceSource(
+      api.source,
+      ListStorage(),
+      fn: (e, mode, sorting) {
+        final text = searchTextController.text;
+        if (text.isEmpty) {
+          return true;
         }
-      });
-    }
+
+        return e.name.startsWith(text);
+      },
+      allowedFilteringModes: const {},
+      allowedSortingModes: const {},
+      initialFilteringMode: FilteringMode.noFilter,
+      initialSortingMode: SortingMode.none,
+    );
 
     if (widget.callback != null) {
       PlatformFunctions.trashThumbId().then((value) {
@@ -187,25 +170,19 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         } catch (_) {}
       });
     }
-
-    extra.setRefreshingStatusCallback((i, inRefresh, empty) {
-      state.gridKey.currentState?.selection.reset();
-
-      if (!inRefresh || empty) {
-        mutation.isRefreshing = false;
-        search.performSearch(search.searchTextController.text);
-        setState(() {});
-      }
-    });
   }
 
   @override
   void dispose() {
     settingsWatcher.cancel();
     miscSettingsWatcher.cancel();
+    searchTextController.dispose();
+    searchFocus.dispose();
+
+    filter.destroy();
 
     api.close();
-    search.dispose();
+    // search.dispose();
     state.dispose();
     Dbs.g.clearTemporaryImages();
     lifecycleListener.dispose();
@@ -227,10 +204,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     galleryPlug.version.then((value) => galleryVersion = value);
   }
 
-  String _segmentCell(SystemGalleryDirectory cell) =>
-      GalleryDirectories.segmentCell(cell.name, cell.bucketId);
+  String _segmentCell(GalleryDirectory cell) => GalleryDirectories.segmentCell(
+        cell.name,
+        cell.bucketId,
+        directoryTags,
+      );
 
-  Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) {
+  Segments<GalleryDirectory> _makeSegments(BuildContext context) {
     return Segments(
       AppLocalizations.of(context)!.segmentsUncategorized,
       injectedLabel: widget.callback != null || widget.nestedCallback != null
@@ -239,11 +219,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       displayFirstCellInSpecial:
           widget.callback != null || widget.nestedCallback != null,
       caps:
-          DirectoryMetadata.caps(AppLocalizations.of(context)!.segmentsSpecial),
+          directoryMetadata.caps(AppLocalizations.of(context)!.segmentsSpecial),
       segment: _segmentCell,
       injectedSegments: [
-        if (FavoriteFile.isNotEmpty())
-          SystemGalleryDirectory(
+        if (favoriteFiles.isNotEmpty())
+          GalleryDirectory.forPlatform(
             bucketId: "favorites",
             name: AppLocalizations.of(context)!
                 .galleryDirectoriesFavorites, // change
@@ -253,10 +233,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             lastModified: 0,
             thumbFileId: miscSettings.favoritesThumbId != 0
                 ? miscSettings.favoritesThumbId
-                : FavoriteFile.thumbnail,
+                : favoriteFiles.thumbnail,
           ),
         if (trashThumbId != null)
-          SystemGalleryDirectory(
+          GalleryDirectory.forPlatform(
             bucketId: "trash",
             name: AppLocalizations.of(context)!.galleryDirectoryTrash, // change
             tag: "",
@@ -273,25 +253,26 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 context,
                 label,
                 children,
-                extra,
+                api,
                 widget.nestedCallback,
                 GlueProvider.generateOf(context),
                 _segmentCell,
+                directoryMetadata,
               ),
     );
   }
 
   Future<void> _addToGroup(
     BuildContext context,
-    List<SystemGalleryDirectory> selected,
+    List<GalleryDirectory> selected,
     String value,
     bool toPin,
   ) async {
-    final requireAuth = <SystemGalleryDirectory>[];
-    final noAuth = <SystemGalleryDirectory>[];
+    final requireAuth = <GalleryDirectory>[];
+    final noAuth = <GalleryDirectory>[];
 
     for (final e in selected) {
-      final m = DirectoryMetadata.get(_segmentCell(e));
+      final m = directoryMetadata.get(_segmentCell(e));
       if (m != null && m.requireAuth) {
         requireAuth.add(e);
       } else {
@@ -308,29 +289,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     }
 
     if (value.isEmpty) {
-      PostTags.g.removeDirectoriesTag(
+      directoryTags.delete(
         (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
             .map((e) => e.bucketId),
       );
     } else {
-      PostTags.g.setDirectoriesTag(
+      directoryTags.add(
         (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
             .map((e) => e.bucketId),
         value,
       );
 
       if (toPin) {
-        if (await DirectoryMetadata.canAuth(value, "Sticky directory")) {
-          final m = (DirectoryMetadata.get(value) ??
-                  DirectoryMetadata(
-                    value,
-                    DateTime.now(),
-                    blur: false,
-                    sticky: false,
-                    requireAuth: false,
-                  ))
-              .copyBools(sticky: true);
-          m.save();
+        if (await directoryMetadata.canAuth(value, "Sticky directory")) {
+          directoryMetadata.getOrCreate(value).copyBools(sticky: true).save();
         }
       }
     }
@@ -351,10 +323,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
               }
 
               if (value.isEmpty) {
-                PostTags.g
-                    .removeDirectoriesTag(requireAuth.map((e) => e.bucketId));
+                directoryTags.delete(requireAuth.map((e) => e.bucketId));
               } else {
-                PostTags.g.setDirectoriesTag(
+                directoryTags.add(
                   requireAuth.map((e) => e.bucketId),
                   value,
                 );
@@ -372,17 +343,23 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
+  void _add(GridSettingsData d) => gridSettings.current = d;
+
   Widget child(BuildContext context) {
-    return GridSkeleton<SystemGalleryDirectory>(
+    return GridSkeleton<GalleryDirectory>(
       state,
       (context) => GridFrame(
         key: state.gridKey,
-        layout: SegmentLayout(
-          _makeSegments(context),
-          GridSettingsDirectories.current,
-          suggestionPrefix: widget.callback?.suggestFor ?? const [],
-        ),
-        getCell: (i) => api.directCell(i),
+        slivers: [
+          SegmentLayout(
+            getCell: filter.forIdxUnsafe,
+            segments: _makeSegments(context),
+            gridSeed: state.gridSeed,
+            suggestionPrefix: widget.callback?.suggestFor ?? const [],
+            mutation: mutation,
+          ),
+        ],
+        getCell: filter.forIdxUnsafe,
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           registerNotifiers: (child) => DirectoriesDataNotifier(
@@ -393,17 +370,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             child: child,
           ),
           refreshingStatus: state.refreshingStatus,
-          watchLayoutSettings: GridSettingsDirectories.watch,
+          settingsButton: GridSettingsButton(
+            add: _add,
+            watch: gridSettings.watch,
+          ),
           search: OverrideGridSearchWidget(
             SearchAndFocus(
-              search.searchWidget(
-                context,
-                count: widget.callback != null
-                    ? extra.db.systemGalleryDirectorys.countSync()
-                    : null,
+              FilteringSearchWidget(
                 hint: AppLocalizations.of(context)!.directoriesHint,
+                filter: filter,
+                textController: searchTextController,
+                localTagDictionary: widget.db.localTagDictionary,
+                focusNode: searchFocus,
               ),
-              search.searchFocus,
+              searchFocus,
             ),
           ),
         ),
@@ -414,10 +394,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   if (widget.callback == null || widget.callback!.joinable)
                     SystemGalleryDirectoriesActions.joinedDirectories(
                       context,
-                      extra,
+                      api,
                       widget.nestedCallback,
                       GlueProvider.generateOf(context),
                       _segmentCell,
+                      directoryMetadata,
                     ),
                 ]
               : [
@@ -438,15 +419,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   ),
                   SystemGalleryDirectoriesActions.blacklist(
                     context,
-                    extra,
                     _segmentCell,
+                    directoryMetadata,
+                    blacklistedDirectories,
                   ),
                   SystemGalleryDirectoriesActions.joinedDirectories(
                     context,
-                    extra,
+                    api,
                     widget.nestedCallback,
                     GlueProvider.generateOf(context),
                     _segmentCell,
+                    directoryMetadata,
                   ),
                 ],
           footer: widget.callback?.preview,
@@ -486,20 +469,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       : widget.nestedCallback!.icon,
                 )
               : null,
-          settingsButton: GridFrameSettingsButton(
-            selectRatio: (ratio, settings) =>
-                (settings as GridSettingsDirectories)
-                    .copy(aspectRatio: ratio)
-                    .save(),
-            selectHideName: (hideNames, settings) =>
-                (settings as GridSettingsDirectories)
-                    .copy(hideName: hideNames)
-                    .save(),
-            selectGridColumn: (columns, settings) =>
-                (settings as GridSettingsDirectories)
-                    .copy(columns: columns)
-                    .save(),
-          ),
+          // settingsButton: GridFrameSettingsButton(
+          //   selectRatio: (ratio, settings) =>
+          //       (settings as GridSettingsDirectories)
+          //           .copy(aspectRatio: ratio)
+          //           .save(),
+          //   selectHideName: (hideNames, settings) =>
+          //       (settings as GridSettingsDirectories)
+          //           .copy(hideName: hideNames)
+          //           .save(),
+          //   selectGridColumn: (columns, settings) =>
+          //       (settings as GridSettingsDirectories)
+          //           .copy(columns: columns)
+          //           .save(),
+          // ),
           inlineMenuButtonItems: true,
           keybindsDescription:
               AppLocalizations.of(context)!.androidGKeybindsDescription,
@@ -507,14 +490,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
       ),
       canPop: widget.callback != null || widget.nestedCallback != null
-          ? search.currentFilteringMode() == FilteringMode.noFilter &&
-              search.searchTextController.text.isEmpty
+          ? filter.filteringMode == FilteringMode.noFilter &&
+              searchTextController.text.isEmpty
           : false,
       onPop: (pop) {
-        final filterMode = search.currentFilteringMode();
-        if (filterMode != FilteringMode.noFilter ||
-            search.searchTextController.text.isNotEmpty) {
-          search.resetSearch();
+        if (filter.filteringMode != FilteringMode.noFilter ||
+            searchTextController.text.isNotEmpty) {
+          searchTextController.clear();
+
+          // search.resetSearch();
           return;
         }
 
@@ -548,13 +532,13 @@ class DirectoriesDataNotifier extends InheritedWidget {
   final GalleryAPIDirectories api;
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;
-  final String Function(SystemGalleryDirectory cell) segmentFnc;
+  final String Function(GalleryDirectory cell) segmentFnc;
 
   static (
     GalleryAPIDirectories,
     CallbackDescription?,
     CallbackDescriptionNested?,
-    String Function(SystemGalleryDirectory cell),
+    String Function(GalleryDirectory cell),
   ) of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<DirectoriesDataNotifier>();

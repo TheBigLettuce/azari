@@ -33,6 +33,8 @@ abstract class StatisticsGeneralData {
 }
 
 abstract interface class StatisticsGeneralService implements ServiceMarker {
+  factory StatisticsGeneralService.db() => _currentDb.statisticsGeneral;
+
   StatisticsGeneralData get current;
 
   void add(StatisticsGeneralData data);

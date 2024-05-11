@@ -12,21 +12,11 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/posts_source.dart";
-import "package:gallery/src/db/services/settings.dart";
-import "package:gallery/src/db/tags/booru_tagging.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/add_to_bookmarks_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -34,7 +24,6 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -171,6 +160,8 @@ class BooruSearchPagingEntry implements PagingEntry {
 }
 
 class _BooruSearchPageState extends State<BooruSearchPage> {
+  PostsSourceService get source => pagingState.source;
+
   late final StreamSubscription<void> blacklistedWatcher;
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
@@ -260,24 +251,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     state.refreshingStatus.refresh();
   }
 
-  Future<void> _download(int i) async {
-    final p = instance.posts.getSync(i + 1);
-    if (p == null) {
-      return Future.value();
-    }
-
-    PostTags.g.addTagsPost(p.filename(), p.tags, true);
-
-    return Downloader.g.add(
-      DownloadFile.d(
-        url: p.fileDownloadUrl(),
-        site: api.booru.url,
-        name: p.filename(),
-        thumbUrl: p.previewUrl,
-      ),
-      state.settings,
-    );
-  }
+  void _download(int i) => source.forIdx(i)?.download(context);
 
   void _moveToBookmarkF(BuildContext context) {
     if (search.tags.isEmpty) {

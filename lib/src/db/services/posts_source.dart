@@ -11,144 +11,177 @@ import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:isar/isar.dart";
 
-abstract interface class PostsSourceService implements ResourceSource<Post> {
+abstract interface class PostsSourceService<T>
+    extends FilteringResourceSource<T> {
   const PostsSourceService();
-
-  factory PostsSourceService.currentMain(
-    BooruAPI api,
-    BooruTagging excluded,
-    PagingEntry entry,
-  ) {
-    return switch (currentDb) {
-      ServicesImplTable.isar => IsarCurrentBooruSource<PostIsar>(
-          db: Dbs.g.main,
-          api: api,
-          excluded: excluded,
-          tags: "",
-          entry: entry,
-          txPut: (db, l) =>
-              db.postIsars.putAllByIdBooruSync(PostIsar.copyTo(l)),
-        ),
-    };
-  }
-
-  factory PostsSourceService.currentTemporary(
-    BooruAPI api,
-    BooruTagging excluded,
-    PagingEntry entry, {
-    required String initialTags,
-  }) {
-    return switch (currentDb) {
-      ServicesImplTable.isar => IsarCurrentBooruSource<PostIsar>(
-          db: DbsOpen.secondaryGrid(),
-          api: api,
-          tags: initialTags,
-          excluded: excluded,
-          entry: entry,
-          txPut: (db, l) =>
-              db.postIsars.putAllByIdBooruSync(PostIsar.copyTo(l)),
-        ),
-    };
-  }
-
-  factory PostsSourceService.currentRestored(
-    String name,
-    BooruAPI api,
-    BooruTagging excluded,
-    PagingEntry entry, {
-    required String initialTags,
-  }) {
-    return switch (_currentDb) {
-      ServicesImplTable.isar => IsarCurrentBooruSource<PostIsar>(
-          db: DbsOpen.secondaryGridName(name),
-          api: api,
-          excluded: excluded,
-          entry: entry,
-          tags: initialTags,
-          txPut: (db, l) =>
-              db.postIsars.putAllByIdBooruSync(PostIsar.copyTo(l)),
-        ),
-    };
-  }
 
   String get tags;
   set tags(String t);
+
+  void clear();
 }
 
-class IsarCurrentBooruSource<T extends Post> implements PostsSourceService {
-  IsarCurrentBooruSource({
-    required this.db,
-    required this.api,
-    required this.excluded,
-    required this.entry,
-    required this.txPut,
-    required this.tags,
-  });
+class _IsarCollectionIterator<T> implements Iterator<T> {
+  _IsarCollectionIterator(this.collection);
 
-  final Isar db;
-  final BooruAPI api;
-  final BooruTagging excluded;
-  final PagingEntry entry;
+  final IsarCollection<T> collection;
+
+  final List<T> _buffer = [];
+  int _cursor = -1;
+  bool _done = false;
 
   @override
-  String tags;
+  T get current => _buffer[_cursor];
 
-  final void Function(Isar db, Iterable<Post>) txPut;
+  @override
+  bool moveNext() {
+    if (_done) {
+      return false;
+    }
 
-  int? currentSkipped;
+    if (_buffer.isNotEmpty && _cursor != _buffer.length) {
+      _cursor += 1;
+      return true;
+    }
+
+    final ret =
+        collection.where().offset(_buffer.length).limit(40).findAllSync();
+    if (ret.isEmpty) {
+      _cursor = -1;
+      _buffer.clear();
+      return !(_done = true);
+    }
+
+    _cursor = 0;
+    _buffer.clear();
+    _buffer.addAll(ret);
+
+    return true;
+  }
+}
+
+class IsarSourceStorage<T extends Post> extends SourceStorage<T> {
+  IsarSourceStorage(this.db, this.txPut);
+
+  final Isar db;
+  final void Function(Isar db, List<T>) txPut;
+
+  IsarCollection<T> get _collection => db.collection<T>();
+
+  @override
+  int get count => _collection.countSync();
+
+  @override
+  Iterator<T> get iterator => _IsarCollectionIterator(_collection);
+
+  @override
+  void add(T e) => db.writeTxnSync(() => txPut(db, [e]));
+
+  @override
+  void addAll(List<T> l) => txPut(db, l);
+
+  @override
+  void clear() => db.writeTxnSync(() => _collection.clearSync());
+
+  @override
+  T? get(int idx) => _collection.getSync(idx + 1);
+
+  @override
+  void removeAll(List<int> idx) {
+    db.writeTxnSync(() => _collection.deleteAllSync(idx));
+  }
 
   @override
   void destroy() => db.close(deleteFromDisk: true);
 
   @override
-  T? forIdx(int idx) => db.collection<T>().getSync(idx + 1);
+  T operator [](int index) => get(index)!;
 
   @override
-  T forIdxUnsafe(int idx) => forIdx(idx)!;
+  void operator []=(int index, T value) =>
+      db.writeTxnSync(() => txPut(db, [value]));
+}
+
+class IsarCurrentBooruSource extends PostsSourceService<Post> {
+  IsarCurrentBooruSource({
+    required Isar db,
+    required void Function(Isar db, List<PostIsar>) txPut,
+    required this.api,
+    required this.excluded,
+    required this.entry,
+    required this.tags,
+    required HiddenBooruPostService hiddenBooru,
+  })  : backingStorage = IsarSourceStorage(db, txPut),
+        filters = [(p) => !hiddenBooru.isHidden(p.id, p.booru)];
+
+  final BooruAPI api;
+  final BooruTagging excluded;
+  final PagingEntry entry;
+
+  @override
+  final IsarSourceStorage<PostIsar> backingStorage;
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f) {
+    throw UnimplementedError();
+  }
+
+  @override
+  final List<FilterFnc<Post>> filters;
+
+  @override
+  String tags;
+
+  int? currentSkipped;
+
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  void destroy() => backingStorage.destroy();
+
+  @override
+  Post? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  Post forIdxUnsafe(int idx) => forIdx(idx)!;
+
+  @override
+  void clear() => backingStorage.clear();
 
   @override
   Future<int> clearRefresh() async {
-    db.writeTxnSync(() => db.collection<T>().clearSync());
+    clear();
 
-    currentDb.statisticsGeneral.current.add(refreshes: 1).save();
+    StatisticsGeneralService.db().current.add(refreshes: 1).save();
 
     entry.updateTime();
 
     final list = await api.page(0, "", excluded);
     entry.setOffset(0);
     currentSkipped = list.$2;
-    db.writeTxnSync(() {
-      db.collection<T>().clearSync();
-      txPut(
-        db,
-        list.$1.where(
-          (element) =>
-              !currentDb.hiddenBooruPost.isHidden(element.id, api.booru),
-        ),
-      );
-    });
+    backingStorage.addAll(PostIsar.copyTo(filter(list.$1)));
 
     entry.reachedEnd = false;
 
-    return db.collection<T>().count();
+    return count;
   }
 
   @override
   Future<int> next([int repeatCount = 0]) async {
     if (repeatCount >= 3) {
-      return db.collection<T>().countSync();
+      return count;
     }
 
     if (entry.reachedEnd) {
-      return db.collection<T>().countSync();
+      return count;
     }
-    final p = db.collection<T>().getSync(db.collection<T>().countSync());
+    final p = forIdx(count - 1);
     if (p == null) {
-      return db.collection<T>().countSync();
+      return count;
     }
 
     try {
@@ -164,18 +197,12 @@ class IsarCurrentBooruSource<T extends Post> implements PostsSourceService {
         entry.reachedEnd = true;
       } else {
         currentSkipped = list.$2;
-        final oldCount = db.collection<T>().countSync();
-        txPut(
-          db,
-          list.$1.where(
-            (element) =>
-                !currentDb.hiddenBooruPost.isHidden(element.id, api.booru),
-          ),
-        );
+        final oldCount = count;
+        backingStorage.addAll(PostIsar.copyTo(filter(list.$1)));
 
         entry.updateTime();
 
-        if (db.collection<T>().countSync() - oldCount < 3) {
+        if (count - oldCount < 3) {
           return next(repeatCount + 1);
         }
       }
@@ -183,6 +210,6 @@ class IsarCurrentBooruSource<T extends Post> implements PostsSourceService {
       return next(repeatCount + 1);
     }
 
-    return db.collection<T>().count();
+    return count;
   }
 }

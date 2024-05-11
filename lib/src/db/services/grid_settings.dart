@@ -69,12 +69,13 @@ abstract interface class WatchableGridSettingsData {
   GridSettingsData get current;
   set current(GridSettingsData d);
 
-  StreamSubscription<GridSettingsData?> watch(
-    void Function(GridSettingsData?) f,
-  );
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData) f, [
+    bool fire = false,
+  ]);
 }
 
-abstract interface class GridSettinsService {
+abstract interface class GridSettingsService {
   WatchableGridSettingsData get animeDiscovery;
   WatchableGridSettingsData get booru;
   WatchableGridSettingsData get directories;

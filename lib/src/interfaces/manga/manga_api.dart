@@ -13,6 +13,7 @@ import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
@@ -73,6 +74,22 @@ enum MangaChapterOrder {
   asc;
 }
 
+extension MangaImageExt on MangaImage {
+  void download(BuildContext context, ReaderData data, int i) {
+    DownloadManager.of(context).addAll(
+      [
+        DownloadEntry.d(
+          name: "$i / $maxPages - ${data.chapterId}.${url.split(".").last}",
+          url: url,
+          thumbUrl: url,
+          site: data.mangaTitle,
+        ),
+      ],
+      SettingsService.db().current,
+    );
+  }
+}
+
 class MangaImage
     implements
         CellBase,
@@ -110,6 +127,8 @@ class MangaImage
       return const [];
     }
 
+    final db = DatabaseConnectionNotifier.of(context);
+
     return [
       SkipChapterButton(
         mangaTitle: data.mangaTitle,
@@ -120,6 +139,7 @@ class MangaImage
         reloadChapters: data.reloadChapters,
         onNextPage: data.onNextPage,
         direction: SkipDirection.left,
+        db: db,
       ),
       SkipChapterButton(
         mangaTitle: data.mangaTitle,
@@ -130,6 +150,7 @@ class MangaImage
         reloadChapters: data.reloadChapters,
         onNextPage: data.onNextPage,
         direction: SkipDirection.right,
+        db: db,
       ),
     ];
   }
@@ -190,6 +211,7 @@ mixin MangaEntry
             id: id,
             api: api,
             entry: this,
+            db: DatabaseConnectionNotifier.of(context),
           );
         },
       ),

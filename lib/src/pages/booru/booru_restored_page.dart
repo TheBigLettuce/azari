@@ -11,22 +11,11 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
 import "package:gallery/src/db/services/posts_source.dart";
-import "package:gallery/src/db/services/settings.dart";
-import "package:gallery/src/db/tags/booru_tagging.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/booru/booru_search_page.dart";
@@ -34,7 +23,6 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -47,7 +35,6 @@ import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class BooruRestoredPage extends StatefulWidget {
@@ -58,6 +45,7 @@ class BooruRestoredPage extends StatefulWidget {
     required this.pagingRegistry,
     this.overrideSafeMode,
     this.onDispose,
+    required this.db,
   });
 
   final GridStateBooru state;
@@ -66,6 +54,8 @@ class BooruRestoredPage extends StatefulWidget {
   final void Function()? onDispose;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
+  final DbConn db;
+
   @override
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
 }
@@ -73,24 +63,25 @@ class BooruRestoredPage extends StatefulWidget {
 class RestoredBooruPageState implements PagingEntry {
   RestoredBooruPageState(
     Booru booru,
-    String name,
     String tags,
-  )   : tagManager = TagManager.fromEnum(booru),
-        instance = DbsOpen.secondaryGridName(name),
-        client = BooruAPI.defaultClientForBooru(booru) {
+    this.tagManager,
+    this.secondaryGrid,
+    HiddenBooruPostService hiddenBooruPosts,
+  ) : client = BooruAPI.defaultClientForBooru(booru) {
     api = BooruAPI.fromEnum(booru, client, this);
 
-    source = PostsSourceService.currentRestored(
-      name,
+    source = secondaryGrid.makeSource(
       api,
       tagManager.excluded,
       this,
-      initialTags: tags,
+      tags,
+      hiddenBooruPosts,
     );
   }
 
   final Dio client;
   final TagManager tagManager;
+  final SecondaryGridService secondaryGrid;
   late final BooruAPI api;
   late final PostsSourceService source;
 
@@ -99,17 +90,17 @@ class RestoredBooruPageState implements PagingEntry {
   @override
   bool reachedEnd = false;
 
-  final Isar instance;
-
   late final state = GridSkeletonRefreshingState<Post>(
-    initalCellCount: instance.postIsars.countSync(),
+    initalCellCount: source.count,
     reachedEnd: () => reachedEnd,
     clearRefresh: AsyncGridRefresh(source.clearRefresh),
     next: source.next,
   );
 
   @override
-  void updateTime() {}
+  void updateTime() => secondaryGrid.currentState
+      .copy(time: DateTime.now())
+      .saveSecondary(secondaryGrid);
 
   @override
   void dispose() {
@@ -117,45 +108,33 @@ class RestoredBooruPageState implements PagingEntry {
 
     state.dispose();
 
-    instance.close();
+    secondaryGrid.destroy();
   }
 
-  @override
-  double get offset {
-    final o =
-        Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!.scrollOffset;
-    if (o.isNaN) {
-      return 0;
-    }
-
-    return o;
-  }
+  SafeMode get safeMode => secondaryGrid.currentState.safeMode;
+  set safeMode(SafeMode s) =>
+      secondaryGrid.currentState.copy(safeMode: s).saveSecondary(secondaryGrid);
 
   @override
-  int get page => instance.gridBooruPagings.getSync(0)?.page ?? 0;
+  double get offset => secondaryGrid.currentState.scrollOffset;
 
   @override
-  set page(int p) {
-    instance.writeTxnSync(
-      () => instance.gridBooruPagings.putSync(GridBooruPaging(p)),
-    );
-  }
+  int get page => secondaryGrid.page;
 
   @override
-  void setOffset(double o) {
-    final prev = Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!;
+  set page(int p) => secondaryGrid.page = p;
 
-    Dbs.g.main.writeTxnSync(
-      () => Dbs.g.main.gridStateBoorus.putByNameSync(
-        prev.copy(
-          scrollOffset: o,
-        ),
-      ),
-    );
-  }
+  @override
+  void setOffset(double o) => secondaryGrid.currentState
+      .copy(scrollOffset: o)
+      .saveSecondary(secondaryGrid);
 }
 
 class _BooruRestoredPageState extends State<BooruRestoredPage> {
+  GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
+  HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
+  FavoritePostService get favoritePosts => widget.db.favoritePosts;
+
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> blacklistedWatcher;
@@ -167,17 +146,24 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   BooruAPI get api => pagingState.api;
   GridSkeletonRefreshingState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
-  Isar get instance => pagingState.instance;
+  PostsSourceService get source => pagingState.source;
 
   @override
   void initState() {
     super.initState();
 
     pagingState = widget.pagingRegistry.getOrRegister(widget.state.name, () {
+      final secondary = widget.db.secondaryGrid(
+        state.settings.selectedBooru,
+        widget.state.name,
+      );
+
       return RestoredBooruPageState(
         widget.state.booru,
-        widget.state.name,
         widget.state.tags,
+        secondary.tagManager,
+        secondary,
+        hiddenBooruPost,
       );
     }) as RestoredBooruPageState;
 
@@ -202,12 +188,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       setState(() {});
     });
 
-    favoritesWatcher = Dbs.g.main.favoriteBoorus.watchLazy().listen((event) {
+    favoritesWatcher = favoritePosts.watch((event) {
       state.refreshingStatus.mutation.notify();
       setState(() {});
     });
 
-    blacklistedWatcher = HiddenBooruPost.watch((_) {
+    blacklistedWatcher = hiddenBooruPost.watch((_) {
       state.refreshingStatus.mutation.notify();
     });
   }
@@ -225,30 +211,13 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     super.dispose();
   }
 
-  SafeMode _safeMode() {
-    final prev = Dbs.g.main.gridStateBoorus.getByNameSync(widget.state.name)!;
+  // SafeMode _safeMode() {
+  //   final prev = Dbs.g.main.gridStateBoorus.getByNameSync(widget.state.name)!;
 
-    return prev.safeMode;
-  }
+  //   return prev.safeMode;
+  // }
 
-  Future<void> _download(int i) async {
-    final p = instance.postIsars.getSync(i + 1);
-    if (p == null) {
-      return Future.value();
-    }
-
-    PostTags.g.addTagsPost(p.filename(), p.tags, true);
-
-    return Downloader.g.add(
-      DownloadFile.d(
-        url: p.fileDownloadUrl(),
-        site: api.booru.url,
-        name: p.filename(),
-        thumbUrl: p.previewUrl,
-      ),
-      state.settings,
-    );
-  }
+  void _download(int i) => source.forIdx(i)?.download(context);
 
   void _onTagPressed(
     BuildContext context,
@@ -325,6 +294,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     BooruGridActions.download(context, api.booru),
                     BooruGridActions.favorites(
                       context,
+                      favoritePosts,
                       showDeleteSnackbar: true,
                     ),
                   ],
@@ -341,20 +311,13 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                         (settings as GridSettingsBooru)
                             .copy(aspectRatio: ratio)
                             .save(),
-                    safeMode: _safeMode(),
+                    safeMode: pagingState.safeMode,
                     selectSafeMode: (safeMode, _) {
                       if (safeMode == null) {
                         return;
                       }
 
-                      final prev = Dbs.g.main.gridStateBoorus
-                          .getByNameSync(widget.state.name)!;
-
-                      Dbs.g.main.writeTxnSync(
-                        () => Dbs.g.main.gridStateBoorus.putByNameSync(
-                          prev.copy(safeMode: safeMode),
-                        ),
-                      );
+                      pagingState.safeMode = safeMode;
 
                       setState(() {});
                     },

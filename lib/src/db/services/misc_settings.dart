@@ -47,6 +47,9 @@ abstract class MiscSettingsData {
   @enumerated
   final FilteringMode favoritesPageMode;
 
+  @ignore
+  MiscSettingsService get s => _currentDb.miscSettings;
+
   MiscSettingsData copy({
     bool? filesExtendedActions,
     int? favoritesThumbId,
@@ -58,6 +61,8 @@ abstract class MiscSettingsData {
 }
 
 abstract interface class MiscSettingsService implements ServiceMarker {
+  factory MiscSettingsService.db() => _currentDb.miscSettings;
+
   MiscSettingsData get current;
 
   void add(MiscSettingsData data);

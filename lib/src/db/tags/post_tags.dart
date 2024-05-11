@@ -7,31 +7,14 @@
 
 import "dart:async";
 import "dart:developer";
-import "dart:io" as io;
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/plugs/download_movers.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
-import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:isar/isar.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart";
-import "package:stream_transform/stream_transform.dart";
-
-late final PostTags _global;
-bool _isInitalized = false;
 
 /// Result of disassembling of the filename in the format.
 /// All the files downloaded with the [Downloader] have a certain format
@@ -55,88 +38,16 @@ class DisassembleResult {
 
   /// The post number.
   final int id;
-}
 
-class ErrorOr<T> {
-  const ErrorOr.error(String Function(BuildContext context) error)
-      : _error = error,
-        _data = null;
-  const ErrorOr.value(T result)
-      : _data = result,
-        _error = null;
-
-  final T? _data;
-  final String Function(BuildContext context)? _error;
-
-  T asValue() => _data!;
-  T? maybeValue() => _data;
-
-  String? asError(BuildContext context) => _error!(context);
-
-  bool get hasError => _error != null;
-  bool get hasValue => _data != null;
-}
-
-/// Post tags saved locally.
-/// This is used for offline tag viewing in the gallery.
-class PostTags {
-  PostTags._new(this.tagsDb);
-
-  static PostTags get g {
-    if (_isInitalized) {
-      return _global;
-    }
-
-    _isInitalized = true;
-
-    return _global = PostTags._new(DbsOpen.localTags());
-  }
-
-  Isar tagsDb;
-
-  String filename(Booru booru, String url, String md5, int id) {
+  static String makeFilename(Booru booru, String url, String md5, int id) {
     final ext = extension(url);
 
     return "${booru.prefix}_$id - $md5$ext";
   }
 
-  /// Connects to the booru and downloads the tags from it.
-  /// Resolves to an empty list in case of any error.
-  Future<List<String>> loadFromDissassemble(
-    String filename,
-    DisassembleResult dissassembled,
-  ) async {
-    final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
-    final api =
-        BooruAPI.fromEnum(dissassembled.booru, client, EmptyPageSaver());
-
-    try {
-      final post = await api.singlePost(dissassembled.id);
-      if (post.tags.isEmpty) {
-        return [];
-      }
-
-      tagsDb.writeTxnSync(
-        () => tagsDb.localTags.putSync(LocalTags(filename, post.tags)),
-      );
-
-      return post.tags;
-    } catch (e, trace) {
-      log(
-        "fetching post for tags",
-        level: Level.SEVERE.value,
-        error: e,
-        stackTrace: trace,
-      );
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
   /// Tries to disassemble the [filename] into the convenient class.
   /// Throws on error, with the reason string.
-  ErrorOr<DisassembleResult> dissassembleFilename(
+  static ErrorOr<DisassembleResult> fromFilename(
     String filename, {
     Booru? suppliedBooru,
   }) {
@@ -217,147 +128,107 @@ class PostTags {
       ),
     );
   }
+}
+
+class ErrorOr<T> {
+  const ErrorOr.error(String Function(BuildContext context) error)
+      : _error = error,
+        _data = null;
+  const ErrorOr.value(T result)
+      : _data = result,
+        _error = null;
+
+  final T? _data;
+  final String Function(BuildContext context)? _error;
+
+  T asValue() => _data!;
+  T? maybeValue() => _data;
+
+  String? asError(BuildContext context) => _error!(context);
+
+  bool get hasError => _error != null;
+  bool get hasValue => _data != null;
+}
+
+/// Post tags saved locally.
+/// This is used for offline tag viewing in the gallery.
+class PostTags {
+  PostTags(this._db, this._freq);
+
+  factory PostTags.fromContext(BuildContext context) {
+    final db = DatabaseConnectionNotifier.of(context);
+
+    return PostTags(db.localTags, db.localTagDictionary);
+  }
+
+  final LocalTagDictionaryService _freq;
+  final LocalTagsService _db;
+
+  /// Connects to the booru and downloads the tags from it.
+  /// Resolves to an empty list in case of any error.
+  Future<List<String>> loadFromDissassemble(
+    String filename,
+    DisassembleResult dissassembled,
+  ) async {
+    final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
+    final api =
+        BooruAPI.fromEnum(dissassembled.booru, client, EmptyPageSaver());
+
+    try {
+      final post = await api.singlePost(dissassembled.id);
+      if (post.tags.isEmpty) {
+        return [];
+      }
+
+      _db.add(filename, post.tags);
+
+      return post.tags;
+    } catch (e, trace) {
+      log(
+        "fetching post for tags",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
+      return [];
+    } finally {
+      client.close();
+    }
+  }
 
   /// Adds tags to the db.
   /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
   void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
-    if (!noDisassemble && dissassembleFilename(filename).hasError) {
+    if (!noDisassemble && DisassembleResult.fromFilename(filename).hasError) {
       return;
     }
 
-    tagsDb.writeTxnSync(() {
-      _putTagsAndIncreaseFreq(tags);
-      tagsDb.localTags.putSync(LocalTags(filename, tags));
-    });
+    _freq.add(tags);
+    _db.add(filename, tags);
   }
 
   /// Doesn't dissassemble.
-  void addTagsPostAll(Iterable<(String, List<String>)> tags) {
-    tagsDb.writeTxnSync(() {
-      tagsDb.localTags.putAllSync(
-        tags.map((e) {
-          _putTagsAndIncreaseFreq(e.$2);
-
-          return LocalTags(e.$1, e.$2);
-        }).toList(),
-      );
-    });
-  }
-
-  /// Rebuilds the tag suggestions dictionary.
-  /// [rebuildTagDictionary] shouldn't be frequently run, as it might take minutes to complete.
-  void rebuildTagDictionary() {
-    tagsDb.writeTxnSync(() => tagsDb.localTagDictionarys.clearSync());
-
-    var offset = 0;
-    for (;;) {
-      final tags =
-          tagsDb.localTags.where().offset(offset).limit(40).findAllSync();
-      offset += tags.length;
-
-      for (final e in tags) {
-        tagsDb.writeTxnSync(() => _putTagsAndIncreaseFreq(e.tags));
-      }
-
-      if (tags.length != 40) {
-        return;
-      }
-    }
-  }
-
-  void _putTagsAndIncreaseFreq(List<String> tags) {
-    tagsDb.localTagDictionarys.putAllSync(
-      tags
-          .map(
-            (e) => LocalTagDictionary(
-              e,
-              (tagsDb.localTagDictionarys.getSync(fastHash(e))?.frequency ??
-                      0) +
-                  1,
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  /// Saves all the tags from the posts.
-  void addAllPostTags(List<Post> p) {
-    tagsDb.writeTxnSync(() {
-      tagsDb.localTags.putAllSync(
-        p.map((e) {
-          final ret = LocalTags(e.filename(), e.tags);
-          _putTagsAndIncreaseFreq(ret.tags);
-          return ret;
-        }).toList(),
-      );
-    });
-  }
-
-  /// Returns tags for the [filename], or empty list if there are none.
-  List<String> getTagsPost(String filename) {
-    return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
-  }
-
-  void removeTag(List<String> filenames, String tag) {
-    final List<LocalTags> newTags = [];
-
-    for (final e
-        in tagsDb.localTags.getAllByFilenameSync(filenames).cast<LocalTags>()) {
-      final idx = e.tags.indexWhere((element) => element == tag);
-      if (idx.isNegative) {
-        continue;
-      }
-
-      newTags.add(LocalTags(e.filename, e.tags.toList()..removeAt(idx)));
-    }
-
-    return tagsDb
-        .writeTxnSync(() => tagsDb.localTags.putAllByFilenameSync(newTags));
-  }
-
-  List<String> _addAndSort(List<String> tags, String addTag) {
-    final l = tags.toList() + [addTag];
-    l.sort();
-
-    return l;
-  }
-
-  void addTag(List<String> filenames, String tag) {
-    if (filenames.isEmpty || tag.isEmpty) {
-      return;
-    }
-
-    final newTags = tagsDb.localTags
-        .getAllByFilenameSync(filenames)
-        .where((element) => element != null && !element.tags.contains(tag))
-        .cast<LocalTags>()
-        .map((e) => LocalTags(e.filename, _addAndSort(e.tags, tag)))
-        .toList();
-
-    if (newTags.isEmpty) {
-      return;
-    }
-
-    return tagsDb
-        .writeTxnSync(() => tagsDb.localTags.putAllByFilenameSync(newTags));
+  void addAllUnsafe(Iterable<(String, List<String>)> tags) {
+    tags.map((e) => _freq.add(e.$2));
+    _db.addAll(tags.map((e) => LocalTagsData.forDb(e.$1, e.$2)).toList());
   }
 
   /// Returns true if tags for the [filename] includes [tag],
   /// or false if there are no tags for [filename].
-  bool containsTag(String filename, String tag) {
-    return tagsDb.localTags.getSync(fastHash(filename))?.tags.contains(tag) ??
-        false;
+  bool contains(String filename, String tag) {
+    return _db.get(filename).contains(tag);
   }
 
   /// Returns true if tags for the [filename] includes all the [tags].
   /// [Tags] should be a string with tags separated by a space.
   /// Or false if there are no tags for the [filename].
-  bool containsTagMultiple(String filename, String tags) {
-    final localTags = tagsDb.localTags.getSync(fastHash(filename))?.tags;
-    if (localTags == null || localTags.isEmpty) {
+  bool containsEvery(String filename, List<String> tags) {
+    final localTags = _db.get(filename);
+    if (localTags.isEmpty) {
       return false;
     }
-    for (final t in tags.split(" ")) {
+
+    for (final t in tags) {
       if (!localTags.contains(t.trim())) {
         return false;
       }
@@ -368,175 +239,90 @@ class PostTags {
 
   /// Returns true if the tags for the [filename] have "original",
   /// or false if there are no tags for [filename].
-  bool isOriginal(String filename) {
-    return tagsDb.localTags
-            .getSync(fastHash(filename))
-            ?.tags
-            .contains("original") ??
-        false;
-  }
-
-  int savedTagsCount() => tagsDb.localTags.countSync();
-
-  Future<List<BooruTag>> completeLocalTag(String string) async {
-    final result = tagsDb.localTagDictionarys
-        .filter()
-        .tagContains(string)
-        .sortByFrequencyDesc()
-        .limit(10)
-        .findAllSync();
-
-    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
-  }
+  bool isOriginal(String filename) => _db.get(filename).contains("original");
 
   /// Disassembles the [filename] and load tags online from the booru.
   /// Resolves to an empty list in case of any error.
   Future<List<String>> getOnlineAndSaveTags(
     String filename,
   ) async {
-    final dissassembled = dissassembleFilename(filename);
+    final dissassembled = DisassembleResult.fromFilename(filename);
     if (dissassembled.hasError) {
       return const [];
     }
 
     return loadFromDissassemble(filename, dissassembled.asValue());
   }
-
-  void deletePostTags(String filename) {
-    tagsDb.writeTxnSync(() => tagsDb.localTags.deleteSync(fastHash(filename)));
-  }
-
-  /// Restore local tags from the backup.
-  /// The backup is just an copy of the Isar DB.
-  /// In case of any error reverts back.
-  Future<void> restore(void Function(String? error) onDone) async {
-    final tagsFile = joinAll([Dbs.g.appStorageDir, "localTags"]);
-    final tagsBakFile = joinAll([Dbs.g.appStorageDir, "localTags.bak"]);
-
-    try {
-      final outputFile =
-          await PlatformFunctions.pickFileAndCopy(Dbs.g.appStorageDir);
-      await Isar.openSync(
-        [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-        directory: Dbs.g.appStorageDir,
-        inspector: false,
-        name: outputFile.split("/").last,
-      ).close();
-
-      await tagsDb.copyToFile(tagsBakFile);
-
-      await tagsDb.close();
-
-      io.File("$tagsFile.isar").deleteSync();
-      io.File(outputFile).renameSync("$tagsFile.isar");
-
-      tagsDb = DbsOpen.localTags();
-
-      io.File(tagsBakFile).deleteSync();
-
-      onDone(null);
-    } catch (e) {
-      try {
-        if (io.File(tagsBakFile).existsSync()) {
-          if (io.File("$tagsFile.isar").existsSync()) {
-            io.File("$tagsFile.isar").deleteSync();
-          }
-          io.File(tagsBakFile).renameSync("$tagsFile.isar");
-        }
-      } catch (_) {}
-      onDone(e.toString());
-    }
-  }
-
-  String? directoryTag(String bucketId) {
-    return tagsDb.directoryTags.getSync(fastHash(bucketId))?.tag;
-  }
-
-  void setDirectoriesTag(Iterable<String> bucketIds, String tag) {
-    tagsDb.writeTxnSync(
-      () => tagsDb.directoryTags
-          .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()),
-    );
-  }
-
-  void removeDirectoriesTag(Iterable<String> buckedIds) {
-    tagsDb.writeTxnSync(
-      () => tagsDb.directoryTags
-          .deleteAllSync(buckedIds.map((e) => fastHash(e)).toList()),
-    );
-  }
-
-  /// Make a copy of the tags DB.
-  /// Calls [onDone] with null error when complete,
-  /// or with non-null error when something went wrong.
-  Future<void> copy(void Function(String? error) onDone) async {
-    try {
-      final plug = await chooseDownloadMoverPlug();
-
-      final output = joinAll([
-        Dbs.g.temporaryDbDir,
-        "${DateTime.now().microsecondsSinceEpoch}_savedtags.bin",
-      ]);
-
-      await tagsDb.copyToFile(output);
-
-      plug.move(
-        MoveOp(
-          source: output,
-          rootDir: SettingsService.currentData.path.path,
-          targetDir: "backup",
-        ),
-      );
-      onDone(null);
-    } catch (e) {
-      onDone(e.toString());
-    }
-  }
-
-  StreamSubscription<List<LocalTags>> watch(
-    String filename,
-    void Function(List<LocalTags>) f,
-  ) {
-    return tagsDb.localTags.where().filenameEqualTo(filename).watch().listen(f);
-  }
-
-  StreamSubscription<List<ImageTag>> watchImagePinned(
-    List<String> tags,
-    void Function(List<ImageTag>) f,
-  ) {
-    return PostTags.g.tagsDb.pinnedTags
-        .watchLazy()
-        .map<List<ImageTag>>((event) {
-      return tags.map((e) => ImageTag(e, PinnedTag.isPinned(e))).toList();
-    }).listen(f);
-  }
-
-  StreamSubscription<List<ImageTag>> watchImageAndPinned(
-    String filename,
-    void Function(List<ImageTag>) f,
-  ) {
-    return tagsDb.localTags
-        .where()
-        .filenameEqualTo(filename)
-        .watch()
-        .merge(
-          PostTags.g.tagsDb.pinnedTags.watchLazy().map((_) {
-            final t = PostTags.g.tagsDb.localTags.getByFilenameSync(filename);
-
-            return t != null ? [t] : const [];
-          }),
-        )
-        .map<List<ImageTag>>((event) {
-      if (event.isEmpty) {
-        return const [];
-      }
-
-      return event.first.tags
-          .map((e) => ImageTag(e, PinnedTag.isPinned(e)))
-          .toList();
-    }).listen(f);
-  }
 }
+
+/// Restore local tags from the backup.
+/// The backup is just an copy of the Isar DB.
+/// In case of any error reverts back.
+// Future<void> restore(void Function(String? error) onDone) async {
+//   final tagsFile = joinAll([Dbs.g.appStorageDir, "localTags"]);
+//   final tagsBakFile = joinAll([Dbs.g.appStorageDir, "localTags.bak"]);
+
+//   try {
+//     final outputFile =
+//         await PlatformFunctions.pickFileAndCopy(Dbs.g.appStorageDir);
+//     await Isar.openSync(
+//       [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
+//       directory: Dbs.g.appStorageDir,
+//       inspector: false,
+//       name: outputFile.split("/").last,
+//     ).close();
+
+//     await tagsDb.copyToFile(tagsBakFile);
+
+//     await tagsDb.close();
+
+//     io.File("$tagsFile.isar").deleteSync();
+//     io.File(outputFile).renameSync("$tagsFile.isar");
+
+//     tagsDb = DbsOpen.localTags();
+
+//     io.File(tagsBakFile).deleteSync();
+
+//     onDone(null);
+//   } catch (e) {
+//     try {
+//       if (io.File(tagsBakFile).existsSync()) {
+//         if (io.File("$tagsFile.isar").existsSync()) {
+//           io.File("$tagsFile.isar").deleteSync();
+//         }
+//         io.File(tagsBakFile).renameSync("$tagsFile.isar");
+//       }
+//     } catch (_) {}
+//     onDone(e.toString());
+//   }
+// }
+
+// /// Make a copy of the tags DB.
+// /// Calls [onDone] with null error when complete,
+// /// or with non-null error when something went wrong.
+// Future<void> copy(void Function(String? error) onDone) async {
+//   try {
+//     final plug = await chooseDownloadMoverPlug();
+
+//     final output = joinAll([
+//       Dbs.g.temporaryDbDir,
+//       "${DateTime.now().microsecondsSinceEpoch}_savedtags.bin",
+//     ]);
+
+//     await tagsDb.copyToFile(output);
+
+//     plug.move(
+//       MoveOp(
+//         source: output,
+//         rootDir: SettingsService.currentData.path.path,
+//         targetDir: "backup",
+//       ),
+//     );
+//     onDone(null);
+//   } catch (e) {
+//     onDone(e.toString());
+//   }
+// }
 
 enum DisassembleResultError {
   extensionInvalid,

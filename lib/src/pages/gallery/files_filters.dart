@@ -7,9 +7,8 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
+import "package:gallery/src/plugs/gallery.dart";
 
 /// Data for the [FilteringMode.same].
 class SameFilterAccumulator {
@@ -24,8 +23,8 @@ class SameFilterAccumulator {
 abstract class FileFilters {
   const FileFilters();
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) tag(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) tag(
+    Iterable<GalleryFile> cells,
     String searchText,
   ) {
     if (searchText.isEmpty) {
@@ -40,8 +39,8 @@ abstract class FileFilters {
     );
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) tagReversed(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) tagReversed(
+    Iterable<GalleryFile> cells,
     String searchText,
   ) {
     if (searchText.isEmpty) {
@@ -56,14 +55,12 @@ abstract class FileFilters {
     );
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) favorite(
-    Iterable<SystemGalleryDirectoryFile> cells,
-  ) {
-    return (cells.where((element) => element.isFavorite), null);
-  }
+  // static bool favorite(Iterable<GalleryFile> cells) {
+  //   return (cells.where((element) => element.isFavorite), null);
+  // }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) untagged(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) untagged(
+    Iterable<GalleryFile> cells,
   ) {
     return (
       cells.where((element) => PostTags.g.getTagsPost(element.name).isEmpty),
@@ -71,26 +68,26 @@ abstract class FileFilters {
     );
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) video(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) video(
+    Iterable<GalleryFile> cells,
   ) {
     return (cells.where((element) => element.isVideo), null);
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) gif(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) gif(
+    Iterable<GalleryFile> cells,
   ) {
     return (cells.where((element) => element.isGif), null);
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) duplicate(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) duplicate(
+    Iterable<GalleryFile> cells,
   ) {
     return (cells.where((element) => element.isDuplicate), null);
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) original(
-    Iterable<SystemGalleryDirectoryFile> cells,
+  static (Iterable<GalleryFile>, dynamic) original(
+    Iterable<GalleryFile> cells,
   ) {
     return (
       cells
@@ -99,20 +96,20 @@ abstract class FileFilters {
     );
   }
 
-  static (Iterable<SystemGalleryDirectoryFile>, dynamic) same(
+  static (Iterable<GalleryFile>, dynamic) same(
     BuildContext context,
-    Iterable<SystemGalleryDirectoryFile> cells,
+    Iterable<GalleryFile> cells,
     dynamic data,
     GalleryFilesExtra extra, {
     required bool end,
-    required SystemGalleryDirectoryFile Function(int i) getCell,
+    required GalleryFile Function(int i) getCell,
     required void Function() performSearch,
   }) {
     final accu =
         (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
 
     Iterable<(int isarId, int? h)> getDifferenceHash(
-      Iterable<SystemGalleryDirectoryFile> cells,
+      Iterable<GalleryFile> cells,
     ) sync* {
       for (final cell in cells) {
         yield (cell.isarId!, cell.getThumbnail(cell.id)?.differenceHash);

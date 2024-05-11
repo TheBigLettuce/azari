@@ -241,7 +241,10 @@ class CongratulationPage extends StatelessWidget {
               label: Text(AppLocalizations.of(context)!.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
-                SettingsService.currentData.copy(showWelcomePage: false).save();
+                SettingsService.db()
+                    .current
+                    .copy(showWelcomePage: false)
+                    .save();
 
                 if (doNotLaunchHome) {
                   Navigator.pop(context);
@@ -279,7 +282,7 @@ class InitalSettings extends StatefulWidget {
 
 class _InitalSettingsState extends State<InitalSettings> {
   late final StreamSubscription<void> watcher;
-  SettingsData settings = SettingsService.currentData;
+  SettingsData settings = SettingsService.db().current;
 
   String? error;
 

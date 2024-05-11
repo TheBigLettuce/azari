@@ -17,9 +17,7 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -30,7 +28,6 @@ import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart
 import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/keybinds/describe_keys.dart";
 import "package:gallery/src/widgets/keybinds/keybind_description.dart";
 import "package:gallery/src/widgets/keybinds/single_activator_description.dart";
@@ -50,6 +47,27 @@ part "parts/cell_provider.dart";
 part "wrappers/wrap_padding.dart";
 part "wrappers/wrap_selection.dart";
 
+class GridConfigurationNotifier extends InheritedWidget {
+  const GridConfigurationNotifier({
+    super.key,
+    required this.config,
+    required super.child,
+  });
+
+  final GridSettingsData config;
+
+  static GridSettingsData of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridConfigurationNotifier>();
+
+    return widget!.config;
+  }
+
+  @override
+  bool updateShouldNotify(GridConfigurationNotifier oldWidget) =>
+      config != oldWidget.config;
+}
+
 typedef MakeCellFunc<T extends CellBase> = Widget Function(
   BuildContext,
   T,
@@ -60,11 +78,11 @@ typedef MakeCellFunc<T extends CellBase> = Widget Function(
 class GridFrame<T extends CellBase> extends StatefulWidget {
   const GridFrame({
     required super.key,
+    required this.slivers,
     required this.getCell,
     this.initalScrollPosition = 0,
     required this.functionality,
     this.onDispose,
-    required this.layout,
     required this.mainFocus,
     this.belowMainFocus,
     this.overrideController,
@@ -94,7 +112,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
 
   final ScrollController? overrideController;
 
-  final GridLayoutBehaviour layout;
+  final List<Widget> slivers;
 
   @override
   State<GridFrame<T>> createState() => GridFrameState<T>();
@@ -109,7 +127,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   late ScrollController controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
 
-  late GridSettingsData _layoutSettings = widget.layout.defaultSettings();
+  // late GridSettingsData _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
     widget.description.actions,
@@ -153,12 +171,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       setState(() {});
     });
 
-    _gridSettingsWatcher =
-        widget.functionality.watchLayoutSettings?.call((newSettings) {
-      _layoutSettings = newSettings;
+    // _gridSettingsWatcher =
+    //     widget.functionality.watchLayoutSettings?.call((newSettings) {
+    //   _layoutSettings = newSettings;
 
-      setState(() {});
-    });
+    //   setState(() {});
+    // });
 
     final description = widget.description;
     final functionality = widget.functionality;
@@ -251,18 +269,18 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     super.dispose();
   }
 
-  void tryScrollUntil(int p) {
+  void tryScrollUntil(int p, GridSettingsData config) {
     if (controller.position.maxScrollExtent.isInfinite) {
       return;
     }
 
-    final picPerRow = _layoutSettings.columns;
+    final picPerRow = config.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
     double target;
-    if (_layoutSettings.layoutType.layout().isList) {
+    if (config.layoutType == GridLayoutType.list) {
       target = contentSize * p / mutation.cellCount;
     } else {
       target = contentSize *
@@ -324,21 +342,20 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     BuildContext context,
     GridDescription<T> description,
   ) {
-    final button = widget.description.settingsButton;
-
     final ret = <Widget>[
-      if (button != null)
-        GridSettingsButton(
-          () => _layoutSettings,
-          watch: widget.functionality.watchLayoutSettings,
-          selectRatio: button.selectRatio,
-          selectHideName: button.selectHideName,
-          selectGridLayout: button.selectGridLayout,
-          selectGridColumn: button.selectGridColumn,
-          safeMode: button.safeMode,
-          selectSafeMode: button.selectSafeMode,
-          onChanged: enableAnimationsFor,
-        ),
+      if (widget.functionality.settingsButton != null)
+        widget.functionality.settingsButton!,
+      // GridSettingsButton(
+      //   () => _layoutSettings,
+      //   watch: widget.functionality.watchLayoutSettings,
+      //   selectRatio: button.selectRatio,
+      //   selectHideName: button.selectHideName,
+      //   selectGridLayout: button.selectGridLayout,
+      //   selectGridColumn: button.selectGridColumn,
+      //   safeMode: button.safeMode,
+      //   selectSafeMode: button.selectSafeMode,
+      //   onChanged: enableAnimationsFor,
+      // ),
     ];
 
     if (description.menuButtonItems == null) {
@@ -379,18 +396,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       final List<Widget> appBarActions = page != null
           ? [
               ...page.appIcons,
-              if (pageSettingsButton != null)
-                GridSettingsButton(
-                  pageSettingsButton.overrideDefault!,
-                  watch: pageSettingsButton.watchExplicitly,
-                  selectRatio: pageSettingsButton.selectRatio,
-                  selectHideName: pageSettingsButton.selectHideName,
-                  selectGridLayout: pageSettingsButton.selectGridLayout,
-                  selectGridColumn: pageSettingsButton.selectGridColumn,
-                  safeMode: pageSettingsButton.safeMode,
-                  selectSafeMode: pageSettingsButton.selectSafeMode,
-                  onChanged: enableAnimationsFor,
-                ),
+              if (pageSettingsButton != null) pageSettingsButton,
             ]
           : _makeActions(context, description);
 
@@ -466,11 +472,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               ),
             ),
           ),
-        ...widget.layout.makeFor<T>(_layoutSettings)(
-          context,
-          _layoutSettings,
-          this,
-        ),
+        ...widget.slivers,
       ],
       if (currentPage == 0)
         _WrapPadding(
@@ -539,7 +541,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             child: CellProvider<T>(
               getCell: widget.getCell,
               child: GridExtrasNotifier(
-                scrollTo: tryScrollUntil,
+                data: GridExtrasData(tryScrollUntil, selection, functionality),
                 child: Builder(
                   builder: (context) {
                     Widget child = SliverMainAxisGroup(
@@ -654,7 +656,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           child: CellProvider<T>(
             getCell: widget.getCell,
             child: GridExtrasNotifier(
-              scrollTo: tryScrollUntil,
+              data: GridExtrasData(tryScrollUntil, selection, functionality),
               child: c,
             ),
           ),
@@ -714,25 +716,33 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   }
 }
 
-class GridExtrasNotifier extends InheritedWidget {
+class GridExtrasData<T extends CellBase> {
+  const GridExtrasData(this.scrollTo, this.selection, this.functionality);
+
+  final void Function(int idx, GridSettingsData config) scrollTo;
+  final GridSelection<T> selection;
+  final GridFunctionality<T> functionality;
+}
+
+class GridExtrasNotifier<T extends CellBase> extends InheritedWidget {
   const GridExtrasNotifier({
     super.key,
-    required this.scrollTo,
+    required this.data,
     required super.child,
   });
 
-  final void Function(int idx) scrollTo;
+  final GridExtrasData<T> data;
 
-  static void Function(int idx) of(BuildContext context) {
+  static GridExtrasData<T> of<T extends CellBase>(BuildContext context) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<GridExtrasNotifier>();
+        context.dependOnInheritedWidgetOfExactType<GridExtrasNotifier<T>>();
 
-    return widget!.scrollTo;
+    return widget!.data;
   }
 
   @override
-  bool updateShouldNotify(GridExtrasNotifier oldWidget) {
-    return scrollTo != oldWidget.scrollTo;
+  bool updateShouldNotify(GridExtrasNotifier<T> oldWidget) {
+    return data != oldWidget.data;
   }
 }
 

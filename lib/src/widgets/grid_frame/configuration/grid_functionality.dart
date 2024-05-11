@@ -8,7 +8,6 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
@@ -16,6 +15,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_refresh_behavi
 import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({
@@ -25,10 +25,10 @@ class GridFunctionality<T extends CellBase> {
     this.registerNotifiers,
     this.updateScrollPosition,
     this.download,
-    this.watchLayoutSettings,
+    this.settingsButton,
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
-    this.refreshBehaviour = const DefaultGridRefreshBehaviour(),
+    // this.refreshBehaviour = const DefaultGridRefreshBehaviour(),
     this.search = const EmptyGridSearchWidget(),
   });
 
@@ -36,7 +36,7 @@ class GridFunctionality<T extends CellBase> {
 
   /// In case if the cell represents an online resource which can be downloaded,
   /// setting [download] enables buttons to download the resource.
-  final Future<void> Function(int indx)? download;
+  final void Function(int indx)? download;
 
   /// [updateScrollPosition] gets called when grid first builds and then when scrolling stops,
   ///  if not null. Useful when it is desirable to persist the scroll position of the grid.
@@ -49,14 +49,12 @@ class GridFunctionality<T extends CellBase> {
 
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
-  final StreamSubscription<GridSettingsData> Function(
-    void Function(GridSettingsData s) f,
-  )? watchLayoutSettings;
+  final GridSettingsButton? settingsButton;
 
   final GridFabType fab;
   final SelectionGlue selectionGlue;
   final GridBackButtonBehaviour backButton;
-  final GridRefreshBehaviour refreshBehaviour;
+  // final GridRefreshBehaviour refreshBehaviour;
   final GridSearchWidget search;
 }
 

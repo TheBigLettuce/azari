@@ -10,9 +10,9 @@ import "dart:io";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/plugs/download_movers.dart";
+import "package:gallery/src/plugs/gallery.dart";
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
@@ -149,7 +149,7 @@ abstract interface class PlatformFunctions {
     _channel.invokeMethod("emptyTrash");
   }
 
-  static void move(MoveOp op) {
+  static Future<void> move(MoveOp op) {
     _channel.invokeMethod(
       "move",
       {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir},

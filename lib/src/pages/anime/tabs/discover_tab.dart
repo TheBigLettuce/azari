@@ -103,7 +103,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
             setCurrentGenre: (g) {
               container.extra.genreId = g;
 
-              state.gridKey.currentState?.refreshSequence();
+              container.refreshingStatus.refresh();
             },
             initalGenreId: container.extra.genreId,
             header: _SearchBar(
@@ -262,7 +262,7 @@ class __SearchBarState extends State<_SearchBar> {
               set: (m) {
                 container.extra.mode = m;
 
-                widget.gridKey.currentState?.refreshSequence();
+                container.refreshingStatus.refresh();
 
                 setState(() {});
               },

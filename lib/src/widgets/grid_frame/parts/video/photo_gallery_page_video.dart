@@ -8,18 +8,25 @@
 import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/widgets/grid_frame/parts/video/video_controls.dart";
 import "package:gallery/src/widgets/loading_error_widget.dart";
 import "package:gallery/src/widgets/notifiers/pause_video.dart";
 import "package:gallery/src/widgets/notifiers/reload_image.dart";
 import "package:video_player/video_player.dart";
 
-class PhotoGalleryPageVideo extends StatefulWidget {
+class PhotoGalleryPageVideo extends StatefulWidget
+    with DbConnHandle<VideoSettingsService> {
   const PhotoGalleryPageVideo({
     super.key,
     required this.url,
     required this.localVideo,
+    required this.db,
   });
+
+  @override
+  final VideoSettingsService db;
+
   final String url;
   final bool localVideo;
 
@@ -27,7 +34,8 @@ class PhotoGalleryPageVideo extends StatefulWidget {
   State<PhotoGalleryPageVideo> createState() => _PhotoGalleryPageVideoState();
 }
 
-class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
+class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
+    with VideoSettingsDbScope<PhotoGalleryPageVideo> {
   late final VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
@@ -52,10 +60,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     _initController();
   }
 
-  Future<void> _initController() async {
-    controller.initialize().then((value) {
+  Future<void> _initController() {
+    return controller.initialize().then((value) {
       if (!disposed) {
-        final videoSettings = VideoSettings.current;
+        final videoSettings = current;
 
         controller.setVolume(videoSettings.volume);
 
@@ -143,6 +151,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                           padding: const EdgeInsets.only(left: 4),
                           child: VideoControls(
                             controller: controller,
+                            db: widget.db,
                             setState: setState,
                           ),
                         ),

@@ -26,5 +26,9 @@ abstract class ThumbnailData {
 abstract interface class ThumbnailService {
   void clear();
 
+  ThumbnailData? get(int id);
+
+  void delete(int id);
+
   void addAll(List<ThumbId> l);
 }

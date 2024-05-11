@@ -12,7 +12,6 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -33,22 +32,28 @@ class BookmarkPage extends StatefulWidget {
     required this.generateGlue,
     required this.pagingRegistry,
     required this.scrollUp,
+    required this.db,
   });
+
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final void Function() scrollUp;
+
+  final DbConn db;
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
 }
 
 class _BookmarkPageState extends State<BookmarkPage> {
+  GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
+
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> settingsWatcher;
   final List<GridStateBooru> gridStates = [];
 
-  SettingsData settings = SettingsService.currentData;
+  SettingsData settings = SettingsService.db().current;
 
   final m = <String, List<Post>>{};
 
@@ -73,15 +78,16 @@ class _BookmarkPageState extends State<BookmarkPage> {
       setState(() {});
     });
 
-    watcher = Dbs.g.main.gridStateBoorus
-        .watchLazy(fireImmediately: true)
-        .listen((event) {
-      if (inInner) {
-        dirty = true;
-      } else {
-        _updateDirectly();
-      }
-    });
+    watcher = gridStateBooru.watch(
+      (event) {
+        if (inInner) {
+          dirty = true;
+        } else {
+          _updateDirectly();
+        }
+      },
+      true,
+    );
   }
 
   List<Post> getSingle(Isar db) => switch (settings.safeMode) {
@@ -102,10 +108,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   Future<void> _updateDirectly() async {
     gridStates.clear();
-
-    gridStates.addAll(
-      Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync(),
-    );
+    gridStates.addAll(gridStateBooru.all);
 
     if (m.isEmpty) {
       for (final e in gridStates) {
@@ -138,10 +141,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   void launchGrid(BuildContext context, GridStateBooru e) {
-    Dbs.g.main.writeTxnSync(
-      () => Dbs.g.main.gridStateBoorus
-          .putByNameSync(e.copy(time: DateTime.now())),
-    );
+    e.copy(time: DateTime.now()).save();
 
     widget.saveSelectedPage(e.name);
 
@@ -207,6 +207,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
             key: ValueKey(e.name),
             state: e,
             title: e.tags,
+            db: gridStateBooru,
             subtitle: e.booru.string,
             posts: posts,
           ),
@@ -286,12 +287,16 @@ class _BookmarkListTile extends StatefulWidget {
     required this.state,
     required this.onPressed,
     required this.posts,
+    required this.db,
   });
+
   final String title;
   final String subtitle;
   final GridStateBooru state;
   final void Function(BuildContext context, GridStateBooru e) onPressed;
   final List<Post> posts;
+
+  final GridStateBooruService db;
 
   @override
   State<_BookmarkListTile> createState() => __BookmarkListTileState();
@@ -432,12 +437,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                           .close(deleteFromDisk: true)
                                           .then((value) {
                                         if (value) {
-                                          Dbs.g.main.writeTxnSync(
-                                            () => Dbs.g.main.gridStateBoorus
-                                                .deleteByNameSync(
-                                              widget.state.name,
-                                            ),
-                                          );
+                                          widget.db.delete(widget.state.name);
                                         }
 
                                         Navigator.pop(context);

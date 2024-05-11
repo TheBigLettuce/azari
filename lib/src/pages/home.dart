@@ -10,8 +10,7 @@ import "dart:math";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -54,7 +53,7 @@ class _HomeState extends State<Home>
         _AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
   final state = SkeletonState();
-  final settings = SettingsService.currentData;
+  final settings = SettingsService.db().current;
 
   bool isRefreshing = false;
 
@@ -63,8 +62,6 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
-
-    final settings = SettingsService.currentData;
 
     initChangePage(this, settings);
     initIcons(this);

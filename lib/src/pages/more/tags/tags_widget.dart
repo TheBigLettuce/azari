@@ -9,9 +9,8 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/make_tags.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
@@ -24,7 +23,8 @@ class TagsWidget extends StatefulWidget {
     required this.onPress,
     this.leading,
   });
-  final void Function(Tag tag, SafeMode? safeMode)? onPress;
+
+  final void Function(String tag, SafeMode? safeMode)? onPress;
   final bool redBackground;
   final BooruTagging tagging;
   final Widget? leading;
@@ -35,7 +35,7 @@ class TagsWidget extends StatefulWidget {
 
 class _TagsWidgetState extends State<TagsWidget> {
   late final StreamSubscription<void> watcher;
-  late final List<Tag> _tags = widget.tagging.get(30);
+  late final List<TagData> _tags = widget.tagging.get(30);
   int refreshes = 0;
 
   @override
@@ -115,10 +115,11 @@ class SingleTagWidget extends StatelessWidget {
     required this.tagging,
     required this.redBackground,
   });
-  final Tag tag;
+
+  final TagData tag;
   final BooruTagging tagging;
   final bool redBackground;
-  final void Function(Tag tag, SafeMode? safeMode)? onPress;
+  final void Function(String tag, SafeMode? safeMode)? onPress;
 
   @override
   Widget build(BuildContext context) {
@@ -130,12 +131,12 @@ class SingleTagWidget extends StatelessWidget {
             context,
             tag.tag,
             (context, _, [safeMode]) {
-              onPress!(tag, safeMode);
+              onPress!(tag.tag, safeMode);
             },
           ),
         PopupMenuItem(
           onTap: () {
-            tagging.delete(tag);
+            tagging.delete(tag.tag);
           },
           child: Text(AppLocalizations.of(context)!.delete),
         ),
@@ -150,7 +151,7 @@ class SingleTagWidget extends StatelessWidget {
         onPressed: onPress == null
             ? null
             : () {
-                onPress!(tag, null);
+                onPress!(tag.tag, null);
               },
         child: Text(
           tag.tag,

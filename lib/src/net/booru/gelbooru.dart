@@ -12,7 +12,6 @@ import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/booru/strip_html.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/net/booru/conventers/gelbooru.dart";
 import "package:xml/xml.dart";
@@ -119,7 +118,7 @@ class Gelbooru implements BooruAPI {
     };
 
     final String safeMode =
-        switch (overrideSafeMode ?? SettingsService.currentData.safeMode) {
+        switch (overrideSafeMode ?? SettingsService.db().current.safeMode) {
       SafeMode.none => "",
       SafeMode.normal => "rating:general",
       SafeMode.relaxed => "-rating:explicit -rating:questionable",

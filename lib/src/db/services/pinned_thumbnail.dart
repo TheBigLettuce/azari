@@ -21,5 +21,8 @@ abstract class PinnedThumbnailData {
 abstract interface class PinnedThumbnailService {
   void clear();
 
+  void add(int id, String path, int differenceHash);
+  PinnedThumbnailData? get(int id);
+
   bool delete(int id);
 }

@@ -8,10 +8,9 @@
 import "package:dio/dio.dart";
 import "package:dio_cookie_manager/dio_cookie_manager.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/net/booru/danbooru.dart";
 import "package:gallery/src/net/booru/gelbooru.dart";
 import "package:gallery/src/net/cookie_jar_tab.dart";
@@ -76,7 +75,7 @@ abstract class BooruAPI {
   /// that is, it makes refreshes on restore few.
   static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
     return BooruAPI.fromEnum(
-      SettingsService.currentData.selectedBooru,
+      SettingsService.db().current.selectedBooru,
       client,
       pageSaver,
     );
@@ -97,13 +96,12 @@ abstract class BooruAPI {
     };
   }
 
-  static int numberOfElementsPerRefresh() {
-    final settings = GridSettingsBooru.current();
-    if (settings.layoutType == GridLayoutType.list) {
-      return 20;
+  static int numberOfElementsPerRefresh(GridSettingsData data) {
+    if (data.layoutType == GridLayoutType.list) {
+      return 40;
     }
 
-    return 15 * settings.columns.number;
+    return 15 * data.columns.number;
   }
 }
 
