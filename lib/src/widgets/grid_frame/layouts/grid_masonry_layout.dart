@@ -17,13 +17,13 @@ class GridMasonryLayout<T extends CellBase> extends StatelessWidget {
     required this.randomNumber,
   });
 
-  final double randomNumber;
+  final int randomNumber;
 
   @override
   Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
     final extras = GridExtrasNotifier.of<T>(context);
-    final config = GridConfigurationNotifier.of(context);
+    final config = GridConfiguration.of(context);
 
     final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
         config.columns.number;

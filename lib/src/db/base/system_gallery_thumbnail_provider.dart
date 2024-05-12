@@ -107,7 +107,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
       }
 
       _thumbLoadingStatus[id] =
-          PlatformFunctions.getCachedThumb(id).whenComplete(() {
+          const AndroidApiFunctions().getCachedThumb(id).whenComplete(() {
         _thumbLoadingStatus.remove(id);
       });
 

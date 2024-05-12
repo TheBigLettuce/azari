@@ -6,26 +6,27 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
+// import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 
-class PagingContainer<T extends CellBase, J> {
-  PagingContainer(this.extra);
+abstract class PagingContainer<T extends CellBase, J> {
+  // PagingContainer(this.extra);
 
-  final J extra;
+  // final J extra;
 
-  int page = 0;
-  double scrollPos = 0;
+  // int page = 0;
+  // double scrollPos = 0;
 
-  bool reachedEnd = false;
+  // bool reachedEnd = false;
 
-  late final GridRefreshingStatus<T> refreshingStatus =
-      GridRefreshingStatus<T>(0, () => reachedEnd);
+  // late final GridRefreshingStatus<T> refreshingStatus =
+  // GridRefreshingStatus<T>(0, () => reachedEnd);
 
-  void dispose() {
-    refreshingStatus.dispose();
-  }
+  void dispose();
+  // {
+  //   refreshingStatus.dispose();
+  // }
 
-  void updateScrollPos(double pos) {
-    scrollPos = pos;
-  }
+  // void updateScrollPos(double pos) {
+  //   scrollPos = pos;
+  // }
 }

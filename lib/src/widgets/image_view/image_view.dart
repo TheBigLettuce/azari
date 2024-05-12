@@ -13,7 +13,7 @@ import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/plugs/platform_fullscreens.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/body.dart";
@@ -35,7 +35,7 @@ class ImageViewStatistics {
 }
 
 abstract interface class ImageViewContentable {
-  Contentable content(BuildContext context);
+  Contentable content();
 }
 
 @immutable
@@ -78,13 +78,14 @@ class ImageView extends StatefulWidget {
     required this.onNearEnd,
     this.pageChange,
     this.download,
-    this.registerNotifiers,
+    // this.registerNotifiers,
     this.onRightSwitchPageEnd,
     this.onLeftSwitchPageEnd,
     this.gridContext,
   });
+
   final int startingCell;
-  final Contentable? Function(BuildContext context, int i) getCell;
+  final Contentable? Function(int i) getCell;
   final int cellCount;
   final void Function(int post) scrollUntill;
   final Future<int> Function()? onNearEnd;
@@ -92,7 +93,7 @@ class ImageView extends StatefulWidget {
   final void Function(ImageViewState state)? pageChange;
   final void Function()? onExit;
 
-  final InheritedWidget Function(Widget child)? registerNotifiers;
+  // final InheritedWidget Function(Widget child)? registerNotifiers;
 
   final ImageViewStatistics? statistics;
 
@@ -114,7 +115,7 @@ class ImageView extends StatefulWidget {
   static Future<void> launchWrapped(
     BuildContext context,
     int cellCount,
-    Contentable Function(BuildContext, int) cell, {
+    Contentable Function(int) cell, {
     int startingCell = 0,
     void Function(int)? download,
     Key? key,
@@ -151,8 +152,8 @@ class ImageView extends StatefulWidget {
       void Function(List<ImageTag> l),
     )? watchTags,
   ) {
-    final extras = GridExtrasNotifier.of(gridContext);
-    final config = GridConfigurationNotifier.of(gridContext);
+    final extras = GridExtrasNotifier.of<T>(gridContext);
+    final config = GridConfiguration.of(gridContext);
 
     functionality.selectionGlue.hideNavBar(true);
 
@@ -161,16 +162,17 @@ class ImageView extends StatefulWidget {
     return Navigator.of(gridContext, rootNavigator: true).push(
       MaterialPageRoute<void>(
         builder: (context) {
-          return ImageView(
+          final r = functionality.registerNotifiers;
+
+          final c = ImageView(
             updates: functionality.refreshingStatus.mutation.listenCount,
             gridContext: gridContext,
             statistics: imageDesctipion.statistics,
-            registerNotifiers: functionality.registerNotifiers,
             scrollUntill: (i) => extras.scrollTo(i, config),
             pageChange: imageDesctipion.pageChange,
             watchTags: watchTags,
             onExit: imageDesctipion.onExit,
-            getCell: (context, idx) => getCell(idx).content(context),
+            getCell: (idx) => getCell(idx).content(),
             cellCount: functionality.refreshingStatus.mutation.cellCount,
             download: functionality.download,
             startingCell: startingCell,
@@ -179,6 +181,8 @@ class ImageView extends StatefulWidget {
                 ? null
                 : functionality.refreshingStatus.onNearEnd,
           );
+
+          return r != null ? r(c) : c;
         },
       ),
     ).then((value) {
@@ -210,9 +214,6 @@ class ImageViewState extends State<ImageView>
 
   late final PageController controller =
       PageController(initialPage: widget.startingCell);
-
-  late final PlatformFullscreensPlug fullscreenPlug =
-      choosePlatformFullscreenPlug();
 
   StreamSubscription<int>? _updates;
 
@@ -258,7 +259,8 @@ class ImageViewState extends State<ImageView>
     loadCells(currentPage, cellCount);
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      fullscreenPlug.setTitle(drawCell(currentPage).widgets.alias(false));
+      PlatformApi.current()
+          .setTitle(drawCell(currentPage).widgets.alias(false));
       _loadNext(widget.startingCell);
     });
 
@@ -271,7 +273,7 @@ class ImageViewState extends State<ImageView>
     bottomSheetController.dispose();
     _updates?.cancel();
 
-    fullscreenPlug.unfullscreen();
+    PlatformApi.current().setFullscreen(false);
 
     WakelockPlus.disable();
     controller.dispose();
@@ -342,7 +344,7 @@ class ImageViewState extends State<ImageView>
   }
 
   void _onTap() {
-    wrapNotifiersKey.currentState?.toggle(fullscreenPlug);
+    wrapNotifiersKey.currentState?.toggle();
   }
 
   void _onTagRefresh() {
@@ -367,7 +369,7 @@ class ImageViewState extends State<ImageView>
 
     final c = drawCell(index);
 
-    fullscreenPlug.setTitle(c.widgets.alias(false));
+    PlatformApi.current().setTitle(c.widgets.alias(false));
 
     refreshPalette();
 
@@ -421,7 +423,6 @@ class ImageViewState extends State<ImageView>
         key: wrapNotifiersKey,
         onTagRefresh: _onTagRefresh,
         currentCell: drawCell(currentPage),
-        registerNotifiers: widget.registerNotifiers,
         child: WrapImageViewTheme(
           key: wrapThemeKey,
           currentPalette: currentPalette,

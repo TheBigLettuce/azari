@@ -11,6 +11,7 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard.dart";
 import "package:gallery/src/pages/more/downloads.dart";
@@ -21,7 +22,10 @@ import "package:gallery/src/widgets/restart_widget.dart";
 class MorePage extends StatelessWidget {
   const MorePage({
     super.key,
+    required this.db,
   });
+
+  final DbConn db;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +80,8 @@ class MorePage extends StatelessWidget {
                           builder: (context) {
                             return Downloads(
                               generateGlue: g,
+                              downloadManager: DownloadManager.of(context),
+                              db: db,
                             );
                           },
                         ),
@@ -93,6 +99,7 @@ class MorePage extends StatelessWidget {
                         MaterialPageRoute<void>(
                           builder: (context) => BlacklistedPage(
                             generateGlue: g,
+                            db: db,
                           ),
                         ),
                       );

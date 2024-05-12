@@ -67,7 +67,7 @@ class AnimePicture
   final String thumbUrl;
 
   @override
-  Contentable openImage(BuildContext context) => NetImage(
+  Contentable openImage() => NetImage(
         this,
         CachedNetworkImageProvider(imageUrl),
       );

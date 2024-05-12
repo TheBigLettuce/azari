@@ -24,6 +24,8 @@ abstract class ThumbnailData {
 }
 
 abstract interface class ThumbnailService {
+  factory ThumbnailService.db() => _currentDb.thumbnails;
+
   void clear();
 
   ThumbnailData? get(int id);

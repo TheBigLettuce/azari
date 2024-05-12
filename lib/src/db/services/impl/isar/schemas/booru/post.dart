@@ -7,6 +7,7 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -32,6 +33,7 @@ class PostIsar extends PostBase
     required super.rating,
     required super.score,
     required super.createdAt,
+    required super.type,
   });
 
   @override
@@ -53,6 +55,7 @@ class PostIsar extends PostBase
           rating: e.rating,
           score: e.score,
           createdAt: e.createdAt,
+          type: e.type,
         ),
       )
       .toList();

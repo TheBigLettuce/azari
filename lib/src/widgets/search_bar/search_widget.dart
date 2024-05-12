@@ -45,7 +45,7 @@ class _FilteringSearchWidgetState<T extends CellBase>
   void initState() {
     super.initState();
 
-    _watcher = filter.watch((_) {
+    _watcher = filter.backingStorage.watch((_) {
       setState(() {});
     });
   }
@@ -53,7 +53,6 @@ class _FilteringSearchWidgetState<T extends CellBase>
   @override
   void dispose() {
     _watcher.cancel();
-    focusNode.dispose();
 
     super.dispose();
   }

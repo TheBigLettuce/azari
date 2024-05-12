@@ -9,24 +9,26 @@ import "package:pigeon/pigeon.dart";
 
 @ConfigurePigeon(
   PigeonOptions(
-      dartOut: "lib/src/plugs/gallery/android/api.g.dart",
-      dartTestOut: "test/test_api.g.dart",
-      kotlinOut:
-          "android/app/src/main/kotlin/lol/bruh19/azari/gallery/Gallery.kt",
-      kotlinOptions: KotlinOptions(
-        package: "lol.bruh19.azari.gallery",
-      ),
-      copyrightHeader: "pigeons/copyright.txt",),
+    dartOut: "lib/src/plugs/gallery/android/api.g.dart",
+    dartTestOut: "test/test_api.g.dart",
+    kotlinOut:
+        "android/app/src/main/kotlin/lol/bruh19/azari/gallery/Gallery.kt",
+    kotlinOptions: KotlinOptions(
+      package: "lol.bruh19.azari.gallery",
+    ),
+    copyrightHeader: "pigeons/copyright.txt",
+  ),
 )
 class Directory {
+  const Directory({
+    required this.bucketId,
+    required this.thumbFileId,
+    required this.relativeLoc,
+    required this.name,
+    required this.volumeName,
+    required this.lastModified,
+  });
 
-  const Directory(
-      {required this.bucketId,
-      required this.thumbFileId,
-      required this.relativeLoc,
-      required this.name,
-      required this.volumeName,
-      required this.lastModified,});
   final int thumbFileId;
   final String bucketId;
   final String name;
@@ -37,7 +39,6 @@ class Directory {
 }
 
 class DirectoryFile {
-
   const DirectoryFile({
     required this.id,
     required this.bucketId,
@@ -51,6 +52,7 @@ class DirectoryFile {
     required this.width,
     required this.isVideo,
   });
+
   final int id;
   final String bucketId;
   final String bucketName;
@@ -71,9 +73,14 @@ class DirectoryFile {
 
 @FlutterApi()
 abstract class GalleryApi {
-  void updateDirectories(List<Directory> d, bool inRefresh, bool empty);
-  void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
-      bool inRefresh, bool empty,);
+  bool updateDirectories(Map<String, Directory> d, bool inRefresh, bool empty);
+  bool updatePictures(
+    List<DirectoryFile?> f,
+    String bucketId,
+    int startTime,
+    bool inRefresh,
+    bool empty,
+  );
 
   void notifyNetworkStatus(bool hasInternet);
 
@@ -81,8 +88,8 @@ abstract class GalleryApi {
 }
 
 class CopyOp {
-
   const CopyOp({required this.from, required this.to});
+
   final String from;
   final String to;
 }

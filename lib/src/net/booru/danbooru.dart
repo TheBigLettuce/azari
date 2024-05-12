@@ -132,7 +132,7 @@ class Danbooru implements BooruAPI {
         };
 
     final query = <String, dynamic>{
-      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
+      "limit": numberOfElementsPerRefresh().toString(),
       "format": "json",
 
       "post[tags]":

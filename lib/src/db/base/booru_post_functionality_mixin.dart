@@ -95,7 +95,7 @@ class ShareButton extends StatelessWidget {
       onLongPress: onLongPress,
       child: IconButton(
         onPressed: () {
-          PlatformFunctions.shareMedia(url, url: true);
+          PlatformApi.current().shareMedia(url, url: true);
         },
         icon: const Icon(Icons.share),
       ),

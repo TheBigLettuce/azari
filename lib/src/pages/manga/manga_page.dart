@@ -11,7 +11,6 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
@@ -21,11 +20,12 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
@@ -72,6 +72,13 @@ class _MangaPageState extends State<MangaPage> {
   bool dirty = false;
 
   bool inInner = false;
+
+  final gridSettings = GridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.zeroSeven,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.grid,
+  );
 
   @override
   void initState() {
@@ -199,10 +206,13 @@ class _MangaPageState extends State<MangaPage> {
       state,
       (context) => GridFrame<CompactMangaData>(
         key: state.gridKey,
-        layout: _ReadingLayout(
-          startReading: _startReading,
-          pinnedMangaKey: _pinnedKey,
-        ),
+        slivers: [
+          _ReadingLayout(
+            mutation: state.refreshingStatus.mutation,
+            startReading: _startReading,
+            gridSeed: state.gridSeed,
+          ),
+        ],
         functionality: GridFunctionality(
           registerNotifiers: (child) {
             return MangaPageDataNotifier(
@@ -243,13 +253,99 @@ class _MangaPageState extends State<MangaPage> {
       onPop: widget.procPop,
     );
 
-    return SafeArea(
-      bottom: false,
-      child: widget.wrapGridPage
-          ? WrapGridPage(
-              child: child,
-            )
-          : child,
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: SafeArea(
+        bottom: false,
+        child: widget.wrapGridPage
+            ? WrapGridPage(
+                child: child,
+              )
+            : child,
+      ),
+    );
+  }
+}
+
+class _ReadingLayout extends StatefulWidget {
+  const _ReadingLayout({
+    super.key,
+    required this.mutation,
+    required this.startReading,
+    required this.gridSeed,
+  });
+
+  final GridMutationInterface mutation;
+  final void Function(int i) startReading;
+
+  final int gridSeed;
+
+  @override
+  State<_ReadingLayout> createState() => __ReadingLayoutState();
+}
+
+class __ReadingLayoutState extends State<_ReadingLayout> {
+  GridMutationInterface get mutation => widget.mutation;
+
+  late final StreamSubscription<void> _watcher;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _watcher = mutation.listenCount((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (mutation.cellCount == 0) {
+      return SliverToBoxAdapter(
+        child: EmptyWidget(
+          gridSeed: widget.gridSeed,
+        ),
+      );
+    }
+
+    final config = GridConfiguration.of(context);
+    final getCell = CellProvider.of<CompactMangaData>(context);
+    final extras = GridExtrasNotifier.of<CompactMangaData>(context);
+
+    return SliverPadding(
+      padding: const EdgeInsets.only(left: 14, right: 14),
+      sliver: SliverGrid.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: config.columns.number,
+          childAspectRatio: config.aspectRatio.value,
+        ),
+        itemCount: mutation.cellCount,
+        itemBuilder: (context, idx) {
+          final cell = getCell(idx);
+
+          return MangaReadingCard<CompactMangaData>(
+            cell: cell,
+            idx: idx,
+            onLongPressed: (_, i) => widget.startReading(i),
+            onPressed: (cell, idx) {
+              cell.onPress(
+                context,
+                extras.functionality,
+                cell,
+                idx,
+              );
+            },
+            db: DatabaseConnectionNotifier.of(context).readMangaChapters,
+          );
+        },
+      ),
     );
   }
 }
@@ -329,7 +425,7 @@ class _ReadingFabState extends State<ReadingFab>
     return FloatingActionButton.extended(
       isExtended: extended,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        borderRadius: BorderRadius.all(Radius.circular(16)),
       ).lerpTo(
         const CircleBorder(),
         Easing.standard.transform(animation.value),
@@ -346,83 +442,6 @@ class _ReadingFabState extends State<ReadingFab>
       icon: const Icon(Icons.search),
     );
   }
-}
-
-class _ReadingLayout
-    implements GridLayouter<CompactMangaData>, GridLayoutBehaviour {
-  const _ReadingLayout({
-    required this.startReading,
-    required this.pinnedMangaKey,
-  });
-
-  final void Function(int idx) startReading;
-  final GlobalKey<_PinnedMangaWidgetState> pinnedMangaKey;
-
-  static GridSettingsBase _defaultSettings() => const GridSettingsBase(
-        aspectRatio: GridAspectRatio.zeroSeven,
-        columns: GridColumn.three,
-        layoutType: GridLayoutType.grid,
-        hideName: false,
-      );
-
-  @override
-  GridSettingsBase Function() get defaultSettings => _defaultSettings;
-
-  @override
-  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
-    return this as GridLayouter<T>;
-  }
-
-  void onLongPressed(CompactMangaData e, int idx) {
-    startReading(idx);
-  }
-
-  @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsBase settings,
-    GridFrameState<CompactMangaData> state,
-  ) {
-    return [
-      if (state.mutation.cellCount == 0)
-        SliverToBoxAdapter(
-          child: EmptyWidget(
-            gridSeed: state.widget.description.gridSeed,
-          ),
-        )
-      else
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 14, right: 14),
-          sliver: SliverGrid.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: settings.columns.number,
-              childAspectRatio: settings.aspectRatio.value,
-            ),
-            itemCount: state.mutation.cellCount,
-            itemBuilder: (context, index) {
-              final cell = state.widget.getCell(index);
-
-              return MangaReadingCard<CompactMangaData>(
-                cell: cell,
-                idx: index,
-                onLongPressed: onLongPressed,
-                onPressed: (cell, idx) {
-                  cell.onPress(
-                    context,
-                    state.widget.functionality,
-                    cell,
-                    idx,
-                  );
-                },
-              );
-            },
-          ),
-        ),
-    ];
-  }
-
-  @override
-  bool get isList => false;
 }
 
 class _PinnedMangaWidget extends StatefulWidget
@@ -452,6 +471,13 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
     clearRefresh: SynchronousGridRefresh(() => data.length),
   );
 
+  final gridSettings = GridSettingsData.noPersist(
+    columns: GridColumn.three,
+    aspectRatio: GridAspectRatio.one,
+    layoutType: GridLayoutType.grid,
+    hideName: false,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -469,6 +495,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
   @override
   void dispose() {
+    gridSettings.cancel();
     watcher.cancel();
     state.dispose();
 
@@ -477,57 +504,54 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
   @override
   Widget build(BuildContext context) {
-    return SliverPadding(
-      padding: const EdgeInsets.only(left: 14, right: 14),
-      sliver: GridFrame<PinnedManga>(
-        key: state.gridKey,
-        overrideController: widget.controller,
-        getCell: (i) => data[data.length - 1 - i],
-        functionality: GridFunctionality(
-          selectionGlue: widget.glue,
-          refreshingStatus: state.refreshingStatus,
-        ),
-        layout: GridSettingsLayoutBehaviour(
-          () => const GridSettingsBase(
-            columns: GridColumn.three,
-            aspectRatio: GridAspectRatio.one,
-            layoutType: GridLayoutType.grid,
-            hideName: false,
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: GridFrame<PinnedManga>(
+          key: state.gridKey,
+          slivers: const [GridLayout()],
+          overrideController: widget.controller,
+          getCell: (i) => data[data.length - 1 - i],
+          functionality: GridFunctionality(
+            selectionGlue: widget.glue,
+            refreshingStatus: state.refreshingStatus,
           ),
-        ),
-        mainFocus: state.mainFocus,
-        description: GridDescription(
-          actions: [
-            GridAction(
-              Icons.push_pin_rounded,
-              (selected) {
-                final deleted = deleteAll(
-                  selected
-                      .map((e) => (MangaStringId(e.mangaId), e.site))
-                      .toList(),
-                );
+          mainFocus: state.mainFocus,
+          description: GridDescription(
+            actions: [
+              GridAction(
+                Icons.push_pin_rounded,
+                (selected) {
+                  final deleted = deleteAll(
+                    selected
+                        .map((e) => (MangaStringId(e.mangaId), e.site))
+                        .toList(),
+                  );
 
-                if (deleted.isEmpty) {
-                  return;
-                }
+                  if (deleted.isEmpty) {
+                    return;
+                  }
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(AppLocalizations.of(context)!.mangaUnpinned),
-                    action: SnackBarAction(
-                      label: AppLocalizations.of(context)!.undoLabel,
-                      onPressed: () => reAdd(deleted),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text(AppLocalizations.of(context)!.mangaUnpinned),
+                      action: SnackBarAction(
+                        label: AppLocalizations.of(context)!.undoLabel,
+                        onPressed: () => reAdd(deleted),
+                      ),
                     ),
-                  ),
-                );
-              },
-              true,
-            ),
-          ],
-          gridSeed: state.gridSeed,
-          asSliver: true,
-          showAppBar: false,
-          keybindsDescription: "Pinned manga",
+                  );
+                },
+                true,
+              ),
+            ],
+            gridSeed: state.gridSeed,
+            asSliver: true,
+            showAppBar: false,
+            keybindsDescription: "Pinned manga",
+          ),
         ),
       ),
     );

@@ -23,6 +23,8 @@ class IsarGridStateBooru extends GridStateBase with GridStateBooru {
     required super.time,
   });
 
+  Id? isarId;
+
   @override
   @enumerated
   final Booru booru;

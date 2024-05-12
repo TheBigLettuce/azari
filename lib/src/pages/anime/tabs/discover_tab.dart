@@ -19,14 +19,22 @@ class DiscoverTab extends StatefulWidget {
   const DiscoverTab({
     super.key,
     required this.procPop,
-    required this.pagingContainer,
     required this.api,
+    required this.db,
+    required this.registry,
   });
-  final void Function(bool) procPop;
-  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
-  final AnimeAPI api;
 
-  static List<GridAction<AnimeSearchEntry>> actions() => [
+  final void Function(bool) procPop;
+  final AnimeAPI api;
+  final PagingStateRegistry registry;
+
+  final DbConn db;
+
+  static List<GridAction<AnimeSearchEntry>> actions(
+    SavedAnimeEntriesService savedAnimeEntries,
+    WatchedAnimeEntryService watchedAnimeEntries,
+  ) =>
+      [
         GridAction(
           Icons.add,
           (selected) {
@@ -34,7 +42,7 @@ class DiscoverTab extends StatefulWidget {
             final toAdd = <AnimeSearchEntry>[];
 
             for (final e in selected) {
-              final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
+              final entry = savedAnimeEntries.maybeGet(e.id, e.site);
               if (entry == null) {
                 toAdd.add(e);
               } else if (entry.inBacklog) {
@@ -42,10 +50,8 @@ class DiscoverTab extends StatefulWidget {
               }
             }
 
-            SavedAnimeEntry.addAll(toAdd);
-            SavedAnimeEntry.deleteAllIds(
-              toDelete.map((e) => (e.id, e.site)).toList(),
-            );
+            savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
+            savedAnimeEntries.deleteAll(toDelete.toIds);
           },
           true,
         ),
@@ -55,37 +61,109 @@ class DiscoverTab extends StatefulWidget {
   State<DiscoverTab> createState() => _DiscoverTabState();
 }
 
+class _DiscoverPagingEntry implements PagingEntry {
+  _DiscoverPagingEntry(this.api);
+
+  factory _DiscoverPagingEntry.prototype(AnimeAPI api) =>
+      _DiscoverPagingEntry(api);
+
+  final entries = <AnimeSearchEntry>[];
+  final AnimeAPI api;
+
+  late final GridRefreshingStatus<AnimeSearchEntry> refreshingStatus =
+      GridRefreshingStatus(
+    0,
+    () => false,
+    clearRefresh: AsyncGridRefresh(() async {
+      entries.clear();
+      page = 0;
+      reachedEnd = false;
+
+      final p = await api.search(
+        searchText,
+        page,
+        genreId,
+        mode,
+      );
+
+      entries.addAll(p);
+
+      return entries.length;
+    }),
+    next: () async {
+      final p = await api.search(
+        searchText,
+        page + 1,
+        genreId,
+        mode,
+      );
+
+      page += 1;
+
+      if (p.isEmpty) {
+        reachedEnd = true;
+      }
+      entries.addAll(p);
+
+      return entries.length;
+    },
+  );
+
+  Future<Map<int, AnimeGenre>>? future;
+
+  int? genreId;
+
+  String searchText = "";
+
+  AnimeSafeMode mode = AnimeSafeMode.safe;
+
+  @override
+  int page = 0;
+
+  @override
+  bool reachedEnd = false;
+
+  @override
+  void dispose() {
+    refreshingStatus.dispose();
+  }
+
+  @override
+  double offset = 0;
+
+  @override
+  void setOffset(double o) => offset = o;
+
+  @override
+  void updateTime() {}
+}
+
 class _DiscoverTabState extends State<DiscoverTab> {
-  late final StreamSubscription<GridSettingsData?> gridSettingsWatcher;
-  late final GridSkeletonState<AnimeSearchEntry> state;
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+  WatchableGridSettingsData get gridSettings =>
+      widget.db.gridSettings.animeDiscovery;
 
-  GridSettingsData gridSettings = GridSettingsAnimeDiscovery.current;
+  final GridSkeletonState<AnimeSearchEntry> state =
+      GridSkeletonState<AnimeSearchEntry>();
 
-  PagingContainer<AnimeSearchEntry, DiscoverExtra> get container =>
-      widget.pagingContainer;
-  List<AnimeSearchEntry> get entries => container.extra.entries;
+  List<AnimeSearchEntry> get entries => pagingState.entries;
+
+  late final _DiscoverPagingEntry pagingState;
 
   @override
   void initState() {
     super.initState();
 
-    state = GridSkeletonRefreshingState<AnimeSearchEntry>(
-      initalCellCount: entries.length,
-      clearRefresh: AsyncGridRefresh(_refresh),
-      next: _loadNext,
+    pagingState = widget.registry.getOrRegister(
+      "discover",
+      () => _DiscoverPagingEntry.prototype(widget.api),
     );
-
-    gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
-      gridSettings = e!;
-
-      setState(() {});
-    });
   }
 
   @override
   void dispose() {
     state.dispose();
-    gridSettingsWatcher.cancel();
 
     super.dispose();
   }
@@ -101,23 +179,23 @@ class _DiscoverTabState extends State<DiscoverTab> {
           child: SearchOptions<int, AnimeGenre>(
             info: widget.api.site.name,
             setCurrentGenre: (g) {
-              container.extra.genreId = g;
+              pagingState.genreId = g;
 
-              container.refreshingStatus.refresh();
+              pagingState.refreshingStatus.refresh();
             },
-            initalGenreId: container.extra.genreId,
+            initalGenreId: pagingState.genreId,
             header: _SearchBar(
-              pagingContainer: container,
+              pagingState: pagingState,
               gridKey: state.gridKey,
             ),
             genreFuture: () {
-              if (container.extra.future != null) {
-                return container.extra.future!;
+              if (pagingState.future != null) {
+                return pagingState.future!;
               }
 
-              container.extra.future = widget.api.genres(AnimeSafeMode.safe);
+              pagingState.future = widget.api.genres(AnimeSafeMode.safe);
 
-              return container.extra.future!;
+              return pagingState.future!;
             },
             idFromGenre: (genre) => (genre.id, genre.title),
           ),
@@ -126,82 +204,50 @@ class _DiscoverTabState extends State<DiscoverTab> {
     );
   }
 
-  Future<int> _loadNext() async {
-    final p = await widget.api.search(
-      container.extra.searchText,
-      container.page + 1,
-      container.extra.genreId,
-      container.extra.mode,
-    );
-
-    container.page += 1;
-
-    if (p.isEmpty) {
-      container.reachedEnd = true;
-    }
-    entries.addAll(p);
-
-    return entries.length;
-  }
-
-  Future<int> _refresh() async {
-    entries.clear();
-    container.page = 0;
-    container.reachedEnd = false;
-
-    final p = await widget.api.search(
-      container.extra.searchText,
-      container.page,
-      container.extra.genreId,
-      container.extra.mode,
-    );
-
-    entries.addAll(p);
-
-    return entries.length;
-  }
-
-  GridSettingsBase _settings() => GridSettingsBase(
-        aspectRatio: GridAspectRatio.zeroSeven,
-        columns: gridSettings.columns,
-        layoutType: GridLayoutType.grid,
-        hideName: false,
-      );
-
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<AnimeSearchEntry>(
-      state,
-      (context) => GridFrame<AnimeSearchEntry>(
-        key: state.gridKey,
-        layout: GridSettingsLayoutBehaviour(_settings),
-        getCell: (i) => entries[i],
-        initalScrollPosition: widget.pagingContainer.scrollPos,
-        functionality: GridFunctionality(
-          updateScrollPosition: widget.pagingContainer.updateScrollPos,
-          selectionGlue: GlueProvider.generateOf(context)(),
-          refreshingStatus: widget.pagingContainer.refreshingStatus,
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: GridSkeleton<AnimeSearchEntry>(
+        state,
+        (context) => GridFrame<AnimeSearchEntry>(
+          key: state.gridKey,
+          slivers: [
+            CurrentGridSettingsLayout(
+              mutation: pagingState.refreshingStatus.mutation,
+              gridSeed: state.gridSeed,
+            )
+          ],
+          getCell: (i) => entries[i],
+          initalScrollPosition: pagingState.offset,
+          functionality: GridFunctionality(
+            updateScrollPosition: pagingState.setOffset,
+            selectionGlue: GlueProvider.generateOf(context)(),
+            refreshingStatus: pagingState.refreshingStatus,
+          ),
+          mainFocus: state.mainFocus,
+          description: GridDescription(
+            actions:
+                DiscoverTab.actions(savedAnimeEntries, watchedAnimeEntries),
+            showAppBar: false,
+            keybindsDescription: AppLocalizations.of(context)!.discoverTab,
+            gridSeed: state.gridSeed,
+          ),
         ),
-        mainFocus: state.mainFocus,
-        description: GridDescription(
-          actions: DiscoverTab.actions(),
-          showAppBar: false,
-          keybindsDescription: AppLocalizations.of(context)!.discoverTab,
-          gridSeed: state.gridSeed,
-        ),
+        canPop: false,
+        onPop: widget.procPop,
       ),
-      canPop: false,
-      onPop: widget.procPop,
     );
   }
 }
 
 class _SearchBar extends StatefulWidget {
   const _SearchBar({
-    required this.pagingContainer,
+    required this.pagingState,
     required this.gridKey,
   });
-  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
+
+  final _DiscoverPagingEntry pagingState;
   final GlobalKey<GridFrameState> gridKey;
 
   @override
@@ -211,14 +257,13 @@ class _SearchBar extends StatefulWidget {
 class __SearchBarState extends State<_SearchBar> {
   late final TextEditingController controller;
 
-  PagingContainer<AnimeEntryData, DiscoverExtra> get container =>
-      widget.pagingContainer;
+  _DiscoverPagingEntry get pagingState => widget.pagingState;
 
   @override
   void initState() {
     super.initState();
 
-    controller = TextEditingController(text: container.extra.searchText);
+    controller = TextEditingController(text: pagingState.searchText);
   }
 
   @override
@@ -234,11 +279,11 @@ class __SearchBarState extends State<_SearchBar> {
       return;
     }
 
-    if (value == container.extra.searchText) {
+    if (value == pagingState.searchText) {
       return;
     }
 
-    container.extra.searchText = value;
+    pagingState.searchText = value;
     gridState.refreshingStatus.updateProgress?.ignore();
     gridState.refreshingStatus.updateProgress = null;
     gridState.refreshingStatus.refresh();
@@ -258,11 +303,11 @@ class __SearchBarState extends State<_SearchBar> {
         StatefulBuilder(
           builder: (context, setState) {
             return SafetyButton(
-              mode: container.extra.mode,
+              mode: pagingState.mode,
               set: (m) {
-                container.extra.mode = m;
+                pagingState.mode = m;
 
-                container.refreshingStatus.refresh();
+                pagingState.refreshingStatus.refresh();
 
                 setState(() {});
               },

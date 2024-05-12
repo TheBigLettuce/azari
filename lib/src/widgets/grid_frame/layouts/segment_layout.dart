@@ -360,7 +360,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
   @override
   Widget build(BuildContext context) {
     final extras = GridExtrasNotifier.of<T>(context);
-    final config = GridConfigurationNotifier.of(context);
+    final config = GridConfiguration.of(context);
 
     return SegmentLayoutBody(
       data: _data,

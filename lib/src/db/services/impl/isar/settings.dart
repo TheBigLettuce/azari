@@ -13,7 +13,8 @@ class IsarSettingsService implements SettingsService {
 
   @override
   void add(SettingsData data) => _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarSettings.putSync(this as IsarSettings));
+        () => _Dbs.g.main.isarSettings.putSync(data as IsarSettings),
+      );
 
   /// Pick an operating system directory.
   /// Calls [onError] in case of any error and resolves to false.
@@ -28,7 +29,7 @@ class IsarSettingsService implements SettingsService {
 
     if (Platform.isAndroid) {
       try {
-        resp = (await PlatformFunctions.chooseDirectory())!;
+        resp = (await const AndroidApiFunctions().chooseDirectory())!;
       } catch (e) {
         onError(emptyResult);
         return false;

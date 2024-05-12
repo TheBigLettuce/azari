@@ -11,13 +11,6 @@ import "dart:math" as math;
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/anime_discovery.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
@@ -27,15 +20,16 @@ import "package:gallery/src/net/anime/jikan.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/paging_container.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/pages/more/tab_with_count.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
@@ -56,15 +50,19 @@ const int kDiscoverTabIndx = 1;
 const int kWatchedTabIndx = 2;
 
 abstract interface class AnimeCell implements CellBase {
-  Contentable openImage(BuildContext context);
+  Contentable openImage();
 }
 
 class AnimePage extends StatefulWidget {
   const AnimePage({
     super.key,
     required this.procPop,
+    required this.db,
   });
+
   final void Function(bool) procPop;
+
+  final DbConn db;
 
   @override
   State<AnimePage> createState() => _AnimePageState();
@@ -72,6 +70,9 @@ class AnimePage extends StatefulWidget {
 
 class _AnimePageState extends State<AnimePage>
     with SingleTickerProviderStateMixin {
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+
   final watchingKey = GlobalKey<__WatchingTabState>();
   final tabKey = GlobalKey<_TabBarWrapperState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
@@ -86,12 +87,9 @@ class _AnimePageState extends State<AnimePage>
 
   int savedCount = 0;
 
-  int readingCount = ReadMangaChapter.countDistinct();
-
   final api = const Jikan();
 
-  final discoverContainer =
-      PagingContainer<AnimeSearchEntry, DiscoverExtra>(DiscoverExtra());
+  final registry = PagingStateRegistry();
 
   @override
   void initState() {
@@ -103,22 +101,22 @@ class _AnimePageState extends State<AnimePage>
       setState(() {});
     });
 
-    savedCount = SavedAnimeEntry.count();
+    savedCount = savedAnimeEntries.count;
 
-    watcher = SavedAnimeEntry.watchAll((_) {
-      savedCount = SavedAnimeEntry.count();
+    watcher = savedAnimeEntries.watchAll((_) {
+      savedCount = savedAnimeEntries.count;
 
       setState(() {});
     });
 
-    watcherWatched = WatchedAnimeEntry.watchAll((_) {
+    watcherWatched = watchedAnimeEntries.watchAll((_) {
       setState(() {});
     });
   }
 
   @override
   void dispose() {
-    discoverContainer.dispose();
+    registry.dispose();
 
     state.dispose();
     watcher.cancel();
@@ -182,7 +180,7 @@ class _AnimePageState extends State<AnimePage>
         Tab(text: AppLocalizations.of(context)!.discoverTab),
         TabWithCount(
           AppLocalizations.of(context)!.finishedTab,
-          WatchedAnimeEntry.count(),
+          watchedAnimeEntries.count,
         ),
       ],
     );
@@ -212,17 +210,20 @@ class _AnimePageState extends State<AnimePage>
               procPop: widget.procPop,
               key: watchingKey,
               onDispose: _hideResetSelection,
+              db: widget.db,
             ),
             DiscoverTab(
               api: api,
               key: discoverKey,
               procPop: widget.procPop,
-              pagingContainer: discoverContainer,
+              db: widget.db,
+              registry: registry,
             ),
             _FinishedTab(
               key: finishedKey,
               onDispose: _hideResetSelection,
               procPop: widget.procPop,
+              db: widget.db,
             ),
           ],
         ),

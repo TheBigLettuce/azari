@@ -33,7 +33,8 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
         onPressed: _status != null
             ? null
             : () {
-                _status = PlatformFunctions.setWallpaper(widget.id)
+                _status = PlatformApi.current()
+                    .setWallpaper(widget.id)
                     .onError((error, stackTrace) {
                   LogTarget.unknown.logDefaultImportant(
                     "setWallpaper".errorMessage(error),

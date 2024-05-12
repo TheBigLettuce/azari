@@ -19,6 +19,8 @@ abstract class PinnedThumbnailData {
 }
 
 abstract interface class PinnedThumbnailService {
+  factory PinnedThumbnailService.db() => _currentDb.pinnedThumbnails;
+
   void clear();
 
   void add(int id, String path, int differenceHash);

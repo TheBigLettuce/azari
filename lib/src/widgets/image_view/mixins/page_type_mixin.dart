@@ -41,10 +41,10 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   }
 
   void loadCells(int i, int maxCells) {
-    _currentCell = (widget.getCell(context, i)!, i);
+    _currentCell = (widget.getCell(i)!, i);
 
     if (i != 0 && !i.isNegative) {
-      final c2 = widget.getCell(context, i - 1);
+      final c2 = widget.getCell(i - 1);
 
       if (c2 != null) {
         _previousCell = (c2, i - 1);
@@ -64,7 +64,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
     }
 
     if (maxCells != i + 1) {
-      final c3 = widget.getCell(context, i + 1);
+      final c3 = widget.getCell(i + 1);
 
       if (c3 != null) {
         _nextCell = (c3, i + 1);

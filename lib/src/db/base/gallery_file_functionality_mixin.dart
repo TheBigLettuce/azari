@@ -28,10 +28,10 @@ mixin GalleryFileFunctionalityMixin {
     return [
       if (file.isVideo) Sticker(FilteringMode.video.icon),
       if (file.isGif) Sticker(FilteringMode.gif.icon),
-      if (file.isOriginal) Sticker(FilteringMode.original.icon),
+      // if (file.isOriginal) Sticker(FilteringMode.original.icon),
       if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
-      if (file.tagsFlat.contains("translated"))
-        const Sticker(Icons.translate_outlined),
+      // if (file.tagsFlat.contains("translated"))
+      const Sticker(Icons.translate_outlined),
     ];
   }
 
@@ -108,7 +108,8 @@ Future<void> loadNetworkThumb(
     try {
       final post = await api.singlePost(res.id);
 
-      final t = await PlatformFunctions.saveThumbNetwork(post.previewUrl, id);
+      final t = await const AndroidApiFunctions()
+          .saveThumbNetwork(post.previewUrl, id);
 
       thumbnails.delete(id);
       pinnedThumbnails.add(id, t.path, t.differenceHash);

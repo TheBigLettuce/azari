@@ -131,7 +131,7 @@ class Gelbooru implements BooruAPI {
       "pid": p.toString(),
       "json": "1",
       "tags": "$safeMode $excludedTagsString $tags",
-      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
+      "limit": numberOfElementsPerRefresh().toString(),
     };
 
     final resp = await client.getUriLog<Map<String, dynamic>>(

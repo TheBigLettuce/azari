@@ -12,6 +12,11 @@ extension SavedAnimeEntryDataExt on SavedAnimeEntryData {
       _currentDb.savedAnimeEntries.addAll([this], _currentDb.watchedAnime);
 }
 
+extension SavedAnimeEntryDataListExt on List<AnimeEntryData> {
+  List<(int id, AnimeMetadata site)> get toIds =>
+      map((e) => (e.id, e.site)).toList();
+}
+
 abstract interface class SavedAnimeEntriesService implements ServiceMarker {
   int get count;
 
@@ -24,7 +29,7 @@ abstract interface class SavedAnimeEntriesService implements ServiceMarker {
   void update(AnimeEntryData e);
 
   (bool, bool) isWatchingBacklog(int id, AnimeMetadata site);
-  void deleteAll(List<(AnimeMetadata, int)> ids);
+  void deleteAll(List<(int, AnimeMetadata)> ids);
   void reAdd(List<SavedAnimeEntryData> entries);
 
   void addAll(

@@ -101,6 +101,7 @@ class AnimeSearchEntry extends AnimeEntryData {
           return AnimeInfoPage(
             entry: cell,
             id: cell.id,
+            db: DatabaseConnectionNotifier.of(context),
             apiFactory: cell.site.api,
           );
         },
@@ -144,6 +145,7 @@ class AnimeRelation {
 
 abstract class SavedAnimeEntryData extends AnimeEntryData {
   const SavedAnimeEntryData({
+    required this.inBacklog,
     required super.site,
     required super.type,
     required super.thumbUrl,
@@ -162,6 +164,8 @@ abstract class SavedAnimeEntryData extends AnimeEntryData {
     required super.background,
     required super.explicit,
   });
+
+  final bool inBacklog;
 
   SavedAnimeEntryData copySuper(
     AnimeEntryData e, [
@@ -265,7 +269,7 @@ abstract class AnimeEntryData
   Key uniqueKey() => ValueKey((thumbUrl, id));
 
   @override
-  Contentable openImage(BuildContext context) => NetImage(
+  Contentable openImage() => NetImage(
         this,
         CachedNetworkImageProvider(thumbUrl),
       );

@@ -28,6 +28,7 @@ abstract class BlacklistedDirectoryData implements CellBase {
 abstract interface class BlacklistedDirectoryService {
   ResourceSource<BlacklistedDirectoryData> makeSource();
 
+  List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
   void addAll(List<GalleryDirectory> directories);
 
   void deleteAll(List<String> bucketIds);

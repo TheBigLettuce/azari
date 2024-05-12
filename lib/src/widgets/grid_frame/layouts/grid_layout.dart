@@ -17,7 +17,7 @@ class GridLayout<T extends CellBase> extends StatelessWidget {
   Widget build(BuildContext context) {
     final getCell = CellProvider.of<T>(context);
     final extras = GridExtrasNotifier.of<T>(context);
-    final config = GridConfigurationNotifier.of(context);
+    final config = GridConfiguration.of(context);
 
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

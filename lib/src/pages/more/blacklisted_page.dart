@@ -23,6 +23,7 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
@@ -47,30 +48,20 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
 
   late final StreamSubscription<void> blacklistedWatcher;
 
-  // final loader = LinearIsarLoader<BlacklistedDirectoryData>(
-  //   BlacklistedDirectorySchema,
-  //   Dbs.g.blacklisted,
-  //   (offset, limit, s, sort, mode) => Dbs.g.blacklisted.blacklistedDirectorys
-  //       .filter()
-  //       .nameContains(s, caseSensitive: false)
-  //       .offset(offset)
-  //       .limit(limit)
-  //       .findAllSync(),
-  // );
-
   late final state = GridSkeletonRefreshingState<BlacklistedDirectoryData>(
     clearRefresh: SynchronousGridRefresh(() => filter.count),
   );
 
   late final ChainedFilterResourceSource<BlacklistedDirectoryData> filter;
   final searchTextController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
 
     filter = ChainedFilterResourceSource(
-      _original,
+      blacklistedDirectory.makeSource(),
       ListStorage(),
       fn: (e, filteringMode, sortingMode) =>
           e.name.contains(searchTextController.text),
@@ -80,11 +71,8 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
       initialSortingMode: SortingMode.none,
     );
 
-    // blacklistedDirectory.
-
     blacklistedWatcher = blacklistedDirectory.watch((event) {
       filter.clearRefresh();
-      // search.performSearch(search.searchTextController.text);
       setState(() {});
     });
   }
@@ -94,6 +82,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
     blacklistedWatcher.cancel();
     state.dispose();
     searchTextController.dispose();
+    searchFocus.dispose();
 
     filter.destroy();
 
@@ -111,7 +100,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
         (context) => GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
           slivers: const [ListLayout(hideThumbnails: false)],
-          getCell: loader.getCell,
+          getCell: filter.forIdxUnsafe,
           functionality: GridFunctionality(
             registerNotifiers: (child) => HideBlacklistedImagesNotifier(
               hiding: hideBlacklistedImages,
@@ -119,11 +108,14 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             ),
             search: OverrideGridSearchWidget(
               SearchAndFocus(
-                search.searchWidget(
-                  context,
+                FilteringSearchWidget(
                   hint: AppLocalizations.of(context)!.blacklistedPage,
+                  filter: filter,
+                  textController: searchTextController,
+                  localTagDictionary: widget.db.localTagDictionary,
+                  focusNode: searchFocus,
                 ),
-                search.searchFocus,
+                searchFocus,
               ),
             ),
             selectionGlue: GlueProvider.generateOf(context)(),

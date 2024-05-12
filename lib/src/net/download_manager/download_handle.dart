@@ -7,7 +7,7 @@
 
 part of "download_manager.dart";
 
-abstract interface class DownloadHandle {
+abstract interface class DownloadHandle implements CellBase, Thumbnailable {
   String get key;
 
   DownloadEntry get data;
@@ -44,6 +44,19 @@ class _DownloadEntry implements DownloadHandle {
 
   @override
   void cancel() => token.cancel();
+
+  @override
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  String alias(bool long) => data.name;
+
+  @override
+  ImageProvider<Object> thumbnail() =>
+      CachedNetworkImageProvider(data.thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey(data.url);
 
   @override
   StreamSubscription<int> watchProgress(void Function(int c) f) {

@@ -7,6 +7,91 @@
 
 part of "services.dart";
 
+class _UnsavableSettingsData extends GridSettingsData {
+  const _UnsavableSettingsData({
+    required super.aspectRatio,
+    required super.columns,
+    required super.layoutType,
+    required super.hideName,
+  });
+
+  @override
+  GridSettingsData copy({
+    bool? hideName,
+    GridAspectRatio? aspectRatio,
+    GridColumn? columns,
+    GridLayoutType? layoutType,
+  }) =>
+      _UnsavableSettingsData(
+        aspectRatio: aspectRatio ?? this.aspectRatio,
+        columns: columns ?? this.columns,
+        layoutType: layoutType ?? this.layoutType,
+        hideName: hideName ?? this.hideName,
+      );
+}
+
+abstract class CancellableWatchableGridSettingsData
+    implements WatchableGridSettingsData {
+  void cancel();
+}
+
+class _InpersistentSettingsWatcher
+    implements CancellableWatchableGridSettingsData {
+  _InpersistentSettingsWatcher(this._current);
+
+  final _events = StreamController<GridSettingsData>.broadcast();
+
+  GridSettingsData _current;
+
+  @override
+  GridSettingsData get current => _current;
+
+  @override
+  set current(GridSettingsData d) {
+    _current = d;
+
+    _events.add(_current);
+  }
+
+  @override
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData p1) f, [
+    bool fire = false,
+  ]) {
+    return _events.stream.transform<GridSettingsData>(
+      StreamTransformer((stream, cancelOnError) {
+        final controller = StreamController<GridSettingsData>(sync: true);
+
+        controller.onListen = () {
+          final subscription = stream.listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+            cancelOnError: cancelOnError,
+          );
+          controller
+            ..onPause = subscription.pause
+            ..onResume = subscription.resume
+            ..onCancel = subscription.cancel;
+        };
+
+        final l = controller.stream.listen(null);
+
+        if (fire) {
+          Timer.run(() {
+            controller.add(current);
+          });
+        }
+
+        return l;
+      }),
+    ).listen(f);
+  }
+
+  @override
+  void cancel() => _events.close();
+}
+
 abstract class GridSettingsData {
   const GridSettingsData({
     required this.aspectRatio,
@@ -15,11 +100,20 @@ abstract class GridSettingsData {
     required this.hideName,
   });
 
-  // const GridSettingsBase.list({
-  //   this.hideName = false,
-  // })  : aspectRatio = GridAspectRatio.one,
-  //       columns = GridColumn.two,
-  //       layoutType = GridLayoutType.list;
+  static CancellableWatchableGridSettingsData noPersist({
+    required bool hideName,
+    required GridAspectRatio aspectRatio,
+    required GridColumn columns,
+    required GridLayoutType layoutType,
+  }) =>
+      _InpersistentSettingsWatcher(
+        _UnsavableSettingsData(
+          aspectRatio: aspectRatio,
+          columns: columns,
+          layoutType: layoutType,
+          hideName: hideName,
+        ),
+      );
 
   final bool hideName;
   @enumerated
@@ -57,13 +151,18 @@ enum GridLayoutType {
           AppLocalizations.of(context)!.enumGridLayoutTypeGridMasonry,
       };
 
-  GridLayouter<T> layout<T extends CellBase>() => switch (this) {
-        GridLayoutType.list => ListLayout<T>(),
-        GridLayoutType.grid => GridLayout<T>(),
-        GridLayoutType.gridQuilted => GridQuiltedLayout<T>(),
-        GridLayoutType.gridMasonry => GridMasonryLayout<T>(),
-      };
+  // GridLayouter<T> layout<T extends CellBase>() => switch (this) {
+  //       GridLayoutType.list => ListLayout<T>(),
+  //       GridLayoutType.grid => GridLayout<T>(),
+  //       GridLayoutType.gridQuilted => GridQuiltedLayout<T>(),
+  //       GridLayoutType.gridMasonry => GridMasonryLayout<T>(),
+  //     };
 }
+
+typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
+  void Function(GridSettingsData) f, [
+  bool fire,
+]);
 
 abstract interface class WatchableGridSettingsData {
   GridSettingsData get current;

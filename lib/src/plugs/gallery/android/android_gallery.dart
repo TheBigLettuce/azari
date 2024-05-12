@@ -10,22 +10,31 @@ part of "android_api_directories.dart";
 class AndroidGallery implements GalleryPlug {
   const AndroidGallery();
   @override
-  Future<int> get version => PlatformFunctions.currentMediastoreVersion();
+  Future<int> get version =>
+      const AndroidApiFunctions().currentMediastoreVersion();
 
   @override
   bool get temporary => _global!.temporary;
 
   @override
-  GalleryAPIDirectories galleryApi({
+  GalleryAPIDirectories galleryApi(
+    BlacklistedDirectoryService blacklistedDirectory,
+    DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
   }) {
-    final api = _AndroidGallery(temporary: temporaryDb);
-    if (setCurrentApi) {
-      _global!._setCurrentApi(api);
-    } else {
-      _global!._temporaryApis.add(api);
-    }
+    final api = _AndroidGallery(
+      blacklistedDirectory,
+      directoryTag,
+      temporary: temporaryDb,
+    );
+    _global!._setCurrentApi(api);
+
+    // if (setCurrentApi) {
+    //   _global!._setCurrentApi(api);
+    // } else {
+    //   _global!._temporaryApis.add(api);
+    // }
 
     return api;
   }

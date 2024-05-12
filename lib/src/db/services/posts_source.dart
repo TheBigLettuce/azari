@@ -18,10 +18,97 @@ abstract interface class PostsSourceService<T>
     extends FilteringResourceSource<T> {
   const PostsSourceService();
 
+  @override
+  SourceStorage<T> get backingStorage;
+
   String get tags;
   set tags(String t);
 
   void clear();
+}
+
+abstract class GridPostSource extends PostsSourceService<Post> {
+  @override
+  PostsOptimizedStorage get backingStorage;
+}
+
+class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
+  IsarPostsOptimizedStorage(this.db);
+
+  final Isar db;
+
+  IsarCollection<PostIsar> get _collection => db.postIsars;
+
+  @override
+  List<Post> get firstFiveNormal => _collection
+      .where()
+      .ratingEqualTo(PostRating.general)
+      .limit(5)
+      .findAllSync();
+
+  @override
+  List<Post> get firstFiveRelaxed => db.postIsars
+      .where()
+      .ratingEqualTo(PostRating.general)
+      .or()
+      .ratingEqualTo(PostRating.sensitive)
+      .limit(5)
+      .findAllSync();
+
+  @override
+  List<Post> get firstFiveAll => _collection.where().limit(5).findAllSync();
+
+  @override
+  int get count => _collection.countSync();
+
+  @override
+  Iterator<Post> get iterator => _IsarCollectionIterator(_collection);
+
+  @override
+  void add(Post e, [bool silent = true]) => db.writeTxnSync(
+        () => _collection.putAllByIdBooruSync(PostIsar.copyTo([e])),
+        silent: silent,
+      );
+
+  @override
+  void addAll(List<Post> l, [bool silent = false]) => db.writeTxnSync(
+        () => _collection.putAllByIdBooruSync(PostIsar.copyTo(l)),
+        silent: silent,
+      );
+
+  @override
+  void clear() => db.writeTxnSync(() => _collection.clearSync());
+
+  @override
+  Post? get(int idx) => _collection.getSync(idx + 1);
+
+  @override
+  void removeAll(List<int> idx) {
+    db.writeTxnSync(() => _collection.deleteAllSync(idx));
+  }
+
+  @override
+  void destroy() => db.close(deleteFromDisk: true);
+
+  @override
+  Post operator [](int index) => get(index)!;
+
+  @override
+  void operator []=(int index, Post value) => db.writeTxnSync(
+        () => _collection.putByIdBooruSync(PostIsar.copyTo([value]).first),
+      );
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f) =>
+      _collection.watchLazy().map((_) => count).listen(f);
+}
+
+abstract class PostsOptimizedStorage extends SourceStorage<Post> {
+  List<Post> get firstFiveNormal;
+
+  List<Post> get firstFiveRelaxed;
+
+  List<Post> get firstFiveAll;
 }
 
 class _IsarCollectionIterator<T> implements Iterator<T> {
@@ -63,7 +150,7 @@ class _IsarCollectionIterator<T> implements Iterator<T> {
   }
 }
 
-class IsarSourceStorage<T extends Post> extends SourceStorage<T> {
+class IsarSourceStorage<T> extends SourceStorage<T> {
   IsarSourceStorage(this.db, this.txPut);
 
   final Isar db;
@@ -78,10 +165,12 @@ class IsarSourceStorage<T extends Post> extends SourceStorage<T> {
   Iterator<T> get iterator => _IsarCollectionIterator(_collection);
 
   @override
-  void add(T e) => db.writeTxnSync(() => txPut(db, [e]));
+  void add(T e, [bool silent = true]) =>
+      db.writeTxnSync(() => txPut(db, [e]), silent: silent);
 
   @override
-  void addAll(List<T> l) => txPut(db, l);
+  void addAll(List<T> l, [bool silent = false]) =>
+      db.writeTxnSync(() => txPut(db, l), silent: silent);
 
   @override
   void clear() => db.writeTxnSync(() => _collection.clearSync());
@@ -103,18 +192,21 @@ class IsarSourceStorage<T extends Post> extends SourceStorage<T> {
   @override
   void operator []=(int index, T value) =>
       db.writeTxnSync(() => txPut(db, [value]));
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f) =>
+      _collection.watchLazy().map((_) => count).listen(f);
 }
 
-class IsarCurrentBooruSource extends PostsSourceService<Post> {
+class IsarCurrentBooruSource extends GridPostSource {
   IsarCurrentBooruSource({
     required Isar db,
-    required void Function(Isar db, List<PostIsar>) txPut,
     required this.api,
     required this.excluded,
     required this.entry,
     required this.tags,
     required HiddenBooruPostService hiddenBooru,
-  })  : backingStorage = IsarSourceStorage(db, txPut),
+  })  : backingStorage = IsarPostsOptimizedStorage(db),
         filters = [(p) => !hiddenBooru.isHidden(p.id, p.booru)];
 
   final BooruAPI api;
@@ -122,12 +214,7 @@ class IsarCurrentBooruSource extends PostsSourceService<Post> {
   final PagingEntry entry;
 
   @override
-  final IsarSourceStorage<PostIsar> backingStorage;
-
-  @override
-  StreamSubscription<int> watch(void Function(int p1) f) {
-    throw UnimplementedError();
-  }
+  final IsarPostsOptimizedStorage backingStorage;
 
   @override
   final List<FilterFnc<Post>> filters;

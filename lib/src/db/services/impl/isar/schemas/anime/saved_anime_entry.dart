@@ -8,6 +8,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -67,7 +68,7 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
   IsarSavedAnimeEntry({
     required this.genres,
     required super.id,
-    required this.inBacklog,
+    required super.inBacklog,
     required super.type,
     required super.explicit,
     required super.site,
@@ -87,8 +88,6 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
     required super.trailerUrl,
     required super.episodes,
   });
-
-  final bool inBacklog;
 
   @override
   Id? isarId;
@@ -117,6 +116,7 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
             id: cell.id,
             entry: cell,
             apiFactory: cell.site.api,
+            db: DatabaseConnectionNotifier.of(context),
           );
         },
       ),

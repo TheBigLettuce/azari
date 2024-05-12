@@ -17,165 +17,217 @@ class _GalleryImpl implements GalleryApi {
     }
 
     _global = _GalleryImpl._new(
-      DbsOpen.androidGalleryDirectories(temporary),
+      // DbsOpen.androidGalleryDirectories(temporary),
       temporary,
     );
     return _global!;
   }
 
-  _GalleryImpl._new(this.db, this.temporary);
-  final Isar db;
+  _GalleryImpl._new(this.temporary);
+  // final Isar db;
   final bool temporary;
-  final List<_AndroidGallery> _temporaryApis = [];
+  // final List<_AndroidGallery> _temporaryApis = [];
 
   bool isSavingTags = false;
 
   _AndroidGallery? _currentApi;
 
   @override
-  void updatePictures(
+  bool updatePictures(
     List<DirectoryFile?> f,
     String bucketId,
     int startTime,
     bool inRefresh,
     bool empty,
   ) {
-    final st = _currentApi?.currentImages?.startTime;
-
-    if (st == null || st > startTime) {
-      return;
+    final api = _currentApi?.bindFiles;
+    if (api == null) {
+      return false;
     }
 
-    if (_currentApi?.currentImages?.isBucketId(bucketId) != true) {
-      return;
+    if (api.startTime > startTime) {
+      return false;
     }
 
-    final db = _currentApi?.currentImages?.db;
-    if (db == null) {
-      return;
+    if (!api.isBucketId(bucketId)) {
+      return false;
     }
+
+    // final db = _currentApi?.bindFiles?.db;
+    // if (db == null) {
+    //   return;
+    // }
 
     if (empty) {
-      _currentApi?.currentImages?.callback
-          ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
-      return;
+      // _currentApi?.currentImages?.callback
+      //     ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
+      return false;
     } else if (f.isEmpty && !inRefresh) {
-      _currentApi?.currentImages?.callback
-          ?.call(db.systemGalleryDirectoryFiles.countSync(), false, false);
+      // _currentApi?.currentImages?.callback
+      //     ?.call(db.systemGalleryDirectoryFiles.countSync(), false, false);
 
-      return;
+      return false;
     } else if (f.isEmpty) {
-      return;
+      return false;
     }
 
-    try {
-      final c = <String, DirectoryMetadata>{};
+    final r = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
-      final out = bucketId == "favorites"
-          ? f
-              .where((dir) {
-                final segment = GalleryDirectories.segmentCell(
-                  dir!.bucketName,
-                  dir.bucketId,
-                );
-
-                DirectoryMetadata? data = c[segment];
-                if (data == null) {
-                  final d = DirectoryMetadata.get(segment);
-                  if (d == null) {
-                    return true;
-                  }
-
-                  data = d;
-                  c[segment] = d;
-                }
-
-                return !data.requireAuth && !data.blur;
-              })
-              .map(SystemGalleryDirectoryFile.fromDirectoryFile)
-              .toList()
-          : f.map(SystemGalleryDirectoryFile.fromDirectoryFile).toList();
-
-      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(out));
-    } catch (e) {
-      log("updatePictures", level: Level.WARNING.value, error: e);
+    if (api.type.isFavorites()) {
+    } else {
+      api.source.backingStorage.addAll(
+        f
+            .map(
+              (e) => GalleryFile.forPlatform(
+                id: e!.id,
+                bucketId: e.bucketId,
+                name: e.name,
+                lastModified: e.lastModified,
+                originalUri: e.originalUri,
+                height: e.height,
+                width: e.width,
+                size: e.size,
+                isVideo: e.isVideo,
+                isGif: e.isGif,
+                isDuplicate: r.hasMatch(e.name),
+              ),
+            )
+            .toList(),
+        inRefresh,
+      );
     }
 
-    _currentApi?.currentImages?.callback
-        ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, false);
+    // try {
+    //   final c = <String, DirectoryMetadata>{};
+
+    //   final out = bucketId == "favorites"
+    //       ? f
+    //           .where((dir) {
+    //             final segment = GalleryDirectories.segmentCell(
+    //               dir!.bucketName,
+    //               dir.bucketId,
+    //             );
+
+    //             DirectoryMetadata? data = c[segment];
+    //             if (data == null) {
+    //               final d = DirectoryMetadata.get(segment);
+    //               if (d == null) {
+    //                 return true;
+    //               }
+
+    //               data = d;
+    //               c[segment] = d;
+    //             }
+
+    //             return !data.requireAuth && !data.blur;
+    //           })
+    //           .map(SystemGalleryDirectoryFile.fromDirectoryFile)
+    //           .toList()
+    //       : f.map(SystemGalleryDirectoryFile.fromDirectoryFile).toList();
+
+    //   db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(out));
+    // } catch (e) {
+    //   log("updatePictures", level: Level.WARNING.value, error: e);
+    // }
+
+    // _currentApi?.currentImages?.callback
+    //     ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, false);
+
+    return true;
   }
 
   @override
-  void updateDirectories(List<Directory?> d, bool inRefresh, bool empty) {
-    if (empty) {
-      _currentApi?.callback
-          ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
-      for (final api in _temporaryApis) {
-        api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), true);
-      }
+  bool updateDirectories(
+    Map<String?, Directory?> d,
+    bool inRefresh,
+    bool empty,
+  ) {
+    final api = _currentApi;
+    if (empty || api == null) {
+      // _currentApi?.callback
+      //     ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
+      // for (final api in _temporaryApis) {
+      //   api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), true);
+      // }
 
-      return;
+      return false;
     } else if (d.isEmpty && !inRefresh) {
-      _currentApi?.callback
-          ?.call(db.systemGalleryDirectorys.countSync(), false, false);
-      for (final api in _temporaryApis) {
-        api.temporarySet
-            ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
-      }
+      // _currentApi?.callback
+      //     ?.call(db.systemGalleryDirectorys.countSync(), false, false);
+      // for (final api in _temporaryApis) {
+      //   api.temporarySet
+      //       ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
+      // }
 
-      return;
+      return false;
     } else if (d.isEmpty) {
-      return;
+      return false;
     }
 
-    final blacklisted = Dbs.g.blacklisted.blacklistedDirectorys
-        .where()
-        // ignore: inference_failure_on_function_invocation
-        .anyOf(
-          d.cast<Directory>(),
-          (q, element) => q.bucketIdEqualTo(element.bucketId),
-        )
-        .findAllSync();
-    final map = <String, void>{for (final i in blacklisted) i.bucketId: Null};
-    d = List.from(d);
-    d.removeWhere((element) => map.containsKey(element!.bucketId));
-
-    final out = d
-        .cast<Directory>()
-        .map(
-          (e) => SystemGalleryDirectory(
-            bucketId: e.bucketId,
-            name: e.name,
-            tag: PostTags.g.directoryTag(e.bucketId) ?? "",
-            volumeName: e.volumeName,
-            relativeLoc: e.relativeLoc,
-            thumbFileId: e.thumbFileId,
-            lastModified: e.lastModified,
-          ),
-        )
-        .toList();
-
-    db.writeTxnSync(() {
-      db.systemGalleryDirectorys.putAllSync(out);
-    });
-
-    _currentApi?.callback
-        ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
-    for (final api in _temporaryApis) {
-      api.temporarySet
-          ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
+    final b = api.blacklistedDirectory.getAll(d.keys.map((e) => e!).toList());
+    for (final e in b) {
+      d.remove(e.bucketId);
     }
+
+    // final blacklisted = Dbs.g.blacklisted.blacklistedDirectorys
+    //     .where()
+    //     // ignore: inference_failure_on_function_invocation
+    //     .anyOf(
+    //       d.cast<Directory>(),
+    //       (q, element) => q.bucketIdEqualTo(element.bucketId),
+    //     )
+    //     .findAllSync();
+    // final map = <String, void>{for (final i in blacklisted) i.bucketId: Null};
+    // d = List.from(d);
+    // d.removeWhere((element) => map.containsKey(element!.bucketId));
+
+    // d
+    //     .cast<Directory>()
+    //     .map(
+    // (e) => ,
+    //     )
+    //     .toList();
+
+    // db.writeTxnSync(() {
+    //   db.systemGalleryDirectorys.putAllSync(out);
+    // });
+
+    api.source.backingStorage.addAll(
+      d.values
+          .map(
+            (e) => GalleryDirectory.forPlatform(
+              bucketId: e!.bucketId,
+              name: e.name,
+              tag: api.directoryTag.get(e.bucketId) ?? "",
+              volumeName: e.volumeName,
+              relativeLoc: e.relativeLoc,
+              thumbFileId: e.thumbFileId,
+              lastModified: e.lastModified,
+            ),
+          )
+          .toList(),
+      inRefresh,
+    );
+
+    // _currentApi?.callback
+    //     ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
+    // for (final api in _temporaryApis) {
+    //   api.temporarySet
+    //       ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
+    // }
+
+    return true;
   }
 
   @override
   void notify(String? target) {
-    if (target == null || target == _currentApi?.currentImages?.target) {
-      _currentApi?.currentImages?.refreshGrid?.call();
+    if (target == null || target == _currentApi?.bindFiles?.target) {
+      _currentApi?.bindFiles?.source.clearRefresh();
     }
-    _currentApi?.refreshGrid?.call();
-    for (final api in _temporaryApis) {
-      api.refreshGrid?.call();
-    }
+    _currentApi?.source.clearRefresh();
+    // for (final api in _temporaryApis) {
+    //   api.refreshGrid?.call();
+    // }
   }
 
   @override

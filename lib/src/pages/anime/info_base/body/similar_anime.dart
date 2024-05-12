@@ -7,6 +7,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
@@ -64,6 +65,8 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                                       return AnimeInfoPage(
                                         id: e.$2.id,
                                         apiFactory: widget.entry.site.api,
+                                        db: DatabaseConnectionNotifier.of(
+                                            context),
                                       );
                                     },
                                   ),

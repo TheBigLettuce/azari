@@ -41,23 +41,25 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 
   bool? manageMediaSupported;
 
+  static const _androidApi = AndroidApiFunctions();
+
   @override
   void initState() {
     super.initState();
 
-    PlatformFunctions.manageMediaSupported().then(
-      (value) => setState(() {
-        manageMediaSupported = value;
+    _androidApi.manageMediaSupported().then(
+          (value) => setState(() {
+            manageMediaSupported = value;
 
-        if (value) {
-          PlatformFunctions.manageMediaStatus().then(
-            (value) => setState(() {
-              manageMedia = value;
-            }),
-          );
-        }
-      }),
-    );
+            if (value) {
+              _androidApi.manageMediaStatus().then(
+                    (value) => setState(() {
+                      manageMedia = value;
+                    }),
+                  );
+            }
+          }),
+        );
 
     Permission.notification.status.then((value) async {
       notifications = value.isGranted;
@@ -116,7 +118,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                 _ButtonWithPadding(
                   icon: const Icon(Icons.perm_media),
                   onPressed: () async {
-                    final result = await PlatformFunctions.requestManageMedia();
+                    final result = await _androidApi.requestManageMedia();
 
                     setState(() {
                       manageMedia = result;

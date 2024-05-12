@@ -103,7 +103,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget>
                             ImageView.launchWrapped(
                               context,
                               list.length,
-                              (context, i) => list[i].openImage(context),
+                              (i) => list[i].openImage(),
                               startingCell: e.$1,
                             );
                           },

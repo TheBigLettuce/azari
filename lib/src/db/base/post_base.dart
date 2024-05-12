@@ -128,29 +128,29 @@ class PostCacheValues implements CacheElement {
   //       .isHidden(post.id, post.booru);
   // }
 
-  PostContentType type(BuildContext context, Post post) {
-    if (_type != null) {
-      return _type!;
-    }
+  // PostContentType type(BuildContext context, Post post) {
+  //   if (_type != null) {
+  //     return _type!;
+  //   }
 
-    final url_ = url(context, post);
+  //   final url_ = url(context, post);
 
-    final type = mime.lookupMimeType(url_);
-    if (type == null) {
-      return _type = PostContentType.none;
-    }
+  //   final type = mime.lookupMimeType(url_);
+  //   if (type == null) {
+  //     return _type = PostContentType.none;
+  //   }
 
-    final typeHalf = type.split("/");
+  //   final typeHalf = type.split("/");
 
-    if (typeHalf[0] == "image") {
-      return _type =
-          typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
-    } else if (typeHalf[0] == "video") {
-      return _type = PostContentType.video;
-    } else {
-      return _type = PostContentType.none;
-    }
-  }
+  //   if (typeHalf[0] == "image") {
+  //     return _type =
+  //         typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
+  //   } else if (typeHalf[0] == "video") {
+  //     return _type = PostContentType.video;
+  //   } else {
+  //     return _type = PostContentType.none;
+  //   }
+  // }
 
   List<Sticker> stickers(
     BuildContext context,
@@ -163,7 +163,7 @@ class PostCacheValues implements CacheElement {
 
     if (excludeDuplicate) {
       final icons = defaultStickersPost(
-        type(context, post),
+        post.type,
         context,
         post.tags,
         post.id,
@@ -183,7 +183,7 @@ class PostCacheValues implements CacheElement {
           db.favoritePosts.isFavorite(post.id, post.booru))
         const Sticker(Icons.favorite_rounded, important: true),
       ...defaultStickersPost(
-        type(context, post),
+        post.type,
         context,
         post.tags,
         post.id,
@@ -194,6 +194,8 @@ class PostCacheValues implements CacheElement {
 }
 
 class PostValuesCache with SimpleMapCache implements CachedDbValues {
+  PostValuesCache();
+
   factory PostValuesCache.of(BuildContext context) =>
       ValuesCache.of<PostValuesCache>(context);
 }
@@ -237,7 +239,8 @@ abstract class PostBase {
     required this.rating,
     required this.score,
     required this.createdAt,
-    this.isHidden = false,
+    required this.type,
+    // this.isHidden = false,
   });
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
@@ -265,8 +268,8 @@ abstract class PostBase {
   @enumerated
   final Booru booru;
 
-  @ignore
-  final bool isHidden;
+  @enumerated
+  final PostContentType type;
 }
 
 mixin DefaultPostPressable implements Pressable<Post> {
@@ -289,7 +292,7 @@ mixin DefaultPostPressable implements Pressable<Post> {
       ),
       idx,
       (c) => _imageViewTags(c, tagManager),
-      (c, f) => _watchTags(c, f, db.localTags),
+      (c, f) => _watchTags(c, f, tagManager),
     );
   }
 
@@ -302,9 +305,9 @@ mixin DefaultPostPressable implements Pressable<Post> {
   StreamSubscription<List<ImageTag>> _watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
-    LocalTagsService localTags,
+    TagManager tagManager,
   ) =>
-      localTags.watchImagePinned((c.widgets as PostBase).tags, f);
+      tagManager.pinned.watchImage((c.widgets as PostBase).tags, f);
 }
 
 extension MultiplePostDownloadExt on List<Post> {
@@ -365,6 +368,35 @@ abstract mixin class Post
         Stickerable,
         Downloadable,
         Pressable<Post> {
+  static PostContentType makeType(Post p) {
+    var url = switch (SettingsService.db().current.quality) {
+      DisplayQuality.original => p.fileUrl,
+      DisplayQuality.sample => p.sampleUrl
+    };
+    if (url.isEmpty) {
+      url = p.sampleUrl.isNotEmpty
+          ? p.sampleUrl
+          : p.fileUrl.isEmpty
+              ? p.previewUrl
+              : p.fileUrl;
+    }
+
+    final t = mime.lookupMimeType(url);
+    if (t == null) {
+      return PostContentType.none;
+    }
+
+    final typeHalf = t.split("/");
+
+    if (typeHalf[0] == "image") {
+      return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
+    } else if (typeHalf[0] == "video") {
+      return PostContentType.video;
+    } else {
+      throw "";
+    }
+  }
+
   PostCacheValues _cache(BuildContext context) => PostValuesCache.of(context)
       .putIfAbsent(uniqueKey(), () => PostCacheValues());
   String _makeName() =>
@@ -411,24 +443,27 @@ abstract mixin class Post
 
   @override
   ImageProvider<Object> thumbnail() {
-    if (isHidden) {
-      return _transparent;
-    }
+    // if (isHidden) {
+    //   return _transparent;
+    // }
 
     return CachedNetworkImageProvider(previewUrl);
   }
 
   @override
-  Contentable content(BuildContext context) {
-    final values = _cache(context);
+  Contentable content() {
+    // final values = _cache(context);
 
-    if (isHidden) {
-      return EmptyContent(this);
-    }
+    // if (isHidden) {
+    //   return EmptyContent(this);
+    // }
 
-    final url = values.url(context, this);
+    final url = switch (SettingsService.db().current.quality) {
+      DisplayQuality.original => fileUrl,
+      DisplayQuality.sample => sampleUrl
+    };
 
-    return switch (values.type(context, this)) {
+    return switch (type) {
       PostContentType.none => EmptyContent(this),
       PostContentType.video => NetVideo(
           this,

@@ -108,7 +108,7 @@ class _SinglePostState extends State<SinglePost> {
         // ignore: use_build_context_synchronously
         context,
         1,
-        (context, __) => value.content(context),
+        (__) => value.content(),
         key: key,
         download: (_) => value.download(context),
       ).then((value) => favoritesWatcher.cancel());

@@ -20,8 +20,10 @@ import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";
+import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -116,6 +118,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
                       id: cell.id,
                       entry: cell,
                       api: api,
+                      db: db,
                     );
                   },
                 ),
@@ -156,6 +159,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
   }) {
     final client = Dio();
     final api = apiFactory(client);
+    final db = DatabaseConnectionNotifier.of(context);
 
     Navigator.push(
       context,
@@ -164,7 +168,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
           return SearchAnimePage<AnimeEntryData, int, AnimeGenre>(
             initalText: search,
             explicit: safeMode,
-            actions: DiscoverTab.actions(),
+            actions: DiscoverTab.actions(db.savedAnimeEntries, db.watchedAnime),
             initalGenreId: initalGenreId,
             siteUri: Uri.https(api.site.browserUrl()),
             info: api.site.name,
@@ -180,6 +184,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
                       id: cell.id,
                       entry: cell,
                       apiFactory: apiFactory,
+                      db: db,
                     );
                   },
                 ),
@@ -203,7 +208,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
 class _SearchAnimePageState<T extends CellBase, I, G>
     extends State<SearchAnimePage<T, I, G>> {
   final List<T> _results = [];
-  late final StreamSubscription<void> watcher;
+  // late final StreamSubscription<void> watcher;
   final searchFocus = FocusNode();
   late final state = GridSkeletonRefreshingState<T>(
     reachedEnd: () => _reachedEnd,
@@ -212,7 +217,13 @@ class _SearchAnimePageState<T extends CellBase, I, G>
   );
   late AnimeSafeMode mode = widget.explicit;
 
-  final gridSettings = GridSettingsAnimeDiscovery.current;
+  final gridSettings = GridSettingsData.noPersist(
+    aspectRatio: GridAspectRatio.zeroSeven,
+    columns: GridColumn.two,
+    layoutType: GridLayoutType.grid,
+    hideName: false,
+  );
+
   Future<Map<I, G>>? _genreFuture;
   Map<I, G>? genres;
 
@@ -227,9 +238,9 @@ class _SearchAnimePageState<T extends CellBase, I, G>
   void initState() {
     super.initState();
 
-    watcher = SavedAnimeEntry.watchAll((_) {
-      setState(() {});
-    });
+    // watcher = SavedAnimeEntry.watchAll((_) {
+    //   setState(() {});
+    // });
 
     if (widget.initalGenreId != null) {
       _genreFuture = widget.genres(AnimeSafeMode.safe).then((value) {
@@ -253,7 +264,8 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
   @override
   void dispose() {
-    watcher.cancel();
+    // watcher.cancel();
+    gridSettings.cancel();
 
     state.dispose();
     searchFocus.dispose();
@@ -294,13 +306,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
     return _results.length;
   }
 
-  GridSettingsBase _settings() => GridSettingsBase(
-        aspectRatio: GridAspectRatio.zeroSeven,
-        columns: gridSettings.columns,
-        layoutType: GridLayoutType.grid,
-        hideName: false,
-      );
-
   @override
   Widget build(BuildContext context) {
     String title(G? genre) {
@@ -318,7 +323,12 @@ class _SearchAnimePageState<T extends CellBase, I, G>
             state,
             (context) => GridFrame<T>(
               key: state.gridKey,
-              layout: GridSettingsLayoutBehaviour(_settings),
+              slivers: [
+                CurrentGridSettingsLayout<T>(
+                  mutation: state.refreshingStatus.mutation,
+                  gridSeed: state.gridSeed,
+                ),
+              ],
               getCell: (i) => _results[i],
               functionality: GridFunctionality(
                 onError: (error) {
@@ -436,12 +446,15 @@ class _SearchAnimePageState<T extends CellBase, I, G>
           ),
         );
 
-    return AnimeInfoTheme(
-      mode: mode,
-      child: Builder(
-        builder: (context) {
-          return body(context);
-        },
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: AnimeInfoTheme(
+        mode: mode,
+        child: Builder(
+          builder: (context) {
+            return body(context);
+          },
+        ),
       ),
     );
   }

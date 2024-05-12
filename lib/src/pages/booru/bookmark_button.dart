@@ -11,7 +11,6 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -23,7 +22,6 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provide
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
 import "package:gallery/src/widgets/time_label.dart";
-import "package:isar/isar.dart";
 
 class BookmarkPage extends StatefulWidget {
   const BookmarkPage({
@@ -90,20 +88,11 @@ class _BookmarkPageState extends State<BookmarkPage> {
     );
   }
 
-  List<Post> getSingle(Isar db) => switch (settings.safeMode) {
-        SafeMode.normal => db.postIsars
-            .where()
-            .ratingEqualTo(PostRating.general)
-            .limit(5)
-            .findAllSync(),
-        SafeMode.relaxed => db.postIsars
-            .where()
-            .ratingEqualTo(PostRating.general)
-            .or()
-            .ratingEqualTo(PostRating.sensitive)
-            .limit(5)
-            .findAllSync(),
-        SafeMode.none => db.postIsars.where().limit(5).findAllSync(),
+  List<Post> getSingle(SecondaryGridService grid) =>
+      switch (settings.safeMode) {
+        SafeMode.normal => grid.savedPosts.firstFiveNormal,
+        SafeMode.relaxed => grid.savedPosts.firstFiveRelaxed,
+        SafeMode.none => grid.savedPosts.firstFiveAll,
       };
 
   Future<void> _updateDirectly() async {
@@ -112,9 +101,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     if (m.isEmpty) {
       for (final e in gridStates) {
-        final db = DbsOpen.secondaryGridName(e.name);
-
-        final List<Post> p = getSingle(db);
+        final grid = widget.db.secondaryGrid(e.booru, e.name);
+        final List<Post> p = getSingle(grid);
 
         List<Post>? l = m[e.name];
         if (l == null) {
@@ -124,7 +112,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
         l.addAll(p);
 
-        await db.close();
+        await grid.close();
       }
     }
 
@@ -161,6 +149,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               }
             },
             generateGlue: widget.generateGlue,
+            db: widget.db,
           );
         },
       ),
@@ -189,14 +178,13 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
       List<Post>? posts = m[e.name];
       if (posts == null) {
-        final db = DbsOpen.secondaryGridName(e.name);
-
-        posts = getSingle(db);
+        final grid = widget.db.secondaryGrid(e.booru, e.name);
+        posts = getSingle(grid);
 
         m[e.name] = posts;
 
         // TODO: do something about this
-        db.close();
+        grid.close();
       }
 
       list.add(
@@ -207,7 +195,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
             key: ValueKey(e.name),
             state: e,
             title: e.tags,
-            db: gridStateBooru,
+            db: widget.db,
             subtitle: e.booru.string,
             posts: posts,
           ),
@@ -296,7 +284,7 @@ class _BookmarkListTile extends StatefulWidget {
   final void Function(BuildContext context, GridStateBooru e) onPressed;
   final List<Post> posts;
 
-  final GridStateBooruService db;
+  final DbConn db;
 
   @override
   State<_BookmarkListTile> createState() => __BookmarkListTileState();
@@ -431,17 +419,20 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                 actions: [
                                   TextButton(
                                     onPressed: () {
-                                      DbsOpen.secondaryGridName(
-                                        widget.state.name,
-                                      )
-                                          .close(deleteFromDisk: true)
-                                          .then((value) {
-                                        if (value) {
-                                          widget.db.delete(widget.state.name);
-                                        }
+                                      widget.db
+                                          .secondaryGrid(
+                                            widget.state.booru,
+                                            widget.state.name,
+                                          )
+                                          .destroy()
+                                          .then(
+                                        (value) {
+                                          widget.db.gridStateBooru
+                                              .delete(widget.state.name);
 
-                                        Navigator.pop(context);
-                                      });
+                                          Navigator.pop(context);
+                                        },
+                                      );
                                     },
                                     child: Text(
                                       AppLocalizations.of(context)!.yes,

@@ -76,7 +76,7 @@ enum MangaChapterOrder {
 
 extension MangaImageExt on MangaImage {
   void download(BuildContext context, ReaderData data, int i) {
-    DownloadManager.of(context).addAll(
+    DownloadManager.of(context).putAll(
       [
         DownloadEntry.d(
           name: "$i / $maxPages - ${data.chapterId}.${url.split(".").last}",
@@ -114,7 +114,7 @@ class MangaImage
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(url);
 
   @override
-  Contentable content(BuildContext context) => NetImage(
+  Contentable content() => NetImage(
         this,
         thumbnail(),
       );
@@ -171,7 +171,7 @@ mixin MangaEntry
         Stickerable,
         Thumbnailable {
   @override
-  Contentable openImage(BuildContext context) => NetImage(
+  Contentable openImage() => NetImage(
         this,
         CachedNetworkImageProvider(imageUrl),
       );
@@ -184,8 +184,8 @@ mixin MangaEntry
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) => [
-        if (currentDb.pinnedManga.exist(id.toString(), site))
-          const Sticker(Icons.push_pin_rounded),
+        // if (currentDb.pinnedManga.exist(id.toString(), site))
+        //   const Sticker(Icons.push_pin_rounded),
       ];
 
   @override

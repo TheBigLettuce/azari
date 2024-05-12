@@ -5,10 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/net/booru/conventers/gelbooru.dart";
 import "package:json_annotation/json_annotation.dart";
+import "package:mime/mime.dart";
 
 part "danbooru.g.dart";
 
@@ -102,6 +106,9 @@ class _DanbooruPost with Post, DefaultPostPressable {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   Booru get booru => Booru.danbooru;
+
+  @override
+  PostContentType get type => Post.makeType(this);
 }
 
 class DanbooruRatingConverter implements JsonConverter<PostRating, String?> {

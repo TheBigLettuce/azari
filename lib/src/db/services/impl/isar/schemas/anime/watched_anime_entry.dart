@@ -73,6 +73,7 @@ class IsarWatchedAnimeEntry extends WatchedAnimeEntryData
             id: cell.id,
             entry: cell,
             apiFactory: cell.site.api,
+            db: DatabaseConnectionNotifier.of(context),
           );
         },
       ),

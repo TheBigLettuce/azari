@@ -30,20 +30,26 @@ class AnimeInfoPage extends StatefulWidget {
     this.entry,
     required this.id,
     required this.apiFactory,
+    required this.db,
   });
 
   final int id;
   final AnimeEntryData? entry;
   final AnimeAPI Function(Dio) apiFactory;
 
+  final DbConn db;
+
   @override
   State<AnimeInfoPage> createState() => _AnimeInfoPageState();
 }
 
 class _AnimeInfoPageState extends State<AnimeInfoPage> {
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+
   final state = SkeletonState();
   final textController = TextEditingController();
-  final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
+  final alwaysLoading = MiscSettingsService.db().current.animeAlwaysLoadFromNet;
 
   final client = Dio();
   late final AnimeAPI api;
@@ -71,8 +77,8 @@ class _AnimeInfoPageState extends State<AnimeInfoPage> {
     }
 
     return api.info(widget.id).then((value) {
-      SavedAnimeEntry.update(value);
-      WatchedAnimeEntry.update(value);
+      savedAnimeEntries.update(value);
+      watchedAnimeEntries.update(value);
 
       return value;
     });
@@ -87,6 +93,7 @@ class _AnimeInfoPageState extends State<AnimeInfoPage> {
           entry: entry,
           api: api,
           state: state,
+          db: widget.db,
         );
       },
     );
@@ -98,16 +105,22 @@ class _AnimeInfoBody extends StatefulWidget {
     required this.entry,
     required this.api,
     required this.state,
+    required this.db,
   });
   final AnimeEntryData entry;
   final AnimeAPI api;
   final SkeletonState state;
+
+  final DbConn db;
 
   @override
   State<_AnimeInfoBody> createState() => __AnimeInfoBodyState();
 }
 
 class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+
   late final StreamSubscription<void> entriesWatcher;
   late final StreamSubscription<WatchedAnimeEntryData?> watchedEntryWatcher;
 
@@ -124,16 +137,16 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
   void initState() {
     super.initState();
 
-    final r = SavedAnimeEntry.isWatchingBacklog(entry.id, entry.site);
+    final r = savedAnimeEntries.isWatchingBacklog(entry.id, entry.site);
 
     _watching = r.$1;
     _backlog = r.$2;
 
-    _watched = WatchedAnimeEntry.watched(entry.id, entry.site);
+    _watched = watchedAnimeEntries.watched(entry.id, entry.site);
 
     watchedEntryWatcher =
-        WatchedAnimeEntry.watchSingle(entry.id, api.site, (e) {
-      final e = WatchedAnimeEntry.maybeGet(entry.id, entry.site);
+        watchedAnimeEntries.watchSingle(entry.id, api.site, (e) {
+      final e = watchedAnimeEntries.maybeGet(entry.id, entry.site);
       _watched = e != null;
       if (e != null) {
         entry = e;
@@ -142,8 +155,8 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
       setState(() {});
     });
 
-    entriesWatcher = SavedAnimeEntry.watchAll((_) {
-      final e = SavedAnimeEntry.maybeGet(entry.id, entry.site);
+    entriesWatcher = savedAnimeEntries.watchAll((_) {
+      final e = savedAnimeEntries.maybeGet(entry.id, entry.site);
 
       if (e == null) {
         _watching = false;
@@ -170,14 +183,14 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
   }
 
   void _addToWatched() {
-    WatchedAnimeEntry.moveAll([entry]);
+    watchedAnimeEntries.moveAll([entry], savedAnimeEntries);
   }
 
   void _save(AnimeEntryData e) {
     if (_watching) {
-      SavedAnimeEntry.update(e);
+      savedAnimeEntries.update(e);
     } else if (_watched) {
-      WatchedAnimeEntry.update(e);
+      watchedAnimeEntries.update(e);
     } else {
       entry = e;
 
@@ -197,16 +210,17 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
             : FloatingActionButton(
                 onPressed: () {
                   if (_watching) {
-                    final e = SavedAnimeEntry.maybeGet(
+                    final e = savedAnimeEntries.maybeGet(
                       widget.entry.id,
                       widget.entry.site,
                     )!;
 
-                    SavedAnimeEntry.deleteAll([
-                      (e.site, e.id),
+                    savedAnimeEntries.deleteAll([
+                      (e.id, e.site),
                     ]);
                   } else {
-                    SavedAnimeEntry.addAll([widget.entry]);
+                    savedAnimeEntries
+                        .addAll([widget.entry], watchedAnimeEntries);
                   }
                 },
                 child: _watching
@@ -220,22 +234,25 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                 IconButton(
                   onPressed: () {
                     final prevEntry =
-                        SavedAnimeEntry.maybeGet(entry.id, entry.site)!;
+                        savedAnimeEntries.maybeGet(entry.id, entry.site)!;
 
                     if (!_backlog) {
-                      prevEntry.unsetIsWatching();
-                      return;
+                      prevEntry.copy(inBacklog: true).save();
+                      // prevEntry.unsetIsWatching();
+                      // return;
+                    } else {
+                      prevEntry.copy(inBacklog: false).save();
                     }
 
-                    if (!prevEntry.setCurrentlyWatching()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppLocalizations.of(context)!.cantWatchThree,
-                          ),
-                        ),
-                      );
-                    }
+                    // if (!prevEntry.setCurrentlyWatching()) {
+                    //   ScaffoldMessenger.of(context).showSnackBar(
+                    //     SnackBar(
+                    //       content: Text(
+                    //         AppLocalizations.of(context)!.cantWatchThree,
+                    //       ),
+                    //     ),
+                    //   );
+                    // }
                   },
                   icon: Icon(
                     Icons.play_arrow_rounded,
@@ -252,8 +269,8 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                 IconButton(
                   onPressed: () {
                     final prevEntry =
-                        WatchedAnimeEntry.maybeGet(entry.id, entry.site)!;
-                    WatchedAnimeEntry.delete(entry.id, entry.site);
+                        watchedAnimeEntries.maybeGet(entry.id, entry.site)!;
+                    watchedAnimeEntries.delete(entry.id, entry.site);
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -263,7 +280,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                         action: SnackBarAction(
                           label: AppLocalizations.of(context)!.undoLabel,
                           onPressed: () {
-                            WatchedAnimeEntry.read(prevEntry);
+                            watchedAnimeEntries.add(prevEntry);
                           },
                         ),
                       ),
@@ -279,9 +296,12 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
               if (_watched)
                 IconButton(
                   onPressed: () {
-                    WatchedAnimeEntry.moveAllReversed([
-                      WatchedAnimeEntry.maybeGet(entry.id, entry.site)!,
-                    ]);
+                    watchedAnimeEntries.moveAllReversed(
+                      [
+                        watchedAnimeEntries.maybeGet(entry.id, entry.site)!,
+                      ],
+                      savedAnimeEntries,
+                    );
                   },
                   icon: const Icon(Icons.library_add_rounded),
                 ),

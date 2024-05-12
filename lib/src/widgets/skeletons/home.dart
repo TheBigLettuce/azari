@@ -85,45 +85,49 @@ class HomeSkeleton extends StatelessWidget {
                       end: Offset.zero,
                     ),
                   ],
-                  child: AnimatedContainer(
-                    duration: 200.ms,
-                    curve: Easing.standard,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceVariant
-                        .withOpacity(0.8),
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.viewPaddingOf(context).top,
-                      ),
-                      child: SizedBox(
-                        height: 24,
-                        width: MediaQuery.sizeOf(context).width,
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.signal_wifi_off_outlined,
-                                size: 14,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant
-                                    .withOpacity(0.8),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(right: 4),
-                              ),
-                              Text(
-                                AppLocalizations.of(context)!.noInternet,
-                                style: TextStyle(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: AnimatedContainer(
+                      duration: 200.ms,
+                      curve: Easing.standard,
+                      color: ElevationOverlay.applySurfaceTint(
+                        Theme.of(context).colorScheme.surface,
+                        Theme.of(context).colorScheme.surfaceTint,
+                        3,
+                      ).withOpacity(0.8),
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.viewPaddingOf(context).top,
+                        ),
+                        child: SizedBox(
+                          height: 24,
+                          width: MediaQuery.sizeOf(context).width,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.signal_wifi_off_outlined,
+                                  size: 14,
                                   color: Theme.of(context)
                                       .colorScheme
-                                      .onSurfaceVariant
+                                      .onSurface
                                       .withOpacity(0.8),
                                 ),
-                              ),
-                            ],
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 4),
+                                ),
+                                Text(
+                                  AppLocalizations.of(context)!.noInternet,
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

@@ -44,7 +44,7 @@ base class AnimeCharacter
   String? fileDownloadUrl() => imageUrl;
 
   @override
-  Contentable openImage(BuildContext context) => NetImage(
+  Contentable openImage() => NetImage(
         this,
         thumbnail(),
       );

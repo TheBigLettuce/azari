@@ -10,10 +10,10 @@ part of "../impl.dart";
 // const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
 // const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
 const kPrimaryGridSchemas = [
-  GridStateSchema,
-  TagSchema,
+  IsarGridStateSchema,
+  IsarTagSchema,
   PostIsarSchema,
-  GridBooruPagingSchema,
+  IsarGridBooruPagingSchema,
 ];
 
 late final _Dbs _dbs;
@@ -76,7 +76,7 @@ abstract class _DbsOpen {
 
   static Isar secondaryGrid({bool temporary = true}) {
     return Isar.openSync(
-      [PostIsarSchema, GridBooruPagingSchema],
+      [PostIsarSchema, IsarGridBooruPagingSchema],
       directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
       inspector: false,
       name: _microsecSinceEpoch(),
@@ -85,25 +85,12 @@ abstract class _DbsOpen {
 
   static Isar secondaryGridName(String name) {
     return Isar.openSync(
-      [PostIsarSchema, GridBooruPagingSchema],
+      [PostIsarSchema, IsarGridBooruPagingSchema],
       directory: _dbs.directory,
       inspector: false,
       name: name,
     );
   }
-
-  static Isar localTags() => Isar.openSync(
-        [
-          LocalTagsSchema,
-          LocalTagDictionarySchema,
-          DirectoryTagSchema,
-          PinnedTagSchema,
-        ],
-        directory: _dbs.directory,
-        inspector: false,
-        name: "localTags",
-      );
-
   // static Isar androidGalleryDirectories([bool temporary = true]) =>
   //     Isar.openSync(
   //       kDirectoriesSchemas,

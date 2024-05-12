@@ -47,6 +47,15 @@ abstract class StatisticsGalleryData {
 abstract interface class StatisticsGalleryService implements ServiceMarker {
   factory StatisticsGalleryService.db() => _currentDb.statisticsGallery;
 
+  static ImageViewStatistics asImageViewStatistics() {
+    final db = _currentDb.statisticsGallery;
+
+    return ImageViewStatistics(
+      swiped: () => db.current.add(filesSwiped: 1).save(),
+      viewed: () => db.current.add(viewedFiles: 1).save(),
+    );
+  }
+
   StatisticsGalleryData get current;
 
   void add(StatisticsGalleryData data);

@@ -7,107 +7,109 @@
 
 part of "android_api_directories.dart";
 
-class _GalleryFilesExtra implements GalleryFilesExtra {
-  const _GalleryFilesExtra._(this._impl);
-  final _AndroidGalleryFiles _impl;
+// class _GalleryFilesExtra implements GalleryFilesExtra {
+//   const _GalleryFilesExtra._(this._impl);
+//   final _AndroidGalleryFiles _impl;
 
-  @override
-  Isar get db => _impl.db;
+//   @override
+//   Isar get db => _impl.db;
 
-  @override
-  FilterInterface<SystemGalleryDirectoryFile> get filter => _impl.filter;
+//   @override
+//   FilterInterface<SystemGalleryDirectoryFile> get filter => _impl.filter;
 
-  @override
-  bool get supportsDirectRefresh => false;
+//   @override
+//   bool get supportsDirectRefresh => false;
 
-  @override
-  bool get isTrash => _impl.isTrash;
-  @override
-  bool get isFavorites => _impl.isFavorites;
+//   @override
+//   bool get isTrash => _impl.isTrash;
+//   @override
+//   bool get isFavorites => _impl.isFavorites;
 
-  @override
-  void setRefreshGridCallback(void Function() callback) {
-    _impl.refreshGrid = callback;
-  }
+//   @override
+//   void setRefreshGridCallback(void Function() callback) {
+//     _impl.refreshGrid = callback;
+//   }
 
-  @override
-  Future<void> loadNextThumbnails(void Function() callback) async {
-    var offset = 0;
-    var count = 0;
-    final List<Future<ThumbId>> thumbnails = [];
+//   @override
+//   Future<void> loadNextThumbnails(void Function() callback) async {
+//     var offset = 0;
+//     var count = 0;
+//     final List<Future<ThumbId>> thumbnails = [];
 
-    for (;;) {
-      final elems = _impl.db.systemGalleryDirectoryFiles
-          .where()
-          .offset(offset)
-          .limit(40)
-          .findAllSync();
-      offset += elems.length;
+//     for (;;) {
+//       final elems = _impl.db.systemGalleryDirectoryFiles
+//           .where()
+//           .offset(offset)
+//           .limit(40)
+//           .findAllSync();
+//       offset += elems.length;
 
-      if (elems.isEmpty) {
-        break;
-      }
+//       if (elems.isEmpty) {
+//         break;
+//       }
 
-      for (final file in elems) {
-        if (file.getThumbnail(file.id) == null) {
-          count++;
+//       for (final file in elems) {
+//         if (file.getThumbnail(file.id) == null) {
+//           count++;
 
-          thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
+//           thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
 
-          if (thumbnails.length > 8) {
-            Thumbnail.addAll(await thumbnails.wait);
-            thumbnails.clear();
-          }
-        }
-      }
+//           if (thumbnails.length > 8) {
+//             Thumbnail.addAll(await thumbnails.wait);
+//             thumbnails.clear();
+//           }
+//         }
+//       }
 
-      if (count >= 80) {
-        break;
-      }
-    }
+//       if (count >= 80) {
+//         break;
+//       }
+//     }
 
-    if (thumbnails.isNotEmpty) {
-      Thumbnail.addAll(await thumbnails.wait);
-    }
+//     if (thumbnails.isNotEmpty) {
+//       Thumbnail.addAll(await thumbnails.wait);
+//     }
 
-    callback();
-  }
+//     callback();
+//   }
 
-  @override
-  void setRefreshingStatusCallback(
-    void Function(int i, bool inRefresh, bool empty) callback,
-  ) {
-    _impl.callback = callback;
-  }
+//   @override
+//   void setRefreshingStatusCallback(
+//     void Function(int i, bool inRefresh, bool empty) callback,
+//   ) {
+//     _impl.callback = callback;
+//   }
 
-  @override
-  void setPassFilter(
-    (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
-      Iterable<SystemGalleryDirectoryFile> cells,
-      dynamic data,
-      bool end,
-    ) f,
-  ) {
-    _impl.filter.passFilter = f;
-  }
+//   @override
+//   void setPassFilter(
+//     (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
+//       Iterable<SystemGalleryDirectoryFile> cells,
+//       dynamic data,
+//       bool end,
+//     ) f,
+//   ) {
+//     _impl.filter.passFilter = f;
+//   }
 
-  List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) =>
-      _impl.db.systemGalleryDirectoryFiles
-          .where()
-          // ignore: inference_failure_on_function_invocation
-          .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
-          .findAllSync();
-}
+//   List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) =>
+//       _impl.db.systemGalleryDirectoryFiles
+//           .where()
+//           // ignore: inference_failure_on_function_invocation
+//           .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
+//           .findAllSync();
+// }
 
 class _JoinedDirectories extends _AndroidGalleryFiles {
-  _JoinedDirectories(this.directories, super.db, super.unsetCurrentImages)
-      : super(
+  _JoinedDirectories({
+    required this.directories,
+    required super.parent,
+    required super.source,
+  }) : super(
           bucketId: "",
-          isTrash: false,
-          isFavorites: false,
+          type: GalleryFilesPageType.normal,
           target: "joinedDir",
-          getElems: lastMofifiedGetElemsFiles(db),
         );
+
   final List<String> directories;
 
   @override
@@ -121,217 +123,281 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     return false;
   }
 
-  @override
-  Future<int> refresh() async {
-    try {
-      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
+  // @override
+  // Future<int> refresh() async {
+  //   try {
+  //     db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
 
-      if (isTrash) {
-        PlatformFunctions.refreshTrashed();
-      } else if (isFavorites) {
-        int offset = 0;
+  //     if (isTrash) {
+  //       PlatformFunctions.refreshTrashed();
+  //     } else if (isFavorites) {
+  //       int offset = 0;
 
-        while (true) {
-          final f = FavoriteFile.getAll(offset: offset, limit: 200)
-              .map((e) => e.id)
-              .toList();
-          offset += f.length;
+  //       while (true) {
+  //         final f = FavoriteFile.getAll(offset: offset, limit: 200)
+  //             .map((e) => e.id)
+  //             .toList();
+  //         offset += f.length;
 
-          if (f.isEmpty) {
-            break;
-          }
+  //         if (f.isEmpty) {
+  //           break;
+  //         }
 
-          await PlatformFunctions.refreshFavorites(f);
-        }
-      } else {
-        PlatformFunctions.refreshFilesMultiple(directories);
-      }
-    } catch (e, trace) {
-      log(
-        "android gallery",
-        level: Level.SEVERE.value,
-        error: e,
-        stackTrace: trace,
-      );
-    }
+  //         await PlatformFunctions.refreshFavorites(f);
+  //       }
+  //     } else {
+  //       PlatformFunctions.refreshFilesMultiple(directories);
+  //     }
+  //   } catch (e, trace) {
+  //     log(
+  //       "android gallery",
+  //       level: Level.SEVERE.value,
+  //       error: e,
+  //       stackTrace: trace,
+  //     );
+  //   }
 
-    return Future.value(db.systemGalleryDirectoryFiles.countSync());
-  }
+  //   return Future.value(db.systemGalleryDirectoryFiles.countSync());
+  // }
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
-  _AndroidGalleryFiles(
-    this.db,
-    this.unsetCurrentImages, {
-    required Iterable<SystemGalleryDirectoryFile> Function(
-      int,
-      int,
-      String,
-      SortingMode,
-      FilteringMode,
-    ) getElems,
+  _AndroidGalleryFiles({
+    required this.source,
+    required this.type,
+    required this.parent,
     required this.target,
     required String bucketId,
-    this.isTrash = false,
-    this.isFavorites = false,
   })  : startTime = DateTime.now().millisecondsSinceEpoch,
-        _bucketId = bucketId,
-        filter = IsarFilter<SystemGalleryDirectoryFile>(
-          db,
-          DbsOpen.androidGalleryFiles(),
-          isFavorites ? lastMofifiedGetElemsFiles(db) : getElems,
-        );
-  final bool isTrash;
-  final bool isFavorites;
+        _bucketId = bucketId;
+
+  @override
+  final GalleryFilesPageType type;
+
+  @override
+  final GalleryAPIDirectories parent;
+
   final String _bucketId;
   final int startTime;
   final String target;
-
-  final Isar db;
-
-  void Function() unsetCurrentImages;
-  void Function(int i, bool inRefresh, bool empty)? callback;
-  void Function()? refreshGrid;
 
   bool isThumbsLoading = false;
 
   bool isBucketId(String bucketId) => _bucketId == bucketId;
 
   @override
-  GalleryFilesExtra getExtra() => _GalleryFilesExtra._(this);
-
-  @override
-  SystemGalleryDirectoryFile directCell(int i, [bool bypassFilter = false]) =>
-      filter.isFiltering && !bypassFilter
-          ? filter.to.systemGalleryDirectoryFiles.getSync(i + 1)!
-          : db.systemGalleryDirectoryFiles.getSync(i + 1)!;
-
-  final IsarFilter<SystemGalleryDirectoryFile> filter;
+  final ResourceSource<GalleryFile> source;
 
   @override
   void close() {
-    filter.dispose();
-    db.close(deleteFromDisk: true);
-    callback = null;
-    refreshGrid = null;
+    source.destroy();
+  }
+}
 
-    unsetCurrentImages();
+class _AndroidFileSourceJoined implements ResourceSource<GalleryFile> {
+  _AndroidFileSourceJoined(this.bucketIds);
+
+  static const _androidApi = AndroidApiFunctions();
+
+  final List<String> bucketIds;
+
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  final SourceStorage<GalleryFile> backingStorage = ListStorage();
+
+  @override
+  GalleryFile? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
+
+  @override
+  Future<int> clearRefresh() {
+    _androidApi.refreshFilesMultiple(bucketIds);
+
+    return Future.value(backingStorage.count);
   }
 
   @override
-  Future<int> refresh() async {
-    try {
-      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
+  Future<int> next() => Future.value(count);
 
-      if (isTrash) {
-        PlatformFunctions.refreshTrashed();
-      } else if (isFavorites) {
-        int offset = 0;
-
-        while (true) {
-          final f = FavoriteFile.getAll(offset: offset, limit: 200)
-              .map((e) => e.id)
-              .toList();
-          offset += f.length;
-
-          if (f.isEmpty) {
-            break;
-          }
-
-          await PlatformFunctions.refreshFavorites(f);
-        }
-      } else {
-        PlatformFunctions.refreshFiles(_bucketId);
-      }
-    } catch (e, trace) {
-      log(
-        "android gallery",
-        level: Level.SEVERE.value,
-        error: e,
-        stackTrace: trace,
-      );
-    }
-
-    return Future.value(db.systemGalleryDirectoryFiles.countSync());
+  @override
+  void destroy() {
+    backingStorage.destroy();
   }
 }
 
-Iterable<SystemGalleryDirectoryFile> Function(
-  int,
-  int,
-  String,
-  SortingMode,
-  FilteringMode,
-) lastMofifiedGetElemsFiles(Isar db) {
-  return (offset, limit, s, sort, mode) {
-    if (sort == SortingMode.size) {
-      return db.systemGalleryDirectoryFiles
-          .filter()
-          .nameContains(s, caseSensitive: false)
-          .sortBySizeDesc()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
+class _AndroidFileSource implements ResourceSource<GalleryFile> {
+  _AndroidFileSource(this.bucketId);
 
-    // if (mode == FilteringMode.same) {
-    //   return db.systemGalleryDirectoryFiles
-    //       .where()
-    //       .offset(offset)
-    //       .limit(limit)
-    //       .findAllSync();
-    // }
+  static const _androidApi = AndroidApiFunctions();
 
-    if (s.isEmpty) {
-      return db.systemGalleryDirectoryFiles
-          .where()
-          .sortByLastModifiedDesc()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
+  final String bucketId;
 
-    return db.systemGalleryDirectoryFiles
-        .filter()
-        .nameContains(s, caseSensitive: false)
-        .sortByLastModifiedDesc()
-        .offset(offset)
-        .limit(limit)
-        .findAllSync();
-  };
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  final SourceStorage<GalleryFile> backingStorage = ListStorage();
+
+  @override
+  GalleryFile? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
+
+  @override
+  Future<int> clearRefresh() {
+    _androidApi.refreshFiles(bucketId);
+
+    return Future.value(backingStorage.count);
+  }
+
+  @override
+  Future<int> next() => Future.value(count);
+
+  @override
+  void destroy() {
+    backingStorage.destroy();
+  }
 }
 
-Iterable<SystemGalleryDirectoryFile> Function(
-  int,
-  int,
-  String,
-  SortingMode,
-  FilteringMode,
-) defaultGetElemsFiles(Isar db) {
-  return (offset, limit, s, sort, _) {
-    if (sort == SortingMode.size) {
-      return db.systemGalleryDirectoryFiles
-          .filter()
-          .nameContains(s, caseSensitive: false)
-          .sortBySizeDesc()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
+  // @override
+  // GalleryFilesExtra getExtra() => _GalleryFilesExtra._(this);
 
-    if (s.isEmpty) {
-      return db.systemGalleryDirectoryFiles
-          .where()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
+  // @override
+  // SystemGalleryDirectoryFile directCell(int i, [bool bypassFilter = false]) =>
+  //     filter.isFiltering && !bypassFilter
+  //         ? filter.to.systemGalleryDirectoryFiles.getSync(i + 1)!
+  //         : db.systemGalleryDirectoryFiles.getSync(i + 1)!;
 
-    return db.systemGalleryDirectoryFiles
-        .filter()
-        .nameContains(s, caseSensitive: false)
-        .offset(offset)
-        .limit(limit)
-        .findAllSync();
-  };
-}
+  // final IsarFilter<SystemGalleryDirectoryFile> filter;
+
+  // @override
+  // void close() {
+  //   filter.dispose();
+  //   db.close(deleteFromDisk: true);
+  //   callback = null;
+  //   refreshGrid = null;
+
+  //   unsetCurrentImages();
+  // }
+
+  // @override
+  // Future<int> refresh() async {
+  //   try {
+  //     db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
+
+  //     if (isTrash) {
+  //       PlatformFunctions.refreshTrashed();
+  //     } else if (isFavorites) {
+  //       int offset = 0;
+
+  //       while (true) {
+  //         final f = FavoriteFile.getAll(offset: offset, limit: 200)
+  //             .map((e) => e.id)
+  //             .toList();
+  //         offset += f.length;
+
+  //         if (f.isEmpty) {
+  //           break;
+  //         }
+
+  //         await PlatformFunctions.refreshFavorites(f);
+  //       }
+  //     } else {
+  //       PlatformFunctions.refreshFiles(_bucketId);
+  //     }
+  //   } catch (e, trace) {
+  //     log(
+  //       "android gallery",
+  //       level: Level.SEVERE.value,
+  //       error: e,
+  //       stackTrace: trace,
+  //     );
+  //   }
+
+  //   return Future.value(db.systemGalleryDirectoryFiles.countSync());
+  // }
+
+// Iterable<SystemGalleryDirectoryFile> Function(
+//   int,
+//   int,
+//   String,
+//   SortingMode,
+//   FilteringMode,
+// ) lastMofifiedGetElemsFiles(Isar db) {
+//   return (offset, limit, s, sort, mode) {
+//     if (sort == SortingMode.size) {
+//       return db.systemGalleryDirectoryFiles
+//           .filter()
+//           .nameContains(s, caseSensitive: false)
+//           .sortBySizeDesc()
+//           .offset(offset)
+//           .limit(limit)
+//           .findAllSync();
+//     }
+
+//     // if (mode == FilteringMode.same) {
+//     //   return db.systemGalleryDirectoryFiles
+//     //       .where()
+//     //       .offset(offset)
+//     //       .limit(limit)
+//     //       .findAllSync();
+//     // }
+
+//     if (s.isEmpty) {
+//       return db.systemGalleryDirectoryFiles
+//           .where()
+//           .sortByLastModifiedDesc()
+//           .offset(offset)
+//           .limit(limit)
+//           .findAllSync();
+//     }
+
+//     return db.systemGalleryDirectoryFiles
+//         .filter()
+//         .nameContains(s, caseSensitive: false)
+//         .sortByLastModifiedDesc()
+//         .offset(offset)
+//         .limit(limit)
+//         .findAllSync();
+//   };
+// }
+
+// Iterable<SystemGalleryDirectoryFile> Function(
+//   int,
+//   int,
+//   String,
+//   SortingMode,
+//   FilteringMode,
+// ) defaultGetElemsFiles(Isar db) {
+//   return (offset, limit, s, sort, _) {
+//     if (sort == SortingMode.size) {
+//       return db.systemGalleryDirectoryFiles
+//           .filter()
+//           .nameContains(s, caseSensitive: false)
+//           .sortBySizeDesc()
+//           .offset(offset)
+//           .limit(limit)
+//           .findAllSync();
+//     }
+
+//     if (s.isEmpty) {
+//       return db.systemGalleryDirectoryFiles
+//           .where()
+//           .offset(offset)
+//           .limit(limit)
+//           .findAllSync();
+//     }
+
+//     return db.systemGalleryDirectoryFiles
+//         .filter()
+//         .nameContains(s, caseSensitive: false)
+//         .offset(offset)
+//         .limit(limit)
+//         .findAllSync();
+//   };
+// }

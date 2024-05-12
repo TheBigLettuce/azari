@@ -116,6 +116,7 @@ mixin _ChangePageMixin on State<Home> {
       return GalleryDirectories(
         nestedCallback: widget.callback,
         procPop: (pop) => _procPop(icons, pop),
+        db: DatabaseConnectionNotifier.of(context),
       );
     }
 
@@ -150,12 +151,14 @@ mixin _ChangePageMixin on State<Home> {
               child: BooruPage(
                 pagingRegistry: pagingRegistry,
                 procPop: (pop) => _procPopA(icons, pop),
+                db: DatabaseConnectionNotifier.of(context),
               ),
             ),
           kGalleryPageRoute => _NavigatorShell(
               navigatorKey: galleryKey,
               child: GalleryDirectories(
                 procPop: (pop) => _procPop(icons, pop),
+                db: DatabaseConnectionNotifier.of(context),
               ),
             ),
           kMangaPageRoute => _NavigatorShell(
@@ -167,10 +170,13 @@ mixin _ChangePageMixin on State<Home> {
             ),
           kAnimePageRoute => AnimePage(
               procPop: (pop) => _procPop(icons, pop),
+              db: DatabaseConnectionNotifier.of(context),
             ),
           kMorePageRoute => _NavigatorShell(
               navigatorKey: moreKey,
-              child: const MorePage(),
+              child: MorePage(
+                db: DatabaseConnectionNotifier.of(context),
+              ),
             ),
           int() => throw "unimpl",
         },
@@ -188,15 +194,15 @@ mixin _ChangePageMixin on State<Home> {
 class PagingStateRegistry {
   final Map<String, PagingEntry> _map = {};
 
-  PagingEntry getOrRegister(String key, PagingEntry Function() prototype) {
+  T getOrRegister<T extends PagingEntry>(String key, T Function() prototype) {
     final e = _map[key];
     if (e != null) {
-      return e;
+      return e as T;
     }
 
     _map[key] = prototype();
 
-    return _map[key]!;
+    return _map[key]! as T;
   }
 
   void remove(String key) {

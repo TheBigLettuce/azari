@@ -95,14 +95,6 @@ abstract class BooruAPI {
       Booru.gelbooru => Gelbooru(client, pageSaver),
     };
   }
-
-  static int numberOfElementsPerRefresh(GridSettingsData data) {
-    if (data.layoutType == GridLayoutType.list) {
-      return 40;
-    }
-
-    return 15 * data.columns.number;
-  }
 }
 
 class BooruTag {

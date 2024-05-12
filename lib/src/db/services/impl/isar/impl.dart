@@ -84,6 +84,10 @@ part "settings.dart";
 
 final _futures = <(int, AnimeMetadata), Future>{};
 
+// void initIsarDb() {
+//   initalizeDb(false);
+// }
+
 class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
   const IsarSavedAnimeCharatersService();
 
@@ -279,11 +283,11 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   }
 
   @override
-  void deleteAll(List<(AnimeMetadata, int)> ids) {
+  void deleteAll(List<(int, AnimeMetadata)> ids) {
     _Dbs.g.anime.writeTxnSync(
       () => _Dbs.g.anime.isarSavedAnimeEntrys.deleteAllBySiteIdSync(
-        ids.map((e) => e.$1).toList(),
         ids.map((e) => e.$2).toList(),
+        ids.map((e) => e.$1).toList(),
       ),
     );
   }
@@ -500,6 +504,7 @@ class IsarFavoritePostService implements FavoritePostService {
             score: post.score,
             createdAt: post.createdAt,
             group: null,
+            type: post.type,
           ),
         );
       } else {
@@ -618,49 +623,50 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
       _Dbs.g.anime.isarWatchedAnimeEntrys.getBySiteIdSync(site, id);
 
-  // @override
-  // void moveAllReversed(List<WatchedAnimeEntry> entries) {
-  //   WatchedAnimeEntry.deleteAll(entries);
+  @override
+  void moveAllReversed(
+      List<WatchedAnimeEntryData> entries, SavedAnimeEntriesService s) {
+    deleteAll(entries.toIds);
 
-  //   SavedAnimeEntry.addAll(entries.cast());
-  // }
+    s.addAll(entries, this);
+  }
 
-  // @override
-  // void moveAll(List<AnimeEntry> entries) {
-  //   SavedAnimeEntry.deleteAll(entries.map((e) => (e.site, e.id)).toList());
+  @override
+  void moveAll(List<AnimeEntryData> entries, SavedAnimeEntriesService s) {
+    s.deleteAll(entries.toIds);
 
-  //   _Dbs.g.anime.writeTxnSync(
-  //     () => _Dbs.g.anime.isarWatchedAnimeEntrys.putAllBySiteIdSync(
-  //       entries
-  //           .map(
-  //             (entry) => WatchedAnimeEntry(
-  //               type: entry.type,
-  //               explicit: entry.explicit,
-  //               date: DateTime.now(),
-  //               site: entry.site,
-  //               relations: entry.relations,
-  //               background: entry.background,
-  //               thumbUrl: entry.thumbUrl,
-  //               title: entry.title,
-  //               titleJapanese: entry.titleJapanese,
-  //               titleEnglish: entry.titleEnglish,
-  //               score: entry.score,
-  //               synopsis: entry.synopsis,
-  //               year: entry.year,
-  //               id: entry.id,
-  //               staff: entry.staff,
-  //               siteUrl: entry.siteUrl,
-  //               isAiring: entry.isAiring,
-  //               titleSynonyms: entry.titleSynonyms,
-  //               genres: entry.genres,
-  //               trailerUrl: entry.trailerUrl,
-  //               episodes: entry.episodes,
-  //             ),
-  //           )
-  //           .toList(),
-  //     ),
-  //   );
-  // }
+    _Dbs.g.anime.writeTxnSync(
+      () => _Dbs.g.anime.isarWatchedAnimeEntrys.putAllBySiteIdSync(
+        entries
+            .map(
+              (entry) => IsarWatchedAnimeEntry(
+                type: entry.type,
+                explicit: entry.explicit,
+                date: DateTime.now(),
+                site: entry.site,
+                relations: entry.relations as List<IsarAnimeRelation>,
+                background: entry.background,
+                thumbUrl: entry.thumbUrl,
+                title: entry.title,
+                titleJapanese: entry.titleJapanese,
+                titleEnglish: entry.titleEnglish,
+                score: entry.score,
+                synopsis: entry.synopsis,
+                year: entry.year,
+                id: entry.id,
+                staff: entry.staff as List<IsarAnimeRelation>,
+                siteUrl: entry.siteUrl,
+                isAiring: entry.isAiring,
+                titleSynonyms: entry.titleSynonyms,
+                genres: entry.genres as List<IsarAnimeGenre>,
+                trailerUrl: entry.trailerUrl,
+                episodes: entry.episodes,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
 
   @override
   StreamSubscription<void> watchAll(
@@ -873,6 +879,14 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   }
 
   @override
+  List<BlacklistedDirectoryData> getAll(List<String> bucketIds) =>
+      _Dbs.g.blacklisted.isarBlacklistedDirectorys
+          .getAllByBucketIdSync(bucketIds)
+          .where((element) => element != null)
+          .cast<BlacklistedDirectoryData>()
+          .toList();
+
+  @override
   void clear() => _Dbs.g.blacklisted.writeTxnSync(
         () => _Dbs.g.blacklisted.isarBlacklistedDirectorys.clearSync(),
       );
@@ -895,10 +909,39 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
           .listen(f);
 
   @override
-  ResourceSource<BlacklistedDirectoryData> makeSource() {
-    // TODO: implement makeSource
-    throw UnimplementedError();
-  }
+  ResourceSource<BlacklistedDirectoryData> makeSource() =>
+      _BlacklistedDirectoriesSource(
+        IsarSourceStorage(
+          _Dbs.g.blacklisted,
+          (db, l) => db.isarBlacklistedDirectorys.putAllByBucketIdSync(l),
+        ),
+      );
+}
+
+class _BlacklistedDirectoriesSource
+    implements ResourceSource<BlacklistedDirectoryData> {
+  _BlacklistedDirectoriesSource(this.backingStorage);
+
+  @override
+  final IsarSourceStorage<IsarBlacklistedDirectory> backingStorage;
+
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  BlacklistedDirectoryData? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  BlacklistedDirectoryData forIdxUnsafe(int idx) => backingStorage[idx];
+
+  @override
+  Future<int> clearRefresh() => Future.value(backingStorage.count);
+
+  @override
+  Future<int> next() => Future.value(backingStorage.count);
+
+  @override
+  void destroy() {}
 }
 
 class IsarDirectoryMetadataService implements DirectoryMetadataService {
@@ -1220,7 +1263,7 @@ class IsarThumbnailService implements ThumbnailService {
         return toDelete;
       });
 
-      PlatformFunctions.deleteCachedThumbs(toDelete);
+      const AndroidApiFunctions().deleteCachedThumbs(toDelete);
     }
 
     _Dbs.g.thumbnail!.writeTxnSync(() {
@@ -1524,47 +1567,44 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
             return data.api.imagesForChapter(MangaStringId(data.chapterId));
           },
           builder: (context, chapters) {
-            return GlueProvider.empty(
-              context,
-              child: ImageView(
-                registerNotifiers: !addNextChapterButton
-                    ? null
-                    : (child) => MangaReaderNotifier(
-                          data: data,
-                          child: child,
-                        ),
-                ignoreLoadingBuilder: true,
-                download: (i) => chapters[i].download(context, data, i),
-                onRightSwitchPageEnd: addNextChapterButton
-                    ? () {
-                        nextChapterKey.currentState?.findAndLaunchNext();
-                      }
-                    : null,
-                onLeftSwitchPageEnd: addNextChapterButton
-                    ? () {
-                        prevChaterKey.currentState?.findAndLaunchNext();
-                      }
-                    : null,
-                pageChange: (state) {
-                  setProgress(
-                    state.currentPage + 1,
-                    chapterName: data.chapterName,
-                    chapterNumber: data.chapterNumber,
-                    siteMangaId: data.mangaId.toString(),
-                    chapterId: data.chapterId,
-                  );
+            return MangaReaderNotifier(
+              data: data,
+              child: GlueProvider.empty(
+                context,
+                child: ImageView(
+                  ignoreLoadingBuilder: true,
+                  download: (i) => chapters[i].download(context, data, i),
+                  onRightSwitchPageEnd: addNextChapterButton
+                      ? () {
+                          nextChapterKey.currentState?.findAndLaunchNext();
+                        }
+                      : null,
+                  onLeftSwitchPageEnd: addNextChapterButton
+                      ? () {
+                          prevChaterKey.currentState?.findAndLaunchNext();
+                        }
+                      : null,
+                  pageChange: (state) {
+                    setProgress(
+                      state.currentPage + 1,
+                      chapterName: data.chapterName,
+                      chapterNumber: data.chapterNumber,
+                      siteMangaId: data.mangaId.toString(),
+                      chapterId: data.chapterId,
+                    );
 
-                  data.onNextPage(
-                    state.currentPage,
-                    chapters[state.currentPage],
-                  );
-                },
-                cellCount: chapters.length,
-                scrollUntill: (_) {},
-                startingCell: p != null ? p - 1 : 0,
-                onExit: () {},
-                getCell: (context, i) => chapters[i].content(context),
-                onNearEnd: null,
+                    data.onNextPage(
+                      state.currentPage,
+                      chapters[state.currentPage],
+                    );
+                  },
+                  cellCount: chapters.length,
+                  scrollUntill: (_) {},
+                  startingCell: p != null ? p - 1 : 0,
+                  onExit: () {},
+                  getCell: (i) => chapters[i].content(),
+                  onNearEnd: null,
+                ),
               ),
             );
           },
@@ -1751,7 +1791,7 @@ class IsarFavoritesGridSettingsData implements WatchableGridSettingsData {
     bool fire = false,
   ]) =>
       _Dbs.g.main.isarGridSettingsFavorites
-          .watchObject(0)
+          .watchObject(0, fireImmediately: fire)
           .map((event) => event ?? current)
           .listen(f);
 }
@@ -1783,7 +1823,7 @@ class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
     bool fire = false,
   ]) =>
       _Dbs.g.main.isarGridSettingsDirectories
-          .watchObject(0)
+          .watchObject(0, fireImmediately: fire)
           .map((event) => event ?? current)
           .listen(f);
 }
@@ -1815,7 +1855,7 @@ class IsarBooruGridSettingsData implements WatchableGridSettingsData {
     bool fire = false,
   ]) =>
       _Dbs.g.main.isarGridSettingsBoorus
-          .watchObject(0)
+          .watchObject(0, fireImmediately: fire)
           .map((event) => event ?? current)
           .listen(f);
 }
@@ -1847,7 +1887,7 @@ class IsarAnimeDiscoveryGridSettingsData implements WatchableGridSettingsData {
     bool fire = false,
   ]) =>
       _Dbs.g.main.isarGridSettingsAnimeDiscoverys
-          .watchObject(0)
+          .watchObject(0, fireImmediately: fire)
           .map((event) => event ?? current)
           .listen(f);
 }
@@ -1950,54 +1990,6 @@ class IsarLocalTagsService implements LocalTagsService {
     return _Dbs.g.localTags.writeTxnSync(
       () => _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags),
     );
-  }
-
-  @override
-  StreamSubscription<List<ImageTag>> watchImagePinned(
-    List<String> tags,
-    void Function(List<ImageTag>) f, {
-    String? withFilename,
-  }) {
-    if (withFilename != null) {
-      return StreamGroup.merge<List<IsarLocalTags>>([
-        _Dbs.g.localTags.isarLocalTags
-            .where()
-            .filenameEqualTo(withFilename)
-            .watch(),
-        _Dbs.g.localTags.isarTags.watchLazy().map((_) {
-          final t =
-              _Dbs.g.localTags.isarLocalTags.getByFilenameSync(withFilename);
-
-          return t != null ? [t] : const [];
-        }),
-      ]).map<List<ImageTag>>((event) {
-        if (event.isEmpty) {
-          return const [];
-        }
-
-        return event.first.tags
-            .map(
-              (e) => ImageTag(
-                e,
-                _Dbs.g.localTags.isarTags.getByTagTypeSync(e, TagType.pinned) !=
-                    null,
-              ),
-            )
-            .toList();
-      }).listen(f);
-    }
-
-    return _Dbs.g.localTags.isarTags.watchLazy().map<List<ImageTag>>((event) {
-      return tags
-          .map(
-            (e) => ImageTag(
-              e,
-              _Dbs.g.localTags.isarTags.getByTagTypeSync(e, TagType.pinned) !=
-                  null,
-            ),
-          )
-          .toList();
-    }).listen(f);
   }
 
   @override
@@ -2138,31 +2130,79 @@ class IsarBooruTagging implements BooruTagging {
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
     return currentBooru.isarTags.watchLazy(fireImmediately: fire).listen(f);
   }
+
+  @override
+  StreamSubscription<List<ImageTag>> watchImage(
+    List<String> tags,
+    void Function(List<ImageTag> l) f, {
+    bool fire = false,
+  }) {
+    return currentBooru.isarTags.watchLazy().map<List<ImageTag>>((event) {
+      return tags
+          .map(
+            (e) => ImageTag(
+              e,
+              currentBooru.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+            ),
+          )
+          .toList();
+    }).listen(f);
+  }
+
+  @override
+  StreamSubscription<List<ImageTag>> watchImageLocal(
+    String filename,
+    void Function(List<ImageTag> l) f, {
+    required LocalTagsService localTag,
+    bool fire = false,
+  }) {
+    return StreamGroup.merge<List<IsarLocalTags>>([
+      _Dbs.g.localTags.isarLocalTags.where().filenameEqualTo(filename).watch(),
+      currentBooru.isarTags.watchLazy().map((_) {
+        final t = _Dbs.g.localTags.isarLocalTags.getByFilenameSync(filename);
+
+        return t != null ? [t] : const [];
+      }),
+    ]).map<List<ImageTag>>((event) {
+      if (event.isEmpty) {
+        return const [];
+      }
+
+      return event.first.tags
+          .map(
+            (e) => ImageTag(
+              e,
+              currentBooru.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+            ),
+          )
+          .toList();
+    }).listen(f);
+  }
 }
 
 class IsarGridStateBooruService implements GridStateBooruService {
   const IsarGridStateBooruService();
 
   @override
-  int get count => _Dbs.g.main.gridStateBoorus.countSync();
+  int get count => _Dbs.g.main.isarGridStateBoorus.countSync();
 
   @override
   List<GridStateBooru> get all =>
-      _Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
+      _Dbs.g.main.isarGridStateBoorus.where().sortByTimeDesc().findAllSync();
 
   @override
   void add(GridStateBooru state) {
-    _Dbs.g.main.gridStateBoorus.putByNameSync(state);
+    _Dbs.g.main.isarGridStateBoorus.putByNameSync(state as IsarGridStateBooru);
   }
 
   @override
   GridStateBooru? get(String name) =>
-      _Dbs.g.main.gridStateBoorus.getByNameSync(name);
+      _Dbs.g.main.isarGridStateBoorus.getByNameSync(name);
 
   @override
   void delete(String name) {
     _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.gridStateBoorus.deleteByNameSync(
+      () => _Dbs.g.main.isarGridStateBoorus.deleteByNameSync(
         name,
       ),
     );
@@ -2170,7 +2210,9 @@ class IsarGridStateBooruService implements GridStateBooruService {
 
   @override
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) =>
-      _Dbs.g.main.gridStateBoorus.watchLazy(fireImmediately: fire).listen(f);
+      _Dbs.g.main.isarGridStateBoorus
+          .watchLazy(fireImmediately: fire)
+          .listen(f);
 }
 
 class IsarSecondaryGridService implements SecondaryGridService {
@@ -2197,18 +2239,23 @@ class IsarSecondaryGridService implements SecondaryGridService {
   final IsarTagManager tagManager;
 
   @override
-  int get page => _secondaryGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+  int get page => _secondaryGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;
 
   @override
   set page(int p) {
     _secondaryGrid.writeTxnSync(
-      () => _secondaryGrid.gridBooruPagings.putSync(IsarGridBooruPaging(p)),
+      () => _secondaryGrid.isarGridBooruPagings.putSync(IsarGridBooruPaging(p)),
     );
   }
 
   @override
+  PostsOptimizedStorage get savedPosts =>
+      IsarPostsOptimizedStorage(_secondaryGrid);
+
+  @override
   GridState get currentState {
-    GridState? state = _mainGrid.gridStates.getByNameSync(_secondaryGrid.name);
+    GridState? state =
+        _mainGrid.isarGridStates.getByNameSync(_secondaryGrid.name);
     if (state == null) {
       state = IsarGridState(
         tags: "",
@@ -2218,7 +2265,9 @@ class IsarSecondaryGridService implements SecondaryGridService {
         scrollOffset: 0,
       );
 
-      _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(state!));
+      _mainGrid.writeTxnSync(
+        () => _mainGrid.isarGridStates.putSync(state! as IsarGridState),
+      );
     }
 
     return state;
@@ -2227,15 +2276,18 @@ class IsarSecondaryGridService implements SecondaryGridService {
   @override
   set currentState(GridState state) {
     _mainGrid.writeTxnSync(
-      () => _mainGrid.gridStates.putSync(state as IsarGridState),
+      () => _mainGrid.isarGridStates.putSync(state as IsarGridState),
     );
   }
 
   @override
-  void destroy() => _secondaryGrid.close(deleteFromDisk: true);
+  Future<void> destroy() => _secondaryGrid.close(deleteFromDisk: true);
 
   @override
-  PostsSourceService<Post> makeSource(
+  Future<void> close() => _secondaryGrid.close();
+
+  @override
+  GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
     PagingEntry entry,
@@ -2247,7 +2299,6 @@ class IsarSecondaryGridService implements SecondaryGridService {
         api: api,
         excluded: excluded,
         entry: entry,
-        txPut: (db, l) => db.postIsars.putAllByIdBooruSync(l),
         tags: tags,
         hiddenBooru: hiddenBooruPosts,
       );
@@ -2267,18 +2318,21 @@ class IsarMainGridService implements MainGridService {
   final IsarTagManager tagManager;
 
   @override
-  int get page => _mainGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+  PostsOptimizedStorage get savedPosts => IsarPostsOptimizedStorage(_mainGrid);
+
+  @override
+  int get page => _mainGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;
 
   @override
   set page(int p) {
     _mainGrid.writeTxnSync(
-      () => _mainGrid.gridBooruPagings.putSync(IsarGridBooruPaging(p)),
+      () => _mainGrid.isarGridBooruPagings.putSync(IsarGridBooruPaging(p)),
     );
   }
 
   @override
   GridState get currentState {
-    GridState? state = _mainGrid.gridStates.getByNameSync(_mainGrid.name);
+    GridState? state = _mainGrid.isarGridStates.getByNameSync(_mainGrid.name);
     if (state == null) {
       state = IsarGridState(
         tags: "",
@@ -2288,7 +2342,9 @@ class IsarMainGridService implements MainGridService {
         scrollOffset: 0,
       );
 
-      _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(state!));
+      _mainGrid.writeTxnSync(
+        () => _mainGrid.isarGridStates.putSync(state! as IsarGridState),
+      );
     }
 
     return state;
@@ -2297,12 +2353,12 @@ class IsarMainGridService implements MainGridService {
   @override
   set currentState(GridState state) {
     _mainGrid.writeTxnSync(
-      () => _mainGrid.gridStates.putSync(state as IsarGridState),
+      () => _mainGrid.isarGridStates.putSync(state as IsarGridState),
     );
   }
 
   @override
-  PostsSourceService<Post> makeSource(
+  GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
     PagingEntry entry,
@@ -2313,7 +2369,6 @@ class IsarMainGridService implements MainGridService {
         api: api,
         excluded: excluded,
         entry: entry,
-        txPut: (db, l) => db.postIsars.putAllByIdBooruSync(l),
         tags: "",
         hiddenBooru: hiddenBooruPosts,
       );

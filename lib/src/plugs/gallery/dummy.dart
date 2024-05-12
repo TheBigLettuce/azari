@@ -5,14 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:gallery/src/plugs/gallery.dart";
-import "package:isar/isar.dart";
 
 class DummyGallery implements GalleryPlug {
   @override
@@ -25,7 +21,9 @@ class DummyGallery implements GalleryPlug {
   void notify(String? target) {}
 
   @override
-  GalleryAPIDirectories galleryApi({
+  GalleryAPIDirectories galleryApi(
+    BlacklistedDirectoryService blacklistedDirectory,
+    DirectoryTagService directoryTag, {
     bool? temporaryDb,
     bool setCurrentApi = true,
   }) {
@@ -39,98 +37,20 @@ class _DummyDirectories implements GalleryAPIDirectories {
   void close() {}
 
   @override
-  GalleryDirectory directCell(int i) {
+  GalleryAPIFiles? get bindFiles => null;
+
+  @override
+  GalleryAPIFiles files(GalleryDirectory d, GalleryFilesPageType type) {
     throw UnimplementedError();
   }
 
   @override
-  GalleryAPIFiles files(GalleryDirectory d) {
+  GalleryAPIFiles joinedFiles(List<String> bucketIds) {
     throw UnimplementedError();
   }
 
   @override
-  GalleryDirectoriesExtra asExtra() {
-    return const _DummyDirectoriesExtra();
-  }
-
-  @override
-  Future<int> refresh() {
-    return Future.value(0);
-  }
-}
-
-class _DummyFilter implements FilterInterface<GalleryDirectory> {
-  const _DummyFilter();
-  @override
-  FilterResult<GalleryDirectory> filter(String s, FilteringMode mode) {
-    return FilterResult((i) => throw UnimplementedError(), 0);
-  }
-
-  @override
-  void setSortingMode(SortingMode mode) {}
-
-  @override
-  SortingMode get currentSortingMode => SortingMode.none;
-
-  @override
-  bool get empty => true;
-
-  @override
-  void resetFilter() {}
-}
-
-class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
-  const _DummyDirectoriesExtra();
-  @override
-  void addBlacklisted(List<BlacklistedDirectoryData> bucketIds) {}
-
-  @override
-  bool get currentlyHostingFiles => false;
-
-  @override
-  Isar get db => throw UnimplementedError();
-
-  @override
-  FilterInterface<GalleryDirectory> get filter => const _DummyFilter();
-
-  @override
-  GalleryAPIFiles favorites() {
-    throw UnimplementedError();
-  }
-
-  @override
-  GalleryAPIFiles trash() {
-    throw UnimplementedError();
-  }
-
-  @override
-  GalleryAPIFiles joinedDir(List<String> bucketIds) {
-    throw UnimplementedError();
-  }
-
-  @override
-  void setPassFilter(
-    (Iterable<GalleryDirectory>, dynamic) Function(
-      Iterable<GalleryDirectory> p1,
-      dynamic p2,
-      bool p3,
-    )? filter,
-  ) {}
-
-  @override
-  void setRefreshGridCallback(void Function() callback) {}
-
-  @override
-  void setRefreshingStatusCallback(
-    void Function(int i, bool inRefresh, bool empty) callback,
-  ) {
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      callback(0, false, true);
-    });
-  }
-
-  @override
-  void setTemporarySet(void Function(int p1, bool p2) callback) {}
+  ResourceSource<GalleryDirectory> get source => throw UnimplementedError();
 }
 
 // class _DummyFiles implements GalleryAPIFiles {

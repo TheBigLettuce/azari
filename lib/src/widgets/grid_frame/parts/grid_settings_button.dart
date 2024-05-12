@@ -25,6 +25,9 @@ class GridSettingsButton extends StatelessWidget {
     this.header,
   });
 
+  factory GridSettingsButton.fromWatchable(WatchableGridSettingsData w) =>
+      GridSettingsButton(add: (d) => w.current = d, watch: w.watch);
+
   final void Function(GridSettingsData) add;
 
   final StreamSubscription<GridSettingsData>

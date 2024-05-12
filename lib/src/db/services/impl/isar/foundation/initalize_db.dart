@@ -9,7 +9,7 @@ part of "../impl.dart";
 
 bool _initalized = false;
 
-Future<void> initalizeDb(bool temporary) async {
+Future<void> initalizeIsarDb(bool temporary) async {
   if (_initalized) {
     return;
   }
@@ -50,12 +50,23 @@ Future<void> initalizeDb(bool temporary) async {
     inspector: false,
   );
 
+  final localTags = Isar.openSync(
+    [
+      IsarLocalTagsSchema,
+      IsarLocalTagDictionarySchema,
+      DirectoryTagSchema,
+    ],
+    directory: directoryPath,
+    inspector: false,
+    name: "localTags",
+  );
+
   final main = Isar.openSync(
     [
       IsarSettingsSchema,
       IsarFavoriteBooruSchema,
-      LocalTagDictionarySchema,
-      GridStateBooruSchema,
+      IsarLocalTagDictionarySchema,
+      IsarGridStateBooruSchema,
       IsarDownloadFileSchema,
       IsarHiddenBooruPostSchema,
       IsarStatisticsGallerySchema,
@@ -89,7 +100,7 @@ Future<void> initalizeDb(bool temporary) async {
 
   if (io.Platform.isAndroid) {
     thumbnailIsar = Isar.openSync(
-      [IsarThumbnailSchema, PinnedThumbnailSchema],
+      [IsarThumbnailSchema, IsarPinnedThumbnailSchema],
       directory: directoryPath,
       inspector: false,
       name: "androidThumbnails",
@@ -112,5 +123,6 @@ Future<void> initalizeDb(bool temporary) async {
     temporaryImagesDir: temporaryImagesPath,
     blacklisted: blacklistedDirIsar,
     thumbnail: thumbnailIsar,
+    localTags: localTags,
   );
 }

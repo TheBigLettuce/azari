@@ -89,7 +89,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
             ImageView.launchWrapped(
               context,
               1,
-              (_, __) => widget.cell.openImage(context),
+              (__) => widget.cell.openImage(),
             );
           },
           icon: const Icon(Icons.image),

@@ -10,7 +10,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/plugs/platform_fullscreens.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
 import "package:gallery/src/widgets/notifiers/current_content.dart";
@@ -26,7 +26,7 @@ import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({
     super.key,
-    required this.registerNotifiers,
+    // required this.registerNotifiers,
     required this.onTagRefresh,
     required this.hardRefresh,
     required this.currentCell,
@@ -38,10 +38,11 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.gridContext,
     required this.child,
   });
+
   final void Function() onTagRefresh;
   final Contentable currentCell;
   final FocusNode mainFocus;
-  final InheritedWidget Function(Widget child)? registerNotifiers;
+  // final InheritedWidget Function(Widget child)? registerNotifiers;
   final void Function([bool refreshPalette]) hardRefresh;
   final BuildContext? gridContext;
   final AnimationController controller;
@@ -80,14 +81,18 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     super.dispose();
   }
 
-  void toggle(PlatformFullscreensPlug plug) {
+  void toggle() {
+    final platformApi = PlatformApi.current();
+
     setState(() => _isAppbarShown = !_isAppbarShown);
 
     if (_isAppbarShown) {
-      plug.unfullscreen();
+      platformApi.setFullscreen(false);
       widget.controller.reverse();
     } else {
-      widget.controller.forward().then((value) => plug.fullscreen());
+      widget.controller
+          .forward()
+          .then((value) => platformApi.setFullscreen(true));
     }
   }
 
@@ -155,11 +160,7 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                         progress: _loadingProgress,
                         child: AppBarVisibilityNotifier(
                           isShown: _isAppbarShown,
-                          child: widget.registerNotifiers == null
-                              ? widget.child
-                              : widget.registerNotifiers!(
-                                  widget.child,
-                                ),
+                          child: widget.child,
                         ),
                       ),
                     ),

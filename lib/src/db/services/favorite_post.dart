@@ -7,6 +7,29 @@
 
 part of "services.dart";
 
+// extension PostDownloadExt on Post {
+//   void download(BuildContext context) {
+//     DownloadManager.of(context).addLocalTags(
+//       [
+//         DownloadEntryTags.d(
+//           tags: tags,
+//           name: DisassembleResult.makeFilename(
+//             booru,
+//             fileDownloadUrl(),
+//             md5,
+//             id,
+//           ),
+//           url: fileDownloadUrl(),
+//           thumbUrl: previewUrl,
+//           site: booru.url,
+//         ),
+//       ],
+//       SettingsService.db().current,
+//       PostTags.fromContext(context),
+//     );
+//   }
+// }
+
 abstract class FavoritePostData extends PostBase
     with Post, DefaultPostPressable {
   FavoritePostData({
@@ -24,6 +47,7 @@ abstract class FavoritePostData extends PostBase
     required super.rating,
     required super.score,
     required super.createdAt,
+    required super.type,
   });
 
   @Index()

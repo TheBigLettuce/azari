@@ -158,8 +158,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                               ImageView.launchWrapped(
                                 context,
                                 snapshot.data!.length,
-                                (context, i) =>
-                                    snapshot.data![i].openImage(context),
+                                (i) => snapshot.data![i].openImage(),
                                 startingCell: e.$1,
                               );
                             },

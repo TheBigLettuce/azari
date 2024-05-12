@@ -9,9 +9,10 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -22,104 +23,118 @@ import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 
 class Downloads extends StatefulWidget {
   const Downloads({
     super.key,
     required this.generateGlue,
+    required this.downloadManager,
+    required this.db,
   });
+
   final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
+  final DownloadManager downloadManager;
+
+  final DbConn db;
 
   @override
   State<Downloads> createState() => _DownloadsState();
 }
 
 class _DownloadsState extends State<Downloads> {
-  final loader = LinearIsarLoader<DownloadFile>(DownloadFileSchema, Dbs.g.main,
-      (offset, limit, s, sort, mode) {
-    return Dbs.g.main.downloadFiles
-        .where()
-        .sortByInProgressDesc()
-        .offset(offset)
-        .limit(limit)
-        .findAllSync();
-  });
-
-  late final SearchFilterGrid<DownloadFile> search;
+  DownloadManager get downloadManager => widget.downloadManager;
 
   late final StreamSubscription<void> _updates;
 
-  late final state = GridSkeletonStateFilter<DownloadFile>(
-    filter: loader.filter,
-    transform: (cell) => cell,
-    clearRefresh: SynchronousGridRefresh(() => loader.count()),
+  late final ChainedFilterResourceSource<DownloadHandle> filter;
+
+  late final state = GridSkeletonRefreshingState<DownloadHandle>(
+    clearRefresh: SynchronousGridRefresh(() => filter.count),
   );
+
+  final searchTextController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
 
-    search = SearchFilterGrid(state, null);
+    filter = ChainedFilterResourceSource(
+      downloadManager,
+      ListStorage(),
+      fn: (e, filteringMode, sortingMode) {
+        final text = searchTextController.text;
+        if (text.isEmpty) {
+          return true;
+        }
 
-    Downloader.g.markStale();
+        return e.data.name.contains(text);
+      },
+      allowedFilteringModes: const {},
+      allowedSortingModes: const {},
+      initialFilteringMode: FilteringMode.noFilter,
+      initialSortingMode: SortingMode.none,
+    );
 
-    _updates = DownloadFile.watch((_) async {
-      search.performSearch(search.searchTextController.text);
+    // Downloader.g.markStale();
+
+    _updates = downloadManager.watch((_) {
+      filter.clearRefresh();
     });
   }
 
   @override
   void dispose() {
     _updates.cancel();
-    search.dispose();
+    filter.destroy();
+
+    searchFocus.dispose();
+    searchTextController.dispose();
     state.dispose();
 
     super.dispose();
   }
 
-  Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
+  Segments<DownloadHandle> _makeSegments(BuildContext context) => Segments(
         AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         injectedLabel: "",
-        segment: Downloader.g.downloadDescription,
-        onLabelPressed: (label, children) {
-          if (children.isEmpty) {
-            return;
-          }
+        segment: (e) => e.data.status.name,
+        // onLabelPressed: (label, children) {
+        //   if (children.isEmpty) {
+        //     return;
+        //   }
 
-          if (label == kDownloadInProgress) {
-            Downloader.g.markStale(override: children);
-          } else if (label == kDownloadOnHold) {
-            Downloader.g.addAll(children, state.settings);
-          } else if (label == kDownloadFailed) {
-            final n = 6 - children.length;
+        //   if (label == kDownloadInProgress) {
+        //     Downloader.g.markStale(override: children);
+        //   } else if (label == kDownloadOnHold) {
+        //     Downloader.g.addAll(children, state.settings);
+        //   } else if (label == kDownloadFailed) {
+        //     final n = 6 - children.length;
 
-            if (!n.isNegative && n != 0) {
-              Downloader.g.addAll(
-                [
-                  ...children,
-                  ...DownloadFile.nextNumber(children.length),
-                ],
-                state.settings,
-              );
-            } else {
-              Downloader.g.addAll(children, state.settings);
-            }
-          }
-        },
+        //     if (!n.isNegative && n != 0) {
+        //       downloadManager.addAll(children);
+        //       Downloader.g.addAll(
+        //         [
+        //           ...children,
+        //           ...DownloadFile.nextNumber(children.length),
+        //         ],
+        //         state.settings,
+        //       );
+        //     } else {
+        //       downloadManager.putAll(
+        //         children.map((e) => e.data),
+        //         state.settings,
+        //       );
+        //       // Downloader.g.addAll(children, state.settings);
+        //     }
+        //   }
+        // },
         caps: SegmentCapability.alwaysPinned(),
       );
 
-  GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
-        aspectRatio: GridAspectRatio.one,
-        columns: GridColumn.three,
-        layoutType: GridLayoutType.grid,
-        hideName: false,
-      );
-
-  static GridAction<DownloadFile> delete(BuildContext context) {
+  GridAction<DownloadHandle> delete(BuildContext context) {
     return GridAction(
       Icons.remove,
       (selected) {
@@ -127,7 +142,7 @@ class _DownloadsState extends State<Downloads> {
           return;
         }
 
-        Downloader.g.remove(selected);
+        downloadManager.remove(selected);
       },
       true,
     );
@@ -139,18 +154,29 @@ class _DownloadsState extends State<Downloads> {
       provided: widget.generateGlue,
       child: GridSkeleton(
         state,
-        (context) => GridFrame<DownloadFile>(
+        (context) => GridFrame<DownloadHandle>(
           key: state.gridKey,
-          layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
-          getCell: loader.getCell,
+          slivers: [
+            SegmentLayout<DownloadHandle>(
+              segments: _makeSegments(context),
+              suggestionPrefix: const [],
+              getCell: filter.forIdxUnsafe,
+              gridSeed: state.gridSeed,
+              mutation: state.refreshingStatus.mutation,
+            ),
+          ],
+          getCell: filter.forIdxUnsafe,
           functionality: GridFunctionality(
             search: OverrideGridSearchWidget(
               SearchAndFocus(
-                search.searchWidget(
-                  context,
+                FilteringSearchWidget(
                   hint: AppLocalizations.of(context)!.downloadsPageName,
+                  filter: filter,
+                  textController: searchTextController,
+                  localTagDictionary: widget.db.localTagDictionary,
+                  focusNode: searchFocus,
                 ),
-                search.searchFocus,
+                searchFocus,
               ),
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
@@ -161,16 +187,16 @@ class _DownloadsState extends State<Downloads> {
             actions: [
               delete(context),
             ],
-            menuButtonItems: [
-              IconButton(
-                onPressed: Downloader.g.restartFailed,
-                icon: const Icon(Icons.download_rounded),
-              ),
-              IconButton(
-                onPressed: Downloader.g.removeAll,
-                icon: const Icon(Icons.close),
-              ),
-            ],
+            // menuButtonItems: [
+            //   IconButton(
+            //     onPressed: Downloader.g.restartFailed,
+            //     icon: const Icon(Icons.download_rounded),
+            //   ),
+            //   IconButton(
+            //     onPressed: Downloader.g.removeAll,
+            //     icon: const Icon(Icons.close),
+            //   ),
+            // ],
             keybindsDescription:
                 AppLocalizations.of(context)!.downloadsPageName,
             inlineMenuButtonItems: true,

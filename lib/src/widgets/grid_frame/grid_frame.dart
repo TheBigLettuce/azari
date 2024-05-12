@@ -47,8 +47,66 @@ part "parts/cell_provider.dart";
 part "wrappers/wrap_padding.dart";
 part "wrappers/wrap_selection.dart";
 
-class GridConfigurationNotifier extends InheritedWidget {
-  const GridConfigurationNotifier({
+class GridConfiguration extends StatefulWidget {
+  const GridConfiguration({
+    super.key,
+    required this.watch,
+    required this.child,
+  });
+
+  final GridSettingsWatcher watch;
+
+  final Widget child;
+
+  static GridSettingsData of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
+
+    return widget!.config;
+  }
+
+  @override
+  State<GridConfiguration> createState() => _GridConfigurationState();
+}
+
+class _GridConfigurationState extends State<GridConfiguration> {
+  late final StreamSubscription<GridSettingsData> _watcher;
+
+  GridSettingsData? config;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _watcher = widget.watch(
+      (d) {
+        config = d;
+
+        setState(() {});
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (config == null) {
+      return const SizedBox.shrink();
+    }
+
+    return _GridConfigurationNotifier(config: config!, child: widget.child);
+  }
+}
+
+class _GridConfigurationNotifier extends InheritedWidget {
+  const _GridConfigurationNotifier({
     super.key,
     required this.config,
     required super.child,
@@ -56,15 +114,8 @@ class GridConfigurationNotifier extends InheritedWidget {
 
   final GridSettingsData config;
 
-  static GridSettingsData of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GridConfigurationNotifier>();
-
-    return widget!.config;
-  }
-
   @override
-  bool updateShouldNotify(GridConfigurationNotifier oldWidget) =>
+  bool updateShouldNotify(_GridConfigurationNotifier oldWidget) =>
       config != oldWidget.config;
 }
 

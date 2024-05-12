@@ -40,6 +40,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   static const int _maxSteps = 10;
 
   late final AppLifecycleListener listener;
+  late TagManager tagManager;
   late final StreamSubscription<void> timeTicker;
   final StreamController<Duration> timeListener = StreamController.broadcast();
   Duration currentDuration = Duration.zero;
@@ -48,6 +49,8 @@ class _RestartWidgetState extends State<RestartWidget> {
   @override
   void initState() {
     super.initState();
+
+    tagManager = TagManager.booru(SettingsService.db().current.selectedBooru);
 
     StatisticsDailyData sts = StatisticsDailyService.db().current;
 
@@ -122,6 +125,8 @@ class _RestartWidgetState extends State<RestartWidget> {
   }
 
   void restartApp() {
+    tagManager = TagManager.booru(SettingsService.db().current.selectedBooru);
+
     setState(() {
       key = UniqueKey();
     });
@@ -135,19 +140,22 @@ class _RestartWidgetState extends State<RestartWidget> {
     final l = buildTheme(Brightness.light, widget.accentColor);
 
     return DatabaseConnectionNotifier.current(
-      TimeSpentNotifier(
-        timeNow,
-        ticker: timeListener.stream,
-        current: _c,
-        child: KeyedSubtree(
-          key: key,
-          child: ColoredBox(
-            color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                ? d.colorScheme.background
-                : l.colorScheme.background,
-            child: widget
-                .child(d, l, SettingsService.db().current)
-                .animate(effects: [const FadeEffect()]),
+      TagManager.wrapAnchor(
+        tagManager,
+        TimeSpentNotifier(
+          timeNow,
+          ticker: timeListener.stream,
+          current: _c,
+          child: KeyedSubtree(
+            key: key,
+            child: ColoredBox(
+              color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                  ? d.colorScheme.background
+                  : l.colorScheme.background,
+              child: widget
+                  .child(d, l, SettingsService.db().current)
+                  .animate(effects: [const FadeEffect()]),
+            ),
           ),
         ),
       ),

@@ -106,6 +106,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   final galleryPlug = chooseGalleryPlug();
 
   late final api = galleryPlug.galleryApi(
+    widget.db.blacklistedDirectories,
+    widget.db.directoryTags,
     temporaryDb: widget.callback != null || widget.nestedCallback != null,
     setCurrentApi: widget.callback == null,
   );
@@ -162,7 +164,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     );
 
     if (widget.callback != null) {
-      PlatformFunctions.trashThumbId().then((value) {
+      const AndroidApiFunctions().trashThumbId().then((value) {
         try {
           setState(() {
             trashThumbId = value;
@@ -184,14 +186,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     api.close();
     // search.dispose();
     state.dispose();
-    Dbs.g.clearTemporaryImages();
+    // Dbs.g.clearTemporaryImages();
     lifecycleListener.dispose();
 
     super.dispose();
   }
 
   void _refresh() {
-    PlatformFunctions.trashThumbId().then((value) {
+    const AndroidApiFunctions().trashThumbId().then((value) {
       try {
         setState(() {
           trashThumbId = value;
@@ -200,7 +202,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     });
 
     mutation.isRefreshing = true;
-    api.refresh();
+    api.source.clearRefresh();
     galleryPlug.version.then((value) => galleryVersion = value);
   }
 
@@ -440,7 +442,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   try {
                     widget.callback!(
                       null,
-                      await PlatformFunctions.chooseDirectory(temporary: true)
+                      await const AndroidApiFunctions()
+                          .chooseDirectory(temporary: true)
                           .then((value) => value!.path),
                     );
                     // ignore: use_build_context_synchronously

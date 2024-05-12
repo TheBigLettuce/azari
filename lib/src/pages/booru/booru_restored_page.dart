@@ -19,14 +19,15 @@ import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/booru/booru_search_page.dart";
+import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/booru_api.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -83,7 +84,7 @@ class RestoredBooruPageState implements PagingEntry {
   final TagManager tagManager;
   final SecondaryGridService secondaryGrid;
   late final BooruAPI api;
-  late final PostsSourceService source;
+  late final PostsSourceService<Post> source;
 
   int? currentSkipped;
 
@@ -134,6 +135,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostService get favoritePosts => widget.db.favoritePosts;
+  WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
@@ -146,7 +148,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   BooruAPI get api => pagingState.api;
   GridSkeletonRefreshingState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
-  PostsSourceService get source => pagingState.source;
+  PostsSourceService<Post> get source => pagingState.source;
 
   @override
   void initState() {
@@ -236,6 +238,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             tags: tag,
             wrapScaffold: true,
             overrideSafeMode: safeMode,
+            db: widget.db,
           );
         },
       ),
@@ -244,94 +247,78 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage(
-      provided: widget.generateGlue,
-      child: Builder(
-        builder: (context) {
-          return BooruAPINotifier(
-            api: api,
-            child: GridSkeleton(
-              state,
-              (context) => GridFrame<Post>(
-                key: state.gridKey,
-                layout: const GridSettingsLayoutBehaviour(
-                  GridSettingsBooru.current,
-                ),
-                mainFocus: state.mainFocus,
-                getCell: pagingState.source.forIdxUnsafe,
-                initalScrollPosition: pagingState.offset,
-                functionality: GridFunctionality(
-                  watchLayoutSettings: GridSettingsBooru.watch,
-                  updateScrollPosition: pagingState.setOffset,
-                  onError: (error) {
-                    return OutlinedButton.icon(
-                      onPressed: () {
-                        launchUrl(
-                          Uri.https(api.booru.url),
-                          mode: LaunchMode.externalApplication,
-                        );
-                      },
-                      label: Text(AppLocalizations.of(context)!.openInBrowser),
-                      icon: const Icon(Icons.public),
-                    );
-                  },
-                  download: _download,
-                  selectionGlue: GlueProvider.generateOf(context)(),
-                  refreshingStatus: state.refreshingStatus,
-                  search: OverrideGridSearchWidget(
-                    SearchAndFocus(
-                      search.searchWidget(context, hint: api.booru.name),
-                      search.searchFocus,
-                    ),
-                  ),
-                  registerNotifiers: (child) => OnBooruTagPressed(
-                    onPressed: _onTagPressed,
-                    child: BooruAPINotifier(api: api, child: child),
-                  ),
-                ),
-                description: GridDescription(
-                  actions: [
-                    BooruGridActions.download(context, api.booru),
-                    BooruGridActions.favorites(
-                      context,
-                      favoritePosts,
-                      showDeleteSnackbar: true,
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: WrapGridPage(
+        provided: widget.generateGlue,
+        child: Builder(
+          builder: (context) {
+            return BooruAPINotifier(
+              api: api,
+              child: GridSkeleton(
+                state,
+                (context) => GridFrame<Post>(
+                  key: state.gridKey,
+                  slivers: [
+                    CurrentGridSettingsLayout<Post>(
+                      mutation: state.refreshingStatus.mutation,
+                      gridSeed: state.gridSeed,
                     ),
                   ],
-                  settingsButton: GridFrameSettingsButton(
-                    selectGridColumn: (columns, settings) =>
-                        (settings as GridSettingsBooru)
-                            .copy(columns: columns)
-                            .save(),
-                    selectGridLayout: (layoutType, settings) =>
-                        (settings as GridSettingsBooru)
-                            .copy(layoutType: layoutType)
-                            .save(),
-                    selectRatio: (ratio, settings) =>
-                        (settings as GridSettingsBooru)
-                            .copy(aspectRatio: ratio)
-                            .save(),
-                    safeMode: pagingState.safeMode,
-                    selectSafeMode: (safeMode, _) {
-                      if (safeMode == null) {
-                        return;
-                      }
-
-                      pagingState.safeMode = safeMode;
-
-                      setState(() {});
+                  mainFocus: state.mainFocus,
+                  getCell: source.forIdxUnsafe,
+                  initalScrollPosition: pagingState.offset,
+                  functionality: GridFunctionality(
+                    settingsButton:
+                        GridSettingsButton.fromWatchable(gridSettings),
+                    updateScrollPosition: pagingState.setOffset,
+                    onError: (error) {
+                      return OutlinedButton.icon(
+                        onPressed: () {
+                          launchUrl(
+                            Uri.https(api.booru.url),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        label:
+                            Text(AppLocalizations.of(context)!.openInBrowser),
+                        icon: const Icon(Icons.public),
+                      );
                     },
+                    download: _download,
+                    selectionGlue: GlueProvider.generateOf(context)(),
+                    refreshingStatus: state.refreshingStatus,
+                    search: OverrideGridSearchWidget(
+                      SearchAndFocus(
+                        search.searchWidget(context, hint: api.booru.name),
+                        search.searchFocus,
+                      ),
+                    ),
+                    registerNotifiers: (child) => OnBooruTagPressed(
+                      onPressed: _onTagPressed,
+                      child: BooruAPINotifier(api: api, child: child),
+                    ),
                   ),
-                  inlineMenuButtonItems: true,
-                  keybindsDescription:
-                      AppLocalizations.of(context)!.booruGridPageName,
-                  gridSeed: state.gridSeed,
+                  description: GridDescription(
+                    actions: [
+                      BooruGridActions.download(context, api.booru),
+                      BooruGridActions.favorites(
+                        context,
+                        favoritePosts,
+                        showDeleteSnackbar: true,
+                      ),
+                    ],
+                    inlineMenuButtonItems: true,
+                    keybindsDescription:
+                        AppLocalizations.of(context)!.booruGridPageName,
+                    gridSeed: state.gridSeed,
+                  ),
                 ),
+                canPop: true,
               ),
-              canPop: true,
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

@@ -9,10 +9,8 @@ import "dart:async";
 import "dart:io";
 
 import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
@@ -47,10 +45,11 @@ class _SettingsListState extends State<SettingsList> {
   MiscSettingsData _miscSettings = MiscSettingsService.db().current;
 
   Future<int>? thumbnailCount =
-      Platform.isAndroid ? PlatformFunctions.thumbCacheSize() : null;
+      Platform.isAndroid ? const AndroidApiFunctions().thumbCacheSize() : null;
 
-  Future<int>? pinnedThumbnailCount =
-      Platform.isAndroid ? PlatformFunctions.thumbCacheSize(true) : null;
+  Future<int>? pinnedThumbnailCount = Platform.isAndroid
+      ? const AndroidApiFunctions().thumbCacheSize(true)
+      : null;
 
   @override
   void initState() {
@@ -160,61 +159,61 @@ class _SettingsListState extends State<SettingsList> {
           subtitle: Text(_settings.quality.translatedString(context)),
         ),
         SettingsLabel(localizations.miscLabel, titleStyle),
-        ListTile(
-          title: Text(localizations.savedTagsCount),
-          trailing: PopupMenuButton(
-            icon: const Icon(Icons.more_horiz_outlined),
-            itemBuilder: (context) {
-              return [
-                PopupMenuItem<void>(
-                  enabled: false,
-                  child: TextButton(
-                    onPressed: () {
-                      PostTags.g.restore((err) {
-                        if (err != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              duration: 1.minutes,
-                              content:
-                                  Text(localizations.couldntRestoreBackup(err)),
-                            ),
-                          );
-                        } else {
-                          setState(() {});
-                        }
-                      });
-                    },
-                    child: Text(localizations.restore),
-                  ),
-                ),
-                PopupMenuItem<void>(
-                  enabled: false,
-                  child: TextButton(
-                    onPressed: () {
-                      PostTags.g.copy((err) {
-                        if (err != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(localizations.couldntBackup(err)),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(localizations.backupSuccess),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text(localizations.backup),
-                  ),
-                ),
-              ];
-            },
-          ),
-          subtitle: Text(PostTags.g.savedTagsCount().toString()),
-        ),
+        // ListTile(
+        //   title: Text(localizations.savedTagsCount),
+        //   trailing: PopupMenuButton(
+        //     icon: const Icon(Icons.more_horiz_outlined),
+        //     itemBuilder: (context) {
+        //       return [
+        //         PopupMenuItem<void>(
+        //           enabled: false,
+        //           child: TextButton(
+        //             onPressed: () {
+        //               PostTags.g.restore((err) {
+        //                 if (err != null) {
+        //                   ScaffoldMessenger.of(context).showSnackBar(
+        //                     SnackBar(
+        //                       duration: 1.minutes,
+        //                       content:
+        //                           Text(localizations.couldntRestoreBackup(err)),
+        //                     ),
+        //                   );
+        //                 } else {
+        //                   setState(() {});
+        //                 }
+        //               });
+        //             },
+        //             child: Text(localizations.restore),
+        //           ),
+        //         ),
+        //         PopupMenuItem<void>(
+        //           enabled: false,
+        //           child: TextButton(
+        //             onPressed: () {
+        //               PostTags.g.copy((err) {
+        //                 if (err != null) {
+        //                   ScaffoldMessenger.of(context).showSnackBar(
+        //                     SnackBar(
+        //                       content: Text(localizations.couldntBackup(err)),
+        //                     ),
+        //                   );
+        //                 } else {
+        //                   ScaffoldMessenger.of(context).showSnackBar(
+        //                     SnackBar(
+        //                       content: Text(localizations.backupSuccess),
+        //                     ),
+        //                   );
+        //                 }
+        //               });
+        //             },
+        //             child: Text(localizations.backup),
+        //           ),
+        //         ),
+        //       ];
+        //     },
+        //   ),
+        //   subtitle: Text(PostTags.g.savedTagsCount().toString()),
+        // ),
         if (Platform.isAndroid)
           FutureBuilder(
             future: thumbnailCount,
@@ -249,7 +248,8 @@ class _SettingsListState extends State<SettingsList> {
                                         onPressed: () {
                                           db.thumbnails.clear();
 
-                                          PlatformFunctions.clearCachedThumbs();
+                                          const AndroidApiFunctions()
+                                              .clearCachedThumbs();
 
                                           thumbnailCount = Future.value(0);
 
@@ -308,12 +308,14 @@ class _SettingsListState extends State<SettingsList> {
                                         onPressed: () {
                                           db.pinnedThumbnails.clear();
 
-                                          PlatformFunctions.clearCachedThumbs(
+                                          const AndroidApiFunctions()
+                                              .clearCachedThumbs(
                                             true,
                                           );
 
                                           thumbnailCount =
-                                              PlatformFunctions.thumbCacheSize(
+                                              const AndroidApiFunctions()
+                                                  .thumbCacheSize(
                                             true,
                                           );
 

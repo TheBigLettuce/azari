@@ -12,8 +12,8 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/base/gallery_file_functionality_mixin.dart";
+import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/base/system_gallery_thumbnail_provider.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
@@ -31,8 +31,6 @@ import "package:gallery/src/plugs/gallery/dummy.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
@@ -43,17 +41,19 @@ import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 import "package:gallery/src/widgets/search_bar/search_text_field.dart";
 import "package:gallery/src/widgets/set_wallpaper_tile.dart";
-import "package:gallery/src/widgets/translation_notes.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
 
 abstract class GalleryPlug {
-  GalleryAPIDirectories galleryApi({
+  GalleryAPIDirectories galleryApi(
+    BlacklistedDirectoryService blacklistedDirectory,
+    DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
   });
+
   void notify(String? target);
   bool get temporary;
   Future<int> get version;
@@ -143,8 +143,12 @@ mixin GalleryDirectory
   CellStaticData description() => const CellStaticData();
 
   @override
-  ImageProvider<Object> thumbnail() =>
-      GalleryThumbnailProvider(thumbFileId, true);
+  ImageProvider<Object> thumbnail() => GalleryThumbnailProvider(
+        thumbFileId,
+        true,
+        PinnedThumbnailService.db(),
+        ThumbnailService.db(),
+      );
 
   @override
   Key uniqueKey() => ValueKey(bucketId);
@@ -161,7 +165,6 @@ mixin GalleryDirectory
   ) async {
     final (api, callback, nestedCallback, segmentFnc) =
         DirectoriesDataNotifier.of(context);
-    final extra = api.asExtra();
 
     if (callback != null) {
       functionality.refreshingStatus.mutation.cellCount = 0;
@@ -191,9 +194,9 @@ mixin GalleryDirectory
       final d = cell;
 
       final apiFiles = switch (cell.bucketId) {
-        "trash" => extra.trash(),
-        "favorites" => extra.favorites(),
-        String() => api.files(d),
+        "trash" => api.files(d, GalleryFilesPageType.trash),
+        "favorites" => api.files(d, GalleryFilesPageType.favorites),
+        String() => api.files(d, GalleryFilesPageType.normal),
       };
 
       final glue = GlueProvider.generateOf(context);
@@ -210,6 +213,8 @@ mixin GalleryDirectory
                 dirName:
                     AppLocalizations.of(context)!.galleryDirectoriesFavorites,
                 bucketId: "favorites",
+                db: DatabaseConnectionNotifier.of(context),
+                tagManager: TagManager.of(context),
               ),
             "trash" => GalleryFiles(
                 api: apiFiles,
@@ -218,6 +223,8 @@ mixin GalleryDirectory
                 callback: nestedCallback,
                 dirName: AppLocalizations.of(context)!.galleryDirectoryTrash,
                 bucketId: "trash",
+                db: DatabaseConnectionNotifier.of(context),
+                tagManager: TagManager.of(context),
               ),
             String() => GalleryFiles(
                 generateGlue: glue,
@@ -226,63 +233,14 @@ mixin GalleryDirectory
                 dirName: d.name,
                 callback: nestedCallback,
                 bucketId: d.bucketId,
+                db: DatabaseConnectionNotifier.of(context),
+                tagManager: TagManager.of(context),
               )
           },
         ),
       );
     }
   }
-}
-
-mixin GenericListSource<T> implements ResourceSource<T> {
-  final List<T> _list = [];
-
-  void addToListAll(List<T> data) {
-    _list.addAll(data);
-  }
-
-  void clearList() {
-    _list.clear();
-  }
-
-  @override
-  T? forIdx(int idx) => _list.elementAtOrNull(idx);
-  @override
-  T forIdxUnsafe(int idx) => _list[idx];
-
-  @override
-  void destroy() {}
-}
-
-class FilesSource
-    with GenericListSource<GalleryFile>
-    implements GridRefreshingStatus<GalleryFile> {
-  @override
-  final GridMutationInterface mutation = DefaultMutationInterface(0);
-
-  @override
-  Future<int>? updateProgress;
-
-  @override
-  Object? refreshingError;
-
-  @override
-  bool reachedEnd = false;
-
-  @override
-  Future<int> clearRefresh() {}
-
-  @override
-  Future<int> next() {}
-
-  @override
-  void dispose() => destroy();
-
-  @override
-  Future<int> onNearEnd() => next();
-
-  @override
-  Future<int> refresh() => clearRefresh();
 }
 
 class FileBase {
@@ -295,10 +253,7 @@ class FileBase {
     required this.size,
     required this.height,
     required this.isDuplicate,
-    required this.isFavorite,
     required this.width,
-    required this.tagsFlat,
-    required this.isOriginal,
     required this.lastModified,
     required this.originalUri,
   });
@@ -321,11 +276,27 @@ class FileBase {
   final bool isVideo;
   final bool isGif;
 
-  final bool isOriginal;
+  // final bool isOriginal;
 
-  final String tagsFlat;
+  // final String tagsFlat;
   final bool isDuplicate;
-  final bool isFavorite;
+  // final bool isFavorite;
+}
+
+class AndroidGalleryFile extends FileBase with GalleryFile {
+  const AndroidGalleryFile({
+    required super.id,
+    required super.bucketId,
+    required super.name,
+    required super.isVideo,
+    required super.isGif,
+    required super.size,
+    required super.height,
+    required super.isDuplicate,
+    required super.width,
+    required super.lastModified,
+    required super.originalUri,
+  });
 }
 
 mixin GalleryFile
@@ -338,8 +309,34 @@ mixin GalleryFile
         Infoable,
         ImageViewActionable,
         AppBarButtonable,
-        IsarEntryId,
         Stickerable {
+  static GalleryFile forPlatform({
+    required int id,
+    required String bucketId,
+    required String name,
+    required int lastModified,
+    required String originalUri,
+    required int height,
+    required int width,
+    required int size,
+    required bool isVideo,
+    required bool isGif,
+    required bool isDuplicate,
+  }) =>
+      AndroidGalleryFile(
+        id: id,
+        bucketId: bucketId,
+        name: name,
+        isVideo: isVideo,
+        isGif: isGif,
+        size: size,
+        height: height,
+        isDuplicate: isDuplicate,
+        width: width,
+        lastModified: lastModified,
+        originalUri: originalUri,
+      );
+
   @override
   CellStaticData description() => const CellStaticData(
         tightMode: true,
@@ -364,9 +361,7 @@ mixin GalleryFile
           icon: const Icon(Icons.public),
         ),
       IconButton(
-        onPressed: () {
-          PlatformFunctions.shareMedia(originalUri);
-        },
+        onPressed: () => PlatformApi.current().shareMedia(originalUri),
         icon: const Icon(Icons.share),
       ),
     ];
@@ -377,37 +372,52 @@ mixin GalleryFile
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
-    final (api, callback, actions, state, plug) = FilesDataNotifier.of(context);
-    final extra = api.getExtra();
+    final (api, callback, actions) = FilesDataNotifier.of(context);
+    final db = DatabaseConnectionNotifier.of(context);
+    final tagManager = TagManager.of(context);
 
     return callback != null
         ? [
             actions.chooseAction().asImageView(this),
           ]
-        : extra.isTrash
+        : api.type.isTrash()
             ? [
                 actions.restoreFromTrash().asImageView(this),
               ]
             : [
-                actions.addToFavoritesAction(this, plug).asImageView(this),
+                actions
+                    .addToFavoritesAction(this, db.favoriteFiles)
+                    .asImageView(this),
                 actions.deleteAction().asImageView(this),
                 ImageViewAction(
                   Icons.copy,
                   (selected) {
-                    actions.moveOrCopyFnc(context, [this], false, state, plug);
+                    actions.moveOrCopyFnc(
+                      context,
+                      [this],
+                      false,
+                      tagManager,
+                      db.favoriteFiles,
+                    );
                   },
                 ),
                 ImageViewAction(
                   Icons.forward_rounded,
                   (selected) {
-                    actions.moveOrCopyFnc(context, [this], true, state, plug);
+                    actions.moveOrCopyFnc(
+                      context,
+                      [this],
+                      true,
+                      tagManager,
+                      db.favoriteFiles,
+                    );
                   },
                 ),
               ];
   }
 
   @override
-  Contentable content(BuildContext context) {
+  Contentable content() {
     final size = Size(width.toDouble(), height.toDouble());
 
     if (isVideo) {
@@ -434,7 +444,12 @@ mixin GalleryFile
   }
 
   @override
-  ImageProvider<Object> thumbnail() => GalleryThumbnailProvider(id, isVideo);
+  ImageProvider<Object> thumbnail() => GalleryThumbnailProvider(
+        id,
+        isVideo,
+        PinnedThumbnailService.db(),
+        ThumbnailService.db(),
+      );
 
   @override
   Key uniqueKey() => ValueKey(id);
@@ -442,18 +457,18 @@ mixin GalleryFile
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     if (excludeDuplicate) {
-      final stickers = [
-        ...injectedStickers.map((e) => e.icon).map((e) => Sticker(e)),
-        ...defaultStickers(context, this),
+      final stickers = <Sticker>[
+        // ...injectedStickers.map((e) => e.icon).map((e) => Sticker(e)),
+        // ...defaultStickers(context, this),
       ];
 
       return stickers.isEmpty ? const [] : stickers;
     }
 
     return [
-      ...injectedStickers,
-      ...defaultStickers(context, this),
-      if (isFavorite) const Sticker(Icons.star_rounded, important: true),
+      // ...injectedStickers,
+      // ...defaultStickers(context, this),
+      // if (isFavorite) const Sticker(Icons.star_rounded, important: true),
     ];
   }
 
@@ -463,35 +478,45 @@ mixin GalleryFile
     GridFunctionality<GalleryFile> functionality,
     GalleryFile cell,
     int idx,
-  ) =>
-      ImageView.defaultForGrid<GalleryFile>(
-        context,
-        functionality,
-        const ImageViewDescription(
-          statistics: ImageViewStatistics(
-            swiped: StatisticsGallery.addFilesSwiped,
-            viewed: StatisticsGallery.addViewedFiles,
-          ),
-        ),
-        idx,
-        _tags,
-        _watchTags,
-      );
+  ) {
+    final db = DatabaseConnectionNotifier.of(context);
+    final tagManager = TagManager.of(context);
 
-  List<ImageTag> _tags(Contentable c) {
-    final postTags = PostTags.g.getTagsPost(c.widgets.alias(false));
+    ImageView.defaultForGrid<GalleryFile>(
+      context,
+      functionality,
+      ImageViewDescription(
+        statistics: StatisticsGalleryService.asImageViewStatistics(),
+      ),
+      idx,
+      (c) => _tags(c, db.localTags, tagManager),
+      (c, f) => _watchTags(c, f, db.localTags, tagManager),
+    );
+  }
+
+  List<ImageTag> _tags(
+    Contentable c,
+    LocalTagsService localTags,
+    TagManager tagManager,
+  ) {
+    final postTags = localTags.get(c.widgets.alias(false));
     if (postTags.isEmpty) {
       return const [];
     }
 
-    return postTags.map((e) => ImageTag(e, PinnedTag.isPinned(e))).toList();
+    return postTags
+        .map((e) => ImageTag(e, tagManager.pinned.exists(e)))
+        .toList();
   }
 
   StreamSubscription<List<ImageTag>> _watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
+    LocalTagsService localTags,
+    TagManager tagManager,
   ) =>
-      PostTags.g.watchImageAndPinned(c.widgets.alias(false), f);
+      tagManager.pinned
+          .watchImageLocal(c.widgets.alias(false), f, localTag: localTags);
 }
 
 // @collection
@@ -650,10 +675,9 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
                                         return null;
                                       },
                                       onFieldSubmitted: (value) {
-                                        PlatformFunctions.rename(
-                                          file.originalUri,
-                                          value,
-                                        );
+                                        PlatformApi.current()
+                                            .rename(file.originalUri, value);
+
                                         Navigator.pop(context);
                                       },
                                     ),
@@ -684,8 +708,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
                 title: AppLocalizations.of(context)!.sizeInfoPage,
                 subtitle: kbMbSize(context, file.size),
               ),
-              if (res != null && file.tagsFlat.contains("translated"))
-                TranslationNotes.tile(context, res.id, res.booru),
+              // if (res != null && file.tagsFlat.contains("translated"))
+              // TranslationNotes.tile(context, res.id, res.booru),
               if (res != null && filesExtended)
                 RedownloadTile(key: file.uniqueKey(), file: file, res: res),
               if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
@@ -745,6 +769,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
             res: res,
             launchGrid: _launchGrid,
             addRemoveTag: true,
+            db: TagManager.of(context),
           ),
         ] else
           const SliverToBoxAdapter(
@@ -790,7 +815,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
 
               _status = api.singlePost(res.id).then((post) {
-                PlatformFunctions.deleteFiles([widget.file]);
+                const AndroidApiFunctions().deleteFiles([widget.file]);
 
                 post.download(context);
 

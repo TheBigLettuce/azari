@@ -12,19 +12,25 @@ class _WatchingTab extends StatefulWidget {
     required super.key,
     required this.procPop,
     required this.onDispose,
+    required this.db,
   });
 
   final void Function() onDispose;
   final void Function(bool) procPop;
+
+  final DbConn db;
 
   @override
   State<_WatchingTab> createState() => __WatchingTabState();
 }
 
 class __WatchingTabState extends State<_WatchingTab> {
-  final List<SavedAnimeEntryData> currentlyWatching =
-      SavedAnimeEntry.currentlyWatching();
-  final List<SavedAnimeEntryData> backlog = SavedAnimeEntry.backlog();
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+
+  late final List<SavedAnimeEntryData> currentlyWatching =
+      savedAnimeEntries.currentlyWatchingAll;
+  late final List<SavedAnimeEntryData> backlog = savedAnimeEntries.backlogAll;
 
   final List<SavedAnimeEntryData> _backlogFilter = [];
   final List<SavedAnimeEntryData> _watchingFilter = [];
@@ -38,9 +44,11 @@ class __WatchingTabState extends State<_WatchingTab> {
   final gridSeed = math.Random().nextInt(948512342);
   final GlobalKey<__CurrentlyWatchingState> watchingKey = GlobalKey();
 
-  bool upward = MiscSettings.current.animeWatchingOrderReversed;
+  bool upward = MiscSettingsService.db().current.animeWatchingOrderReversed;
   bool right = false;
   String _filteringValue = "";
+
+  final scrollController = ScrollController();
 
   void filter(String value) {
     final m = state.gridKey.currentState?.mutation;
@@ -78,8 +86,8 @@ class __WatchingTabState extends State<_WatchingTab> {
   void initState() {
     super.initState();
 
-    watcher = SavedAnimeEntry.watchAll((_) {
-      final newB = SavedAnimeEntry.backlog();
+    watcher = savedAnimeEntries.watchAll((_) {
+      final newB = savedAnimeEntries.backlogAll;
       backlog.clear();
       backlog.addAll(newB);
 
@@ -90,7 +98,7 @@ class __WatchingTabState extends State<_WatchingTab> {
       }
 
       currentlyWatching.clear();
-      currentlyWatching.addAll(SavedAnimeEntry.currentlyWatching());
+      currentlyWatching.addAll(savedAnimeEntries.currentlyWatchingAll);
     });
   }
 
@@ -99,6 +107,8 @@ class __WatchingTabState extends State<_WatchingTab> {
     watcher.cancel();
 
     state.dispose();
+
+    scrollController.dispose();
 
     widget.onDispose();
 
@@ -119,24 +129,109 @@ class __WatchingTabState extends State<_WatchingTab> {
       state,
       (context) => GridFrame<SavedAnimeEntryData>(
         key: state.gridKey,
-        layout: _WatchingLayout(
-          currentlyWatching,
-          watchingKey: watchingKey,
-          flipBacklogUpward: () {
-            upward = !upward;
+        overrideController: scrollController,
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.only(left: 14, right: 14),
+            sliver: SliverToBoxAdapter(
+              child: MediumSegmentLabel(
+                AppLocalizations.of(context)!.watchingLabel,
+                trailingWidget: IconButton.filledTonal(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() {
+                    right = !right;
+                  }),
+                  icon: (right
+                          ? const Icon(Icons.arrow_back)
+                          : const Icon(Icons.arrow_forward))
+                      .animate(key: ValueKey(right))
+                      .fadeIn(),
+                ),
+              ),
+            ),
+          ),
+          if (currentlyWatching.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.only(left: 14, right: 14),
+              sliver: _CurrentlyWatching(
+                key: watchingKey,
+                currentlyWatching: currentlyWatching,
+                watchingRight: right,
+                controller: scrollController,
+                glue: GlueProvider.generateOf(context)(),
+                db: widget.db,
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: EmptyWidget(
+                gridSeed: gridSeed,
+              ),
+            ),
+          SliverPadding(
+            padding: const EdgeInsets.only(left: 14, right: 14),
+            sliver: SliverToBoxAdapter(
+              child: MediumSegmentLabel(
+                AppLocalizations.of(context)!.backlogLabel,
+                trailingWidget: IconButton.filledTonal(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    upward = !upward;
 
-            MiscSettings.setAnimeWatchingOrderReversed(upward);
+                    MiscSettingsService.db()
+                        .current
+                        .copy(animeWatchingOrderReversed: upward);
 
-            setState(() {});
-          },
-          backlogUpward: upward,
-          watchingRight: right,
-          flipWatchingRight: () {
-            right = !right;
-
-            setState(() {});
-          },
-        ),
+                    setState(() {});
+                  },
+                  icon: (upward
+                          ? const Icon(Icons.arrow_upward)
+                          : const Icon(Icons.arrow_downward))
+                      .animate(key: ValueKey(upward))
+                      .fadeIn(),
+                ),
+              ),
+            ),
+          ),
+          if (state.refreshingStatus.mutation.cellCount > 0)
+            SliverPadding(
+                padding: const EdgeInsets.only(left: 14, right: 14),
+                sliver: GridLayout()
+                // GridLayout.blueprint<SavedAnimeEntryData>(
+                //   context,
+                //   state.widget.functionality,
+                //   state.selection,
+                //   aspectRatio: gridSettings.aspectRatio.value,
+                //   columns: gridSettings.columns.number,
+                //   gridCell: (context, cell, idx) {
+                //     return GridCell.frameDefault(
+                //       context,
+                //       idx,
+                //       cell,
+                //       imageAlign: Alignment.topCenter,
+                //       hideTitle: gridSettings.hideName,
+                //       isList: isList,
+                //       state: state,
+                //       animated: true,
+                //     );
+                //   },
+                // ),
+                )
+          else
+            SliverToBoxAdapter(
+              child: EmptyWidget(
+                gridSeed: gridSeed + 1,
+              ),
+            ),
+        ],
+        // layout: _WatchingLayout(
+        //   currentlyWatching,
+        //   watchingKey: watchingKey,
+        // flipBacklogUpward:,
+        //   backlogUpward: upward,
+        //   watchingRight: right,
+        // flipWatchingRight:
+        // ),
         getCell: _getCell,
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
@@ -151,18 +246,18 @@ class __WatchingTabState extends State<_WatchingTab> {
                 final entry = selected.first;
 
                 if (!entry.inBacklog) {
-                  entry.unsetIsWatching();
+                  entry.copy(inBacklog: true).save();
                   return;
                 }
 
-                if (!entry.setCurrentlyWatching()) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context)!.cantWatchThree),
-                    ),
-                  );
-                }
+                // if (!entry.setCurrentlyWatching()) {
+                //   ScaffoldMessenger.of(context).showSnackBar(
+                //     SnackBar(
+                //       content:
+                //           Text(AppLocalizations.of(context)!.cantWatchThree),
+                //     ),
+                //   );
+                // }
               },
               true,
               showOnlyWhenSingle: true,
@@ -170,9 +265,7 @@ class __WatchingTabState extends State<_WatchingTab> {
             GridAction(
               Icons.delete_rounded,
               (selected) {
-                SavedAnimeEntry.deleteAll(
-                  selected.map((e) => (e.site, e.id)).toList(),
-                );
+                savedAnimeEntries.deleteAll(selected.toIds);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content:
@@ -180,7 +273,7 @@ class __WatchingTabState extends State<_WatchingTab> {
                     action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undoLabel,
                       onPressed: () {
-                        SavedAnimeEntry.reAdd(selected);
+                        savedAnimeEntries.reAdd(selected);
                       },
                     ),
                   ),
@@ -188,9 +281,9 @@ class __WatchingTabState extends State<_WatchingTab> {
               },
               true,
             ),
-            const GridAction(
+            GridAction(
               Icons.check_rounded,
-              WatchedAnimeEntry.moveAll,
+              (s) => watchedAnimeEntries.moveAll(s, savedAnimeEntries),
               true,
             ),
           ],
@@ -209,135 +302,55 @@ class __WatchingTabState extends State<_WatchingTab> {
   }
 }
 
-class _WatchingLayout
-    implements GridLayouter<SavedAnimeEntryData>, GridLayoutBehaviour {
-  const _WatchingLayout(
-    this.currentlyWatching, {
-    required this.backlogUpward,
-    required this.flipBacklogUpward,
-    required this.flipWatchingRight,
-    required this.watchingRight,
-    required this.watchingKey,
-  });
+// class _WatchingLayout
+//     implements GridLayouter<SavedAnimeEntryData>, GridLayoutBehaviour {
+//   const _WatchingLayout(
+//     this.currentlyWatching, {
+//     required this.backlogUpward,
+//     required this.flipBacklogUpward,
+//     required this.flipWatchingRight,
+//     required this.watchingRight,
+//     required this.watchingKey,
+//   });
 
-  final GlobalKey<__CurrentlyWatchingState> watchingKey;
+//   final GlobalKey<__CurrentlyWatchingState> watchingKey;
 
-  final bool backlogUpward;
-  final void Function() flipBacklogUpward;
+//   final bool backlogUpward;
+//   final void Function() flipBacklogUpward;
 
-  final bool watchingRight;
-  final void Function() flipWatchingRight;
+//   final bool watchingRight;
+//   final void Function() flipWatchingRight;
 
-  final List<SavedAnimeEntryData> currentlyWatching;
+//   final List<SavedAnimeEntryData> currentlyWatching;
 
-  @override
-  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsData settings) {
-    return this as GridLayouter<T>;
-  }
+//   @override
+//   GridLayouter<T> makeFor<T extends CellBase>(GridSettingsData settings) {
+//     return this as GridLayouter<T>;
+//   }
 
-  @override
-  bool get isList => false;
+//   @override
+//   bool get isList => false;
 
-  static GridSettingsBase _defaultSettings() => const GridSettingsBase(
-        aspectRatio: GridAspectRatio.zeroSeven,
-        columns: GridColumn.three,
-        layoutType: GridLayoutType.grid,
-        hideName: false,
-      );
+//   static GridSettingsBase _defaultSettings() => const GridSettingsBase(
+//         aspectRatio: GridAspectRatio.zeroSeven,
+//         columns: GridColumn.three,
+//         layoutType: GridLayoutType.grid,
+//         hideName: false,
+//       );
 
-  @override
-  GridSettingsBase Function() get defaultSettings => _defaultSettings;
+//   @override
+//   GridSettingsBase Function() get defaultSettings => _defaultSettings;
 
-  @override
-  List<Widget> call(
-    BuildContext context,
-    GridSettingsData gridSettings,
-    GridFrameState<SavedAnimeEntryData> state,
-  ) {
-    return [
-      SliverPadding(
-        padding: const EdgeInsets.only(left: 14, right: 14),
-        sliver: SliverToBoxAdapter(
-          child: MediumSegmentLabel(
-            AppLocalizations.of(context)!.watchingLabel,
-            trailingWidget: IconButton.filledTonal(
-              visualDensity: VisualDensity.compact,
-              onPressed: flipWatchingRight,
-              icon: (watchingRight
-                      ? const Icon(Icons.arrow_back)
-                      : const Icon(Icons.arrow_forward))
-                  .animate(key: ValueKey(watchingRight))
-                  .fadeIn(),
-            ),
-          ),
-        ),
-      ),
-      if (currentlyWatching.isNotEmpty)
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 14, right: 14),
-          sliver: _CurrentlyWatching(
-            key: watchingKey,
-            currentlyWatching: currentlyWatching,
-            watchingRight: watchingRight,
-            controller: state.controller,
-            glue: GlueProvider.generateOf(context)(),
-          ),
-        )
-      else
-        SliverToBoxAdapter(
-          child: EmptyWidget(
-            gridSeed: state.widget.description.gridSeed,
-          ),
-        ),
-      SliverPadding(
-        padding: const EdgeInsets.only(left: 14, right: 14),
-        sliver: SliverToBoxAdapter(
-          child: MediumSegmentLabel(
-            AppLocalizations.of(context)!.backlogLabel,
-            trailingWidget: IconButton.filledTonal(
-              visualDensity: VisualDensity.compact,
-              onPressed: flipBacklogUpward,
-              icon: (backlogUpward
-                      ? const Icon(Icons.arrow_upward)
-                      : const Icon(Icons.arrow_downward))
-                  .animate(key: ValueKey(backlogUpward))
-                  .fadeIn(),
-            ),
-          ),
-        ),
-      ),
-      if (state.mutation.cellCount > 0)
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 14, right: 14),
-          sliver: GridLayout.blueprint<SavedAnimeEntryData>(
-            context,
-            state.widget.functionality,
-            state.selection,
-            aspectRatio: gridSettings.aspectRatio.value,
-            columns: gridSettings.columns.number,
-            gridCell: (context, cell, idx) {
-              return GridCell.frameDefault(
-                context,
-                idx,
-                cell,
-                imageAlign: Alignment.topCenter,
-                hideTitle: gridSettings.hideName,
-                isList: isList,
-                state: state,
-                animated: true,
-              );
-            },
-          ),
-        )
-      else
-        SliverToBoxAdapter(
-          child: EmptyWidget(
-            gridSeed: state.widget.description.gridSeed + 1,
-          ),
-        ),
-    ];
-  }
-}
+//   @override
+//   List<Widget> call(
+//     BuildContext context,
+//     GridSettingsData gridSettings,
+//     GridFrameState<SavedAnimeEntryData> state,
+//   ) {
+//     return [
+//     ];
+//   }
+// }
 
 class _CurrentlyWatching extends StatefulWidget {
   const _CurrentlyWatching({
@@ -346,6 +359,7 @@ class _CurrentlyWatching extends StatefulWidget {
     required this.controller,
     required this.watchingRight,
     required this.glue,
+    required this.db,
   });
 
   final bool watchingRight;
@@ -353,31 +367,36 @@ class _CurrentlyWatching extends StatefulWidget {
   final ScrollController controller;
   final SelectionGlue glue;
 
+  final DbConn db;
+
   @override
   State<_CurrentlyWatching> createState() => __CurrentlyWatchingState();
 }
 
 class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
+  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+
   late final selection = GridSelection<SavedAnimeEntryData>(
     [
       GridAction(
         Icons.play_arrow_rounded,
         (selected) {
-          SavedAnimeEntry.unsetIsWatchingAll(selected.cast());
+          savedAnimeEntries.unsetIsWatchingAll(selected);
         },
         true,
       ),
       GridAction(
         Icons.delete_rounded,
         (selected) {
-          SavedAnimeEntry.deleteAll(selected.cast());
+          savedAnimeEntries.deleteAll(selected.toIds);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.deletedFromBacklog),
               action: SnackBarAction(
                 label: AppLocalizations.of(context)!.undoLabel,
                 onPressed: () {
-                  SavedAnimeEntry.reAdd(selected.cast());
+                  savedAnimeEntries.reAdd(selected);
                 },
               ),
             ),
@@ -388,7 +407,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
       GridAction(
         Icons.check_rounded,
         (selected) {
-          WatchedAnimeEntry.moveAll(selected.cast());
+          watchedAnimeEntries.moveAll(selected, widget.db.savedAnimeEntries);
         },
         true,
       ),
@@ -409,6 +428,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
             entry: e,
             id: e.id,
             apiFactory: e.site.api,
+            db: widget.db,
           );
         },
       ),
@@ -456,6 +476,7 @@ class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
     required this.onPressed,
     required this.idx,
     this.onLongPressed,
+    required this.db,
   });
 
   final T cell;
@@ -463,13 +484,15 @@ class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
   final void Function(T cell, int idx)? onPressed;
   final void Function(T cell, int idx)? onLongPressed;
 
+  final ReadMangaChaptersService db;
+
   void _onLongPressed() => onLongPressed!(cell, idx);
 
   void _onPressed() => onPressed!(cell, idx);
 
   @override
   Widget build(BuildContext context) {
-    final lastRead = ReadMangaChapter.firstForId(cell.mangaId);
+    final lastRead = db.firstForId(cell.mangaId);
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.labelMedium?.copyWith(
       color: theme.colorScheme.onSurface.withOpacity(0.7),

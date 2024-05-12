@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
@@ -143,6 +144,9 @@ class _GelbooruPost with Post, DefaultPostPressable {
   Booru get booru => Booru.gelbooru;
 
   static final _dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
+
+  @override
+  PostContentType get type => Post.makeType(this);
 }
 
 class GelbooruRatingConverter implements JsonConverter<PostRating, String?> {

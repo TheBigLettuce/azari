@@ -11,6 +11,11 @@ extension WatchedAnimeEntryDataExt on WatchedAnimeEntryData {
   void save() => _currentDb.watchedAnime.add(this);
 }
 
+extension WatchedAnimeEntryDataListExt on List<WatchedAnimeEntryData> {
+  List<(int id, AnimeMetadata site)> get toIds =>
+      map((e) => (e.id, e.site)).toList();
+}
+
 abstract class WatchedAnimeEntryData extends AnimeEntryData {
   const WatchedAnimeEntryData({
     required super.site,
@@ -81,8 +86,10 @@ abstract interface class WatchedAnimeEntryService implements ServiceMarker {
   void reAdd(List<WatchedAnimeEntryData> entries);
 
   WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
-  // void moveAllReversed(List<WatchedAnimeEntryData> entries);
-  // void moveAll(List<AnimeEntryData> entries);
+  void moveAllReversed(List<WatchedAnimeEntryData> entries,
+      SavedAnimeEntriesService savedAnimeEntries);
+  void moveAll(
+      List<AnimeEntryData> entries, SavedAnimeEntriesService savedAnimeEntries);
 
   StreamSubscription<void> watchAll(
     void Function(void) f, [

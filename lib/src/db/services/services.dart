@@ -38,17 +38,13 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
+import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:isar/isar.dart";
@@ -78,12 +74,32 @@ part "statistics_general.dart";
 part "download_file.dart";
 part "watched_anime_entry.dart";
 
+Future<void> initServices(DownloadMoverPlug plug) async {
+  final ret = await _currentDb._init();
+
+  _downloadManager ??= DownloadManager(plug, _currentDb.downloads);
+
+  return Future.value();
+}
+
+int numberOfElementsPerRefresh() {
+  final booruSettings = _currentDb.gridSettings.booru.current;
+  if (booruSettings.layoutType == GridLayoutType.list) {
+    return 40;
+  }
+
+  return 15 * booruSettings.columns.number;
+}
+
+DownloadManager? _downloadManager;
+
 ServicesImplTable get _currentDb => ServicesImplTable.isar;
 typedef DbConn = ServicesImplTable;
 
 class DatabaseConnectionNotifier extends InheritedWidget {
   const DatabaseConnectionNotifier._({
     super.key,
+    required this.downloadManager,
     required this.db,
     required super.child,
   });
@@ -91,10 +107,19 @@ class DatabaseConnectionNotifier extends InheritedWidget {
   factory DatabaseConnectionNotifier.current(Widget child) =>
       DatabaseConnectionNotifier._(
         db: _currentDb,
+        downloadManager: _downloadManager!,
         child: child,
       );
 
   final DbConn db;
+  final DownloadManager downloadManager;
+
+  static DownloadManager downloadManagerOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<DatabaseConnectionNotifier>();
+
+    return widget!.downloadManager;
+  }
 
   static DbConn of(BuildContext context) {
     final widget = context
@@ -108,8 +133,12 @@ class DatabaseConnectionNotifier extends InheritedWidget {
       db != oldWidget.db;
 }
 
-enum ServicesImplTable {
+enum ServicesImplTable implements ServiceMarker {
   isar;
+
+  Future<void> _init() => switch (this) {
+        ServicesImplTable.isar => initalizeIsarDb(false),
+      };
 
   SettingsService get settings => switch (this) {
         ServicesImplTable.isar => const IsarSettingsService(),
@@ -260,14 +289,18 @@ abstract class FilteringResourceSource<T> implements ResourceSource<T> {
       }).toList();
 }
 
-abstract class SourceStorage<T> with Iterable<T> {
+abstract class ReadOnlyStorage<T> with Iterable<T> {
   int get count;
-
-  void add(T e);
 
   T? get(int idx);
 
-  void addAll(List<T> l);
+  T operator [](int index);
+}
+
+abstract class SourceStorage<T> extends ReadOnlyStorage<T> {
+  void add(T e, [bool silent = false]);
+
+  void addAll(List<T> l, [bool silent = false]);
 
   void removeAll(List<int> idx);
 
@@ -275,17 +308,17 @@ abstract class SourceStorage<T> with Iterable<T> {
 
   void destroy();
 
-  T operator [](int index);
   void operator []=(int index, T value);
+
+  StreamSubscription<int> watch(void Function(int) f);
 }
 
 class ListStorage<T> extends SourceStorage<T> {
   ListStorage();
 
-  final List<T> list = [];
+  final StreamController<int> _events = StreamController.broadcast();
 
-  @override
-  void add(T e) => list.add(e);
+  final List<T> list = [];
 
   @override
   int get count => list.length;
@@ -294,16 +327,38 @@ class ListStorage<T> extends SourceStorage<T> {
   Iterator<T> get iterator => list.iterator;
 
   @override
-  T? get(int idx) => idx >= list.length ? null : list[idx];
+  T? get(int idx) => idx >= count ? null : list[idx];
 
   @override
-  void addAll(List<T> l) => list.addAll(l);
+  void add(T e, [bool silent = false]) {
+    list.add(e);
+
+    if (!silent) {
+      _events.add(count);
+    }
+  }
 
   @override
-  void clear() => list.clear();
+  void addAll(List<T> l, [bool silent = false]) {
+    list.addAll(l);
+
+    if (!silent) {
+      _events.add(count);
+    }
+  }
 
   @override
-  void removeAll(List<int> idx) => idx.forEach(list.removeAt);
+  void clear() {
+    list.clear();
+    _events.add(count);
+  }
+
+  @override
+  void removeAll(List<int> idx) {
+    idx.forEach(list.removeAt);
+
+    _events.add(count);
+  }
 
   @override
   T operator [](int index) => get(index)!;
@@ -312,7 +367,15 @@ class ListStorage<T> extends SourceStorage<T> {
   void operator []=(int index, T value) => list[index] = value;
 
   @override
-  void destroy() => clear();
+  void destroy() {
+    clear();
+
+    _events.close();
+  }
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f) =>
+      _events.stream.listen(f);
 }
 
 class ChainedFilterResourceSource<T> implements ResourceSource<T> {
@@ -332,7 +395,7 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
             : allowedSortingModes.contains(initialSortingMode)),
         _mode = initialFilteringMode,
         _sorting = initialSortingMode {
-    _originalSubscr = _original.watch((c) {
+    _originalSubscr = _original.backingStorage.watch((c) {
       clearRefresh();
     });
   }
@@ -344,7 +407,6 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
   SourceStorage<T> get backingStorage => _filterStorage;
 
   late final StreamSubscription<int> _originalSubscr;
-  final StreamController<int> _events = StreamController.broadcast();
 
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
@@ -407,21 +469,19 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
     _filteringInProgress = true;
 
     backingStorage.clear();
-    _events.add(count);
 
     if (_original.backingStorage.count == 0) {
       _filteringInProgress = false;
       return 0;
     }
 
-    for (final e in _original.backingStorage) {
+    final origCount_ = _original.count;
+    for (final (i, e) in _original.backingStorage.indexed) {
       final keep = fn(e, _mode, _sorting);
       if (keep) {
-        backingStorage.add(e);
+        backingStorage.add(e, i != origCount_ - 1);
       }
     }
-
-    _events.add(count);
 
     _filteringInProgress = false;
 
@@ -445,19 +505,44 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
 
   @override
   void destroy() {
-    _events.close();
+    backingStorage.destroy();
     _originalSubscr.cancel();
-
-    _currentProgress?.ignore();
   }
 
+  // @override
+  // StreamSubscription<int> watch(void Function(int c) f) =>
+  //     _events.stream.listen(f);
+}
+
+class _EmptyResourceSource<T> extends ResourceSource<T> {
   @override
-  StreamSubscription<int> watch(void Function(int c) f) =>
-      _events.stream.listen(f);
+  int get count => backingStorage.count;
+
+  @override
+  final SourceStorage<T> backingStorage = ListStorage();
+
+  @override
+  T? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  T forIdxUnsafe(int idx) => backingStorage[idx];
+
+  @override
+  Future<int> clearRefresh() => Future.value(count);
+
+  @override
+  Future<int> next() => Future.value(count);
+
+  @override
+  void destroy() {
+    backingStorage.destroy();
+  }
 }
 
 abstract interface class ResourceSource<T> {
   const ResourceSource();
+
+  factory ResourceSource.empty() => _EmptyResourceSource();
 
   SourceStorage<T> get backingStorage;
 
@@ -471,8 +556,6 @@ abstract interface class ResourceSource<T> {
   Future<int> next();
 
   void destroy();
-
-  StreamSubscription<int> watch(void Function(int) f);
 }
 
 abstract interface class LocalTagDictionaryService {
@@ -516,11 +599,11 @@ abstract interface class LocalTagsService {
     void Function(List<LocalTagsData>) f,
   );
 
-  StreamSubscription<List<ImageTag>> watchImagePinned(
-    List<String> tags,
-    void Function(List<ImageTag>) f, {
-    String? withFilename,
-  });
+  // StreamSubscription<List<ImageTag>> watchImagePinned(
+  //   List<String> tags,
+  //   void Function(List<ImageTag>) f, {
+  //   String? withFilename,
+  // });
 }
 
 abstract interface class DirectoryTagService {
@@ -566,6 +649,19 @@ abstract class BooruTagging {
   void clear();
 
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+
+  StreamSubscription<List<ImageTag>> watchImage(
+    List<String> tags,
+    void Function(List<ImageTag>) f, {
+    bool fire = false,
+  });
+
+  StreamSubscription<List<ImageTag>> watchImageLocal(
+    String filename,
+    void Function(List<ImageTag>) f, {
+    required LocalTagsService localTag,
+    bool fire = false,
+  });
 }
 
 mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
@@ -579,11 +675,37 @@ mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
 }
 
 abstract interface class TagManager implements ServiceMarker {
-  factory TagManager.of(BuildContext context) {}
+  factory TagManager.booru(Booru booru) => switch (_currentDb) {
+        ServicesImplTable.isar => IsarTagManager(booru),
+      };
+
+  factory TagManager.of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_TagManagerAnchor>();
+
+    return widget!.tagManager;
+  }
+
+  static Widget wrapAnchor(TagManager tagManager, Widget child) =>
+      _TagManagerAnchor(tagManager: tagManager, child: child);
 
   BooruTagging get excluded;
   BooruTagging get latest;
   BooruTagging get pinned;
+}
+
+class _TagManagerAnchor extends InheritedWidget {
+  const _TagManagerAnchor({
+    super.key,
+    required this.tagManager,
+    required super.child,
+  });
+
+  final TagManager tagManager;
+
+  @override
+  bool updateShouldNotify(_TagManagerAnchor oldWidget) =>
+      tagManager != oldWidget.tagManager;
 }
 
 abstract class GridStateBase {
@@ -667,7 +789,9 @@ abstract interface class MainGridService {
 
   TagManager get tagManager;
 
-  PostsSourceService<Post> makeSource(
+  PostsOptimizedStorage get savedPosts;
+
+  GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
     PagingEntry entry,
@@ -684,7 +808,9 @@ abstract interface class SecondaryGridService {
 
   TagManager get tagManager;
 
-  PostsSourceService<Post> makeSource(
+  PostsOptimizedStorage get savedPosts;
+
+  GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
     PagingEntry entry,
@@ -692,5 +818,6 @@ abstract interface class SecondaryGridService {
     HiddenBooruPostService hiddenBooruPosts,
   );
 
-  void destroy();
+  Future<void> destroy();
+  Future<void> close();
 }

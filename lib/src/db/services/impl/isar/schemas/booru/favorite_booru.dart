@@ -7,8 +7,10 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
@@ -31,6 +33,7 @@ class IsarFavoriteBooru extends FavoritePostData implements IsarEntryId {
     required super.score,
     required super.createdAt,
     required super.group,
+    required super.type,
   });
 
   @override

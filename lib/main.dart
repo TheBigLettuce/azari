@@ -18,6 +18,7 @@ import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
@@ -133,7 +134,7 @@ Future<void> mainPickfile() async {
   initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
-  await initalizeDb(true);
+  await initServices(await chooseDownloadMoverPlug());
   initalizeGalleryPlug(true);
 
   if (Platform.isAndroid) {
@@ -145,12 +146,14 @@ Future<void> mainPickfile() async {
   }
 
   initalizeNetworkStatus(
-    Platform.isAndroid && await PlatformFunctions.currentNetworkStatus(),
+    Platform.isAndroid
+        ? await const AndroidApiFunctions().currentNetworkStatus()
+        : true,
   );
 
   changeExceptionErrorColors();
 
-  final accentColor = await PlatformFunctions.accentColor();
+  final accentColor = await PlatformApi.current().accentColor();
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -170,7 +173,7 @@ Future<void> mainPickfile() async {
             callback: CallbackDescriptionNested(
                 icon: Icons.file_open_rounded,
                 AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
-              PlatformFunctions.returnUri(chosen.originalUri);
+              const AndroidApiFunctions().returnUri(chosen.originalUri);
             }),
           );
         },
@@ -183,8 +186,9 @@ void main() async {
   initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
-  await initalizeDb(false);
-  await initalizeDownloader();
+
+  await initServices(await chooseDownloadMoverPlug());
+  // await initalizeDownloader();
 
   changeExceptionErrorColors();
 
@@ -198,10 +202,12 @@ void main() async {
 
   initalizeGalleryPlug(false);
   initalizeNetworkStatus(
-    Platform.isAndroid && await PlatformFunctions.currentNetworkStatus(),
+    Platform.isAndroid
+        ? await const AndroidApiFunctions().currentNetworkStatus()
+        : true,
   );
 
-  final accentColor = await PlatformFunctions.accentColor();
+  final accentColor = await PlatformApi.current().accentColor();
 
   final GlobalKey restartKey = GlobalKey();
 
