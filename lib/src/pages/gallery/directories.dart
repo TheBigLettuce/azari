@@ -12,7 +12,6 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
@@ -21,10 +20,9 @@ import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/gallery_directories_actions.dart";
 import "package:gallery/src/pages/more/favorite_booru_actions.dart";
 import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
@@ -56,7 +54,10 @@ class GalleryDirectories extends StatefulWidget {
   final DbConn db;
 
   static String segmentCell(
-      String name, String bucketId, DirectoryTagService directoryTag) {
+    String name,
+    String bucketId,
+    DirectoryTagService directoryTag,
+  ) {
     for (final booru in Booru.values) {
       if (booru.url == name) {
         return "Booru";
@@ -84,8 +85,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   BlacklistedDirectoryService get blacklistedDirectories =>
       widget.db.blacklistedDirectories;
 
-  GridMutationInterface get mutation => state.refreshingStatus.mutation;
-
   static const _log = LogTarget.gallery;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
@@ -98,10 +97,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   late final ChainedFilterResourceSource<GalleryDirectory> filter;
 
-  late final GridSkeletonRefreshingState<GalleryDirectory> state =
-      GridSkeletonRefreshingState(
-    clearRefresh: RetainedGridRefresh(_refresh),
-  );
+  late final GridSkeletonState<GalleryDirectory> state = GridSkeletonState();
 
   final galleryPlug = chooseGalleryPlug();
 
@@ -164,7 +160,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     );
 
     if (widget.callback != null) {
-      const AndroidApiFunctions().trashThumbId().then((value) {
+      GalleryManagementApi.current().trashThumbId().then((value) {
         try {
           setState(() {
             trashThumbId = value;
@@ -172,6 +168,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         } catch (_) {}
       });
     }
+
+    api.source.clearRefresh();
   }
 
   @override
@@ -193,7 +191,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   }
 
   void _refresh() {
-    const AndroidApiFunctions().trashThumbId().then((value) {
+    GalleryManagementApi.current().trashThumbId().then((value) {
       try {
         setState(() {
           trashThumbId = value;
@@ -201,7 +199,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       } catch (_) {}
     });
 
-    mutation.isRefreshing = true;
     api.source.clearRefresh();
     galleryPlug.version.then((value) => galleryVersion = value);
   }
@@ -356,12 +353,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           SegmentLayout(
             getCell: filter.forIdxUnsafe,
             segments: _makeSegments(context),
-            gridSeed: state.gridSeed,
+            gridSeed: 1,
             suggestionPrefix: widget.callback?.suggestFor ?? const [],
-            mutation: mutation,
+            storage: filter.backingStorage,
+            progress: filter.progress,
           ),
         ],
-        getCell: filter.forIdxUnsafe,
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           registerNotifiers: (child) => DirectoriesDataNotifier(
@@ -371,7 +368,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             segmentFnc: _segmentCell,
             child: child,
           ),
-          refreshingStatus: state.refreshingStatus,
+          source: filter,
           settingsButton: GridSettingsButton(
             add: _add,
             watch: gridSettings.watch,
@@ -442,7 +439,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   try {
                     widget.callback!(
                       null,
-                      await const AndroidApiFunctions()
+                      await GalleryManagementApi.current()
                           .chooseDirectory(temporary: true)
                           .then((value) => value!.path),
                     );
@@ -472,20 +469,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       : widget.nestedCallback!.icon,
                 )
               : null,
-          // settingsButton: GridFrameSettingsButton(
-          //   selectRatio: (ratio, settings) =>
-          //       (settings as GridSettingsDirectories)
-          //           .copy(aspectRatio: ratio)
-          //           .save(),
-          //   selectHideName: (hideNames, settings) =>
-          //       (settings as GridSettingsDirectories)
-          //           .copy(hideName: hideNames)
-          //           .save(),
-          //   selectGridColumn: (columns, settings) =>
-          //       (settings as GridSettingsDirectories)
-          //           .copy(columns: columns)
-          //           .save(),
-          // ),
           inlineMenuButtonItems: true,
           keybindsDescription:
               AppLocalizations.of(context)!.androidGKeybindsDescription,
@@ -512,14 +495,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.wrapGridPage
-        ? WrapGridPage(
-            addScaffold: widget.callback != null,
-            child: Builder(
-              builder: (context) => child(context),
-            ),
-          )
-        : child(context);
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: widget.wrapGridPage
+          ? WrapGridPage(
+              addScaffold: widget.callback != null,
+              child: Builder(
+                builder: (context) => child(context),
+              ),
+            )
+          : child(context),
+    );
   }
 }
 

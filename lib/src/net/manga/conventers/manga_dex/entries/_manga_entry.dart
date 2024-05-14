@@ -54,7 +54,7 @@ class _MangaEntry with MangaEntry {
       .toList();
 
   @override
-  String get demographics => attributes.demographics;
+  String get demographics => attributes.demographics ?? "";
 
   @override
   String get status => attributes.status;

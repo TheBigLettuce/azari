@@ -150,8 +150,8 @@ class _RestartWidgetState extends State<RestartWidget> {
             key: key,
             child: ColoredBox(
               color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                  ? d.colorScheme.background
-                  : l.colorScheme.background,
+                  ? d.colorScheme.surface
+                  : l.colorScheme.surface,
               child: widget
                   .child(d, l, SettingsService.db().current)
                   .animate(effects: [const FadeEffect()]),

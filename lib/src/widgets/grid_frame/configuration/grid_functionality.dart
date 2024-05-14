@@ -8,31 +8,28 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refresh_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({
+    required this.source,
     required this.selectionGlue,
-    required this.refreshingStatus,
-    this.onError,
     this.registerNotifiers,
     this.updateScrollPosition,
     this.download,
     this.settingsButton,
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
-    // this.refreshBehaviour = const DefaultGridRefreshBehaviour(),
     this.search = const EmptyGridSearchWidget(),
   });
 
-  final GridRefreshingStatus<T> refreshingStatus;
+  final ResourceSource<T> source;
 
   /// In case if the cell represents an online resource which can be downloaded,
   /// setting [download] enables buttons to download the resource.
@@ -45,8 +42,6 @@ class GridFunctionality<T extends CellBase> {
   /// State restoration takes this info into the account.
   final void Function(double pos)? updateScrollPosition;
 
-  final Widget Function(Object error)? onError;
-
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
   final GridSettingsButton? settingsButton;
@@ -54,7 +49,6 @@ class GridFunctionality<T extends CellBase> {
   final GridFabType fab;
   final SelectionGlue selectionGlue;
   final GridBackButtonBehaviour backButton;
-  // final GridRefreshBehaviour refreshBehaviour;
   final GridSearchWidget search;
 }
 

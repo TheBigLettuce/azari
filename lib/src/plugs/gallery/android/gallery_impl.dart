@@ -63,6 +63,8 @@ class _GalleryImpl implements GalleryApi {
       //     ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
       return false;
     } else if (f.isEmpty && !inRefresh) {
+      api.source.progress.inRefreshing = false;
+
       // _currentApi?.currentImages?.callback
       //     ?.call(db.systemGalleryDirectoryFiles.countSync(), false, false);
 
@@ -95,6 +97,10 @@ class _GalleryImpl implements GalleryApi {
             .toList(),
         inRefresh,
       );
+    }
+
+    if (!inRefresh) {
+      api.source.progress.inRefreshing = false;
     }
 
     // try {
@@ -152,6 +158,7 @@ class _GalleryImpl implements GalleryApi {
 
       return false;
     } else if (d.isEmpty && !inRefresh) {
+      api.source.progress.inRefreshing = false;
       // _currentApi?.callback
       //     ?.call(db.systemGalleryDirectorys.countSync(), false, false);
       // for (final api in _temporaryApis) {
@@ -208,6 +215,10 @@ class _GalleryImpl implements GalleryApi {
           .toList(),
       inRefresh,
     );
+
+    if (!inRefresh) {
+      api.source.progress.inRefreshing = false;
+    }
 
     // _currentApi?.callback
     //     ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);

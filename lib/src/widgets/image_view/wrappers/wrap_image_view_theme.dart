@@ -17,6 +17,7 @@ class WrapImageViewTheme extends StatefulWidget {
     required this.previousPallete,
     required this.child,
   });
+
   final PaletteGenerator? currentPalette;
   final PaletteGenerator? previousPallete;
   final Widget child;
@@ -78,14 +79,14 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
     return Theme(
       data: themeData.copyWith(
         appBarTheme: themeData.appBarTheme.copyWith(
-          backgroundColor: colorScheme.surface.withOpacity(0.95),
+          backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
         ),
         bottomAppBarTheme: BottomAppBarTheme(
           color: colorScheme.surface.withOpacity(0.95),
         ),
         searchBarTheme: SearchBarThemeData(
-          backgroundColor: MaterialStatePropertyAll(
-            colorScheme.surfaceVariant.withOpacity(0.8),
+          backgroundColor: WidgetStatePropertyAll(
+            colorScheme.surfaceContainerHighest.withOpacity(0.8),
           ),
         ),
       ),

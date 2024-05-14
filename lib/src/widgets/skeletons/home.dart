@@ -9,7 +9,7 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 

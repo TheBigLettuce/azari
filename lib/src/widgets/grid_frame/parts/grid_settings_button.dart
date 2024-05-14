@@ -244,8 +244,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                         focusMain: searchFocus.unfocus,
                         child: Builder(
                           builder: (context) {
-                            return makeSearchBar(
-                              context,
+                            return AutocompleteSearchBar(
                               searchTextOverride:
                                   AppLocalizations.of(context)!.filterHint,
                               focusNode: searchFocus,

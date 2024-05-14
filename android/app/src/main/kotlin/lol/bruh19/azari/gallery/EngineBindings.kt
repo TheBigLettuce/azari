@@ -620,9 +620,7 @@ class EngineBindings(
                 }
 
                 "refreshGallery" -> {
-                    context.runOnUiThread {
-                        mover.refreshGallery()
-                    }
+                    mover.refreshGallery()
 
                     result.success(null)
                 }

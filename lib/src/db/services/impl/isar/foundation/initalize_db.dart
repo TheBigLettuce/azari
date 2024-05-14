@@ -17,7 +17,7 @@ Future<void> initalizeIsarDb(bool temporary) async {
 
   final directoryPath = (await getApplicationSupportDirectory()).path;
 
-  final d = io.Directory(path.joinAll([directoryPath, "temporary"]));
+  final d = Directory(path.joinAll([directoryPath, "temporary"]));
   d.createSync();
   if (!temporary) {
     d.deleteSync(recursive: true);
@@ -25,7 +25,7 @@ Future<void> initalizeIsarDb(bool temporary) async {
   }
   final temporaryDbPath = d.path;
 
-  final dimages = io.Directory(path.joinAll([directoryPath, "temp_images"]));
+  final dimages = Directory(path.joinAll([directoryPath, "temp_images"]));
   dimages.createSync();
   if (!temporary) {
     dimages.deleteSync(recursive: true);
@@ -98,7 +98,7 @@ Future<void> initalizeIsarDb(bool temporary) async {
 
   Isar? thumbnailIsar;
 
-  if (io.Platform.isAndroid) {
+  if (Platform.isAndroid) {
     thumbnailIsar = Isar.openSync(
       [IsarThumbnailSchema, IsarPinnedThumbnailSchema],
       directory: directoryPath,

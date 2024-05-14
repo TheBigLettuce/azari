@@ -166,7 +166,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
           shape: description.circle
               ? const CircleBorder()
               : RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
+                  borderRadius: BorderRadius.circular(15),
                 ),
         ),
         child: alias.isEmpty &&

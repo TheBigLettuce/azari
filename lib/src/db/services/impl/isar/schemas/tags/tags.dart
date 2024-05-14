@@ -10,12 +10,6 @@ import "package:isar/isar.dart";
 
 part "tags.g.dart";
 
-enum TagType {
-  normal,
-  pinned,
-  excluded;
-}
-
 // static void add(String tag) {
 //   PostTags.g.tagsDb.writeTxnSync(
 //     () => PostTags.g.tagsDb.pinnedTags.putSync(PinnedTag(tag)),

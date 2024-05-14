@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
 
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
@@ -15,11 +14,8 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
@@ -119,18 +115,11 @@ class _GridConfigurationNotifier extends InheritedWidget {
       config != oldWidget.config;
 }
 
-typedef MakeCellFunc<T extends CellBase> = Widget Function(
-  BuildContext,
-  T,
-  int,
-);
-
 /// The grid of images.
 class GridFrame<T extends CellBase> extends StatefulWidget {
   const GridFrame({
     required super.key,
     required this.slivers,
-    required this.getCell,
     this.initalScrollPosition = 0,
     required this.functionality,
     this.onDispose,
@@ -139,9 +128,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
     this.overrideController,
     required this.description,
   });
-
-  /// Grid gets the cell from [getCell].
-  final T Function(int) getCell;
 
   /// [initalScrollPosition] is needed for the state restoration.
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
@@ -171,14 +157,8 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
 
 class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     with GridSubpageState<T> {
-  StreamSubscription<void>? _gridSettingsWatcher;
-  late final StreamSubscription<void> _mutationEventsCells;
-  late final StreamSubscription<void> _mutationEventsRefresh;
-
   late ScrollController controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
-
-  // late GridSettingsData _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
     widget.description.actions,
@@ -189,15 +169,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       },
     ),
     () => controller,
-    mutation: widget.functionality.refreshingStatus.mutation,
+    source: widget.functionality.source.backingStorage,
     noAppBar: !widget.description.showAppBar,
   );
 
-  GridRefreshingStatus<T> get refreshingStatus =>
-      widget.functionality.refreshingStatus;
-  GridMutationInterface get mutation => refreshingStatus.mutation;
-
-  bool inImageView = false;
+  ResourceSource<T> get source => widget.functionality.source;
 
   int _refreshes = 0;
 
@@ -215,29 +191,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   void initState() {
     super.initState();
 
-    _mutationEventsCells = refreshingStatus.mutation.listenCount((_) {
-      setState(() {});
-    });
-    _mutationEventsRefresh = refreshingStatus.mutation.listenRefresh((_) {
-      setState(() {});
-    });
-
-    // _gridSettingsWatcher =
-    //     widget.functionality.watchLayoutSettings?.call((newSettings) {
-    //   _layoutSettings = newSettings;
-
-    //   setState(() {});
-    // });
-
     final description = widget.description;
-    final functionality = widget.functionality;
 
     controller = description.asSliver && widget.overrideController != null
         ? widget.overrideController!
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-    if (mutation.cellCount == 0) {
-      refreshingStatus.refresh();
+    if (source.count == 0) {
+      source.clearRefresh();
     }
 
     if (!description.asSliver) {
@@ -250,14 +211,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
         setState(() {});
 
-        if (functionality.refreshingStatus.next == null) {
+        if (!source.hasNext) {
           return;
         }
 
         controller.addListener(() {
           lastOffset = controller.offset;
 
-          if (refreshingStatus.reachedEnd || atNotHomePage) {
+          if (!source.progress.canLoadMore || atNotHomePage) {
             return;
           }
 
@@ -265,17 +226,21 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
           final height = h - h * 0.80;
 
-          if (!mutation.isRefreshing &&
-              mutation.cellCount != 0 &&
+          if (!source.progress.inRefreshing &&
+              source.count != 0 &&
               (controller.offset /
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
-            refreshingStatus.onNearEnd();
+            source.next();
           }
         });
       });
     }
   }
+
+  // void enableAnimationsFor([
+  //   Duration duration = const Duration(milliseconds: 300),
+  // ]) {}
 
   void resetFab() {
     setState(() {
@@ -283,30 +248,8 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     });
   }
 
-  bool _enableAnimations = false;
-
-  void enableAnimationsFor([
-    Duration duration = const Duration(milliseconds: 300),
-  ]) {
-    setState(() {
-      _enableAnimations = true;
-    });
-
-    Future.delayed(duration, () {
-      try {
-        _enableAnimations = false;
-
-        setState(() {});
-      } catch (_) {}
-    });
-  }
-
   @override
   void dispose() {
-    _mutationEventsCells.cancel();
-    _mutationEventsRefresh.cancel();
-    _gridSettingsWatcher?.cancel();
-
     if (widget.overrideController == null) {
       controller.dispose();
     }
@@ -332,11 +275,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     // Estimate the target scroll position.
     double target;
     if (config.layoutType == GridLayoutType.list) {
-      target = contentSize * p / mutation.cellCount;
+      target = contentSize * p / source.count;
     } else {
       target = contentSize *
           (p / picPerRow.number - 1) /
-          (mutation.cellCount / picPerRow.number);
+          (source.count / picPerRow.number);
     }
 
     if (target < controller.position.minScrollExtent) {
@@ -344,7 +287,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           ?.call(controller.position.minScrollExtent);
       return;
     } else if (target > controller.position.maxScrollExtent) {
-      if (refreshingStatus.reachedEnd) {
+      if (!source.progress.canLoadMore) {
         widget.functionality.updateScrollPosition
             ?.call(controller.position.maxScrollExtent);
         return;
@@ -377,11 +320,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   double appBarBottomWidgetSize(PageDescription? page) =>
       ((page?.search == null && !atHomePage) || widget.description.pages == null
           ? 0
-          : (widget.description.showPageSwitcherAsHeader
-              ? 0
-              : Platform.isAndroid
-                  ? 40 + 16
-                  : 32 + 24)) +
+          : (widget.description.showPageSwitcherAsHeader ? 0 : 40 + 16)) +
       (page == null ? 4 : 0);
 
   bool get hideAppBar =>
@@ -396,17 +335,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     final ret = <Widget>[
       if (widget.functionality.settingsButton != null)
         widget.functionality.settingsButton!,
-      // GridSettingsButton(
-      //   () => _layoutSettings,
-      //   watch: widget.functionality.watchLayoutSettings,
-      //   selectRatio: button.selectRatio,
-      //   selectHideName: button.selectHideName,
-      //   selectGridLayout: button.selectGridLayout,
-      //   selectGridColumn: button.selectGridColumn,
-      //   safeMode: button.safeMode,
-      //   selectSafeMode: button.selectSafeMode,
-      //   onChanged: enableAnimationsFor,
-      // ),
     ];
 
     if (description.menuButtonItems == null) {
@@ -453,18 +381,20 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
-          : _BottomWidget(
-              isRefreshing: mutation.isRefreshing,
-              routeChanger: (page != null && page.search == null) ||
-                      widget.description.showPageSwitcherAsHeader
-                  ? const SizedBox.shrink()
-                  : widget.description.pages?.switcherWidget(context, this),
+          : PreferredSize(
               preferredSize: Size.fromHeight(
                 appBarBottomWidgetSize(page),
               ),
-              child: Padding(
-                padding: EdgeInsets.only(top: page == null ? 4 : 0),
-                child: const SizedBox.shrink(),
+              child: _BottomWidget(
+                progress: source.progress,
+                routeChanger: (page != null && page.search == null) ||
+                        widget.description.showPageSwitcherAsHeader
+                    ? const SizedBox.shrink()
+                    : widget.description.pages?.switcherWidget(context, this),
+                child: Padding(
+                  padding: EdgeInsets.only(top: page == null ? 4 : 0),
+                  child: const SizedBox.shrink(),
+                ),
               ),
             );
 
@@ -498,31 +428,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           SliverToBoxAdapter(
             child: widget.description.pages!.switcherWidget(context, this),
           ),
-        if (!mutation.isRefreshing &&
-            mutation.cellCount == 0 &&
-            !description.ignoreEmptyWidgetOnNoContent)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  EmptyWidget(
-                    gridSeed: 0,
-                    overrideEmpty: widget.description.overrideEmptyWidgetNotice,
-                    error: refreshingStatus.refreshingError == null
-                        ? null
-                        : EmptyWidget.unwrapDioError(
-                            refreshingStatus.refreshingError,
-                          ),
-                  ),
-                  if (functionality.onError != null &&
-                      refreshingStatus.refreshingError != null)
-                    functionality.onError!(refreshingStatus.refreshingError!),
-                ],
-              ),
-            ),
-          ),
         ...widget.slivers,
       ],
       if (currentPage == 0)
@@ -547,7 +452,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       ),
       child: Scrollbar(
         interactive: false,
-        thumbVisibility: !Platform.isAndroid && !Platform.isIOS,
+        // thumbVisibility: !Platform.isAndroid && !Platform.isIOS,
         controller: controller,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -580,8 +485,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
     if (description.asSliver) {
-      return PlayAnimationNotifier(
-        play: _enableAnimations,
+      return PlayAnimations(
         child: FocusNotifier(
           notifier: searchFocus,
           focusMain: widget.mainFocus.requestFocus,
@@ -590,7 +494,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             key: _holderKey,
             selection: selection,
             child: CellProvider<T>(
-              getCell: widget.getCell,
+              getCell: source.forIdxUnsafe,
               child: GridExtrasNotifier(
                 data: GridExtrasData(tryScrollUntil, selection, functionality),
                 child: Builder(
@@ -622,10 +526,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
         children: [
-          if (atHomePage &&
-              widget.functionality.refreshingStatus.clearRefresh.pullToRefresh)
+          if (atHomePage && widget.description.pullToRefresh)
             RefreshIndicator(
-              onRefresh: () => refreshingStatus.refresh(),
+              onRefresh: source.clearRefresh,
               child: mainBody(context, page),
             )
           else
@@ -656,13 +559,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                     child: PreferredSize(
                       preferredSize:
                           const Size.fromHeight(loadingIndicatorSize),
-                      child: !mutation.isRefreshing
-                          ? const Padding(
-                              padding:
-                                  EdgeInsets.only(top: loadingIndicatorSize),
-                              child: SizedBox(),
-                            )
-                          : const LinearProgressIndicator(),
+                      child: _LinearProgressIndicator(
+                        progress: source.progress,
+                      ),
                     ),
                   );
                 },
@@ -695,8 +594,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       c = functionality.registerNotifiers!(c);
     }
 
-    return PlayAnimationNotifier(
-      play: _enableAnimations,
+    return PlayAnimations(
       child: FocusNotifier(
         notifier: searchFocus,
         focusMain: widget.mainFocus.requestFocus,
@@ -705,7 +603,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           calculatePadding: _bottomPadding,
           selection: selection,
           child: CellProvider<T>(
-            getCell: widget.getCell,
+            getCell: source.forIdxUnsafe,
             child: GridExtrasNotifier(
               data: GridExtrasData(tryScrollUntil, selection, functionality),
               child: c,
@@ -714,6 +612,48 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         ),
       ),
     );
+  }
+}
+
+class _LinearProgressIndicator extends StatefulWidget {
+  const _LinearProgressIndicator({super.key, required this.progress});
+
+  final RefreshingProgress progress;
+
+  @override
+  State<_LinearProgressIndicator> createState() =>
+      __LinearProgressIndicatorState();
+}
+
+class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
+  RefreshingProgress get progress => widget.progress;
+
+  late final StreamSubscription<bool> _watcher;
+
+  @override
+  void initState() {
+    _watcher = progress.watch((_) {
+      setState(() {});
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return !progress.inRefreshing
+        ? const Padding(
+            padding: EdgeInsets.only(top: GridFrameState.loadingIndicatorSize),
+            child: SizedBox(),
+          )
+        : const LinearProgressIndicator();
   }
 }
 
@@ -797,22 +737,59 @@ class GridExtrasNotifier<T extends CellBase> extends InheritedWidget {
   }
 }
 
-class PlayAnimationNotifier extends InheritedWidget {
-  const PlayAnimationNotifier({
+class PlayAnimations extends StatefulWidget {
+  const PlayAnimations({super.key, required this.child});
+
+  final Widget child;
+
+  static bool? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_PlayAnimationNotifier>();
+
+    return widget?.play;
+  }
+
+  @override
+  State<PlayAnimations> createState() => _PlayAnimationsState();
+}
+
+class _PlayAnimationsState extends State<PlayAnimations> {
+  bool play = false;
+
+  void enableAnimationsFor([
+    Duration duration = const Duration(milliseconds: 300),
+  ]) {
+    setState(() {
+      play = true;
+    });
+
+    Future.delayed(duration, () {
+      try {
+        play = false;
+
+        setState(() {});
+      } catch (_) {}
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PlayAnimationNotifier(
+      play: play,
+      child: widget.child,
+    );
+  }
+}
+
+class _PlayAnimationNotifier extends InheritedWidget {
+  const _PlayAnimationNotifier({
     super.key,
     required this.play,
     required super.child,
   });
   final bool play;
 
-  static bool? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<PlayAnimationNotifier>();
-
-    return widget?.play;
-  }
-
   @override
-  bool updateShouldNotify(PlayAnimationNotifier oldWidget) =>
+  bool updateShouldNotify(_PlayAnimationNotifier oldWidget) =>
       play != oldWidget.play;
 }

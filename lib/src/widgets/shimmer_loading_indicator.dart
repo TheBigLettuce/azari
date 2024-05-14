@@ -24,7 +24,10 @@ class ShimmerLoadingIndicator extends StatelessWidget {
         ),
       ],
       child: Container(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withOpacity(0.5),
       ),
     );
   }

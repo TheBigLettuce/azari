@@ -143,7 +143,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
         } else {
           return DecoratedBox(
             decoration:
-                BoxDecoration(color: Theme.of(context).colorScheme.background),
+                BoxDecoration(color: Theme.of(context).colorScheme.surface),
             child:
                 widget.builder(context, snapshot.data as T).animate().fadeIn(),
           );

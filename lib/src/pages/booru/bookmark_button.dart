@@ -306,7 +306,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
-                  .surfaceVariant
+                  .surfaceContainerHighest
                   .withOpacity(0.25),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(25),

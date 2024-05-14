@@ -46,7 +46,7 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
     return _Image(
       t: t,
       reset: () {
-        key.currentState?.setLoadingProgress(1.0);
+        key.currentState?.setLoadingProgress(1);
       },
     );
   }

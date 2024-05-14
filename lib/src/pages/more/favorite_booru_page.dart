@@ -13,7 +13,6 @@ import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -65,6 +64,7 @@ class FavoriteBooruPage extends StatelessWidget {
         if (state.segments != null)
           SegmentLayout<FavoritePostData>(
             getCell: state.filter.forIdxUnsafe,
+            progress: state.filter.progress,
             segments: Segments(
               AppLocalizations.of(context)!.segmentsUncategorized,
               injectedLabel: "",
@@ -74,11 +74,12 @@ class FavoriteBooruPage extends StatelessWidget {
             ),
             suggestionPrefix: const [],
             gridSeed: state.state.gridSeed,
-            mutation: state.state.refreshingStatus.mutation,
+            storage: state.filter.backingStorage,
           )
         else
           CurrentGridSettingsLayout<FavoritePostData>(
-            mutation: state.state.refreshingStatus.mutation,
+            source: state.filter.backingStorage,
+            progress: state.filter.progress,
             gridSeed: state.state.gridSeed,
           ),
       ],
@@ -108,9 +109,8 @@ class FavoriteBooruPage extends StatelessWidget {
         ),
         selectionGlue: GlueProvider.generateOf(context)(),
         download: state.download,
-        refreshingStatus: state.state.refreshingStatus,
+        source: state.filter,
       ),
-      getCell: state.filter.forIdxUnsafe,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
         actions: state.gridActions(),
@@ -366,28 +366,27 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   //   return (const [], data);
   // }
 
-  late final state = GridSkeletonRefreshingState<FavoritePostData>(
-    clearRefresh: SynchronousGridRefresh(() => filter.count),
-    // filter: loader.filter,
-    // unsetFilteringModeOnReset: false,
-    // hook: (selected) {
-    //   segments = null;
-    //   if (selected == FilteringMode.group) {
-    //     segmented = true;
-    //     setState(() {});
-    //   } else {
-    //     segmented = false;
-    //     setState(() {});
-    //   }
+  late final state = GridSkeletonState<FavoritePostData>(
+      // filter: loader.filter,
+      // unsetFilteringModeOnReset: false,
+      // hook: (selected) {
+      //   segments = null;
+      //   if (selected == FilteringMode.group) {
+      //     segmented = true;
+      //     setState(() {});
+      //   } else {
+      //     segmented = false;
+      //     setState(() {});
+      //   }
 
-    //   MiscSettings.setFavoritesPageMode(selected);
-    // },
-    // defaultMode: FilteringMode.tag,
-    // filteringModes: ,
-    // transform: (FavoriteBooru cell) {
-    //   return cell;
-    // },
-  );
+      //   MiscSettings.setFavoritesPageMode(selected);
+      // },
+      // defaultMode: FilteringMode.tag,
+      // filteringModes: ,
+      // transform: (FavoriteBooru cell) {
+      //   return cell;
+      // },
+      );
 
   // late final SearchFilterGrid<FavoriteBooru> search;
 

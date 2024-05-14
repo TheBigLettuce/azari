@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
@@ -16,10 +15,9 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/plugs/download_movers.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:path/path.dart" as path;
-import "package:path_provider/path_provider.dart";
 
 part "download_entry.dart";
 part "download_status.dart";
@@ -48,7 +46,7 @@ mixin _SourceImpl on SourceStorage<DownloadHandle>
 
 class DownloadManager extends SourceStorage<DownloadHandle>
     with _StatisticsTimer, _SourceImpl {
-  DownloadManager(this.moverPlug, this._db);
+  DownloadManager(this._db);
 
   factory DownloadManager.of(BuildContext context) =>
       DatabaseConnectionNotifier.downloadManagerOf(context);
@@ -57,12 +55,14 @@ class DownloadManager extends SourceStorage<DownloadHandle>
 
   int _inWork = 0;
   final _client = Dio();
-  final StreamController<int> _events = StreamController();
+  final StreamController<int> _events = StreamController.broadcast();
+
+  @override
+  RefreshingProgress get progress => const RefreshingProgress.empty();
 
   final DownloadFileService _db;
 
   final NotificationPlug notificationPlug = chooseNotificationPlug();
-  final DownloadMoverPlug moverPlug;
 
   final Map<String, int> _entriesMap = {};
   final List<_DownloadEntry> _aliveEntries = [];
@@ -87,7 +87,19 @@ class DownloadManager extends SourceStorage<DownloadHandle>
   DownloadHandle operator [](int index) => _aliveEntries[0];
 
   @override
-  void operator []=(int index, DownloadHandle value) {}
+  void operator []=(int index, DownloadHandle value) {
+    if (value is _DownloadEntry) {
+      _aliveEntries[index] = value;
+
+      _events.add(count);
+    }
+  }
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  Iterable<DownloadHandle> get reversed => _aliveEntries.reversed;
 
   @override
   void add(DownloadHandle e, [bool silent = false]) =>
@@ -359,10 +371,11 @@ class DownloadManager extends SourceStorage<DownloadHandle>
     final entry = _aliveEntries[_entriesMap[url]!];
 
     try {
-      final dir = await _tryCreateInternalDownloadDir(entry);
-      final filePath = path.joinAll([dir.path, entry.data.name]);
+      final dir = await GalleryManagementApi.current()
+          .ensureDownloadDirectoryExists(entry.data.site);
+      final filePath = path.joinAll([dir, entry.data.name]);
 
-      if (await _fileExists(filePath)) {
+      if (await GalleryManagementApi.current().fileExists(filePath)) {
         _failed(entry);
         _tryAddNew();
         return;
@@ -410,35 +423,13 @@ class DownloadManager extends SourceStorage<DownloadHandle>
     _tryAddNew();
   }
 
-  Future<Directory> _tryCreateInternalDownloadDir(_DownloadEntry entry) async {
-    final downloadtd = Directory(
-      path.joinAll([(await getTemporaryDirectory()).path, "downloads"]),
-    );
-
-    final dirpath = path.joinAll([downloadtd.path, entry.data.site]);
-    try {
-      await downloadtd.create();
-
-      return Directory(dirpath).create();
-    } catch (e, trace) {
-      _log.logDefaultImportant(
-        "while creating directory $dirpath".errorMessage(e),
-        trace,
-      );
-
-      rethrow;
-    }
-  }
-
-  Future<bool> _fileExists(String filePath) => File(filePath).exists();
-
   Future<void> _moveDownloadedFile(
     _DownloadEntry entry, {
     required String filePath,
   }) async {
     final settings = SettingsService.db().current;
 
-    await moverPlug.move(
+    await GalleryManagementApi.current().move(
       MoveOp(
         source: filePath,
         rootDir: settings.path.path,

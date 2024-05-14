@@ -11,6 +11,7 @@ import "dart:ui";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:transparent_image/transparent_image.dart";
 
@@ -107,7 +108,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
       }
 
       _thumbLoadingStatus[id] =
-          const AndroidApiFunctions().getCachedThumb(id).whenComplete(() {
+          GalleryManagementApi.current().getCachedThumb(id).whenComplete(() {
         _thumbLoadingStatus.remove(id);
       });
 

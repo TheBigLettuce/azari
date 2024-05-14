@@ -15,6 +15,8 @@ class GlueBottomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final actions = glue.actions?.$1 ?? [];
 
     return Stack(
@@ -27,7 +29,7 @@ class GlueBottomAppBar extends StatelessWidget {
           ),
         ),
         BottomAppBar(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+          color: theme.colorScheme.surface.withOpacity(0.95),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -76,26 +78,18 @@ class GlueBottomAppBar extends StatelessWidget {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(6),
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.8),
+                        color: theme.colorScheme.primary.withOpacity(0.8),
                       ),
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8, right: 8),
                           child: Text(
                             glue.count.toString(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary
-                                      .withOpacity(0.8),
-                                ),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  theme.colorScheme.onPrimary.withOpacity(0.8),
+                            ),
                           ),
                         ),
                       ),

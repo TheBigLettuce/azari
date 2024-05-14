@@ -19,7 +19,7 @@ import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/glue_bottom_app_bar.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/more/more_page.dart";
-import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
@@ -27,7 +27,6 @@ import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 import "package:gallery/src/widgets/skeletons/home.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-import "package:isar/isar.dart";
 
 part "home/animated_icons_mixin.dart";
 part "home/before_you_continue_dialog_mixin.dart";
@@ -108,8 +107,10 @@ class _HomeState extends State<Home>
                 child: NavigationBar(
                   labelBehavior:
                       NavigationDestinationLabelBehavior.onlyShowSelected,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainer
+                      .withOpacity(0.95),
                   selectedIndex: currentRoute,
                   onDestinationSelected: (route) => _switchPage(this, route),
                   destinations: widget.callback != null

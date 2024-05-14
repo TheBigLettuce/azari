@@ -7,72 +7,72 @@
 
 part of "../grid_frame.dart";
 
-class DefaultMutationInterface implements GridMutationInterface {
-  DefaultMutationInterface(this._cellCount);
-  final _updatesCell = StreamController<int>.broadcast();
-  final _updatesRefresh = StreamController<bool>.broadcast();
+// class DefaultMutationInterface implements GridMutationInterface {
+//   DefaultMutationInterface(this._cellCount);
+//   final _updatesCell = StreamController<int>.broadcast();
+//   final _updatesRefresh = StreamController<bool>.broadcast();
 
-  int _cellCount = 0;
-  bool _refreshing = false;
+//   int _cellCount = 0;
+//   bool _refreshing = false;
 
-  @override
-  int get cellCount => _cellCount;
+//   @override
+//   int get cellCount => _cellCount;
 
-  @override
-  set cellCount(int c) {
-    _cellCount = c;
+//   @override
+//   set cellCount(int c) {
+//     _cellCount = c;
 
-    _updateCell();
-  }
+//     _updateCell();
+//   }
 
-  @override
-  bool get isRefreshing => _refreshing;
+//   @override
+//   bool get isRefreshing => _refreshing;
 
-  @override
-  set isRefreshing(bool b) {
-    if (b == _refreshing) {
-      return;
-    }
+//   @override
+//   set isRefreshing(bool b) {
+//     if (b == _refreshing) {
+//       return;
+//     }
 
-    _refreshing = b;
+//     _refreshing = b;
 
-    _updateRefresh();
-  }
+//     _updateRefresh();
+//   }
 
-  @override
-  void reset() {
-    _cellCount = 0;
-    _refreshing = false;
+//   @override
+//   void reset() {
+//     _cellCount = 0;
+//     _refreshing = false;
 
-    _updateCell();
-    _updateRefresh();
-  }
+//     _updateCell();
+//     _updateRefresh();
+//   }
 
-  void _updateCell() {
-    if (!_updatesCell.isClosed) {
-      _updatesCell.add(_cellCount);
-    }
-  }
+//   void _updateCell() {
+//     if (!_updatesCell.isClosed) {
+//       _updatesCell.add(_cellCount);
+//     }
+//   }
 
-  void _updateRefresh() {
-    if (!_updatesRefresh.isClosed) {
-      _updatesRefresh.add(_refreshing);
-    }
-  }
+//   void _updateRefresh() {
+//     if (!_updatesRefresh.isClosed) {
+//       _updatesRefresh.add(_refreshing);
+//     }
+//   }
 
-  @override
-  StreamSubscription<int> listenCount(void Function(int) f) {
-    return _updatesCell.stream.listen(f);
-  }
+//   @override
+//   StreamSubscription<int> listenCount(void Function(int) f) {
+//     return _updatesCell.stream.listen(f);
+//   }
 
-  @override
-  StreamSubscription<bool> listenRefresh(void Function(bool) f) {
-    return _updatesRefresh.stream.listen(f);
-  }
+//   @override
+//   StreamSubscription<bool> listenRefresh(void Function(bool) f) {
+//     return _updatesRefresh.stream.listen(f);
+//   }
 
-  @override
-  void dispose() {
-    _updatesCell.close();
-    _updatesRefresh.close();
-  }
-}
+//   @override
+//   void dispose() {
+//     _updatesCell.close();
+//     _updatesRefresh.close();
+//   }
+// }

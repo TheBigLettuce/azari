@@ -50,10 +50,10 @@ class BackgroundImageBase extends StatelessWidget {
           end: Alignment.topCenter,
           colors: gradient ??
               [
-                Theme.of(context).colorScheme.background,
-                Theme.of(context).colorScheme.background.withOpacity(0.8),
-                Theme.of(context).colorScheme.background.withOpacity(0.6),
-                Theme.of(context).colorScheme.background.withOpacity(0.4),
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                Theme.of(context).colorScheme.surface.withOpacity(0.6),
+                Theme.of(context).colorScheme.surface.withOpacity(0.4),
               ],
         ),
       ),

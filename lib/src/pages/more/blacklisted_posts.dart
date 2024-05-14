@@ -36,18 +36,14 @@ class BlacklistedPostsPage extends StatefulWidget {
 class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   HiddenBooruPostService get hiddenBooruPost => widget.db;
 
-  late final state = GridSkeletonRefreshingState<HiddenBooruPostData>(
-    initalCellCount: list.length,
-    clearRefresh: SynchronousGridRefresh(() {
-      list = hiddenBooruPost.all;
-
-      return list.length;
-    }),
+  late final state = GridSkeletonState<HiddenBooruPostData>();
+  late final source = GenericListSource<HiddenBooruPostData>(
+    () => Future.value(hiddenBooruPost.all),
   );
-  List<HiddenBooruPostData> list = [];
 
   @override
   void dispose() {
+    source.destroy();
     state.dispose();
 
     super.dispose();
@@ -59,22 +55,24 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
       generate: widget.generateGlue,
       child: GridFrame<HiddenBooruPostData>(
         key: state.gridKey,
-        getCell: (i) => list[i],
         overrideController: widget.conroller,
         slivers: [
           Builder(
-            builder: (context) => ListLayout(
+            builder: (context) => ListLayout<HiddenBooruPostData>(
               hideThumbnails: HideBlacklistedImagesNotifier.of(context),
+              source: source.backingStorage,
+              progress: source.progress,
             ),
           ),
         ],
         functionality: GridFunctionality(
           selectionGlue: widget.generateGlue(),
-          refreshingStatus: state.refreshingStatus,
+          source: source,
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
           showAppBar: false,
+          pullToRefresh: false,
           asSliver: true,
           actions: [
             GridAction(
@@ -84,9 +82,7 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
                   selected.map((e) => (e.postId, e.booru)).toList(),
                 );
 
-                list = hiddenBooruPost.all;
-
-                state.refreshingStatus.mutation.cellCount = list.length;
+                source.clearRefresh();
               },
               true,
             ),

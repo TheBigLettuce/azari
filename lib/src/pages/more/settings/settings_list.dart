@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -16,7 +15,7 @@ import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/pages/more/settings/settings_label.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 import "package:gallery/welcome_pages.dart";
 
@@ -44,12 +43,10 @@ class _SettingsListState extends State<SettingsList> {
   SettingsData _settings = SettingsService.db().current;
   MiscSettingsData _miscSettings = MiscSettingsService.db().current;
 
-  Future<int>? thumbnailCount =
-      Platform.isAndroid ? const AndroidApiFunctions().thumbCacheSize() : null;
+  Future<int> thumbnailCount = GalleryManagementApi.current().thumbCacheSize();
 
-  Future<int>? pinnedThumbnailCount = Platform.isAndroid
-      ? const AndroidApiFunctions().thumbCacheSize(true)
-      : null;
+  Future<int> pinnedThumbnailCount =
+      GalleryManagementApi.current().thumbCacheSize(true);
 
   @override
   void initState() {
@@ -214,132 +211,130 @@ class _SettingsListState extends State<SettingsList> {
         //   ),
         //   subtitle: Text(PostTags.g.savedTagsCount().toString()),
         // ),
-        if (Platform.isAndroid)
-          FutureBuilder(
-            future: thumbnailCount,
-            builder: (context, data) {
-              return ListTile(
-                title: Text(localizations.thumbnailsCSize),
-                subtitle: data.hasData
-                    ? Text(_calculateMBSize(data.data!, localizations))
-                    : Text(localizations.loadingPlaceholder),
-                trailing: PopupMenuButton(
-                  itemBuilder: (context) {
-                    return [
-                      PopupMenuItem<void>(
-                        enabled: false,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              DialogRoute<void>(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(localizations.areYouSure),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations.no),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          db.thumbnails.clear();
+        FutureBuilder(
+          future: thumbnailCount,
+          builder: (context, data) {
+            return ListTile(
+              title: Text(localizations.thumbnailsCSize),
+              subtitle: data.hasData
+                  ? Text(_calculateMBSize(data.data!, localizations))
+                  : Text(localizations.loadingPlaceholder),
+              trailing: PopupMenuButton(
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<void>(
+                      enabled: false,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            DialogRoute<void>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(localizations.areYouSure),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.no),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        db.thumbnails.clear();
 
-                                          const AndroidApiFunctions()
-                                              .clearCachedThumbs();
+                                        GalleryManagementApi.current()
+                                            .clearCachedThumbs();
 
-                                          thumbnailCount = Future.value(0);
+                                        thumbnailCount = Future.value(0);
 
-                                          setState(() {});
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations.yes),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          child: Text(localizations.purgeThumbnails),
-                        ),
+                                        setState(() {});
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.yes),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        child: Text(localizations.purgeThumbnails),
                       ),
-                    ];
-                  },
-                  icon: const Icon(Icons.more_horiz_rounded),
-                ),
-              );
-            },
-          ),
-        if (Platform.isAndroid)
-          FutureBuilder(
-            future: pinnedThumbnailCount,
-            builder: (context, data) {
-              return ListTile(
-                title: Text(localizations.pinnedThumbnailsSize),
-                subtitle: data.hasData
-                    ? Text(_calculateMBSize(data.data!, localizations))
-                    : Text(localizations.loadingPlaceholder),
-                trailing: PopupMenuButton(
-                  itemBuilder: (context) {
-                    return [
-                      PopupMenuItem<void>(
-                        enabled: false,
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              DialogRoute<void>(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(localizations.areYouSure),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations.no),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          db.pinnedThumbnails.clear();
+                    ),
+                  ];
+                },
+                icon: const Icon(Icons.more_horiz_rounded),
+              ),
+            );
+          },
+        ),
+        FutureBuilder(
+          future: pinnedThumbnailCount,
+          builder: (context, data) {
+            return ListTile(
+              title: Text(localizations.pinnedThumbnailsSize),
+              subtitle: data.hasData
+                  ? Text(_calculateMBSize(data.data!, localizations))
+                  : Text(localizations.loadingPlaceholder),
+              trailing: PopupMenuButton(
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<void>(
+                      enabled: false,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            DialogRoute<void>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(localizations.areYouSure),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.no),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        db.pinnedThumbnails.clear();
 
-                                          const AndroidApiFunctions()
-                                              .clearCachedThumbs(
-                                            true,
-                                          );
+                                        GalleryManagementApi.current()
+                                            .clearCachedThumbs(
+                                          true,
+                                        );
 
-                                          thumbnailCount =
-                                              const AndroidApiFunctions()
-                                                  .thumbCacheSize(
-                                            true,
-                                          );
+                                        thumbnailCount =
+                                            GalleryManagementApi.current()
+                                                .thumbCacheSize(
+                                          true,
+                                        );
 
-                                          setState(() {});
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(localizations.yes),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          child: Text(localizations.purgeThumbnails),
-                        ),
+                                        setState(() {});
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(localizations.yes),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        child: Text(localizations.purgeThumbnails),
                       ),
-                    ];
-                  },
-                  icon: const Icon(Icons.more_horiz_rounded),
-                ),
-              );
-            },
-          ),
+                    ),
+                  ];
+                },
+                icon: const Icon(Icons.more_horiz_rounded),
+              ),
+            );
+          },
+        ),
         SwitchListTile(
           value: _miscSettings.filesExtendedActions,
           onChanged: (value) => MiscSettingsService.db()

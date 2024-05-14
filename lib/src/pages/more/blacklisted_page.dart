@@ -10,7 +10,6 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/blacklisted_posts.dart";
 import "package:gallery/src/plugs/gallery.dart";
@@ -48,9 +47,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
 
   late final StreamSubscription<void> blacklistedWatcher;
 
-  late final state = GridSkeletonRefreshingState<BlacklistedDirectoryData>(
-    clearRefresh: SynchronousGridRefresh(() => filter.count),
-  );
+  late final state = GridSkeletonState<BlacklistedDirectoryData>();
 
   late final ChainedFilterResourceSource<BlacklistedDirectoryData> filter;
   final searchTextController = TextEditingController();
@@ -99,8 +96,13 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
         state,
         (context) => GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
-          slivers: const [ListLayout(hideThumbnails: false)],
-          getCell: filter.forIdxUnsafe,
+          slivers: [
+            ListLayout<BlacklistedDirectoryData>(
+              hideThumbnails: false,
+              source: filter.backingStorage,
+              progress: filter.progress,
+            ),
+          ],
           functionality: GridFunctionality(
             registerNotifiers: (child) => HideBlacklistedImagesNotifier(
               hiding: hideBlacklistedImages,
@@ -119,7 +121,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               ),
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: state.refreshingStatus,
+            source: filter,
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(

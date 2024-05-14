@@ -37,14 +37,12 @@ mixin CompactMangaData
     required String title,
     required String thumbUrl,
   }) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarCompactMangaData(
-            mangaId: mangaId,
-            site: site,
-            thumbUrl: thumbUrl,
-            title: title,
-          ),
-      };
+      _currentDb.compactMangaDataForDb(
+        mangaId: mangaId,
+        site: site,
+        title: title,
+        thumbUrl: thumbUrl,
+      );
 
   @override
   CellStaticData description() => const CellStaticData();

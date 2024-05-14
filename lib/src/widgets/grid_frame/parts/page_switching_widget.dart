@@ -33,7 +33,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
       child: SegmentedButton<int>(
         emptySelectionAllowed: true,
         style: const ButtonStyle(
-          side: MaterialStatePropertyAll(BorderSide.none),
+          side: WidgetStatePropertyAll(BorderSide.none),
           visualDensity: VisualDensity.compact,
         ),
         showSelectedIcon: false,
@@ -57,7 +57,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
                 icon: Icon(e.$2.icon),
                 background: e.$1 + 1 == state.currentPage
                     ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.surfaceVariant,
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
                 foreground: e.$1 + 1 == state.currentPage
                     ? Theme.of(context).colorScheme.onSecondary
                     : Theme.of(context).colorScheme.onSurfaceVariant,

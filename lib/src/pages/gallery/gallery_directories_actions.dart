@@ -58,12 +58,14 @@ class SystemGalleryDirectoriesActions {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                  "Some directories require authentication"), // TODO: change
+                "Some directories require authentication",
+              ), // TODO: change
               action: SnackBarAction(
                 label: "Auth",
                 onPressed: () async {
                   final success = await LocalAuthentication().authenticate(
-                      localizedReason: "Hide directory"); // TODO: change
+                    localizedReason: "Hide directory",
+                  ); // TODO: change
                   if (!success) {
                     return;
                   }

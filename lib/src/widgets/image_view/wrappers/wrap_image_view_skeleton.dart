@@ -21,7 +21,6 @@ import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
 import "package:gallery/src/widgets/notifiers/current_content.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
-import "package:palette_generator/palette_generator.dart";
 
 class WrapImageViewSkeleton extends StatelessWidget {
   const WrapImageViewSkeleton({
@@ -29,14 +28,13 @@ class WrapImageViewSkeleton extends StatelessWidget {
     required this.mainFocus,
     required this.controller,
     required this.scaffoldKey,
-    required this.currentPalette,
     required this.bottomSheetController,
     required this.scrollController,
     required this.child,
   });
+
   final FocusNode mainFocus;
   final ScrollController scrollController;
-  final PaletteGenerator? currentPalette;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final AnimationController controller;
   final DraggableScrollableController bottomSheetController;

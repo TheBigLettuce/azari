@@ -55,13 +55,13 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
               },
         child: IconButton(
           style: ButtonStyle(
-            shape: const MaterialStatePropertyAll(
+            shape: const WidgetStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
               ),
             ),
             backgroundColor: widget.backgroundColor != null
-                ? MaterialStatePropertyAll(widget.backgroundColor)
+                ? WidgetStatePropertyAll(widget.backgroundColor)
                 : null,
           ),
           onPressed: widget.whenSingleContext != null &&

@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package lol.bruh19.azari.gallery
 
 import android.content.ContentResolver
@@ -23,8 +25,10 @@ import com.bumptech.glide.Glide
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import okio.FileSystem
@@ -43,7 +47,7 @@ import kotlin.io.path.extension
 data class NetworkThumbOp(val url: String, val id: Long)
 
 internal class Mover(
-    private val coContext: CoroutineContext,
+    private val uiContext: CoroutineContext,
     private val context: Context,
     private val galleryApi: GalleryApi
 ) {
@@ -54,7 +58,7 @@ internal class Mover(
         Runtime.getRuntime().availableProcessors() - 1
     }
     private val thumbnailsChannel = Channel<ThumbOp>(capacity = cap)
-    private val scope = CoroutineScope(coContext + Dispatchers.IO)
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     private val isLockedDirMux = Mutex()
     private val isLockedFilesMux = Mutex()
@@ -163,7 +167,7 @@ internal class Mover(
                         Log.e("downloader", e.toString())
                     }
 
-                    CoroutineScope(coContext).launch {
+                    CoroutineScope(uiContext).launch {
                         galleryApi.notify(op.dir) {
 
                         }
@@ -215,7 +219,7 @@ internal class Mover(
     }
 
     fun notifyGallery() {
-        CoroutineScope(coContext).launch {
+        CoroutineScope(uiContext).launch {
             galleryApi.notify(null) {
             }
         }
@@ -335,7 +339,7 @@ internal class Mover(
         empty: Boolean,
         inRefresh: Boolean
     ) {
-        CoroutineScope(coContext).launch {
+        CoroutineScope(uiContext).launch {
             galleryApi.updatePictures(
                 content,
                 dir,
@@ -637,6 +641,32 @@ internal class Mover(
         return Pair(path, hash)
     }
 
+    private suspend fun sendDirResult(
+        dirs: Map<String, Directory>, inRefresh: Boolean,
+        empty: Boolean,
+    ): Boolean {
+        val ch = Channel<Boolean>(capacity = 1)
+
+        scope.launch {
+            CoroutineScope(uiContext).launch {
+                galleryApi.updateDirectories(
+                    dirs,
+                    inRefreshArg = inRefresh,
+                    emptyArg = empty
+                ) {
+                    scope.launch {
+                        ch.send(it.getOrNull()!!)
+                    }
+                }
+            }
+        }
+
+        val res = ch.receive();
+        ch.close()
+
+        return res
+    }
+
     private suspend fun refreshMediastore(context: Context, galleryApi: GalleryApi) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -665,16 +695,10 @@ internal class Mover(
             val volume_name = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
 
             val map = HashMap<String, Unit>()
-            val list = mutableListOf<Directory>()
+            val resMap = mutableMapOf<String, Directory>()
 
             if (!cursor.moveToFirst()) {
-                CoroutineScope(coContext).launch {
-                    galleryApi.updateDirectories(
-                        listOf(),
-                        inRefreshArg = false,
-                        emptyArg = true
-                    ) {}
-                }.join()
+                sendDirResult(mapOf(), inRefresh = false, empty = true)
                 return@use
             }
 
@@ -687,39 +711,30 @@ internal class Mover(
 
                     map[bucketId] = Unit
 
-                    list.add(
-                        Directory(
-                            thumbFileId = cursor.getLong(id),
-                            lastModified = cursor.getLong(date_modified),
-                            bucketId = bucketId,
-                            name = cursor.getString(b_display_name) ?: "Internal",
-                            volumeName = cursor.getString(volume_name),
-                            relativeLoc = cursor.getString(relative_path)
-                        )
+                    resMap[bucketId] = Directory(
+                        thumbFileId = cursor.getLong(id),
+                        lastModified = cursor.getLong(date_modified),
+                        bucketId = bucketId,
+                        name = cursor.getString(b_display_name) ?: "Internal",
+                        volumeName = cursor.getString(volume_name),
+                        relativeLoc = cursor.getString(relative_path)
                     )
 
-                    if (list.count() == 40) {
-                        val copy = list.toList()
-                        list.clear()
 
-                        CoroutineScope(coContext).launch {
-                            galleryApi.updateDirectories(
-                                copy,
-                                inRefreshArg = true, emptyArg = false
-                            ) {}
-                        }.join()
+                    if (resMap.count() == 40) {
+                        val copy = resMap.toMap()
+                        resMap.clear()
+
+                        val toContinue = sendDirResult(copy, inRefresh = true, empty = false)
+                        if (!toContinue) {
+                            return@use
+                        }
                     }
                 } while (
                     cursor.moveToNext()
                 )
 
-                CoroutineScope(coContext).launch {
-                    galleryApi.updateDirectories(
-                        list,
-                        inRefreshArg = false,
-                        emptyArg = false
-                    ) {}
-                }.join()
+                sendDirResult(resMap, inRefresh = false, empty = false)
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
             }

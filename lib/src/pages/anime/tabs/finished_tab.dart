@@ -36,12 +36,12 @@ class __FinishedTabState extends State<_FinishedTab> {
     hideName: false,
   );
 
-  final List<WatchedAnimeEntryData> _list = [];
-  final List<WatchedAnimeEntryData> _filter = [];
-
-  late final state = GridSkeletonRefreshingState<WatchedAnimeEntryData>(
-    clearRefresh: SynchronousGridRefresh(() => _list.length),
+  late final originalSource = GenericListSource<WatchedAnimeEntryData>(
+    () => Future.value(watchedAnimeEntries.all),
   );
+  late final ChainedFilterResourceSource<WatchedAnimeEntryData> filter;
+
+  late final state = GridSkeletonState<WatchedAnimeEntryData>();
 
   String _filteringValue = "";
 
@@ -49,25 +49,21 @@ class __FinishedTabState extends State<_FinishedTab> {
   void initState() {
     super.initState();
 
-    _list.addAll(watchedAnimeEntries.all);
+    filter = ChainedFilterResourceSource.basic(
+      originalSource,
+      ListStorage(),
+      fn: (e, filteringMode, sortingMode) => e.title.contains(_filteringValue),
+    );
 
     watcher = watchedAnimeEntries.watchAll((_) {
-      state.gridKey.currentState?.mutation.cellCount = 0;
-      _list.clear();
-      _list.addAll(watchedAnimeEntries.all);
-
-      setState(() {});
-
-      if (_filteringValue.isNotEmpty) {
-        filter(_filteringValue);
-      } else {
-        state.gridKey.currentState?.mutation.cellCount = _list.length;
-      }
+      originalSource.clearRefresh();
     });
   }
 
   @override
   void dispose() {
+    originalSource.destroy();
+    filter.destroy();
     widget.onDispose();
     gridSettings.cancel();
 
@@ -78,43 +74,16 @@ class __FinishedTabState extends State<_FinishedTab> {
     super.dispose();
   }
 
-  void filter(String value) {
-    final m = state.gridKey.currentState?.mutation;
-    if (m == null) {
-      return;
-    }
+  void doFilter(String value) {
+    _filteringValue = value.toLowerCase().trim();
 
-    _filteringValue = value.trim();
-
-    final l = _filteringValue.toLowerCase();
-
-    _filter.clear();
-
-    if (_filteringValue.isEmpty) {
-      setState(() {});
-
-      m.cellCount = _list.length;
-
-      return;
-    }
-
-    _filter.addAll(
-      _list.where((element) => element.title.toLowerCase().contains(l)),
-    );
-
-    m.cellCount = _filter.length;
-  }
-
-  WatchedAnimeEntryData _getCell(int i) {
-    if (_filter.isNotEmpty) {
-      return _filter[_filter.length - 1 - i];
-    }
-
-    return _list[_list.length - 1 - i];
+    filter.clearRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       watch: gridSettings.watch,
       child: GridSkeleton<AnimeEntryData>(
@@ -123,14 +92,14 @@ class __FinishedTabState extends State<_FinishedTab> {
           key: state.gridKey,
           slivers: [
             CurrentGridSettingsLayout(
-              mutation: state.refreshingStatus.mutation,
+              source: filter.backingStorage,
+              progress: filter.progress,
               gridSeed: state.gridSeed,
             ),
           ],
-          getCell: _getCell,
           functionality: GridFunctionality(
             selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: state.refreshingStatus,
+            source: filter,
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(
@@ -143,9 +112,10 @@ class __FinishedTabState extends State<_FinishedTab> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          AppLocalizations.of(context)!.deletedFromWatched),
+                        l8n.deletedFromWatched,
+                      ),
                       action: SnackBarAction(
-                        label: AppLocalizations.of(context)!.undoLabel,
+                        label: l8n.undoLabel,
                         onPressed: () {
                           watchedAnimeEntries.reAdd(selected);
                         },
@@ -162,7 +132,7 @@ class __FinishedTabState extends State<_FinishedTab> {
                 true,
               ),
             ],
-            keybindsDescription: AppLocalizations.of(context)!.finishedTab,
+            keybindsDescription: l8n.finishedTab,
             showAppBar: false,
             gridSeed: state.gridSeed,
           ),

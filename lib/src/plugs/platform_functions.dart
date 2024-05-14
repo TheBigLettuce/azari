@@ -5,14 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
-
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/plugs/download_movers.dart";
-import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/api_functions/dummy.dart"
+    if (dart.library.io) "package:gallery/src/plugs/api_functions/io.dart"
+    if (dart.library.html) "package:gallery/src/plugs/api_functions/web.dart";
 
 @immutable
 class ThumbId {
@@ -28,23 +26,23 @@ class ThumbId {
 }
 
 abstract interface class PlatformApi {
-  factory PlatformApi.current() => Platform.isAndroid
-      ? const AndroidApiFunctions()
-      : Platform.isLinux
-          ? const LinuxApiFunctions()
-          : const _DummyApiFunctions();
+  factory PlatformApi.current() => getApi();
+
+  bool get requiresPermissions;
 
   Future<Color> accentColor();
   Future<void> setFullscreen(bool f);
   Future<void> setTitle(String windowTitle);
 
   Future<void> shareMedia(String originalUri, {bool url = false});
-  Future<void> rename(String uri, String newName, [bool notify]);
   Future<void> setWallpaper(int id);
 }
 
-class _DummyApiFunctions implements PlatformApi {
-  const _DummyApiFunctions();
+class DummyApiFunctions implements PlatformApi {
+  const DummyApiFunctions();
+
+  @override
+  bool get requiresPermissions => false;
 
   @override
   Future<Color> accentColor() => Future.value(Colors.indigo);
@@ -60,10 +58,6 @@ class _DummyApiFunctions implements PlatformApi {
       Future.value();
 
   @override
-  Future<void> rename(String uri, String newName, [bool notify = true]) =>
-      Future.value();
-
-  @override
   Future<void> setWallpaper(int id) => Future.value();
 }
 
@@ -71,6 +65,9 @@ class LinuxApiFunctions implements PlatformApi {
   const LinuxApiFunctions();
 
   static const _channel = MethodChannel("lol.bruh19.azari.gallery");
+
+  @override
+  bool get requiresPermissions => false;
 
   @override
   Future<Color> accentColor() async {
@@ -102,12 +99,6 @@ class LinuxApiFunctions implements PlatformApi {
   }
 
   @override
-  Future<void> rename(String uri, String newName, [bool notify = true]) {
-    // TODO: implement rename
-    throw UnimplementedError();
-  }
-
-  @override
   Future<void> setWallpaper(int id) {
     // TODO: implement setWallpaper
     throw UnimplementedError();
@@ -119,6 +110,9 @@ class AndroidApiFunctions implements PlatformApi {
 
   static const MethodChannel _channel =
       MethodChannel("lol.bruh19.azari.gallery");
+
+  @override
+  bool get requiresPermissions => true;
 
   @override
   Future<void> setFullscreen(bool f) {
@@ -134,28 +128,6 @@ class AndroidApiFunctions implements PlatformApi {
 
   void hideRecents(bool hide) {
     _channel.invokeMethod("hideRecents", hide);
-  }
-
-  void refreshFiles(String bucketId) {
-    _channel.invokeMethod("refreshFiles", bucketId);
-  }
-
-  void refreshFilesMultiple(List<String> ids) {
-    _channel.invokeMethod("refreshFilesMultiple", ids);
-  }
-
-  Future<void> refreshFavorites(List<int> ids) {
-    return _channel.invokeMethod("refreshFavorites", ids);
-  }
-
-  Future<String> pickFileAndCopy(String outputDir) {
-    return _channel
-        .invokeMethod("pickFileAndCopy", outputDir)
-        .then((value) => value as String);
-  }
-
-  void loadThumbnail(int thumb) {
-    _channel.invokeMethod("loadThumbnail", thumb);
   }
 
   Future<bool> requestManageMedia() {
@@ -174,70 +146,6 @@ class AndroidApiFunctions implements PlatformApi {
     _channel.invokeMethod("returnUri", originalUri);
   }
 
-  Future<void> rename(String uri, String newName, [bool notify = true]) {
-    if (newName.isEmpty) {
-      return Future.value();
-    }
-
-    return _channel.invokeMethod(
-      "rename",
-      {"uri": uri, "newName": newName, "notify": notify},
-    );
-  }
-
-  void copyMoveFiles(
-    String? chosen,
-    String? chosenVolumeName,
-    List<GalleryFile> selected, {
-    required bool move,
-    String? newDir,
-  }) {
-    _channel.invokeMethod(
-      "copyMoveFiles",
-      {
-        "dest": chosen ?? newDir,
-        "images": selected
-            .where((element) => !element.isVideo)
-            .map((e) => e.id)
-            .toList(),
-        "videos": selected
-            .where((element) => element.isVideo)
-            .map((e) => e.id)
-            .toList(),
-        "move": move,
-        "volumeName": chosenVolumeName,
-        "newDir": newDir != null,
-      },
-    );
-  }
-
-  Future<int?> trashThumbId() {
-    if (!Platform.isAndroid) {
-      return Future.value();
-    }
-    return _channel.invokeMethod("trashThumbId");
-  }
-
-  void deleteFiles(List<GalleryFile> selected) {
-    _channel.invokeMethod(
-      "deleteFiles",
-      selected.map((e) => e.originalUri).toList(),
-    );
-  }
-
-  Future<SettingsPath?> chooseDirectory({bool temporary = false}) async {
-    return _channel.invokeMethod("chooseDirectory", temporary).then(
-          (value) => SettingsPath.forCurrent(
-            path: (value as Map<String, dynamic>)["path"] as String,
-            pathDisplay: value["pathDisplay"] as String,
-          ),
-        );
-  }
-
-  void refreshGallery() {
-    _channel.invokeMethod("refreshGallery");
-  }
-
   Future<bool> manageMediaSupported() {
     return _channel
         .invokeMethod("manageMediaSupported")
@@ -250,17 +158,7 @@ class AndroidApiFunctions implements PlatformApi {
         .then((value) => value as bool);
   }
 
-  void emptyTrash() {
-    _channel.invokeMethod("emptyTrash");
-  }
-
-  Future<void> move(MoveOp op) {
-    return _channel.invokeMethod(
-      "move",
-      {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir},
-    );
-  }
-
+  @override
   Future<void> shareMedia(String originalUri, {bool url = false}) {
     _channel.invokeMethod("shareMedia", {"uri": originalUri, "isUrl": url});
 
@@ -274,18 +172,6 @@ class AndroidApiFunctions implements PlatformApi {
     ).then((value) => (value as bool?) ?? false);
   }
 
-  void refreshTrashed() {
-    _channel.invokeMethod("refreshTrashed");
-  }
-
-  void addToTrash(List<String> uris) {
-    _channel.invokeMethod("addToTrash", uris);
-  }
-
-  void removeFromTrash(List<String> uris) {
-    _channel.invokeMethod("removeFromTrash", uris);
-  }
-
   Future<bool> moveFromInternal(
     String fromInternalFile,
     String toDir,
@@ -297,36 +183,9 @@ class AndroidApiFunctions implements PlatformApi {
     ).then((value) => (value as bool?) ?? false);
   }
 
-  void preloadImage(String uri) {
-    _channel.invokeMethod("preloadImage", uri);
-  }
-
-  Future<int> thumbCacheSize([bool fromPinned = false]) {
-    return _channel
-        .invokeMethod("thumbCacheSize", fromPinned)
-        .then((value) => value as int);
-  }
-
-  Future<ThumbId> getCachedThumb(int id) {
-    return _channel.invokeMethod("getCachedThumb", id).then(
-          (value) => ThumbId(
-            id: id,
-            path: (value as Map<String, dynamic>)["path"] as String,
-            differenceHash: value["hash"] as int,
-          ),
-        );
-  }
-
-  void clearCachedThumbs([bool fromPinned = false]) {
-    _channel.invokeMethod("clearCachedThumbs", fromPinned);
-  }
-
-  void deleteCachedThumbs(List<int> id, [bool fromPinned = false]) {
-    _channel.invokeMethod(
-      "deleteCachedThumbs",
-      {"ids": id, "fromPinned": fromPinned},
-    );
-  }
+  // void preloadImage(String uri) {
+  //   _channel.invokeMethod("preloadImage", uri);
+  // }
 
   Future<int> currentMediastoreVersion() {
     return _channel
@@ -340,18 +199,8 @@ class AndroidApiFunctions implements PlatformApi {
         .then((value) => value as bool);
   }
 
+  @override
   Future<void> setWallpaper(int id) {
     return _channel.invokeMethod("setWallpaper", id);
-  }
-
-  Future<ThumbId> saveThumbNetwork(String url, int id) {
-    return _channel
-        .invokeMethod("saveThumbNetwork", {"url": url, "id": id}).then(
-      (value) => ThumbId(
-        id: id,
-        path: (value as Map<String, dynamic>)["path"] as String,
-        differenceHash: value["hash"] as int,
-      ),
-    );
   }
 }

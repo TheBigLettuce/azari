@@ -165,7 +165,7 @@ class ImageView extends StatefulWidget {
           final r = functionality.registerNotifiers;
 
           final c = ImageView(
-            updates: functionality.refreshingStatus.mutation.listenCount,
+            updates: functionality.source.backingStorage.watch,
             gridContext: gridContext,
             statistics: imageDesctipion.statistics,
             scrollUntill: (i) => extras.scrollTo(i, config),
@@ -173,13 +173,14 @@ class ImageView extends StatefulWidget {
             watchTags: watchTags,
             onExit: imageDesctipion.onExit,
             getCell: (idx) => getCell(idx).content(),
-            cellCount: functionality.refreshingStatus.mutation.cellCount,
+            cellCount: functionality.source.count,
             download: functionality.download,
             startingCell: startingCell,
             tags: tags,
-            onNearEnd: imageDesctipion.ignoreOnNearEnd
-                ? null
-                : functionality.refreshingStatus.onNearEnd,
+            onNearEnd:
+                imageDesctipion.ignoreOnNearEnd || !functionality.source.hasNext
+                    ? null
+                    : functionality.source.next,
           );
 
           return r != null ? r(c) : c;
@@ -434,7 +435,6 @@ class ImageViewState extends State<ImageView>
               scrollController: scrollController,
               bottomSheetController: bottomSheetController,
               controller: animationController,
-              currentPalette: currentPalette,
               mainFocus: mainFocus,
               child: ImageViewBody(
                 key: ValueKey(refreshTries),

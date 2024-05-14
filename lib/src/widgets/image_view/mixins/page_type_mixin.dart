@@ -5,8 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
-
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
@@ -51,9 +49,9 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
 
         final content = c2;
         if (content is NetImage) {
-          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-            precacheImage(content.provider, context);
-          });
+          // WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+          // precacheImage(content.provider, context);
+          // });
         }
 
         // if (_previousCell!.$1 is SystemGalleryDirectoryFile) {
@@ -71,9 +69,9 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
 
         final content = c3;
         if (content is NetImage) {
-          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-            precacheImage(content.provider, context);
-          });
+          // WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+          // precacheImage(content.provider, context);
+          // });
         }
 
         // if (_nextCell!.$1 is SystemGalleryDirectoryFile) {
@@ -112,14 +110,12 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
       PhotoViewGalleryPageOptions.customChild(
         disableGestures: true,
         tightMode: true,
-        child: !Platform.isAndroid
-            ? const Center(child: Icon(Icons.error_outline))
-            : PhotoGalleryPageVideo(
-                key: key,
-                url: uri,
-                localVideo: local,
-                db: DatabaseConnectionNotifier.of(context).videoSettings,
-              ),
+        child: PhotoGalleryPageVideo(
+          key: key,
+          url: uri,
+          localVideo: local,
+          db: DatabaseConnectionNotifier.of(context).videoSettings,
+        ),
       );
 
   PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {

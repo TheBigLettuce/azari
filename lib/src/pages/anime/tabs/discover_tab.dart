@@ -67,46 +67,30 @@ class _DiscoverPagingEntry implements PagingEntry {
   factory _DiscoverPagingEntry.prototype(AnimeAPI api) =>
       _DiscoverPagingEntry(api);
 
-  final entries = <AnimeSearchEntry>[];
   final AnimeAPI api;
-
-  late final GridRefreshingStatus<AnimeSearchEntry> refreshingStatus =
-      GridRefreshingStatus(
-    0,
-    () => false,
-    clearRefresh: AsyncGridRefresh(() async {
-      entries.clear();
+  late final source = GenericListSource<AnimeSearchEntry>(
+    () {
       page = 0;
-      reachedEnd = false;
 
-      final p = await api.search(
+      return api.search(
         searchText,
         page,
         genreId,
         mode,
       );
-
-      entries.addAll(p);
-
-      return entries.length;
-    }),
-    next: () async {
-      final p = await api.search(
-        searchText,
-        page + 1,
-        genreId,
-        mode,
-      );
-
+    },
+    () => api
+        .search(
+      searchText,
+      page + 1,
+      genreId,
+      mode,
+    )
+        .then((l) {
       page += 1;
 
-      if (p.isEmpty) {
-        reachedEnd = true;
-      }
-      entries.addAll(p);
-
-      return entries.length;
-    },
+      return l;
+    }),
   );
 
   Future<Map<int, AnimeGenre>>? future;
@@ -125,7 +109,7 @@ class _DiscoverPagingEntry implements PagingEntry {
 
   @override
   void dispose() {
-    refreshingStatus.dispose();
+    source.destroy();
   }
 
   @override
@@ -147,7 +131,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
   final GridSkeletonState<AnimeSearchEntry> state =
       GridSkeletonState<AnimeSearchEntry>();
 
-  List<AnimeSearchEntry> get entries => pagingState.entries;
+  ResourceSource<AnimeSearchEntry> get source => pagingState.source;
 
   late final _DiscoverPagingEntry pagingState;
 
@@ -181,7 +165,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
             setCurrentGenre: (g) {
               pagingState.genreId = g;
 
-              pagingState.refreshingStatus.refresh();
+              source.clearRefresh();
             },
             initalGenreId: pagingState.genreId,
             header: _SearchBar(
@@ -213,17 +197,17 @@ class _DiscoverTabState extends State<DiscoverTab> {
         (context) => GridFrame<AnimeSearchEntry>(
           key: state.gridKey,
           slivers: [
-            CurrentGridSettingsLayout(
-              mutation: pagingState.refreshingStatus.mutation,
+            CurrentGridSettingsLayout<AnimeSearchEntry>(
+              source: source.backingStorage,
+              progress: source.progress,
               gridSeed: state.gridSeed,
-            )
+            ),
           ],
-          getCell: (i) => entries[i],
           initalScrollPosition: pagingState.offset,
           functionality: GridFunctionality(
             updateScrollPosition: pagingState.setOffset,
             selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: pagingState.refreshingStatus,
+            source: source,
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(
@@ -258,6 +242,7 @@ class __SearchBarState extends State<_SearchBar> {
   late final TextEditingController controller;
 
   _DiscoverPagingEntry get pagingState => widget.pagingState;
+  ResourceSource<AnimeSearchEntry> get source => pagingState.source;
 
   @override
   void initState() {
@@ -275,7 +260,7 @@ class __SearchBarState extends State<_SearchBar> {
 
   void _search(BuildContext context, String value) {
     final gridState = widget.gridKey.currentState;
-    if (gridState == null) {
+    if (gridState == null || source.progress.inRefreshing) {
       return;
     }
 
@@ -284,9 +269,8 @@ class __SearchBarState extends State<_SearchBar> {
     }
 
     pagingState.searchText = value;
-    gridState.refreshingStatus.updateProgress?.ignore();
-    gridState.refreshingStatus.updateProgress = null;
-    gridState.refreshingStatus.refresh();
+
+    source.clearRefresh();
 
     Navigator.pop(context);
   }
@@ -296,7 +280,7 @@ class __SearchBarState extends State<_SearchBar> {
     return SearchBar(
       onSubmitted: (value) => _search(context, value),
       controller: controller,
-      elevation: const MaterialStatePropertyAll(0),
+      elevation: const WidgetStatePropertyAll(0),
       hintText: AppLocalizations.of(context)!.searchHint,
       leading: const Icon(Icons.search_rounded),
       trailing: [
@@ -307,7 +291,7 @@ class __SearchBarState extends State<_SearchBar> {
               set: (m) {
                 pagingState.mode = m;
 
-                pagingState.refreshingStatus.refresh();
+                source.clearRefresh();
 
                 setState(() {});
               },

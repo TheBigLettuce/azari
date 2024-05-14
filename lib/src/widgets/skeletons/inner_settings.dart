@@ -5,8 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
-
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -77,9 +75,7 @@ class InnerSettingsSkeleton extends StatelessWidget {
                         ...appBarActions!.map(
                           (e) => SafeArea(
                             child: Padding(
-                              padding: Platform.isAndroid
-                                  ? const EdgeInsets.only(top: 4, bottom: 4)
-                                  : const EdgeInsets.only(top: 8, bottom: 8),
+                              padding: const EdgeInsets.only(top: 4, bottom: 4),
                               child: e,
                             ),
                           ),

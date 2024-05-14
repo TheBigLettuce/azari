@@ -11,7 +11,7 @@ extension SettingsDataExt on SettingsData {
   void save() => SettingsService.db().add(this);
 }
 
-abstract interface class SettingsPath {
+abstract class SettingsPath {
   const SettingsPath();
 
   String get path;
@@ -24,12 +24,10 @@ abstract interface class SettingsPath {
     required String path,
     required String pathDisplay,
   }) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarSettingsPath(
-            path: path,
-            pathDisplay: pathDisplay,
-          ),
-      };
+      _currentDb.settingsPathForCurrent(
+        path: path,
+        pathDisplay: pathDisplay,
+      );
 }
 
 abstract class SettingsData {

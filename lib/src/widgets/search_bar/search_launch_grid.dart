@@ -12,60 +12,71 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
 
-/// Search mixin which launches a new page with a grid.
-class SearchLaunchGrid<T extends CellBase> {
-  SearchLaunchGrid(this._state) {
-    searchController.text = _state.searchText;
-    tags = _state.searchText;
-  }
+class LaunchingSearchWidget extends StatefulWidget {
+  const LaunchingSearchWidget({
+    super.key,
+    required this.getTags,
+    required this.state,
+    required this.searchController,
+    required this.hint,
+  });
 
-  final searchController = SearchController();
-  final FocusNode searchFocus = FocusNode();
+  final String Function() getTags;
+  final SearchLaunchGridData state;
+  final SearchController searchController;
+  final String? hint;
 
-  final _ScrollHack _scrollHack = _ScrollHack();
-  final SearchLaunchGridData _state;
+  @override
+  State<LaunchingSearchWidget> createState() => _LaunchingSearchWidgetState();
+}
 
-  String tags = "";
-
-  void dispose() {
-    searchController.dispose();
-    searchFocus.dispose();
-    _scrollHack.dispose();
-  }
+class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
+  SearchLaunchGridData get state => widget.state;
+  SearchController get searchController => widget.searchController;
 
   (Future<List<BooruTag>>, String)? previousSearch;
 
-  Widget searchWidget(BuildContext context, {String? hint, int? count}) {
-    final addItems = _state.addItems(context);
+  final _ScrollHack _scrollHack = _ScrollHack();
+
+  @override
+  void dispose() {
+    _scrollHack.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final addItems = state.addItems(context);
 
     return AbsorbPointer(
-      absorbing: _state.disabled,
+      absorbing: state.disabled,
       child: DefaultSelectionStyle(
         child: Theme(
           data: Theme.of(context).copyWith(
             searchBarTheme: SearchBarThemeData(
-              overlayColor: MaterialStatePropertyAll(
+              overlayColor: WidgetStatePropertyAll(
                 Theme.of(context).colorScheme.onPrimary.withOpacity(0.05),
               ),
-              textStyle: MaterialStatePropertyAll(
+              textStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: _state.disabled
+                  color: state.disabled
                       ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
                       : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-              elevation: const MaterialStatePropertyAll(0),
-              backgroundColor: MaterialStatePropertyAll(
-                _state.disabled
+              elevation: const WidgetStatePropertyAll(0),
+              backgroundColor: WidgetStatePropertyAll(
+                state.disabled
                     ? Theme.of(context).colorScheme.surface.withOpacity(0.4)
                     : Theme.of(context)
                         .colorScheme
                         .surfaceTint
                         .withOpacity(0.8),
               ),
-              hintStyle: MaterialStatePropertyAll(
+              hintStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: _state.disabled
+                  color: state.disabled
                       ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
                       : Theme.of(context)
                           .colorScheme
@@ -94,32 +105,32 @@ class SearchLaunchGrid<T extends CellBase> {
                 borderRadius: BorderRadius.circular(25),
                 child: AbsorbPointer(
                   child: SearchBar(
-                    side: const MaterialStatePropertyAll(BorderSide.none),
-                    leading: _state.swapSearchIconWithAddItems &&
-                            addItems.length == 1
-                        ? addItems.first
-                        : Icon(
-                            Icons.search_rounded,
-                            size: 18,
-                            color: _state.disabled
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.4)
-                                : Theme.of(context).colorScheme.onPrimary,
-                          ),
+                    side: const WidgetStatePropertyAll(BorderSide.none),
+                    leading:
+                        state.swapSearchIconWithAddItems && addItems.length == 1
+                            ? addItems.first
+                            : Icon(
+                                Icons.search_rounded,
+                                size: 18,
+                                color: state.disabled
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4)
+                                    : Theme.of(context).colorScheme.onPrimary,
+                              ),
                     constraints: const BoxConstraints.expand(
                       height: 38,
                       width: 114,
                     ),
-                    hintText: _state.disabled || _state.searchTextAsLabel
-                        ? tags
+                    hintText: state.disabled || state.searchTextAsLabel
+                        ? widget.getTags()
                         : AppLocalizations.of(context)!.searchHint,
-                    onSubmitted: _state.disabled
+                    onSubmitted: state.disabled
                         ? null
                         : (value) {
                             searchController.closeView(null);
-                            _state.onSubmit(context, value);
+                            state.onSubmit(context, value);
                           },
                   ),
                 ),
@@ -133,26 +144,26 @@ class SearchLaunchGrid<T extends CellBase> {
               ),
             ],
             viewOnSubmitted: (value) {
-              _state.onSubmit(context, value);
+              state.onSubmit(context, value);
             },
             viewHintText:
-                "${AppLocalizations.of(context)!.searchHint} ${hint ?? ''}",
+                "${AppLocalizations.of(context)!.searchHint} ${widget.hint ?? ''}",
             searchController: searchController,
             suggestionsBuilder: (suggestionsContext, controller) {
               if (controller.text.isEmpty) {
-                return [_state.header];
+                return [state.header];
               }
 
               if (previousSearch == null) {
                 previousSearch = (
-                  autocompleteTag(controller.text, _state.completeTag),
+                  autocompleteTag(controller.text, state.completeTag),
                   controller.text
                 );
               } else {
                 if (previousSearch!.$2 != controller.text) {
                   previousSearch?.$1.ignore();
                   previousSearch = (
-                    autocompleteTag(controller.text, _state.completeTag),
+                    autocompleteTag(controller.text, state.completeTag),
                     controller.text
                   );
                 }
@@ -166,7 +177,7 @@ class SearchLaunchGrid<T extends CellBase> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _state.header,
+                        state.header,
                         if (!snapshot.hasData)
                           const Center(
                             child: Padding(
@@ -242,6 +253,36 @@ class SearchLaunchGrid<T extends CellBase> {
       ),
     );
   }
+}
+
+/// Search mixin which launches a new page with a grid.
+class SearchLaunchGrid<T extends CellBase> {
+  SearchLaunchGrid(this._state) {
+    searchController.text = _state.searchText;
+    tags = _state.searchText;
+  }
+
+  final searchController = SearchController();
+  final FocusNode searchFocus = FocusNode();
+
+  final SearchLaunchGridData _state;
+
+  String tags = "";
+
+  void dispose() {
+    searchController.dispose();
+    searchFocus.dispose();
+  }
+
+  String _getTags() => tags;
+
+  Widget searchWidget(BuildContext context, {String? hint}) =>
+      LaunchingSearchWidget(
+        getTags: _getTags,
+        state: _state,
+        searchController: searchController,
+        hint: hint,
+      );
 }
 
 class _ScrollHack extends ScrollController {

@@ -7,7 +7,6 @@
 
 import "dart:async";
 import "dart:developer";
-import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -26,8 +25,10 @@ import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
-import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
-import "package:gallery/src/plugs/gallery/dummy.dart";
+import "package:gallery/src/plugs/gallery/dummy_.dart"
+    if (dart.library.io) "package:gallery/src/plugs/gallery/io.dart"
+    if (dart.library.html) "package:gallery/src/plugs/gallery/web.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -59,19 +60,9 @@ abstract class GalleryPlug {
   Future<int> get version;
 }
 
-GalleryPlug chooseGalleryPlug() {
-  if (Platform.isAndroid) {
-    return const AndroidGallery();
-  }
+GalleryPlug chooseGalleryPlug() => getApi();
 
-  return DummyGallery();
-}
-
-void initalizeGalleryPlug(bool temporary) {
-  if (Platform.isAndroid) {
-    initalizeAndroidGallery(temporary);
-  }
-}
+void initalizeGalleryPlug(bool temporary) => initApi(temporary);
 
 class GalleryDirectoryBase {
   const GalleryDirectoryBase({
@@ -167,7 +158,7 @@ mixin GalleryDirectory
         DirectoriesDataNotifier.of(context);
 
     if (callback != null) {
-      functionality.refreshingStatus.mutation.cellCount = 0;
+      // functionality.refreshingStatus.mutation.cellCount = 0;
 
       Navigator.pop(context);
       callback(cell, null);
@@ -398,6 +389,7 @@ mixin GalleryFile
                       false,
                       tagManager,
                       db.favoriteFiles,
+                      db.localTags,
                     );
                   },
                 ),
@@ -410,6 +402,7 @@ mixin GalleryFile
                       true,
                       tagManager,
                       db.favoriteFiles,
+                      db.localTags,
                     );
                   },
                 ),
@@ -675,7 +668,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
                                         return null;
                                       },
                                       onFieldSubmitted: (value) {
-                                        PlatformApi.current()
+                                        GalleryManagementApi.current()
                                             .rename(file.originalUri, value);
 
                                         Navigator.pop(context);
@@ -815,7 +808,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
 
               _status = api.singlePost(res.id).then((post) {
-                const AndroidApiFunctions().deleteFiles([widget.file]);
+                GalleryManagementApi.current().deleteFiles([widget.file]);
 
                 post.download(context);
 

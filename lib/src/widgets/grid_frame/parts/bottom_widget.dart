@@ -7,27 +7,69 @@
 
 part of "../grid_frame.dart";
 
-class _BottomWidget extends PreferredSize {
+class _BottomWidget extends StatefulWidget {
   const _BottomWidget({
-    required super.preferredSize,
     this.routeChanger,
-    required this.isRefreshing,
-    required super.child,
+    required this.child,
+    required this.progress,
   });
-  final bool isRefreshing;
+
+  final RefreshingProgress progress;
   final Widget? routeChanger;
+  final Widget child;
+
+  @override
+  State<_BottomWidget> createState() => __BottomWidgetState();
+}
+
+class __BottomWidgetState extends State<_BottomWidget> {
+  RefreshingProgress get progress => widget.progress;
+
+  late final StreamSubscription<bool> _watcher;
+
+  @override
+  void initState() {
+    _watcher = progress.watch((_) {
+      setState(() {});
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return routeChanger != null
+    return widget.routeChanger != null
         ? Column(
             children: [
-              routeChanger!,
-              super.build(context),
+              widget.routeChanger!,
+              widget.child,
             ],
           )
-        : !isRefreshing
-            ? super.build(context)
+        : !progress.inRefreshing
+            ? widget.child
             : const LinearProgressIndicator();
   }
 }
+
+// class _BottomWidget extends PreferredSize {
+//   const _BottomWidget({
+//     required super.preferredSize,
+//     this.routeChanger,
+//     required this.isRefreshing,
+//     required super.child,
+//   });
+//   final bool isRefreshing;
+//   final Widget? routeChanger;
+
+//   @override
+//   Widget build(BuildContext context) {
+    // return 
+//   }
+// }

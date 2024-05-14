@@ -12,14 +12,9 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/base/system_gallery_thumbnail_provider.dart";
-import "package:gallery/src/db/services/impl/isar/impl.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/impl_table/dummy.dart"
+    if (dart.library.io) "package:gallery/src/db/services/impl_table/io.dart"
+    if (dart.library.html) "package:gallery/src/db/services/impl_table/web.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
@@ -29,7 +24,6 @@ import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
@@ -38,7 +32,6 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
-import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -49,35 +42,33 @@ import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:isar/isar.dart";
 
-part "settings.dart";
-part "saved_anime_characters.dart";
-part "saved_anime_entry.dart";
-part "video_settings.dart";
-part "misc_settings.dart";
-part "hidden_booru_post.dart";
+part "blacklisted_directory.dart";
+part "chapters_settings.dart";
+part "compact_manga_data.dart";
+part "directory_metadata.dart";
+part "download_file.dart";
+part "favorite_file.dart";
 part "favorite_post.dart";
 part "grid_settings.dart";
-part "saved_manga_chapters.dart";
-part "read_manga_chapters.dart";
+part "hidden_booru_post.dart";
+part "misc_settings.dart";
 part "pinned_manga.dart";
-part "compact_manga_data.dart";
-part "chapters_settings.dart";
-part "thumbnail.dart";
 part "pinned_thumbnail.dart";
-part "favorite_file.dart";
-part "directory_metadata.dart";
-part "blacklisted_directory.dart";
-part "statistics_daily.dart";
+part "read_manga_chapters.dart";
+part "saved_anime_characters.dart";
+part "saved_anime_entry.dart";
+part "saved_manga_chapters.dart";
+part "settings.dart";
 part "statistics_booru.dart";
+part "statistics_daily.dart";
 part "statistics_gallery.dart";
 part "statistics_general.dart";
-part "download_file.dart";
+part "thumbnail.dart";
+part "video_settings.dart";
 part "watched_anime_entry.dart";
 
-Future<void> initServices(DownloadMoverPlug plug) async {
-  final ret = await _currentDb._init();
-
-  _downloadManager ??= DownloadManager(plug, _currentDb.downloads);
+Future<void> initServices() async {
+  _downloadManager ??= await init(_currentDb);
 
   return Future.value();
 }
@@ -93,7 +84,7 @@ int numberOfElementsPerRefresh() {
 
 DownloadManager? _downloadManager;
 
-ServicesImplTable get _currentDb => ServicesImplTable.isar;
+final ServicesImplTable _currentDb = ServicesImplTable();
 typedef DbConn = ServicesImplTable;
 
 class DatabaseConnectionNotifier extends InheritedWidget {
@@ -133,135 +124,6 @@ class DatabaseConnectionNotifier extends InheritedWidget {
       db != oldWidget.db;
 }
 
-enum ServicesImplTable implements ServiceMarker {
-  isar;
-
-  Future<void> _init() => switch (this) {
-        ServicesImplTable.isar => initalizeIsarDb(false),
-      };
-
-  SettingsService get settings => switch (this) {
-        ServicesImplTable.isar => const IsarSettingsService(),
-      };
-
-  MiscSettingsService get miscSettings => switch (this) {
-        ServicesImplTable.isar => const IsarMiscSettingsService(),
-      };
-
-  SavedAnimeEntriesService get savedAnimeEntries => switch (this) {
-        ServicesImplTable.isar => const IsarSavedAnimeEntriesService(),
-      };
-
-  SavedAnimeCharactersService get savedAnimeCharacters => switch (this) {
-        ServicesImplTable.isar => const IsarSavedAnimeCharatersService(),
-      };
-
-  WatchedAnimeEntryService get watchedAnime => switch (this) {
-        ServicesImplTable.isar => const IsarWatchedAnimeEntryService(),
-      };
-
-  VideoSettingsService get videoSettings => switch (this) {
-        ServicesImplTable.isar => const IsarVideoService(),
-      };
-
-  HiddenBooruPostService get hiddenBooruPost => switch (this) {
-        ServicesImplTable.isar => const IsarHiddenBooruPostService(),
-      };
-
-  DownloadFileService get downloads => switch (this) {
-        ServicesImplTable.isar => const IsarDownloadFileService(),
-      };
-
-  FavoritePostService get favoritePosts => switch (this) {
-        ServicesImplTable.isar => const IsarFavoritePostService(),
-      };
-
-  StatisticsGeneralService get statisticsGeneral => switch (this) {
-        ServicesImplTable.isar => const IsarStatisticsGeneralService(),
-      };
-
-  StatisticsGalleryService get statisticsGallery => switch (this) {
-        ServicesImplTable.isar => const IsarStatisticsGalleryService(),
-      };
-
-  StatisticsBooruService get statisticsBooru => switch (this) {
-        ServicesImplTable.isar => const IsarStatisticsBooruService(),
-      };
-
-  StatisticsDailyService get statisticsDaily => switch (this) {
-        ServicesImplTable.isar => const IsarDailyStatisticsService(),
-      };
-
-  DirectoryMetadataService get directoryMetadata => switch (this) {
-        ServicesImplTable.isar => const IsarDirectoryMetadataService(),
-      };
-
-  ChaptersSettingsService get chaptersSettings => switch (this) {
-        ServicesImplTable.isar => const IsarChapterSettingsService(),
-      };
-
-  SavedMangaChaptersService get savedMangaChapters => switch (this) {
-        ServicesImplTable.isar => const IsarSavedMangaChaptersService(),
-      };
-
-  ReadMangaChaptersService get readMangaChapters => switch (this) {
-        ServicesImplTable.isar => const IsarReadMangaChapterService(),
-      };
-
-  PinnedMangaService get pinnedManga => switch (this) {
-        ServicesImplTable.isar => const IsarPinnedMangaService(),
-      };
-
-  ThumbnailService get thumbnails => switch (this) {
-        ServicesImplTable.isar => const IsarThumbnailService(),
-      };
-
-  PinnedThumbnailService get pinnedThumbnails => switch (this) {
-        ServicesImplTable.isar => const IsarPinnedThumbnailService(),
-      };
-
-  LocalTagsService get localTags => switch (this) {
-        ServicesImplTable.isar => const IsarLocalTagsService(),
-      };
-
-  LocalTagDictionaryService get localTagDictionary => switch (this) {
-        ServicesImplTable.isar => const IsarLocalTagDictionaryService(),
-      };
-
-  CompactMangaDataService get compactManga => switch (this) {
-        ServicesImplTable.isar => const IsarCompactMangaDataService(),
-      };
-
-  GridStateBooruService get gridStateBooru => switch (this) {
-        ServicesImplTable.isar => const IsarGridStateBooruService(),
-      };
-
-  FavoriteFileService get favoriteFiles => switch (this) {
-        ServicesImplTable.isar => const IsarFavoriteFileService(),
-      };
-
-  DirectoryTagService get directoryTags => switch (this) {
-        ServicesImplTable.isar => const IsarDirectoryTagService(),
-      };
-
-  BlacklistedDirectoryService get blacklistedDirectories => switch (this) {
-        ServicesImplTable.isar => const IsarBlacklistedDirectoryService(),
-      };
-
-  GridSettingsService get gridSettings => switch (this) {
-        ServicesImplTable.isar => const IsarGridSettinsService(),
-      };
-
-  MainGridService mainGrid(Booru booru) => switch (this) {
-        ServicesImplTable.isar => IsarMainGridService.booru(booru),
-      };
-
-  SecondaryGridService secondaryGrid(Booru booru, String name) =>
-      switch (this) {
-        ServicesImplTable.isar => IsarSecondaryGridService.booru(booru, name),
-      };
-}
-
 abstract interface class ServiceMarker {}
 
 mixin DbConnHandle<T extends ServiceMarker> implements StatefulWidget {
@@ -295,9 +157,13 @@ abstract class ReadOnlyStorage<T> with Iterable<T> {
   T? get(int idx);
 
   T operator [](int index);
+
+  StreamSubscription<int> watch(void Function(int) f);
 }
 
 abstract class SourceStorage<T> extends ReadOnlyStorage<T> {
+  Iterable<T> get reversed;
+
   void add(T e, [bool silent = false]);
 
   void addAll(List<T> l, [bool silent = false]);
@@ -309,8 +175,6 @@ abstract class SourceStorage<T> extends ReadOnlyStorage<T> {
   void destroy();
 
   void operator []=(int index, T value);
-
-  StreamSubscription<int> watch(void Function(int) f);
 }
 
 class ListStorage<T> extends SourceStorage<T> {
@@ -325,6 +189,9 @@ class ListStorage<T> extends SourceStorage<T> {
 
   @override
   Iterator<T> get iterator => list.iterator;
+
+  @override
+  Iterable<T> get reversed => list.reversed;
 
   @override
   T? get(int idx) => idx >= count ? null : list[idx];
@@ -387,18 +254,41 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
     required this.allowedSortingModes,
     required FilteringMode initialFilteringMode,
     required SortingMode initialSortingMode,
-  })  : assert(allowedFilteringModes.isEmpty
-            ? true
-            : allowedFilteringModes.contains(initialFilteringMode)),
-        assert(allowedSortingModes.isEmpty
-            ? true
-            : allowedSortingModes.contains(initialSortingMode)),
+  })  : assert(
+          allowedFilteringModes.isEmpty
+              ? true
+              : allowedFilteringModes.contains(initialFilteringMode),
+        ),
+        assert(
+          allowedSortingModes.isEmpty
+              ? true
+              : allowedSortingModes.contains(initialSortingMode),
+        ),
         _mode = initialFilteringMode,
         _sorting = initialSortingMode {
     _originalSubscr = _original.backingStorage.watch((c) {
       clearRefresh();
     });
   }
+
+  factory ChainedFilterResourceSource.basic(
+    ResourceSource<T> original,
+    SourceStorage<T> filterStorage, {
+    required bool Function(
+      T e,
+      FilteringMode filteringMode,
+      SortingMode sortingMode,
+    ) fn,
+  }) =>
+      ChainedFilterResourceSource(
+        original,
+        filterStorage,
+        fn: fn,
+        allowedFilteringModes: const {},
+        allowedSortingModes: const {},
+        initialFilteringMode: FilteringMode.noFilter,
+        initialSortingMode: SortingMode.none,
+      );
 
   final ResourceSource<T> _original;
   final SourceStorage<T> _filterStorage;
@@ -416,6 +306,9 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
 
   FilteringMode get filteringMode => _mode;
   SortingMode get sortingMode => _sorting;
+
+  @override
+  RefreshingProgress get progress => _original.progress;
 
   set filteringMode(FilteringMode f) {
     if (allowedFilteringModes.isEmpty) {
@@ -456,22 +349,21 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
   final bool Function(T e, FilteringMode filteringMode, SortingMode sortingMode)
       fn;
 
-  bool _filteringInProgress = false;
-
   @override
   int get count => backingStorage.count;
 
   @override
+  bool get hasNext => false;
+
+  @override
   Future<int> clearRefresh() async {
-    if (_filteringInProgress) {
-      throw "filtering is in progress";
+    if (progress.inRefreshing) {
+      return count;
     }
-    _filteringInProgress = true;
 
     backingStorage.clear();
 
     if (_original.backingStorage.count == 0) {
-      _filteringInProgress = false;
       return 0;
     }
 
@@ -482,8 +374,6 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
         backingStorage.add(e, i != origCount_ - 1);
       }
     }
-
-    _filteringInProgress = false;
 
     return count;
   }
@@ -508,15 +398,31 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
     backingStorage.destroy();
     _originalSubscr.cancel();
   }
+}
 
-  // @override
-  // StreamSubscription<int> watch(void Function(int c) f) =>
-  //     _events.stream.listen(f);
+class _EmptyProgress implements RefreshingProgress {
+  const _EmptyProgress();
+
+  @override
+  Object? get error => null;
+
+  @override
+  bool get inRefreshing => false;
+
+  @override
+  bool get canLoadMore => false;
+
+  @override
+  StreamSubscription<bool> watch(void Function(bool p1) f) =>
+      const Stream<bool>.empty().listen(f);
 }
 
 class _EmptyResourceSource<T> extends ResourceSource<T> {
   @override
   int get count => backingStorage.count;
+
+  @override
+  bool get hasNext => false;
 
   @override
   final SourceStorage<T> backingStorage = ListStorage();
@@ -537,14 +443,63 @@ class _EmptyResourceSource<T> extends ResourceSource<T> {
   void destroy() {
     backingStorage.destroy();
   }
+
+  @override
+  RefreshingProgress get progress => const _EmptyProgress();
+}
+
+class ClosableRefreshProgress implements RefreshingProgress {
+  ClosableRefreshProgress({
+    this.canLoadMore = true,
+  });
+
+  final _events = StreamController<bool>.broadcast();
+
+  bool _refresh = false;
+
+  @override
+  Object? error;
+
+  @override
+  bool get inRefreshing => _refresh;
+
+  @override
+  bool canLoadMore;
+
+  set inRefreshing(bool b) {
+    _refresh = b;
+    _events.add(b);
+  }
+
+  @override
+  StreamSubscription<bool> watch(void Function(bool p1) f) =>
+      _events.stream.listen(f);
+
+  void close() {
+    _events.close();
+  }
+}
+
+abstract class RefreshingProgress {
+  const factory RefreshingProgress.empty() = _EmptyProgress;
+
+  Object? get error;
+
+  bool get inRefreshing;
+  bool get canLoadMore;
+
+  StreamSubscription<bool> watch(void Function(bool) f);
 }
 
 abstract interface class ResourceSource<T> {
   const ResourceSource();
 
-  factory ResourceSource.empty() => _EmptyResourceSource();
+  factory ResourceSource.empty() = _EmptyResourceSource;
 
   SourceStorage<T> get backingStorage;
+
+  RefreshingProgress get progress;
+  bool get hasNext;
 
   int get count;
 
@@ -556,6 +511,86 @@ abstract interface class ResourceSource<T> {
   Future<int> next();
 
   void destroy();
+}
+
+class GenericListSource<T> implements ResourceSource<T> {
+  GenericListSource(this._clearRefresh, [this._next]);
+
+  final Future<List<T>> Function() _clearRefresh;
+  final Future<List<T>> Function()? _next;
+
+  @override
+  final ListStorage<T> backingStorage = ListStorage();
+
+  @override
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  bool get hasNext => _next != null;
+
+  @override
+  T? forIdx(int idx) => backingStorage.get(idx);
+
+  @override
+  T forIdxUnsafe(int idx) => backingStorage[idx];
+
+  @override
+  Future<int> clearRefresh() async {
+    if (progress.inRefreshing) {
+      return count;
+    }
+    progress.inRefreshing = true;
+
+    backingStorage.clear();
+
+    try {
+      final ret = await _clearRefresh();
+      if (ret.isEmpty) {
+        progress.canLoadMore = false;
+      } else {
+        backingStorage.addAll(ret);
+      }
+    } catch (e) {
+      progress.error = e;
+      rethrow;
+    }
+
+    progress.inRefreshing = false;
+
+    return count;
+  }
+
+  @override
+  Future<int> next() async {
+    if (_next == null || progress.inRefreshing) {
+      return count;
+    }
+    progress.inRefreshing = true;
+
+    try {
+      final ret = await _next();
+      if (ret.isEmpty) {
+        progress.canLoadMore = false;
+      } else {
+        backingStorage.addAll(ret);
+      }
+    } catch (e) {
+      progress.error = e;
+    }
+
+    progress.inRefreshing = false;
+
+    return count;
+  }
+
+  @override
+  void destroy() {
+    backingStorage.destroy();
+    progress.close();
+  }
 }
 
 abstract interface class LocalTagDictionaryService {
@@ -571,9 +606,7 @@ abstract class LocalTagsData {
     String filename,
     List<String> tags,
   ) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarLocalTags(filename, tags),
-      };
+      _currentDb.localTagsDataForDb(filename, tags);
 
   @Index(unique: true, replace: true)
   final String filename;
@@ -584,6 +617,8 @@ abstract class LocalTagsData {
 
 abstract interface class LocalTagsService {
   int get count;
+
+  Map<String, List<String>> get cachedValues;
 
   List<String> get(String filename);
 
@@ -604,6 +639,12 @@ abstract interface class LocalTagsService {
   //   void Function(List<ImageTag>) f, {
   //   String? withFilename,
   // });
+}
+
+enum TagType {
+  normal,
+  pinned,
+  excluded;
 }
 
 abstract interface class DirectoryTagService {
@@ -675,9 +716,7 @@ mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
 }
 
 abstract interface class TagManager implements ServiceMarker {
-  factory TagManager.booru(Booru booru) => switch (_currentDb) {
-        ServicesImplTable.isar => IsarTagManager(booru),
-      };
+  factory TagManager.booru(Booru booru) => _currentDb.tagManager(booru);
 
   factory TagManager.of(BuildContext context) {
     final widget =

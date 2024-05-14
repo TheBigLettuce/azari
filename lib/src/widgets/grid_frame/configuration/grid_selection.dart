@@ -13,12 +13,12 @@ class GridSelection<T extends CellBase> {
     this.glue,
     this.controller, {
     required this.noAppBar,
-    required this.mutation,
+    required this.source,
   });
 
   final SelectionGlue glue;
   final ScrollController Function() controller;
-  final GridMutationInterface mutation;
+  final ReadOnlyStorage<T> source;
 
   final _selected = <int, T>{};
   final List<GridAction<T>> addActions;
@@ -49,7 +49,7 @@ class GridSelection<T extends CellBase> {
   }
 
   void selectAll(BuildContext context) {
-    final m = mutation.cellCount;
+    final m = source.count;
 
     if (m <= _selected.length) {
       return;

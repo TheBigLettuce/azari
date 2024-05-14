@@ -10,11 +10,12 @@ part of "../grid_frame.dart";
 /// Metadata about the grid.
 class GridDescription<T extends CellBase> {
   const GridDescription({
+    this.pullToRefresh = true,
     required this.actions,
     required this.gridSeed,
     required this.keybindsDescription,
     this.showAppBar = true,
-    this.ignoreEmptyWidgetOnNoContent = false,
+    // this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
     this.asSliver = false,
     // this.settingsButton,
@@ -43,16 +44,13 @@ class GridDescription<T extends CellBase> {
   final PreferredSizeWidget? bottomWidget;
 
   final bool showAppBar;
-
-  final bool ignoreEmptyWidgetOnNoContent;
+  // final bool ignoreEmptyWidgetOnNoContent;
+  final bool pullToRefresh;
 
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
-
   final bool asSliver;
-
   final bool appBarSnap;
-
   final bool showPageSwitcherAsHeader;
 
   final int gridSeed;

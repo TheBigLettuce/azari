@@ -42,6 +42,11 @@ abstract interface class SavedAnimeEntriesService implements ServiceMarker {
     bool fire = false,
   ]);
 
+  StreamSubscription<int> watchCount(
+    void Function(int) f, [
+    bool fire = false,
+  ]);
+
   StreamSubscription<SavedAnimeEntryData?> watch(
     int id,
     AnimeMetadata site,

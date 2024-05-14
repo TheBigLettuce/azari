@@ -10,9 +10,10 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -48,12 +49,17 @@ class _DownloadsState extends State<Downloads> {
 
   late final ChainedFilterResourceSource<DownloadHandle> filter;
 
-  late final state = GridSkeletonRefreshingState<DownloadHandle>(
-    clearRefresh: SynchronousGridRefresh(() => filter.count),
-  );
+  late final state = GridSkeletonState<DownloadHandle>();
 
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
+
+  final gridSettings = GridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.grid,
+  );
 
   @override
   void initState() {
@@ -85,6 +91,7 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   void dispose() {
+    gridSettings.cancel();
     _updates.cancel();
     filter.destroy();
 
@@ -150,60 +157,63 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage(
-      provided: widget.generateGlue,
-      child: GridSkeleton(
-        state,
-        (context) => GridFrame<DownloadHandle>(
-          key: state.gridKey,
-          slivers: [
-            SegmentLayout<DownloadHandle>(
-              segments: _makeSegments(context),
-              suggestionPrefix: const [],
-              getCell: filter.forIdxUnsafe,
-              gridSeed: state.gridSeed,
-              mutation: state.refreshingStatus.mutation,
-            ),
-          ],
-          getCell: filter.forIdxUnsafe,
-          functionality: GridFunctionality(
-            search: OverrideGridSearchWidget(
-              SearchAndFocus(
-                FilteringSearchWidget(
-                  hint: AppLocalizations.of(context)!.downloadsPageName,
-                  filter: filter,
-                  textController: searchTextController,
-                  localTagDictionary: widget.db.localTagDictionary,
-                  focusNode: searchFocus,
-                ),
-                searchFocus,
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: WrapGridPage(
+        provided: widget.generateGlue,
+        child: GridSkeleton(
+          state,
+          (context) => GridFrame<DownloadHandle>(
+            key: state.gridKey,
+            slivers: [
+              SegmentLayout<DownloadHandle>(
+                segments: _makeSegments(context),
+                suggestionPrefix: const [],
+                getCell: filter.forIdxUnsafe,
+                progress: filter.progress,
+                gridSeed: state.gridSeed,
+                storage: filter.backingStorage,
               ),
-            ),
-            selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: state.refreshingStatus,
-          ),
-          mainFocus: state.mainFocus,
-          description: GridDescription(
-            actions: [
-              delete(context),
             ],
-            // menuButtonItems: [
-            //   IconButton(
-            //     onPressed: Downloader.g.restartFailed,
-            //     icon: const Icon(Icons.download_rounded),
-            //   ),
-            //   IconButton(
-            //     onPressed: Downloader.g.removeAll,
-            //     icon: const Icon(Icons.close),
-            //   ),
-            // ],
-            keybindsDescription:
-                AppLocalizations.of(context)!.downloadsPageName,
-            inlineMenuButtonItems: true,
-            gridSeed: state.gridSeed,
+            functionality: GridFunctionality(
+              search: OverrideGridSearchWidget(
+                SearchAndFocus(
+                  FilteringSearchWidget(
+                    hint: AppLocalizations.of(context)!.downloadsPageName,
+                    filter: filter,
+                    textController: searchTextController,
+                    localTagDictionary: widget.db.localTagDictionary,
+                    focusNode: searchFocus,
+                  ),
+                  searchFocus,
+                ),
+              ),
+              selectionGlue: GlueProvider.generateOf(context)(),
+              source: filter,
+            ),
+            mainFocus: state.mainFocus,
+            description: GridDescription(
+              actions: [
+                delete(context),
+              ],
+              // menuButtonItems: [
+              //   IconButton(
+              //     onPressed: Downloader.g.restartFailed,
+              //     icon: const Icon(Icons.download_rounded),
+              //   ),
+              //   IconButton(
+              //     onPressed: Downloader.g.removeAll,
+              //     icon: const Icon(Icons.close),
+              //   ),
+              // ],
+              keybindsDescription:
+                  AppLocalizations.of(context)!.downloadsPageName,
+              inlineMenuButtonItems: true,
+              gridSeed: state.gridSeed,
+            ),
           ),
+          canPop: true,
         ),
-        canPop: true,
       ),
     );
   }

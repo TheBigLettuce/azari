@@ -30,26 +30,27 @@ class MangaDexSafeModeConverter
 }
 
 class MangaDexAltTitlesConventer
-    implements JsonConverter<Map<String, String>, List<Map<String, String>>> {
+    implements JsonConverter<Map<String, String>, List<dynamic>> {
   const MangaDexAltTitlesConventer();
 
   @override
-  Map<String, String> fromJson(List<Map<String, String>> json) => json
+  Map<String, String> fromJson(List<dynamic> json) => json
           .where(
-        (element) => element.containsKey("en") && element.containsKey("ja-ro"),
+        (element) =>
+            (element as Map).containsKey("en") && element.containsKey("ja-ro"),
         // &&
         // element.containsKey(attributes.originalLanguage),
       )
           .fold<Map<String, String>>(
         {},
         (previousValue, element) {
-          for (final e in element.entries) {
+          for (final e in (element as Map).entries) {
             final prev = previousValue[e.key];
             if (prev == null) {
-              previousValue[e.key] = e.value;
+              previousValue[e.key as String] = e.value as String;
             } else {
-              if (e.value.compareTo(prev) < 0) {
-                previousValue[e.key] = e.value;
+              if ((e.value as String).compareTo(prev) < 0) {
+                previousValue[e.key as String] = e.value as String;
               }
             }
           }
@@ -59,14 +60,14 @@ class MangaDexAltTitlesConventer
       );
 
   @override
-  List<Map<String, String>> toJson(Map<String, String> object) => const [];
+  List<dynamic> toJson(Map<String, String> object) => const [];
 }
 
-class MangaDexVolumeConventer implements JsonConverter<int, String> {
+class MangaDexVolumeConventer implements JsonConverter<int, String?> {
   const MangaDexVolumeConventer();
 
   @override
-  int fromJson(String json) => int.tryParse(json) ?? -1;
+  int fromJson(String? json) => json == null ? -1 : int.tryParse(json) ?? -1;
 
   @override
   String toJson(int object) => object.toString();

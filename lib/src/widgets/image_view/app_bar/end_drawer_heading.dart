@@ -27,7 +27,7 @@ class EndDrawerHeading extends StatelessWidget {
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           headline,
-          style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
     );

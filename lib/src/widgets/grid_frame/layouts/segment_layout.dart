@@ -16,8 +16,8 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:local_auth/local_auth.dart";
@@ -29,13 +29,15 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
     required this.suggestionPrefix,
     required this.getCell,
     required this.gridSeed,
-    required this.mutation,
+    required this.storage,
+    required this.progress,
   });
 
   final Segments<T> segments;
   final List<String> suggestionPrefix;
   final T Function(int) getCell;
-  final GridMutationInterface mutation;
+  final ReadOnlyStorage<T> storage;
+  final RefreshingProgress progress;
 
   final int gridSeed;
 
@@ -46,7 +48,7 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
 class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
   Segments<T> get segments => widget.segments;
   List<String> get suggestionPrefix => widget.suggestionPrefix;
-  GridMutationInterface get mutation => widget.mutation;
+  ReadOnlyStorage<T> get storage => widget.storage;
   T Function(int) get getCell => widget.getCell;
 
   late final StreamSubscription<int> _watcher;
@@ -60,7 +62,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
 
     _makeSegments();
 
-    _watcher = mutation.listenCount((_) {
+    _watcher = storage.watch((_) {
       _makeSegments();
 
       setState(() {});
@@ -108,13 +110,11 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
     final segRows = <_SegmentType>[];
     final segMap = <String, (List<int>, Set<SegmentModifier>)>{};
 
-    final getCell = CellProvider.of<T>(context);
-
     final unsegmented = <int>[];
 
     final List<(T, bool)> suggestionCells = [];
 
-    for (var i = 0; i < mutation.cellCount; i++) {
+    for (var i = 0; i < storage.count; i++) {
       final cell = getCell(i);
 
       if (segments.displayFirstCellInSpecial && suggestionPrefix.isNotEmpty) {
@@ -362,14 +362,19 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
     final extras = GridExtrasNotifier.of<T>(context);
     final config = GridConfiguration.of(context);
 
-    return SegmentLayoutBody(
-      data: _data,
-      predefined: predefined,
-      gridSeed: widget.gridSeed,
-      selection: extras.selection,
-      segments: segments,
-      gridFunctionality: extras.functionality,
-      config: config,
+    return EmptyWidgetOrContent(
+      count: storage.count,
+      progress: widget.progress,
+      buildEmpty: null,
+      child: SegmentLayoutBody(
+        data: _data,
+        predefined: predefined,
+        gridSeed: widget.gridSeed,
+        selection: extras.selection,
+        segments: segments,
+        gridFunctionality: extras.functionality,
+        config: config,
+      ),
     );
   }
 }
@@ -477,7 +482,7 @@ class _SegRowHCell<T extends CellBase> extends StatelessWidget {
               isList: false,
               imageAlign: Alignment.topCenter,
               hideTitle: config.hideName,
-              animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+              animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
         },
@@ -545,7 +550,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
               blur: toBlur,
               imageAlign: Alignment.topCenter,
               hideTitle: config.hideName,
-              animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+              animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
         },
@@ -632,9 +637,9 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                 }
 
                                 unawaited(HapticFeedback.vibrate());
-                                unawaited(
-                                  gridFunctionality.refreshingStatus.refresh(),
-                                );
+                                // unawaited(
+                                //   gridFunctionality.refreshingStatus.refresh(),
+                                // );
                               },
                               child: Text(
                                 toSticky
@@ -670,9 +675,9 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                               }
 
                               unawaited(HapticFeedback.vibrate());
-                              unawaited(
-                                gridFunctionality.refreshingStatus.refresh(),
-                              );
+                              // unawaited(
+                              //   gridFunctionality.refreshingStatus.refresh(),
+                              // );
                             },
                             child: Text(
                               toBlur
@@ -713,10 +718,10 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                       }
 
                                       unawaited(HapticFeedback.vibrate());
-                                      unawaited(
-                                        gridFunctionality.refreshingStatus
-                                            .refresh(),
-                                      );
+                                      // unawaited(
+                                      //   gridFunctionality.refreshingStatus
+                                      //       .refresh(),
+                                      // );
                                     },
                               child: Text(
                                 toAuth

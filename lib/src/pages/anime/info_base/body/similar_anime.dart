@@ -66,7 +66,8 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                                         id: e.$2.id,
                                         apiFactory: widget.entry.site.api,
                                         db: DatabaseConnectionNotifier.of(
-                                            context),
+                                          context,
+                                        ),
                                       );
                                     },
                                   ),

@@ -16,8 +16,8 @@ import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/settings/global_progress.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
 import "package:logging/logging.dart";
 
 mixin GalleryFileFunctionalityMixin {
@@ -108,7 +108,7 @@ Future<void> loadNetworkThumb(
     try {
       final post = await api.singlePost(res.id);
 
-      final t = await const AndroidApiFunctions()
+      final t = await GalleryManagementApi.current()
           .saveThumbNetwork(post.previewUrl, id);
 
       thumbnails.delete(id);

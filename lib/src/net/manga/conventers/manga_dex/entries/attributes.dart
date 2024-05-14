@@ -43,14 +43,14 @@ class _Attributes {
   final Map<String, String> titlesExtra;
 
   @JsonKey(name: "publicationDemographic")
-  final String demographics;
+  final String? demographics;
 
   @MangaDexVolumeConventer()
   @JsonKey(name: "lastVolume")
   final int volumes;
 
   @JsonKey(name: "lastChapter")
-  final String lastChapter;
+  final String? lastChapter;
 
   @MangaDexSafeModeConverter()
   @JsonKey(name: "contentRating")

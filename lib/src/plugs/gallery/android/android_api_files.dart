@@ -175,7 +175,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   final GalleryFilesPageType type;
 
   @override
-  final GalleryAPIDirectories parent;
+  final _AndroidGallery parent;
 
   final String _bucketId;
   final int startTime;
@@ -186,10 +186,11 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   bool isBucketId(String bucketId) => _bucketId == bucketId;
 
   @override
-  final ResourceSource<GalleryFile> source;
+  final _AndroidFileSourceJoined source;
 
   @override
   void close() {
+    parent.bindFiles = null;
     source.destroy();
   }
 }
@@ -197,47 +198,16 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
 class _AndroidFileSourceJoined implements ResourceSource<GalleryFile> {
   _AndroidFileSourceJoined(this.bucketIds);
 
-  static const _androidApi = AndroidApiFunctions();
-
   final List<String> bucketIds;
 
   @override
   int get count => backingStorage.count;
 
   @override
-  final SourceStorage<GalleryFile> backingStorage = ListStorage();
+  bool get hasNext => false;
 
   @override
-  GalleryFile? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
-
-  @override
-  Future<int> clearRefresh() {
-    _androidApi.refreshFilesMultiple(bucketIds);
-
-    return Future.value(backingStorage.count);
-  }
-
-  @override
-  Future<int> next() => Future.value(count);
-
-  @override
-  void destroy() {
-    backingStorage.destroy();
-  }
-}
-
-class _AndroidFileSource implements ResourceSource<GalleryFile> {
-  _AndroidFileSource(this.bucketId);
-
-  static const _androidApi = AndroidApiFunctions();
-
-  final String bucketId;
-
-  @override
-  int get count => backingStorage.count;
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
 
   @override
   final SourceStorage<GalleryFile> backingStorage = ListStorage();
@@ -250,7 +220,15 @@ class _AndroidFileSource implements ResourceSource<GalleryFile> {
 
   @override
   Future<int> clearRefresh() {
-    _androidApi.refreshFiles(bucketId);
+    if (progress.inRefreshing) {
+      return Future.value(count);
+    }
+    progress.inRefreshing = true;
+    if (bucketIds.length == 1) {
+      GalleryManagementApi.current().refreshFiles(bucketIds.first);
+    } else {
+      GalleryManagementApi.current().refreshFilesMultiple(bucketIds);
+    }
 
     return Future.value(backingStorage.count);
   }
@@ -261,8 +239,56 @@ class _AndroidFileSource implements ResourceSource<GalleryFile> {
   @override
   void destroy() {
     backingStorage.destroy();
+    progress.close();
   }
 }
+
+// class _AndroidFileSource implements ResourceSource<GalleryFile> {
+//   _AndroidFileSource(this.bucketId);
+
+//   static const _androidApi = AndroidApiFunctions();
+
+//   final String bucketId;
+
+//   @override
+//   int get count => backingStorage.count;
+
+//   @override
+//   bool get hasNext => false;
+
+//   @override
+//   final ClosableRefreshProgress progress = ClosableRefreshProgress();
+
+//   @override
+//   final SourceStorage<GalleryFile> backingStorage = ListStorage();
+
+//   @override
+//   GalleryFile? forIdx(int idx) => backingStorage.get(idx);
+
+//   @override
+//   GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
+
+//   @override
+//   Future<int> clearRefresh() {
+//     if (progress.inRefreshing) {
+//       return Future.value(count);
+//     }
+//     progress.inRefreshing = true;
+
+//     _androidApi.refreshFiles(bucketId);
+
+//     return Future.value(backingStorage.count);
+//   }
+
+//   @override
+//   Future<int> next() => Future.value(count);
+
+//   @override
+//   void destroy() {
+//     backingStorage.destroy();
+//     progress.close();
+//   }
+// }
 
   // @override
   // GalleryFilesExtra getExtra() => _GalleryFilesExtra._(this);

@@ -18,7 +18,6 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/net/anime/jikan.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
-import "package:gallery/src/pages/anime/paging_container.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
@@ -28,8 +27,6 @@ import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
@@ -80,12 +77,10 @@ class _AnimePageState extends State<AnimePage>
 
   final _textController = TextEditingController();
   final state = SkeletonState();
-  late final StreamSubscription<void> watcher;
+  // late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> watcherWatched;
 
   late final tabController = TabController(length: 3, vsync: this);
-
-  int savedCount = 0;
 
   final api = const Jikan();
 
@@ -101,13 +96,13 @@ class _AnimePageState extends State<AnimePage>
       setState(() {});
     });
 
-    savedCount = savedAnimeEntries.count;
+    // savedCount = savedAnimeEntries.count;
 
-    watcher = savedAnimeEntries.watchAll((_) {
-      savedCount = savedAnimeEntries.count;
+    // watcher = savedAnimeEntries.watchAll((_) {
+    //   savedCount = savedAnimeEntries.count;
 
-      setState(() {});
-    });
+    //   setState(() {});
+    // });
 
     watcherWatched = watchedAnimeEntries.watchAll((_) {
       setState(() {});
@@ -119,7 +114,7 @@ class _AnimePageState extends State<AnimePage>
     registry.dispose();
 
     state.dispose();
-    watcher.cancel();
+    // watcher.cancel();
     watcherWatched.cancel();
     tabController.dispose();
     _textController.dispose();
@@ -152,12 +147,12 @@ class _AnimePageState extends State<AnimePage>
       return;
     }
 
-    watchingKey.currentState?.filter(value);
-    finishedKey.currentState?.filter(value);
+    watchingKey.currentState?.doFilter(value);
+    finishedKey.currentState?.doFilter(value);
   }
 
   void _procHideTab(bool b) {
-    if (tabKey.currentState?.clearOrHide() == true) {
+    if (tabKey.currentState?.clearOrHide() ?? false) {
       setState(() {});
     }
   }
@@ -176,11 +171,14 @@ class _AnimePageState extends State<AnimePage>
       isScrollable: true,
       controller: tabController,
       tabs: [
-        TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
+        TabWithCount(
+          AppLocalizations.of(context)!.watchingTab,
+          savedAnimeEntries.watchCount,
+        ),
         Tab(text: AppLocalizations.of(context)!.discoverTab),
         TabWithCount(
           AppLocalizations.of(context)!.finishedTab,
-          watchedAnimeEntries.count,
+          watchedAnimeEntries.watchCount,
         ),
       ],
     );
@@ -188,7 +186,7 @@ class _AnimePageState extends State<AnimePage>
     return PopScope(
       canPop: false,
       onPopInvoked:
-          tabKey.currentState?._showSearchField == true ? _procHideTab : null,
+          tabKey.currentState?._showSearchField ?? false ? _procHideTab : null,
       child: SettingsSkeleton(
         AppLocalizations.of(context)!.animePage,
         state,

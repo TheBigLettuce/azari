@@ -45,7 +45,7 @@ class SearchTextField extends StatelessWidget {
             ).animate().fadeIn(),
         ],
         hintText: AppLocalizations.of(context)!.filterHint,
-        elevation: const MaterialStatePropertyAll(0),
+        elevation: const WidgetStatePropertyAll(0),
         controller: data.searchController,
         onSubmitted: (value) {
           FocusNotifier.of(context).unfocus();

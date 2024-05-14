@@ -73,7 +73,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
       title: Text(
         widget.cell.alias(false),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onBackground.withOpacity(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(
                 clampDouble(
                   Easing.emphasizedAccelerate.transform(animation.value),
                   0,
@@ -95,10 +95,10 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
           icon: const Icon(Icons.image),
         ),
       ],
-      surfaceTintColor: Theme.of(context).colorScheme.background.withOpacity(0),
+      surfaceTintColor: Theme.of(context).colorScheme.surface.withOpacity(0),
       backgroundColor: ColorTween(
-        begin: Theme.of(context).colorScheme.background.withOpacity(0),
-        end: Theme.of(context).colorScheme.background.withOpacity(0.8),
+        begin: Theme.of(context).colorScheme.surface.withOpacity(0),
+        end: Theme.of(context).colorScheme.surface.withOpacity(0.8),
       ).transform(Easing.emphasizedAccelerate.transform(animation.value)),
       // title: Text(widget.entry.title),
     );

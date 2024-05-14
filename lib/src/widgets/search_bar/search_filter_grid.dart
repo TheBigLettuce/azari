@@ -11,124 +11,232 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
 
-part "search_widget.dart";
+class FilteringSearchWidget<T extends CellBase> extends StatefulWidget {
+  const FilteringSearchWidget({
+    super.key,
+    required this.hint,
+    required this.filter,
+    required this.textController,
+    this.addItems,
+    required this.localTagDictionary,
+    required this.focusNode,
+  });
 
-/// Search mixin which filters the elements on a grid.
-// class _SearchFilterGrid<T extends CellBase> {
-//   _SearchFilterGrid(this._state, this.addItems, this._localTagCompleteFunc);
+  final String? hint;
 
-//   final TextEditingController searchTextController = TextEditingController();
-//   final FocusNode searchFocus = FocusNode();
+  final ChainedFilterResourceSource<T> filter;
 
-//   final List<Widget>? addItems;
-//   final GlobalKey<_FilteringSearchWidgetState> _key = GlobalKey();
-//   final Future<List<BooruTag>> Function(String string) _localTagCompleteFunc;
+  final TextEditingController textController;
+  final List<Widget>? addItems;
+  final LocalTagDictionaryService localTagDictionary;
 
-//   final GridSkeletonStateFilter<T> _state;
+  final FocusNode focusNode;
 
-//   late FilteringMode _currentFilterMode = _state.defaultMode;
-//   bool _searchVirtual = false;
+  @override
+  State<FilteringSearchWidget<T>> createState() =>
+      _FilteringSearchWidgetState();
+}
 
-//   void _onChanged(String value, bool direct) {
-//     final interf = _state.refreshingStatus.mutation;
-//     _state.hook(_currentFilterMode);
+class _FilteringSearchWidgetState<T extends CellBase>
+    extends State<FilteringSearchWidget<T>> {
+  ChainedFilterResourceSource<T> get filter => widget.filter;
+  TextEditingController get textController => widget.textController;
 
-//     if (!_state.filter.empty) {
-//       _state.gridKey.currentState?.enableAnimationsFor();
-//     }
+  late final StreamSubscription<void> _watcher;
+  FocusNode get focusNode => widget.focusNode;
 
-//     final res =
-//         _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
+  @override
+  void initState() {
+    super.initState();
 
-//     interf.cellCount = res.count;
+    _watcher = filter.backingStorage.watch((_) {
+      setState(() {});
+    });
+  }
 
-//     _key.currentState?.update(res.count);
-//   }
+  @override
+  void dispose() {
+    _watcher.cancel();
 
-//   void performSearch(String s, [bool orDirectly = false]) {
-//     if (orDirectly) {
-//       if (_key.currentState == null) {
-//         prewarmResults();
+    super.dispose();
+  }
 
-//         return;
-//       }
-//     }
+  List<Widget> _addItems() => [
+        if (filter.allowedFilteringModes.isNotEmpty)
+          IconButton(
+            onPressed: () {
+              showModalBottomSheet<void>(
+                useRootNavigator: true,
+                isScrollControlled: true,
+                showDragHandle: true,
+                context: context,
+                builder: (context) {
+                  return SafeArea(
+                    child: _FilteringWidget(
+                      selectSorting: (e) => filter.sortingMode = e,
+                      currentSorting: filter.sortingMode,
+                      enabledSorting: filter.allowedSortingModes,
+                      select: (e) => filter.filteringMode = e,
+                      currentFilter: filter.filteringMode,
+                      enabledModes: filter.allowedFilteringModes,
+                    ),
+                  );
+                },
+              );
+            },
+            icon: Icon(filter.filteringMode.icon),
+            padding: EdgeInsets.zero,
+          ),
+        if (widget.addItems != null) ...widget.addItems!,
+      ];
 
-//     searchTextController.text = s;
-//     _onChanged(s, true);
-//   }
+  void onChanged() => filter.clearRefresh();
 
-//   void prewarmResults() {
-//     // final sorting = _state.hook(_currentFilterMode);
+  Widget _autocompleteWidget() => AutocompleteWidget(
+        textController,
+        (p0) {},
+        (p0) {},
+        () {
+          focusNode.unfocus();
+          // widget.instance._state.mainFocus.requestFocus();
+        },
+        widget.localTagDictionary.complete,
+        focusNode,
+        swapSearchIcon: true,
+        searchCount: filter.count,
+        addItems: _addItems(),
+        onChanged: onChanged,
+        customHint: widget.hint,
+        searchTextOverride: AppLocalizations.of(context)!.filterHint,
+        noUnfocus: true,
+        scrollHack: _ScrollHack(),
+      );
 
-//     // _state.filter.setSortingMode(sorting);
+  @override
+  Widget build(BuildContext context) {
+    return switch (filter.filteringMode) {
+      FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
+      FilteringMode() => AutocompleteSearchBar(
+          swapSearchIcon: true,
+          disable: false,
+          focusNode: focusNode,
+          addItems: _addItems(),
+          count: filter.count,
+          textController: textController,
+          onChanged: onChanged,
+          searchTextOverride: AppLocalizations.of(context)!.filterHint,
+          customHint: widget.hint,
+          onSubmit: (_) {},
+        ),
+    };
+  }
+}
 
-//     final res = _state.filter.filter("", _currentFilterMode);
-//     _state.refreshingStatus.mutation.cellCount = res.count;
+class _FilteringWidget extends StatefulWidget {
+  const _FilteringWidget({
+    super.key,
+    required this.currentFilter,
+    required this.enabledModes,
+    required this.select,
+    required this.currentSorting,
+    required this.enabledSorting,
+    required this.selectSorting,
+  });
 
-//     // mutation.setSource(res.count, (i) {
-//     //   final cell = res.cell(i);
-//     //   return _state.transform(cell, sorting);
-//     // });
-//   }
+  final FilteringMode currentFilter;
+  final SortingMode currentSorting;
+  final Set<FilteringMode> enabledModes;
+  final Set<SortingMode> enabledSorting;
+  final FilteringMode Function(FilteringMode) select;
+  final void Function(SortingMode) selectSorting;
 
-//   FilteringMode currentFilteringMode() {
-//     return _currentFilterMode;
-//   }
+  @override
+  State<_FilteringWidget> createState() => __FilteringWidgetState();
+}
 
-//   FilteringMode setFilteringMode(FilteringMode f) {
-//     if (_state.filteringModes.contains(f)) {
-//       _currentFilterMode = f;
+class __FilteringWidgetState extends State<_FilteringWidget> {
+  late FilteringMode currentFilter = widget.currentFilter;
+  late SortingMode currentSorting = widget.currentSorting;
 
-//       return f;
-//     }
+  void _selectFilter(FilteringMode? mode) {
+    if (mode == null) {
+      return;
+    } else {
+      currentFilter = widget.select(mode);
 
-//     return _currentFilterMode;
-//   }
+      setState(() {});
+    }
+  }
 
-//   // ignore: use_setters_to_change_properties
-//   // void setLocalTagCompleteF(Future<List<BooruTag>> Function(String string) f) {
-//   //   _localTagCompleteFunc = f;
-//   // }
+  void _selectSorting(SortingMode? sort) {
+    if (sort != null) {
+      currentSorting = sort;
 
-//   void _reset(bool resetFilterMode) {
-//     searchTextController.clear();
-//     _state.gridKey.currentState?.mutation.reset();
-//     if (_state.filteringModes.isNotEmpty) {
-//       _searchVirtual = false;
-//       if (resetFilterMode) {
-//         _currentFilterMode = _state.defaultMode;
-//       }
-//     }
-//     _onChanged(searchTextController.text, true);
+      widget.selectSorting(sort);
 
-//     _key.currentState
-//         ?.update(_state.gridKey.currentState?.mutation.cellCount ?? 0);
-//   }
+      setState(() {});
+    }
+  }
 
-//   void markSearchVirtual() {
-//     _searchVirtual = true;
-//   }
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.filteringLabel,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            SegmentedButtonGroup<FilteringMode>(
+              variant: SegmentedButtonVariant.chip,
+              select: _selectFilter,
+              selected: currentFilter,
+              allowUnselect: true,
+              values: widget.enabledModes
+                  .where((element) => element != FilteringMode.noFilter)
+                  .map(
+                    (e) => SegmentedButtonValue(
+                      e,
+                      e.translatedString(context),
+                      icon: e.icon,
+                    ),
+                  ),
+              title: AppLocalizations.of(context)!.filteringModesLabel,
+            ),
+            SegmentedButtonGroup<SortingMode>(
+              variant: SegmentedButtonVariant.segments,
+              select: _selectSorting,
+              selected: currentSorting,
+              values: widget.enabledSorting.isEmpty
+                  ? [
+                      SegmentedButtonValue(
+                        currentSorting,
+                        currentSorting.translatedString(context),
+                      ),
+                    ]
+                  : widget.enabledSorting.map(
+                      (e) =>
+                          SegmentedButtonValue(e, e.translatedString(context)),
+                    ),
+              title: AppLocalizations.of(context)!.sortingModesLabel,
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-//   void resetSearch([bool resetFilterMode = true]) {
-//     _reset(resetFilterMode);
-//   }
-
-//   void dispose() {
-//     searchTextController.dispose();
-//     searchFocus.dispose();
-//   }
-
-//   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
-//       FilteringSearchWidget<T>(
-//         key: _key,
-//         instance: this,
-//         hint: hint,
-//         count: count,
-//       );
-// }
+class _ScrollHack extends ScrollController {
+  @override
+  bool get hasClients => false;
+}

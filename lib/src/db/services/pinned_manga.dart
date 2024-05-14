@@ -19,14 +19,12 @@ mixin PinnedManga
     required String thumbUrl,
     required String title,
   }) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarPinnedManga(
-            mangaId: mangaId,
-            site: site,
-            thumbUrl: thumbUrl,
-            title: title,
-          ),
-      };
+      _currentDb.pinnedMangaForDb(
+        mangaId: mangaId,
+        site: site,
+        thumbUrl: thumbUrl,
+        title: title,
+      );
 
   @override
   CellStaticData description() => const CellStaticData(

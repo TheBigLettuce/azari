@@ -28,7 +28,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             actions: [
               TextButton(
                 onPressed: () {
-                  const AndroidApiFunctions().addToTrash(
+                  GalleryManagementApi.current().addToTrash(
                     selected.map((e) => e.originalUri).toList(),
                   );
 
@@ -57,7 +57,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
-        const AndroidApiFunctions().removeFromTrash(
+        GalleryManagementApi.current().removeFromTrash(
           selected.map((e) => e.originalUri).toList(),
         );
       },
@@ -115,20 +115,18 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryFile? f,
     FavoriteFileService favoriteFile,
   ) {
-    throw "";
+    final isFavorites = f != null && (favoriteFile.cachedValues[f.id] ?? false);
 
-    // final isFavorites = f != null && f.isFavorite;
-
-    // return GridAction(
-    //   isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
-    //   (selected) {
-    //     _favoriteOrUnfavorite(context, selected, favoriteFile);
-    //   },
-    //   false,
-    //   color: isFavorites ? Colors.yellow.shade900 : null,
-    //   animate: f != null,
-    //   play: !isFavorites,
-    // );
+    return GridAction(
+      isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
+      (selected) {
+        _favoriteOrUnfavorite(context, selected, favoriteFile);
+      },
+      false,
+      color: isFavorites ? Colors.yellow.shade900 : null,
+      animate: f != null,
+      play: !isFavorites,
+    );
   }
 
   GridAction<GalleryFile> setFavoritesThumbnailAction(
@@ -158,6 +156,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
   GridAction<GalleryFile> copyAction(
     TagManager tagManager,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     return GridAction(
       Icons.copy,
@@ -168,6 +167,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           false,
           tagManager,
           favoriteFile,
+          localTags,
         );
       },
       false,
@@ -177,6 +177,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
   GridAction<GalleryFile> moveAction(
     TagManager tagManager,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     return GridAction(
       Icons.forward_rounded,
@@ -187,6 +188,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           true,
           tagManager,
           favoriteFile,
+          localTags,
         );
       },
       false,
@@ -214,102 +216,102 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     bool move,
     TagManager tagManager,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
-    throw "";
-
     PauseVideoNotifier.maybePauseOf(context, true);
 
-    // final List<String> searchPrefix = [];
-    // for (final tag in selected.first.tagsFlat.split(" ")) {
-    //   if (tagManager.pinned.exists(tag)) {
-    //     searchPrefix.add(tag);
-    //   }
-    // }
+    final List<String> searchPrefix = [];
+    for (final tag in localTags.cachedValues[selected.first.bucketId] ??
+        const <String>[]) {
+      if (tagManager.pinned.exists(tag)) {
+        searchPrefix.add(tag);
+      }
+    }
 
-    // Navigator.of(context, rootNavigator: true).push(
-    //   MaterialPageRoute<void>(
-    //     builder: (context) {
-    //       return GalleryDirectories(
-    //         showBackButton: true,
-    //         procPop: (_) {},
-    //         wrapGridPage: true,
-    //         db: DatabaseConnectionNotifier.of(context),
-    //         callback: CallbackDescription(
-    //           icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-    //           move
-    //               ? AppLocalizations.of(context)!.chooseMoveDestination
-    //               : AppLocalizations.of(context)!.chooseCopyDestination,
-    //           (chosen, newDir) {
-    //             if (chosen == null && newDir == null) {
-    //               throw "both are empty";
-    //             }
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return GalleryDirectories(
+            showBackButton: true,
+            procPop: (_) {},
+            wrapGridPage: true,
+            db: DatabaseConnectionNotifier.of(context),
+            callback: CallbackDescription(
+              icon: move ? Icons.forward_rounded : Icons.copy_rounded,
+              move
+                  ? AppLocalizations.of(context)!.chooseMoveDestination
+                  : AppLocalizations.of(context)!.chooseCopyDestination,
+              (chosen, newDir) {
+                if (chosen == null && newDir == null) {
+                  throw "both are empty";
+                }
 
-    //             if (chosen != null && chosen.bucketId == widget.bucketId) {
-    //               ScaffoldMessenger.of(context).showSnackBar(
-    //                 SnackBar(
-    //                   content: Text(
-    //                     move
-    //                         ? AppLocalizations.of(context)!.cantMoveSameDest
-    //                         : AppLocalizations.of(context)!.cantCopySameDest,
-    //                   ),
-    //                 ),
-    //               );
-    //               return Future.value();
-    //             }
+                if (chosen != null && chosen.bucketId == widget.bucketId) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        move
+                            ? AppLocalizations.of(context)!.cantMoveSameDest
+                            : AppLocalizations.of(context)!.cantCopySameDest,
+                      ),
+                    ),
+                  );
+                  return Future.value();
+                }
 
-    //             if (chosen?.bucketId == "favorites") {
-    //               _favoriteOrUnfavorite(context, selected, favoriteFile);
-    //             } else if (chosen?.bucketId == "trash") {
-    //               if (!move) {
-    //                 ScaffoldMessenger.of(context).showSnackBar(
-    //                   SnackBar(
-    //                     content: Text(
-    //                       AppLocalizations.of(context)!.cantCopyToTrash,
-    //                     ),
-    //                   ),
-    //                 );
-    //                 return Future.value();
-    //               }
+                if (chosen?.bucketId == "favorites") {
+                  _favoriteOrUnfavorite(context, selected, favoriteFile);
+                } else if (chosen?.bucketId == "trash") {
+                  if (!move) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context)!.cantCopyToTrash,
+                        ),
+                      ),
+                    );
+                    return Future.value();
+                  }
 
-    //               return _deleteDialog(context, selected);
-    //             } else {
-    //               const AndroidApiFunctions().copyMoveFiles(
-    //                 chosen?.relativeLoc,
-    //                 chosen?.volumeName,
-    //                 selected,
-    //                 move: move,
-    //                 newDir: newDir,
-    //               );
+                  return _deleteDialog(context, selected);
+                } else {
+                  GalleryManagementApi.current().copyMoveFiles(
+                    chosen?.relativeLoc,
+                    chosen?.volumeName,
+                    selected,
+                    move: move,
+                    newDir: newDir,
+                  );
 
-    //               if (move) {
-    //                 StatisticsGalleryService.db()
-    //                     .current
-    //                     .add(moved: selected.length)
-    //                     .save();
-    //               } else {
-    //                 StatisticsGalleryService.db()
-    //                     .current
-    //                     .add(copied: selected.length)
-    //                     .save();
-    //               }
-    //             }
+                  if (move) {
+                    StatisticsGalleryService.db()
+                        .current
+                        .add(moved: selected.length)
+                        .save();
+                  } else {
+                    StatisticsGalleryService.db()
+                        .current
+                        .add(copied: selected.length)
+                        .save();
+                  }
+                }
 
-    //             return Future.value();
-    //           },
-    //           preview: PreferredSize(
-    //             preferredSize: const Size.fromHeight(52),
-    //             child: CopyMovePreview(
-    //               files: selected,
-    //               size: 52,
-    //             ),
-    //           ),
-    //           joinable: false,
-    //           suggestFor: searchPrefix,
-    //         ),
-    //       );
-    //     },
-    //   ),
-    // ).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
+                return Future.value();
+              },
+              preview: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: CopyMovePreview(
+                  files: selected,
+                  size: 52,
+                ),
+              ),
+              joinable: false,
+              suggestFor: searchPrefix,
+            ),
+          );
+        },
+      ),
+    ).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
   }
 
   void _favoriteOrUnfavorite(
@@ -431,9 +433,10 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                 }
 
                 final matchBefore = value.substring(0, idx);
+                final api = GalleryManagementApi.current();
 
                 for (final (i, e) in selected.indexed) {
-                  const AndroidApiFunctions().rename(
+                  await api.rename(
                     e.originalUri,
                     "$matchBefore${e.name}",
                     i == selected.length - 1,

@@ -15,6 +15,7 @@ class TabBarWrapper extends StatefulWidget {
     required this.filter,
     required this.onPressed,
   });
+
   final TextEditingController controller;
   final TabBar tabBar;
   final void Function(String? value) filter;
@@ -132,11 +133,11 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                 begin: Alignment.centerRight,
                 end: Alignment.centerLeft,
                 colors: [
-                  Theme.of(context).colorScheme.background,
-                  Theme.of(context).colorScheme.background.withOpacity(0.7),
-                  Theme.of(context).colorScheme.background.withOpacity(0.5),
-                  Theme.of(context).colorScheme.background.withOpacity(0.3),
-                  Theme.of(context).colorScheme.background.withOpacity(0),
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                  Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                  Theme.of(context).colorScheme.surface.withOpacity(0.3),
+                  Theme.of(context).colorScheme.surface.withOpacity(0),
                 ],
               ),
             ),

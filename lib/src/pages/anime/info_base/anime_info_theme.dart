@@ -31,7 +31,7 @@ class AnimeInfoTheme extends StatelessWidget {
         seedColor: Colors.pink,
         brightness:
             mode == AnimeSafeMode.h ? Brightness.dark : oldTheme.brightness,
-        background: mode == AnimeSafeMode.h ? bgColor : null,
+        surface: mode == AnimeSafeMode.h ? bgColor : null,
       ),
     );
 
@@ -59,7 +59,7 @@ class _ButtonsThemes extends StatelessWidget {
 
     return Theme(
       data: theme.copyWith(
-        scaffoldBackgroundColor: theme.colorScheme.background,
+        scaffoldBackgroundColor: theme.colorScheme.surface,
         chipTheme: mode == AnimeSafeMode.h
             ? ChipThemeData(
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.8),
@@ -71,21 +71,21 @@ class _ButtonsThemes extends StatelessWidget {
             : null,
         filledButtonTheme: FilledButtonThemeData(
           style: ButtonStyle(
-            foregroundColor: MaterialStatePropertyAll(
+            foregroundColor: WidgetStatePropertyAll(
               theme.colorScheme.onPrimary.withOpacity(0.8),
             ),
             visualDensity: VisualDensity.compact,
-            backgroundColor: MaterialStatePropertyAll(
+            backgroundColor: WidgetStatePropertyAll(
               theme.colorScheme.primary.withOpacity(0.8),
             ),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-            textStyle: MaterialStatePropertyAll(
+            textStyle: WidgetStatePropertyAll(
               theme.textTheme.bodyMedium,
             ),
-            foregroundColor: MaterialStatePropertyAll(
+            foregroundColor: WidgetStatePropertyAll(
               theme.colorScheme.primary.withOpacity(0.8),
             ),
           ),

@@ -27,14 +27,16 @@ class DummyGallery implements GalleryPlug {
     bool? temporaryDb,
     bool setCurrentApi = true,
   }) {
-    return const _DummyDirectories();
+    return _DummyDirectories();
   }
 }
 
 class _DummyDirectories implements GalleryAPIDirectories {
-  const _DummyDirectories();
+  _DummyDirectories();
   @override
-  void close() {}
+  void close() {
+    source.destroy();
+  }
 
   @override
   GalleryAPIFiles? get bindFiles => null;
@@ -50,7 +52,7 @@ class _DummyDirectories implements GalleryAPIDirectories {
   }
 
   @override
-  ResourceSource<GalleryDirectory> get source => throw UnimplementedError();
+  final ResourceSource<GalleryDirectory> source = ResourceSource.empty();
 }
 
 // class _DummyFiles implements GalleryAPIFiles {

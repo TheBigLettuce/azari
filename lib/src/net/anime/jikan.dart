@@ -122,7 +122,8 @@ class Jikan implements AnimeAPI {
 
   @override
   Future<List<AnimeRecommendations>> recommendations(
-      AnimeEntryData entry) async {
+    AnimeEntryData entry,
+  ) async {
     final response =
         await api.Jikan(debug: kDebugMode).getAnimeRecommendations(entry.id);
 
@@ -194,7 +195,11 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     staff: e.producers
         .map(
           (e) => AnimeRelation(
-              title: e.name, type: e.type, id: e.malId, thumbUrl: ""),
+            title: e.name,
+            type: e.type,
+            id: e.malId,
+            thumbUrl: "",
+          ),
         )
         .toList(),
     isAiring: e.airing,

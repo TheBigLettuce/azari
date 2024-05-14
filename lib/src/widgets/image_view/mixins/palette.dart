@@ -29,7 +29,9 @@ mixin ImageViewPaletteMixin on State<ImageView> {
       return;
     }
 
-    PaletteGenerator.fromImageProvider(t).then((value) {
+    PaletteGenerator.fromImageProvider(
+      t,
+    ).then((value) {
       previousPallete = currentPalette;
       currentPalette = value;
 

@@ -33,16 +33,14 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
     required String site,
     required DateTime date,
   }) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarDownloadFile(
-            status: status,
-            name: name,
-            url: url,
-            thumbUrl: thumbUrl,
-            site: site,
-            date: date,
-          ),
-      };
+      _currentDb.downloadFileDataForDbFormat(
+        status: status,
+        name: name,
+        url: url,
+        thumbUrl: thumbUrl,
+        site: site,
+        date: date,
+      );
 
   @Index(unique: true, replace: true)
   final String url;
@@ -54,6 +52,9 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
   final DateTime date;
 
   final String site;
+
+  @override
+  CellStaticData description() => const CellStaticData();
 
   @Index()
   @enumerated

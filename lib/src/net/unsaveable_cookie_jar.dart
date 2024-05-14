@@ -30,6 +30,6 @@ class UnsaveableCookieJar implements CookieJar {
 
   Future<void> replaceDirectly(Uri uri, List<Cookie> cookies) async {
     await _proxy.deleteAll();
-    _proxy.saveFromResponse(uri, cookies);
+    return _proxy.saveFromResponse(uri, cookies);
   }
 }

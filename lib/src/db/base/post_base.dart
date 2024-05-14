@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
@@ -35,10 +34,7 @@ import "package:transparent_image/transparent_image.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class PostCacheValues implements CacheElement {
-  // bool? _isHidden;
-
   List<Sticker>? _stickers;
-  PostContentType? _type;
 
   String? _url;
 
@@ -280,7 +276,6 @@ mixin DefaultPostPressable implements Pressable<Post> {
     PostBase cell,
     int idx,
   ) {
-    final db = DatabaseConnectionNotifier.of(context);
     final tagManager = TagManager.of(context);
 
     ImageView.defaultForGrid<Post>(
@@ -368,7 +363,7 @@ abstract mixin class Post
         Stickerable,
         Downloadable,
         Pressable<Post> {
-  static PostContentType makeType(Post p) {
+  static String _getUrl(Post p) {
     var url = switch (SettingsService.db().current.quality) {
       DisplayQuality.original => p.fileUrl,
       DisplayQuality.sample => p.sampleUrl
@@ -380,6 +375,12 @@ abstract mixin class Post
               ? p.previewUrl
               : p.fileUrl;
     }
+
+    return url;
+  }
+
+  static PostContentType makeType(Post p) {
+    final url = _getUrl(p);
 
     final t = mime.lookupMimeType(url);
     if (t == null) {
@@ -420,20 +421,20 @@ abstract mixin class Post
           );
         },
       ),
-      if (Platform.isAndroid)
-        ShareButton(
-          fileUrl,
-          onLongPress: () {
-            showQr(context, booru.prefix, id);
-          },
-        )
-      else
-        IconButton(
-          onPressed: () {
-            showQr(context, booru.prefix, id);
-          },
-          icon: const Icon(Icons.qr_code_rounded),
-        ),
+      // if (Platform.isAndroid)
+      ShareButton(
+        fileUrl,
+        onLongPress: () {
+          showQr(context, booru.prefix, id);
+        },
+      )
+      // else
+      // IconButton(
+      // onPressed: () {
+      // showQr(context, booru.prefix, id);
+      // },
+      // icon: const Icon(Icons.qr_code_rounded),
+      // ),
     ];
   }
 
@@ -458,10 +459,7 @@ abstract mixin class Post
     //   return EmptyContent(this);
     // }
 
-    final url = switch (SettingsService.db().current.quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
-    };
+    final url = _getUrl(this);
 
     return switch (type) {
       PostContentType.none => EmptyContent(this),

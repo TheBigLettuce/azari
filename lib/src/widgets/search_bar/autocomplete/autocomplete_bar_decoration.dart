@@ -17,45 +17,44 @@ InputDecoration autocompleteBarDecoration(
   int? searchCount,
   required bool roundBorders,
   required String hint,
-}) {
-  return InputDecoration(
-    prefixIcon: FocusNotifier.of(context).hasFocus
-        ? IconButton(
-            onPressed: FocusNotifier.of(context).unfocus,
-            icon: Badge.count(
-              count: searchCount ?? 0,
-              isLabelVisible: searchCount != null,
-              child: const Icon(Icons.arrow_back),
+}) =>
+    InputDecoration(
+      prefixIcon: FocusNotifier.of(context).hasFocus
+          ? IconButton(
+              onPressed: FocusNotifier.of(context).unfocus,
+              icon: Badge.count(
+                count: searchCount ?? 0,
+                isLabelVisible: searchCount != null,
+                child: const Icon(Icons.arrow_back),
+              ),
+              padding: EdgeInsets.zero,
+            )
+          : showSearch
+              ? IconButton(
+                  onPressed: null,
+                  icon: Badge.count(
+                    count: searchCount ?? 0,
+                    isLabelVisible: searchCount != null,
+                    // child: const Icon(Icons.search_rounded),
+                  ),
+                  padding: EdgeInsets.zero,
+                )
+              : null,
+      suffixIcon: addItems == null || addItems.isEmpty
+          ? null
+          : Wrap(
+              children: addItems,
             ),
-            padding: EdgeInsets.zero,
-          )
-        : showSearch
-            ? IconButton(
-                onPressed: null,
-                icon: Badge.count(
-                  count: searchCount ?? 0,
-                  isLabelVisible: searchCount != null,
-                  // child: const Icon(Icons.search_rounded),
-                ),
-                padding: EdgeInsets.zero,
-              )
-            : null,
-    suffixIcon: addItems == null || addItems.isEmpty
-        ? null
-        : Wrap(
-            children: addItems,
-          ),
-    suffix: IconButton(
-      onPressed: iconOnPressed,
-      icon: const Icon(Icons.close),
-    ),
-    hintText: hint,
-    // fillColor: Colors.black,
-    border: roundBorders
-        ? const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(50)),
-          )
-        : InputBorder.none,
-    isDense: false,
-  );
-}
+      suffix: IconButton(
+        onPressed: iconOnPressed,
+        icon: const Icon(Icons.close),
+      ),
+      hintText: hint,
+      // fillColor: Colors.black,
+      border: roundBorders
+          ? const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(50)),
+            )
+          : InputBorder.none,
+      isDense: false,
+    );

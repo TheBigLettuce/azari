@@ -79,3 +79,17 @@ enum FilteringMode {
           AppLocalizations.of(context)!.enumFilteringModeUngrouped,
       };
 }
+
+/// Sorting modes.
+/// Implemented inside the [FilterInterface].
+enum SortingMode {
+  none,
+  size;
+
+  const SortingMode();
+
+  String translatedString(BuildContext context) => switch (this) {
+        SortingMode.none => AppLocalizations.of(context)!.enumSortringModeNone,
+        SortingMode.size => AppLocalizations.of(context)!.enumSortringModeSize,
+      };
+}

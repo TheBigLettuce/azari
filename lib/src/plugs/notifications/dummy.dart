@@ -8,6 +8,8 @@
 import "package:gallery/src/plugs/notifications.dart";
 
 class DummyProgress implements NotificationProgress {
+  const DummyProgress();
+
   @override
   void setTotal(int t) {}
   @override
@@ -19,6 +21,8 @@ class DummyProgress implements NotificationProgress {
 }
 
 class DummyNotifications implements NotificationPlug {
+  const DummyNotifications();
+
   @override
   Future<NotificationProgress> newProgress(_, __, ___, ____) =>
       Future.value(DummyProgress());

@@ -15,7 +15,9 @@ class BooruGridActions {
   const BooruGridActions();
 
   static GridAction<Post> hide(
-      BuildContext context, HiddenBooruPostService hiddenPost) {
+    BuildContext context,
+    HiddenBooruPostService hiddenPost,
+  ) {
     return GridAction(
       Icons.hide_image_rounded,
       (selected) {

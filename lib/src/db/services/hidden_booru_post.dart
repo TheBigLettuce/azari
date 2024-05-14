@@ -19,9 +19,11 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
     int postId,
     Booru booru,
   ) =>
-      switch (_currentDb) {
-        ServicesImplTable.isar => IsarHiddenBooruPost(booru, postId, thumbUrl),
-      };
+      _currentDb.hiddenBooruPostDataForDb(
+        thumbUrl,
+        postId,
+        booru,
+      );
 
   final String thumbUrl;
 

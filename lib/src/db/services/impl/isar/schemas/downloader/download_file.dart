@@ -30,9 +30,6 @@ class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
   Id? isarId;
 
   @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
   DownloadFileData toInProgress() => IsarDownloadFile(
         status: DownloadStatus.inProgress,
         isarId: isarId,

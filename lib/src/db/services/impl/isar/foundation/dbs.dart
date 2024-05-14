@@ -7,8 +7,6 @@
 
 part of "../impl.dart";
 
-// const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
-// const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
 const kPrimaryGridSchemas = [
   IsarGridStateSchema,
   IsarTagSchema,
@@ -30,6 +28,9 @@ class _Dbs {
     required this.thumbnail,
   });
 
+  final _favoriteFilesCachedValues = <int, bool>{};
+  final _localTagsCachedValues = <String, List<String>>{};
+
   final _currentBooruDbs = <Booru, Isar>{};
 
   Isar booru(Booru booru) =>
@@ -48,7 +49,7 @@ class _Dbs {
   String get appStorageDir => directory;
 
   void clearTemporaryImages() {
-    io.Directory(temporaryImagesDir)
+    Directory(temporaryImagesDir)
       ..createSync()
       ..deleteSync(recursive: true)
       ..createSync();
@@ -105,14 +106,6 @@ abstract class _DbsOpen {
   //       inspector: false,
   //       name: _microsecSinceEpoch(),
   //     );
-
-  // ignore: strict_raw_type
-  static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(
-        schemas,
-        directory: _dbs.temporaryDbDir,
-        inspector: false,
-        name: _microsecSinceEpoch(),
-      );
 
   static String _microsecSinceEpoch() =>
       DateTime.now().microsecondsSinceEpoch.toString();

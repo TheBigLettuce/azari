@@ -7,31 +7,17 @@
 
 import "dart:io";
 
-import "package:gallery/src/plugs/download_movers/android.dart";
-import "package:gallery/src/plugs/download_movers/dart.dart";
-import "package:gallery/src/plugs/download_movers/dummy.dart";
+import "package:gallery/src/plugs/notifications.dart";
+import "package:gallery/src/plugs/notifications/android.dart";
+import "package:gallery/src/plugs/notifications/dummy.dart";
+import "package:gallery/src/plugs/notifications/kde.dart";
 
-class MoveOp {
-  const MoveOp({
-    required this.source,
-    required this.rootDir,
-    required this.targetDir,
-  });
-  final String source;
-  final String rootDir;
-  final String targetDir;
-}
-
-abstract class DownloadMoverPlug {
-  Future<void> move(MoveOp op);
-}
-
-Future<DownloadMoverPlug> chooseDownloadMoverPlug() {
+NotificationPlug getApi() {
   if (Platform.isLinux) {
-    return initalizeDartMover();
+    return KDENotifications();
   } else if (Platform.isAndroid) {
-    return Future.value(AndroidDownloadMover());
+    return AndroidNotifications();
   } else {
-    return Future.value(DummyMover());
+    return const DummyNotifications();
   }
 }

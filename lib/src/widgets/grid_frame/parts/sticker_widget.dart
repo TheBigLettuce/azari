@@ -37,7 +37,7 @@ class StickerWidget extends StatelessWidget {
             shape: BoxShape.circle,
             color: e.important
                 ? colorScheme.onPrimary.withOpacity(0.9)
-                : colorScheme.surfaceVariant.withOpacity(0.8),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.8),
           ),
           child: Icon(
             e.icon,

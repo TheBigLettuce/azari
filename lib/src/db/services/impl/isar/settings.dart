@@ -29,7 +29,7 @@ class IsarSettingsService implements SettingsService {
 
     if (Platform.isAndroid) {
       try {
-        resp = (await const AndroidApiFunctions().chooseDirectory())!;
+        resp = (await GalleryManagementApi.current().chooseDirectory())!;
       } catch (e) {
         onError(emptyResult);
         return false;

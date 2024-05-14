@@ -76,7 +76,7 @@ class _MenuWrapperState extends State<MenuWrapper> {
             reverseCurve: Easing.standardDecelerate,
             duration: const Duration(milliseconds: 280),
           ),
-          shadowColor: Theme.of(context).colorScheme.background,
+          shadowColor: Theme.of(context).colorScheme.surface,
           surfaceTintColor: Theme.of(context).colorScheme.primary,
           constraints:
               const BoxConstraints(minWidth: 56 * 2.5, maxWidth: 56 * 2.5),

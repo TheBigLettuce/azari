@@ -33,7 +33,7 @@ class _AppBar extends StatelessWidget {
           )
         : SliverAppBar(
             backgroundColor:
-                Theme.of(context).colorScheme.background.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
             actions: actions,
             centerTitle: true,
             title: title,

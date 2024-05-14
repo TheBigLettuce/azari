@@ -144,7 +144,7 @@ class SingleTagWidget extends StatelessWidget {
       child: FilledButton.tonal(
         style: ButtonStyle(
           visualDensity: VisualDensity.comfortable,
-          backgroundColor: MaterialStatePropertyAll(
+          backgroundColor: WidgetStatePropertyAll(
             redBackground ? Colors.pink.shade300 : null,
           ),
         ),

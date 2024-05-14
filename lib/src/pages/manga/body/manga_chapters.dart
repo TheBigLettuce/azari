@@ -231,7 +231,7 @@ class _MangaChaptersState extends State<MangaChapters> {
           onPressed: null,
           style: ButtonStyle(
             foregroundColor:
-                MaterialStatePropertyAll(Theme.of(context).colorScheme.primary),
+                WidgetStatePropertyAll(Theme.of(context).colorScheme.primary),
           ),
           child: Text(AppLocalizations.of(context)!.settingsLabel),
         ),

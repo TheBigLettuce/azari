@@ -30,12 +30,11 @@ import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/pages/more/tags/single_post.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/notifiers/booru_api.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -64,12 +63,12 @@ class _MainGridPagingState implements PagingEntry {
     source =
         mainGrid.makeSource(api, tagManager.excluded, this, hiddenBooruPosts);
 
-    refreshingStatus = GridRefreshingStatus(
-      source.count,
-      () => reachedEnd,
-      clearRefresh: AsyncGridRefresh(source.clearRefresh),
-      next: source.next,
-    );
+    // refreshingStatus = GridRefreshingStatus(
+    //   source.count,
+    //   () => reachedEnd,
+    //   refreshType: AsyncGridRefresh(source.clearRefresh),
+    //   next: source.next,
+    // );
   }
 
   factory _MainGridPagingState.prototype(
@@ -100,7 +99,7 @@ class _MainGridPagingState implements PagingEntry {
 
   String? restoreSecondaryGrid;
 
-  late final GridRefreshingStatus<Post> refreshingStatus;
+  // late final GridRefreshingStatus<Post> refreshingStatus;
 
   bool needToRefresh(Duration microseconds) => mainGrid.currentState.time
       .isBefore(DateTime.now().subtract(microseconds));
@@ -125,7 +124,7 @@ class _MainGridPagingState implements PagingEntry {
   @override
   void dispose() {
     client.close();
-    refreshingStatus.dispose();
+    // refreshingStatus.dispose();
   }
 }
 
@@ -194,7 +193,7 @@ class _BooruPageState extends State<BooruPage> {
           state.settings.selectedBooru,
         );
       },
-    ) as _MainGridPagingState;
+    );
 
     bookmarksWatcher = gridStateBooru.watch((_) {
       setState(() {});
@@ -212,7 +211,8 @@ class _BooruPageState extends State<BooruPage> {
           final gridState = state.gridKey.currentState;
           if (gridState != null) {
             gridState.resetFab();
-            pagingState.refreshingStatus.refresh();
+            source.clearRefresh();
+            // pagingState.refreshingStatus.refresh();
           }
 
           pagingState.updateTime();
@@ -267,7 +267,6 @@ class _BooruPageState extends State<BooruPage> {
     if (pagingState.api.wouldBecomeStale &&
         pagingState.needToRefresh(const Duration(hours: 1))) {
       source.clear();
-      pagingState.refreshingStatus.mutation.cellCount = 0;
 
       pagingState.updateTime();
     }
@@ -279,11 +278,11 @@ class _BooruPageState extends State<BooruPage> {
     });
 
     blacklistedWatcher = hiddenBooruPost.watch((_) {
-      pagingState.refreshingStatus.mutation.notify();
+      // pagingState.refreshingStatus.mutation.notify();
     });
 
     favoritesWatcher = favoritePosts.watch((event) {
-      pagingState.refreshingStatus.mutation.notify();
+      // pagingState.refreshingStatus.mutation.notify();
     });
 
     if (pagingState.restoreSecondaryGrid != null) {
@@ -381,8 +380,19 @@ class _BooruPageState extends State<BooruPage> {
                   key: state.gridKey,
                   slivers: [
                     CurrentGridSettingsLayout<Post>(
-                      mutation: pagingState.refreshingStatus.mutation,
+                      source: source.backingStorage,
+                      progress: source.progress,
                       gridSeed: state.gridSeed,
+                      buildEmpty: (e) => EmptyWidgetWithButton(
+                        error: e,
+                        buttonText: AppLocalizations.of(context)!.openInBrowser,
+                        onPressed: () {
+                          launchUrl(
+                            Uri.https(pagingState.api.booru.url),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                      ),
                     ),
                   ],
                   overrideController: scrollController,
@@ -390,7 +400,7 @@ class _BooruPageState extends State<BooruPage> {
                     settingsButton:
                         GridSettingsButton.fromWatchable(gridSettings),
                     selectionGlue: GlueProvider.generateOf(context)(),
-                    refreshingStatus: pagingState.refreshingStatus,
+                    source: source,
                     download: _download,
                     search: OverrideGridSearchWidget(
                       SearchAndFocus(
@@ -402,19 +412,6 @@ class _BooruPageState extends State<BooruPage> {
                       ),
                     ),
                     updateScrollPosition: pagingState.setOffset,
-                    onError: (error) {
-                      return FilledButton.icon(
-                        onPressed: () {
-                          launchUrl(
-                            Uri.https(pagingState.api.booru.url),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                        label:
-                            Text(AppLocalizations.of(context)!.openInBrowser),
-                        icon: const Icon(Icons.public),
-                      );
-                    },
                     registerNotifiers: (child) => ValuesCache(
                       cache: postValues,
                       child: OnBooruTagPressed(
@@ -507,7 +504,6 @@ class _BooruPageState extends State<BooruPage> {
                     gridSeed: state.gridSeed,
                   ),
                   mainFocus: state.mainFocus,
-                  getCell: pagingState.source.forIdxUnsafe,
                   initalScrollPosition: pagingState.offset,
                 ),
                 canPop: false,

@@ -28,6 +28,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -207,19 +208,26 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
 
 class _SearchAnimePageState<T extends CellBase, I, G>
     extends State<SearchAnimePage<T, I, G>> {
-  final List<T> _results = [];
-  // late final StreamSubscription<void> watcher;
-  final searchFocus = FocusNode();
-  late final state = GridSkeletonRefreshingState<T>(
-    reachedEnd: () => _reachedEnd,
-    next: _loadNext,
-    clearRefresh: AsyncGridRefresh(_load),
+  late final source = GenericListSource<T>(
+    () {
+      _page = 0;
+
+      return widget.search(currentSearch, 0, currentGenre, mode);
+    },
+    () => widget.search(currentSearch, _page + 1, currentGenre, mode).then((l) {
+      _page += 1;
+
+      return l;
+    }),
   );
+
+  final searchFocus = FocusNode();
+  late final state = GridSkeletonState<T>();
   late AnimeSafeMode mode = widget.explicit;
 
   final gridSettings = GridSettingsData.noPersist(
     aspectRatio: GridAspectRatio.zeroSeven,
-    columns: GridColumn.two,
+    columns: GridColumn.three,
     layoutType: GridLayoutType.grid,
     hideName: false,
   );
@@ -231,8 +239,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
   String currentSearch = "";
   I? currentGenre;
-
-  bool _reachedEnd = false;
 
   @override
   void initState() {
@@ -264,46 +270,13 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
   @override
   void dispose() {
-    // watcher.cancel();
+    source.destroy();
     gridSettings.cancel();
 
     state.dispose();
     searchFocus.dispose();
 
     super.dispose();
-  }
-
-  Future<int> _load() async {
-    final mutation = state.gridKey.currentState?.mutation;
-
-    mutation?.isRefreshing = true;
-    mutation?.cellCount = 0;
-
-    _results.clear();
-    _page = 0;
-    _reachedEnd = false;
-
-    final result = await widget.search(currentSearch, 0, currentGenre, mode);
-
-    _results.addAll(result);
-
-    mutation?.isRefreshing = false;
-    mutation?.cellCount = _results.length;
-
-    return _results.length;
-  }
-
-  Future<int> _loadNext() async {
-    final result =
-        await widget.search(currentSearch, _page + 1, currentGenre, mode);
-    _page += 1;
-    if (result.isEmpty) {
-      _reachedEnd = true;
-    }
-
-    _results.addAll(result);
-
-    return _results.length;
   }
 
   @override
@@ -325,26 +298,24 @@ class _SearchAnimePageState<T extends CellBase, I, G>
               key: state.gridKey,
               slivers: [
                 CurrentGridSettingsLayout<T>(
-                  mutation: state.refreshingStatus.mutation,
+                  source: source.backingStorage,
+                  progress: source.progress,
                   gridSeed: state.gridSeed,
-                ),
-              ],
-              getCell: (i) => _results[i],
-              functionality: GridFunctionality(
-                onError: (error) {
-                  return FilledButton.icon(
+                  buildEmpty: (e) => EmptyWidgetWithButton(
+                    error: e,
+                    buttonText: AppLocalizations.of(context)!.openInBrowser,
                     onPressed: () {
                       launchUrl(
                         widget.siteUri,
                         mode: LaunchMode.inAppBrowserView,
                       );
                     },
-                    label: Text(AppLocalizations.of(context)!.openInBrowser),
-                    icon: const Icon(Icons.public),
-                  );
-                },
+                  ),
+                ),
+              ],
+              functionality: GridFunctionality(
                 selectionGlue: GlueProvider.generateOf(context)(),
-                refreshingStatus: state.refreshingStatus,
+                source: source,
                 search: OverrideGridSearchWidget(
                   SearchAndFocus(
                     TextFormField(
@@ -357,13 +328,13 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                       focusNode: searchFocus,
                       onFieldSubmitted: (value) {
                         final grid = state.gridKey.currentState;
-                        if (grid == null || grid.mutation.isRefreshing) {
+                        if (grid == null || source.progress.inRefreshing) {
                           return;
                         }
 
                         currentSearch = value;
 
-                        _load();
+                        source.clearRefresh();
                       },
                     ),
                     searchFocus,
@@ -380,8 +351,8 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                     set: (m) {
                       mode = m;
 
-                      if (_results.isNotEmpty) {
-                        _load();
+                      if (source.backingStorage.isNotEmpty) {
+                        source.clearRefresh();
                       }
 
                       setState(() {});
@@ -401,7 +372,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                               setCurrentGenre: (g) {
                                 currentGenre = g;
 
-                                _load();
+                                source.clearRefresh();
 
                                 setState(() {});
                               },

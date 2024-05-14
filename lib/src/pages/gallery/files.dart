@@ -16,7 +16,6 @@ import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
@@ -27,12 +26,12 @@ import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
@@ -84,7 +83,6 @@ class GalleryFiles extends StatefulWidget {
 class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
   LocalTagsService get localTags => widget.db.localTags;
-  GridMutationInterface get mutation => state.refreshingStatus.mutation;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
 
   GalleryAPIFiles get api => widget.api;
@@ -158,53 +156,52 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
   late final ChainedFilterResourceSource<GalleryFile> filter;
 
-  late final GridSkeletonRefreshingState<GalleryFile> state =
-      GridSkeletonRefreshingState(
-    clearRefresh: RetainedGridRefresh(_refresh),
-    // transform: (cell) {
-    //   if (state.filter.currentSortingMode == SortingMode.size ||
-    //       search.currentFilteringMode() == FilteringMode.same) {
-    //     cell.injectedStickers.add(cell.sizeSticker(cell.size));
-    //   }
+  late final GridSkeletonState<GalleryFile> state = GridSkeletonState(
+      // clearRefresh: RetainedGridRefresh(_refresh),
+      // transform: (cell) {
+      //   if (state.filter.currentSortingMode == SortingMode.size ||
+      //       search.currentFilteringMode() == FilteringMode.same) {
+      //     cell.injectedStickers.add(cell.sizeSticker(cell.size));
+      //   }
 
-    //   return cell;
-    // },
-    // sortingModes: {
-    //   SortingMode.none,
-    //   SortingMode.size,
-    // },
-    // hook: (selected) {
-    //   if (selected == FilteringMode.favorite) {
-    //     _switcherKey.currentState?.setPage(1);
-    //   } else {
-    //     _switcherKey.currentState?.setPage(0);
-    //   }
+      //   return cell;
+      // },
+      // sortingModes: {
+      //   SortingMode.none,
+      //   SortingMode.size,
+      // },
+      // hook: (selected) {
+      //   if (selected == FilteringMode.favorite) {
+      //     _switcherKey.currentState?.setPage(1);
+      //   } else {
+      //     _switcherKey.currentState?.setPage(0);
+      //   }
 
-    //   if (selected == FilteringMode.same) {
-    //     StatisticsGalleryService.db().current.add(sameFiltered: 1).save();
-    //   }
+      //   if (selected == FilteringMode.same) {
+      //     StatisticsGalleryService.db().current.add(sameFiltered: 1).save();
+      //   }
 
-    //   if (selected == FilteringMode.tag ||
-    //       selected == FilteringMode.tagReversed) {
-    //     search.markSearchVirtual();
-    //   }
+      //   if (selected == FilteringMode.tag ||
+      //       selected == FilteringMode.tagReversed) {
+      //     search.markSearchVirtual();
+      //   }
 
-    //   setState(() {});
-    // },
-    // filter: extra.filter,
-    // filteringModes: {
-    //   FilteringMode.noFilter,
-    //   if (!extra.isFavorites) FilteringMode.favorite,
-    //   FilteringMode.original,
-    //   FilteringMode.duplicate,
-    //   FilteringMode.same,
-    //   FilteringMode.tag,
-    //   FilteringMode.tagReversed,
-    //   FilteringMode.untagged,
-    //   FilteringMode.gif,
-    //   FilteringMode.video,
-    // },
-  );
+      //   setState(() {});
+      // },
+      // filter: extra.filter,
+      // filteringModes: {
+      //   FilteringMode.noFilter,
+      //   if (!extra.isFavorites) FilteringMode.favorite,
+      //   FilteringMode.original,
+      //   FilteringMode.duplicate,
+      //   FilteringMode.same,
+      //   FilteringMode.tag,
+      //   FilteringMode.tagReversed,
+      //   FilteringMode.untagged,
+      //   FilteringMode.gif,
+      //   FilteringMode.video,
+      // },
+      );
 
   // late final SearchFilterGrid<GalleryFile> search;
 
@@ -273,7 +270,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
           _subscription?.cancel();
           _subscription = Stream<void>.periodic(const Duration(seconds: 10))
               .listen((event) {
-            state.refreshingStatus.mutation.cellCount = 0;
+            filter.backingStorage.clear();
 
             Navigator.of(context).pop();
 
@@ -290,6 +287,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
       const AndroidApiFunctions().hideRecents(true);
     }
+
+    api.source.clearRefresh();
   }
 
   @override
@@ -310,11 +309,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     super.dispose();
   }
 
-  void _refresh() {
-    mutation.cellCount = 0;
-    mutation.isRefreshing = true;
-    api.source.clearRefresh();
-  }
+  // void _refresh() => api.source.clearRefresh();
 
   void _onBooruTagPressed(
     BuildContext context,
@@ -354,7 +349,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
         final gridState = state.gridKey.currentState;
 
         if (gridState != null) {
-          if (gridState.selection.count == gridState.mutation.cellCount) {
+          if (gridState.selection.count == gridState.source.count) {
             gridState.selection.reset(true);
           } else {
             gridState.selection.selectAll(context);
@@ -403,12 +398,12 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
           (context) => GridFrame(
             key: state.gridKey,
             slivers: [
-              CurrentGridSettingsLayout(
-                mutation: mutation,
+              CurrentGridSettingsLayout<GalleryFile>(
+                source: filter.backingStorage,
+                progress: filter.progress,
                 gridSeed: state.gridSeed,
               ),
             ],
-            getCell: filter.forIdxUnsafe,
             functionality: GridFunctionality(
               settingsButton: GridSettingsButton.fromWatchable(gridSettings),
               registerNotifiers: (child) {
@@ -432,7 +427,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 },
               ),
               selectionGlue: GlueProvider.generateOf(context)(),
-              refreshingStatus: state.refreshingStatus,
+              source: filter,
               search: OverrideGridSearchWidget(
                 SearchAndFocus(
                   FilteringSearchWidget(
@@ -479,7 +474,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                             saveTagsAction(plug, postTags, localTags),
                             addTag(
                               context,
-                              state.refreshingStatus.refresh,
+                              api.source.clearRefresh,
                               localTags,
                             ),
                           ],
@@ -488,10 +483,12 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                           copyAction(
                             widget.tagManager,
                             favoriteFiles,
+                            localTags,
                           ),
                           moveAction(
                             widget.tagManager,
                             favoriteFiles,
+                            localTags,
                           ),
                         ],
               menuButtonItems: [
@@ -517,7 +514,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    const AndroidApiFunctions().emptyTrash();
+                                    GalleryManagementApi.current().emptyTrash();
                                     Navigator.pop(context);
                                   },
                                   child: Text(
@@ -541,18 +538,18 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 if (widget.callback != null)
                   IconButton(
                     onPressed: () {
-                      if (state.refreshingStatus.mutation.isRefreshing) {
+                      if (filter.progress.inRefreshing) {
                         return;
                       }
 
-                      final upTo = state.refreshingStatus.mutation.cellCount;
+                      final upTo = filter.backingStorage.count;
 
                       try {
                         final n = math.Random.secure().nextInt(upTo);
 
                         final gridState = state.gridKey.currentState;
                         if (gridState != null) {
-                          final cell = gridState.widget.getCell(n);
+                          final cell = gridState.source.forIdxUnsafe(n);
                           cell.onPress(
                             context,
                             gridState.widget.functionality,
@@ -610,27 +607,47 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 class CurrentGridSettingsLayout<T extends CellBase> extends StatelessWidget {
   const CurrentGridSettingsLayout({
     super.key,
-    required this.mutation,
+    required this.source,
     this.hideThumbnails = false,
     required this.gridSeed,
+    this.buildEmpty,
+    required this.progress,
   });
 
-  final GridMutationInterface mutation;
+  final SourceStorage<T> source;
   final bool hideThumbnails;
   final int gridSeed;
+  final Widget Function(Object?)? buildEmpty;
+  final RefreshingProgress progress;
 
   @override
   Widget build(BuildContext context) {
     final config = GridConfiguration.of(context);
 
     return switch (config.layoutType) {
-      GridLayoutType.grid => GridLayout<T>(),
+      GridLayoutType.grid => GridLayout<T>(
+          source: source,
+          progress: progress,
+          buildEmpty: buildEmpty,
+        ),
       GridLayoutType.list => ListLayout<T>(
           hideThumbnails: hideThumbnails,
+          source: source,
+          progress: progress,
+          buildEmpty: buildEmpty,
         ),
-      GridLayoutType.gridQuilted =>
-        GridQuiltedLayout<T>(randomNumber: gridSeed),
-      GridLayoutType.gridMasonry => GridMasonryLayout(randomNumber: gridSeed),
+      GridLayoutType.gridQuilted => GridQuiltedLayout<T>(
+          randomNumber: gridSeed,
+          source: source,
+          progress: progress,
+          buildEmpty: buildEmpty,
+        ),
+      GridLayoutType.gridMasonry => GridMasonryLayout(
+          randomNumber: gridSeed,
+          source: source,
+          progress: progress,
+          buildEmpty: buildEmpty,
+        ),
     };
   }
 }
@@ -641,23 +658,17 @@ class FilesDataNotifier extends InheritedWidget {
     required this.api,
     required this.actions,
     required this.nestedCallback,
-    // required this.plug,
-    // required this.state,
     required super.child,
   });
 
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? nestedCallback;
   final FilesActionsMixin actions;
-  // final GridSkeletonStateFilter<GalleryFile> state;
-  // final GalleryPlug plug;
 
   static (
     GalleryAPIFiles,
     CallbackDescriptionNested?,
     FilesActionsMixin,
-    // GridSkeletonStateFilter<GalleryFile>,
-    // GalleryPlug,
   ) of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
@@ -666,8 +677,6 @@ class FilesDataNotifier extends InheritedWidget {
       widget!.api,
       widget.nestedCallback,
       widget.actions,
-      // widget.state,
-      // widget.plug,
     );
   }
 
@@ -675,10 +684,5 @@ class FilesDataNotifier extends InheritedWidget {
   bool updateShouldNotify(FilesDataNotifier oldWidget) =>
       api != oldWidget.api ||
       nestedCallback != oldWidget.nestedCallback ||
-      actions != oldWidget.actions
-      // ||
-      // plug != oldWidget.plug
-      // ||
-      // state != oldWidget.state
-      ;
+      actions != oldWidget.actions;
 }

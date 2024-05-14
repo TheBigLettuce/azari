@@ -10,8 +10,6 @@ import "dart:math" as math;
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class SkeletonState {
@@ -24,31 +22,31 @@ class SkeletonState {
   }
 }
 
-class GridSkeletonRefreshingState<T extends CellBase>
-    extends GridSkeletonState<T> {
-  GridSkeletonRefreshingState({
-    int initalCellCount = 0,
-    bool Function() reachedEnd = _alwaysTrue,
-    required GridRefreshType clearRefresh,
-    Future<int> Function()? next,
-    GridRefreshingStatus<T>? overrideRefreshStatus,
-  }) : refreshingStatus = overrideRefreshStatus ??
-            GridRefreshingStatus<T>(
-              initalCellCount,
-              reachedEnd,
-              clearRefresh: clearRefresh,
-              next: next,
-            );
-  final GridRefreshingStatus<T> refreshingStatus;
+// class GridSkeletonRefreshingState<T extends CellBase>
+//     extends GridSkeletonState<T> {
+//   GridSkeletonRefreshingState({
+//     int initalCellCount = 0,
+//     bool Function() reachedEnd = _alwaysTrue,
+//     required GridRefreshType clearRefresh,
+//     Future<int> Function()? next,
+//     GridRefreshingStatus<T>? overrideRefreshStatus,
+//   }) : refreshingStatus = overrideRefreshStatus ??
+//             GridRefreshingStatus<T>(
+//               initalCellCount,
+//               reachedEnd,
+//               refreshType: clearRefresh,
+//               next: next,
+//             );
+//   final GridRefreshingStatus<T> refreshingStatus;
 
-  @override
-  void dispose() {
-    super.dispose();
-    refreshingStatus.dispose();
-  }
+//   @override
+//   void dispose() {
+//     super.dispose();
+//     refreshingStatus.dispose();
+//   }
 
-  static bool _alwaysTrue() => true;
-}
+//   static bool _alwaysTrue() => true;
+// }
 
 class GridSkeletonState<T extends CellBase> extends SkeletonState {
   GridSkeletonState();

@@ -10,9 +10,10 @@ import "dart:async";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
-import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
+import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 
 part "android_api_files.dart";
@@ -55,7 +56,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     }
 
     return bindFiles = _AndroidGalleryFiles(
-      source: _AndroidFileSource(d.bucketId),
+      source: _AndroidFileSourceJoined([d.bucketId]),
       bucketId: d.bucketId,
       target: d.name,
       type: type,
@@ -77,27 +78,44 @@ class _AndroidGallery implements GalleryAPIDirectories {
   }
 
   @override
-  final ResourceSource<GalleryDirectory> source = _AndroidSource();
+  final _AndroidSource source = _AndroidSource();
 }
 
 class _AndroidSource implements ResourceSource<GalleryDirectory> {
   _AndroidSource();
 
   @override
+  int get count => backingStorage.count;
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+
+  @override
   final SourceStorage<GalleryDirectory> backingStorage = ListStorage();
 
   @override
-  Future<int> clearRefresh() => Future.value(count);
+  Future<int> clearRefresh() {
+    if (progress.inRefreshing) {
+      return Future.value(count);
+    }
+    progress.inRefreshing = true;
+
+    backingStorage.clear();
+    GalleryManagementApi.current().refreshGallery();
+
+    return Future.value(count);
+  }
 
   @override
   Future<int> next() => Future.value(count);
 
   @override
-  int get count => backingStorage.count;
-
-  @override
   void destroy() {
     backingStorage.destroy();
+    progress.close();
   }
 
   @override

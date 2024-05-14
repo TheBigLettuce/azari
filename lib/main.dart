@@ -5,7 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
 import "dart:ui" as ui;
 
 import "package:flutter/material.dart";
@@ -17,9 +16,8 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/settings/network_status.dart";
-import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:gallery/src/widgets/restart_widget.dart";
@@ -39,7 +37,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
 
   const menuTheme = MenuThemeData(
     style: MenuStyle(
-      shape: MaterialStatePropertyAll(
+      shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(15)),
         ),
@@ -78,7 +76,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final scrollBarTheme = ScrollbarThemeData(
     radius: const ui.Radius.circular(15),
     mainAxisMargin: 0.75,
-    thumbColor: MaterialStatePropertyAll(
+    thumbColor: WidgetStatePropertyAll(
       baseTheme.colorScheme.onSurface.withOpacity(0.75),
     ),
   );
@@ -98,14 +96,14 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
     case ThemeType.secretPink:
       baseTheme = baseTheme.copyWith(
         scrollbarTheme: scrollBarTheme,
-        scaffoldBackgroundColor: baseTheme.colorScheme.background,
+        scaffoldBackgroundColor: baseTheme.colorScheme.surface,
         filledButtonTheme: FilledButtonThemeData(
           style: ButtonStyle(
-            foregroundColor: MaterialStatePropertyAll(
+            foregroundColor: WidgetStatePropertyAll(
               baseTheme.colorScheme.onPrimary.withOpacity(0.8),
             ),
             visualDensity: VisualDensity.compact,
-            backgroundColor: MaterialStatePropertyAll(
+            backgroundColor: WidgetStatePropertyAll(
               baseTheme.colorScheme.primary.withOpacity(0.8),
             ),
           ),
@@ -113,10 +111,10 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
         // buttonTheme: const ButtonThemeData(),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-            textStyle: MaterialStatePropertyAll(
+            textStyle: WidgetStatePropertyAll(
               baseTheme.textTheme.bodyMedium,
             ),
-            foregroundColor: MaterialStatePropertyAll(
+            foregroundColor: WidgetStatePropertyAll(
               baseTheme.colorScheme.primary.withOpacity(0.8),
             ),
           ),
@@ -134,10 +132,10 @@ Future<void> mainPickfile() async {
   initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
-  await initServices(await chooseDownloadMoverPlug());
+  await initServices();
   initalizeGalleryPlug(true);
 
-  if (Platform.isAndroid) {
+  if (PlatformApi.current().requiresPermissions) {
     final auth = LocalAuthentication();
 
     _canUseAuth = await auth.isDeviceSupported() &&
@@ -145,11 +143,7 @@ Future<void> mainPickfile() async {
         (await auth.getAvailableBiometrics()).isNotEmpty;
   }
 
-  initalizeNetworkStatus(
-    Platform.isAndroid
-        ? await const AndroidApiFunctions().currentNetworkStatus()
-        : true,
-  );
+  await initalizeNetworkStatus();
 
   changeExceptionErrorColors();
 
@@ -187,12 +181,12 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initServices(await chooseDownloadMoverPlug());
+  await initServices();
   // await initalizeDownloader();
 
   changeExceptionErrorColors();
 
-  if (Platform.isAndroid) {
+  if (PlatformApi.current().requiresPermissions) {
     final auth = LocalAuthentication();
 
     _canUseAuth = await auth.isDeviceSupported() &&
@@ -201,11 +195,7 @@ void main() async {
   }
 
   initalizeGalleryPlug(false);
-  initalizeNetworkStatus(
-    Platform.isAndroid
-        ? await const AndroidApiFunctions().currentNetworkStatus()
-        : true,
-  );
+  await initalizeNetworkStatus();
 
   final accentColor = await PlatformApi.current().accentColor();
 

@@ -23,10 +23,10 @@ import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/booru_api.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -72,11 +72,7 @@ class BooruSearchPagingEntry implements PagingEntry {
     //   initialTags: initTags,
     // );
 
-    state = GridSkeletonRefreshingState(
-      reachedEnd: () => reachedEnd,
-      clearRefresh: AsyncGridRefresh(source.clearRefresh),
-      next: source.next,
-    );
+    state = GridSkeletonState();
   }
 
   final Dio client;
@@ -84,7 +80,7 @@ class BooruSearchPagingEntry implements PagingEntry {
   late final BooruAPI api;
 
   late final PostsSourceService<Post> source;
-  late final GridSkeletonRefreshingState<Post> state;
+  late final GridSkeletonState<Post> state;
 
   SafeMode? safeMode;
 
@@ -177,7 +173,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   late final SearchLaunchGrid search;
 
-  GridSkeletonRefreshingState<Post> get state => pagingState.state;
+  GridSkeletonState<Post> get state => pagingState.state;
   BooruAPI get api => pagingState.api;
   TagManager get tagManager => pagingState.tagManager;
 
@@ -231,7 +227,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     // });
 
     blacklistedWatcher = hiddenBooruPost.watch((_) {
-      state.refreshingStatus.mutation.notify();
+      // state.refreshingStatus.mutation.notify();
     });
   }
 
@@ -255,7 +251,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       search.tags = tag;
     });
 
-    state.refreshingStatus.refresh();
+    source.clearRefresh();
   }
 
   void _download(int i) => source.forIdx(i)?.download(context);
@@ -273,7 +269,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       return;
     }
 
-    state.refreshingStatus.mutation.cellCount = 0;
+    // state.refreshingStatus.mutation.cellCount = 0;
 
     pagingState.moveToBookmark(context, search.tags);
   }
@@ -295,30 +291,27 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   key: state.gridKey,
                   slivers: [
                     CurrentGridSettingsLayout(
-                      mutation: state.refreshingStatus.mutation,
+                      source: source.backingStorage,
+                      progress: source.progress,
                       gridSeed: state.gridSeed,
-                    ),
-                  ],
-                  mainFocus: state.mainFocus,
-                  getCell: pagingState.source.forIdxUnsafe,
-                  functionality: GridFunctionality(
-                    updateScrollPosition: pagingState.setOffset,
-                    onError: (error) {
-                      return OutlinedButton.icon(
+                      buildEmpty: (e) => EmptyWidgetWithButton(
+                        buttonText: AppLocalizations.of(context)!.openInBrowser,
+                        error: e,
                         onPressed: () {
                           launchUrl(
                             Uri.https(api.booru.url),
                             mode: LaunchMode.externalApplication,
                           );
                         },
-                        label:
-                            Text(AppLocalizations.of(context)!.openInBrowser),
-                        icon: const Icon(Icons.public),
-                      );
-                    },
+                      ),
+                    ),
+                  ],
+                  mainFocus: state.mainFocus,
+                  functionality: GridFunctionality(
+                    updateScrollPosition: pagingState.setOffset,
                     download: _download,
                     selectionGlue: GlueProvider.generateOf(context)(),
-                    refreshingStatus: state.refreshingStatus,
+                    source: source,
                     search: OverrideGridSearchWidget(
                       SearchAndFocus(
                         search.searchWidget(context, hint: api.booru.name),

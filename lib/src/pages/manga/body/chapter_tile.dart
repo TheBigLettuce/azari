@@ -106,8 +106,10 @@ class _ChapterTileState extends State<ChapterTile> {
         padding: const EdgeInsets.only(top: 4, bottom: 4),
         child: DecoratedBox(
           decoration: ShapeDecoration(
-            color:
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withOpacity(0.2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),

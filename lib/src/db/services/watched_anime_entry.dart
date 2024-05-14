@@ -86,13 +86,22 @@ abstract interface class WatchedAnimeEntryService implements ServiceMarker {
   void reAdd(List<WatchedAnimeEntryData> entries);
 
   WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
-  void moveAllReversed(List<WatchedAnimeEntryData> entries,
-      SavedAnimeEntriesService savedAnimeEntries);
+  void moveAllReversed(
+    List<WatchedAnimeEntryData> entries,
+    SavedAnimeEntriesService savedAnimeEntries,
+  );
   void moveAll(
-      List<AnimeEntryData> entries, SavedAnimeEntriesService savedAnimeEntries);
+    List<AnimeEntryData> entries,
+    SavedAnimeEntriesService savedAnimeEntries,
+  );
 
   StreamSubscription<void> watchAll(
     void Function(void) f, [
+    bool fire = false,
+  ]);
+
+  StreamSubscription<int> watchCount(
+    void Function(int) f, [
     bool fire = false,
   ]);
 

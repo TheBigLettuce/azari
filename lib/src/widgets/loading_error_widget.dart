@@ -52,7 +52,7 @@ class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
         },
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
           ),
           child: SizedBox.expand(
             child: Center(
@@ -80,7 +80,7 @@ class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
     }
 
     return ColoredBox(
-      color: theme.colorScheme.surfaceVariant.withOpacity(0.1),
+      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
       child: Center(
         child: InkWell(
           onTap: widget.refresh,
