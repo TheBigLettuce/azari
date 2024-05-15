@@ -132,7 +132,7 @@ class _ChapterTileState extends State<ChapterTile> {
                       );
                     }
 
-                    readChapters.launchReader(
+                    ReadMangaChaptersService.launchReader(
                       context,
                       ReaderData(
                         chapterNumber: widget.chapter.chapter,

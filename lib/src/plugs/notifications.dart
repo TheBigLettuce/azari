@@ -27,5 +27,7 @@ abstract class NotificationPlug {
 
 NotificationPlug chooseNotificationPlug() => getApi();
 
+Future<void> initNotifications() => init();
+
 const savingTagsNotifId = -10;
 const savingThumbNotifId = -11;

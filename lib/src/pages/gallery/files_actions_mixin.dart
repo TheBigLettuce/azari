@@ -115,7 +115,8 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryFile? f,
     FavoriteFileService favoriteFile,
   ) {
-    final isFavorites = f != null && (favoriteFile.cachedValues[f.id] ?? false);
+    final isFavorites =
+        f != null && (favoriteFile.cachedValues.containsKey(f.id));
 
     return GridAction(
       isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
@@ -319,18 +320,16 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     List<GalleryFile> selected,
     FavoriteFileService favoriteFile,
   ) {
-    throw "";
-
     final toDelete = <int>[];
     final toAdd = <int>[];
 
-    // for (final fav in selected) {
-    //   if (fav.isFavorite) {
-    //     toDelete.add(fav.id);
-    //   } else {
-    //     toAdd.add(fav.id);
-    //   }
-    // }
+    for (final fav in selected) {
+      if (favoriteFile.cachedValues.containsKey(fav.id)) {
+        toDelete.add(fav.id);
+      } else {
+        toAdd.add(fav.id);
+      }
+    }
 
     if (toAdd.isNotEmpty) {
       favoriteFile.addAll(toAdd);

@@ -11,7 +11,6 @@ import "dart:io";
 import "package:async/async.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
@@ -61,18 +60,14 @@ import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/manga/next_chapter_button.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
 import "package:path/path.dart" as path;
@@ -165,23 +160,23 @@ class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
       _collection.watchLazy().map((_) => count).listen(f);
 }
 
-class IsarCurrentBooruSource extends GridPostSource {
+class IsarCurrentBooruSource extends GridPostSource
+    with GridPostSourceRefreshNext {
   IsarCurrentBooruSource({
     required Isar db,
     required this.api,
     required this.excluded,
     required this.entry,
     required this.tags,
-    required HiddenBooruPostService hiddenBooru,
-  })  : backingStorage = IsarPostsOptimizedStorage(db),
-        filters = [(p) => !hiddenBooru.isHidden(p.id, p.booru)];
-
-  final BooruAPI api;
-  final BooruTagging excluded;
-  final PagingEntry entry;
+    required this.filters,
+  }) : backingStorage = IsarPostsOptimizedStorage(db);
 
   @override
-  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+  final BooruAPI api;
+  @override
+  final BooruTagging excluded;
+  @override
+  final PagingEntry entry;
 
   @override
   final IsarPostsOptimizedStorage backingStorage;
@@ -195,8 +190,6 @@ class IsarCurrentBooruSource extends GridPostSource {
   @override
   String tags;
 
-  int? currentSkipped;
-
   @override
   int get count => backingStorage.count;
 
@@ -204,92 +197,6 @@ class IsarCurrentBooruSource extends GridPostSource {
   void destroy() {
     backingStorage.destroy();
     progress.close();
-  }
-
-  @override
-  Post? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  Post forIdxUnsafe(int idx) => forIdx(idx)!;
-
-  @override
-  void clear() => backingStorage.clear();
-
-  @override
-  Future<int> clearRefresh() async {
-    if (progress.inRefreshing) {
-      return count;
-    }
-    progress.inRefreshing = true;
-
-    clear();
-
-    StatisticsGeneralService.db().current.add(refreshes: 1).save();
-
-    entry.updateTime();
-
-    final list = await api.page(0, "", excluded);
-    entry.setOffset(0);
-    currentSkipped = list.$2;
-    backingStorage.addAll(PostIsar.copyTo(filter(list.$1)));
-
-    entry.reachedEnd = false;
-
-    progress.inRefreshing = false;
-
-    return count;
-  }
-
-  @override
-  Future<int> next([int repeatCount = 0]) async {
-    if (repeatCount >= 3) {
-      progress.inRefreshing = false;
-      return count;
-    }
-
-    if (entry.reachedEnd) {
-      return count;
-    }
-
-    if (progress.inRefreshing) {
-      return count;
-    }
-    progress.inRefreshing = true;
-
-    final p = forIdx(count - 1);
-    if (p == null) {
-      return count;
-    }
-
-    try {
-      final list = await api.fromPost(
-        currentSkipped != null && currentSkipped! < p.id
-            ? currentSkipped!
-            : p.id,
-        "",
-        excluded,
-      );
-
-      if (list.$1.isEmpty && currentSkipped == null) {
-        entry.reachedEnd = true;
-      } else {
-        currentSkipped = list.$2;
-        final oldCount = count;
-        backingStorage.addAll(PostIsar.copyTo(filter(list.$1)));
-
-        entry.updateTime();
-
-        if (count - oldCount < 3) {
-          return next(repeatCount + 1);
-        }
-      }
-    } catch (e, _) {
-      return next(repeatCount + 1);
-    }
-
-    progress.inRefreshing = false;
-
-    return count;
   }
 }
 
@@ -561,10 +468,6 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
           .findAllSync();
 
   @override
-  SavedAnimeEntryData get(int id, [bool addOne = true]) =>
-      _Dbs.g.anime.isarSavedAnimeEntrys.getSync(id + (addOne ? 1 : 0))!;
-
-  @override
   SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
       _Dbs.g.anime.isarSavedAnimeEntrys.getBySiteIdSync(site, id);
 
@@ -798,11 +701,7 @@ class IsarFavoritePostService implements FavoritePostService {
   }
 
   @override
-  void addRemove(
-    BuildContext context,
-    List<Post> posts,
-    bool showDeleteSnackbar,
-  ) {
+  List<Post> addRemove(List<Post> posts) {
     final toAdd = <IsarFavoriteBooru>[];
     final toRemoveInts = <int>[];
     final toRemoveBoorus = <Booru>[];
@@ -835,7 +734,7 @@ class IsarFavoritePostService implements FavoritePostService {
     }
 
     if (toAdd.isEmpty && toRemoveInts.isEmpty) {
-      return;
+      return const [];
     }
 
     final deleteCopy = toRemoveInts.isEmpty
@@ -849,23 +748,8 @@ class IsarFavoritePostService implements FavoritePostService {
           .deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
     });
 
-    if (deleteCopy != null && showDeleteSnackbar) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 20),
-          content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
-          action: SnackBarAction(
-            label: AppLocalizations.of(context)!.undoLabel,
-            onPressed: () {
-              _Dbs.g.main.writeTxnSync(
-                () => _Dbs.g.main.isarFavoriteBoorus
-                    .putAllSync(deleteCopy as List<IsarFavoriteBooru>),
-              );
-            },
-          ),
-        ),
-      );
-    }
+    return deleteCopy?.where((e) => e != null).cast<Post>().toList() ??
+        const <Post>[];
   }
 
   @override
@@ -1018,8 +902,10 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   }
 
   @override
-  StreamSubscription<int> watchCount(void Function(int p1) f,
-          [bool fire = false]) =>
+  StreamSubscription<int> watchCount(
+    void Function(int p1) f, [
+    bool fire = false,
+  ]) =>
       _Dbs.g.anime.isarWatchedAnimeEntrys
           .watchLazy(fireImmediately: fire)
           .map((event) => count)
@@ -1077,16 +963,6 @@ class IsarDownloadFileService implements DownloadFileService {
         .where()
         .statusEqualTo(DownloadStatus.onHold)
         .findFirstSync();
-  }
-
-  @override
-  StreamSubscription<void> watch(
-    void Function(void) f, [
-    bool fire = true,
-  ]) {
-    return _Dbs.g.main.isarDownloadFiles
-        .watchLazy(fireImmediately: fire)
-        .listen(f);
   }
 
   @override
@@ -1894,98 +1770,13 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
   }
 
   @override
-  Future<void> launchReader(
-    BuildContext context,
-    ReaderData data, {
-    bool addNextChapterButton = false,
-    bool replace = false,
-  }) {
-    touch(
-      siteMangaId: data.mangaId.toString(),
-      chapterId: data.chapterId,
-      chapterName: data.chapterName,
-      chapterNumber: data.chapterNumber,
-    );
-
-    final p = progress(
-      siteMangaId: data.mangaId.toString(),
-      chapterId: data.chapterId,
-    );
-
-    final nextChapterKey = GlobalKey<SkipChapterButtonState>();
-    final prevChaterKey = GlobalKey<SkipChapterButtonState>();
-
-    final route = MaterialPageRoute<void>(
-      builder: (context) {
-        return WrapFutureRestartable(
-          newStatus: () {
-            return data.api.imagesForChapter(MangaStringId(data.chapterId));
-          },
-          builder: (context, chapters) {
-            return MangaReaderNotifier(
-              data: data,
-              child: GlueProvider.empty(
-                context,
-                child: ImageView(
-                  ignoreLoadingBuilder: true,
-                  download: (i) => chapters[i].download(context, data, i),
-                  onRightSwitchPageEnd: addNextChapterButton
-                      ? () {
-                          nextChapterKey.currentState?.findAndLaunchNext();
-                        }
-                      : null,
-                  onLeftSwitchPageEnd: addNextChapterButton
-                      ? () {
-                          prevChaterKey.currentState?.findAndLaunchNext();
-                        }
-                      : null,
-                  pageChange: (state) {
-                    setProgress(
-                      state.currentPage + 1,
-                      chapterName: data.chapterName,
-                      chapterNumber: data.chapterNumber,
-                      siteMangaId: data.mangaId.toString(),
-                      chapterId: data.chapterId,
-                    );
-
-                    data.onNextPage(
-                      state.currentPage,
-                      chapters[state.currentPage],
-                    );
-                  },
-                  cellCount: chapters.length,
-                  scrollUntill: (_) {},
-                  startingCell: p != null ? p - 1 : 0,
-                  onExit: () {},
-                  getCell: (i) => chapters[i].content(),
-                  onNearEnd: null,
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (replace) {
-      return Navigator.of(context, rootNavigator: true).pushReplacement(
-        route,
-      );
-    } else {
-      return Navigator.of(context, rootNavigator: true).push(
-        route,
-      );
-    }
-  }
-
-  @override
   StreamSubscription<void> watch(void Function(void) f) =>
       _Dbs.g.anime.isarReadMangaChapters.watchLazy().listen(f);
 
   @override
   StreamSubscription<int> watchReading(void Function(int) f) =>
       _Dbs.g.anime.isarReadMangaChapters
-          .watchLazy(fireImmediately: true)
+          .watchLazy()
           .map((event) => countDistinct)
           .listen(f);
 
@@ -2351,14 +2142,15 @@ class IsarLocalTagsService implements LocalTagsService {
   }
 
   @override
-  StreamSubscription<List<LocalTagsData>> watch(
+  StreamSubscription<LocalTagsData> watch(
     String filename,
-    void Function(List<LocalTagsData>) f,
+    void Function(LocalTagsData) f,
   ) =>
       _Dbs.g.localTags.isarLocalTags
           .where()
           .filenameEqualTo(filename)
           .watch()
+          .map((e) => e.first)
           .listen(f);
 
   List<String> _addAndSort(List<String> tags, String addTag) {
@@ -2514,19 +2306,20 @@ class IsarBooruTagging implements BooruTagging {
     required LocalTagsService localTag,
     bool fire = false,
   }) {
-    return StreamGroup.merge<List<IsarLocalTags>>([
-      _Dbs.g.localTags.isarLocalTags.where().filenameEqualTo(filename).watch(),
-      currentBooru.isarTags.watchLazy().map((_) {
-        final t = _Dbs.g.localTags.isarLocalTags.getByFilenameSync(filename);
-
-        return t != null ? [t] : const [];
-      }),
+    return StreamGroup.merge<void>([
+      _Dbs.g.localTags.isarLocalTags
+          .where()
+          .filenameEqualTo(filename)
+          .watchLazy(),
+      currentBooru.isarTags.watchLazy(),
     ]).map<List<ImageTag>>((event) {
-      if (event.isEmpty) {
+      final t =
+          _Dbs.g.localTags.isarLocalTags.getByFilenameSync(filename)?.tags;
+      if (t == null) {
         return const [];
       }
 
-      return event.first.tags
+      return t
           .map(
             (e) => ImageTag(
               e,
@@ -2658,7 +2451,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
         excluded: excluded,
         entry: entry,
         tags: tags,
-        hiddenBooru: hiddenBooruPosts,
+        filters: [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
       );
 }
 
@@ -2728,6 +2521,6 @@ class IsarMainGridService implements MainGridService {
         excluded: excluded,
         entry: entry,
         tags: "",
-        hiddenBooru: hiddenBooruPosts,
+        filters: [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
       );
 }

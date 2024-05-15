@@ -102,28 +102,6 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
   final List<IsarAnimeRelation> staff;
 
   @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<AnimeEntryData> functionality,
-    AnimeEntryData cell,
-    int idx,
-  ) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return AnimeInfoPage(
-            id: cell.id,
-            entry: cell,
-            apiFactory: cell.site.api,
-            db: DatabaseConnectionNotifier.of(context),
-          );
-        },
-      ),
-    );
-  }
-
-  @override
   IsarSavedAnimeEntry copySuper(
     AnimeEntryData e, [
     bool ignoreRelations = false,

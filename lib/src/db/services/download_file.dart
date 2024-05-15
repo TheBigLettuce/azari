@@ -92,9 +92,4 @@ abstract interface class DownloadFileService implements ServiceMarker {
   List<DownloadFileData> nextNumber(int minus);
 
   void clear();
-
-  StreamSubscription<void> watch(
-    void Function(void) f, [
-    bool fire = true,
-  ]);
 }

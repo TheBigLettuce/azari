@@ -10,10 +10,10 @@ import "dart:async";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
-import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 
 part "android_api_files.dart";

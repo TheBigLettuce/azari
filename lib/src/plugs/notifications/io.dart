@@ -7,6 +7,7 @@
 
 import "dart:io";
 
+import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/notifications/android.dart";
 import "package:gallery/src/plugs/notifications/dummy.dart";
@@ -21,3 +22,22 @@ NotificationPlug getApi() {
     return const DummyNotifications();
   }
 }
+
+Future<void> init() async {
+  await FlutterLocalNotificationsPlugin().initialize(
+    const InitializationSettings(
+      linux: LinuxInitializationSettings(defaultActionName: "Default action"),
+      android: AndroidInitializationSettings("@drawable/ic_notification"),
+    ),
+    onDidReceiveNotificationResponse: (details) {
+      // final context = restartKey.currentContext;
+      // if (context != null) {}
+    },
+    onDidReceiveBackgroundNotificationResponse: notifBackground,
+  );
+
+  await FlutterLocalNotificationsPlugin().cancelAll();
+}
+
+@pragma("vm:entry-point")
+void notifBackground(NotificationResponse res) {}

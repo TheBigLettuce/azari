@@ -75,14 +75,14 @@ abstract class _DbsOpen {
     );
   }
 
-  static Isar secondaryGrid({bool temporary = true}) {
-    return Isar.openSync(
-      [PostIsarSchema, IsarGridBooruPagingSchema],
-      directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
-      inspector: false,
-      name: _microsecSinceEpoch(),
-    );
-  }
+  // static Isar secondaryGrid({bool temporary = true}) {
+  //   return Isar.openSync(
+  //     [PostIsarSchema, IsarGridBooruPagingSchema],
+  //     directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
+  //     inspector: false,
+  //     name: _microsecSinceEpoch(),
+  //   );
+  // }
 
   static Isar secondaryGridName(String name) {
     return Isar.openSync(

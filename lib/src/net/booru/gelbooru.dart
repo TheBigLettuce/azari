@@ -47,7 +47,6 @@ class Gelbooru implements BooruAPI {
       }),
       LogReq(LogReq.notes(booru, postId), _log),
       options: Options(
-        sendTimeout: _defaultTimeout,
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.plain,
       ),
@@ -77,7 +76,6 @@ class Gelbooru implements BooruAPI {
         "orderby": "count",
       }),
       options: Options(
-        sendTimeout: _defaultTimeout,
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
@@ -137,7 +135,6 @@ class Gelbooru implements BooruAPI {
     final resp = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(booru.url, "/index.php", query),
       options: Options(
-        sendTimeout: _defaultTimeout,
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
@@ -162,7 +159,6 @@ class Gelbooru implements BooruAPI {
         },
       ),
       options: Options(
-        sendTimeout: _defaultTimeout,
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),

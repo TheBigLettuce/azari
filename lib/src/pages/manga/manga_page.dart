@@ -117,8 +117,7 @@ class _MangaPageState extends State<MangaPage> {
 
     inInner = true;
 
-    readChapters
-        .launchReader(
+    ReadMangaChaptersService.launchReader(
       context,
       ReaderData(
         api: api,
@@ -133,8 +132,7 @@ class _MangaPageState extends State<MangaPage> {
         onNextPage: (p, cell) {},
       ),
       addNextChapterButton: true,
-    )
-        .then((value) {
+    ).then((value) {
       _procReload();
     });
   }
@@ -477,6 +475,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
   @override
   Widget build(BuildContext context) {
     return GridConfiguration(
+      sliver: true,
       watch: gridSettings.watch,
       child: SliverPadding(
         padding: const EdgeInsets.only(left: 14, right: 14),

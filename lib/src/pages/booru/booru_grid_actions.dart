@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
@@ -67,7 +68,22 @@ class BooruGridActions {
     return GridAction(
       Icons.favorite_border_rounded,
       (selected) {
-        favoritePost.addRemove(context, selected, showDeleteSnackbar);
+        final ret = favoritePost.addRemove(selected);
+
+        if (ret.isNotEmpty && showDeleteSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 20),
+              content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
+              action: SnackBarAction(
+                label: AppLocalizations.of(context)!.undoLabel,
+                onPressed: () {
+                  favoritePost.addRemove(ret);
+                },
+              ),
+            ),
+          );
+        }
         // for (final post in selected) {
         //   LocalTagDictionary.addAll(post.tags);
         // }

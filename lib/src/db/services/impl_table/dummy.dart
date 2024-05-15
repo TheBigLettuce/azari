@@ -13,53 +13,88 @@ import "package:gallery/src/net/download_manager/download_manager.dart";
 Future<DownloadManager> init(ServicesImplTable db) =>
     throw UnimplementedError();
 
-class ServicesImplTable implements ServiceMarker {
+ServicesImplTable getApi() => DummyServicesImplTable();
+
+class DummyServicesImplTable
+    with ServicesImplTableObjInstExt
+    implements ServicesImplTable {
+  @override
   SettingsService get settings => throw UnimplementedError();
+  @override
   MiscSettingsService get miscSettings => throw UnimplementedError();
+  @override
   SavedAnimeEntriesService get savedAnimeEntries => throw UnimplementedError();
+  @override
   SavedAnimeCharactersService get savedAnimeCharacters =>
       throw UnimplementedError();
+  @override
   WatchedAnimeEntryService get watchedAnime => throw UnimplementedError();
+  @override
   VideoSettingsService get videoSettings => throw UnimplementedError();
+  @override
   HiddenBooruPostService get hiddenBooruPost => throw UnimplementedError();
+  @override
   DownloadFileService get downloads => throw UnimplementedError();
+  @override
   FavoritePostService get favoritePosts => throw UnimplementedError();
+  @override
   StatisticsGeneralService get statisticsGeneral => throw UnimplementedError();
+  @override
   StatisticsGalleryService get statisticsGallery => throw UnimplementedError();
+  @override
   StatisticsBooruService get statisticsBooru => throw UnimplementedError();
+  @override
   StatisticsDailyService get statisticsDaily => throw UnimplementedError();
+  @override
   DirectoryMetadataService get directoryMetadata => throw UnimplementedError();
+  @override
   ChaptersSettingsService get chaptersSettings => throw UnimplementedError();
+  @override
   SavedMangaChaptersService get savedMangaChapters =>
       throw UnimplementedError();
+  @override
   ReadMangaChaptersService get readMangaChapters => throw UnimplementedError();
+  @override
   PinnedMangaService get pinnedManga => throw UnimplementedError();
+  @override
   ThumbnailService get thumbnails => throw UnimplementedError();
+  @override
   PinnedThumbnailService get pinnedThumbnails => throw UnimplementedError();
+  @override
   LocalTagsService get localTags => throw UnimplementedError();
+  @override
   LocalTagDictionaryService get localTagDictionary =>
       throw UnimplementedError();
+  @override
   CompactMangaDataService get compactManga => throw UnimplementedError();
+  @override
   GridStateBooruService get gridStateBooru => throw UnimplementedError();
+  @override
   FavoriteFileService get favoriteFiles => throw UnimplementedError();
+  @override
   DirectoryTagService get directoryTags => throw UnimplementedError();
+  @override
   BlacklistedDirectoryService get blacklistedDirectories =>
       throw UnimplementedError();
+  @override
   GridSettingsService get gridSettings => throw UnimplementedError();
+  @override
   MainGridService mainGrid(Booru booru) => throw UnimplementedError();
+  @override
   SecondaryGridService secondaryGrid(Booru booru, String name) =>
       throw UnimplementedError();
-}
 
-extension ServicesImplTableObjInstExt on ServicesImplTable {
+  @override
   TagManager tagManager(Booru booru) => throw UnimplementedError();
 
+  @override
   LocalTagsData localTagsDataForDb(
     String filename,
     List<String> tags,
   ) =>
       throw UnimplementedError();
 
+  @override
   CompactMangaData compactMangaDataForDb({
     required String mangaId,
     required MangaMeta site,
@@ -68,12 +103,14 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
   }) =>
       throw UnimplementedError();
 
+  @override
   SettingsPath settingsPathForCurrent({
     required String path,
     required String pathDisplay,
   }) =>
       throw UnimplementedError();
 
+  @override
   DownloadFileData downloadFileDataForDbFormat({
     required DownloadStatus status,
     required String name,
@@ -84,6 +121,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
   }) =>
       throw UnimplementedError();
 
+  @override
   HiddenBooruPostData hiddenBooruPostDataForDb(
     String thumbUrl,
     int postId,
@@ -91,6 +129,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
   ) =>
       throw UnimplementedError();
 
+  @override
   PinnedManga pinnedMangaForDb({
     required String mangaId,
     required MangaMeta site,

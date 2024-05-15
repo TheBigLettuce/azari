@@ -37,10 +37,10 @@ abstract class FavoritePostData extends PostBase
 abstract interface class FavoritePostService implements ServiceMarker {
   int get count;
 
-  void addRemove(
-    BuildContext context,
+  List<Post> addRemove(
+    // BuildContext context,
     List<Post> posts,
-    bool showDeleteSnackbar,
+    // bool showDeleteSnackbar,
   );
 
   bool isFavorite(int id, Booru booru);

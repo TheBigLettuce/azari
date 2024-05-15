@@ -24,7 +24,6 @@ abstract interface class SavedAnimeEntriesService implements ServiceMarker {
   List<SavedAnimeEntryData> get currentlyWatchingAll;
 
   void unsetIsWatchingAll(List<SavedAnimeEntryData> entries);
-  SavedAnimeEntryData get(int id, [bool addOne = true]);
   SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
   void update(AnimeEntryData e);
 

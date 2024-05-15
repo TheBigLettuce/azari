@@ -48,7 +48,7 @@ class _MangaEntry with MangaEntry {
       .map(
         (e) => MangaRelation(
           id: MangaStringId(e.id),
-          name: _tagOrFirst("en", e.attributes!.title!),
+          name: _tagOrFirst("en", e.attributes?.title),
         ),
       )
       .toList();
@@ -99,7 +99,11 @@ class _MangaEntry with MangaEntry {
   @override
   int get year => attributes.year ?? -1;
 
-  String _tagOrFirst(String tag, Map<String, String> m) {
+  String _tagOrFirst(String tag, Map<String, String>? m) {
+    if (m == null) {
+      return "";
+    }
+
     final en = m[tag];
     if (en == null) {
       return m.isNotEmpty ? m.values.first : "";

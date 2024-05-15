@@ -11,13 +11,13 @@ import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/network_status.dart";
+import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:gallery/src/widgets/restart_widget.dart";
@@ -182,7 +182,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await initServices();
-  // await initalizeDownloader();
 
   changeExceptionErrorColors();
 
@@ -197,23 +196,11 @@ void main() async {
   initalizeGalleryPlug(false);
   await initalizeNetworkStatus();
 
+  await initNotifications();
+
   final accentColor = await PlatformApi.current().accentColor();
 
   final GlobalKey restartKey = GlobalKey();
-
-  await FlutterLocalNotificationsPlugin().initialize(
-    const InitializationSettings(
-      linux: LinuxInitializationSettings(defaultActionName: "Default action"),
-      android: AndroidInitializationSettings("@drawable/ic_notification"),
-    ),
-    onDidReceiveNotificationResponse: (details) {
-      final context = restartKey.currentContext;
-      if (context != null) {}
-    },
-    onDidReceiveBackgroundNotificationResponse: notifBackground,
-  );
-
-  await FlutterLocalNotificationsPlugin().cancelAll();
 
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
@@ -263,8 +250,5 @@ SystemUiOverlayStyle navBarStyleForTheme(
               : theme.colorScheme.surface)
           .withOpacity(transparent ? 0.0 : 0.8),
     );
-
-@pragma("vm:entry-point")
-void notifBackground(NotificationResponse res) {}
 
 bool _canUseAuth = false;

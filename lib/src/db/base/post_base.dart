@@ -55,7 +55,7 @@ class PostCacheValues implements CacheElement {
       ImageViewAction(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (_) {
-          favorites.addRemove(context, [post], true);
+          favorites.addRemove([post]);
           // db.localTagDictionary.add(post.tags);
         },
         play: !isFavorite,
@@ -421,20 +421,12 @@ abstract mixin class Post
           );
         },
       ),
-      // if (Platform.isAndroid)
       ShareButton(
         fileUrl,
         onLongPress: () {
           showQr(context, booru.prefix, id);
         },
-      )
-      // else
-      // IconButton(
-      // onPressed: () {
-      // showQr(context, booru.prefix, id);
-      // },
-      // icon: const Icon(Icons.qr_code_rounded),
-      // ),
+      ),
     ];
   }
 

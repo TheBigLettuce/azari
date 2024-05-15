@@ -64,7 +64,8 @@ class BooruSearchPagingEntry implements PagingEntry {
   BooruSearchPagingEntry(Booru booru, this.safeMode, String initTags)
       : client = BooruAPI.defaultClientForBooru(booru) {
     throw "";
-    api = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
+
+    // api = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
     // source = PostsSourceService.currentTemporary(
     //   api,
     //   tagManager.excluded,
@@ -72,7 +73,7 @@ class BooruSearchPagingEntry implements PagingEntry {
     //   initialTags: initTags,
     // );
 
-    state = GridSkeletonState();
+    // state = GridSkeletonState();
   }
 
   final Dio client;

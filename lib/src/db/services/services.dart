@@ -28,6 +28,8 @@ import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/anime/anime_info_page.dart";
+import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
@@ -40,6 +42,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:isar/isar.dart";
 
 part "blacklisted_directory.dart";
@@ -84,7 +87,86 @@ int numberOfElementsPerRefresh() {
 
 DownloadManager? _downloadManager;
 
-final ServicesImplTable _currentDb = ServicesImplTable();
+abstract interface class ServicesImplTable
+    with ServicesImplTableObjInstExt
+    implements ServiceMarker {
+  SettingsService get settings;
+  MiscSettingsService get miscSettings;
+  SavedAnimeEntriesService get savedAnimeEntries;
+  SavedAnimeCharactersService get savedAnimeCharacters;
+  WatchedAnimeEntryService get watchedAnime;
+  VideoSettingsService get videoSettings;
+  HiddenBooruPostService get hiddenBooruPost;
+  DownloadFileService get downloads;
+  FavoritePostService get favoritePosts;
+  StatisticsGeneralService get statisticsGeneral;
+  StatisticsGalleryService get statisticsGallery;
+  StatisticsBooruService get statisticsBooru;
+  StatisticsDailyService get statisticsDaily;
+  DirectoryMetadataService get directoryMetadata;
+  ChaptersSettingsService get chaptersSettings;
+  SavedMangaChaptersService get savedMangaChapters;
+  ReadMangaChaptersService get readMangaChapters;
+  PinnedMangaService get pinnedManga;
+  ThumbnailService get thumbnails;
+  PinnedThumbnailService get pinnedThumbnails;
+  LocalTagsService get localTags;
+  LocalTagDictionaryService get localTagDictionary;
+  CompactMangaDataService get compactManga;
+  GridStateBooruService get gridStateBooru;
+  FavoriteFileService get favoriteFiles;
+  DirectoryTagService get directoryTags;
+  BlacklistedDirectoryService get blacklistedDirectories;
+  GridSettingsService get gridSettings;
+
+  MainGridService mainGrid(Booru booru);
+  SecondaryGridService secondaryGrid(Booru booru, String name);
+}
+
+mixin ServicesImplTableObjInstExt {
+  TagManager tagManager(Booru booru);
+
+  LocalTagsData localTagsDataForDb(
+    String filename,
+    List<String> tags,
+  );
+
+  CompactMangaData compactMangaDataForDb({
+    required String mangaId,
+    required MangaMeta site,
+    required String title,
+    required String thumbUrl,
+  });
+
+  SettingsPath settingsPathForCurrent({
+    required String path,
+    required String pathDisplay,
+  });
+
+  DownloadFileData downloadFileDataForDbFormat({
+    required DownloadStatus status,
+    required String name,
+    required String url,
+    required String thumbUrl,
+    required String site,
+    required DateTime date,
+  });
+
+  HiddenBooruPostData hiddenBooruPostDataForDb(
+    String thumbUrl,
+    int postId,
+    Booru booru,
+  );
+
+  PinnedManga pinnedMangaForDb({
+    required String mangaId,
+    required MangaMeta site,
+    required String thumbUrl,
+    required String title,
+  });
+}
+
+final ServicesImplTable _currentDb = getApi();
 typedef DbConn = ServicesImplTable;
 
 class DatabaseConnectionNotifier extends InheritedWidget {
@@ -555,7 +637,6 @@ class GenericListSource<T> implements ResourceSource<T> {
       }
     } catch (e) {
       progress.error = e;
-      rethrow;
     }
 
     progress.inRefreshing = false;
@@ -629,9 +710,9 @@ abstract interface class LocalTagsService {
   void delete(String filename);
   void removeSingle(List<String> filenames, String tag);
 
-  StreamSubscription<List<LocalTagsData>> watch(
+  StreamSubscription<LocalTagsData> watch(
     String filename,
-    void Function(List<LocalTagsData>) f,
+    void Function(LocalTagsData) f,
   );
 
   // StreamSubscription<List<ImageTag>> watchImagePinned(

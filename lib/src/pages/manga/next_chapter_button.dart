@@ -126,7 +126,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
 
     widget.reloadChapters();
 
-    readChapters.launchReader(
+    ReadMangaChaptersService.launchReader(
       context,
       ReaderData(
         chapterNumber: chapterNumber,

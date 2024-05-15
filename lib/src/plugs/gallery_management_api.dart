@@ -81,8 +81,12 @@ class DummyGalleryManagementApi implements GalleryManagementApi {
 
   @override
   void copyMoveFiles(
-      String? chosen, String? chosenVolumeName, List<GalleryFile> selected,
-      {required bool move, String? newDir}) {}
+    String? chosen,
+    String? chosenVolumeName,
+    List<GalleryFile> selected, {
+    required bool move,
+    String? newDir,
+  }) {}
 
   @override
   void deleteCachedThumbs(List<int> id, [bool fromPinned = false]) {}

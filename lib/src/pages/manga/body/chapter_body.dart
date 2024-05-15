@@ -94,7 +94,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
       setState(() {});
     }
 
-    readChapters.launchReader(
+    ReadMangaChaptersService.launchReader(
       context,
       ReaderData(
         api: widget.api,

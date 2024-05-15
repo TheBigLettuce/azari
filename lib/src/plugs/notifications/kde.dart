@@ -56,11 +56,11 @@ class KDENotifications implements NotificationPlug {
 
       final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);
 
-      notif.callsetInfoMessage(name);
+      await notif.callsetInfoMessage(name);
 
       return Future.value(KDENotificationProgress(notif));
     } catch (_) {
-      return DummyProgress();
+      return const DummyProgress();
     }
   }
 }

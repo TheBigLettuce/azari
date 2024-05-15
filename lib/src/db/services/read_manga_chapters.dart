@@ -114,13 +114,6 @@ abstract interface class ReadMangaChaptersService implements ServiceMarker {
     required String chapterId,
   });
 
-  Future<void> launchReader(
-    BuildContext context,
-    ReaderData data, {
-    bool addNextChapterButton = false,
-    bool replace = false,
-  });
-
   StreamSubscription<void> watch(void Function(void) f);
 
   StreamSubscription<int> watchReading(void Function(int) f);
@@ -130,4 +123,90 @@ abstract interface class ReadMangaChaptersService implements ServiceMarker {
     required String siteMangaId,
     required String chapterId,
   });
+
+  static Future<void> launchReader(
+    BuildContext context,
+    ReaderData data, {
+    bool addNextChapterButton = false,
+    bool replace = false,
+  }) {
+    final readChapters = _currentDb.readMangaChapters;
+
+    readChapters.touch(
+      siteMangaId: data.mangaId.toString(),
+      chapterId: data.chapterId,
+      chapterName: data.chapterName,
+      chapterNumber: data.chapterNumber,
+    );
+
+    final p = readChapters.progress(
+      siteMangaId: data.mangaId.toString(),
+      chapterId: data.chapterId,
+    );
+
+    final nextChapterKey = GlobalKey<SkipChapterButtonState>();
+    final prevChaterKey = GlobalKey<SkipChapterButtonState>();
+
+    final route = MaterialPageRoute<void>(
+      builder: (context) {
+        return WrapFutureRestartable(
+          newStatus: () {
+            return data.api.imagesForChapter(MangaStringId(data.chapterId));
+          },
+          builder: (context, chapters) {
+            return MangaReaderNotifier(
+              data: data,
+              child: GlueProvider.empty(
+                context,
+                child: ImageView(
+                  ignoreLoadingBuilder: true,
+                  download: (i) => chapters[i].download(context, data, i),
+                  onRightSwitchPageEnd: addNextChapterButton
+                      ? () {
+                          nextChapterKey.currentState?.findAndLaunchNext();
+                        }
+                      : null,
+                  onLeftSwitchPageEnd: addNextChapterButton
+                      ? () {
+                          prevChaterKey.currentState?.findAndLaunchNext();
+                        }
+                      : null,
+                  pageChange: (state) {
+                    readChapters.setProgress(
+                      state.currentPage + 1,
+                      chapterName: data.chapterName,
+                      chapterNumber: data.chapterNumber,
+                      siteMangaId: data.mangaId.toString(),
+                      chapterId: data.chapterId,
+                    );
+
+                    data.onNextPage(
+                      state.currentPage,
+                      chapters[state.currentPage],
+                    );
+                  },
+                  cellCount: chapters.length,
+                  scrollUntill: (_) {},
+                  startingCell: p != null ? p - 1 : 0,
+                  onExit: () {},
+                  getCell: (i) => chapters[i].content(),
+                  onNearEnd: null,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (replace) {
+      return Navigator.of(context, rootNavigator: true).pushReplacement(
+        route,
+      );
+    } else {
+      return Navigator.of(context, rootNavigator: true).push(
+        route,
+      );
+    }
+  }
 }

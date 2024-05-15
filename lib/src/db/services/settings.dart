@@ -60,7 +60,6 @@ abstract class SettingsData {
   });
 }
 
-@immutable
 abstract interface class SettingsService implements ServiceMarker {
   const SettingsService();
 

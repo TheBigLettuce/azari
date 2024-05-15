@@ -47,11 +47,12 @@ class GridConfiguration extends StatefulWidget {
   const GridConfiguration({
     super.key,
     required this.watch,
+    this.sliver = false,
     required this.child,
   });
 
   final GridSettingsWatcher watch;
-
+  final bool sliver;
   final Widget child;
 
   static GridSettingsData of(BuildContext context) {
@@ -94,7 +95,9 @@ class _GridConfigurationState extends State<GridConfiguration> {
   @override
   Widget build(BuildContext context) {
     if (config == null) {
-      return const SizedBox.shrink();
+      return widget.sliver
+          ? const SliverPadding(padding: EdgeInsets.zero)
+          : const SizedBox.shrink();
     }
 
     return _GridConfigurationNotifier(config: config!, child: widget.child);

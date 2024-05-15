@@ -18,71 +18,110 @@ import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
 Future<DownloadManager> init(ServicesImplTable db) async {
-  final ret = await initalizeIsarDb(false);
+  await initalizeIsarDb(false);
 
   return DownloadManager(db.downloads);
 }
 
-class ServicesImplTable implements ServiceMarker {
+ServicesImplTable getApi() => const IoServicesImplTable();
+
+class IoServicesImplTable
+    with IoServicesImplTableObjInstExt
+    implements ServicesImplTable {
+  const IoServicesImplTable();
+
+  @override
   SettingsService get settings => const IsarSettingsService();
+  @override
   MiscSettingsService get miscSettings => const IsarMiscSettingsService();
+  @override
   SavedAnimeEntriesService get savedAnimeEntries =>
       const IsarSavedAnimeEntriesService();
+  @override
   SavedAnimeCharactersService get savedAnimeCharacters =>
       const IsarSavedAnimeCharatersService();
+  @override
   WatchedAnimeEntryService get watchedAnime =>
       const IsarWatchedAnimeEntryService();
+  @override
   VideoSettingsService get videoSettings => const IsarVideoService();
+  @override
   HiddenBooruPostService get hiddenBooruPost =>
       const IsarHiddenBooruPostService();
+  @override
   DownloadFileService get downloads => const IsarDownloadFileService();
+  @override
   FavoritePostService get favoritePosts => const IsarFavoritePostService();
+  @override
   StatisticsGeneralService get statisticsGeneral =>
       const IsarStatisticsGeneralService();
+  @override
   StatisticsGalleryService get statisticsGallery =>
       const IsarStatisticsGalleryService();
+  @override
   StatisticsBooruService get statisticsBooru =>
       const IsarStatisticsBooruService();
+  @override
   StatisticsDailyService get statisticsDaily =>
       const IsarDailyStatisticsService();
+  @override
   DirectoryMetadataService get directoryMetadata =>
       const IsarDirectoryMetadataService();
+  @override
   ChaptersSettingsService get chaptersSettings =>
       const IsarChapterSettingsService();
+  @override
   SavedMangaChaptersService get savedMangaChapters =>
       const IsarSavedMangaChaptersService();
+  @override
   ReadMangaChaptersService get readMangaChapters =>
       const IsarReadMangaChapterService();
+  @override
   PinnedMangaService get pinnedManga => const IsarPinnedMangaService();
+  @override
   ThumbnailService get thumbnails => const IsarThumbnailService();
+  @override
   PinnedThumbnailService get pinnedThumbnails =>
       const IsarPinnedThumbnailService();
+  @override
   LocalTagsService get localTags => const IsarLocalTagsService();
+  @override
   LocalTagDictionaryService get localTagDictionary =>
       const IsarLocalTagDictionaryService();
+  @override
   CompactMangaDataService get compactManga =>
       const IsarCompactMangaDataService();
+  @override
   GridStateBooruService get gridStateBooru => const IsarGridStateBooruService();
+  @override
   FavoriteFileService get favoriteFiles => const IsarFavoriteFileService();
+  @override
   DirectoryTagService get directoryTags => const IsarDirectoryTagService();
+  @override
   BlacklistedDirectoryService get blacklistedDirectories =>
       const IsarBlacklistedDirectoryService();
+  @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
 
+  @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
+  @override
   SecondaryGridService secondaryGrid(Booru booru, String name) =>
       IsarSecondaryGridService.booru(booru, name);
 }
 
-extension ServicesImplTableObjInstExt on ServicesImplTable {
+mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
+  @override
   TagManager tagManager(Booru booru) => IsarTagManager(booru);
 
+  @override
   LocalTagsData localTagsDataForDb(
     String filename,
     List<String> tags,
   ) =>
       IsarLocalTags(filename, tags);
 
+  @override
   CompactMangaData compactMangaDataForDb({
     required String mangaId,
     required MangaMeta site,
@@ -96,6 +135,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
         title: title,
       );
 
+  @override
   SettingsPath settingsPathForCurrent({
     required String path,
     required String pathDisplay,
@@ -105,6 +145,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
         pathDisplay: pathDisplay,
       );
 
+  @override
   DownloadFileData downloadFileDataForDbFormat({
     required DownloadStatus status,
     required String name,
@@ -122,6 +163,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
         date: date,
       );
 
+  @override
   HiddenBooruPostData hiddenBooruPostDataForDb(
     String thumbUrl,
     int postId,
@@ -129,6 +171,7 @@ extension ServicesImplTableObjInstExt on ServicesImplTable {
   ) =>
       IsarHiddenBooruPost(booru, postId, thumbUrl);
 
+  @override
   PinnedManga pinnedMangaForDb({
     required String mangaId,
     required MangaMeta site,

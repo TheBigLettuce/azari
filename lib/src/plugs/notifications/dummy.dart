@@ -25,5 +25,5 @@ class DummyNotifications implements NotificationPlug {
 
   @override
   Future<NotificationProgress> newProgress(_, __, ___, ____) =>
-      Future.value(DummyProgress());
+      Future.value(const DummyProgress());
 }

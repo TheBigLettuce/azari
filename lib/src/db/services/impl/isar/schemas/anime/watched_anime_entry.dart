@@ -7,14 +7,11 @@
 
 import "dart:async";
 
-import "package:flutter/material.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/pages/anime/anime_info_page.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:isar/isar.dart";
 
 part "watched_anime_entry.g.dart";
@@ -57,28 +54,6 @@ class IsarWatchedAnimeEntry extends WatchedAnimeEntryData
 
   @override
   final List<IsarAnimeRelation> staff;
-
-  @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<AnimeEntryData> functionality,
-    AnimeEntryData cell,
-    int idx,
-  ) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return AnimeInfoPage(
-            id: cell.id,
-            entry: cell,
-            apiFactory: cell.site.api,
-            db: DatabaseConnectionNotifier.of(context),
-          );
-        },
-      ),
-    );
-  }
 
   @override
   WatchedAnimeEntryData copySuper(

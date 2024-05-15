@@ -342,6 +342,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
+  // ignore: use_setters_to_change_properties
   void _add(GridSettingsData d) => gridSettings.current = d;
 
   Widget child(BuildContext context) {

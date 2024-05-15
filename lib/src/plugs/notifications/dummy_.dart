@@ -9,3 +9,5 @@ import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/notifications/dummy.dart";
 
 NotificationPlug getApi() => const DummyNotifications();
+
+Future<void> init() => Future.value();

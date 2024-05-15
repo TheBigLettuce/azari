@@ -6,15 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:dio/dio.dart";
-import "package:dio_cookie_manager/dio_cookie_manager.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/net/booru/danbooru.dart";
 import "package:gallery/src/net/booru/gelbooru.dart";
-import "package:gallery/src/net/cookie_jar_tab.dart";
-import "package:gallery/src/net/unsaveable_cookie_jar.dart";
 
 /// The interface to interact with the various booru APIs.
 ///
@@ -82,9 +79,9 @@ abstract class BooruAPI {
   }
 
   static Dio defaultClientForBooru(Booru booru) {
-    final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
+    // final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
     final Dio dio = Dio();
-    dio.interceptors.add(CookieManager(jar));
+    // dio.interceptors.add(CookieManager(jar));
 
     return dio;
   }

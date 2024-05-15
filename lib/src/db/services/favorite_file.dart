@@ -12,7 +12,7 @@ abstract interface class FavoriteFileService {
 
   int get thumbnail;
 
-  Map<int, bool> get cachedValues;
+  Map<int, void> get cachedValues;
 
   bool isEmpty();
   bool isNotEmpty();
