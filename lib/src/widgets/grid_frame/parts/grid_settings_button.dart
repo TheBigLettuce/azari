@@ -90,6 +90,7 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     this.allowUnselect = false,
     this.enableFilter = false,
   });
+
   final Iterable<SegmentedButtonValue<T>> values;
   final T? selected;
   final void Function(T?) select;
@@ -125,6 +126,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
       return;
     }
+
     widget.select(selection.first);
 
     controller.animateTo(

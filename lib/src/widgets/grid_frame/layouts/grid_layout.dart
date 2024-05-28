@@ -22,7 +22,7 @@ class GridLayout<T extends CellBase> extends StatefulWidget {
     required this.progress,
   });
 
-  final ReadOnlyStorage<T> source;
+  final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
@@ -32,7 +32,7 @@ class GridLayout<T extends CellBase> extends StatefulWidget {
 }
 
 class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
-  ReadOnlyStorage<T> get source => widget.source;
+  ReadOnlyStorage<int, T> get source => widget.source;
 
   late final StreamSubscription<int> _watcher;
 

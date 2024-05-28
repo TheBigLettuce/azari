@@ -222,8 +222,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     PauseVideoNotifier.maybePauseOf(context, true);
 
     final List<String> searchPrefix = [];
-    for (final tag in localTags.cachedValues[selected.first.bucketId] ??
-        const <String>[]) {
+    for (final tag
+        in localTags.cachedValues[selected.first.bucketId]?.split(" ") ??
+            const <String>[]) {
       if (tagManager.pinned.exists(tag)) {
         searchPrefix.add(tag);
       }

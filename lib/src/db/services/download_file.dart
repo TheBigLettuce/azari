@@ -25,23 +25,6 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
     required this.date,
   }) : status = DownloadStatus.inProgress;
 
-  factory DownloadFileData.forDbFormat({
-    required DownloadStatus status,
-    required String name,
-    required String url,
-    required String thumbUrl,
-    required String site,
-    required DateTime date,
-  }) =>
-      _currentDb.downloadFileDataForDbFormat(
-        status: status,
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-      );
-
   @Index(unique: true, replace: true)
   final String url;
   @Index(unique: true, replace: true)

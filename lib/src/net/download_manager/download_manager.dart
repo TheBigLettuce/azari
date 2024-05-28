@@ -14,6 +14,7 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
@@ -23,10 +24,10 @@ part "download_entry.dart";
 part "download_status.dart";
 part "download_handle.dart";
 
-mixin _SourceImpl on SourceStorage<DownloadHandle>
-    implements ResourceSource<DownloadHandle> {
+mixin _SourceImpl on SourceStorage<int, DownloadHandle>
+    implements ResourceSource<int, DownloadHandle> {
   @override
-  SourceStorage<DownloadHandle> get backingStorage => this;
+  SourceStorage<int, DownloadHandle> get backingStorage => this;
 
   @override
   Future<int> clearRefresh() => Future.value(count);
@@ -35,16 +36,10 @@ mixin _SourceImpl on SourceStorage<DownloadHandle>
   void destroy() {}
 
   @override
-  DownloadHandle? forIdx(int idx) => get(idx);
-
-  @override
-  DownloadHandle forIdxUnsafe(int idx) => this[idx];
-
-  @override
   Future<int> next() => Future.value(count);
 }
 
-class DownloadManager extends SourceStorage<DownloadHandle>
+class DownloadManager extends SourceStorage<int, DownloadHandle>
     with _StatisticsTimer, _SourceImpl {
   DownloadManager(this._db);
 
@@ -77,6 +72,12 @@ class DownloadManager extends SourceStorage<DownloadHandle>
   int get count => _aliveEntries.length;
 
   @override
+  Iterable<DownloadHandle> trySorted(SortingMode sort) {
+    // TODO: implement trySorted
+    throw UnimplementedError();
+  }
+
+  @override
   DownloadHandle? get(int idx) =>
       idx >= _aliveEntries.length ? null : _aliveEntries[0];
 
@@ -106,11 +107,12 @@ class DownloadManager extends SourceStorage<DownloadHandle>
       throw "should not be called";
 
   @override
-  void addAll(List<DownloadHandle> l, [bool silent = false]) =>
+  void addAll(Iterable<DownloadHandle> l, [bool silent = false]) =>
       throw "should not be called";
 
   @override
-  void removeAll(List<int> idx) => throw "should not be called";
+  List<DownloadHandle> removeAll(Iterable<int> idx) =>
+      throw "should not be called";
 
   // String downloadDescription(DownloadFile f) {
   //   if (_hasCancelKey(f.url)) {
@@ -439,7 +441,7 @@ class DownloadManager extends SourceStorage<DownloadHandle>
   }
 
   @override
-  StreamSubscription<int> watch(void Function(int) f) =>
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]) =>
       _events.stream.listen(f);
 
   // Future<void> _removeTempContentsDownloads() async {

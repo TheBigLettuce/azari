@@ -31,13 +31,15 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
     required this.gridSeed,
     required this.storage,
     required this.progress,
+    required this.localizations,
   });
 
   final Segments<T> segments;
   final List<String> suggestionPrefix;
   final T Function(int) getCell;
-  final ReadOnlyStorage<T> storage;
+  final ReadOnlyStorage<int, T> storage;
   final RefreshingProgress progress;
+  final AppLocalizations localizations;
 
   final int gridSeed;
 
@@ -48,7 +50,7 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
 class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
   Segments<T> get segments => widget.segments;
   List<String> get suggestionPrefix => widget.suggestionPrefix;
-  ReadOnlyStorage<T> get storage => widget.storage;
+  ReadOnlyStorage<int, T> get storage => widget.storage;
   T Function(int) get getCell => widget.getCell;
 
   late final StreamSubscription<int> _watcher;
@@ -314,7 +316,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
       segRows.add(
         _HeaderWithIdx(
           _SegSticky(
-            e.key.translatedString(context),
+            e.key.translatedString(widget.localizations),
             segments.onLabelPressed == null
                 ? null
                 : () {
@@ -322,7 +324,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                         segments.limitLabelChildren != 0 &&
                         !segments.limitLabelChildren!.isNegative) {
                       segments.onLabelPressed!(
-                        e.key.translatedString(context),
+                        e.key.translatedString(widget.localizations),
                         List.generate(
                           e.value > segments.limitLabelChildren!
                               ? segments.limitLabelChildren!

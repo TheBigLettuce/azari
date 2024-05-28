@@ -7,7 +7,7 @@
 
 part of "services.dart";
 
-base class AnimeCharacter
+abstract base class AnimeCharacter
     implements
         AnimeCell,
         ContentWidgets,

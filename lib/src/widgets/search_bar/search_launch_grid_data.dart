@@ -16,7 +16,7 @@ class SearchLaunchGridData {
     required this.addItems,
     required this.header,
     this.swapSearchIconWithAddItems = true,
-    this.disabled = false,
+    // this.disabled = false,
     required this.onSubmit,
     this.searchTextAsLabel = false,
   });
@@ -28,7 +28,7 @@ class SearchLaunchGridData {
   final bool swapSearchIconWithAddItems;
   final Future<List<BooruTag>> Function(String tag) completeTag;
 
-  final bool disabled;
+  // final bool disabled;
   final Widget header;
   final bool searchTextAsLabel;
 }

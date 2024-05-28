@@ -184,10 +184,27 @@ mixin GalleryDirectory
       StatisticsGalleryService.db().current.add(viewedDirectories: 1).save();
       final d = cell;
 
+      final db = DatabaseConnectionNotifier.of(context);
+
       final apiFiles = switch (cell.bucketId) {
-        "trash" => api.files(d, GalleryFilesPageType.trash),
-        "favorites" => api.files(d, GalleryFilesPageType.favorites),
-        String() => api.files(d, GalleryFilesPageType.normal),
+        "trash" => api.files(
+            d,
+            GalleryFilesPageType.trash,
+            db.directoryTags,
+            db.directoryMetadata,
+          ),
+        "favorites" => api.files(
+            d,
+            GalleryFilesPageType.favorites,
+            db.directoryTags,
+            db.directoryMetadata,
+          ),
+        String() => api.files(
+            d,
+            GalleryFilesPageType.normal,
+            db.directoryTags,
+            db.directoryMetadata,
+          ),
       };
 
       final glue = GlueProvider.generateOf(context);

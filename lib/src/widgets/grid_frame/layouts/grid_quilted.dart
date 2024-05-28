@@ -25,7 +25,7 @@ class GridQuiltedLayout<T extends CellBase> extends StatefulWidget {
   });
 
   final int randomNumber;
-  final ReadOnlyStorage<T> source;
+  final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
@@ -36,7 +36,7 @@ class GridQuiltedLayout<T extends CellBase> extends StatefulWidget {
 
 class _GridQuiltedLayoutState<T extends CellBase>
     extends State<GridQuiltedLayout<T>> {
-  ReadOnlyStorage<T> get source => widget.source;
+  ReadOnlyStorage<int, T> get source => widget.source;
 
   late final StreamSubscription<int> _watcher;
 

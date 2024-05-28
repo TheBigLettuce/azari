@@ -29,7 +29,7 @@ class GridFunctionality<T extends CellBase> {
     this.search = const EmptyGridSearchWidget(),
   });
 
-  final ResourceSource<T> source;
+  final ResourceSource<int, T> source;
 
   /// In case if the cell represents an online resource which can be downloaded,
   /// setting [download] enables buttons to download the resource.

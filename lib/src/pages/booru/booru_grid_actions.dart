@@ -36,7 +36,11 @@ class BooruGridActions {
             toDelete.add((cell.id, booru));
           } else {
             toAdd.add(
-              HiddenBooruPostData.forDb(cell.previewUrl, cell.id, booru),
+              objFactory.makeHiddenBooruPostData(
+                cell.previewUrl,
+                cell.id,
+                booru,
+              ),
             );
           }
         }
@@ -62,7 +66,7 @@ class BooruGridActions {
 
   static GridAction<T> favorites<T extends Post>(
     BuildContext context,
-    FavoritePostService favoritePost, {
+    FavoritePostSourceService favoritePost, {
     bool showDeleteSnackbar = false,
   }) {
     return GridAction(

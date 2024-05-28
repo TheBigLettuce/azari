@@ -205,7 +205,7 @@ class PagingStateRegistry {
     return _map[key]! as T;
   }
 
-  void remove(String key) {
+  void removeDispose(String key) {
     _map.remove(key)?.dispose();
   }
 

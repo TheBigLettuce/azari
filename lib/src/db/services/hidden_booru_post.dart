@@ -14,17 +14,6 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
     this.thumbUrl,
   );
 
-  factory HiddenBooruPostData.forDb(
-    String thumbUrl,
-    int postId,
-    Booru booru,
-  ) =>
-      _currentDb.hiddenBooruPostDataForDb(
-        thumbUrl,
-        postId,
-        booru,
-      );
-
   final String thumbUrl;
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
@@ -47,13 +36,18 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
   CellStaticData description() => const CellStaticData();
 }
 
-abstract interface class HiddenBooruPostService implements ServiceMarker {
-  List<HiddenBooruPostData> get all;
+extension HiddenBooruPostServiceExt on HiddenBooruPostService {
+  bool isHidden(int id, Booru booru) => cachedValues.containsKey((id, booru));
+}
 
-  bool isHidden(int postId, Booru booru);
+abstract interface class HiddenBooruPostService implements ServiceMarker {
+  factory HiddenBooruPostService.db() => _currentDb.hiddenBooruPost;
+
+  Map<(int, Booru), String> get cachedValues;
 
   void addAll(List<HiddenBooruPostData> booru);
   void removeAll(List<(int, Booru)> booru);
 
   StreamSubscription<void> watch(void Function(void) f);
+  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]);
 }

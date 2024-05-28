@@ -28,7 +28,7 @@ class AndroidGallery implements GalleryPlug {
       directoryTag,
       temporary: temporaryDb,
     );
-    _global!._setCurrentApi(api);
+    _global!._currentApi = api;
 
     // if (setCurrentApi) {
     //   _global!._setCurrentApi(api);

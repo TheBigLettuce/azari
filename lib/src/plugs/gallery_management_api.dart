@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management/dummy.dart"
     if (dart.library.io) "package:gallery/src/plugs/gallery_management/io.dart"
@@ -19,11 +20,11 @@ abstract interface class GalleryManagementApi {
 
   Future<bool> fileExists(String filePath);
 
-  void refreshFiles(String bucketId);
+  void refreshFiles(String bucketId, SortingMode sortingMode);
 
-  void refreshFilesMultiple(List<String> ids);
+  void refreshFilesMultiple(List<String> ids, SortingMode sortingMode);
 
-  Future<void> refreshFavorites(List<int> ids);
+  Future<void> refreshFavorites(List<int> ids, SortingMode sortingMode);
 
   Future<String> pickFileAndCopy(String outputDir);
 
@@ -109,13 +110,14 @@ class DummyGalleryManagementApi implements GalleryManagementApi {
   Future<String> pickFileAndCopy(String outputDir) => Future.value("");
 
   @override
-  Future<void> refreshFavorites(List<int> ids) => Future.value();
+  Future<void> refreshFavorites(List<int> ids, SortingMode sortingMode) =>
+      Future.value();
 
   @override
-  void refreshFiles(String bucketId) {}
+  void refreshFiles(String bucketId, SortingMode sortingMode) {}
 
   @override
-  void refreshFilesMultiple(List<String> ids) {}
+  void refreshFilesMultiple(List<String> ids, SortingMode sortingMode) {}
 
   @override
   void refreshGallery() {}

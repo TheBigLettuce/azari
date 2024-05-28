@@ -7,15 +7,16 @@
 
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/pages/home.dart";
 
-abstract interface class PostsSourceService<T>
-    extends FilteringResourceSource<T> {
+abstract interface class PostsSourceService<K, V>
+    extends FilteringResourceSource<K, V> {
   const PostsSourceService();
 
   @override
-  SourceStorage<T> get backingStorage;
+  SourceStorage<K, V> get backingStorage;
 
   String get tags;
   set tags(String t);
@@ -34,12 +35,6 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
   int? currentSkipped;
 
   @override
-  Post? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  Post forIdxUnsafe(int idx) => forIdx(idx)!;
-
-  @override
   void clear() => backingStorage.clear();
 
   @override
@@ -56,7 +51,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     entry.updateTime();
 
     try {
-      final list = await api.page(0, "", excluded);
+      final list = await api.page(0, tags, excluded);
       entry.setOffset(0);
       currentSkipped = list.$2;
       backingStorage.addAll(filter(list.$1));
@@ -87,7 +82,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     }
     progress.inRefreshing = true;
 
-    final p = forIdx(count - 1);
+    final p = currentlyLast;
     if (p == null) {
       return count;
     }
@@ -97,7 +92,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
         currentSkipped != null && currentSkipped! < p.id
             ? currentSkipped!
             : p.id,
-        "",
+        tags,
         excluded,
       );
 
@@ -124,15 +119,21 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
   }
 }
 
-abstract class GridPostSource extends PostsSourceService<Post> {
-  @override
-  PostsOptimizedStorage get backingStorage;
+abstract class GridPostSource extends PostsSourceService<int, Post> {
+  // @override
+  // PostsOptimizedStorage get backingStorage;
+
+  Post? get currentlyLast;
 }
 
-abstract class PostsOptimizedStorage extends SourceStorage<Post> {
+abstract class PostsOptimizedStorage extends SourceStorage<(int, Booru), Post> {
   List<Post> get firstFiveNormal;
 
   List<Post> get firstFiveRelaxed;
 
   List<Post> get firstFiveAll;
+
+  // Post? get currentlyLast;
+
+  static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }

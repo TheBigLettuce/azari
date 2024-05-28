@@ -10,7 +10,7 @@ part of "../grid_frame.dart";
 abstract class SegmentKey {
   const SegmentKey();
 
-  String translatedString(BuildContext context);
+  String translatedString(AppLocalizations context);
 }
 
 /// Segments of the grid.

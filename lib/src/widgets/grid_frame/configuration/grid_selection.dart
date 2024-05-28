@@ -18,7 +18,7 @@ class GridSelection<T extends CellBase> {
 
   final SelectionGlue glue;
   final ScrollController Function() controller;
-  final ReadOnlyStorage<T> source;
+  final ReadOnlyStorage<int, T> source;
 
   final _selected = <int, T>{};
   final List<GridAction<T>> addActions;

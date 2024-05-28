@@ -84,7 +84,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
     return widget.api.single(widget.id).then((value) {
       isPinned = pinnedManga.exist(value.id.toString(), value.site);
       compactManga.addAll([
-        CompactMangaData.forDb(
+        objFactory.makeCompactMangaData(
           mangaId: value.id.toString(),
           site: value.site,
           thumbUrl: value.thumbUrl,

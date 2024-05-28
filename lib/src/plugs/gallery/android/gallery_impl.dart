@@ -17,20 +17,19 @@ class _GalleryImpl implements GalleryApi {
     }
 
     _global = _GalleryImpl._new(
-      // DbsOpen.androidGalleryDirectories(temporary),
       temporary,
     );
     return _global!;
   }
 
   _GalleryImpl._new(this.temporary);
-  // final Isar db;
   final bool temporary;
-  // final List<_AndroidGallery> _temporaryApis = [];
 
   bool isSavingTags = false;
 
   _AndroidGallery? _currentApi;
+
+  static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
   @override
   bool updatePictures(
@@ -41,103 +40,79 @@ class _GalleryImpl implements GalleryApi {
     bool empty,
   ) {
     final api = _currentApi?.bindFiles;
-    if (api == null) {
+    if (api == null ||
+        api.startTime > startTime ||
+        !api.isBucketId(bucketId) ||
+        empty) {
       return false;
     }
 
-    if (api.startTime > startTime) {
-      return false;
-    }
-
-    if (!api.isBucketId(bucketId)) {
-      return false;
-    }
-
-    // final db = _currentApi?.bindFiles?.db;
-    // if (db == null) {
-    //   return;
-    // }
-
-    if (empty) {
-      // _currentApi?.currentImages?.callback
-      //     ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
-      return false;
-    } else if (f.isEmpty && !inRefresh) {
+    if (f.isEmpty && !inRefresh) {
       api.source.progress.inRefreshing = false;
-
-      // _currentApi?.currentImages?.callback
-      //     ?.call(db.systemGalleryDirectoryFiles.countSync(), false, false);
+      api.source.backingStorage.addAll([]);
 
       return false;
     } else if (f.isEmpty) {
       return false;
     }
 
-    final r = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
-
     if (api.type.isFavorites()) {
+      final c = <String, DirectoryMetadataData>{};
+
+      api.source.backingStorage.addAll(
+        f.where((dir) {
+          final segment = GalleryDirectories.segmentCell(
+            dir!.bucketName,
+            dir.bucketId,
+            api.directoryTag,
+          );
+
+          DirectoryMetadataData? data = c[segment];
+          if (data == null) {
+            final d = api.directoryMetadata.get(segment);
+            if (d == null) {
+              return true;
+            }
+
+            data = d;
+            c[segment] = d;
+          }
+
+          return !data.requireAuth && !data.blur;
+        }).map((e) => GalleryFile.forPlatform(
+              id: e!.id,
+              bucketId: e.bucketId,
+              name: e.name,
+              lastModified: e.lastModified,
+              originalUri: e.originalUri,
+              height: e.height,
+              width: e.width,
+              size: e.size,
+              isVideo: e.isVideo,
+              isGif: e.isGif,
+              isDuplicate: _regxp.hasMatch(e.name),
+            )),
+      );
     } else {
       api.source.backingStorage.addAll(
-        f
-            .map(
-              (e) => GalleryFile.forPlatform(
-                id: e!.id,
-                bucketId: e.bucketId,
-                name: e.name,
-                lastModified: e.lastModified,
-                originalUri: e.originalUri,
-                height: e.height,
-                width: e.width,
-                size: e.size,
-                isVideo: e.isVideo,
-                isGif: e.isGif,
-                isDuplicate: r.hasMatch(e.name),
-              ),
-            )
-            .toList(),
-        inRefresh,
+        f.map(
+          (e) => GalleryFile.forPlatform(
+            id: e!.id,
+            bucketId: e.bucketId,
+            name: e.name,
+            lastModified: e.lastModified,
+            originalUri: e.originalUri,
+            height: e.height,
+            width: e.width,
+            size: e.size,
+            isVideo: e.isVideo,
+            isGif: e.isGif,
+            isDuplicate: _regxp.hasMatch(e.name),
+          ),
+        ),
+        true,
       );
     }
-
-    if (!inRefresh) {
-      api.source.progress.inRefreshing = false;
-    }
-
-    // try {
-    //   final c = <String, DirectoryMetadata>{};
-
-    //   final out = bucketId == "favorites"
-    //       ? f
-    //           .where((dir) {
-    //             final segment = GalleryDirectories.segmentCell(
-    //               dir!.bucketName,
-    //               dir.bucketId,
-    //             );
-
-    //             DirectoryMetadata? data = c[segment];
-    //             if (data == null) {
-    //               final d = DirectoryMetadata.get(segment);
-    //               if (d == null) {
-    //                 return true;
-    //               }
-
-    //               data = d;
-    //               c[segment] = d;
-    //             }
-
-    //             return !data.requireAuth && !data.blur;
-    //           })
-    //           .map(SystemGalleryDirectoryFile.fromDirectoryFile)
-    //           .toList()
-    //       : f.map(SystemGalleryDirectoryFile.fromDirectoryFile).toList();
-
-    //   db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(out));
-    // } catch (e) {
-    //   log("updatePictures", level: Level.WARNING.value, error: e);
-    // }
-
-    // _currentApi?.currentImages?.callback
-    //     ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, false);
 
     return true;
   }
@@ -150,21 +125,10 @@ class _GalleryImpl implements GalleryApi {
   ) {
     final api = _currentApi;
     if (empty || api == null) {
-      // _currentApi?.callback
-      //     ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
-      // for (final api in _temporaryApis) {
-      //   api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), true);
-      // }
-
       return false;
     } else if (d.isEmpty && !inRefresh) {
       api.source.progress.inRefreshing = false;
-      // _currentApi?.callback
-      //     ?.call(db.systemGalleryDirectorys.countSync(), false, false);
-      // for (final api in _temporaryApis) {
-      //   api.temporarySet
-      //       ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
-      // }
+      api.source.backingStorage.addAll([]);
 
       return false;
     } else if (d.isEmpty) {
@@ -175,29 +139,6 @@ class _GalleryImpl implements GalleryApi {
     for (final e in b) {
       d.remove(e.bucketId);
     }
-
-    // final blacklisted = Dbs.g.blacklisted.blacklistedDirectorys
-    //     .where()
-    //     // ignore: inference_failure_on_function_invocation
-    //     .anyOf(
-    //       d.cast<Directory>(),
-    //       (q, element) => q.bucketIdEqualTo(element.bucketId),
-    //     )
-    //     .findAllSync();
-    // final map = <String, void>{for (final i in blacklisted) i.bucketId: Null};
-    // d = List.from(d);
-    // d.removeWhere((element) => map.containsKey(element!.bucketId));
-
-    // d
-    //     .cast<Directory>()
-    //     .map(
-    // (e) => ,
-    //     )
-    //     .toList();
-
-    // db.writeTxnSync(() {
-    //   db.systemGalleryDirectorys.putAllSync(out);
-    // });
 
     api.source.backingStorage.addAll(
       d.values
@@ -213,19 +154,8 @@ class _GalleryImpl implements GalleryApi {
             ),
           )
           .toList(),
-      inRefresh,
+      true,
     );
-
-    if (!inRefresh) {
-      api.source.progress.inRefreshing = false;
-    }
-
-    // _currentApi?.callback
-    //     ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
-    // for (final api in _temporaryApis) {
-    //   api.temporarySet
-    //       ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
-    // }
 
     return true;
   }
@@ -236,9 +166,6 @@ class _GalleryImpl implements GalleryApi {
       _currentApi?.bindFiles?.source.clearRefresh();
     }
     _currentApi?.source.clearRefresh();
-    // for (final api in _temporaryApis) {
-    //   api.refreshGrid?.call();
-    // }
   }
 
   @override
@@ -247,13 +174,5 @@ class _GalleryImpl implements GalleryApi {
       NetworkStatus.g.hasInternet = hasInternet;
       NetworkStatus.g.notify?.call();
     }
-  }
-
-  void _setCurrentApi(_AndroidGallery api) {
-    _currentApi = api;
-  }
-
-  void _unsetCurrentApi() {
-    _currentApi = null;
   }
 }

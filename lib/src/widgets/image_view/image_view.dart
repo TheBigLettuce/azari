@@ -504,9 +504,11 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     }
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      setState(() {
-        currentPixels = widget.controller.pixels;
-      });
+      try {
+        setState(() {
+          currentPixels = widget.controller.pixels;
+        });
+      } catch (_) {}
     });
   }
 

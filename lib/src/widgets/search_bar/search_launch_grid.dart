@@ -19,12 +19,14 @@ class LaunchingSearchWidget extends StatefulWidget {
     required this.state,
     required this.searchController,
     required this.hint,
+    this.disabled = false,
   });
 
   final String Function() getTags;
   final SearchLaunchGridData state;
   final SearchController searchController;
   final String? hint;
+  final bool disabled;
 
   @override
   State<LaunchingSearchWidget> createState() => _LaunchingSearchWidgetState();
@@ -50,7 +52,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
     final addItems = state.addItems(context);
 
     return AbsorbPointer(
-      absorbing: state.disabled,
+      absorbing: widget.disabled,
       child: DefaultSelectionStyle(
         child: Theme(
           data: Theme.of(context).copyWith(
@@ -60,14 +62,14 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
               ),
               textStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: state.disabled
+                  color: widget.disabled
                       ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
                       : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
               elevation: const WidgetStatePropertyAll(0),
               backgroundColor: WidgetStatePropertyAll(
-                state.disabled
+                widget.disabled
                     ? Theme.of(context).colorScheme.surface.withOpacity(0.4)
                     : Theme.of(context)
                         .colorScheme
@@ -76,7 +78,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
               ),
               hintStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: state.disabled
+                  color: widget.disabled
                       ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
                       : Theme.of(context)
                           .colorScheme
@@ -112,7 +114,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                             : Icon(
                                 Icons.search_rounded,
                                 size: 18,
-                                color: state.disabled
+                                color: widget.disabled
                                     ? Theme.of(context)
                                         .colorScheme
                                         .onSurface
@@ -123,10 +125,10 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                       height: 38,
                       width: 114,
                     ),
-                    hintText: state.disabled || state.searchTextAsLabel
+                    hintText: widget.disabled || state.searchTextAsLabel
                         ? widget.getTags()
                         : AppLocalizations.of(context)!.searchHint,
-                    onSubmitted: state.disabled
+                    onSubmitted: widget.disabled
                         ? null
                         : (value) {
                             searchController.closeView(null);
@@ -276,12 +278,17 @@ class SearchLaunchGrid<T extends CellBase> {
 
   String _getTags() => tags;
 
-  Widget searchWidget(BuildContext context, {String? hint}) =>
+  Widget searchWidget(
+    BuildContext context, {
+    String? hint,
+    bool disabled = false,
+  }) =>
       LaunchingSearchWidget(
         getTags: _getTags,
         state: _state,
         searchController: searchController,
         hint: hint,
+        disabled: disabled,
       );
 }
 

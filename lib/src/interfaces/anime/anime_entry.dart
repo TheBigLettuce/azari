@@ -9,7 +9,6 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
-import "package:gallery/src/interfaces/cached_db_values.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
@@ -18,43 +17,8 @@ import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:isar/isar.dart";
 
-final class AnimeEntryDataValues implements CacheElement {
-  AnimeEntryDataValues();
-
-  List<Sticker>? _stickers;
-
-  List<Sticker> stickers(BuildContext context, AnimeEntryData entry) {
-    if (_stickers != null) {
-      return _stickers!;
-    }
-
-    final db = DatabaseConnectionNotifier.of(context);
-
-    final (watching, inBacklog) =
-        db.savedAnimeEntries.isWatchingBacklog(entry.id, entry.site);
-
-    _stickers = [
-      if (entry is! SavedAnimeEntryData && watching)
-        !inBacklog
-            ? const Sticker(Icons.play_arrow_rounded)
-            : const Sticker(Icons.library_add_check),
-      if (entry is! WatchedAnimeEntryData &&
-          db.watchedAnime.watched(entry.id, entry.site))
-        const Sticker(Icons.check, important: true),
-    ];
-
-    return _stickers!;
-  }
-}
-
-class AnimeEntryCache with SimpleMapCache implements CachedDbValues {
-  AnimeEntryCache();
-
-  factory AnimeEntryCache.of(BuildContext context) =>
-      ValuesCache.of<AnimeEntryCache>(context);
-}
-
-class AnimeSearchEntry extends AnimeEntryData {
+class AnimeSearchEntry extends AnimeEntryData
+    implements Pressable<AnimeSearchEntry> {
   const AnimeSearchEntry({
     required this.genres,
     required this.relations,
@@ -94,9 +58,9 @@ class AnimeSearchEntry extends AnimeEntryData {
     AnimeEntryData cell,
     int idx,
   ) {
-    Navigator.push(
+    Navigator.push<void>(
       context,
-      MaterialPageRoute<void>(
+      MaterialPageRoute(
         builder: (context) {
           return AnimeInfoPage(
             entry: cell,
@@ -110,7 +74,7 @@ class AnimeSearchEntry extends AnimeEntryData {
   }
 }
 
-class AnimeGenre {
+abstract class AnimeGenre {
   const AnimeGenre({
     required this.id,
     required this.title,
@@ -124,7 +88,7 @@ class AnimeGenre {
   final bool explicit;
 }
 
-class AnimeRelation {
+abstract class AnimeRelation {
   const AnimeRelation({
     required this.id,
     required this.thumbUrl,
@@ -225,8 +189,7 @@ abstract class AnimeEntryData
         ContentWidgets,
         Thumbnailable,
         Downloadable,
-        Stickerable,
-        Pressable<AnimeEntryData> {
+        Stickerable {
   const AnimeEntryData({
     required this.site,
     required this.type,
@@ -304,9 +267,18 @@ abstract class AnimeEntryData
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
-    final values = AnimeEntryCache.of(context)
-        .putIfAbsent(uniqueKey(), () => AnimeEntryDataValues());
+    final db = DatabaseConnectionNotifier.of(context);
 
-    return values.stickers(context, this);
+    final (watching, inBacklog) =
+        db.savedAnimeEntries.isWatchingBacklog(id, site);
+
+    return [
+      if (this is! SavedAnimeEntryData && watching)
+        !inBacklog
+            ? const Sticker(Icons.play_arrow_rounded)
+            : const Sticker(Icons.library_add_check),
+      if (this is! WatchedAnimeEntryData && db.watchedAnime.watched(id, site))
+        const Sticker(Icons.check, important: true),
+    ];
   }
 }

@@ -210,7 +210,9 @@ class PostTags {
   /// Doesn't dissassemble.
   void addAllUnsafe(Iterable<(String, List<String>)> tags) {
     tags.map((e) => _freq.add(e.$2));
-    _db.addAll(tags.map((e) => LocalTagsData.forDb(e.$1, e.$2)).toList());
+    _db.addAll(
+      tags.map((e) => objFactory.makeLocalTagsData(e.$1, e.$2)).toList(),
+    );
   }
 
   /// Returns true if tags for the [filename] includes [tag],

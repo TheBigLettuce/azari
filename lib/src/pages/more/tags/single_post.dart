@@ -33,7 +33,7 @@ class SinglePost extends StatefulWidget {
   final TagManager tagManager;
   final Widget? overrideLeading;
 
-  final FavoritePostService db;
+  final FavoritePostSourceService db;
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -99,20 +99,20 @@ class _SinglePostState extends State<SinglePost> {
         value = await booru.singlePost(n);
       }
 
-      final key = GlobalKey<ImageViewState>();
+      // final key = GlobalKey<ImageViewState>();
 
-      final favoritesWatcher = widget.db.watch((event) {
-        key.currentState?.setState(() {});
-      });
+      // final favoritesWatcher = widget.db.watch((event) {
+      //   key.currentState?.setState(() {});
+      // });
 
       return ImageView.launchWrapped(
         // ignore: use_build_context_synchronously
         context,
         1,
         (__) => value.content(),
-        key: key,
+        // key: key,
         download: (_) => value.download(context),
-      ).then((value) => favoritesWatcher.cancel());
+      );
     } catch (e, trace) {
       try {
         // ignore: use_build_context_synchronously

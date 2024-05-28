@@ -13,19 +13,6 @@ mixin PinnedManga
         CellBase,
         Thumbnailable,
         Pressable<PinnedManga> {
-  static PinnedManga forDb({
-    required String mangaId,
-    required MangaMeta site,
-    required String thumbUrl,
-    required String title,
-  }) =>
-      _currentDb.pinnedMangaForDb(
-        mangaId: mangaId,
-        site: site,
-        thumbUrl: thumbUrl,
-        title: title,
-      );
-
   @override
   CellStaticData description() => const CellStaticData(
         alignTitleToTopLeft: true,

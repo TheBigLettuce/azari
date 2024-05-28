@@ -69,7 +69,7 @@ class GelbooruPostRet {
 }
 
 @JsonSerializable()
-class _GelbooruPost with Post, DefaultPostPressable {
+class _GelbooruPost with Post<Post>, DefaultPostPressable<Post> {
   const _GelbooruPost({
     required this.height,
     required this.id,

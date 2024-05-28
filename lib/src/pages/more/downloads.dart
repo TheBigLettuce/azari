@@ -47,7 +47,7 @@ class _DownloadsState extends State<Downloads> {
 
   late final StreamSubscription<void> _updates;
 
-  late final ChainedFilterResourceSource<DownloadHandle> filter;
+  late final ChainedFilterResourceSource<int, DownloadHandle> filter;
 
   late final state = GridSkeletonState<DownloadHandle>();
 
@@ -68,13 +68,13 @@ class _DownloadsState extends State<Downloads> {
     filter = ChainedFilterResourceSource(
       downloadManager,
       ListStorage(),
-      fn: (e, filteringMode, sortingMode) {
+      filter: (cells, filteringMode, sortingMode, end, [data]) {
         final text = searchTextController.text;
         if (text.isEmpty) {
-          return true;
+          return (cells, null);
         }
 
-        return e.data.name.contains(text);
+        return (cells.where((e) => e.data.name.contains(text)), null);
       },
       allowedFilteringModes: const {},
       allowedSortingModes: const {},
@@ -157,6 +157,8 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
@@ -168,6 +170,7 @@ class _DownloadsState extends State<Downloads> {
             slivers: [
               SegmentLayout<DownloadHandle>(
                 segments: _makeSegments(context),
+                localizations: l8n,
                 suggestionPrefix: const [],
                 getCell: filter.forIdxUnsafe,
                 progress: filter.progress,
@@ -179,7 +182,7 @@ class _DownloadsState extends State<Downloads> {
               search: OverrideGridSearchWidget(
                 SearchAndFocus(
                   FilteringSearchWidget(
-                    hint: AppLocalizations.of(context)!.downloadsPageName,
+                    hint: l8n.downloadsPageName,
                     filter: filter,
                     textController: searchTextController,
                     localTagDictionary: widget.db.localTagDictionary,
@@ -206,8 +209,7 @@ class _DownloadsState extends State<Downloads> {
               //     icon: const Icon(Icons.close),
               //   ),
               // ],
-              keybindsDescription:
-                  AppLocalizations.of(context)!.downloadsPageName,
+              keybindsDescription: l8n.downloadsPageName,
               inlineMenuButtonItems: true,
               gridSeed: state.gridSeed,
             ),

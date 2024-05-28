@@ -17,7 +17,7 @@ part "post.g.dart";
 
 @collection
 class PostIsar extends PostBase
-    with Post, DefaultPostPressable
+    with Post<Post>, DefaultPostPressable<Post>
     implements IsarEntryId {
   PostIsar({
     required super.height,

@@ -87,8 +87,10 @@ int numberOfElementsPerRefresh() {
 
 DownloadManager? _downloadManager;
 
+ServicesObjFactoryExt get objFactory => _currentDb;
+
 abstract interface class ServicesImplTable
-    with ServicesImplTableObjInstExt
+    with ServicesObjFactoryExt
     implements ServiceMarker {
   SettingsService get settings;
   MiscSettingsService get miscSettings;
@@ -98,7 +100,7 @@ abstract interface class ServicesImplTable
   VideoSettingsService get videoSettings;
   HiddenBooruPostService get hiddenBooruPost;
   DownloadFileService get downloads;
-  FavoritePostService get favoritePosts;
+  FavoritePostSourceService get favoritePosts;
   StatisticsGeneralService get statisticsGeneral;
   StatisticsGalleryService get statisticsGallery;
   StatisticsBooruService get statisticsBooru;
@@ -113,37 +115,41 @@ abstract interface class ServicesImplTable
   LocalTagsService get localTags;
   LocalTagDictionaryService get localTagDictionary;
   CompactMangaDataService get compactManga;
-  GridStateBooruService get gridStateBooru;
+  GridBookmarkService get gridBookmarks;
   FavoriteFileService get favoriteFiles;
   DirectoryTagService get directoryTags;
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
 
   MainGridService mainGrid(Booru booru);
-  SecondaryGridService secondaryGrid(Booru booru, String name);
+  SecondaryGridService secondaryGrid(
+    Booru booru,
+    String name, [
+    bool create = false,
+  ]);
 }
 
-mixin ServicesImplTableObjInstExt {
-  TagManager tagManager(Booru booru);
+mixin ServicesObjFactoryExt {
+  TagManager makeTagManager(Booru booru);
 
-  LocalTagsData localTagsDataForDb(
+  LocalTagsData makeLocalTagsData(
     String filename,
     List<String> tags,
   );
 
-  CompactMangaData compactMangaDataForDb({
+  CompactMangaData makeCompactMangaData({
     required String mangaId,
     required MangaMeta site,
     required String title,
     required String thumbUrl,
   });
 
-  SettingsPath settingsPathForCurrent({
+  SettingsPath makeSettingsPath({
     required String path,
     required String pathDisplay,
   });
 
-  DownloadFileData downloadFileDataForDbFormat({
+  DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,
     required String url,
@@ -152,17 +158,49 @@ mixin ServicesImplTableObjInstExt {
     required DateTime date,
   });
 
-  HiddenBooruPostData hiddenBooruPostDataForDb(
+  HiddenBooruPostData makeHiddenBooruPostData(
     String thumbUrl,
     int postId,
     Booru booru,
   );
 
-  PinnedManga pinnedMangaForDb({
+  PinnedManga makePinnedManga({
     required String mangaId,
     required MangaMeta site,
     required String thumbUrl,
     required String title,
+  });
+
+  GridBookmark makeGridBookmark({
+    required String tags,
+    required Booru booru,
+    required String name,
+    required DateTime time,
+  });
+
+  BlacklistedDirectoryData makeBlacklistedDirectoryData(
+    String bucketId,
+    String name,
+  );
+
+  AnimeGenre makeAnimeGenre({
+    required String title,
+    required int id,
+    required bool unpressable,
+    required bool explicit,
+  });
+
+  AnimeRelation makeAnieRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  });
+
+  AnimeCharacter makeAnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
   });
 }
 
@@ -216,12 +254,12 @@ mixin DbScope<T extends ServiceMarker, W extends DbConnHandle<T>> on State<W> {}
 
 typedef FilterFnc<T> = bool Function(T);
 
-abstract class FilteringResourceSource<T> implements ResourceSource<T> {
+abstract class FilteringResourceSource<K, V> implements ResourceSource<K, V> {
   const FilteringResourceSource();
 
-  List<FilterFnc<T>> get filters;
+  List<FilterFnc<V>> get filters;
 
-  List<T> filter(List<T> l) => l.where((element) {
+  Iterable<V> filter(Iterable<V> l) => l.where((element) {
         for (final e in filters) {
           final res = e(element);
           if (!res) {
@@ -230,56 +268,184 @@ abstract class FilteringResourceSource<T> implements ResourceSource<T> {
         }
 
         return true;
-      }).toList();
+      });
 }
 
-abstract class ReadOnlyStorage<T> with Iterable<T> {
+abstract class ReadOnlyStorage<K, V> with Iterable<V> {
   int get count;
 
-  T? get(int idx);
+  V? get(K idx);
 
-  T operator [](int index);
+  V operator [](K index);
 
-  StreamSubscription<int> watch(void Function(int) f);
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
 }
 
-abstract class SourceStorage<T> extends ReadOnlyStorage<T> {
-  Iterable<T> get reversed;
+abstract class SourceStorage<K, V> extends ReadOnlyStorage<K, V> {
+  Iterable<V> get reversed;
 
-  void add(T e, [bool silent = false]);
+  Iterable<V> trySorted(SortingMode sort);
 
-  void addAll(List<T> l, [bool silent = false]);
+  void add(V e, [bool silent = false]);
 
-  void removeAll(List<int> idx);
+  void addAll(Iterable<V> l, [bool silent = false]);
+
+  List<V> removeAll(Iterable<K> idx);
 
   void clear();
 
   void destroy();
 
-  void operator []=(int index, T value);
+  void operator []=(K index, V value);
 }
 
-class ListStorage<T> extends SourceStorage<T> {
-  ListStorage();
+class MapStorage<K, V> extends SourceStorage<K, V> {
+  MapStorage(
+    this.getKey, {
+    Map<K, V>? providedMap,
+    this.sortFnc,
+  }) : map_ = providedMap ?? {};
+
+  final Iterable<V> Function(MapStorage<K, V> instance, SortingMode sort)?
+      sortFnc;
+
+  @override
+  Iterable<V> trySorted(SortingMode sort) =>
+      sortFnc == null ? this : sortFnc!(this, sort);
 
   final StreamController<int> _events = StreamController.broadcast();
 
-  final List<T> list = [];
+  final Map<K, V> map_;
+  final K Function(V) getKey;
+
+  @override
+  int get count => map_.length;
+
+  @override
+  Iterator<V> get iterator => map_.values.iterator;
+
+  @override
+  Iterable<V> get reversed => map_.values.toList().reversed;
+
+  @override
+  V? get(K idx) => map_[idx];
+
+  @override
+  void add(V e, [bool silent = false]) {
+    map_[getKey(e)] = e;
+
+    if (!silent) {
+      _events.add(count);
+    }
+  }
+
+  @override
+  void addAll(Iterable<V> l, [bool silent = false]) {
+    for (final e in l) {
+      add(e, true);
+    }
+
+    if (!silent) {
+      _events.add(count);
+    }
+  }
+
+  @override
+  void clear() {
+    map_.clear();
+    _events.add(count);
+  }
+
+  @override
+  List<V> removeAll(Iterable<K> idx) {
+    final l = <V>[];
+
+    for (final e in idx) {
+      final v = map_.remove(e);
+      if (v != null) {
+        l.add(v);
+      }
+    }
+
+    _events.add(count);
+
+    return l;
+  }
+
+  @override
+  V operator [](K index) => get(index)!;
+
+  @override
+  void operator []=(K index, V value) {
+    map_[index] = value;
+
+    _events.add(count);
+  }
+
+  @override
+  void destroy() {
+    // clear();
+
+    _events.close();
+  }
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _events.stream.transform<int>(
+        StreamTransformer((input, cancelOnError) {
+          final controller = StreamController<int>(sync: true);
+          controller.onListen = () {
+            final subscription = input.listen(
+              controller.add,
+              onError: controller.addError,
+              onDone: controller.close,
+              cancelOnError: cancelOnError,
+            );
+            controller
+              ..onPause = subscription.pause
+              ..onResume = subscription.resume
+              ..onCancel = subscription.cancel;
+          };
+
+          if (fire) {
+            Timer.run(() {
+              controller.add(count);
+            });
+          }
+
+          return controller.stream.listen(null);
+        }),
+      ).listen(f);
+}
+
+class ListStorage<V> extends SourceStorage<int, V> {
+  ListStorage({this.sortFnc});
+
+  final Iterable<V> Function(ListStorage<V> instance, SortingMode sort)?
+      sortFnc;
+
+  final StreamController<int> _events = StreamController.broadcast();
+
+  final List<V> list = [];
 
   @override
   int get count => list.length;
 
   @override
-  Iterator<T> get iterator => list.iterator;
+  Iterator<V> get iterator => list.iterator;
 
   @override
-  Iterable<T> get reversed => list.reversed;
+  Iterable<V> get reversed => list.reversed;
 
   @override
-  T? get(int idx) => idx >= count ? null : list[idx];
+  Iterable<V> trySorted(SortingMode sort) =>
+      sortFnc == null ? this : sortFnc!(this, sort);
 
   @override
-  void add(T e, [bool silent = false]) {
+  V? get(int idx) => idx >= count ? null : list[idx];
+
+  @override
+  void add(V e, [bool silent = false]) {
     list.add(e);
 
     if (!silent) {
@@ -288,7 +454,7 @@ class ListStorage<T> extends SourceStorage<T> {
   }
 
   @override
-  void addAll(List<T> l, [bool silent = false]) {
+  void addAll(Iterable<V> l, [bool silent = false]) {
     list.addAll(l);
 
     if (!silent) {
@@ -303,17 +469,25 @@ class ListStorage<T> extends SourceStorage<T> {
   }
 
   @override
-  void removeAll(List<int> idx) {
-    idx.forEach(list.removeAt);
+  List<V> removeAll(Iterable<int> idx) {
+    final l = <V>[];
+
+    for (final e in idx) {
+      if (e < list.length) {
+        l.add(list.removeAt(e));
+      }
+    }
 
     _events.add(count);
+
+    return l;
   }
 
   @override
-  T operator [](int index) => get(index)!;
+  V operator [](int index) => get(index)!;
 
   @override
-  void operator []=(int index, T value) => list[index] = value;
+  void operator []=(int index, V value) => list[index] = value;
 
   @override
   void destroy() {
@@ -323,15 +497,24 @@ class ListStorage<T> extends SourceStorage<T> {
   }
 
   @override
-  StreamSubscription<int> watch(void Function(int p1) f) =>
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
       _events.stream.listen(f);
 }
 
-class ChainedFilterResourceSource<T> implements ResourceSource<T> {
+typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
+  Iterable<V> e,
+  FilteringMode filteringMode,
+  SortingMode sortingMode,
+  bool end, [
+  dynamic data,
+]);
+
+class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   ChainedFilterResourceSource(
     this._original,
     this._filterStorage, {
-    required this.fn,
+    this.prefilter = _doNothing,
+    required this.filter,
     required this.allowedFilteringModes,
     required this.allowedSortingModes,
     required FilteringMode initialFilteringMode,
@@ -354,34 +537,34 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
   }
 
   factory ChainedFilterResourceSource.basic(
-    ResourceSource<T> original,
-    SourceStorage<T> filterStorage, {
-    required bool Function(
-      T e,
-      FilteringMode filteringMode,
-      SortingMode sortingMode,
-    ) fn,
+    ResourceSource<K, V> original,
+    SourceStorage<int, V> filterStorage, {
+    required ChainedFilterFnc<V> filter,
   }) =>
       ChainedFilterResourceSource(
         original,
         filterStorage,
-        fn: fn,
+        filter: filter,
         allowedFilteringModes: const {},
         allowedSortingModes: const {},
         initialFilteringMode: FilteringMode.noFilter,
         initialSortingMode: SortingMode.none,
       );
 
-  final ResourceSource<T> _original;
-  final SourceStorage<T> _filterStorage;
+  static void _doNothing() {}
+
+  final ResourceSource<K, V> _original;
+  final SourceStorage<int, V> _filterStorage;
 
   @override
-  SourceStorage<T> get backingStorage => _filterStorage;
+  SourceStorage<int, V> get backingStorage => _filterStorage;
 
   late final StreamSubscription<int> _originalSubscr;
 
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
+
+  final void Function() prefilter;
 
   FilteringMode _mode;
   SortingMode _sorting;
@@ -428,8 +611,7 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
     clearRefresh();
   }
 
-  final bool Function(T e, FilteringMode filteringMode, SortingMode sortingMode)
-      fn;
+  final ChainedFilterFnc<V> filter;
 
   @override
   int get count => backingStorage.count;
@@ -449,13 +631,67 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
       return 0;
     }
 
-    final origCount_ = _original.count;
-    for (final (i, e) in _original.backingStorage.indexed) {
-      final keep = fn(e, _mode, _sorting);
-      if (keep) {
-        backingStorage.add(e, i != origCount_ - 1);
+    prefilter();
+
+    // var offset = 0;
+    dynamic data;
+
+    final buffer = <V>[];
+
+    for (final e in _original.backingStorage) {
+      buffer.add(e);
+
+      if (buffer.length == 40) {
+        final Iterable<V> filtered;
+        (filtered, data) =
+            filter(buffer, filteringMode, sortingMode, false, data);
+
+        backingStorage.addAll(filtered, true);
+        buffer.clear();
       }
     }
+
+    backingStorage
+        .addAll(filter(buffer, filteringMode, sortingMode, true, data).$1);
+
+    // for (;;) {
+    //   var sorted = _original.backingStorage.skip(offset).take(40);
+    //   final end = sorted.length != 40;
+    //   offset += 40;
+
+    //   (sorted, data) = filter(sorted, filteringMode, sortingMode, end, data);
+    //   // for (var element in sorted) {
+    //   //   element.isarId = null;
+    //   // }
+
+    //   final l = <V>[];
+    //   var count = 0;
+    //   for (final elem in sorted) {
+    //     count++;
+    //     l.add(elem);
+    //     if (count == 40) {
+    //       backingStorage.addAll(l);
+    //       l.clear();
+    //       count = 0;
+    //     }
+    //   }
+
+    //   if (l.isNotEmpty) {
+    //     backingStorage.addAll(l);
+    //   }
+
+    //   if (end) {
+    //     break;
+    //   }
+    // }
+
+    // final origCount_ = _original.count;
+    // for (final (i, e) in _original.backingStorage.indexed) {
+    //   final keep = filter(e, _mode, _sorting);
+    //   if (keep) {
+    //     backingStorage.add(e, i != origCount_ - 1);
+    //   }
+    // }
 
     return count;
   }
@@ -468,12 +704,6 @@ class ChainedFilterResourceSource<T> implements ResourceSource<T> {
 
     return Future.value(count);
   }
-
-  @override
-  T? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  T forIdxUnsafe(int idx) => backingStorage[idx];
 
   @override
   void destroy() {
@@ -499,7 +729,11 @@ class _EmptyProgress implements RefreshingProgress {
       const Stream<bool>.empty().listen(f);
 }
 
-class _EmptyResourceSource<T> extends ResourceSource<T> {
+class _EmptyResourceSource<K, V> extends ResourceSource<K, V> {
+  _EmptyResourceSource(this.getKey);
+
+  final K Function(V) getKey;
+
   @override
   int get count => backingStorage.count;
 
@@ -507,13 +741,7 @@ class _EmptyResourceSource<T> extends ResourceSource<T> {
   bool get hasNext => false;
 
   @override
-  final SourceStorage<T> backingStorage = ListStorage();
-
-  @override
-  T? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  T forIdxUnsafe(int idx) => backingStorage[idx];
+  late final SourceStorage<K, V> backingStorage = MapStorage(getKey);
 
   @override
   Future<int> clearRefresh() => Future.value(count);
@@ -573,20 +801,29 @@ abstract class RefreshingProgress {
   StreamSubscription<bool> watch(void Function(bool) f);
 }
 
-abstract interface class ResourceSource<T> {
+extension ResourceSourceExt<K, V> on ResourceSource<K, V> {
+  V? forIdx(K idx) => backingStorage.get(idx);
+  V forIdxUnsafe(K idx) => backingStorage[idx];
+}
+
+abstract interface class SortingResourceSource<K, V>
+    extends ResourceSource<K, V> {
+  Future<int> clearRefreshSorting(SortingMode sortingMode);
+
+  Future<int> nextSorting(SortingMode sortingMode);
+}
+
+abstract interface class ResourceSource<K, V> {
   const ResourceSource();
 
-  factory ResourceSource.empty() = _EmptyResourceSource;
+  factory ResourceSource.empty(K Function(V) getKey) = _EmptyResourceSource;
 
-  SourceStorage<T> get backingStorage;
+  SourceStorage<K, V> get backingStorage;
 
   RefreshingProgress get progress;
   bool get hasNext;
 
   int get count;
-
-  T? forIdx(int idx);
-  T forIdxUnsafe(int idx);
 
   Future<int> clearRefresh();
 
@@ -595,14 +832,14 @@ abstract interface class ResourceSource<T> {
   void destroy();
 }
 
-class GenericListSource<T> implements ResourceSource<T> {
+class GenericListSource<V> implements ResourceSource<int, V> {
   GenericListSource(this._clearRefresh, [this._next]);
 
-  final Future<List<T>> Function() _clearRefresh;
-  final Future<List<T>> Function()? _next;
+  final Future<List<V>> Function() _clearRefresh;
+  final Future<List<V>> Function()? _next;
 
   @override
-  final ListStorage<T> backingStorage = ListStorage();
+  final ListStorage<V> backingStorage = ListStorage();
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -612,12 +849,6 @@ class GenericListSource<T> implements ResourceSource<T> {
 
   @override
   bool get hasNext => _next != null;
-
-  @override
-  T? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  T forIdxUnsafe(int idx) => backingStorage[idx];
 
   @override
   Future<int> clearRefresh() async {
@@ -683,12 +914,6 @@ abstract interface class LocalTagDictionaryService {
 abstract class LocalTagsData {
   const LocalTagsData(this.filename, this.tags);
 
-  factory LocalTagsData.forDb(
-    String filename,
-    List<String> tags,
-  ) =>
-      _currentDb.localTagsDataForDb(filename, tags);
-
   @Index(unique: true, replace: true)
   final String filename;
 
@@ -699,7 +924,7 @@ abstract class LocalTagsData {
 abstract interface class LocalTagsService {
   int get count;
 
-  Map<String, List<String>> get cachedValues;
+  Map<String, String> get cachedValues;
 
   List<String> get(String filename);
 
@@ -797,8 +1022,6 @@ mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
 }
 
 abstract interface class TagManager implements ServiceMarker {
-  factory TagManager.booru(Booru booru) => _currentDb.tagManager(booru);
-
   factory TagManager.of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<_TagManagerAnchor>();
@@ -828,61 +1051,75 @@ class _TagManagerAnchor extends InheritedWidget {
       tagManager != oldWidget.tagManager;
 }
 
-abstract class GridStateBase {
-  const GridStateBase({
+abstract class GridBookmark {
+  const GridBookmark({
     required this.tags,
-    required this.safeMode,
-    required this.scrollOffset,
+    required this.booru,
     required this.name,
     required this.time,
   });
+
+  final String tags;
+
+  @enumerated
+  final Booru booru;
 
   @Index(unique: true, replace: true)
   final String name;
   @Index()
   final DateTime time;
 
+  GridBookmark copy({
+    String? tags,
+    String? name,
+    Booru? booru,
+    DateTime? time,
+  });
+
+  @override
+  String toString() => "GridBookmarkBase: $name $time";
+}
+
+extension GridStateBooruExt on GridBookmark {
+  void save() => _currentDb.gridBookmarks.add(this);
+}
+
+abstract class GridState {
+  const GridState({
+    required this.name,
+    required this.offset,
+    required this.tags,
+    required this.safeMode,
+  });
+
+  @Index(unique: true, replace: true)
+  final String name;
+
+  final double offset;
   final String tags;
-
-  final double scrollOffset;
-
   @enumerated
   final SafeMode safeMode;
 
-  @override
-  String toString() =>
-      "GridStateBase: $name, $time, '$tags', $scrollOffset, $safeMode";
-}
-
-extension GridStateBooruExt on GridStateBooru {
-  void save() => _currentDb.gridStateBooru.add(this);
-}
-
-mixin GridStateBooru implements GridStateBase {
-  Booru get booru;
-
-  GridStateBooru copy({
+  GridState copy({
     String? name,
-    Booru? booru,
+    double? offset,
     String? tags,
-    double? scrollOffset,
     SafeMode? safeMode,
-    DateTime? time,
   });
 }
 
-abstract interface class GridStateBooruService {
+abstract interface class GridBookmarkService {
   int get count;
 
-  List<GridStateBooru> get all;
+  List<GridBookmark> get all;
 
-  GridStateBooru? get(String name);
+  GridBookmark? get(String name);
 
   void delete(String name);
 
-  void add(GridStateBooru state);
+  void add(GridBookmark state);
 
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
 }
 
 extension GridStateExt on GridState {
@@ -890,19 +1127,12 @@ extension GridStateExt on GridState {
   void saveSecondary(SecondaryGridService s) => s.currentState = this;
 }
 
-mixin GridState implements GridStateBase {
-  GridState copy({
-    String? name,
-    String? tags,
-    double? scrollOffset,
-    SafeMode? safeMode,
-    DateTime? time,
-  });
-}
-
 abstract interface class MainGridService {
   int get page;
   set page(int p);
+
+  DateTime get time;
+  set time(DateTime d);
 
   GridState get currentState;
   set currentState(GridState state);
@@ -920,6 +1150,8 @@ abstract interface class MainGridService {
 }
 
 abstract interface class SecondaryGridService {
+  String get name;
+
   int get page;
   set page(int p);
 
@@ -940,4 +1172,39 @@ abstract interface class SecondaryGridService {
 
   Future<void> destroy();
   Future<void> close();
+}
+
+class BufferedStorage<T> {
+  final List<T> _buffer = [];
+  int _offset = 0;
+  int _cursor = -1;
+  bool _done = false;
+
+  T get current => _buffer[_cursor];
+
+  bool moveNext(Iterable<T> Function(int offset, int limit) nextItems) {
+    if (_done) {
+      return false;
+    }
+
+    if (_buffer.isNotEmpty && _cursor != _buffer.length - 1) {
+      _cursor += 1;
+      return true;
+    }
+
+    final ret = nextItems(_offset, 40);
+    if (ret.isEmpty) {
+      _cursor = -1;
+      _buffer.clear();
+      _offset = -1;
+      return !(_done = true);
+    }
+
+    _cursor = 0;
+    _buffer.clear();
+    _buffer.addAll(ret);
+    _offset += _buffer.length;
+
+    return true;
+  }
 }

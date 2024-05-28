@@ -27,7 +27,7 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
 
   final bool hideThumbnails;
 
-  final ReadOnlyStorage<T> source;
+  final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
@@ -37,7 +37,7 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
 }
 
 class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
-  ReadOnlyStorage<T> get source => widget.source;
+  ReadOnlyStorage<int, T> get source => widget.source;
 
   late final StreamSubscription<int> _watcher;
 

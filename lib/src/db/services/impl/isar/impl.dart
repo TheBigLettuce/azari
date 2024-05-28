@@ -30,9 +30,10 @@ import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.da
 import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/directories.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/favorites.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/files.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_time.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/chapters_settings.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
@@ -61,12 +62,12 @@ import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
@@ -84,11 +85,15 @@ final _futures = <(int, AnimeMetadata), Future>{};
 // }
 
 class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
-  IsarPostsOptimizedStorage(this.db);
+  IsarPostsOptimizedStorage(this.db, this.closeDb);
 
   final Isar db;
+  final bool closeDb;
 
   IsarCollection<PostIsar> get _collection => db.postIsars;
+
+  // @override
+  Post? get currentlyLast => _collection.where().sortById().findFirstSync();
 
   @override
   List<Post> get firstFiveNormal => _collection
@@ -122,13 +127,16 @@ class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
       );
 
   @override
+  Iterable<Post> trySorted(SortingMode sort) => this;
+
+  @override
   void add(Post e, [bool silent = true]) => db.writeTxnSync(
         () => _collection.putAllByIdBooruSync(PostIsar.copyTo([e])),
         silent: silent,
       );
 
   @override
-  void addAll(List<Post> l, [bool silent = false]) => db.writeTxnSync(
+  void addAll(Iterable<Post> l, [bool silent = false]) => db.writeTxnSync(
         () => _collection.putAllByIdBooruSync(PostIsar.copyTo(l)),
         silent: silent,
       );
@@ -137,27 +145,43 @@ class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
   void clear() => db.writeTxnSync(() => _collection.clearSync());
 
   @override
-  Post? get(int idx) => _collection.getSync(idx + 1);
+  Post? get((int, Booru) idx) => _collection.getByIdBooruSync(idx.$1, idx.$2);
 
   @override
-  void removeAll(List<int> idx) {
-    db.writeTxnSync(() => _collection.deleteAllSync(idx));
+  List<Post> removeAll(Iterable<(int, Booru)> idx) {
+    final l = <Post>[];
+
+    final ids = idx.map((e) => e.$1).toList();
+    final boorus = idx.map((e) => e.$2).toList();
+
+    l.addAll(
+      _collection
+          .getAllByIdBooruSync(ids, boorus)
+          .where((e) => e != null)
+          .cast<Post>()
+          .toList(),
+    );
+    db.writeTxnSync(
+      () => _collection.deleteAllByIdBooruSync(ids, boorus),
+    );
+
+    return l;
   }
 
   @override
-  void destroy() => db.close(deleteFromDisk: true);
+  void destroy() => closeDb ? db.close(deleteFromDisk: true) : null;
 
   @override
-  Post operator [](int index) => get(index)!;
+  Post operator []((int, Booru) index) => get(index)!;
 
   @override
-  void operator []=(int index, Post value) => db.writeTxnSync(
+  void operator []=((int, Booru) index, Post value) => db.writeTxnSync(
         () => _collection.putByIdBooruSync(PostIsar.copyTo([value]).first),
       );
 
   @override
-  StreamSubscription<int> watch(void Function(int p1) f) =>
-      _collection.watchLazy().map((_) => count).listen(f);
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
 }
 
 class IsarCurrentBooruSource extends GridPostSource
@@ -169,7 +193,7 @@ class IsarCurrentBooruSource extends GridPostSource
     required this.entry,
     required this.tags,
     required this.filters,
-  }) : backingStorage = IsarPostsOptimizedStorage(db);
+  }) : backingStorage = _IsarPostsStorage(db);
 
   @override
   final BooruAPI api;
@@ -179,10 +203,14 @@ class IsarCurrentBooruSource extends GridPostSource
   final PagingEntry entry;
 
   @override
-  final IsarPostsOptimizedStorage backingStorage;
+  final _IsarPostsStorage backingStorage;
 
   @override
   final List<FilterFnc<Post>> filters;
+
+  @override
+  Post? get currentlyLast =>
+      backingStorage._collection.where().sortById().findFirstSync();
 
   @override
   bool get hasNext => true;
@@ -201,65 +229,140 @@ class IsarCurrentBooruSource extends GridPostSource
 }
 
 class _IsarCollectionIterator<T> implements Iterator<T> {
-  _IsarCollectionIterator(this.collection, {required this.reversed});
+  _IsarCollectionIterator(
+    this.collection, {
+    required this.reversed,
+    this.loader,
+  });
 
   final IsarCollection<T> collection;
   final bool reversed;
 
-  final List<T> _buffer = [];
-  int _cursor = -1;
-  bool _done = false;
+  final QueryBuilder<T, T, QAfterLimit> Function(
+    QueryBuilder<T, T, QWhere> q,
+    int offset,
+    int limit,
+  )? loader;
+
+  final _storage = BufferedStorage<T>();
 
   @override
-  T get current => _buffer[_cursor];
+  T get current => _storage.current;
+
+  QueryBuilder<T, T, QAfterLimit> defaultLoader(
+    QueryBuilder<T, T, QWhere> q,
+    int offset,
+    int limit,
+  ) =>
+      q.offset(offset).limit(limit);
+
+  Iterable<T> _nextItems(int offset, int limit) => (loader ?? defaultLoader)(
+        collection.where(sort: reversed ? Sort.asc : Sort.desc),
+        offset,
+        limit,
+      ).findAllSync();
 
   @override
-  bool moveNext() {
-    if (_done) {
-      return false;
-    }
-
-    if (_buffer.isNotEmpty && _cursor != _buffer.length) {
-      _cursor += 1;
-      return true;
-    }
-
-    final ret = collection
-        .where(sort: reversed ? Sort.asc : Sort.desc)
-        .offset(_buffer.length)
-        .limit(40)
-        .findAllSync();
-    if (ret.isEmpty) {
-      _cursor = -1;
-      _buffer.clear();
-      return !(_done = true);
-    }
-
-    _cursor = 0;
-    _buffer.clear();
-    _buffer.addAll(ret);
-
-    return true;
-  }
+  bool moveNext() => _storage.moveNext(_nextItems);
 }
 
-class _IsarCollectionReverseIterable<T> extends Iterable<T> {
-  _IsarCollectionReverseIterable(this.iterator);
+class _IsarCollectionReverseIterable<V> extends Iterable<V> {
+  const _IsarCollectionReverseIterable(this.iterator);
 
   @override
-  final Iterator<T> iterator;
+  final Iterator<V> iterator;
 }
 
-class IsarSourceStorage<T> extends SourceStorage<T> {
-  IsarSourceStorage(this.db, this.txPut);
+class _IsarPostsStorage extends SourceStorage<int, Post> {
+  _IsarPostsStorage(this.db);
 
   final Isar db;
-  final void Function(Isar db, List<T>) txPut;
 
-  IsarCollection<T> get _collection => db.collection<T>();
+  IsarCollection<PostIsar> get _collection => db.postIsars;
 
   @override
-  Iterable<T> get reversed => _IsarCollectionReverseIterable(
+  Iterable<Post> get reversed => _IsarCollectionReverseIterable(
+        _IsarCollectionIterator<PostIsar>(_collection, reversed: true),
+      );
+
+  @override
+  int get count => _collection.countSync();
+
+  @override
+  Iterator<Post> get iterator =>
+      _IsarCollectionIterator<PostIsar>(_collection, reversed: false);
+
+  @override
+  void add(Post e, [bool silent = true]) => db.writeTxnSync(
+        () => _collection
+            .putByIdBooruSync(e is PostIsar ? e : PostIsar.copyTo([e])[0]),
+        silent: silent,
+      );
+
+  @override
+  void addAll(Iterable<Post> l, [bool silent = false]) => db.writeTxnSync(
+        () => _collection
+            .putAllByIdBooruSync(l is List<PostIsar> ? l : PostIsar.copyTo(l)),
+        silent: silent,
+      );
+
+  @override
+  void clear() => db.writeTxnSync(() => _collection.clearSync());
+
+  @override
+  Post? get(int idx) => _collection.getSync(idx + 1);
+
+  @override
+  List<Post> removeAll(Iterable<int> idx) {
+    final k = idx.map((e) => e + 1).toList();
+
+    final ret = _collection.getAllSync(k);
+    db.writeTxnSync(() => _collection.deleteAllSync(k));
+
+    return ret.map((e) => e != null).cast<Post>().toList();
+  }
+
+  @override
+  void destroy([bool delete = false]) => db.close(deleteFromDisk: delete);
+
+  @override
+  Post operator [](int index) => get(index)!;
+
+  @override
+  void operator []=(int index, Post value) => addAll([value]);
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
+
+  @override
+  Iterable<Post<ContentableCell>> trySorted(SortingMode sort) => this;
+}
+
+class IsarSourceStorage<K, V, CollectionType extends V>
+    extends SourceStorage<K, V> {
+  IsarSourceStorage(
+    this.db, {
+    required this.sortFnc,
+    required this.txPut,
+    required this.txGet,
+    required this.txRemove,
+  });
+
+  final Isar db;
+  final void Function(IsarCollection<CollectionType> c, Iterable<V> values)
+      txPut;
+  final V? Function(IsarCollection<CollectionType> c, K key) txGet;
+  final List<V> Function(IsarCollection<CollectionType> c, Iterable<K> keys)
+      txRemove;
+
+  final _IsarCollectionIterator<V> Function(SortingMode sort)? sortFnc;
+
+  IsarCollection<CollectionType> get _collection =>
+      db.collection<CollectionType>();
+
+  @override
+  Iterable<V> get reversed => _IsarCollectionReverseIterable(
         _IsarCollectionIterator(_collection, reversed: true),
       );
 
@@ -267,41 +370,44 @@ class IsarSourceStorage<T> extends SourceStorage<T> {
   int get count => _collection.countSync();
 
   @override
-  Iterator<T> get iterator =>
+  Iterator<V> get iterator =>
       _IsarCollectionIterator(_collection, reversed: false);
 
   @override
-  void add(T e, [bool silent = true]) =>
-      db.writeTxnSync(() => txPut(db, [e]), silent: silent);
+  Iterable<V> trySorted(SortingMode sort) =>
+      sortFnc == null ? this : _IsarCollectionReverseIterable(sortFnc!(sort));
 
   @override
-  void addAll(List<T> l, [bool silent = false]) =>
-      db.writeTxnSync(() => txPut(db, l), silent: silent);
+  void add(V e, [bool silent = true]) =>
+      db.writeTxnSync(() => txPut(_collection, [e]), silent: silent);
+
+  @override
+  void addAll(Iterable<V> l, [bool silent = false]) =>
+      db.writeTxnSync(() => txPut(_collection, l), silent: silent);
 
   @override
   void clear() => db.writeTxnSync(() => _collection.clearSync());
 
   @override
-  T? get(int idx) => _collection.getSync(idx + 1);
+  V? get(K idx) => txGet(_collection, idx);
 
   @override
-  void removeAll(List<int> idx) {
-    db.writeTxnSync(() => _collection.deleteAllSync(idx));
-  }
+  List<V> removeAll(Iterable<K> idx) =>
+      db.writeTxnSync(() => txRemove(_collection, idx));
 
   @override
-  void destroy() => db.close(deleteFromDisk: true);
+  void destroy([bool delete = false]) => db.close(deleteFromDisk: delete);
 
   @override
-  T operator [](int index) => get(index)!;
+  V operator [](K index) => get(index)!;
 
   @override
-  void operator []=(int index, T value) =>
-      db.writeTxnSync(() => txPut(db, [value]));
+  void operator []=(K index, V value) =>
+      db.writeTxnSync(() => txPut(_collection, [value]));
 
   @override
-  StreamSubscription<int> watch(void Function(int p1) f) =>
-      _collection.watchLazy().map((_) => count).listen(f);
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
 }
 
 class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
@@ -325,7 +431,7 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
         _Dbs.g.anime.writeTxnSync(
           () => _Dbs.g.anime.isarSavedAnimeCharacters.putByIdSiteSync(
             IsarSavedAnimeCharacters(
-              characters: value as List<IsarAnimeCharacter>,
+              characters: value.cast(),
               id: entry.id,
               site: entry.site,
             ),
@@ -536,8 +642,8 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
                 type: e.type,
                 inBacklog: true,
                 site: e.site,
-                staff: e.staff as List<IsarAnimeRelation>,
-                relations: e.relations as List<IsarAnimeRelation>,
+                staff: e.staff.cast(),
+                relations: e.relations.cast(),
                 thumbUrl: e.thumbUrl,
                 title: e.title,
                 titleJapanese: e.titleJapanese,
@@ -549,7 +655,7 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
                 siteUrl: e.siteUrl,
                 isAiring: e.isAiring,
                 titleSynonyms: e.titleSynonyms,
-                genres: e.genres as List<IsarAnimeGenre>,
+                genres: e.genres.cast(),
                 trailerUrl: e.trailerUrl,
                 episodes: e.episodes,
               ),
@@ -647,13 +753,8 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
   const IsarHiddenBooruPostService();
 
   @override
-  List<HiddenBooruPostData> get all =>
-      _Dbs.g.main.isarHiddenBooruPosts.where().findAllSync();
-
-  @override
-  bool isHidden(int postId, Booru booru) =>
-      _Dbs.g.main.isarHiddenBooruPosts.getByPostIdBooruSync(postId, booru) !=
-      null;
+  Map<(int, Booru), String> get cachedValues =>
+      _Dbs.g._hiddenBooruPostCachedValues;
 
   @override
   void addAll(List<HiddenBooruPostData> booru) {
@@ -662,8 +763,13 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
     }
 
     _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarHiddenBooruPosts
-          .putAllSync(booru as List<IsarHiddenBooruPost>),
+      () {
+        _Dbs.g.main.isarHiddenBooruPosts.putAllSync(booru.cast());
+
+        for (final e in booru) {
+          cachedValues[(e.postId, e.booru)] = e.thumbUrl;
+        }
+      },
     );
   }
 
@@ -674,31 +780,40 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
     }
 
     _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarHiddenBooruPosts.deleteAllByPostIdBooruSync(
-        booru.map((e) => e.$1).toList(),
-        booru.map((e) => e.$2).toList(),
-      ),
+      () {
+        _Dbs.g.main.isarHiddenBooruPosts.deleteAllByPostIdBooruSync(
+          booru.map((e) => e.$1).toList(),
+          booru.map((e) => e.$2).toList(),
+        );
+
+        for (final e in booru) {
+          cachedValues.remove(e);
+        }
+      },
     );
   }
 
   @override
   StreamSubscription<void> watch(void Function(void) f) =>
       _Dbs.g.main.isarHiddenBooruPosts.watchLazy().listen(f);
+
+  @override
+  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) =>
+      _Dbs.g.main.isarHiddenBooruPosts
+          .where()
+          .postIdBooruEqualTo(id, booru)
+          .watchLazy(fireImmediately: fire)
+          .map((e) => cachedValues.containsKey((id, booru)));
 }
 
-class IsarFavoritePostService implements FavoritePostService {
-  const IsarFavoritePostService();
+class IsarFavoritePostService implements FavoritePostSourceService {
+  IsarFavoritePostService();
+
+  // Map<(int, Booru), FavoritePostData> get cachedValues =>
+  // _Dbs.g._favoritePostsCachedValues;
 
   @override
   int get count => _Dbs.g.main.isarFavoriteBoorus.countSync();
-
-  @override
-  void addAllFileUrl(List<FavoritePostData> favorites) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarFavoriteBoorus
-          .putAllByIdBooruSync(favorites as List<IsarFavoriteBooru>),
-    );
-  }
 
   @override
   List<Post> addRemove(List<Post> posts) {
@@ -707,25 +822,27 @@ class IsarFavoritePostService implements FavoritePostService {
     final toRemoveBoorus = <Booru>[];
 
     for (final post in posts) {
-      if (!isFavorite(post.id, post.booru)) {
+      if (!backingStorage.map_.containsKey((post.id, post.booru))) {
         toAdd.add(
-          IsarFavoriteBooru(
-            height: post.height,
-            id: post.id,
-            md5: post.md5,
-            tags: post.tags,
-            width: post.width,
-            fileUrl: post.fileUrl,
-            booru: post.booru,
-            previewUrl: post.previewUrl,
-            sampleUrl: post.sampleUrl,
-            sourceUrl: post.sourceUrl,
-            rating: post.rating,
-            score: post.score,
-            createdAt: post.createdAt,
-            group: null,
-            type: post.type,
-          ),
+          post is IsarFavoriteBooru
+              ? post
+              : IsarFavoriteBooru(
+                  height: post.height,
+                  id: post.id,
+                  md5: post.md5,
+                  tags: post.tags,
+                  width: post.width,
+                  fileUrl: post.fileUrl,
+                  booru: post.booru,
+                  previewUrl: post.previewUrl,
+                  sampleUrl: post.sampleUrl,
+                  sourceUrl: post.sourceUrl,
+                  rating: post.rating,
+                  score: post.score,
+                  createdAt: post.createdAt,
+                  group: null,
+                  type: post.type,
+                ),
         );
       } else {
         toRemoveInts.add(post.id);
@@ -744,8 +861,15 @@ class IsarFavoritePostService implements FavoritePostService {
 
     _Dbs.g.main.writeTxnSync(() {
       _Dbs.g.main.isarFavoriteBoorus.putAllByIdBooruSync(toAdd);
+      for (final e in toAdd) {
+        backingStorage[(e.id, e.booru)] = e;
+      }
+
       _Dbs.g.main.isarFavoriteBoorus
           .deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
+      for (final e in toRemoveBoorus.indexed) {
+        backingStorage.removeAll([(toRemoveInts[e.$1], e.$2)]);
+      }
     });
 
     return deleteCopy?.where((e) => e != null).cast<Post>().toList() ??
@@ -753,15 +877,40 @@ class IsarFavoritePostService implements FavoritePostService {
   }
 
   @override
-  bool isFavorite(int id, Booru booru) =>
-      _Dbs.g.main.isarFavoriteBoorus.getByIdBooruSync(id, booru) != null;
+  final MapStorage<(int, Booru), FavoritePostData> backingStorage =
+      MapStorage((v) => (v.id, v.booru));
 
   @override
-  StreamSubscription<void> watch(
-    void Function(void) f, [
+  Future<int> clearRefresh() => Future.value(backingStorage.count);
+
+  @override
+  void destroy() {
+    backingStorage.destroy();
+  }
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  Future<int> next() => Future.value(backingStorage.count);
+
+  @override
+  RefreshingProgress get progress => const RefreshingProgress.empty();
+
+  @override
+  StreamSubscription<T> watchSingle<T>(
+    int id,
+    Booru booru,
+    T Function(bool p1) transform,
+    void Function(T p1) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.main.isarFavoriteBoorus.watchLazy(fireImmediately: fire).listen(f);
+      _Dbs.g.main.isarFavoriteBoorus
+          .where()
+          .idBooruEqualTo(id, booru)
+          .watch(fireImmediately: fire)
+          .map((e) => transform(e.isNotEmpty))
+          .listen(f);
 }
 
 class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
@@ -1072,77 +1221,42 @@ class IsarDailyStatisticsService implements StatisticsDailyService {
 }
 
 class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
-  const IsarBlacklistedDirectoryService();
+  IsarBlacklistedDirectoryService();
 
   @override
-  void addAll(List<GalleryDirectory> directories) {
-    _Dbs.g.blacklisted.writeTxnSync(
-      () => _Dbs.g.blacklisted.isarBlacklistedDirectorys.putAllByBucketIdSync(
-        directories
-            .map((e) => IsarBlacklistedDirectory(e.bucketId, e.name))
-            .toList(),
-      ),
-    );
-  }
+  late final IsarSourceStorage<String, BlacklistedDirectoryData,
+      IsarBlacklistedDirectory> backingStorage = IsarSourceStorage(
+    _Dbs.g.blacklisted,
+    txPut: (c, l) =>
+        c.putAllByBucketIdSync(l.cast<IsarBlacklistedDirectory>().toList()),
+    txGet: (c, key) => c.getByBucketIdSync(key),
+    txRemove: (c, keys) {
+      final k = keys.toList();
+
+      final ret = c.getAllByBucketIdSync(k);
+      c.deleteAllByBucketIdSync(k);
+
+      return ret
+          .where((e) => e != null)
+          .cast<IsarBlacklistedDirectory>()
+          .toList();
+    },
+    sortFnc: null,
+  );
 
   @override
   List<BlacklistedDirectoryData> getAll(List<String> bucketIds) =>
-      _Dbs.g.blacklisted.isarBlacklistedDirectorys
+      backingStorage._collection
           .getAllByBucketIdSync(bucketIds)
           .where((element) => element != null)
           .cast<BlacklistedDirectoryData>()
           .toList();
 
   @override
-  void clear() => _Dbs.g.blacklisted.writeTxnSync(
-        () => _Dbs.g.blacklisted.isarBlacklistedDirectorys.clearSync(),
-      );
-
-  @override
-  void deleteAll(List<String> bucketIds) {
-    _Dbs.g.blacklisted.writeTxnSync(() {
-      return _Dbs.g.blacklisted.isarBlacklistedDirectorys
-          .deleteAllByBucketIdSync(bucketIds);
-    });
-  }
-
-  @override
-  StreamSubscription<void> watch(
-    void Function(void) f, [
-    bool fire = false,
-  ]) =>
-      _Dbs.g.blacklisted.isarBlacklistedDirectorys
-          .watchLazy(fireImmediately: fire)
-          .listen(f);
-
-  @override
-  ResourceSource<BlacklistedDirectoryData> makeSource() =>
-      _BlacklistedDirectoriesSource(
-        IsarSourceStorage(
-          _Dbs.g.blacklisted,
-          (db, l) => db.isarBlacklistedDirectorys.putAllByBucketIdSync(l),
-        ),
-      );
-}
-
-class _BlacklistedDirectoriesSource
-    implements ResourceSource<BlacklistedDirectoryData> {
-  _BlacklistedDirectoriesSource(this.backingStorage);
-
-  @override
-  final IsarSourceStorage<IsarBlacklistedDirectory> backingStorage;
-
-  @override
   int get count => backingStorage.count;
 
   @override
   bool get hasNext => false;
-
-  @override
-  BlacklistedDirectoryData? forIdx(int idx) => backingStorage.get(idx);
-
-  @override
-  BlacklistedDirectoryData forIdxUnsafe(int idx) => backingStorage[idx];
 
   @override
   Future<int> clearRefresh() => Future.value(backingStorage.count);
@@ -2067,7 +2181,7 @@ class IsarLocalTagsService implements LocalTagsService {
   int get count => _Dbs.g.localTags.isarLocalTags.countSync();
 
   @override
-  Map<String, List<String>> get cachedValues => _Dbs.g._localTagsCachedValues;
+  Map<String, String> get cachedValues => _Dbs.g._localTagsCachedValues;
 
   /// Returns tags for the [filename], or empty list if there are none.
   @override
@@ -2079,8 +2193,12 @@ class IsarLocalTagsService implements LocalTagsService {
   @override
   void add(String filename, List<String> tags) {
     _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.isarLocalTags
-          .putByFilenameSync(IsarLocalTags(filename, tags)),
+      () {
+        _Dbs.g.localTags.isarLocalTags
+            .putByFilenameSync(IsarLocalTags(filename, tags));
+
+        cachedValues[filename] = tags.join(" ");
+      },
     );
   }
 
@@ -2088,8 +2206,12 @@ class IsarLocalTagsService implements LocalTagsService {
   void addAll(List<LocalTagsData> tags) {
     _Dbs.g.localTags.writeTxnSync(() {
       _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(
-        tags as List<IsarLocalTags>,
+        tags.cast(),
       );
+
+      for (final e in tags) {
+        cachedValues[e.filename] = e.tags.join(" ");
+      }
     });
   }
 
@@ -2110,14 +2232,24 @@ class IsarLocalTagsService implements LocalTagsService {
     }
 
     return _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags),
+      () {
+        _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags);
+
+        for (final e in newTags) {
+          cachedValues[e.filename] = e.tags.join(" ");
+        }
+      },
     );
   }
 
   @override
   void delete(String filename) {
     _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.isarLocalTags.deleteByFilenameSync(filename),
+      () {
+        _Dbs.g.localTags.isarLocalTags.deleteByFilenameSync(filename);
+
+        cachedValues.remove(filename);
+      },
     );
   }
 
@@ -2137,7 +2269,13 @@ class IsarLocalTagsService implements LocalTagsService {
     }
 
     return _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags),
+      () {
+        _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags);
+
+        for (final e in newTags) {
+          cachedValues[e.filename] = e.tags.join(" ");
+        }
+      },
     );
   }
 
@@ -2331,38 +2469,41 @@ class IsarBooruTagging implements BooruTagging {
   }
 }
 
-class IsarGridStateBooruService implements GridStateBooruService {
+class IsarGridStateBooruService implements GridBookmarkService {
   const IsarGridStateBooruService();
 
   @override
-  int get count => _Dbs.g.main.isarGridStateBoorus.countSync();
+  int get count => _Dbs.g.main.isarBookmarks.countSync();
 
   @override
-  List<GridStateBooru> get all =>
-      _Dbs.g.main.isarGridStateBoorus.where().sortByTimeDesc().findAllSync();
+  List<GridBookmark> get all =>
+      _Dbs.g.main.isarBookmarks.where().sortByTimeDesc().findAllSync();
 
   @override
-  void add(GridStateBooru state) {
-    _Dbs.g.main.isarGridStateBoorus.putByNameSync(state as IsarGridStateBooru);
+  void add(GridBookmark state) {
+    _Dbs.g.main.writeTxnSync(
+      () => _Dbs.g.main.isarBookmarks.putByNameSync(state as IsarBookmark),
+    );
   }
 
   @override
-  GridStateBooru? get(String name) =>
-      _Dbs.g.main.isarGridStateBoorus.getByNameSync(name);
+  GridBookmark? get(String name) =>
+      _Dbs.g.main.isarBookmarks.getByNameSync(name);
 
   @override
   void delete(String name) {
     _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarGridStateBoorus.deleteByNameSync(
+      () => _Dbs.g.main.isarBookmarks.deleteByNameSync(
         name,
       ),
     );
   }
 
   @override
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) =>
-      _Dbs.g.main.isarGridStateBoorus
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]) =>
+      _Dbs.g.main.isarBookmarks
           .watchLazy(fireImmediately: fire)
+          .map<int>((e) => count)
           .listen(f);
 }
 
@@ -2371,18 +2512,27 @@ class IsarSecondaryGridService implements SecondaryGridService {
     this._secondaryGrid,
     this.tagManager,
     this._mainGrid,
+    this.name,
   );
 
-  factory IsarSecondaryGridService.booru(Booru booru, String name) {
+  factory IsarSecondaryGridService.booru(
+    Booru booru,
+    String name,
+    bool create,
+  ) {
     final dbMain = _Dbs.g.booru(booru);
-    final dbSecondary = _DbsOpen.secondaryGridName(name);
+    final dbSecondary = _DbsOpen.secondaryGridName(name, create);
 
     return IsarSecondaryGridService._(
       dbSecondary,
       IsarTagManager._db(dbMain),
       dbMain,
+      name,
     );
   }
+
+  @override
+  final String name;
 
   final Isar _secondaryGrid;
   final Isar _mainGrid;
@@ -2401,7 +2551,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
 
   @override
   PostsOptimizedStorage get savedPosts =>
-      IsarPostsOptimizedStorage(_secondaryGrid);
+      IsarPostsOptimizedStorage(_secondaryGrid, false);
 
   @override
   GridState get currentState {
@@ -2412,8 +2562,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
         tags: "",
         name: _secondaryGrid.name,
         safeMode: SafeMode.normal,
-        time: DateTime.now(),
-        scrollOffset: 0,
+        offset: 0,
       );
 
       _mainGrid.writeTxnSync(
@@ -2451,7 +2600,9 @@ class IsarSecondaryGridService implements SecondaryGridService {
         excluded: excluded,
         entry: entry,
         tags: tags,
-        filters: [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
+        filters: [
+          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+        ],
       );
 }
 
@@ -2463,13 +2614,22 @@ class IsarMainGridService implements MainGridService {
 
     return IsarMainGridService._(db, IsarTagManager._db(db));
   }
+  @override
+  DateTime get time =>
+      _mainGrid.isarGridTimes.getSync(0)?.time ??
+      DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  set time(DateTime d) => _mainGrid
+      .writeTxnSync(() => _mainGrid.isarGridTimes.putSync(IsarGridTime(d)));
 
   final Isar _mainGrid;
   @override
   final IsarTagManager tagManager;
 
   @override
-  PostsOptimizedStorage get savedPosts => IsarPostsOptimizedStorage(_mainGrid);
+  PostsOptimizedStorage get savedPosts =>
+      IsarPostsOptimizedStorage(_mainGrid, false);
 
   @override
   int get page => _mainGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;
@@ -2489,8 +2649,7 @@ class IsarMainGridService implements MainGridService {
         tags: "",
         name: _mainGrid.name,
         safeMode: SafeMode.normal,
-        time: DateTime.now(),
-        scrollOffset: 0,
+        offset: 0,
       );
 
       _mainGrid.writeTxnSync(
@@ -2521,6 +2680,8 @@ class IsarMainGridService implements MainGridService {
         excluded: excluded,
         entry: entry,
         tags: "",
-        filters: [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
+        filters: [
+          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+        ],
       );
 }

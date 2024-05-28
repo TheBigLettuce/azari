@@ -8,20 +8,21 @@
 import "package:flutter/material.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-class AddToBookmarksButton extends StatelessWidget {
-  const AddToBookmarksButton({
-    super.key,
-    required this.state,
-    required this.f,
-  });
-  final GridSkeletonState state;
-  final void Function(BuildContext) f;
+// class AddToBookmarksButton extends StatelessWidget {
+//   const AddToBookmarksButton({
+//     super.key,
+//     required this.state,
+//     required this.f,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () => f(context),
-      icon: const Icon(Icons.bookmark_add),
-    );
-  }
-}
+//   final GridSkeletonState state;
+//   final void Function(BuildContext) f;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return IconButton(
+//       onPressed: () => f(context),
+//       icon: const Icon(Icons.bookmark_add),
+//     );
+//   }
+// }

@@ -6,29 +6,34 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/services/impl/isar/impl.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
 Future<DownloadManager> init(ServicesImplTable db) async {
-  await initalizeIsarDb(false);
+  await initalizeIsarDb(false, db);
 
   return DownloadManager(db.downloads);
 }
 
-ServicesImplTable getApi() => const IoServicesImplTable();
+ServicesImplTable getApi() => IoServicesImplTable();
 
 class IoServicesImplTable
     with IoServicesImplTableObjInstExt
     implements ServicesImplTable {
-  const IoServicesImplTable();
+  IoServicesImplTable();
 
   @override
   SettingsService get settings => const IsarSettingsService();
@@ -51,7 +56,7 @@ class IoServicesImplTable
   @override
   DownloadFileService get downloads => const IsarDownloadFileService();
   @override
-  FavoritePostService get favoritePosts => const IsarFavoritePostService();
+  FavoritePostSourceService favoritePosts = IsarFavoritePostService();
   @override
   StatisticsGeneralService get statisticsGeneral =>
       const IsarStatisticsGeneralService();
@@ -92,37 +97,55 @@ class IoServicesImplTable
   CompactMangaDataService get compactManga =>
       const IsarCompactMangaDataService();
   @override
-  GridStateBooruService get gridStateBooru => const IsarGridStateBooruService();
+  GridBookmarkService get gridBookmarks => const IsarGridStateBooruService();
   @override
   FavoriteFileService get favoriteFiles => const IsarFavoriteFileService();
   @override
   DirectoryTagService get directoryTags => const IsarDirectoryTagService();
   @override
-  BlacklistedDirectoryService get blacklistedDirectories =>
-      const IsarBlacklistedDirectoryService();
+  BlacklistedDirectoryService blacklistedDirectories =
+      IsarBlacklistedDirectoryService();
   @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
 
   @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
   @override
-  SecondaryGridService secondaryGrid(Booru booru, String name) =>
-      IsarSecondaryGridService.booru(booru, name);
+  SecondaryGridService secondaryGrid(
+    Booru booru,
+    String name, [
+    bool create = false,
+  ]) =>
+      IsarSecondaryGridService.booru(booru, name, create);
 }
 
-mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
+mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
   @override
-  TagManager tagManager(Booru booru) => IsarTagManager(booru);
+  GridBookmark makeGridBookmark({
+    required String tags,
+    required Booru booru,
+    required String name,
+    required DateTime time,
+  }) =>
+      IsarBookmark(
+        booru: booru,
+        tags: tags,
+        name: name,
+        time: time,
+      );
 
   @override
-  LocalTagsData localTagsDataForDb(
+  TagManager makeTagManager(Booru booru) => IsarTagManager(booru);
+
+  @override
+  LocalTagsData makeLocalTagsData(
     String filename,
     List<String> tags,
   ) =>
       IsarLocalTags(filename, tags);
 
   @override
-  CompactMangaData compactMangaDataForDb({
+  CompactMangaData makeCompactMangaData({
     required String mangaId,
     required MangaMeta site,
     required String title,
@@ -136,7 +159,7 @@ mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
       );
 
   @override
-  SettingsPath settingsPathForCurrent({
+  SettingsPath makeSettingsPath({
     required String path,
     required String pathDisplay,
   }) =>
@@ -146,7 +169,7 @@ mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
       );
 
   @override
-  DownloadFileData downloadFileDataForDbFormat({
+  DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,
     required String url,
@@ -164,7 +187,7 @@ mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
       );
 
   @override
-  HiddenBooruPostData hiddenBooruPostDataForDb(
+  HiddenBooruPostData makeHiddenBooruPostData(
     String thumbUrl,
     int postId,
     Booru booru,
@@ -172,7 +195,7 @@ mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
       IsarHiddenBooruPost(booru, postId, thumbUrl);
 
   @override
-  PinnedManga pinnedMangaForDb({
+  PinnedManga makePinnedManga({
     required String mangaId,
     required MangaMeta site,
     required String thumbUrl,
@@ -183,5 +206,52 @@ mixin IoServicesImplTableObjInstExt implements ServicesImplTableObjInstExt {
         site: site,
         thumbUrl: thumbUrl,
         title: title,
+      );
+
+  @override
+  BlacklistedDirectoryData makeBlacklistedDirectoryData(
+    String bucketId,
+    String name,
+  ) =>
+      IsarBlacklistedDirectory(bucketId, name);
+
+  @override
+  AnimeGenre makeAnimeGenre({
+    required String title,
+    required int id,
+    required bool unpressable,
+    required bool explicit,
+  }) =>
+      IsarAnimeGenre(
+        title: title,
+        id: id,
+        unpressable: unpressable,
+        explicit: explicit,
+      );
+
+  @override
+  AnimeRelation makeAnieRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  }) =>
+      IsarAnimeRelation(
+        thumbUrl: thumbUrl,
+        title: title,
+        type: type,
+        id: id,
+      );
+
+  @override
+  AnimeCharacter makeAnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
+  }) =>
+      IsarAnimeCharacter(
+        imageUrl: imageUrl,
+        name: name,
+        role: role,
       );
 }

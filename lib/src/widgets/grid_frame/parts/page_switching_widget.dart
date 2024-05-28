@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart";
@@ -53,7 +55,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
           ...pageSwitcher.pages.indexed.map(
             (e) => ButtonSegment(
               icon: _IconWithCount(
-                count: e.$2.count,
+                watchCount: e.$2.watchCount,
                 icon: Icon(e.$2.icon),
                 background: e.$1 + 1 == state.currentPage
                     ? Theme.of(context).colorScheme.secondary
@@ -72,29 +74,60 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
   }
 }
 
-class _IconWithCount extends StatelessWidget {
+class _IconWithCount extends StatefulWidget {
   const _IconWithCount({
-    required this.count,
+    required this.watchCount,
     required this.icon,
     required this.background,
     required this.foreground,
   });
+
   final Icon icon;
-  final int count;
+  final WatchFire<int>? watchCount;
   final Color background;
   final Color foreground;
 
   @override
+  State<_IconWithCount> createState() => __IconWithCountState();
+}
+
+class __IconWithCountState extends State<_IconWithCount> {
+  StreamSubscription<int>? _watcher;
+
+  int count = -1;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _watcher = widget.watchCount?.call(
+      (c) {
+        setState(() {
+          count = c;
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _watcher?.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return count.isNegative
-        ? icon
+    return widget.watchCount == null
+        ? widget.icon
         : Row(
             children: [
-              icon,
+              widget.icon,
               const Padding(padding: EdgeInsets.only(left: 2)),
               Badge.count(
-                backgroundColor: background,
-                textColor: foreground,
+                backgroundColor: widget.background,
+                textColor: widget.foreground,
                 alignment: Alignment.bottomCenter,
                 count: count,
               ),

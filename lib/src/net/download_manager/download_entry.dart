@@ -52,7 +52,7 @@ class DownloadEntry {
         status: newStatus,
       );
 
-  DownloadFileData _toDb() => DownloadFileData.forDbFormat(
+  DownloadFileData _toDb() => objFactory.makeDownloadFileData(
         status: status,
         name: name,
         url: url,

@@ -25,18 +25,7 @@ abstract class BlacklistedDirectoryData implements CellBase {
   String alias(bool isList) => name;
 }
 
-abstract interface class BlacklistedDirectoryService {
-  ResourceSource<BlacklistedDirectoryData> makeSource();
-
+abstract interface class BlacklistedDirectoryService
+    implements ResourceSource<String, BlacklistedDirectoryData>, ServiceMarker {
   List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
-  void addAll(List<GalleryDirectory> directories);
-
-  void deleteAll(List<String> bucketIds);
-
-  void clear();
-
-  StreamSubscription<void> watch(
-    void Function(void) f, [
-    bool fire = false,
-  ]);
 }

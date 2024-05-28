@@ -8,6 +8,7 @@
 part of "../impl.dart";
 
 const kPrimaryGridSchemas = [
+  IsarGridTimeSchema,
   IsarGridStateSchema,
   IsarTagSchema,
   PostIsarSchema,
@@ -26,10 +27,13 @@ class _Dbs {
     required this.temporaryDbDir,
     required this.temporaryImagesDir,
     required this.thumbnail,
+    required this.secondaryGridDbDir,
   });
 
   final _favoriteFilesCachedValues = <int, bool>{};
-  final _localTagsCachedValues = <String, List<String>>{};
+  // final _favoritePostsCachedValues = <(int, Booru), FavoritePostData>{};
+  final _localTagsCachedValues = <String, String>{};
+  final _hiddenBooruPostCachedValues = <(int, Booru), String>{};
 
   final _currentBooruDbs = <Booru, Isar>{};
 
@@ -45,6 +49,7 @@ class _Dbs {
   final String directory;
   final String temporaryDbDir;
   final String temporaryImagesDir;
+  final String secondaryGridDbDir;
 
   String get appStorageDir => directory;
 
@@ -84,10 +89,15 @@ abstract class _DbsOpen {
   //   );
   // }
 
-  static Isar secondaryGridName(String name) {
+  static Isar secondaryGridName(String name, bool create) {
+    if (!create &&
+        !File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
+      throw "$name doesn't exist on disk";
+    }
+
     return Isar.openSync(
       [PostIsarSchema, IsarGridBooruPagingSchema],
-      directory: _dbs.directory,
+      directory: _dbs.secondaryGridDbDir,
       inspector: false,
       name: name,
     );

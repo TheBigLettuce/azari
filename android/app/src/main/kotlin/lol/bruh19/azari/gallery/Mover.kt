@@ -577,10 +577,9 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
+                closure(list, false, !inRefreshAtEnd && list.isNotEmpty())
                 if (list.isNotEmpty()) {
-                    closure(list, false, !inRefreshAtEnd)
-                } else {
-                    closure(list, false, false)
+                    closure(listOf(), false, !inRefreshAtEnd)
                 }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)
@@ -734,7 +733,10 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
-                sendDirResult(resMap, inRefresh = false, empty = false)
+                sendDirResult(resMap, inRefresh = resMap.isNotEmpty(), empty = false)
+                if (resMap.isNotEmpty()) {
+                    sendDirResult(mapOf(), inRefresh = false, empty = false)
+                }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
             }

@@ -10,7 +10,10 @@ import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/plugs/gallery.dart";
 
 abstract class GalleryAPIFiles {
-  ResourceSource<GalleryFile> get source;
+  DirectoryTagService get directoryTag;
+  DirectoryMetadataService get directoryMetadata;
+
+  SortingResourceSource<int, GalleryFile> get source;
 
   GalleryFilesPageType get type;
 

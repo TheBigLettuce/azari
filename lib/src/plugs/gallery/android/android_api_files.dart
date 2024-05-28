@@ -104,6 +104,8 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required this.directories,
     required super.parent,
     required super.source,
+    required super.directoryMetadata,
+    required super.directoryTag,
   }) : super(
           bucketId: "",
           type: GalleryFilesPageType.normal,
@@ -163,6 +165,8 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
   _AndroidGalleryFiles({
+    required this.directoryMetadata,
+    required this.directoryTag,
     required this.source,
     required this.type,
     required this.parent,
@@ -193,9 +197,16 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
     parent.bindFiles = null;
     source.destroy();
   }
+
+  @override
+  final DirectoryMetadataService directoryMetadata;
+
+  @override
+  final DirectoryTagService directoryTag;
 }
 
-class _AndroidFileSourceJoined implements ResourceSource<GalleryFile> {
+class _AndroidFileSourceJoined
+    implements SortingResourceSource<int, GalleryFile> {
   _AndroidFileSourceJoined(this.bucketIds);
 
   final List<String> bucketIds;
@@ -210,24 +221,29 @@ class _AndroidFileSourceJoined implements ResourceSource<GalleryFile> {
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
 
   @override
-  final SourceStorage<GalleryFile> backingStorage = ListStorage();
+  final ListStorage<GalleryFile> backingStorage = ListStorage();
 
   @override
-  GalleryFile? forIdx(int idx) => backingStorage.get(idx);
+  Future<int> clearRefreshSorting(SortingMode sortingMode) =>
+      clearRefresh(sortingMode);
 
   @override
-  GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
+  Future<int> nextSorting(SortingMode sortingMode) => next();
 
   @override
-  Future<int> clearRefresh() {
+  Future<int> clearRefresh([SortingMode sortingMode = SortingMode.none]) {
     if (progress.inRefreshing) {
       return Future.value(count);
     }
+
+    backingStorage.list.clear();
+
     progress.inRefreshing = true;
     if (bucketIds.length == 1) {
-      GalleryManagementApi.current().refreshFiles(bucketIds.first);
+      GalleryManagementApi.current().refreshFiles(bucketIds.first, sortingMode);
     } else {
-      GalleryManagementApi.current().refreshFilesMultiple(bucketIds);
+      GalleryManagementApi.current()
+          .refreshFilesMultiple(bucketIds, sortingMode);
     }
 
     return Future.value(backingStorage.count);
@@ -242,6 +258,91 @@ class _AndroidFileSourceJoined implements ResourceSource<GalleryFile> {
     progress.close();
   }
 }
+
+// class GenericListSorter<T> extends Iterable<T> {
+//   GenericListSorter(this.nextItems);
+
+//   final Iterable<T> Function(int, int) nextItems;
+
+//   @override
+//   Iterator<T> get iterator => _GenericSorterIterator(this.nextItems);
+// }
+
+// class _GenericSorterIterator<T> implements Iterator<T> {
+//   _GenericSorterIterator(this.nextItems);
+
+//   final Iterable<T> Function(int, int) nextItems;
+//   final _storage = BufferedStorage<T>();
+
+//   @override
+//   T get current => _storage.current;
+
+//   @override
+//   bool moveNext() => _storage.moveNext(nextItems);
+// }
+
+ 
+
+// class _IsarCollectionIterator<T> implements Iterator<T> {
+//   _IsarCollectionIterator(
+//     this.collection, {
+//     required this.reversed,
+//     this.loader,
+//   });
+
+//   final IsarCollection<T> collection;
+//   final bool reversed;
+
+//   final QueryBuilder<T, T, QAfterLimit> Function(
+//     QueryBuilder<T, T, QWhere> q,
+//     int offset,
+//     int limit,
+//   )? loader;
+
+//   final List<T> _buffer = [];
+//   int _cursor = -1;
+//   bool _done = false;
+
+//   @override
+//   T get current => _buffer[_cursor];
+
+//   QueryBuilder<T, T, QAfterLimit> defaultLoader(
+//     QueryBuilder<T, T, QWhere> q,
+//     int offset,
+//     int limit,
+//   ) =>
+//       q.offset(offset).limit(limit);
+
+//   @override
+//   bool moveNext() {
+//     if (_done) {
+//       return false;
+//     }
+
+//     if (_buffer.isNotEmpty && _cursor != _buffer.length - 1) {
+//       _cursor += 1;
+//       return true;
+//     }
+
+//     final ret = (loader ?? defaultLoader)(
+//       collection.where(sort: reversed ? Sort.asc : Sort.desc),
+//       _buffer.length,
+//       40,
+//     ).findAllSync();
+//     if (ret.isEmpty) {
+//       _cursor = -1;
+//       _buffer.clear();
+//       return !(_done = true);
+//     }
+
+//     _cursor = 0;
+//     _buffer.clear();
+//     _buffer.addAll(ret);
+
+//     return true;
+//   }
+// }
+
 
 // class _AndroidFileSource implements ResourceSource<GalleryFile> {
 //   _AndroidFileSource(this.bucketId);

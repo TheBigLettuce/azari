@@ -39,7 +39,7 @@ class __FinishedTabState extends State<_FinishedTab> {
   late final originalSource = GenericListSource<WatchedAnimeEntryData>(
     () => Future.value(watchedAnimeEntries.all),
   );
-  late final ChainedFilterResourceSource<WatchedAnimeEntryData> filter;
+  late final ChainedFilterResourceSource<int, WatchedAnimeEntryData> filter;
 
   late final state = GridSkeletonState<WatchedAnimeEntryData>();
 
@@ -52,7 +52,10 @@ class __FinishedTabState extends State<_FinishedTab> {
     filter = ChainedFilterResourceSource.basic(
       originalSource,
       ListStorage(),
-      fn: (e, filteringMode, sortingMode) => e.title.contains(_filteringValue),
+      filter: (cells, filteringMode, sortingMode, end, [data]) => (
+        cells.where((e) => e.title.contains(_filteringValue)),
+        null,
+      ),
     );
 
     watcher = watchedAnimeEntries.watchAll((_) {

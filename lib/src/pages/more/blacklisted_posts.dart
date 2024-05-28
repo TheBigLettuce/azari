@@ -7,6 +7,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/impl/memory_only/impl.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -38,7 +39,11 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
 
   late final state = GridSkeletonState<HiddenBooruPostData>();
   late final source = GenericListSource<HiddenBooruPostData>(
-    () => Future.value(hiddenBooruPost.all),
+    () => Future.value(
+      hiddenBooruPost.cachedValues.entries
+          .map((e) => PlainHiddenBooruPostData(e.key.$2, e.key.$1, e.value))
+          .toList(),
+    ),
   );
 
   @override

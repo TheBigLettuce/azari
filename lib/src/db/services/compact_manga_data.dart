@@ -31,19 +31,6 @@ mixin CompactMangaData
         CellBase,
         Thumbnailable,
         Pressable<CompactMangaData> {
-  static CompactMangaData forDb({
-    required String mangaId,
-    required MangaMeta site,
-    required String title,
-    required String thumbUrl,
-  }) =>
-      _currentDb.compactMangaDataForDb(
-        mangaId: mangaId,
-        site: site,
-        title: title,
-        thumbUrl: thumbUrl,
-      );
-
   @override
   CellStaticData description() => const CellStaticData();
 

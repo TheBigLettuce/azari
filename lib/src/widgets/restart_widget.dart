@@ -50,7 +50,8 @@ class _RestartWidgetState extends State<RestartWidget> {
   void initState() {
     super.initState();
 
-    tagManager = TagManager.booru(SettingsService.db().current.selectedBooru);
+    tagManager =
+        objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
 
     StatisticsDailyData sts = StatisticsDailyService.db().current;
 
@@ -125,7 +126,8 @@ class _RestartWidgetState extends State<RestartWidget> {
   }
 
   void restartApp() {
-    tagManager = TagManager.booru(SettingsService.db().current.selectedBooru);
+    tagManager =
+        objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
 
     setState(() {
       key = UniqueKey();

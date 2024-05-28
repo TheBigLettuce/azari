@@ -42,17 +42,27 @@ class _DummyDirectories implements GalleryAPIDirectories {
   GalleryAPIFiles? get bindFiles => null;
 
   @override
-  GalleryAPIFiles files(GalleryDirectory d, GalleryFilesPageType type) {
+  final ResourceSource<int, GalleryDirectory> source =
+      GenericListSource(() => Future.value([]));
+
+  @override
+  GalleryAPIFiles files(
+    GalleryDirectory d,
+    GalleryFilesPageType type,
+    DirectoryTagService directoryTag,
+    DirectoryMetadataService directoryMetadata,
+  ) {
     throw UnimplementedError();
   }
 
   @override
-  GalleryAPIFiles joinedFiles(List<String> bucketIds) {
+  GalleryAPIFiles joinedFiles(
+    List<String> bucketIds,
+    DirectoryTagService directoryTag,
+    DirectoryMetadataService directoryMetadata,
+  ) {
     throw UnimplementedError();
   }
-
-  @override
-  final ResourceSource<GalleryDirectory> source = ResourceSource.empty();
 }
 
 // class _DummyFiles implements GalleryAPIFiles {

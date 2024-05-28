@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
@@ -16,7 +17,7 @@ Future<DownloadManager> init(ServicesImplTable db) =>
 ServicesImplTable getApi() => DummyServicesImplTable();
 
 class DummyServicesImplTable
-    with ServicesImplTableObjInstExt
+    with ServicesObjFactoryExt
     implements ServicesImplTable {
   @override
   SettingsService get settings => throw UnimplementedError();
@@ -36,7 +37,7 @@ class DummyServicesImplTable
   @override
   DownloadFileService get downloads => throw UnimplementedError();
   @override
-  FavoritePostService get favoritePosts => throw UnimplementedError();
+  FavoritePostSourceService get favoritePosts => throw UnimplementedError();
   @override
   StatisticsGeneralService get statisticsGeneral => throw UnimplementedError();
   @override
@@ -68,7 +69,7 @@ class DummyServicesImplTable
   @override
   CompactMangaDataService get compactManga => throw UnimplementedError();
   @override
-  GridStateBooruService get gridStateBooru => throw UnimplementedError();
+  GridBookmarkService get gridBookmarks => throw UnimplementedError();
   @override
   FavoriteFileService get favoriteFiles => throw UnimplementedError();
   @override
@@ -81,21 +82,25 @@ class DummyServicesImplTable
   @override
   MainGridService mainGrid(Booru booru) => throw UnimplementedError();
   @override
-  SecondaryGridService secondaryGrid(Booru booru, String name) =>
+  SecondaryGridService secondaryGrid(
+    Booru booru,
+    String name, [
+    bool create = false,
+  ]) =>
       throw UnimplementedError();
 
   @override
-  TagManager tagManager(Booru booru) => throw UnimplementedError();
+  TagManager makeTagManager(Booru booru) => throw UnimplementedError();
 
   @override
-  LocalTagsData localTagsDataForDb(
+  LocalTagsData makeLocalTagsData(
     String filename,
     List<String> tags,
   ) =>
       throw UnimplementedError();
 
   @override
-  CompactMangaData compactMangaDataForDb({
+  CompactMangaData makeCompactMangaData({
     required String mangaId,
     required MangaMeta site,
     required String title,
@@ -104,14 +109,14 @@ class DummyServicesImplTable
       throw UnimplementedError();
 
   @override
-  SettingsPath settingsPathForCurrent({
+  SettingsPath makeSettingsPath({
     required String path,
     required String pathDisplay,
   }) =>
       throw UnimplementedError();
 
   @override
-  DownloadFileData downloadFileDataForDbFormat({
+  DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,
     required String url,
@@ -122,7 +127,7 @@ class DummyServicesImplTable
       throw UnimplementedError();
 
   @override
-  HiddenBooruPostData hiddenBooruPostDataForDb(
+  HiddenBooruPostData makeHiddenBooruPostData(
     String thumbUrl,
     int postId,
     Booru booru,
@@ -130,11 +135,52 @@ class DummyServicesImplTable
       throw UnimplementedError();
 
   @override
-  PinnedManga pinnedMangaForDb({
+  PinnedManga makePinnedManga({
     required String mangaId,
     required MangaMeta site,
     required String thumbUrl,
     required String title,
   }) =>
       throw UnimplementedError();
+
+  @override
+  GridBookmark makeGridBookmark({
+    required String tags,
+    required Booru booru,
+    required String name,
+    required DateTime time,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  BlacklistedDirectoryData makeBlacklistedDirectoryData(
+          String bucketId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  AnimeGenre makeAnimeGenre(
+      {required String title,
+      required int id,
+      required bool unpressable,
+      required bool explicit}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  AnimeRelation makeAnieRelation(
+      {required int id,
+      required String thumbUrl,
+      required String title,
+      required String type}) {
+    // TODO: implement makeAnieRelation
+    throw UnimplementedError();
+  }
+
+  @override
+  AnimeCharacter makeAnimeCharacter(
+      {required String imageUrl, required String name, required String role}) {
+    // TODO: implement makeAnimeCharacter
+    throw UnimplementedError();
+  }
 }

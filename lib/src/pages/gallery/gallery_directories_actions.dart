@@ -30,15 +30,19 @@ class SystemGalleryDirectoriesActions {
     return GridAction(
       Icons.hide_image_outlined,
       (selected) async {
-        final requireAuth = <GalleryDirectory>[];
-        final noAuth = <GalleryDirectory>[];
+        final requireAuth = <BlacklistedDirectoryData>[];
+        final noAuth = <BlacklistedDirectoryData>[];
 
         for (final e in selected) {
           final m = directoryMetadata.get(segment(e));
           if (m != null && m.requireAuth) {
-            requireAuth.add(e);
+            requireAuth.add(
+              objFactory.makeBlacklistedDirectoryData(e.bucketId, e.name),
+            );
           } else {
-            noAuth.add(e);
+            noAuth.add(
+              objFactory.makeBlacklistedDirectoryData(e.bucketId, e.name),
+            );
           }
         }
 
@@ -50,7 +54,7 @@ class SystemGalleryDirectoriesActions {
           }
         }
 
-        blacklistedDirectory.addAll(
+        blacklistedDirectory.backingStorage.addAll(
           noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth,
         );
 
@@ -70,7 +74,7 @@ class SystemGalleryDirectoriesActions {
                     return;
                   }
 
-                  blacklistedDirectory.addAll(requireAuth);
+                  blacklistedDirectory.backingStorage.addAll(requireAuth);
                 },
               ),
             ),
@@ -88,6 +92,7 @@ class SystemGalleryDirectoriesActions {
     SelectionGlue Function([Set<GluePreferences>])? generate,
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
+    DirectoryTagService directoryTags,
   ) {
     return GridAction(
       Icons.merge_rounded,
@@ -103,6 +108,7 @@ class SystemGalleryDirectoriesActions {
           generate,
           segment,
           directoryMetadata,
+          directoryTags,
         );
       },
       true,
@@ -118,6 +124,7 @@ class SystemGalleryDirectoriesActions {
     SelectionGlue Function([Set<GluePreferences>])? generate,
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
+    DirectoryTagService directoryTags,
   ) async {
     bool requireAuth = false;
 
@@ -140,7 +147,11 @@ class SystemGalleryDirectoriesActions {
 
     StatisticsGalleryService.db().current.add(joined: 1).save();
 
-    final joined = api.joinedFiles(dirs.map((e) => e.bucketId).toList());
+    final joined = api.joinedFiles(
+      dirs.map((e) => e.bucketId).toList(),
+      directoryTags,
+      directoryMetadata,
+    );
 
     return Navigator.push<void>(
       context,

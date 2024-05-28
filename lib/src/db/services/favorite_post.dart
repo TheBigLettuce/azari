@@ -8,7 +8,7 @@
 part of "services.dart";
 
 abstract class FavoritePostData extends PostBase
-    with Post, DefaultPostPressable {
+    with Post<FavoritePostData>, DefaultPostPressable<FavoritePostData> {
   FavoritePostData({
     required this.group,
     required super.id,
@@ -32,23 +32,22 @@ abstract class FavoritePostData extends PostBase
 
   @override
   CellStaticData description() => const CellStaticData();
+
+  @override
+  String toString() => "FavoritePostData: $id";
 }
 
-abstract interface class FavoritePostService implements ServiceMarker {
-  int get count;
+abstract interface class FavoritePostSourceService
+    implements
+        ResourceSource<(int id, Booru booru), FavoritePostData>,
+        ServiceMarker {
+  List<Post> addRemove(List<Post> posts);
 
-  List<Post> addRemove(
-    // BuildContext context,
-    List<Post> posts,
-    // bool showDeleteSnackbar,
-  );
-
-  bool isFavorite(int id, Booru booru);
-
-  void addAllFileUrl(List<FavoritePostData> favorites);
-
-  StreamSubscription<void> watch(
-    void Function(void) f, [
+  StreamSubscription<T> watchSingle<T>(
+    int id,
+    Booru booru,
+    T Function(bool) transform,
+    void Function(T) f, [
     bool fire = false,
   ]);
 }

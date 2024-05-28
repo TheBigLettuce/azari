@@ -19,15 +19,6 @@ abstract class SettingsPath {
 
   bool get isEmpty => path.isEmpty;
   bool get isNotEmpty => path.isNotEmpty;
-
-  static SettingsPath forCurrent({
-    required String path,
-    required String pathDisplay,
-  }) =>
-      _currentDb.settingsPathForCurrent(
-        path: path,
-        pathDisplay: pathDisplay,
-      );
 }
 
 abstract class SettingsData {

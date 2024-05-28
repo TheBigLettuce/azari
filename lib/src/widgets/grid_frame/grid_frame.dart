@@ -11,6 +11,7 @@ import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
@@ -176,7 +177,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     noAppBar: !widget.description.showAppBar,
   );
 
-  ResourceSource<T> get source => widget.functionality.source;
+  ResourceSource<int, T> get source => widget.functionality.source;
 
   int _refreshes = 0;
 

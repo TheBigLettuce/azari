@@ -30,7 +30,7 @@ List<Post> fromList(List<dynamic> l) {
 }
 
 @JsonSerializable()
-class _DanbooruPost with Post, DefaultPostPressable {
+class _DanbooruPost with Post<Post>, DefaultPostPressable<Post> {
   const _DanbooruPost({
     required this.height,
     required this.id,

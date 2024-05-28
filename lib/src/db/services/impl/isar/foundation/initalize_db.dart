@@ -9,7 +9,7 @@ part of "../impl.dart";
 
 bool _initalized = false;
 
-Future<void> initalizeIsarDb(bool temporary) async {
+Future<void> initalizeIsarDb(bool temporary, ServicesImplTable db) async {
   if (_initalized) {
     return;
   }
@@ -33,6 +33,11 @@ Future<void> initalizeIsarDb(bool temporary) async {
   }
 
   final temporaryImagesPath = dimages.path;
+
+  final secondaryDir = path.join(directoryPath, "secondaryGrid");
+  {
+    Directory(secondaryDir).createSync();
+  }
 
   final anime = Isar.openSync(
     [
@@ -66,7 +71,7 @@ Future<void> initalizeIsarDb(bool temporary) async {
       IsarSettingsSchema,
       IsarFavoriteBooruSchema,
       IsarLocalTagDictionarySchema,
-      IsarGridStateBooruSchema,
+      IsarBookmarkSchema,
       IsarDownloadFileSchema,
       IsarHiddenBooruPostSchema,
       IsarStatisticsGallerySchema,
@@ -121,8 +126,27 @@ Future<void> initalizeIsarDb(bool temporary) async {
     anime: anime,
     temporaryDbDir: temporaryDbPath,
     temporaryImagesDir: temporaryImagesPath,
+    secondaryGridDbDir: secondaryDir,
     blacklisted: blacklistedDirIsar,
     thumbnail: thumbnailIsar,
     localTags: localTags,
   );
+
+  for (final e in _IsarCollectionReverseIterable(
+    _IsarCollectionIterator(_Dbs.g.main.isarFavoriteBoorus, reversed: false),
+  )) {
+    db.favoritePosts.backingStorage.add(e, true);
+  }
+
+  for (final e in _IsarCollectionReverseIterable(
+    _IsarCollectionIterator(_Dbs.g.main.isarHiddenBooruPosts, reversed: false),
+  )) {
+    _dbs._hiddenBooruPostCachedValues[(e.postId, e.booru)] = e.thumbUrl;
+  }
+
+  for (final e in _IsarCollectionReverseIterable(
+    _IsarCollectionIterator(_Dbs.g.localTags.isarLocalTags, reversed: false),
+  )) {
+    _dbs._localTagsCachedValues[e.filename] = e.tags.join(" ");
+  }
 }

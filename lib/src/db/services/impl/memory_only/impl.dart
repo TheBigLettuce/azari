@@ -58,7 +58,7 @@ class MemoryOnlyServicesImplTable
   @override
   final HiddenBooruPostService hiddenBooruPost = MemoryHiddenBooruPostService();
   @override
-  final FavoritePostService favoritePosts = MemoryFavoritePostService();
+  final FavoritePostSourceService favoritePosts = MemoryFavoritePostService();
 
   @override
   final StatisticsGeneralService statisticsGeneral =
@@ -100,7 +100,7 @@ class MemoryOnlyServicesImplTable
   @override
   final CompactMangaDataService compactManga = MemoryCompactMangaDataService();
   @override
-  final GridStateBooruService gridStateBooru = MemoryGridStateBooruService();
+  final GridBookmarkService gridBookmarks = MemoryGridStateBooruService();
   @override
   final FavoriteFileService favoriteFiles = MemoryFavoriteFileService();
   @override
@@ -114,24 +114,45 @@ class MemoryOnlyServicesImplTable
 
   final Map<Booru, MainGridService> _gridServices = {};
 
-  TagManager tagManager(Booru booru) => mainGrid(booru).tagManager;
+  @override
+  TagManager makeTagManager(Booru booru) => mainGrid(booru).tagManager;
 
   @override
   MainGridService mainGrid(Booru booru) =>
       _gridServices.putIfAbsent(booru, () => MemoryMainGridService(booru));
   @override
-  SecondaryGridService secondaryGrid(Booru booru, String name) =>
+  SecondaryGridService secondaryGrid(
+    Booru booru,
+    String name, [
+    bool create = false,
+  ]) =>
       throw UnimplementedError();
 }
 
-mixin class MemoryOnlyServicesImplTableObjInstExt {
-  LocalTagsData localTagsDataForDb(
+mixin MemoryOnlyServicesImplTableObjInstExt implements ServicesObjFactoryExt {
+  @override
+  GridBookmark makeGridBookmark({
+    required String tags,
+    required Booru booru,
+    required String name,
+    required DateTime time,
+  }) =>
+      PlainGridBookmark(
+        tags: tags,
+        booru: booru,
+        name: name,
+        time: time,
+      );
+
+  @override
+  LocalTagsData makeLocalTagsData(
     String filename,
     List<String> tags,
   ) =>
       PlainLocalTagsData(filename, tags);
 
-  CompactMangaData compactMangaDataForDb({
+  @override
+  CompactMangaData makeCompactMangaData({
     required String mangaId,
     required MangaMeta site,
     required String title,
@@ -144,13 +165,15 @@ mixin class MemoryOnlyServicesImplTableObjInstExt {
         title: title,
       );
 
-  SettingsPath settingsPathForCurrent({
+  @override
+  SettingsPath makeSettingsPath({
     required String path,
     required String pathDisplay,
   }) =>
       PlainSettingsPath(path, pathDisplay);
 
-  DownloadFileData downloadFileDataForDbFormat({
+  @override
+  DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,
     required String url,
@@ -167,14 +190,16 @@ mixin class MemoryOnlyServicesImplTableObjInstExt {
         status: DownloadStatus.inProgress,
       );
 
-  HiddenBooruPostData hiddenBooruPostDataForDb(
+  @override
+  HiddenBooruPostData makeHiddenBooruPostData(
     String thumbUrl,
     int postId,
     Booru booru,
   ) =>
       PlainHiddenBooruPostData(booru, postId, thumbUrl);
 
-  PinnedManga pinnedMangaForDb({
+  @override
+  PinnedManga makePinnedManga({
     required String mangaId,
     required MangaMeta site,
     required String thumbUrl,
@@ -186,6 +211,38 @@ mixin class MemoryOnlyServicesImplTableObjInstExt {
         thumbUrl: thumbUrl,
         title: title,
       );
+
+  @override
+  BlacklistedDirectoryData makeBlacklistedDirectoryData(
+    String bucketId,
+    String name,
+  ) =>
+      PlainBlacklistedDirectoryData(bucketId, name);
+
+  @override
+  AnimeGenre makeAnimeGenre(
+          {required String title,
+          required int id,
+          required bool unpressable,
+          required bool explicit}) =>
+      throw UnimplementedError();
+
+  @override
+  AnimeRelation makeAnieRelation(
+      {required int id,
+      required String thumbUrl,
+      required String title,
+      required String type}) {
+    // TODO: implement makeAnieRelation
+    throw UnimplementedError();
+  }
+
+  @override
+  AnimeCharacter makeAnimeCharacter(
+      {required String imageUrl, required String name, required String role}) {
+    // TODO: implement makeAnimeCharacter
+    throw UnimplementedError();
+  }
 }
 
 class MemoryDownloadFileService implements DownloadFileService {
@@ -1652,9 +1709,9 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
     return l;
   }
 
-  @override
-  ResourceSource<BlacklistedDirectoryData> makeSource() =>
-      GenericListSource(() => Future.value(_val.values.toList()));
+  // @override
+  // ResourceSource<BlacklistedDirectoryData, String> makeSource() =>
+  //     GenericListSource(() => Future.value(_val.values.toList()));
 
   @override
   StreamSubscription<void> watch(
@@ -1662,6 +1719,40 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
     bool fire = false,
   ]) =>
       _events.stream.listen(f);
+
+  @override
+  // TODO: implement backingStorage
+  SourceStorage<String, BlacklistedDirectoryData> get backingStorage =>
+      throw UnimplementedError();
+
+  @override
+  Future<int> clearRefresh() {
+    // TODO: implement clearRefresh
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement count
+  int get count => throw UnimplementedError();
+
+  @override
+  void destroy() {
+    // TODO: implement destroy
+  }
+
+  @override
+  // TODO: implement hasNext
+  bool get hasNext => throw UnimplementedError();
+
+  @override
+  Future<int> next() {
+    // TODO: implement next
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement progress
+  RefreshingProgress get progress => throw UnimplementedError();
 }
 
 class MemoryLocalTagDictionaryService implements LocalTagDictionaryService {
@@ -1690,20 +1781,20 @@ class PlainBooruTag extends BooruTag {
 
 class MemoryLocalTagsService implements LocalTagsService {
   @override
-  final Map<String, List<String>> cachedValues = {};
+  final Map<String, String> cachedValues = {};
 
   final _events = StreamController<String>.broadcast();
 
   @override
   void add(String filename, List<String> tags) {
-    cachedValues[filename] = tags;
+    cachedValues[filename] = tags.join(" ");
     _events.add(filename);
   }
 
   @override
   void addAll(List<LocalTagsData> tags) {
     for (final e in tags) {
-      cachedValues[e.filename] = e.tags;
+      cachedValues[e.filename] = e.tags.join(" ");
     }
 
     for (final e in tags) {
@@ -1714,10 +1805,10 @@ class MemoryLocalTagsService implements LocalTagsService {
   @override
   void addMultiple(List<String> filenames, String tag) {
     for (final e in filenames) {
-      final prev = (cachedValues[e] ?? []).toList()
+      final prev = (cachedValues[e]?.split(" ") ?? []).toList()
         ..remove(tag)
         ..add(tag);
-      cachedValues[e] = prev;
+      cachedValues[e] = prev.join(" ");
     }
 
     for (final e in filenames) {
@@ -1735,13 +1826,14 @@ class MemoryLocalTagsService implements LocalTagsService {
   }
 
   @override
-  List<String> get(String filename) => cachedValues[filename] ?? const [];
+  List<String> get(String filename) =>
+      cachedValues[filename]?.split(" ") ?? const [];
 
   @override
   void removeSingle(List<String> filenames, String tag) {
     for (final e in filenames) {
-      final prev = (cachedValues[e] ?? []).toList()..remove(tag);
-      cachedValues[e] = prev;
+      final prev = (cachedValues[e]?.split(" ") ?? []).toList()..remove(tag);
+      cachedValues[e] = prev.join(" ");
     }
     for (final e in filenames) {
       _events.add(e);
@@ -1756,7 +1848,7 @@ class MemoryLocalTagsService implements LocalTagsService {
               sink.add(
                 PlainLocalTagsData(
                   filename,
-                  cachedValues[filename] ?? const [],
+                  cachedValues[filename]?.split(" ") ?? const [],
                 ),
               );
             }
@@ -1787,40 +1879,63 @@ class MemoryCompactMangaDataService implements CompactMangaDataService {
       _val[(mangaId, site)];
 }
 
-class MemoryGridStateBooruService implements GridStateBooruService {
-  final Map<String, GridStateBooru> _val = {};
+class MemoryGridStateBooruService implements GridBookmarkService {
+  final Map<String, GridBookmark> _val = {};
 
-  final StreamController<void> _events = StreamController.broadcast();
+  final _events = StreamController<int>.broadcast();
 
   @override
-  List<GridStateBooru> get all => _val.values.toList();
+  List<GridBookmark> get all => _val.values.toList();
 
   @override
   int get count => all.length;
 
   @override
-  void add(GridStateBooru state) {
+  void add(GridBookmark state) {
     _val.containsKey(state.name);
-    _events.add(null);
+    _events.add(count);
   }
 
   @override
   void delete(String name) {
     final n = _val.remove(name);
     if (n != null) {
-      _events.add(null);
+      _events.add(count);
     }
   }
 
   @override
-  GridStateBooru? get(String name) => _val[name];
+  GridBookmark? get(String name) => _val[name];
 
   @override
-  StreamSubscription<void> watch(
-    void Function(void p1) f, [
+  StreamSubscription<int> watch(
+    void Function(int p1) f, [
     bool fire = false,
   ]) =>
       _events.stream.listen(f);
+}
+
+class PlainGridBookmark extends GridBookmark {
+  const PlainGridBookmark({
+    required super.name,
+    required super.time,
+    required super.tags,
+    required super.booru,
+  });
+
+  @override
+  GridBookmark copy({
+    String? tags,
+    String? name,
+    Booru? booru,
+    DateTime? time,
+  }) =>
+      PlainGridBookmark(
+        tags: tags ?? this.tags,
+        booru: booru ?? this.booru,
+        name: name ?? this.name,
+        time: time ?? this.time,
+      );
 }
 
 class PlainFavoritePostData extends FavoritePostData {
@@ -1843,92 +1958,141 @@ class PlainFavoritePostData extends FavoritePostData {
   });
 }
 
-class MemoryFavoritePostService implements FavoritePostService {
-  final Map<(int id, Booru booru), FavoritePostData> _val = {};
+class MemoryFavoritePostService implements FavoritePostSourceService {
+  // @override
+  // final Map<(int id, Booru booru), FavoritePostData> cachedValues = {};
 
-  final StreamController<void> _events = StreamController.broadcast();
+  final _eventsCount = StreamController<int>.broadcast();
+  // final _events = StreamController<(int, Booru)>.broadcast();
 
   @override
-  int get count => _val.length;
+  int get count => backingStorage.length;
 
-  @override
-  void addAllFileUrl(List<FavoritePostData> favorites) {
-    _val.addEntries(favorites.map((e) => MapEntry((e.id, e.booru), e)));
-    _events.add(null);
-  }
+  // @override
+  // void addAllFileUrl(List<FavoritePostData> favorites) {
+  //   cachedValues.addEntries(favorites.map((e) => MapEntry((e.id, e.booru), e)));
+
+  //   for (final e in favorites) {
+  //     _events.add((e.id, e.booru));
+  //   }
+
+  //   _eventsVoid.add(null);
+  // }
 
   @override
   List<Post> addRemove(List<Post> posts) {
     final deleted = <Post>[];
 
     for (final e in posts) {
-      final p = _val[(e.id, e.booru)];
+      final p = backingStorage.get((e.id, e.booru));
       if (p == null) {
-        _val[(e.id, e.booru)] = e is FavoritePostData
-            ? e
-            : PlainFavoritePostData(
-                group: null,
-                id: e.id,
-                height: e.height,
-                md5: e.md5,
-                tags: e.tags,
-                width: e.width,
-                fileUrl: e.fileUrl,
-                booru: e.booru,
-                previewUrl: e.previewUrl,
-                sampleUrl: e.sampleUrl,
-                sourceUrl: e.sourceUrl,
-                rating: e.rating,
-                score: e.score,
-                createdAt: e.createdAt,
-                type: e.type,
-              );
+        backingStorage.add(
+          e is FavoritePostData
+              ? e
+              : PlainFavoritePostData(
+                  group: null,
+                  id: e.id,
+                  height: e.height,
+                  md5: e.md5,
+                  tags: e.tags,
+                  width: e.width,
+                  fileUrl: e.fileUrl,
+                  booru: e.booru,
+                  previewUrl: e.previewUrl,
+                  sampleUrl: e.sampleUrl,
+                  sourceUrl: e.sourceUrl,
+                  rating: e.rating,
+                  score: e.score,
+                  createdAt: e.createdAt,
+                  type: e.type,
+                ),
+          true,
+        );
       } else {
-        final d = _val.remove((e.id, e.booru));
-        if (d != null) {
-          deleted.add(d);
+        final d = backingStorage.removeAll([(e.id, e.booru)]);
+        if (d.isNotEmpty) {
+          deleted.add(d.first);
         }
       }
     }
 
-    _events.add(null);
+    // for (final e in posts) {
+    //   _events.add((e.id, e.booru));
+    // }
+
+    _eventsCount.add(count);
 
     return deleted;
   }
 
-  @override
-  bool isFavorite(int id, Booru booru) => _val.containsKey((id, booru));
+  // @override
+  // StreamSubscription<int> watch(
+  //   void Function(int p1) f, [
+  //   bool fire = false,
+  // ]) =>
+  //     _eventsCount.stream.listen(f);
 
   @override
-  StreamSubscription<void> watch(
-    void Function(void p1) f, [
+  final MapStorage<(int, Booru), FavoritePostData> backingStorage =
+      MapStorage((v) => (v.id, v.booru));
+
+  @override
+  Future<int> clearRefresh() => Future.value(count);
+
+  @override
+  Future<int> next() => Future.value(count);
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  ClosableRefreshProgress get progress => ClosableRefreshProgress();
+
+  @override
+  void destroy() {
+    progress.close();
+    backingStorage.destroy();
+  }
+
+  @override
+  StreamSubscription<T> watchSingle<T>(
+    int id,
+    Booru booru,
+    T Function(bool p1) transform,
+    void Function(T p1) f, [
     bool fire = false,
   ]) =>
-      _events.stream.listen(f);
+      throw UnimplementedError()
+      // _events.stream.transform<T>(
+      //   StreamTransformer.fromHandlers(
+      //     handleData: (data, sink) {
+      //       if (data.$1 == id && data.$2 == booru) {
+      //         sink.add(transform(backingStorage.map_.containsKey(data)));
+      //       }
+      //     },
+      //   ),
+      // ).listen(f)
+      ;
 }
 
 class MemoryHiddenBooruPostService implements HiddenBooruPostService {
-  final Map<(int, Booru), HiddenBooruPostData> _val = {};
+  @override
+  final Map<(int, Booru), String> cachedValues = {};
 
   final StreamController<void> _events = StreamController.broadcast();
 
   @override
-  List<HiddenBooruPostData> get all => _val.values.toList();
-
-  @override
   void addAll(List<HiddenBooruPostData> booru) {
-    _val.addEntries(booru.map((e) => MapEntry((e.postId, e.booru), e)));
+    cachedValues.addEntries(
+        booru.map((e) => MapEntry((e.postId, e.booru), e.thumbUrl)));
 
     _events.add(null);
   }
 
   @override
-  bool isHidden(int postId, Booru booru) => _val.containsKey((postId, booru));
-
-  @override
   void removeAll(List<(int, Booru)> booru) {
     for (final e in booru) {
-      _val.remove(e);
+      cachedValues.remove(e);
     }
 
     _events.add(null);
@@ -1937,6 +2101,12 @@ class MemoryHiddenBooruPostService implements HiddenBooruPostService {
   @override
   StreamSubscription<void> watch(void Function(void p1) f) =>
       _events.stream.listen(f);
+
+  @override
+  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) {
+    // TODO: implement streamSingle
+    throw UnimplementedError();
+  }
 }
 
 class MemoryGridSettingsService implements GridSettingsService {
@@ -1981,46 +2151,50 @@ class MemoryGridSettingsService implements GridSettingsService {
   );
 }
 
-class MemoryGridState extends GridStateBase with GridState {
-  const MemoryGridState({
+class PlainGridState extends GridState {
+  const PlainGridState({
+    required super.name,
+    required super.offset,
     required super.tags,
     required super.safeMode,
-    required super.scrollOffset,
-    required super.name,
-    required super.time,
   });
 
   @override
   GridState copy({
     String? name,
     String? tags,
-    double? scrollOffset,
+    double? offset,
     SafeMode? safeMode,
-    DateTime? time,
   }) =>
-      MemoryGridState(
+      PlainGridState(
         tags: tags ?? this.tags,
         safeMode: safeMode ?? this.safeMode,
-        scrollOffset: scrollOffset ?? this.scrollOffset,
+        offset: offset ?? this.offset,
         name: name ?? this.name,
-        time: time ?? this.time,
       );
 }
 
-class ListPostsOptimizedStorage extends ListStorage<Post>
+class MapPostsOptimizedStorage extends MapStorage<(int, Booru), Post>
     implements PostsOptimizedStorage {
-  @override
-  List<Post> get firstFiveAll =>
-      list.where((p) => p.rating.asSafeMode == SafeMode.none).take(5).toList();
+  MapPostsOptimizedStorage() : super(PostsOptimizedStorage.postTransformKey);
 
   @override
-  List<Post> get firstFiveNormal => list
+  Post? currentlyLast;
+
+  @override
+  List<Post> get firstFiveAll => map_.values
+      .where((p) => p.rating.asSafeMode == SafeMode.none)
+      .take(5)
+      .toList();
+
+  @override
+  List<Post> get firstFiveNormal => map_.values
       .where((p) => p.rating.asSafeMode == SafeMode.normal)
       .take(5)
       .toList();
 
   @override
-  List<Post> get firstFiveRelaxed => list
+  List<Post> get firstFiveRelaxed => map_.values
       .where((p) => p.rating.asSafeMode == SafeMode.relaxed)
       .take(5)
       .toList();
@@ -2032,7 +2206,7 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
     this.entry,
     this.excluded,
     this.filters,
-    this.backingStorage,
+    // this.backingStorage,
   );
 
   @override
@@ -2054,16 +2228,33 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   bool get hasNext => true;
 
   @override
-  final PostsOptimizedStorage backingStorage;
+  // TODO: implement backingStorage
+  SourceStorage<int, Post> get backingStorage => throw UnimplementedError();
 
   @override
-  int get count => backingStorage.count;
+  // TODO: implement count
+  int get count => throw UnimplementedError();
+
+  @override
+  // TODO: implement currentlyLast
+  Post? get currentlyLast => throw UnimplementedError();
 
   @override
   void destroy() {
-    progress.close();
-    backingStorage.destroy();
+    // TODO: implement destroy
   }
+
+  // @override
+  // final PostsOptimizedStorage backingStorage;
+
+  // @override
+  // int get count => backingStorage.count;
+
+  // @override
+  // void destroy() {
+  //   progress.close();
+  //   backingStorage.destroy();
+  // }
 }
 
 class MemoryMainGridService implements MainGridService {
@@ -2072,16 +2263,18 @@ class MemoryMainGridService implements MainGridService {
   final Booru booru;
 
   @override
-  late GridState currentState = MemoryGridState(
-    tags: "",
-    safeMode: SafeMode.normal,
-    scrollOffset: 0,
+  late GridState currentState = PlainGridState(
     name: booru.string,
-    time: DateTime.now(),
+    offset: 0,
+    tags: "",
+    safeMode: SafeMode.none,
   );
 
   @override
   int page = 0;
+
+  @override
+  DateTime time = DateTime.now();
 
   @override
   GridPostSource makeSource(
@@ -2095,10 +2288,9 @@ class MemoryMainGridService implements MainGridService {
         entry,
         excluded,
         [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
-        _storage,
       );
 
-  final _storage = ListPostsOptimizedStorage();
+  final _storage = MapPostsOptimizedStorage();
 
   @override
   PostsOptimizedStorage get savedPosts => _storage;

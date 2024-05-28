@@ -15,7 +15,6 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
@@ -45,11 +44,11 @@ class BookmarkPage extends StatefulWidget {
 }
 
 class _BookmarkPageState extends State<BookmarkPage> {
-  GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
+  GridBookmarkService get gridStateBooru => widget.db.gridBookmarks;
 
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> settingsWatcher;
-  final List<GridStateBooru> gridStates = [];
+  final List<GridBookmark> gridStates = [];
 
   SettingsData settings = SettingsService.db().current;
 
@@ -128,26 +127,19 @@ class _BookmarkPageState extends State<BookmarkPage> {
     }
   }
 
-  void launchGrid(BuildContext context, GridStateBooru e) {
-    e.copy(time: DateTime.now()).save();
-
-    widget.saveSelectedPage(e.name);
-
+  void launchGrid(BuildContext context, GridBookmark e) {
     inInner = true;
 
-    Navigator.push(
+    Navigator.push<void>(
       context,
-      MaterialPageRoute<void>(
+      MaterialPageRoute(
         builder: (context) {
           return BooruRestoredPage(
-            state: e,
+            booru: e.booru,
+            tags: e.tags,
+            name: e.name,
             pagingRegistry: widget.pagingRegistry,
-            onDispose: () {
-              if (!isRestart) {
-                widget.saveSelectedPage(null);
-                widget.pagingRegistry.remove(e.name);
-              }
-            },
+            saveSelectedPage: widget.saveSelectedPage,
             generateGlue: widget.generateGlue,
             db: widget.db,
           );
@@ -234,7 +226,7 @@ class BookmarkListTile extends StatelessWidget {
   });
   final String title;
   final String subtitle;
-  final GridStateBooru state;
+  final GridBookmark state;
 
   @override
   Widget build(BuildContext context) {
@@ -280,8 +272,8 @@ class _BookmarkListTile extends StatefulWidget {
 
   final String title;
   final String subtitle;
-  final GridStateBooru state;
-  final void Function(BuildContext context, GridStateBooru e) onPressed;
+  final GridBookmark state;
+  final void Function(BuildContext context, GridBookmark e) onPressed;
   final List<Post> posts;
 
   final DbConn db;
@@ -427,7 +419,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                           .destroy()
                                           .then(
                                         (value) {
-                                          widget.db.gridStateBooru
+                                          widget.db.gridBookmarks
                                               .delete(widget.state.name);
 
                                           Navigator.pop(context);

@@ -28,7 +28,7 @@ class FilteringSearchWidget<T extends CellBase> extends StatefulWidget {
 
   final String? hint;
 
-  final ChainedFilterResourceSource<T> filter;
+  final ChainedFilterResourceSource<dynamic, T> filter;
 
   final TextEditingController textController;
   final List<Widget>? addItems;
@@ -43,7 +43,7 @@ class FilteringSearchWidget<T extends CellBase> extends StatefulWidget {
 
 class _FilteringSearchWidgetState<T extends CellBase>
     extends State<FilteringSearchWidget<T>> {
-  ChainedFilterResourceSource<T> get filter => widget.filter;
+  ChainedFilterResourceSource<dynamic, T> get filter => widget.filter;
   TextEditingController get textController => widget.textController;
 
   late final StreamSubscription<void> _watcher;
@@ -164,6 +164,10 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
 
   void _selectFilter(FilteringMode? mode) {
     if (mode == null) {
+      if (widget.enabledModes.contains(FilteringMode.noFilter)) {
+        currentFilter = widget.select(FilteringMode.noFilter);
+      }
+
       return;
     } else {
       currentFilter = widget.select(mode);
@@ -184,6 +188,8 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return SizedBox(
       width: double.infinity,
       child: Padding(
@@ -192,7 +198,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              AppLocalizations.of(context)!.filteringLabel,
+              l8n.filteringLabel,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SegmentedButtonGroup<FilteringMode>(
@@ -205,11 +211,11 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                   .map(
                     (e) => SegmentedButtonValue(
                       e,
-                      e.translatedString(context),
+                      e.translatedString(l8n),
                       icon: e.icon,
                     ),
                   ),
-              title: AppLocalizations.of(context)!.filteringModesLabel,
+              title: l8n.filteringModesLabel,
             ),
             SegmentedButtonGroup<SortingMode>(
               variant: SegmentedButtonVariant.segments,
@@ -226,7 +232,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                       (e) =>
                           SegmentedButtonValue(e, e.translatedString(context)),
                     ),
-              title: AppLocalizations.of(context)!.sortingModesLabel,
+              title: l8n.sortingModesLabel,
             ),
             const Padding(padding: EdgeInsets.only(bottom: 8)),
           ],

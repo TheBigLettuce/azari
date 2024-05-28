@@ -19,12 +19,21 @@ enum GalleryFilesPageType {
 }
 
 abstract class GalleryAPIDirectories {
-  ResourceSource<GalleryDirectory> get source;
+  ResourceSource<int, GalleryDirectory> get source;
 
   GalleryAPIFiles? get bindFiles;
 
-  GalleryAPIFiles files(GalleryDirectory d, GalleryFilesPageType type);
-  GalleryAPIFiles joinedFiles(List<String> bucketIds);
+  GalleryAPIFiles files(
+    GalleryDirectory d,
+    GalleryFilesPageType type,
+    DirectoryTagService directoryTag,
+    DirectoryMetadataService directoryMetadata,
+  );
+  GalleryAPIFiles joinedFiles(
+    List<String> bucketIds,
+    DirectoryTagService directoryTag,
+    DirectoryMetadataService directoryMetadata,
+  );
 
   void close();
 }

@@ -5,14 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
-
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/blacklisted_posts.dart";
-import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
@@ -45,11 +42,12 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.db.blacklistedDirectories;
 
-  late final StreamSubscription<void> blacklistedWatcher;
+  // late final StreamSubscription<void> blacklistedWatcher;
 
   late final state = GridSkeletonState<BlacklistedDirectoryData>();
 
-  late final ChainedFilterResourceSource<BlacklistedDirectoryData> filter;
+  late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
+      filter;
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
 
@@ -58,25 +56,27 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
     super.initState();
 
     filter = ChainedFilterResourceSource(
-      blacklistedDirectory.makeSource(),
+      blacklistedDirectory,
       ListStorage(),
-      fn: (e, filteringMode, sortingMode) =>
-          e.name.contains(searchTextController.text),
+      filter: (cells, filteringMode, sortingMode, end, [data]) => (
+        cells.where((e) => e.name.contains(searchTextController.text)),
+        null
+      ),
       allowedFilteringModes: const {},
       allowedSortingModes: const {},
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
 
-    blacklistedWatcher = blacklistedDirectory.watch((event) {
-      filter.clearRefresh();
-      setState(() {});
-    });
+    // blacklistedWatcher = blacklistedDirectory.watch((event) {
+    //   filter.clearRefresh();
+    //   setState(() {});
+    // });
   }
 
   @override
   void dispose() {
-    blacklistedWatcher.cancel();
+    // blacklistedWatcher.cancel();
     state.dispose();
     searchTextController.dispose();
     searchFocus.dispose();
@@ -154,7 +154,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               GridAction(
                 Icons.restore_page,
                 (selected) {
-                  blacklistedDirectory.deleteAll(
+                  blacklistedDirectory.backingStorage.removeAll(
                     selected.map((e) => e.bucketId).toList(),
                   );
                 },
@@ -163,10 +163,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             ],
             menuButtonItems: [
               IconButton(
-                onPressed: () {
-                  blacklistedDirectory.clear();
-                  chooseGalleryPlug().notify(null);
-                },
+                onPressed: blacklistedDirectory.backingStorage.clear,
                 icon: const Icon(Icons.delete),
               ),
             ],

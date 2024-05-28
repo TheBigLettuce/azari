@@ -64,6 +64,7 @@ class ImageViewAction {
     this.color,
     this.animate = false,
     this.play = true,
+    this.watch,
   });
 
   /// Icon of the button.
@@ -78,4 +79,20 @@ class ImageViewAction {
 
   final bool animate;
   final bool play;
+
+  ImageViewAction copy(
+    IconData? icon,
+    Color? color,
+    bool? play,
+    bool? animate,
+  ) =>
+      ImageViewAction(
+        icon ?? this.icon,
+        onPress,
+        color: color ?? this.color,
+        animate: animate ?? this.animate,
+        play: play ?? this.play,
+      );
+
+  final WatchFire<(IconData?, Color?, bool?)>? watch;
 }

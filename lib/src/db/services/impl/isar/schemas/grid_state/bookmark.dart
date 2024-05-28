@@ -7,42 +7,31 @@
 
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:isar/isar.dart";
 
-part "grid_state_booru.g.dart";
+part "bookmark.g.dart";
 
 @collection
-class IsarGridStateBooru extends GridStateBase with GridStateBooru {
-  IsarGridStateBooru(
-    this.booru, {
-    required super.tags,
-    required super.safeMode,
-    required super.scrollOffset,
+class IsarBookmark extends GridBookmark {
+  IsarBookmark({
     required super.name,
     required super.time,
+    required super.tags,
+    required super.booru,
   });
 
   Id? isarId;
 
   @override
-  @enumerated
-  final Booru booru;
-
-  @override
-  GridStateBooru copy({
+  GridBookmark copy({
+    String? tags,
     String? name,
     Booru? booru,
-    String? tags,
-    double? scrollOffset,
-    SafeMode? safeMode,
     DateTime? time,
   }) =>
-      IsarGridStateBooru(
-        booru ?? this.booru,
+      IsarBookmark(
         tags: tags ?? this.tags,
-        safeMode: safeMode ?? this.safeMode,
-        scrollOffset: scrollOffset ?? this.scrollOffset,
+        booru: booru ?? this.booru,
         time: time ?? this.time,
         name: name ?? this.name,
       );

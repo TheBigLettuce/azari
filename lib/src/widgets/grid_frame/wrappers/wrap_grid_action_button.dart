@@ -5,9 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
 class WrapGridActionButton extends StatefulWidget {
@@ -16,22 +19,24 @@ class WrapGridActionButton extends StatefulWidget {
     this.onPressed,
     this.addBadge, {
     super.key,
-    this.backgroundColor,
     this.color,
     required this.onLongPress,
     required this.whenSingleContext,
     required this.play,
     required this.animate,
+    this.watch,
   });
+
   final IconData icon;
   final void Function()? onPressed;
   final void Function()? onLongPress;
   final bool addBadge;
-  final Color? backgroundColor;
   final Color? color;
   final bool animate;
   final bool play;
   final BuildContext? whenSingleContext;
+
+  final WatchFire<(IconData?, Color?, bool?)>? watch;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -40,9 +45,41 @@ class WrapGridActionButton extends StatefulWidget {
 class _WrapGridActionButtonState extends State<WrapGridActionButton> {
   AnimationController? _controller;
 
+  StreamSubscription<(IconData?, Color?, bool?)>? _subscr;
+
+  late (IconData, Color?, bool) data = (widget.icon, widget.color, widget.play);
+
+  @override
+  void initState() {
+    _subscr = widget.watch?.call(
+      (d) {
+        // if (d.$3 != null && !data.$3 && d.$3!) {
+        //   _controller?.reset();
+        //   _controller?.animateTo(1).then((value) => _controller?.animateBack(0));
+        // }
+
+        data = (d.$1 ?? data.$1, d.$2, d.$3 ?? data.$3);
+
+        // print
+
+        setState(() {});
+      },
+      true,
+    );
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _subscr?.cancel();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final icn = Icon(widget.icon, color: widget.color);
+    final icn = Icon(data.$1, color: data.$2);
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -54,15 +91,14 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                 HapticFeedback.lightImpact();
               },
         child: IconButton(
-          style: ButtonStyle(
-            shape: const WidgetStatePropertyAll(
+          style: const ButtonStyle(
+            shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
               ),
             ),
-            backgroundColor: widget.backgroundColor != null
-                ? WidgetStatePropertyAll(widget.backgroundColor)
-                : null,
+            // backgroundColor:
+            //     data.$2 != null ? WidgetStatePropertyAll(data.$2) : null,
           ),
           onPressed: widget.whenSingleContext != null &&
                   SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1

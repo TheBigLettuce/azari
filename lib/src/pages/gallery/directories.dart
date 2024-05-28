@@ -89,13 +89,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
+  late final StreamSubscription<void> blacklistedWatcher;
   late final AppLifecycleListener lifecycleListener;
 
   MiscSettingsData miscSettings = MiscSettingsService.db().current;
 
   int galleryVersion = 0;
 
-  late final ChainedFilterResourceSource<GalleryDirectory> filter;
+  late final ChainedFilterResourceSource<int, GalleryDirectory> filter;
 
   late final GridSkeletonState<GalleryDirectory> state = GridSkeletonState();
 
@@ -142,17 +143,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       setState(() {});
     });
 
+    blacklistedWatcher = blacklistedDirectories.backingStorage.watch((_) {
+      api.source.clearRefresh();
+    });
+
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
-      fn: (e, mode, sorting) {
-        final text = searchTextController.text;
-        if (text.isEmpty) {
-          return true;
-        }
-
-        return e.name.startsWith(text);
-      },
+      filter: (cells, mode, sorting, end, [data]) => (
+        cells.where((e) => e.name.contains(searchTextController.text)),
+        null
+      ),
       allowedFilteringModes: const {},
       allowedSortingModes: const {},
       initialFilteringMode: FilteringMode.noFilter,
@@ -174,6 +175,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   void dispose() {
+    blacklistedWatcher.cancel();
     settingsWatcher.cancel();
     miscSettingsWatcher.cancel();
     searchTextController.dispose();
@@ -257,6 +259,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 GlueProvider.generateOf(context),
                 _segmentCell,
                 directoryMetadata,
+                directoryTags,
               ),
     );
   }
@@ -358,6 +361,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             suggestionPrefix: widget.callback?.suggestFor ?? const [],
             storage: filter.backingStorage,
             progress: filter.progress,
+            localizations: AppLocalizations.of(context)!,
           ),
         ],
         functionality: GridFunctionality(
@@ -399,6 +403,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       GlueProvider.generateOf(context),
                       _segmentCell,
                       directoryMetadata,
+                      directoryTags,
                     ),
                 ]
               : [
@@ -430,6 +435,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     GlueProvider.generateOf(context),
                     _segmentCell,
                     directoryMetadata,
+                    directoryTags,
                   ),
                 ],
           footer: widget.callback?.preview,

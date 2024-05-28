@@ -9,6 +9,7 @@ import "dart:io";
 
 import "package:flutter/services.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
@@ -38,18 +39,27 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
   Future<bool> fileExists(String filePath) => File(filePath).exists();
 
   @override
-  void refreshFiles(String bucketId) {
-    _channel.invokeMethod("refreshFiles", bucketId);
+  void refreshFiles(String bucketId, SortingMode sortingMode) {
+    _channel.invokeMethod("refreshFiles", {
+      "bucketId": bucketId,
+      "sort": sortingMode.sortingIdAndroid,
+    });
   }
 
   @override
-  void refreshFilesMultiple(List<String> ids) {
-    _channel.invokeMethod("refreshFilesMultiple", ids);
+  void refreshFilesMultiple(List<String> ids, SortingMode sortingMode) {
+    _channel.invokeMethod("refreshFilesMultiple", {
+      "ids": ids,
+      "sort": sortingMode.sortingIdAndroid,
+    });
   }
 
   @override
-  Future<void> refreshFavorites(List<int> ids) {
-    return _channel.invokeMethod("refreshFavorites", ids);
+  Future<void> refreshFavorites(List<int> ids, SortingMode sortingMode) {
+    return _channel.invokeMethod("refreshFavorites", {
+      "ids": ids,
+      "sort": sortingMode.sortingIdAndroid,
+    });
   }
 
   @override
@@ -118,7 +128,7 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
   @override
   Future<SettingsPath?> chooseDirectory({bool temporary = false}) async {
     return _channel.invokeMethod("chooseDirectory", temporary).then(
-          (value) => SettingsPath.forCurrent(
+          (value) => objFactory.makeSettingsPath(
             path: (value as Map)["path"] as String,
             pathDisplay: value["pathDisplay"] as String,
           ),

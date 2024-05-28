@@ -31,12 +31,14 @@ class __WatchingTabState extends State<_WatchingTab> {
   late final originalSourceBacklog = GenericListSource<SavedAnimeEntryData>(
     () => Future.value(savedAnimeEntries.backlogAll),
   );
-  late final ChainedFilterResourceSource<SavedAnimeEntryData> filterBacklog;
+  late final ChainedFilterResourceSource<int, SavedAnimeEntryData>
+      filterBacklog;
 
   late final originalSourceCurrent = GenericListSource<SavedAnimeEntryData>(
     () => Future.value(savedAnimeEntries.currentlyWatchingAll),
   );
-  late final ChainedFilterResourceSource<SavedAnimeEntryData> filterCurrent;
+  late final ChainedFilterResourceSource<int, SavedAnimeEntryData>
+      filterCurrent;
 
   late final StreamSubscription<void> watcher;
 
@@ -72,13 +74,15 @@ class __WatchingTabState extends State<_WatchingTab> {
     filterBacklog = ChainedFilterResourceSource.basic(
       originalSourceBacklog,
       ListStorage(),
-      fn: (e, filteringMode, sortingMode) => e.title.contains(_filteringValue),
+      filter: (cells, filteringMode, sortingMode, end, [data]) =>
+          (cells.where((e) => e.title.contains(_filteringValue)), null),
     );
 
     filterCurrent = ChainedFilterResourceSource.basic(
       originalSourceCurrent,
       ListStorage(),
-      fn: (e, filteringMode, sortingMode) => e.title.contains(_filteringValue),
+      filter: (cells, filteringMode, sortingMode, end, [data]) =>
+          (cells.where((e) => e.title.contains(_filteringValue)), null),
     );
 
     watcher = savedAnimeEntries.watchAll((_) {
@@ -293,7 +297,7 @@ class _CurrentlyWatching extends StatefulWidget {
   });
 
   final bool watchingRight;
-  final ChainedFilterResourceSource<SavedAnimeEntryData> filter;
+  final ChainedFilterResourceSource<int, SavedAnimeEntryData> filter;
   final ScrollController controller;
   final SelectionGlue glue;
 
@@ -307,7 +311,8 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
   WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
 
-  ChainedFilterResourceSource<SavedAnimeEntryData> get filter => widget.filter;
+  ChainedFilterResourceSource<int, SavedAnimeEntryData> get filter =>
+      widget.filter;
 
   late final selection = GridSelection<SavedAnimeEntryData>(
     [

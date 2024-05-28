@@ -9,10 +9,13 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cached_db_values.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -58,6 +61,8 @@ class FavoriteBooruPage extends StatelessWidget {
   }
 
   GridFrame<FavoritePostData> child(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return GridFrame<FavoritePostData>(
       key: state.state.gridKey,
       slivers: [
@@ -65,8 +70,9 @@ class FavoriteBooruPage extends StatelessWidget {
           SegmentLayout<FavoritePostData>(
             getCell: state.filter.forIdxUnsafe,
             progress: state.filter.progress,
+            localizations: l8n,
             segments: Segments(
-              AppLocalizations.of(context)!.segmentsUncategorized,
+              l8n.segmentsUncategorized,
               injectedLabel: "",
               caps: SegmentCapability.empty(),
               hidePinnedIcon: true,
@@ -117,8 +123,8 @@ class FavoriteBooruPage extends StatelessWidget {
         // settingsButton: !asSliver ? state.gridSettingsButton() : null,
         showAppBar: !asSliver,
         asSliver: asSliver,
-        keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-        pageName: AppLocalizations.of(context)!.favoritesLabel,
+        keybindsDescription: l8n.favoritesLabel,
+        pageName: l8n.favoritesLabel,
         gridSeed: state.state.gridSeed,
       ),
     );
@@ -126,15 +132,19 @@ class FavoriteBooruPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return wrapGridPage
-        ? WrapGridPage(
-            child: GridSkeleton<FavoritePostData>(
-              state.state,
-              (context) => child(context),
-              canPop: true,
-            ),
-          )
-        : child(context);
+    return GridConfiguration(
+      sliver: true,
+      watch: state.gridSettings.watch,
+      child: wrapGridPage
+          ? WrapGridPage(
+              child: GridSkeleton<FavoritePostData>(
+                state.state,
+                child,
+                canPop: true,
+              ),
+            )
+          : child(context),
+    );
   }
 }
 
@@ -185,8 +195,8 @@ class _FilterEnumSegmentKey implements SegmentKey {
   final FilteringMode mode;
 
   @override
-  String translatedString(BuildContext context) =>
-      mode.translatedString(context);
+  String translatedString(AppLocalizations localizations) =>
+      mode.translatedString(localizations);
 
   @override
   int get hashCode => mode.hashCode;
@@ -207,7 +217,7 @@ class _StringSegmentKey implements SegmentKey {
   final String string;
 
   @override
-  String translatedString(BuildContext context) => string;
+  String translatedString(AppLocalizations l8n) => string;
 
   @override
   int get hashCode => string.hashCode;
@@ -223,11 +233,11 @@ class _StringSegmentKey implements SegmentKey {
 }
 
 mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
-  FavoritePostService get favoritePosts => widget.db.favoritePosts;
+  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   WatchableGridSettingsData get gridSettings =>
       widget.db.gridSettings.favoritePosts;
 
-  late final StreamSubscription<void> favoritesWatcher;
+  // late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
 
   MiscSettingsData miscSettings = MiscSettingsService.db().current;
@@ -235,6 +245,8 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   Map<SegmentKey, int>? segments;
 
   bool segmented = false;
+
+  // final valuesCache = PostValuesCache();
 
   final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
@@ -281,120 +293,53 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   //       .limit(limit)
   //       .findAllSync();
   // })
-  //   ..filter.passFilter = (cells, data, end) {
-  //     final filterMode = search.currentFilteringMode();
 
-  //     if (filterMode == FilteringMode.group) {
-  //       segments = segments ?? {};
+  Iterable<FavoritePostData> _collector(
+    Map<String, Set<(int, Booru)>>? data,
+  ) sync* {
+    for (final ids in data!.values) {
+      for (final i in ids) {
+        yield favoritePosts.forIdxUnsafe((i.$1, i.$2));
+      }
+    }
+  }
 
-  //       for (final e in cells) {
-  //         if (e.group != null) {
-  //           segments![_StringSegmentKey(e.group!)] =
-  //               (segments![_StringSegmentKey(e.group!)] ?? 0) + 1;
+  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
+    Iterable<T> cells,
+    dynamic data_,
+    bool end,
+    Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
+  ) {
+    final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
 
-  //           continue;
-  //         }
+    T? prevCell;
+    for (final e in cells) {
+      if (prevCell != null) {
+        if (prevCell.md5 == e.md5) {
+          final prev = data[e.md5] ?? {};
 
-  //         segments![const _FilterEnumSegmentKey(FilteringMode.ungrouped)] =
-  //             (segments![const _FilterEnumSegmentKey(
-  //                       FilteringMode.ungrouped,
-  //                     )] ??
-  //                     0) +
-  //                 1;
-  //       }
-  //     } else {
-  //       segments = null;
-  //     }
+          data[e.md5] = {...prev, (e.id, e.booru)};
+        }
+      }
 
-  //     return switch (filterMode) {
-  //       FilteringMode.same => sameFavorites(cells, data, end, _collector),
-  //       FilteringMode.ungrouped => (
-  //           cells.where(
-  //             (element) => element.group == null || element.group!.isEmpty,
-  //           ),
-  //           data
-  //         ),
-  //       FilteringMode.gif => (
-  //           cells.where((element) => element.content is NetGif),
-  //           data
-  //         ),
-  //       FilteringMode.video => (
-  //           cells.where((element) => element.content is NetVideo),
-  //           data
-  //         ),
-  //       FilteringMode() => (cells, data)
-  //     };
-  //   };
+      prevCell = e;
+    }
 
-  // Iterable<FavoriteBooru> _collector(
-  //   Map<String, Set<(int, Booru)>>? data,
-  // ) sync* {
-  //   for (final ids in data!.values) {
-  //     for (final i in ids) {
-  //       final f = loader.instance.favoriteBoorus.getByIdBooruSync(i.$1, i.$2)!;
-  //       f.isarId = null;
-  //       yield f;
-  //     }
-  //   }
-  // }
+    if (end) {
+      return (collect(data), null);
+    }
 
-  // static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
-  //   Iterable<T> cells,
-  //   dynamic data_,
-  //   bool end,
-  //   Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
-  // ) {
-  //   final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
+    return (const [], data);
+  }
 
-  //   T? prevCell;
-  //   for (final e in cells) {
-  //     if (prevCell != null) {
-  //       if (prevCell.md5 == e.md5) {
-  //         final prev = data[e.md5] ?? {};
+  late final state = GridSkeletonState<FavoritePostData>();
 
-  //         data[e.md5] = {...prev, (e.id, e.booru)};
-  //       }
-  //     }
-
-  //     prevCell = e;
-  //   }
-
-  //   if (end) {
-  //     return (collect(data), null);
-  //   }
-
-  //   return (const [], data);
-  // }
-
-  late final state = GridSkeletonState<FavoritePostData>(
-      // filter: loader.filter,
-      // unsetFilteringModeOnReset: false,
-      // hook: (selected) {
-      //   segments = null;
-      //   if (selected == FilteringMode.group) {
-      //     segmented = true;
-      //     setState(() {});
-      //   } else {
-      //     segmented = false;
-      //     setState(() {});
-      //   }
-
-      //   MiscSettings.setFavoritesPageMode(selected);
-      // },
-      // defaultMode: FilteringMode.tag,
-      // filteringModes: ,
-      // transform: (FavoriteBooru cell) {
-      //   return cell;
-      // },
-      );
-
-  // late final SearchFilterGrid<FavoriteBooru> search;
-
-  late final ChainedFilterResourceSource<FavoritePostData> filter;
+  late final ChainedFilterResourceSource<(int, Booru), FavoritePostData> filter;
 
   void disposeFavoriteBooruState() {
+    // valuesCache.clear();
     miscSettingsWatcher.cancel();
-    favoritesWatcher.cancel();
+    // favoritesWatcher.cancel();
     filter.destroy();
 
     searchFocus.dispose();
@@ -406,11 +351,70 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
 
   void initFavoriteBooruState() {
     filter = ChainedFilterResourceSource(
-      ResourceSource.empty(),
-      fn: (e, filteringMode, sortingMode) {
-        return true;
+      favoritePosts,
+      filter: (cells, filteringMode, sortingMode, end, [data]) {
+        if (filteringMode == FilteringMode.group) {
+          segments = segments ?? {};
+
+          for (final e in cells) {
+            if (e.group != null) {
+              segments![_StringSegmentKey(e.group!)] =
+                  (segments![_StringSegmentKey(e.group!)] ?? 0) + 1;
+
+              continue;
+            }
+
+            segments![const _FilterEnumSegmentKey(FilteringMode.ungrouped)] =
+                (segments![const _FilterEnumSegmentKey(
+                          FilteringMode.ungrouped,
+                        )] ??
+                        0) +
+                    1;
+          }
+        } else {
+          segments = null;
+        }
+
+        return switch (filteringMode) {
+          FilteringMode.same => sameFavorites(cells, data, end, _collector),
+          FilteringMode.tag => (
+              searchTextController.text.isEmpty
+                  ? cells
+                  : cells
+                      .where((e) => e.tags.contains(searchTextController.text)),
+              data
+            ),
+          FilteringMode.ungrouped => (
+              cells.where(
+                (element) => element.group == null || element.group!.isEmpty,
+              ),
+              data
+            ),
+          FilteringMode.gif => (
+              cells.where((element) => element.type == PostContentType.gif),
+              data
+            ),
+          FilteringMode.video => (
+              cells.where((element) => element.type == PostContentType.video),
+              data
+            ),
+          FilteringMode() => (cells, data)
+        };
       },
       ListStorage(),
+      prefilter: () {
+        segments = null;
+        if (filter.filteringMode == FilteringMode.group) {
+          segmented = true;
+        } else {
+          segmented = false;
+        }
+
+        MiscSettingsService.db()
+            .current
+            .copy(favoritesPageMode: filter.filteringMode)
+            .save();
+      },
       allowedFilteringModes: const {
         FilteringMode.tag,
         FilteringMode.group,
@@ -427,6 +431,8 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
       initialSortingMode: SortingMode.none,
     );
 
+    filter.clearRefresh();
+
     // search.setFilteringMode(miscSettings.favoritesPageMode);
     // search.setLocalTagCompleteF((string) {
     //   final result = Dbs.g.main.localTagDictionarys
@@ -441,7 +447,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     //   );
     // });
 
-    setState(() {});
+    // setState(() {});
 
     miscSettingsWatcher = miscSettings.s.watch((s) {
       miscSettings = s!;
@@ -449,15 +455,14 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
       setState(() {});
     });
 
-    favoritesWatcher = favoritePosts.watch((event) {
-      filter.clearRefresh();
-      // search.performSearch(search.searchTextController.text, true);
+    // favoritesWatcher = favoritePosts.watch((event) {
+    // filter.clearRefresh();
+    // search.performSearch(search.searchTextController.text, true);
 
-      state.gridKey.currentState?.selection.reset();
-    });
+    // state.gridKey.currentState?.selection.reset();
+    // });
 
     filter.clearRefresh();
-    // search.prewarmResults();
   }
 
   void download(int i) => filter.forIdxUnsafe(i).download(context);
@@ -481,7 +486,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
           e.group = value.isEmpty ? null : value;
         }
 
-        favoritePosts.addAllFileUrl(selected);
+        favoritePosts.addRemove(selected);
 
         Navigator.of(context, rootNavigator: true).pop();
       },
@@ -500,19 +505,4 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
       ),
     ];
   }
-
-  // GridFrameSettingsButton gridSettingsButton() {
-  //   return GridFrameSettingsButton(
-  //     overrideDefault: GridSettingsFavorites.current,
-  //     watchExplicitly: GridSettingsFavorites.watch,
-  //     selectRatio: (ratio, settings) =>
-  //         (settings as GridSettingsFavorites).copy(aspectRatio: ratio).save(),
-  //     selectGridLayout: (layoutType, settings) =>
-  //         (settings as GridSettingsFavorites)
-  //             .copy(layoutType: layoutType)
-  //             .save(),
-  //     selectGridColumn: (columns, settings) =>
-  //         (settings as GridSettingsFavorites).copy(columns: columns).save(),
-  //   );
-  // }
 }

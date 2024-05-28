@@ -16,11 +16,13 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cached_db_values.dart";
+import "package:gallery/src/pages/booru/add_to_bookmarks_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/pages/booru/booru_search_page.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -41,24 +43,53 @@ import "package:url_launcher/url_launcher.dart";
 class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
     super.key,
-    required this.state,
     this.generateGlue,
     required this.pagingRegistry,
     this.overrideSafeMode,
-    this.onDispose,
     required this.db,
+    this.name,
+    required this.booru,
+    required this.tags,
+    this.wrapScaffold = false,
+    required this.saveSelectedPage,
   });
 
-  final GridStateBooru state;
+  final String? name;
+  final Booru booru;
+  final String tags;
   final PagingStateRegistry pagingRegistry;
   final SafeMode? overrideSafeMode;
-  final void Function()? onDispose;
+  final void Function(String? e) saveSelectedPage;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
+  final bool wrapScaffold;
 
   final DbConn db;
 
   @override
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
+}
+
+class LocalBookmark extends GridBookmark {
+  const LocalBookmark({
+    required super.tags,
+    required super.booru,
+    required super.name,
+    required super.time,
+  });
+
+  @override
+  GridBookmark copy({
+    String? tags,
+    String? name,
+    Booru? booru,
+    DateTime? time,
+  }) =>
+      LocalBookmark(
+        tags: tags ?? this.tags,
+        booru: booru ?? this.booru,
+        name: name ?? this.name,
+        time: time ?? this.time,
+      );
 }
 
 class RestoredBooruPageState implements PagingEntry {
@@ -68,6 +99,8 @@ class RestoredBooruPageState implements PagingEntry {
     this.tagManager,
     this.secondaryGrid,
     HiddenBooruPostService hiddenBooruPosts,
+    this.gridBookmarks,
+    this.addToBookmarks,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
     api = BooruAPI.fromEnum(booru, client, this);
 
@@ -80,36 +113,38 @@ class RestoredBooruPageState implements PagingEntry {
     );
   }
 
+  bool addToBookmarks;
+
+  @override
+  void updateTime() =>
+      gridBookmarks.get(secondaryGrid.name)!.copy(time: DateTime.now()).save();
+
   final Dio client;
   final TagManager tagManager;
-  final SecondaryGridService secondaryGrid;
   late final BooruAPI api;
-  late final PostsSourceService<Post> source;
+
+  final SecondaryGridService secondaryGrid;
+  final GridBookmarkService gridBookmarks;
+  late final GridPostSource source;
 
   int? currentSkipped;
 
   @override
   bool reachedEnd = false;
 
-  late final state = GridSkeletonState<Post>(
-      // initalCellCount: source.count,
-      // reachedEnd: () => reachedEnd,
-      // clearRefresh: AsyncGridRefresh(source.clearRefresh),
-      // next: source.next,
-      );
+  late final state = GridSkeletonState<Post>();
 
   @override
-  void updateTime() => secondaryGrid.currentState
-      .copy(time: DateTime.now())
-      .saveSecondary(secondaryGrid);
-
-  @override
-  void dispose() {
+  Future<void> dispose([bool closeGrid = true]) {
     client.close();
-
+    // source.destroy();
     state.dispose();
 
-    secondaryGrid.destroy();
+    if (closeGrid) {
+      return secondaryGrid.close();
+    } else {
+      return secondaryGrid.destroy();
+    }
   }
 
   SafeMode get safeMode => secondaryGrid.currentState.safeMode;
@@ -117,7 +152,7 @@ class RestoredBooruPageState implements PagingEntry {
       secondaryGrid.currentState.copy(safeMode: s).saveSecondary(secondaryGrid);
 
   @override
-  double get offset => secondaryGrid.currentState.scrollOffset;
+  double get offset => secondaryGrid.currentState.offset;
 
   @override
   int get page => secondaryGrid.page;
@@ -126,21 +161,21 @@ class RestoredBooruPageState implements PagingEntry {
   set page(int p) => secondaryGrid.page = p;
 
   @override
-  void setOffset(double o) => secondaryGrid.currentState
-      .copy(scrollOffset: o)
-      .saveSecondary(secondaryGrid);
+  void setOffset(double o) =>
+      secondaryGrid.currentState.copy(offset: o).saveSecondary(secondaryGrid);
 }
 
 class _BooruRestoredPageState extends State<BooruRestoredPage> {
-  GridStateBooruService get gridStateBooru => widget.db.gridStateBooru;
+  GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
-  FavoritePostService get favoritePosts => widget.db.favoritePosts;
+  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
-  late final StreamSubscription<void> favoritesWatcher;
-  late final StreamSubscription<void> blacklistedWatcher;
+  // late final StreamSubscription<void> favoritesWatcher;
+  // late final StreamSubscription<void> blacklistedWatcher;
 
+  // final postValues = PostValuesCache();
   late final SearchLaunchGrid search;
 
   late final RestoredBooruPageState pagingState;
@@ -148,26 +183,45 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   BooruAPI get api => pagingState.api;
   GridSkeletonState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
-  PostsSourceService<Post> get source => pagingState.source;
+  GridPostSource get source => pagingState.source;
 
   @override
   void initState() {
     super.initState();
 
-    pagingState = widget.pagingRegistry.getOrRegister(widget.state.name, () {
+    final name =
+        widget.name ?? DateTime.now().microsecondsSinceEpoch.toString();
+
+    widget.saveSelectedPage(name);
+
+    pagingState = widget.pagingRegistry.getOrRegister(name, () {
       final secondary = widget.db.secondaryGrid(
-        state.settings.selectedBooru,
-        widget.state.name,
+        widget.booru,
+        name,
+        widget.name == null,
       );
 
       return RestoredBooruPageState(
-        widget.state.booru,
-        widget.state.tags,
+        widget.booru,
+        widget.tags,
         secondary.tagManager,
         secondary,
         hiddenBooruPost,
+        gridBookmarks,
+        widget.name != null,
       );
     });
+
+    if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
+      gridBookmarks.add(
+        objFactory.makeGridBookmark(
+          booru: widget.booru,
+          name: pagingState.secondaryGrid.name,
+          time: DateTime.now(),
+          tags: widget.tags,
+        ),
+      );
+    }
 
     search = SearchLaunchGrid(
       SearchLaunchGridData(
@@ -175,12 +229,17 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         mainFocus: state.mainFocus,
         header: TagsWidget(
           tagging: tagManager.latest,
-          onPress: (tag, safeMode) {},
+          onPress: (tag, safeMode) {
+            _onTagPressed(context, state.settings.selectedBooru, tag, safeMode);
+          },
         ),
-        searchText: widget.state.tags,
+        searchText: pagingState.source.tags,
         addItems: (_) => const [],
-        disabled: true,
-        onSubmit: (context, tag) {},
+        onSubmit: (context, tag) {
+          pagingState.source.tags = tag;
+          pagingState.source.clearRefresh();
+          gridBookmarks.get(name)!.copy(tags: tag).save();
+        },
       ),
     );
 
@@ -190,34 +249,36 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       setState(() {});
     });
 
-    favoritesWatcher = favoritePosts.watch((event) {
-      // state.refreshingStatus.mutation.notify();
-      setState(() {});
-    });
+    // favoritesWatcher = favoritePosts.watch((event) {
+    // state.refreshingStatus.mutation.notify();
+    // setState(() {});
+    // });
 
-    blacklistedWatcher = hiddenBooruPost.watch((_) {
-      // state.refreshingStatus.mutation.notify();
-    });
+    // blacklistedWatcher = hiddenBooruPost.watch((_) {
+    // state.refreshingStatus.mutation.notify();
+    // });
   }
 
   @override
   void dispose() {
-    blacklistedWatcher.cancel();
+    // blacklistedWatcher.cancel();
     settingsWatcher.cancel();
-    favoritesWatcher.cancel();
+    // favoritesWatcher.cancel();
 
-    widget.onDispose?.call();
+    // postValues.clear();
+
+    if (!isRestart) {
+      widget.saveSelectedPage(null);
+      if (!pagingState.addToBookmarks) {
+        gridBookmarks.delete(pagingState.secondaryGrid.name);
+      }
+      widget.pagingRegistry.removeDispose(pagingState.secondaryGrid.name);
+    }
 
     search.dispose();
 
     super.dispose();
   }
-
-  // SafeMode _safeMode() {
-  //   final prev = Dbs.g.main.gridStateBoorus.getByNameSync(widget.state.name)!;
-
-  //   return prev.safeMode;
-  // }
 
   void _download(int i) => source.forIdx(i)?.download(context);
 
@@ -229,20 +290,27 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
-    Navigator.push(
+    final registry = PagingStateRegistry();
+
+    Navigator.push<void>(
       context,
-      MaterialPageRoute<void>(
+      MaterialPageRoute(
         builder: (context) {
-          return BooruSearchPage(
+          return BooruRestoredPage(
             booru: booru,
             tags: tag,
             wrapScaffold: true,
             overrideSafeMode: safeMode,
             db: widget.db,
+            saveSelectedPage: (s) {},
+            pagingRegistry: registry,
           );
         },
       ),
-    ).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
+    ).then((value) {
+      registry.dispose();
+      PauseVideoNotifier.maybePauseOf(context, false);
+    });
   }
 
   @override
@@ -250,6 +318,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
+        addScaffold: widget.wrapScaffold,
         provided: widget.generateGlue,
         child: Builder(
           builder: (context) {
@@ -287,7 +356,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     source: source,
                     search: OverrideGridSearchWidget(
                       SearchAndFocus(
-                        search.searchWidget(context, hint: api.booru.name),
+                        search.searchWidget(
+                          context,
+                          hint: api.booru.name,
+                          disabled: pagingState.addToBookmarks,
+                        ),
                         search.searchFocus,
                       ),
                     ),
@@ -297,6 +370,19 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ),
                   ),
                   description: GridDescription(
+                    menuButtonItems: [
+                      IconButton(
+                        icon: pagingState.addToBookmarks
+                            ? const Icon(Icons.bookmark_remove_rounded)
+                            : const Icon(Icons.bookmark_add_rounded),
+                        onPressed: () {
+                          pagingState.addToBookmarks =
+                              !pagingState.addToBookmarks;
+
+                          setState(() {});
+                        },
+                      ),
+                    ],
                     actions: [
                       BooruGridActions.download(context, api.booru),
                       BooruGridActions.favorites(

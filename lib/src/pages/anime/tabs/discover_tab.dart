@@ -131,7 +131,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
   final GridSkeletonState<AnimeSearchEntry> state =
       GridSkeletonState<AnimeSearchEntry>();
 
-  ResourceSource<AnimeSearchEntry> get source => pagingState.source;
+  GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
   late final _DiscoverPagingEntry pagingState;
 
@@ -242,7 +242,7 @@ class __SearchBarState extends State<_SearchBar> {
   late final TextEditingController controller;
 
   _DiscoverPagingEntry get pagingState => widget.pagingState;
-  ResourceSource<AnimeSearchEntry> get source => pagingState.source;
+  GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
   @override
   void initState() {

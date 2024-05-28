@@ -54,29 +54,19 @@ enum FilteringMode {
   /// Icon displayed in search bar.
   final IconData icon;
 
-  String translatedString(BuildContext context) => switch (this) {
-        FilteringMode.favorite =>
-          AppLocalizations.of(context)!.enumFilteringModeFavorite,
-        FilteringMode.original =>
-          AppLocalizations.of(context)!.enumFilteringModeOriginal,
-        FilteringMode.duplicate =>
-          AppLocalizations.of(context)!.enumFilteringModeDuplicate,
-        FilteringMode.same =>
-          AppLocalizations.of(context)!.enumFilteringModeSame,
-        FilteringMode.video =>
-          AppLocalizations.of(context)!.enumFilteringModeVideo,
-        FilteringMode.gif => AppLocalizations.of(context)!.enumFilteringModeGif,
-        FilteringMode.tag => AppLocalizations.of(context)!.enumFilteringModeTag,
-        FilteringMode.noFilter =>
-          AppLocalizations.of(context)!.enumFilteringModeNoFilter,
-        FilteringMode.tagReversed =>
-          AppLocalizations.of(context)!.enumFilteringModeTagReversed,
-        FilteringMode.untagged =>
-          AppLocalizations.of(context)!.enumFilteringModeUntagged,
-        FilteringMode.group =>
-          AppLocalizations.of(context)!.enumFilteringModeGroup,
-        FilteringMode.ungrouped =>
-          AppLocalizations.of(context)!.enumFilteringModeUngrouped,
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        FilteringMode.favorite => l8n.enumFilteringModeFavorite,
+        FilteringMode.original => l8n.enumFilteringModeOriginal,
+        FilteringMode.duplicate => l8n.enumFilteringModeDuplicate,
+        FilteringMode.same => l8n.enumFilteringModeSame,
+        FilteringMode.video => l8n.enumFilteringModeVideo,
+        FilteringMode.gif => l8n.enumFilteringModeGif,
+        FilteringMode.tag => l8n.enumFilteringModeTag,
+        FilteringMode.noFilter => l8n.enumFilteringModeNoFilter,
+        FilteringMode.tagReversed => l8n.enumFilteringModeTagReversed,
+        FilteringMode.untagged => l8n.enumFilteringModeUntagged,
+        FilteringMode.group => l8n.enumFilteringModeGroup,
+        FilteringMode.ungrouped => l8n.enumFilteringModeUngrouped,
       };
 }
 
@@ -87,6 +77,11 @@ enum SortingMode {
   size;
 
   const SortingMode();
+
+  int get sortingIdAndroid => switch (this) {
+        SortingMode.none => 0,
+        SortingMode.size => 1,
+      };
 
   String translatedString(BuildContext context) => switch (this) {
         SortingMode.none => AppLocalizations.of(context)!.enumSortringModeNone,

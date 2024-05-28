@@ -251,7 +251,7 @@ class _ReadingLayout extends StatefulWidget {
     required this.gridSeed,
   });
 
-  final SourceStorage<CompactMangaData> source;
+  final SourceStorage<int, CompactMangaData> source;
   final void Function(int i) startReading;
 
   final int gridSeed;
@@ -261,7 +261,7 @@ class _ReadingLayout extends StatefulWidget {
 }
 
 class __ReadingLayoutState extends State<_ReadingLayout> {
-  SourceStorage<CompactMangaData> get source => widget.source;
+  SourceStorage<int, CompactMangaData> get source => widget.source;
 
   late final StreamSubscription<void> _watcher;
 
