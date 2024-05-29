@@ -77,7 +77,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       return count;
     }
 
-    if (progress.inRefreshing) {
+    if (progress.inRefreshing && repeatCount == 0) {
       return count;
     }
     progress.inRefreshing = true;
@@ -106,11 +106,11 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
         entry.updateTime();
 
         if (count - oldCount < 3) {
-          return next(repeatCount + 1);
+          return await next(repeatCount + 1);
         }
       }
     } catch (e, _) {
-      return next(repeatCount + 1);
+      return await next(repeatCount + 1);
     }
 
     progress.inRefreshing = false;
