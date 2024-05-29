@@ -52,7 +52,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
   TrashCell(this.localizations);
 
   final _events = StreamController<GalleryDirectory?>.broadcast();
-  final _key = UniqueKey();
+  // final _key = UniqueKey();
   final AppLocalizations localizations;
 
   GalleryDirectory? _currentData;
@@ -88,7 +88,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
   }
 
   @override
-  Key uniqueKey() => _key;
+  Key uniqueKey() => const ValueKey("trash");
 
   @override
   StreamSubscription<GalleryDirectory?> watch(

@@ -305,203 +305,215 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
           searchTextController: searchTextController,
           filter: filter,
           searchFocus: searchFocus,
-          child: GridFrame<GalleryFile>(
-            key: state.gridKey,
-            slivers: [
-              CurrentGridSettingsLayout<GalleryFile>(
-                source: filter.backingStorage,
-                progress: filter.progress,
-                gridSeed: state.gridSeed,
-              ),
-            ],
-            functionality: GridFunctionality(
-              settingsButton: GridSettingsButton.fromWatchable(gridSettings),
-              registerNotifiers: (child) {
-                return FilesDataNotifier(
-                  actions: this,
-                  api: widget.api,
-                  nestedCallback: widget.callback,
-                  child: OnBooruTagPressed(
-                    onPressed: _onBooruTagPressed,
-                    child: child,
-                  ),
-                );
-              },
-              backButton: CallbackGridBackButton(
-                onPressed: () {
-                  if (filter.filteringMode != FilteringMode.noFilter) {
-                    filter.filteringMode = FilteringMode.noFilter;
-                    return;
-                  }
-                  Navigator.pop(context);
-                },
-              ),
-              selectionGlue: GlueProvider.generateOf(context)(),
-              source: filter,
-              search: OverrideGridSearchWidget(
-                SearchAndFocus(
-                  FilteringSearchWidget(
-                    hint: widget.dirName,
-                    filter: filter,
-                    textController: searchTextController,
-                    localTagDictionary: widget.db.localTagDictionary,
-                    focusNode: searchFocus,
-                  ),
-                  searchFocus,
-                ),
-              ),
-            ),
-            mainFocus: state.mainFocus,
-            description: GridDescription(
-              overrideEmptyWidgetNotice: api.type.isFavorites()
-                  ? "Some files can't be shown"
-                  : null, // TODO: change
-              showPageSwitcherAsHeader: true,
-              pages: api.type.isFavorites()
-                  ? null
-                  : PageSwitcherToggable(
-                      [
-                        PageToaggable(
-                          Icons.select_all_rounded,
-                          active: widget.callback == null,
-                        ),
-                        PageToaggable(FilteringMode.favorite.icon),
-                      ],
-                      _filterFavorites,
-                      stateKey: _switcherKey,
-                    ),
-              actions: widget.callback != null
-                  ? const []
-                  : api.type.isTrash()
-                      ? [
-                          restoreFromTrash(),
-                        ]
-                      : [
-                          if (api.type.isFavorites())
-                            setFavoritesThumbnailAction(widget.db.miscSettings),
-                          if (miscSettings.filesExtendedActions) ...[
-                            bulkRename(),
-                            saveTagsAction(plug, postTags, localTags),
-                            addTag(
-                              context,
-                              () => api.source.clearRefreshSorting(
-                                filter.sortingMode,
-                                true,
-                              ),
-                              localTags,
-                            ),
-                          ],
-                          addToFavoritesAction(null, favoriteFiles),
-                          deleteAction(),
-                          copyAction(
-                            widget.tagManager,
-                            favoriteFiles,
-                            localTags,
-                            api.parent,
+          child: Builder(
+              builder: (context) => GridFrame<GalleryFile>(
+                    key: state.gridKey,
+                    slivers: [
+                      CurrentGridSettingsLayout<GalleryFile>(
+                        source: filter.backingStorage,
+                        progress: filter.progress,
+                        gridSeed: state.gridSeed,
+                      ),
+                    ],
+                    functionality: GridFunctionality(
+                      settingsButton:
+                          GridSettingsButton.fromWatchable(gridSettings),
+                      registerNotifiers: (child) {
+                        return FilesDataNotifier(
+                          actions: this,
+                          api: widget.api,
+                          nestedCallback: widget.callback,
+                          child: OnBooruTagPressed(
+                            onPressed: _onBooruTagPressed,
+                            child: child,
                           ),
-                          moveAction(
-                            widget.tagManager,
-                            favoriteFiles,
-                            localTags,
-                            api.parent,
-                          ),
-                        ],
-              menuButtonItems: [
-                if (widget.callback == null && api.type.isTrash())
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        DialogRoute<void>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(
-                                AppLocalizations.of(context)!.emptyTrashTitle,
-                              ),
-                              content: Text(
-                                AppLocalizations.of(context)!.thisIsPermanent,
-                                style: TextStyle(
-                                  color: Colors.red.harmonizeWith(
-                                    Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    GalleryManagementApi.current().emptyTrash();
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    AppLocalizations.of(context)!.yes,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(AppLocalizations.of(context)!.no),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_sweep_outlined),
-                  ),
-                if (widget.callback != null)
-                  IconButton(
-                    onPressed: () {
-                      if (filter.progress.inRefreshing) {
-                        return;
-                      }
-
-                      final upTo = filter.backingStorage.count;
-
-                      try {
-                        final n = math.Random.secure().nextInt(upTo);
-
-                        final gridState = state.gridKey.currentState;
-                        if (gridState != null) {
-                          final cell = gridState.source.forIdxUnsafe(n);
-                          cell.onPress(
-                            context,
-                            gridState.widget.functionality,
-                            cell,
-                            n,
-                          );
-                        }
-                      } catch (e, trace) {
-                        _log.logDefaultImportant(
-                          "getting random number".errorMessage(e),
-                          trace,
                         );
+                      },
+                      backButton: CallbackGridBackButton(
+                        onPressed: () {
+                          if (filter.filteringMode != FilteringMode.noFilter) {
+                            filter.filteringMode = FilteringMode.noFilter;
+                            return;
+                          }
+                          Navigator.pop(context);
+                        },
+                      ),
+                      selectionGlue: GlueProvider.generateOf(context)(),
+                      source: filter,
+                      search: OverrideGridSearchWidget(
+                        SearchAndFocus(
+                          FilteringSearchWidget(
+                            hint: widget.dirName,
+                            filter: filter,
+                            textController: searchTextController,
+                            localTagDictionary: widget.db.localTagDictionary,
+                            focusNode: searchFocus,
+                          ),
+                          searchFocus,
+                        ),
+                      ),
+                    ),
+                    mainFocus: state.mainFocus,
+                    description: GridDescription(
+                      overrideEmptyWidgetNotice: api.type.isFavorites()
+                          ? "Some files can't be shown"
+                          : null, // TODO: change
+                      showPageSwitcherAsHeader: true,
+                      pages: api.type.isFavorites()
+                          ? null
+                          : PageSwitcherToggable(
+                              [
+                                PageToaggable(
+                                  Icons.select_all_rounded,
+                                  active: widget.callback == null,
+                                ),
+                                PageToaggable(FilteringMode.favorite.icon),
+                              ],
+                              _filterFavorites,
+                              stateKey: _switcherKey,
+                            ),
+                      actions: widget.callback != null
+                          ? const []
+                          : api.type.isTrash()
+                              ? [
+                                  restoreFromTrash(),
+                                ]
+                              : [
+                                  if (api.type.isFavorites())
+                                    setFavoritesThumbnailAction(
+                                        widget.db.miscSettings),
+                                  if (miscSettings.filesExtendedActions) ...[
+                                    bulkRename(),
+                                    saveTagsAction(plug, postTags, localTags),
+                                    addTag(
+                                      context,
+                                      () => api.source.clearRefreshSorting(
+                                        filter.sortingMode,
+                                        true,
+                                      ),
+                                      localTags,
+                                    ),
+                                  ],
+                                  addToFavoritesAction(null, favoriteFiles),
+                                  deleteAction(),
+                                  copyAction(
+                                    widget.tagManager,
+                                    favoriteFiles,
+                                    localTags,
+                                    api.parent,
+                                  ),
+                                  moveAction(
+                                    widget.tagManager,
+                                    favoriteFiles,
+                                    localTags,
+                                    api.parent,
+                                  ),
+                                ],
+                      menuButtonItems: [
+                        if (widget.callback == null && api.type.isTrash())
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                DialogRoute<void>(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                        AppLocalizations.of(context)!
+                                            .emptyTrashTitle,
+                                      ),
+                                      content: Text(
+                                        AppLocalizations.of(context)!
+                                            .thisIsPermanent,
+                                        style: TextStyle(
+                                          color: Colors.red.harmonizeWith(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            GalleryManagementApi.current()
+                                                .emptyTrash();
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            AppLocalizations.of(context)!.yes,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                              AppLocalizations.of(context)!.no),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.delete_sweep_outlined),
+                          ),
+                        if (widget.callback != null)
+                          Builder(
+                            builder: (context) => IconButton(
+                              onPressed: () {
+                                if (filter.progress.inRefreshing) {
+                                  return;
+                                }
 
-                        return;
-                      }
+                                final upTo = filter.backingStorage.count;
 
-                      if (widget.callback!.returnBack) {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                      }
-                    },
-                    icon: const Icon(Icons.casino_outlined),
-                  ),
-              ],
+                                try {
+                                  final n = math.Random.secure().nextInt(upTo);
 
-              inlineMenuButtonItems: true,
-              bottomWidget: widget.callback != null
-                  ? CopyMovePreview.hintWidget(
-                      context,
-                      AppLocalizations.of(context)!.chooseFileNotice,
-                      widget.callback!.icon,
-                    )
-                  : null,
-              keybindsDescription: widget.dirName,
-              gridSeed: state.gridSeed,
-            ),
-          ),
+                                  final gridState = state.gridKey.currentState;
+                                  if (gridState != null) {
+                                    final cell =
+                                        gridState.source.forIdxUnsafe(n);
+                                    cell.onPress(
+                                      context,
+                                      gridState.widget.functionality,
+                                      cell,
+                                      n,
+                                    );
+                                  }
+                                } catch (e, trace) {
+                                  _log.logDefaultImportant(
+                                    "getting random number".errorMessage(e),
+                                    trace,
+                                  );
+
+                                  return;
+                                }
+
+                                if (widget.callback!.returnBack) {
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                }
+                              },
+                              icon: const Icon(Icons.casino_outlined),
+                            ),
+                          ),
+                      ],
+
+                      inlineMenuButtonItems: true,
+                      bottomWidget: widget.callback != null
+                          ? CopyMovePreview.hintWidget(
+                              context,
+                              AppLocalizations.of(context)!.chooseFileNotice,
+                              widget.callback!.icon,
+                            )
+                          : null,
+                      keybindsDescription: widget.dirName,
+                      gridSeed: state.gridSeed,
+                    ),
+                  )),
         ),
       ),
     );

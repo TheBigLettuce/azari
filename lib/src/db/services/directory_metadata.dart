@@ -52,4 +52,6 @@ abstract interface class DirectoryMetadataService implements ServiceMarker {
     required bool auth,
     required bool sticky,
   });
+
+  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
 }

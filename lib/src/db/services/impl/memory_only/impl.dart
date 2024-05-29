@@ -1608,6 +1608,13 @@ class MemoryDirectoryMetadataService implements DirectoryMetadataService {
         sticky: sticky,
         requireAuth: auth,
       );
+
+  @override
+  StreamSubscription<void> watch(void Function(void p1) f,
+      [bool fire = false]) {
+    // TODO: implement watch
+    throw UnimplementedError();
+  }
 }
 
 class MemoryFavoriteFileService implements FavoriteFileService {

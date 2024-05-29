@@ -442,7 +442,7 @@ class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
   }
 }
 
-class _SegRowHCell<T extends CellBase> extends StatelessWidget {
+class _SegRowHCell<T extends CellBase> extends StatefulWidget {
   const _SegRowHCell({
     super.key,
     required this.selection,
@@ -459,133 +459,204 @@ class _SegRowHCell<T extends CellBase> extends StatelessWidget {
   final GridSettingsData config;
 
   @override
-  Widget build(BuildContext context) {
-    return SegmentCard(
-      selection: selection,
-      columns: config.columns,
-      gridFunctionality: gridFunctionality,
-      segments: segments,
-      aspectRatio: config.aspectRatio.value,
-      segmentLabel: val.header,
-      modifiers: val.modifiers,
-      sliver: SliverGrid.builder(
-        itemCount: val.cells.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: config.columns.number,
-          childAspectRatio: config.aspectRatio.value,
-        ),
-        itemBuilder: (context, idx) {
-          final (cell, blur) = val.cells[idx];
-
-          return switch (cell) {
-            AsyncCell<T>() => _AsyncCell(
-                key: cell.uniqueKey(),
-                data: cell,
-                selection: selection,
-                gridFunctionality: gridFunctionality,
-                segments: segments,
-                config: config,
-                blur: blur,
-              ),
-            SyncCell<T>() => WrapSelection<T>(
-                selection: selection,
-                description: cell.value.description(),
-                onPressed: cell.value
-                    .tryAsPressable<T>(context, gridFunctionality, idx),
-                functionality: gridFunctionality,
-                selectFrom: null,
-                thisIndx: -1,
-                child: GridCell.frameDefault<T>(
-                  context,
-                  -1,
-                  cell.value,
-                  blur: blur,
-                  isList: false,
-                  imageAlign: Alignment.topCenter,
-                  hideTitle: config.hideName,
-                  animated: PlayAnimations.maybeOf(context) ?? false,
-                ),
-              ),
-          };
-        },
-      ),
-    );
-  }
+  State<_SegRowHCell<T>> createState() => __SegRowHCellState();
 }
 
-class _AsyncCell<T extends CellBase> extends StatefulWidget {
-  const _AsyncCell({
-    required super.key,
-    required this.data,
-    required this.selection,
-    required this.gridFunctionality,
-    required this.segments,
-    required this.config,
-    required this.blur,
-  });
+class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
+  late final items = widget.val.cells
+      .where((e) => e.$1 is! AsyncCell<T>)
+      .map((e) => (e.$1 as SyncCell<T>, e.$2))
+      .toList();
 
-  final AsyncCell<T> data;
-  final GridSelection<T> selection;
-  final GridFunctionality<T> gridFunctionality;
-  final Segments<T> segments;
-  final GridSettingsData config;
-  final bool blur;
-
-  @override
-  State<_AsyncCell<T>> createState() => __AsyncCellState();
-}
-
-class __AsyncCellState<T extends CellBase> extends State<_AsyncCell<T>> {
-  late final StreamSubscription<T?> _watcher;
-
-  T? _data;
+  late final List<StreamSubscription<T?>> _watchers;
 
   @override
   void initState() {
     super.initState();
 
-    _watcher = widget.data.watch(
-      (cell) {
-        setState(() {
-          _data = cell;
-        });
-      },
-      true,
-    );
+    _watchers = widget.val.cells
+        .where((e) => e.$1 is AsyncCell<T>)
+        .map(
+          (e) => (e.$1 as AsyncCell<T>).watch((newE) {
+            if (newE != null) {
+              items.removeWhere(
+                  (e) => e.$1.value.uniqueKey() == newE.uniqueKey());
+              items.add((SyncCell(newE), false));
+            } else {
+              items.removeWhere((e2) =>
+                  e2.$1.value.uniqueKey() ==
+                  (e.$1 as AsyncCell<T>).uniqueKey());
+            }
+          }),
+        )
+        .toList();
   }
 
   @override
   void dispose() {
-    _watcher.cancel();
+    for (final e in _watchers) {
+      e.cancel();
+    }
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _data == null
-        ? const SizedBox.shrink()
-        : WrapSelection<T>(
+    if (items.isEmpty) {
+      return const SliverPadding(padding: EdgeInsets.zero);
+    }
+
+    return SegmentCard(
+      selection: widget.selection,
+      columns: widget.config.columns,
+      gridFunctionality: widget.gridFunctionality,
+      segments: widget.segments,
+      aspectRatio: widget.config.aspectRatio.value,
+      segmentLabel: widget.val.header,
+      modifiers: widget.val.modifiers,
+      sliver: SliverGrid.builder(
+        itemCount: items.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.config.columns.number,
+          childAspectRatio: widget.config.aspectRatio.value,
+        ),
+        itemBuilder: (context, idx) {
+          final (cell as SyncCell<T>, blur) = items[idx];
+
+          return WrapSelection<T>(
             selection: widget.selection,
-            description: _data!.description(),
-            onPressed:
-                _data!.tryAsPressable<T>(context, widget.gridFunctionality, -1),
+            description: cell.value.description(),
+            onPressed: cell.value
+                .tryAsPressable<T>(context, widget.gridFunctionality, idx),
             functionality: widget.gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
             child: GridCell.frameDefault<T>(
               context,
               -1,
-              _data!,
-              blur: widget.blur,
+              cell.value,
+              blur: blur,
               isList: false,
               imageAlign: Alignment.topCenter,
               hideTitle: widget.config.hideName,
               animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
+
+          // switch (cell) {
+          //   AsyncCell<T>() => _AsyncCell(
+          //       key: cell.uniqueKey(),
+          //       data: cell,
+          //       selection: widget.selection,
+          //       gridFunctionality: widget.gridFunctionality,
+          //       segments: widget.segments,
+          //       config: widget.config,
+          //       blur: blur,
+          //     ),
+          //   SyncCell<T>() =>,
+          // };
+        },
+      ),
+    );
   }
 }
+
+// class _SegRowHCell<T extends CellBase> extends StatelessWidget {
+//   const _SegRowHCell({
+//     super.key,
+//     required this.selection,
+//     required this.val,
+//     required this.gridFunctionality,
+//     required this.segments,
+//     required this.config,
+//   });
+
+//   final GridSelection<T> selection;
+//   final _HeaderWithCells<T> val;
+//   final GridFunctionality<T> gridFunctionality;
+//   final Segments<T> segments;
+//   final GridSettingsData config;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return;
+//   }
+// }
+
+// class _AsyncCell<T extends CellBase> extends StatefulWidget {
+//   const _AsyncCell({
+//     required super.key,
+//     required this.data,
+//     required this.selection,
+//     required this.gridFunctionality,
+//     required this.segments,
+//     required this.config,
+//     required this.blur,
+//   });
+
+//   final AsyncCell<T> data;
+//   final GridSelection<T> selection;
+//   final GridFunctionality<T> gridFunctionality;
+//   final Segments<T> segments;
+//   final GridSettingsData config;
+//   final bool blur;
+
+//   @override
+//   State<_AsyncCell<T>> createState() => __AsyncCellState();
+// }
+
+// class __AsyncCellState<T extends CellBase> extends State<_AsyncCell<T>> {
+//   late final StreamSubscription<T?> _watcher;
+
+//   T? _data;
+
+//   @override
+//   void initState() {
+//     super.initState();
+
+//     _watcher = widget.data.watch(
+//       (cell) {
+//         setState(() {
+//           _data = cell;
+//         });
+//       },
+//       true,
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _watcher.cancel();
+
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return _data == null
+//         ? const SizedBox.shrink()
+//         : WrapSelection<T>(
+//             selection: widget.selection,
+//             description: _data!.description(),
+//             onPressed:
+//                 _data!.tryAsPressable<T>(context, widget.gridFunctionality, -1),
+//             functionality: widget.gridFunctionality,
+//             selectFrom: null,
+//             thisIndx: -1,
+//             child: GridCell.frameDefault<T>(
+//               context,
+//               -1,
+//               _data!,
+//               blur: widget.blur,
+//               isList: false,
+//               imageAlign: Alignment.topCenter,
+//               hideTitle: widget.config.hideName,
+//               animated: PlayAnimations.maybeOf(context) ?? false,
+//             ),
+//           );
+//   }
+// }
 
 class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
   const _SegRowHIdx({

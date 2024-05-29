@@ -1382,6 +1382,15 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
       },
     );
   }
+
+  @override
+  StreamSubscription<void> watch(
+    void Function(void p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.blacklisted.isarDirectoryMetadatas
+          .watchLazy(fireImmediately: fire)
+          .listen(f);
 }
 
 class _DirectoryMetadataCap implements SegmentCapability {

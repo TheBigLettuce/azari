@@ -213,7 +213,7 @@ class ImageViewState extends State<ImageView>
 
   final scrollController = ScrollController();
 
-  late final PageController controller =
+  late PageController controller =
       PageController(initialPage: widget.startingCell);
 
   StreamSubscription<int>? _updates;
@@ -326,7 +326,10 @@ class ImageViewState extends State<ImageView>
   }
 
   void refreshImage([bool refreshPalette = false]) {
-    refreshTries += 1;
+    // refreshTries += 1;
+
+    // controller.dispose();
+    // controller = PageController(initialPage: currentPage);
 
     loadCells(currentPage, cellCount);
 

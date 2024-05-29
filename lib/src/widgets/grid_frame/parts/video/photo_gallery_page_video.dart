@@ -36,7 +36,7 @@ class PhotoGalleryPageVideo extends StatefulWidget
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
     with VideoSettingsDbScope<PhotoGalleryPageVideo> {
-  late final VideoPlayerController controller;
+  late VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
   Object? error;
@@ -45,6 +45,12 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
   void initState() {
     super.initState();
 
+    newController();
+
+    _initController();
+  }
+
+  void newController() {
     if (widget.localVideo) {
       controller = VideoPlayerController.contentUri(
         Uri.parse(widget.url),
@@ -56,8 +62,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
     }
-
-    _initController();
   }
 
   Future<void> _initController() {
@@ -68,9 +72,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
         controller.setVolume(videoSettings.volume);
 
         setState(() {
+          chewieController?.dispose();
           chewieController = ChewieController(
             videoPlayerController: controller,
-            aspectRatio: controller.value.aspectRatio,
+            aspectRatio: controller!.value.aspectRatio,
             looping: videoSettings.looping,
             allowPlaybackSpeedChanging: false,
             showOptions: false,
@@ -103,9 +108,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
     disposed = true;
     controller.pause();
     controller.dispose();
-    if (chewieController != null) {
-      chewieController!.dispose();
-    }
+    chewieController?.dispose();
     super.dispose();
   }
 
@@ -129,7 +132,11 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
                 error: tryFormatError(),
                 short: false,
                 refresh: () {
-                  ReloadImageNotifier.of(context);
+                  controller.dispose();
+                  newController();
+                  _initController();
+                  setState(() {});
+                  // ReloadImageNotifier.of(context);
                 },
               )
             : chewieController == null

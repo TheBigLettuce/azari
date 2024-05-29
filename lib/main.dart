@@ -152,27 +152,32 @@ Future<void> mainPickfile() async {
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  final tagManager =
+      objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
+
   runApp(
-    MaterialApp(
-      title: "Azari",
-      themeAnimationCurve: Easing.standard,
-      themeAnimationDuration: const Duration(milliseconds: 300),
-      darkTheme: buildTheme(Brightness.dark, accentColor),
-      theme: buildTheme(Brightness.light, accentColor),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Builder(
-        builder: (context) {
-          return Home(
-            callback: CallbackDescriptionNested(
-                icon: Icons.file_open_rounded,
-                AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
-              const AndroidApiFunctions().returnUri(chosen.originalUri);
-            }),
-          );
-        },
-      ),
-    ),
+    DatabaseConnectionNotifier.current(TagManager.wrapAnchor(
+        tagManager,
+        MaterialApp(
+          title: "Azari",
+          themeAnimationCurve: Easing.standard,
+          themeAnimationDuration: const Duration(milliseconds: 300),
+          darkTheme: buildTheme(Brightness.dark, accentColor),
+          theme: buildTheme(Brightness.light, accentColor),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) {
+              return Home(
+                callback: CallbackDescriptionNested(
+                    icon: Icons.file_open_rounded,
+                    AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
+                  const AndroidApiFunctions().returnUri(chosen.originalUri);
+                }),
+              );
+            },
+          ),
+        ))),
   );
 }
 

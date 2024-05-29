@@ -94,6 +94,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
   late final StreamSubscription<void> blacklistedWatcher;
+  late final StreamSubscription<void> directoryTagWatcher;
   late final AppLifecycleListener lifecycleListener;
 
   MiscSettingsData miscSettings = MiscSettingsService.db().current;
@@ -150,6 +151,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       setState(() {});
     });
 
+    directoryTagWatcher = directoryMetadata.watch((s) {
+      api.source.backingStorage.addAll([]);
+    });
+
     blacklistedWatcher = blacklistedDirectories.backingStorage.watch((_) {
       api.source.clearRefresh();
     });
@@ -175,6 +180,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   void dispose() {
+    directoryTagWatcher.cancel();
     blacklistedWatcher.cancel();
     settingsWatcher.cancel();
     miscSettingsWatcher.cancel();
@@ -340,6 +346,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   Widget child(BuildContext context) {
     return GridPopScope(
       filter: filter,
+      rootNavigatorPopCond: widget.nestedCallback != null,
       searchFocus: searchFocus,
       searchTextController: searchTextController,
       rootNavigatorPop: widget.procPop,
@@ -502,11 +509,13 @@ class GridPopScope extends StatefulWidget {
     required this.filter,
     required this.searchFocus,
     required this.child,
+    this.rootNavigatorPopCond = false,
   });
 
   final FocusNode? searchFocus;
   final TextEditingController? searchTextController;
   final void Function(bool)? rootNavigatorPop;
+  final bool rootNavigatorPopCond;
   final ChainedFilterResourceSource<dynamic, dynamic>? filter;
   final Widget child;
 
@@ -548,16 +557,19 @@ class _GridPopScopeState extends State<GridPopScope> {
 
     return PopScope(
       canPop: widget.rootNavigatorPop != null
-          ? false
-          : !glue.isOpen() &&
-              (widget.searchFocus == null || !widget.searchFocus!.hasFocus) &&
-              (widget.searchTextController == null ||
-                  widget.searchTextController!.text.isEmpty) &&
-              (widget.filter == null ||
-                  widget.filter!.allowedFilteringModes.isEmpty ||
-                  (widget.filter!.allowedFilteringModes
-                          .contains(FilteringMode.noFilter) &&
-                      widget.filter!.filteringMode == FilteringMode.noFilter)),
+          ? widget.rootNavigatorPopCond
+          : false ||
+              !glue.isOpen() &&
+                  (widget.searchFocus == null ||
+                      !widget.searchFocus!.hasFocus) &&
+                  (widget.searchTextController == null ||
+                      widget.searchTextController!.text.isEmpty) &&
+                  (widget.filter == null ||
+                      widget.filter!.allowedFilteringModes.isEmpty ||
+                      (widget.filter!.allowedFilteringModes
+                              .contains(FilteringMode.noFilter) &&
+                          widget.filter!.filteringMode ==
+                              FilteringMode.noFilter)),
       onPopInvoked: (didPop) {
         if (widget.searchFocus != null && widget.searchFocus!.hasFocus) {
           widget.searchFocus!.unfocus();
