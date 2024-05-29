@@ -43,6 +43,8 @@ abstract interface class FavoritePostSourceService
         ServiceMarker {
   List<Post> addRemove(List<Post> posts);
 
+  bool isFavorite(int id, Booru booru);
+
   StreamSubscription<T> watchSingle<T>(
     int id,
     Booru booru,

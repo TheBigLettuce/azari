@@ -40,10 +40,12 @@ class _GalleryImpl implements GalleryApi {
     bool empty,
   ) {
     final api = _currentApi?.bindFiles;
-    if (api == null ||
-        api.startTime > startTime ||
-        !api.isBucketId(bucketId) ||
-        empty) {
+    if (api == null || api.startTime > startTime || !api.isBucketId(bucketId)) {
+      return false;
+    } else if (empty) {
+      api.source.progress.inRefreshing = false;
+      api.source.backingStorage.clear();
+
       return false;
     }
 

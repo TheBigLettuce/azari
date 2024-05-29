@@ -19,6 +19,7 @@ import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/net/anime/jikan.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
@@ -33,7 +34,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 

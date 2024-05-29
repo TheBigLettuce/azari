@@ -166,6 +166,8 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
     if (mode == null) {
       if (widget.enabledModes.contains(FilteringMode.noFilter)) {
         currentFilter = widget.select(FilteringMode.noFilter);
+
+        setState(() {});
       }
 
       return;

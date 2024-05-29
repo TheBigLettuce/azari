@@ -281,6 +281,11 @@ class MemoryDownloadFileService implements DownloadFileService {
   void saveAll(List<DownloadFileData> l) {
     // TODO: implement saveAll
   }
+
+  @override
+  void markInProgressAsFailed() {
+    // TODO: implement markInProgressAsFailed
+  }
 }
 
 class MemoryBooruTagging implements BooruTagging {
@@ -1606,6 +1611,8 @@ class MemoryDirectoryMetadataService implements DirectoryMetadataService {
 }
 
 class MemoryFavoriteFileService implements FavoriteFileService {
+  final _events = StreamController<int>.broadcast();
+
   @override
   final Map<int, void> cachedValues = {};
 
@@ -1634,6 +1641,8 @@ class MemoryFavoriteFileService implements FavoriteFileService {
     for (final e in ids) {
       cachedValues[e] = null;
     }
+
+    _events.add(count);
   }
 
   @override
@@ -1641,6 +1650,40 @@ class MemoryFavoriteFileService implements FavoriteFileService {
     for (final e in ids) {
       cachedValues.remove(e);
     }
+
+    _events.add(count);
+  }
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _events.stream.transform<int>(
+        StreamTransformer((input, cancelOnError) {
+          final controller = StreamController<int>(sync: true);
+          controller.onListen = () {
+            final subscription = input.listen(controller.add,
+                onError: controller.addError,
+                onDone: controller.close,
+                cancelOnError: cancelOnError);
+            controller
+              ..onPause = subscription.pause
+              ..onResume = subscription.resume
+              ..onCancel = subscription.cancel;
+          };
+
+          if (fire) {
+            Timer.run(() {
+              controller.add(count);
+            });
+          }
+
+          return controller.stream.listen(null);
+        }),
+      ).listen(f);
+
+  @override
+  Stream<bool> streamSingle(int id, [bool fire = false]) {
+    // TODO: implement streamSingle
+    throw UnimplementedError();
   }
 }
 
@@ -1978,6 +2021,10 @@ class MemoryFavoritePostService implements FavoritePostSourceService {
 
   //   _eventsVoid.add(null);
   // }
+
+  @override
+  bool isFavorite(int id, Booru booru) =>
+      backingStorage.map_.containsKey((id, booru));
 
   @override
   List<Post> addRemove(List<Post> posts) {

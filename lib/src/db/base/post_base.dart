@@ -17,12 +17,10 @@ import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/cached_db_values.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/more/favorite_booru_actions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
@@ -32,68 +30,6 @@ import "package:mime/mime.dart" as mime;
 import "package:path/path.dart" as path_util;
 import "package:transparent_image/transparent_image.dart";
 import "package:url_launcher/url_launcher.dart";
-
-// class PostCacheValues implements CacheElement {
-// List<Sticker>? _stickers;
-
-// String? _url;
-
-// List<ImageViewAction>? _actions;
-
-// List<ImageViewAction> actions(BuildContext context, Post post) {
-//  ;
-// }
-
-// String url(BuildContext context, Post post) {
-//   if (_url != null) {
-//     return _url!;
-//   }
-
-//   return _url =
-// }
-
-// bool isHidden(BuildContext context, Post post) {
-//   if (_isHidden != null) {
-//     return _isHidden!;
-//   }
-
-//   return _isHidden = DatabaseConnectionNotifier.of(context)
-//       .hiddenBooruPost
-//       .isHidden(post.id, post.booru);
-// }
-
-// PostContentType type(BuildContext context, Post post) {
-//   if (_type != null) {
-//     return _type!;
-//   }
-
-//   final url_ = url(context, post);
-
-//   final type = mime.lookupMimeType(url_);
-//   if (type == null) {
-//     return _type = PostContentType.none;
-//   }
-
-//   final typeHalf = type.split("/");
-
-//   if (typeHalf[0] == "image") {
-//     return _type =
-//         typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
-//   } else if (typeHalf[0] == "video") {
-//     return _type = PostContentType.video;
-//   } else {
-//     return _type = PostContentType.none;
-//   }
-// }
-
-// }
-
-// class PostValuesCache with SimpleMapCache implements CachedDbValues {
-//   PostValuesCache();
-
-//   factory PostValuesCache.of(BuildContext context) =>
-//       ValuesCache.of<PostValuesCache>(context);
-// }
 
 enum PostRating {
   general,
@@ -296,8 +232,6 @@ abstract mixin class Post<T extends ContentableCell>
     }
   }
 
-  // PostCacheValues _cache(BuildContext context) => PostValuesCache.of(context)
-  //     .putIfAbsent(uniqueKey(), () => PostCacheValues());
   String _makeName() =>
       DisassembleResult.makeFilename(booru, fileDownloadUrl(), md5, id);
 
@@ -359,21 +293,21 @@ abstract mixin class Post<T extends ContentableCell>
           fire,
         ),
       ),
-      if (this is FavoritePostData)
-        FavoritesActions.addToGroup<CellBase>(
-          context,
-          (selected) => (selected.first as FavoritePostData).group,
-          (selected, value, toPin) {
-            for (final FavoritePostData e in selected.cast()) {
-              e.group = value.isEmpty ? null : value;
-            }
+      // if (this is FavoritePostData)
+      //   FavoritesActions.addToGroup<CellBase>(
+      //     context,
+      //     (selected) => (selected.first as FavoritePostData).group,
+      //     (selected, value, toPin) {
+      //       for (final FavoritePostData e in selected.cast()) {
+      //         e.group = value.isEmpty ? null : value;
+      //       }
 
-            favorites.addRemove(selected.cast());
+      //       favorites.addRemove(selected.cast());
 
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          false,
-        ).asImageView(this),
+      //       Navigator.of(context, rootNavigator: true).pop();
+      //     },
+      //     false,
+      //   ).asImageView(this),
       ImageViewAction(
         Icons.download,
         (_) => download(context),
@@ -476,9 +410,8 @@ abstract mixin class Post<T extends ContentableCell>
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      // if (post is! FavoritePostData &&
-      //     db.favoritePosts.isFavorite(post.id, post.booru))
-      //   const Sticker(Icons.favorite_rounded, important: true),
+      if (this is! FavoritePostData && db.favoritePosts.isFavorite(id, booru))
+        const Sticker(Icons.favorite_rounded, important: true),
       ...defaultStickersPost(
         type,
         context,

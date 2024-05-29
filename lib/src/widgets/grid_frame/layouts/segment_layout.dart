@@ -27,19 +27,20 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
     super.key,
     required this.segments,
     required this.suggestionPrefix,
-    required this.getCell,
     required this.gridSeed,
     required this.storage,
     required this.progress,
     required this.localizations,
+    this.unselectOnUpdate = true,
   });
 
   final Segments<T> segments;
   final List<String> suggestionPrefix;
-  final T Function(int) getCell;
   final ReadOnlyStorage<int, T> storage;
   final RefreshingProgress progress;
   final AppLocalizations localizations;
+
+  final bool unselectOnUpdate;
 
   final int gridSeed;
 
@@ -51,7 +52,6 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
   Segments<T> get segments => widget.segments;
   List<String> get suggestionPrefix => widget.suggestionPrefix;
   ReadOnlyStorage<int, T> get storage => widget.storage;
-  T Function(int) get getCell => widget.getCell;
 
   late final StreamSubscription<int> _watcher;
 
@@ -65,6 +65,10 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
     _makeSegments();
 
     _watcher = storage.watch((_) {
+      if (widget.unselectOnUpdate) {
+        GridExtrasNotifier.of<T>(context).selection.reset();
+      }
+
       _makeSegments();
 
       setState(() {});
@@ -96,14 +100,14 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
         key,
         value
             .take(segments.limitLabelChildren!)
-            .map((e) => getCell(e))
+            .map((e) => storage[e])
             .toList(),
       );
 
       return;
     }
 
-    segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
+    segments.onLabelPressed!(key, value.map((e) => storage[e]).toList());
   }
 
   (List<_SegmentType>, List<int>) _genSegFnc() {
@@ -114,10 +118,10 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
 
     final unsegmented = <int>[];
 
-    final List<(T, bool)> suggestionCells = [];
+    final List<(SegmentInjectedCellType<T>, bool)> suggestionCells = [];
 
     for (var i = 0; i < storage.count; i++) {
-      final cell = getCell(i);
+      final cell = storage[i];
 
       if (segments.displayFirstCellInSpecial && suggestionPrefix.isNotEmpty) {
         for (final alias in suggestionPrefix) {
@@ -132,7 +136,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                   .startsWith(e.length <= 4 ? e : e.substring(0, 4))) {
                 suggestionCells.add(
                   (
-                    cell,
+                    SyncCell(cell),
                     caps
                         .modifiersFor(segments.segment!(cell) ?? "")
                         .contains(SegmentModifier.blur)
@@ -146,7 +150,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                 )) {
               suggestionCells.add(
                 (
-                  cell,
+                  SyncCell(cell),
                   caps
                       .modifiersFor(segments.segment!(cell) ?? "")
                       .contains(SegmentModifier.blur)
@@ -158,8 +162,12 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
       }
 
       if (suggestionCells.isNotEmpty) {
-        suggestionCells
-            .sort((a, b) => a.$1.alias(false).compareTo(b.$1.alias(false)));
+        suggestionCells.sort(
+          (a, b) => (a.$1 as SyncCell<T>)
+              .value
+              .alias(false)
+              .compareTo((b.$1 as SyncCell<T>).value.alias(false)),
+        );
       }
 
       final (res) = segments.segment!(cell);
@@ -186,17 +194,18 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
             firstIsSpecial: true,
           ),
           (suggestionCells.isEmpty
-                  ? [
-                      () {
-                        final cell = getCell(0);
+                  ? <(SegmentInjectedCellType<T>, bool)>[
+                      if (storage.isNotEmpty)
+                        () {
+                          final cell = storage[0];
 
-                        return (
-                          cell,
-                          caps
-                              .modifiersFor(segments.segment!(cell) ?? "")
-                              .contains(SegmentModifier.blur)
-                        );
-                      }()
+                          return (
+                            SyncCell(cell),
+                            caps
+                                .modifiersFor(segments.segment!(cell) ?? "")
+                                .contains(SegmentModifier.blur)
+                          );
+                        }(),
                     ]
                   : suggestionCells) +
               segments.injectedSegments.map((e) => (e, false)).toList(),
@@ -330,7 +339,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                               ? segments.limitLabelChildren!
                               : e.value,
                           (index) => index + prevCount,
-                        ).map((e) => getCell(e)).toList(),
+                        ).map((e) => storage[e]).toList(),
                       );
 
                       return;
@@ -342,7 +351,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                       e.value,
                       (index) => index + prevCount,
                     )) {
-                      cells.add(getCell(i - 1));
+                      cells.add(storage[i - 1]);
                     }
 
                     segments.onLabelPressed!(e.key.toString(), cells);
@@ -466,30 +475,115 @@ class _SegRowHCell<T extends CellBase> extends StatelessWidget {
           childAspectRatio: config.aspectRatio.value,
         ),
         itemBuilder: (context, idx) {
-          final cell = val.cells[idx];
+          final (cell, blur) = val.cells[idx];
 
-          return WrapSelection<T>(
-            selection: selection,
-            description: cell.$1.description(),
+          return switch (cell) {
+            AsyncCell<T>() => _AsyncCell(
+                key: cell.uniqueKey(),
+                data: cell,
+                selection: selection,
+                gridFunctionality: gridFunctionality,
+                segments: segments,
+                config: config,
+                blur: blur,
+              ),
+            SyncCell<T>() => WrapSelection<T>(
+                selection: selection,
+                description: cell.value.description(),
+                onPressed: cell.value
+                    .tryAsPressable<T>(context, gridFunctionality, idx),
+                functionality: gridFunctionality,
+                selectFrom: null,
+                thisIndx: -1,
+                child: GridCell.frameDefault<T>(
+                  context,
+                  -1,
+                  cell.value,
+                  blur: blur,
+                  isList: false,
+                  imageAlign: Alignment.topCenter,
+                  hideTitle: config.hideName,
+                  animated: PlayAnimations.maybeOf(context) ?? false,
+                ),
+              ),
+          };
+        },
+      ),
+    );
+  }
+}
+
+class _AsyncCell<T extends CellBase> extends StatefulWidget {
+  const _AsyncCell({
+    required super.key,
+    required this.data,
+    required this.selection,
+    required this.gridFunctionality,
+    required this.segments,
+    required this.config,
+    required this.blur,
+  });
+
+  final AsyncCell<T> data;
+  final GridSelection<T> selection;
+  final GridFunctionality<T> gridFunctionality;
+  final Segments<T> segments;
+  final GridSettingsData config;
+  final bool blur;
+
+  @override
+  State<_AsyncCell<T>> createState() => __AsyncCellState();
+}
+
+class __AsyncCellState<T extends CellBase> extends State<_AsyncCell<T>> {
+  late final StreamSubscription<T?> _watcher;
+
+  T? _data;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _watcher = widget.data.watch(
+      (cell) {
+        setState(() {
+          _data = cell;
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _data == null
+        ? const SizedBox.shrink()
+        : WrapSelection<T>(
+            selection: widget.selection,
+            description: _data!.description(),
             onPressed:
-                cell.$1.tryAsPressable<T>(context, gridFunctionality, idx),
-            functionality: gridFunctionality,
+                _data!.tryAsPressable<T>(context, widget.gridFunctionality, -1),
+            functionality: widget.gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
             child: GridCell.frameDefault<T>(
               context,
               -1,
-              cell.$1,
-              blur: cell.$2,
+              _data!,
+              blur: widget.blur,
               isList: false,
               imageAlign: Alignment.topCenter,
-              hideTitle: config.hideName,
+              hideTitle: widget.config.hideName,
               animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
-        },
-      ),
-    );
   }
 }
 
@@ -767,7 +861,7 @@ sealed class _SegmentType {
 class _HeaderWithCells<T extends CellBase> implements _SegmentType {
   const _HeaderWithCells(this.header, this.cells, this.modifiers);
 
-  final List<(T, bool)> cells;
+  final List<(SegmentInjectedCellType<T>, bool)> cells;
   final _SegSticky header;
   final Set<SegmentModifier> modifiers;
 }

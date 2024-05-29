@@ -7,98 +7,6 @@
 
 part of "android_api_directories.dart";
 
-// class _GalleryFilesExtra implements GalleryFilesExtra {
-//   const _GalleryFilesExtra._(this._impl);
-//   final _AndroidGalleryFiles _impl;
-
-//   @override
-//   Isar get db => _impl.db;
-
-//   @override
-//   FilterInterface<SystemGalleryDirectoryFile> get filter => _impl.filter;
-
-//   @override
-//   bool get supportsDirectRefresh => false;
-
-//   @override
-//   bool get isTrash => _impl.isTrash;
-//   @override
-//   bool get isFavorites => _impl.isFavorites;
-
-//   @override
-//   void setRefreshGridCallback(void Function() callback) {
-//     _impl.refreshGrid = callback;
-//   }
-
-//   @override
-//   Future<void> loadNextThumbnails(void Function() callback) async {
-//     var offset = 0;
-//     var count = 0;
-//     final List<Future<ThumbId>> thumbnails = [];
-
-//     for (;;) {
-//       final elems = _impl.db.systemGalleryDirectoryFiles
-//           .where()
-//           .offset(offset)
-//           .limit(40)
-//           .findAllSync();
-//       offset += elems.length;
-
-//       if (elems.isEmpty) {
-//         break;
-//       }
-
-//       for (final file in elems) {
-//         if (file.getThumbnail(file.id) == null) {
-//           count++;
-
-//           thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
-
-//           if (thumbnails.length > 8) {
-//             Thumbnail.addAll(await thumbnails.wait);
-//             thumbnails.clear();
-//           }
-//         }
-//       }
-
-//       if (count >= 80) {
-//         break;
-//       }
-//     }
-
-//     if (thumbnails.isNotEmpty) {
-//       Thumbnail.addAll(await thumbnails.wait);
-//     }
-
-//     callback();
-//   }
-
-//   @override
-//   void setRefreshingStatusCallback(
-//     void Function(int i, bool inRefresh, bool empty) callback,
-//   ) {
-//     _impl.callback = callback;
-//   }
-
-//   @override
-//   void setPassFilter(
-//     (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
-//       Iterable<SystemGalleryDirectoryFile> cells,
-//       dynamic data,
-//       bool end,
-//     ) f,
-//   ) {
-//     _impl.filter.passFilter = f;
-//   }
-
-//   List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) =>
-//       _impl.db.systemGalleryDirectoryFiles
-//           .where()
-//           // ignore: inference_failure_on_function_invocation
-//           .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
-//           .findAllSync();
-// }
-
 class _JoinedDirectories extends _AndroidGalleryFiles {
   _JoinedDirectories({
     required this.directories,
@@ -106,6 +14,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required super.source,
     required super.directoryMetadata,
     required super.directoryTag,
+    required super.favoriteFile,
   }) : super(
           bucketId: "",
           type: GalleryFilesPageType.normal,
@@ -124,47 +33,11 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
     return false;
   }
-
-  // @override
-  // Future<int> refresh() async {
-  //   try {
-  //     db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
-
-  //     if (isTrash) {
-  //       PlatformFunctions.refreshTrashed();
-  //     } else if (isFavorites) {
-  //       int offset = 0;
-
-  //       while (true) {
-  //         final f = FavoriteFile.getAll(offset: offset, limit: 200)
-  //             .map((e) => e.id)
-  //             .toList();
-  //         offset += f.length;
-
-  //         if (f.isEmpty) {
-  //           break;
-  //         }
-
-  //         await PlatformFunctions.refreshFavorites(f);
-  //       }
-  //     } else {
-  //       PlatformFunctions.refreshFilesMultiple(directories);
-  //     }
-  //   } catch (e, trace) {
-  //     log(
-  //       "android gallery",
-  //       level: Level.SEVERE.value,
-  //       error: e,
-  //       stackTrace: trace,
-  //     );
-  //   }
-
-  //   return Future.value(db.systemGalleryDirectoryFiles.countSync());
-  // }
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
   _AndroidGalleryFiles({
+    required this.favoriteFile,
     required this.directoryMetadata,
     required this.directoryTag,
     required this.source,
@@ -203,13 +76,23 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
 
   @override
   final DirectoryTagService directoryTag;
+
+  @override
+  final FavoriteFileService favoriteFile;
 }
 
 class _AndroidFileSourceJoined
     implements SortingResourceSource<int, GalleryFile> {
-  _AndroidFileSourceJoined(this.bucketIds);
+  _AndroidFileSourceJoined(this.bucketIds, this.type, this.favoriteFile) {
+    _favoritesWatcher = favoriteFile.watch((_) {
+      backingStorage.addAll([]);
+    });
+  }
 
   final List<String> bucketIds;
+  final GalleryFilesPageType type;
+  final FavoriteFileService favoriteFile;
+  late final StreamSubscription<int>? _favoritesWatcher;
 
   @override
   int get count => backingStorage.count;
@@ -224,14 +107,21 @@ class _AndroidFileSourceJoined
   final ListStorage<GalleryFile> backingStorage = ListStorage();
 
   @override
-  Future<int> clearRefreshSorting(SortingMode sortingMode) =>
-      clearRefresh(sortingMode);
+  Future<int> clearRefreshSorting(
+    SortingMode sortingMode, [
+    bool silent = false,
+  ]) =>
+      clearRefresh(sortingMode, silent);
 
   @override
-  Future<int> nextSorting(SortingMode sortingMode) => next();
+  Future<int> nextSorting(SortingMode sortingMode, [bool silent = false]) =>
+      next();
 
   @override
-  Future<int> clearRefresh([SortingMode sortingMode = SortingMode.none]) {
+  Future<int> clearRefresh([
+    SortingMode sortingMode = SortingMode.none,
+    bool silent = false,
+  ]) async {
     if (progress.inRefreshing) {
       return Future.value(count);
     }
@@ -239,11 +129,29 @@ class _AndroidFileSourceJoined
     backingStorage.list.clear();
 
     progress.inRefreshing = true;
-    if (bucketIds.length == 1) {
-      GalleryManagementApi.current().refreshFiles(bucketIds.first, sortingMode);
+    if (type.isTrash()) {
+      GalleryManagementApi.current().refreshTrashed(sortingMode);
+    } else if (type.isFavorites()) {
+      int offset = 0;
+
+      while (true) {
+        final f = favoriteFile.getAll(offset: offset, limit: 200);
+        offset += f.length;
+
+        if (f.isEmpty) {
+          break;
+        }
+
+        await GalleryManagementApi.current().refreshFavorites(f, sortingMode);
+      }
     } else {
-      GalleryManagementApi.current()
-          .refreshFilesMultiple(bucketIds, sortingMode);
+      if (bucketIds.length == 1) {
+        GalleryManagementApi.current()
+            .refreshFiles(bucketIds.first, sortingMode);
+      } else {
+        GalleryManagementApi.current()
+            .refreshFilesMultiple(bucketIds, sortingMode);
+      }
     }
 
     return Future.value(backingStorage.count);
@@ -254,200 +162,12 @@ class _AndroidFileSourceJoined
 
   @override
   void destroy() {
+    _favoritesWatcher?.cancel();
     backingStorage.destroy();
     progress.close();
   }
 }
 
-// class GenericListSorter<T> extends Iterable<T> {
-//   GenericListSorter(this.nextItems);
-
-//   final Iterable<T> Function(int, int) nextItems;
-
-//   @override
-//   Iterator<T> get iterator => _GenericSorterIterator(this.nextItems);
-// }
-
-// class _GenericSorterIterator<T> implements Iterator<T> {
-//   _GenericSorterIterator(this.nextItems);
-
-//   final Iterable<T> Function(int, int) nextItems;
-//   final _storage = BufferedStorage<T>();
-
-//   @override
-//   T get current => _storage.current;
-
-//   @override
-//   bool moveNext() => _storage.moveNext(nextItems);
-// }
-
- 
-
-// class _IsarCollectionIterator<T> implements Iterator<T> {
-//   _IsarCollectionIterator(
-//     this.collection, {
-//     required this.reversed,
-//     this.loader,
-//   });
-
-//   final IsarCollection<T> collection;
-//   final bool reversed;
-
-//   final QueryBuilder<T, T, QAfterLimit> Function(
-//     QueryBuilder<T, T, QWhere> q,
-//     int offset,
-//     int limit,
-//   )? loader;
-
-//   final List<T> _buffer = [];
-//   int _cursor = -1;
-//   bool _done = false;
-
-//   @override
-//   T get current => _buffer[_cursor];
-
-//   QueryBuilder<T, T, QAfterLimit> defaultLoader(
-//     QueryBuilder<T, T, QWhere> q,
-//     int offset,
-//     int limit,
-//   ) =>
-//       q.offset(offset).limit(limit);
-
-//   @override
-//   bool moveNext() {
-//     if (_done) {
-//       return false;
-//     }
-
-//     if (_buffer.isNotEmpty && _cursor != _buffer.length - 1) {
-//       _cursor += 1;
-//       return true;
-//     }
-
-//     final ret = (loader ?? defaultLoader)(
-//       collection.where(sort: reversed ? Sort.asc : Sort.desc),
-//       _buffer.length,
-//       40,
-//     ).findAllSync();
-//     if (ret.isEmpty) {
-//       _cursor = -1;
-//       _buffer.clear();
-//       return !(_done = true);
-//     }
-
-//     _cursor = 0;
-//     _buffer.clear();
-//     _buffer.addAll(ret);
-
-//     return true;
-//   }
-// }
-
-
-// class _AndroidFileSource implements ResourceSource<GalleryFile> {
-//   _AndroidFileSource(this.bucketId);
-
-//   static const _androidApi = AndroidApiFunctions();
-
-//   final String bucketId;
-
-//   @override
-//   int get count => backingStorage.count;
-
-//   @override
-//   bool get hasNext => false;
-
-//   @override
-//   final ClosableRefreshProgress progress = ClosableRefreshProgress();
-
-//   @override
-//   final SourceStorage<GalleryFile> backingStorage = ListStorage();
-
-//   @override
-//   GalleryFile? forIdx(int idx) => backingStorage.get(idx);
-
-//   @override
-//   GalleryFile forIdxUnsafe(int idx) => backingStorage[idx];
-
-//   @override
-//   Future<int> clearRefresh() {
-//     if (progress.inRefreshing) {
-//       return Future.value(count);
-//     }
-//     progress.inRefreshing = true;
-
-//     _androidApi.refreshFiles(bucketId);
-
-//     return Future.value(backingStorage.count);
-//   }
-
-//   @override
-//   Future<int> next() => Future.value(count);
-
-//   @override
-//   void destroy() {
-//     backingStorage.destroy();
-//     progress.close();
-//   }
-// }
-
-  // @override
-  // GalleryFilesExtra getExtra() => _GalleryFilesExtra._(this);
-
-  // @override
-  // SystemGalleryDirectoryFile directCell(int i, [bool bypassFilter = false]) =>
-  //     filter.isFiltering && !bypassFilter
-  //         ? filter.to.systemGalleryDirectoryFiles.getSync(i + 1)!
-  //         : db.systemGalleryDirectoryFiles.getSync(i + 1)!;
-
-  // final IsarFilter<SystemGalleryDirectoryFile> filter;
-
-  // @override
-  // void close() {
-  //   filter.dispose();
-  //   db.close(deleteFromDisk: true);
-  //   callback = null;
-  //   refreshGrid = null;
-
-  //   unsetCurrentImages();
-  // }
-
-  // @override
-  // Future<int> refresh() async {
-  //   try {
-  //     db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
-
-  //     if (isTrash) {
-  //       PlatformFunctions.refreshTrashed();
-  //     } else if (isFavorites) {
-  //       int offset = 0;
-
-  //       while (true) {
-  //         final f = FavoriteFile.getAll(offset: offset, limit: 200)
-  //             .map((e) => e.id)
-  //             .toList();
-  //         offset += f.length;
-
-  //         if (f.isEmpty) {
-  //           break;
-  //         }
-
-  //         await PlatformFunctions.refreshFavorites(f);
-  //       }
-  //     } else {
-  //       PlatformFunctions.refreshFiles(_bucketId);
-  //     }
-  //   } catch (e, trace) {
-  //     log(
-  //       "android gallery",
-  //       level: Level.SEVERE.value,
-  //       error: e,
-  //       stackTrace: trace,
-  //     );
-  //   }
-
-  //   return Future.value(db.systemGalleryDirectoryFiles.countSync());
-  // }
 
 // Iterable<SystemGalleryDirectoryFile> Function(
 //   int,

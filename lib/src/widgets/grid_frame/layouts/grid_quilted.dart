@@ -22,11 +22,14 @@ class GridQuiltedLayout<T extends CellBase> extends StatefulWidget {
     required this.source,
     required this.progress,
     this.buildEmpty,
+    this.unselectOnUpdate = true,
   });
 
   final int randomNumber;
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
+
+  final bool unselectOnUpdate;
 
   final Widget Function(Object? error)? buildEmpty;
 
@@ -43,6 +46,10 @@ class _GridQuiltedLayoutState<T extends CellBase>
   @override
   void initState() {
     _watcher = source.watch((_) {
+      if (widget.unselectOnUpdate) {
+        GridExtrasNotifier.of<T>(context).selection.reset();
+      }
+
       setState(() {});
     });
 

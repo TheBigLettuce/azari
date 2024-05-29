@@ -103,7 +103,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
       builder: (context, snapshot) {
         if (!snapshot.hasData && !snapshot.hasError) {
           return AnnotatedRegion(
-            value: navBarStyleForTheme(Theme.of(context), elevation: false),
+            value: navBarStyleForTheme(Theme.of(context), highTone: false),
             child: const Scaffold(
               body: Center(
                 child: SizedBox(

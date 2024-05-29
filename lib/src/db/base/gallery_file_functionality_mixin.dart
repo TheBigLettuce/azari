@@ -20,54 +20,56 @@ import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:logging/logging.dart";
 
-mixin GalleryFileFunctionalityMixin {
-  List<Sticker> defaultStickers(
-    BuildContext? context,
-    GalleryFile file,
-  ) {
-    return [
-      if (file.isVideo) Sticker(FilteringMode.video.icon),
-      if (file.isGif) Sticker(FilteringMode.gif.icon),
-      // if (file.isOriginal) Sticker(FilteringMode.original.icon),
-      if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
-      // if (file.tagsFlat.contains("translated"))
+List<Sticker> defaultStickersFile(
+  BuildContext? context,
+  GalleryFile file,
+  LocalTagsService localTags,
+) {
+  final tags = localTags.cachedValues[file.name];
+
+  return [
+    if (file.isVideo) Sticker(FilteringMode.video.icon),
+    if (file.isGif) Sticker(FilteringMode.gif.icon),
+    if (tags?.contains("original") ?? false)
+      Sticker(FilteringMode.original.icon),
+    if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
+    if (tags?.contains("translated") ?? false)
       const Sticker(Icons.translate_outlined),
-    ];
+  ];
+}
+
+Sticker sizeSticker(int size) {
+  if (size == 0) {
+    return const Sticker(IconData(0x4B));
   }
 
-  Sticker sizeSticker(int size) {
-    if (size == 0) {
+  final kb = size / 1000;
+  if (kb < 1000) {
+    if (kb > 500) {
       return const Sticker(IconData(0x4B));
-    }
-
-    final kb = size / 1000;
-    if (kb < 1000) {
-      if (kb > 500) {
-        return const Sticker(IconData(0x4B));
-      } else {
-        return const Sticker(IconData(0x6B));
-      }
     } else {
-      final mb = kb / 1000;
-      if (mb > 2) {
-        return const Sticker(IconData(0x4D));
-      } else {
-        return const Sticker(IconData(0x6D));
-      }
+      return const Sticker(IconData(0x6B));
+    }
+  } else {
+    final mb = kb / 1000;
+    if (mb > 2) {
+      return const Sticker(IconData(0x4D));
+    } else {
+      return const Sticker(IconData(0x6D));
     }
   }
+}
 
-  String kbMbSize(BuildContext context, int bytes) {
-    if (bytes == 0) {
-      return "0";
-    }
-    final res = bytes / 1000;
-    if (res > 1000) {
-      return AppLocalizations.of(context)!.megabytes(res / 1000);
-    }
-
-    return AppLocalizations.of(context)!.kilobytes(res);
+String kbMbSize(BuildContext context, int bytes) {
+  if (bytes == 0) {
+    return "0";
   }
+  final res = bytes / 1000;
+  if (res > 1000) {
+    return AppLocalizations.of(context)!.megabytes(res / 1000);
+  }
+
+  return AppLocalizations.of(context)!.kilobytes(res);
 }
 
 Future<void> loadNetworkThumb(

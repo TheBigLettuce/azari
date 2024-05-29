@@ -20,12 +20,14 @@ class GridLayout<T extends CellBase> extends StatefulWidget {
     required this.source,
     this.buildEmpty,
     required this.progress,
+    this.unselectOnUpdate = true,
   });
 
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
+  final bool unselectOnUpdate;
 
   @override
   State<GridLayout<T>> createState() => _GridLayoutState();
@@ -39,6 +41,10 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
   @override
   void initState() {
     _watcher = source.watch((_) {
+      if (widget.unselectOnUpdate) {
+        GridExtrasNotifier.of<T>(context).selection.reset();
+      }
+
       setState(() {});
     });
 

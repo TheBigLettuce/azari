@@ -117,6 +117,7 @@ mixin _ChangePageMixin on State<Home> {
         nestedCallback: widget.callback,
         procPop: (pop) => _procPop(icons, pop),
         db: DatabaseConnectionNotifier.of(context),
+        localizations: AppLocalizations.of(context)!,
       );
     }
 
@@ -159,6 +160,7 @@ mixin _ChangePageMixin on State<Home> {
               child: GalleryDirectories(
                 procPop: (pop) => _procPop(icons, pop),
                 db: DatabaseConnectionNotifier.of(context),
+                localizations: AppLocalizations.of(context)!,
               ),
             ),
           kMangaPageRoute => _NavigatorShell(
@@ -205,14 +207,16 @@ class PagingStateRegistry {
     return _map[key]! as T;
   }
 
-  void removeDispose(String key) {
-    _map.remove(key)?.dispose();
-  }
+  PagingEntry? remove(String key) => _map.remove(key);
 
   void dispose() {
     for (final e in _map.entries) {
       e.value.dispose();
     }
+  }
+
+  void clear() {
+    _map.clear();
   }
 }
 

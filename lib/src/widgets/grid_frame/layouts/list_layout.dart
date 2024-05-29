@@ -23,12 +23,15 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
     required this.source,
     required this.progress,
     this.buildEmpty,
+    this.unselectOnUpdate = true,
   });
 
   final bool hideThumbnails;
 
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
+
+  final bool unselectOnUpdate;
 
   final Widget Function(Object? error)? buildEmpty;
 
@@ -44,6 +47,10 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
   @override
   void initState() {
     _watcher = source.watch((_) {
+      if (widget.unselectOnUpdate) {
+        GridExtrasNotifier.of<T>(context).selection.reset();
+      }
+
       setState(() {});
     });
 

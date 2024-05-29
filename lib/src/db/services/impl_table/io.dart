@@ -23,9 +23,7 @@ import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
 Future<DownloadManager> init(ServicesImplTable db) async {
-  await initalizeIsarDb(false, db);
-
-  return DownloadManager(db.downloads);
+  return await initalizeIsarDb(false, db);
 }
 
 ServicesImplTable getApi() => IoServicesImplTable();

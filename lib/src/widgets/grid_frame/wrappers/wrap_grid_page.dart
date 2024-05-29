@@ -65,7 +65,7 @@ class _WrapGridPageState extends State<WrapGridPage>
             value: navBarStyleForTheme(
               Theme.of(context),
               transparent: false,
-              elevation: false,
+              highTone: false,
             ),
             child: Scaffold(
               extendBody: true,

@@ -114,9 +114,12 @@ class __WatchingTabState extends State<_WatchingTab> {
   Widget build(BuildContext context) {
     return GridConfiguration(
       watch: gridSettings.watch,
-      child: GridSkeleton<AnimeEntryData>(
-        state,
-        (context) => GridFrame<SavedAnimeEntryData>(
+      child: GridPopScope(
+        searchTextController: null,
+        filter: null,
+        searchFocus: null,
+        rootNavigatorPop: widget.procPop,
+        child: GridFrame<SavedAnimeEntryData>(
           key: state.gridKey,
           overrideController: scrollController,
           slivers: [
@@ -189,25 +192,6 @@ class __WatchingTabState extends State<_WatchingTab> {
                   source: filterBacklog.backingStorage,
                   progress: filterBacklog.progress,
                 ),
-                // GridLayout.blueprint<SavedAnimeEntryData>(
-                //   context,
-                //   state.widget.functionality,
-                //   state.selection,
-                //   aspectRatio: gridSettings.aspectRatio.value,
-                //   columns: gridSettings.columns.number,
-                //   gridCell: (context, cell, idx) {
-                //     return GridCell.frameDefault(
-                //       context,
-                //       idx,
-                //       cell,
-                //       imageAlign: Alignment.topCenter,
-                //       hideTitle: gridSettings.hideName,
-                //       isList: isList,
-                //       state: state,
-                //       animated: true,
-                //     );
-                //   },
-                // ),
               )
             else
               SliverToBoxAdapter(
@@ -233,6 +217,7 @@ class __WatchingTabState extends State<_WatchingTab> {
                     return;
                   }
 
+                  // TODO: this
                   // if (!entry.setCurrentlyWatching()) {
                   //   ScaffoldMessenger.of(context).showSnackBar(
                   //     SnackBar(
@@ -276,15 +261,20 @@ class __WatchingTabState extends State<_WatchingTab> {
             gridSeed: state.gridSeed,
           ),
         ),
-        canPop: false,
-        secondarySelectionHide: () {
-          watchingKey.currentState?.selection.reset();
-        },
-        onPop: widget.procPop,
       ),
     );
   }
 }
+
+// GridSkeleton<AnimeEntryData>(
+//       state,
+//       (context) => ,
+//       canPop: false,
+//       secondarySelectionHide: () {
+//         watchingKey.currentState?.selection.reset();
+//       },
+//       onPop: widget.procPop,
+//     )
 
 class _CurrentlyWatching extends StatefulWidget {
   const _CurrentlyWatching({

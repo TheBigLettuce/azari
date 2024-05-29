@@ -121,7 +121,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
       (selected) {
-        _favoriteOrUnfavorite(context, selected, favoriteFile);
+        favoriteOrUnfavorite(context, selected, favoriteFile);
       },
       false,
       color: isFavorites ? Colors.yellow.shade900 : null,
@@ -158,6 +158,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     TagManager tagManager,
     FavoriteFileService favoriteFile,
     LocalTagsService localTags,
+    GalleryAPIDirectories providedApi,
   ) {
     return GridAction(
       Icons.copy,
@@ -169,6 +170,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           tagManager,
           favoriteFile,
           localTags,
+          providedApi,
         );
       },
       false,
@@ -179,6 +181,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     TagManager tagManager,
     FavoriteFileService favoriteFile,
     LocalTagsService localTags,
+    GalleryAPIDirectories providedApi,
   ) {
     return GridAction(
       Icons.forward_rounded,
@@ -190,6 +193,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           tagManager,
           favoriteFile,
           localTags,
+          providedApi,
         );
       },
       false,
@@ -218,13 +222,15 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     TagManager tagManager,
     FavoriteFileService favoriteFile,
     LocalTagsService localTags,
+    GalleryAPIDirectories providedApi,
   ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
+    // print(localTags.cachedValues[selected.first.name]?.split(" "));
+
     final List<String> searchPrefix = [];
-    for (final tag
-        in localTags.cachedValues[selected.first.bucketId]?.split(" ") ??
-            const <String>[]) {
+    for (final tag in localTags.cachedValues[selected.first.name]?.split(" ") ??
+        const <String>[]) {
       if (tagManager.pinned.exists(tag)) {
         searchPrefix.add(tag);
       }
@@ -235,8 +241,8 @@ mixin FilesActionsMixin on State<GalleryFiles> {
         builder: (context) {
           return GalleryDirectories(
             showBackButton: true,
-            procPop: (_) {},
             wrapGridPage: true,
+            providedApi: providedApi,
             db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
               icon: move ? Icons.forward_rounded : Icons.copy_rounded,
@@ -262,7 +268,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                 }
 
                 if (chosen?.bucketId == "favorites") {
-                  _favoriteOrUnfavorite(context, selected, favoriteFile);
+                  favoriteOrUnfavorite(context, selected, favoriteFile);
                 } else if (chosen?.bucketId == "trash") {
                   if (!move) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -310,13 +316,14 @@ mixin FilesActionsMixin on State<GalleryFiles> {
               joinable: false,
               suggestFor: searchPrefix,
             ),
+            localizations: AppLocalizations.of(context)!,
           );
         },
       ),
     ).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
   }
 
-  void _favoriteOrUnfavorite(
+  static void favoriteOrUnfavorite(
     BuildContext context,
     List<GalleryFile> selected,
     FavoriteFileService favoriteFile,

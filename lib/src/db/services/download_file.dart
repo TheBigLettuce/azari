@@ -74,5 +74,6 @@ abstract interface class DownloadFileService implements ServiceMarker {
   DownloadFileData? next();
   List<DownloadFileData> nextNumber(int minus);
 
+  void markInProgressAsFailed();
   void clear();
 }

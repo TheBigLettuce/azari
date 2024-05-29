@@ -225,7 +225,7 @@ internal class Mover(
         }
     }
 
-    fun refreshFavorites(ids: List<Long>, closure: () -> Unit) {
+    fun refreshFavorites(ids: List<Long>, sortingMode: FilesSortingMode, closure: () -> Unit) {
         val time = Calendar.getInstance().time.time
 
         scope.launch {
@@ -235,7 +235,8 @@ internal class Mover(
                 context,
                 time,
                 inRefreshAtEnd = true,
-                showOnly = ids
+                showOnly = ids,
+                sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
                 sendMedia("favorites", time, content, empty, inRefresh)
             }
@@ -262,7 +263,8 @@ internal class Mover(
         dirId: String,
         inRefreshAtEnd: Boolean,
         isTrashed: Boolean = false,
-        isFavorites: Boolean = false
+        isFavorites: Boolean = false,
+        sortingMode: FilesSortingMode,
     ) {
         val time = Calendar.getInstance().time.time
 
@@ -275,7 +277,8 @@ internal class Mover(
                 time,
                 inRefreshAtEnd = inRefreshAtEnd,
                 isTrashed = isTrashed,
-                isFavorites = isFavorites
+                isFavorites = isFavorites,
+                sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
                 sendMedia(dirId, time, content, empty, inRefresh)
             }
@@ -284,9 +287,9 @@ internal class Mover(
         }
     }
 
-    suspend fun refreshFilesMultiple(dirs: List<String>) {
+    suspend fun refreshFilesMultiple(dirs: List<String>, sortingMode: FilesSortingMode) {
         if (dirs.count() == 1) {
-            refreshFiles(dirs.first(), inRefreshAtEnd = true)
+            refreshFiles(dirs.first(), inRefreshAtEnd = true, sortingMode = sortingMode)
 
             return
         }
@@ -296,7 +299,7 @@ internal class Mover(
 
         val jobs = mutableListOf<Job>()
 
-        for ((i, d) in dirs.subList(0, dirs.count() - 1).withIndex()) {
+        for (d in dirs.subList(0, dirs.count() - 1)) {
             if (jobs.count() == cap) {
                 jobs.first().join()
                 jobs.removeFirst()
@@ -307,7 +310,8 @@ internal class Mover(
                     d,
                     context,
                     time,
-                    inRefreshAtEnd = false
+                    inRefreshAtEnd = false,
+                    sortingMode = sortingMode,
                 ) { content, empty, inRefresh ->
                     sendMedia(d, time, content, empty, inRefresh)
                 }
@@ -324,7 +328,8 @@ internal class Mover(
             last,
             context,
             time,
-            inRefreshAtEnd = true
+            inRefreshAtEnd = true,
+            sortingMode = sortingMode,
         ) { content, empty, inRefresh ->
             sendMedia(last, time, content, empty, inRefresh)
         }
@@ -454,6 +459,7 @@ internal class Mover(
         isTrashed: Boolean = false,
         isFavorites: Boolean = false,
         showOnly: List<Long>? = null,
+        sortingMode: FilesSortingMode,
         closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
         val projection = arrayOf(
@@ -501,7 +507,7 @@ internal class Mover(
             )
             putString(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
-                "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
+                if (sortingMode == FilesSortingMode.None) "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC" else "${MediaStore.Files.FileColumns.SIZE} DESC"
             )
             if (isTrashed) {
                 putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
@@ -746,6 +752,19 @@ internal class Mover(
     fun add(op: MoveOp) {
         scope.launch {
             channel.send(op)
+        }
+    }
+}
+
+enum class FilesSortingMode {
+    None, Size;
+
+    companion object {
+        fun fromDartInt(int: Int): FilesSortingMode {
+            return when (int) {
+                1 -> Size
+                else -> None
+            }
         }
     }
 }

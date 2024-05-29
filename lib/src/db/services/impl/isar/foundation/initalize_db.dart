@@ -9,10 +9,12 @@ part of "../impl.dart";
 
 bool _initalized = false;
 
-Future<void> initalizeIsarDb(bool temporary, ServicesImplTable db) async {
+Future<DownloadManager> initalizeIsarDb(
+    bool temporary, ServicesImplTable db) async {
   if (_initalized) {
-    return;
+    return throw "already initalized";
   }
+
   _initalized = true;
 
   final directoryPath = (await getApplicationSupportDirectory()).path;
@@ -149,4 +151,28 @@ Future<void> initalizeIsarDb(bool temporary, ServicesImplTable db) async {
   )) {
     _dbs._localTagsCachedValues[e.filename] = e.tags.join(" ");
   }
+
+  for (final e in _IsarCollectionReverseIterable(
+    _IsarCollectionIterator(
+      _Dbs.g.blacklisted.isarFavoriteFiles,
+      reversed: false,
+    ),
+  )) {
+    _dbs._favoriteFilesCachedValues[e.id] = null;
+  }
+
+  final downloader = DownloadManager(db.downloads);
+
+  db.downloads.markInProgressAsFailed();
+
+  for (final e in _IsarCollectionReverseIterable(
+    _IsarCollectionIterator(
+      _Dbs.g.main.isarDownloadFiles,
+      reversed: false,
+    ),
+  )) {
+    downloader.restoreFile(e);
+  }
+
+  return downloader;
 }

@@ -30,7 +30,7 @@ class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
   Id? isarId;
 
   @override
-  DownloadFileData toInProgress() => IsarDownloadFile(
+  IsarDownloadFile toInProgress() => IsarDownloadFile(
         status: DownloadStatus.inProgress,
         isarId: isarId,
         url: url,
@@ -41,7 +41,7 @@ class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
       );
 
   @override
-  DownloadFileData toFailed() => IsarDownloadFile(
+  IsarDownloadFile toFailed() => IsarDownloadFile(
         status: DownloadStatus.failed,
         isarId: isarId,
         url: url,
@@ -52,7 +52,7 @@ class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
       );
 
   @override
-  DownloadFileData toOnHold() => IsarDownloadFile(
+  IsarDownloadFile toOnHold() => IsarDownloadFile(
         status: DownloadStatus.onHold,
         isarId: isarId,
         url: url,

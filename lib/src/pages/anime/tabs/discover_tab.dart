@@ -192,9 +192,12 @@ class _DiscoverTabState extends State<DiscoverTab> {
   Widget build(BuildContext context) {
     return GridConfiguration(
       watch: gridSettings.watch,
-      child: GridSkeleton<AnimeSearchEntry>(
-        state,
-        (context) => GridFrame<AnimeSearchEntry>(
+      child: GridPopScope(
+        searchTextController: null,
+        filter: null,
+        searchFocus: null,
+        rootNavigatorPop: widget.procPop,
+        child: GridFrame<AnimeSearchEntry>(
           key: state.gridKey,
           slivers: [
             CurrentGridSettingsLayout<AnimeSearchEntry>(
@@ -218,8 +221,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
             gridSeed: state.gridSeed,
           ),
         ),
-        canPop: false,
-        onPop: widget.procPop,
       ),
     );
   }

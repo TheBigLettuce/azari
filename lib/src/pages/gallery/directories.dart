@@ -30,7 +30,6 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:local_auth/local_auth.dart";
 
@@ -39,17 +38,22 @@ class GalleryDirectories extends StatefulWidget {
     super.key,
     this.callback,
     this.nestedCallback,
-    required this.procPop,
+    this.procPop,
     this.wrapGridPage = false,
     this.showBackButton = false,
+    this.providedApi,
     required this.db,
+    required this.localizations,
   }) : assert(!(callback != null && nestedCallback != null));
 
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;
   final bool showBackButton;
-  final void Function(bool) procPop;
+  final void Function(bool)? procPop;
   final bool wrapGridPage;
+
+  final GalleryAPIDirectories? providedApi;
+  final AppLocalizations localizations;
 
   final DbConn db;
 
@@ -102,15 +106,18 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   final galleryPlug = chooseGalleryPlug();
 
-  late final api = galleryPlug.galleryApi(
-    widget.db.blacklistedDirectories,
-    widget.db.directoryTags,
-    temporaryDb: widget.callback != null || widget.nestedCallback != null,
-    setCurrentApi: widget.callback == null,
-  );
+  late final api = widget.providedApi ??
+      galleryPlug.galleryApi(
+        widget.db.blacklistedDirectories,
+        widget.db.directoryTags,
+        temporaryDb: widget.callback != null || widget.nestedCallback != null,
+        setCurrentApi: widget.callback == null,
+        localizations: widget.localizations,
+      );
+
   bool isThumbsLoading = false;
 
-  int? trashThumbId;
+  // int? trashThumbId;
 
   final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
@@ -160,17 +167,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       initialSortingMode: SortingMode.none,
     );
 
-    if (widget.callback != null) {
-      GalleryManagementApi.current().trashThumbId().then((value) {
-        try {
-          setState(() {
-            trashThumbId = value;
-          });
-        } catch (_) {}
-      });
+    if (widget.providedApi == null) {
+      api.trashCell.refresh();
+      api.source.clearRefresh();
     }
-
-    api.source.clearRefresh();
   }
 
   @override
@@ -183,7 +183,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
     filter.destroy();
 
-    api.close();
+    if (widget.providedApi == null) {
+      api.close();
+    }
     // search.dispose();
     state.dispose();
     // Dbs.g.clearTemporaryImages();
@@ -193,14 +195,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   }
 
   void _refresh() {
-    GalleryManagementApi.current().trashThumbId().then((value) {
-      try {
-        setState(() {
-          trashThumbId = value;
-        });
-      } catch (_) {}
-    });
-
+    api.trashCell.refresh();
     api.source.clearRefresh();
     galleryPlug.version.then((value) => galleryVersion = value);
   }
@@ -224,28 +219,21 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       segment: _segmentCell,
       injectedSegments: [
         if (favoriteFiles.isNotEmpty())
-          GalleryDirectory.forPlatform(
-            bucketId: "favorites",
-            name: AppLocalizations.of(context)!
-                .galleryDirectoriesFavorites, // change
-            tag: "",
-            volumeName: "",
-            relativeLoc: "",
-            lastModified: 0,
-            thumbFileId: miscSettings.favoritesThumbId != 0
-                ? miscSettings.favoritesThumbId
-                : favoriteFiles.thumbnail,
+          SyncCell(
+            GalleryDirectory.forPlatform(
+              bucketId: "favorites",
+              name: AppLocalizations.of(context)!
+                  .galleryDirectoriesFavorites, // change
+              tag: "",
+              volumeName: "",
+              relativeLoc: "",
+              lastModified: 0,
+              thumbFileId: miscSettings.favoritesThumbId != 0
+                  ? miscSettings.favoritesThumbId
+                  : favoriteFiles.thumbnail,
+            ),
           ),
-        if (trashThumbId != null)
-          GalleryDirectory.forPlatform(
-            bucketId: "trash",
-            name: AppLocalizations.of(context)!.galleryDirectoryTrash, // change
-            tag: "",
-            volumeName: "",
-            relativeLoc: "",
-            lastModified: 0,
-            thumbFileId: trashThumbId!,
-          ),
+        api.trashCell,
       ],
       onLabelPressed: widget.callback != null && !widget.callback!.joinable
           ? null
@@ -260,6 +248,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 _segmentCell,
                 directoryMetadata,
                 directoryTags,
+                favoriteFiles,
               ),
     );
   }
@@ -349,13 +338,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   void _add(GridSettingsData d) => gridSettings.current = d;
 
   Widget child(BuildContext context) {
-    return GridSkeleton<GalleryDirectory>(
-      state,
-      (context) => GridFrame(
+    return GridPopScope(
+      filter: filter,
+      searchFocus: searchFocus,
+      searchTextController: searchTextController,
+      rootNavigatorPop: widget.procPop,
+      child: GridFrame<GalleryDirectory>(
         key: state.gridKey,
         slivers: [
           SegmentLayout(
-            getCell: filter.forIdxUnsafe,
             segments: _makeSegments(context),
             gridSeed: 1,
             suggestionPrefix: widget.callback?.suggestFor ?? const [],
@@ -404,6 +395,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       _segmentCell,
                       directoryMetadata,
                       directoryTags,
+                      favoriteFiles,
                     ),
                 ]
               : [
@@ -436,6 +428,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     _segmentCell,
                     directoryMetadata,
                     directoryTags,
+                    favoriteFiles,
                   ),
                 ],
           footer: widget.callback?.preview,
@@ -482,21 +475,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           gridSeed: state.gridSeed,
         ),
       ),
-      canPop: widget.callback != null || widget.nestedCallback != null
-          ? filter.filteringMode == FilteringMode.noFilter &&
-              searchTextController.text.isEmpty
-          : false,
-      onPop: (pop) {
-        if (filter.filteringMode != FilteringMode.noFilter ||
-            searchTextController.text.isNotEmpty) {
-          searchTextController.clear();
-
-          // search.resetSearch();
-          return;
-        }
-
-        widget.procPop(pop);
-      },
     );
   }
 
@@ -512,6 +490,101 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
               ),
             )
           : child(context),
+    );
+  }
+}
+
+class GridPopScope extends StatefulWidget {
+  const GridPopScope({
+    super.key,
+    this.rootNavigatorPop,
+    required this.searchTextController,
+    required this.filter,
+    required this.searchFocus,
+    required this.child,
+  });
+
+  final FocusNode? searchFocus;
+  final TextEditingController? searchTextController;
+  final void Function(bool)? rootNavigatorPop;
+  final ChainedFilterResourceSource<dynamic, dynamic>? filter;
+  final Widget child;
+
+  @override
+  State<GridPopScope> createState() => _GridPopScopeState();
+}
+
+class _GridPopScopeState extends State<GridPopScope> {
+  late final StreamSubscription<void>? _watcher;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.searchTextController?.addListener(_listener);
+    widget.searchFocus?.addListener(_listener);
+
+    _watcher = widget.filter?.backingStorage.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _watcher?.cancel();
+    widget.searchTextController?.removeListener(_listener);
+    widget.searchFocus?.removeListener(_listener);
+
+    super.dispose();
+  }
+
+  void _listener() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final glue = GlueProvider.generateOf(context)();
+
+    return PopScope(
+      canPop: widget.rootNavigatorPop != null
+          ? false
+          : !glue.isOpen() &&
+              (widget.searchFocus == null || !widget.searchFocus!.hasFocus) &&
+              (widget.searchTextController == null ||
+                  widget.searchTextController!.text.isEmpty) &&
+              (widget.filter == null ||
+                  widget.filter!.allowedFilteringModes.isEmpty ||
+                  (widget.filter!.allowedFilteringModes
+                          .contains(FilteringMode.noFilter) &&
+                      widget.filter!.filteringMode == FilteringMode.noFilter)),
+      onPopInvoked: (didPop) {
+        if (widget.searchFocus != null && widget.searchFocus!.hasFocus) {
+          widget.searchFocus!.unfocus();
+
+          return;
+        }
+
+        if (glue.isOpen()) {
+          glue.updateCount(0);
+
+          return;
+        } else if (widget.searchTextController != null &&
+            widget.searchTextController!.text.isNotEmpty) {
+          widget.searchTextController!.text = "";
+          widget.filter?.clearRefresh();
+
+          return;
+        } else if (widget.filter != null &&
+            widget.filter!.allowedFilteringModes
+                .contains(FilteringMode.noFilter) &&
+            widget.filter!.filteringMode != FilteringMode.noFilter) {
+          widget.filter!.filteringMode = FilteringMode.noFilter;
+        }
+
+        widget.rootNavigatorPop?.call(didPop);
+      },
+      child: widget.child,
     );
   }
 }

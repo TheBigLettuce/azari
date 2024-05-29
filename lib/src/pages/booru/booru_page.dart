@@ -17,11 +17,11 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/cached_db_values.dart";
 import "package:gallery/src/pages/booru/bookmark_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/booru/open_menu_button.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/favorite_booru_page.dart";
@@ -41,7 +41,6 @@ import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -62,13 +61,6 @@ class _MainGridPagingState implements PagingEntry {
   ) : client = BooruAPI.defaultClientForBooru(booru) {
     source =
         mainGrid.makeSource(api, tagManager.excluded, this, hiddenBooruPosts);
-
-    // refreshingStatus = GridRefreshingStatus(
-    //   source.count,
-    //   () => reachedEnd,
-    //   refreshType: AsyncGridRefresh(source.clearRefresh),
-    //   next: source.next,
-    // );
   }
 
   factory _MainGridPagingState.prototype(
@@ -154,7 +146,7 @@ class _BooruPageState extends State<BooruPage> {
 
   GridPostSource get source => pagingState.source;
 
-  // late final StreamSubscription<void> favoritesWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
 
   bool inForeground = true;
@@ -162,7 +154,6 @@ class _BooruPageState extends State<BooruPage> {
   late final AppLifecycleListener lifecycleListener;
 
   late final SearchLaunchGrid<Post> search;
-  // final postValues = PostValuesCache();
 
   int? currentSkipped;
 
@@ -264,9 +255,9 @@ class _BooruPageState extends State<BooruPage> {
       pagingState.updateTime();
     }
 
-    // favoritesWatcher = favoritePosts.watch((event) {
-    // pagingState.refreshingStatus.mutation.notify();
-    // });
+    favoritesWatcher = favoritePosts.backingStorage.watch((event) {
+      source.backingStorage.addAll([]);
+    });
 
     if (pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
@@ -295,9 +286,7 @@ class _BooruPageState extends State<BooruPage> {
 
   @override
   void dispose() {
-    // favoritesWatcher.cancel();
-    // bookmarksWatcher.cancel();
-    // postValues.clear();
+    favoritesWatcher.cancel();
 
     if (!isRestart) {
       pagingState.restoreSecondaryGrid = null;
@@ -347,6 +336,16 @@ class _BooruPageState extends State<BooruPage> {
     pagingState.restoreSecondaryGrid = name;
   }
 
+  void _proc(bool didPop) {
+    final s = state.gridKey.currentState;
+    if (s != null && s.currentPage != 0) {
+      s.onSubpageSwitched(0, s.selection, s.controller);
+      return;
+    }
+
+    widget.procPop(didPop);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l8n = AppLocalizations.of(context)!;
@@ -354,19 +353,23 @@ class _BooruPageState extends State<BooruPage> {
     return FavoriteBooruStateHolder(
       db: widget.db,
       build: (context, favoriteBooruState) {
-        return GridConfiguration(
-          watch: gridSettings.watch,
-          child: BooruAPINotifier(
-            api: pagingState.api,
-            child: GridSkeleton(
-              state,
-              (context) => GridFrame<Post>(
+        return GridPopScope(
+          searchTextController: favoriteBooruState.searchTextController,
+          filter: favoriteBooruState.filter,
+          searchFocus: favoriteBooruState.searchFocus,
+          rootNavigatorPop: _proc,
+          child: GridConfiguration(
+            watch: gridSettings.watch,
+            child: BooruAPINotifier(
+              api: pagingState.api,
+              child: GridFrame<Post>(
                 key: state.gridKey,
                 slivers: [
                   CurrentGridSettingsLayout<Post>(
                     source: source.backingStorage,
                     progress: source.progress,
                     gridSeed: state.gridSeed,
+                    unselectOnUpdate: false,
                     buildEmpty: (e) => EmptyWidgetWithButton(
                       error: e,
                       buttonText: l8n.openInBrowser,
@@ -484,28 +487,6 @@ class _BooruPageState extends State<BooruPage> {
                 mainFocus: state.mainFocus,
                 initalScrollPosition: pagingState.offset,
               ),
-              canPop: false,
-              secondarySelectionHide: () {
-                favoriteBooruState.state.gridKey.currentState?.selection
-                    .reset();
-              },
-              onPop: (pop) {
-                final gridState = state.gridKey.currentState;
-                if (gridState != null && gridState.currentPage == 1) {
-                  if (favoriteBooruState.searchTextController.text.isNotEmpty) {
-                    favoriteBooruState.searchTextController.text = "";
-                    return;
-                  }
-                }
-
-                final s = state.gridKey.currentState;
-                if (s != null && s.currentPage != 0) {
-                  s.onSubpageSwitched(0, s.selection, s.controller);
-                  return;
-                }
-
-                widget.procPop(pop);
-              },
             ),
           ),
         );

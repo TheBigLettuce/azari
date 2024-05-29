@@ -89,9 +89,12 @@ class __FinishedTabState extends State<_FinishedTab> {
 
     return GridConfiguration(
       watch: gridSettings.watch,
-      child: GridSkeleton<AnimeEntryData>(
-        state,
-        (context) => GridFrame<WatchedAnimeEntryData>(
+      child: GridPopScope(
+        searchTextController: null,
+        filter: filter,
+        searchFocus: null,
+        rootNavigatorPop: widget.procPop,
+        child: GridFrame<WatchedAnimeEntryData>(
           key: state.gridKey,
           slivers: [
             CurrentGridSettingsLayout(
@@ -140,8 +143,6 @@ class __FinishedTabState extends State<_FinishedTab> {
             gridSeed: state.gridSeed,
           ),
         ),
-        canPop: false,
-        onPop: widget.procPop,
       ),
     );
   }

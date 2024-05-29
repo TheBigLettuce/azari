@@ -74,9 +74,11 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return _WrapPadding(
-      title: AppLocalizations.of(context)!.welcomePermissions,
-      explanation: AppLocalizations.of(context)!.welcomePermissionsExplanation,
+      title: l8n.welcomePermissions,
+      explanation: l8n.welcomePermissionsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: SingleChildScrollView(
@@ -94,7 +96,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                         resultVideos.isGranted && resultPhotos.isGranted;
                   });
                 },
-                label: AppLocalizations.of(context)!.permissionsPhotosVideos,
+                label: l8n.permissionsPhotosVideos,
                 variant: photoAndVideos
                     ? ButtonVariant.selected
                     : ButtonVariant.normal,
@@ -108,7 +110,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     mediaLocation = result.isGranted;
                   });
                 },
-                label: AppLocalizations.of(context)!.permissionsMediaLocation,
+                label: l8n.permissionsMediaLocation,
                 variant: mediaLocation
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -123,7 +125,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                       manageMedia = result;
                     });
                   },
-                  label: AppLocalizations.of(context)!.permissionsManageMedia,
+                  label: l8n.permissionsManageMedia,
                   variant: manageMedia
                       ? ButtonVariant.selected
                       : ButtonVariant.secondary,
@@ -137,7 +139,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     notifications = result.isGranted;
                   });
                 },
-                label: AppLocalizations.of(context)!.permissionsNotifications,
+                label: l8n.permissionsNotifications,
                 variant: notifications
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -163,7 +165,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     ),
                   );
                 },
-          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
+          label: Text(l8n.welcomeNextLabel),
         ),
       ],
     );
@@ -186,12 +188,15 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return _WrapPadding(
-      title: AppLocalizations.of(context)!.welcomeWelcome,
+      title: l8n.welcomeWelcome,
       addCenteredIcon: true,
       body: Text(
-        AppLocalizations.of(context)!.welcomeSomeSettings,
-        style: Theme.of(context).textTheme.bodyLarge,
+        l8n.welcomeSomeSettings,
+        style: theme.textTheme.bodyLarge,
       ),
       buttons: [
         FilledButton.icon(
@@ -208,7 +213,7 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
             );
           },
-          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
+          label: Text(l8n.welcomeNextLabel),
         ),
       ],
     );
@@ -224,22 +229,23 @@ class CongratulationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Stack(
       children: [
         _WrapPadding(
-          title: AppLocalizations.of(context)!.welcomeDone,
+          title: l8n.welcomeDone,
           addCenteredIcon: true,
           body: Center(
             child: Text(
-              AppLocalizations.of(context)!.welcomeFinishBody,
+              l8n.welcomeFinishBody,
               style: theme.textTheme.bodyLarge,
             ),
           ),
           buttons: [
             FilledButton.icon(
-              label: Text(AppLocalizations.of(context)!.welcomeFinishLabel),
+              label: Text(l8n.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
                 SettingsService.db()
@@ -335,10 +341,12 @@ class _InitalSettingsState extends State<InitalSettings> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return _WrapPadding(
-      title: AppLocalizations.of(context)!.welcomeInitalSettings,
-      explanation:
-          AppLocalizations.of(context)!.welcomeInitalSettingsExplanation,
+      title: l8n.welcomeInitalSettings,
+      explanation: l8n.welcomeInitalSettingsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: Column(
@@ -355,15 +363,14 @@ class _InitalSettingsState extends State<InitalSettings> {
 
                     setState(() {});
                   },
-                  emptyResult: AppLocalizations.of(context)!.emptyResult,
-                  pickDirectory: AppLocalizations.of(context)!.pickDirectory,
-                  validDirectory:
-                      AppLocalizations.of(context)!.chooseValidDirectory,
+                  emptyResult: l8n.emptyResult,
+                  pickDirectory: l8n.pickDirectory,
+                  validDirectory: l8n.chooseValidDirectory,
                 );
               },
               label: Text(
                 settings.path.isEmpty
-                    ? AppLocalizations.of(context)!.downloadDirectorySetting
+                    ? l8n.downloadDirectorySetting
                     : settings.path.pathDisplay,
               ),
             ),
@@ -372,9 +379,9 @@ class _InitalSettingsState extends State<InitalSettings> {
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(
                   error!,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
             const Padding(padding: EdgeInsets.only(top: 8)),
@@ -388,11 +395,10 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(selectedBooru: value).save();
                   },
-                  title: AppLocalizations.of(context)!.booruLabel,
+                  title: l8n.booruLabel,
                 );
               },
-              label:
-                  "${AppLocalizations.of(context)!.booruLabel}: ${settings.selectedBooru.string}",
+              label: "${l8n.booruLabel}: ${settings.selectedBooru.string}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -406,12 +412,11 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(quality: value).save();
                   },
-                  title:
-                      AppLocalizations.of(context)!.imageDisplayQualitySetting,
+                  title: l8n.imageDisplayQualitySetting,
                 );
               },
               label:
-                  "${AppLocalizations.of(context)!.imageDisplayQualitySetting}: ${settings.quality.translatedString(context)}",
+                  "${l8n.imageDisplayQualitySetting}: ${settings.quality.translatedString(context)}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -424,11 +429,11 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(safeMode: value).save();
                   },
-                  title: AppLocalizations.of(context)!.safeModeSetting,
+                  title: l8n.safeModeSetting,
                 );
               },
               label:
-                  "${AppLocalizations.of(context)!.safeModeSetting}: ${settings.safeMode.translatedString(context)}",
+                  "${l8n.safeModeSetting}: ${settings.safeMode.translatedString(context)}",
               variant: ButtonVariant.secondary,
             ),
           ],
@@ -438,7 +443,7 @@ class _InitalSettingsState extends State<InitalSettings> {
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
           onPressed: settings.path.isEmpty ? null : _nextPage,
-          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
+          label: Text(l8n.welcomeNextLabel),
         ),
       ],
     );

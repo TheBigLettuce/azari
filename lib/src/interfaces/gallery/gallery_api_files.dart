@@ -12,6 +12,7 @@ import "package:gallery/src/plugs/gallery.dart";
 abstract class GalleryAPIFiles {
   DirectoryTagService get directoryTag;
   DirectoryMetadataService get directoryMetadata;
+  FavoriteFileService get favoriteFile;
 
   SortingResourceSource<int, GalleryFile> get source;
 
@@ -21,25 +22,3 @@ abstract class GalleryAPIFiles {
 
   void close();
 }
-
-// abstract class GalleryFilesExtra {
-//   FilterInterface<GalleryFile> get filter;
-//   Isar get db;
-
-//   bool get supportsDirectRefresh;
-//   bool get isTrash;
-//   bool get isFavorites;
-
-//   void setRefreshGridCallback(void Function() callback);
-//   Future<void> loadNextThumbnails(void Function() callback);
-//   void setRefreshingStatusCallback(
-//     void Function(int i, bool inRefresh, bool empty) callback,
-//   );
-//   void setPassFilter(
-//     (Iterable<GalleryFile>, dynamic) Function(
-//       Iterable<GalleryFile> cells,
-//       dynamic data,
-//       bool end,
-//     ) f,
-//   );
-// }

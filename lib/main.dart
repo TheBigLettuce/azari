@@ -235,20 +235,15 @@ bool get canAuthBiometric => _canUseAuth;
 SystemUiOverlayStyle navBarStyleForTheme(
   ThemeData theme, {
   bool transparent = true,
-  bool elevation = true,
+  bool highTone = true,
 }) =>
     SystemUiOverlayStyle(
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
-      systemNavigationBarColor: (elevation
-              ? ElevationOverlay.applySurfaceTint(
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surfaceTint,
-                  3,
-                )
-              : theme.colorScheme.surface)
-          .withOpacity(transparent ? 0.0 : 0.8),
+      systemNavigationBarColor:
+          (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
+              .withOpacity(transparent ? 0.0 : 0.8),
     );
 
 bool _canUseAuth = false;

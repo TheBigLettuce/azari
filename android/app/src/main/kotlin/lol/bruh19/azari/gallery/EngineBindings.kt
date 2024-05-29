@@ -279,7 +279,10 @@ class EngineBindings(
 
                 "refreshFavorites" -> {
                     context.runOnUiThread {
-                        mover.refreshFavorites(call.arguments as List<Long>) {
+                        mover.refreshFavorites(
+                            call.argument<List<Long>>("ids")!!,
+                            FilesSortingMode.fromDartInt(call.argument<Int>("sort")!!)
+                        ) {
                             result.success(null)
                         }
                     }
@@ -287,7 +290,12 @@ class EngineBindings(
 
                 "refreshTrashed" -> {
                     context.runOnUiThread {
-                        mover.refreshFiles("trash", inRefreshAtEnd = true, isTrashed = true)
+                        mover.refreshFiles(
+                            "trash",
+                            inRefreshAtEnd = true,
+                            isTrashed = true,
+                            sortingMode = FilesSortingMode.fromDartInt(call.arguments<Int>()!!)
+                        )
                     }
 
                     result.success(null)
@@ -601,8 +609,9 @@ class EngineBindings(
                 "refreshFiles" -> {
                     context.runOnUiThread {
                         mover.refreshFiles(
-                            call.arguments as String,
+                            call.argument<String>("bucketId")!!,
                             inRefreshAtEnd = true,
+                            sortingMode = FilesSortingMode.fromDartInt(call.argument<Int>("sort")!!),
                         )
                     }
 
@@ -612,7 +621,8 @@ class EngineBindings(
                 "refreshFilesMultiple" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         mover.refreshFilesMultiple(
-                            call.arguments as List<String>
+                            call.argument<List<String>>("ids")!!,
+                            FilesSortingMode.fromDartInt(call.argument<Int>("sort")!!),
                         )
                     }
 

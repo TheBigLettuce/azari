@@ -22,6 +22,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
     required this.controller,
     required this.selection,
   });
+
   final EdgeInsets padding;
   final GridSubpageState<T> state;
   final GridSelection<T> selection;
@@ -30,45 +31,43 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding,
-      child: SegmentedButton<int>(
-        emptySelectionAllowed: true,
-        style: const ButtonStyle(
-          side: WidgetStatePropertyAll(BorderSide.none),
-          visualDensity: VisualDensity.compact,
-        ),
-        showSelectedIcon: false,
-        onSelectionChanged: (set) {
-          if (set.isEmpty) {
-            return;
-          }
+    return SelectedGridPage(
+      page: state.currentPage,
+      child: Padding(
+        padding: padding,
+        child: SegmentedButton<int>(
+          emptySelectionAllowed: true,
+          style: const ButtonStyle(
+            side: WidgetStatePropertyAll(BorderSide.none),
+            visualDensity: VisualDensity.compact,
+          ),
+          showSelectedIcon: false,
+          onSelectionChanged: (set) {
+            if (set.isEmpty) {
+              return;
+            }
 
-          state.onSubpageSwitched(set.first, selection, controller);
-        },
-        segments: [
-          ButtonSegment(
-            icon:
-                pageSwitcher.overrideHomeIcon ?? const Icon(Icons.home_rounded),
-            value: 0,
-          ),
-          ...pageSwitcher.pages.indexed.map(
-            (e) => ButtonSegment(
-              icon: _IconWithCount(
-                watchCount: e.$2.watchCount,
-                icon: Icon(e.$2.icon),
-                background: e.$1 + 1 == state.currentPage
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                foreground: e.$1 + 1 == state.currentPage
-                    ? Theme.of(context).colorScheme.onSecondary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              value: e.$1 + 1,
+            state.onSubpageSwitched(set.first, selection, controller);
+          },
+          segments: [
+            ButtonSegment(
+              icon: pageSwitcher.overrideHomeIcon ??
+                  const Icon(Icons.home_rounded),
+              value: 0,
             ),
-          ),
-        ],
-        selected: {state.currentPage},
+            ...pageSwitcher.pages.indexed.map(
+              (e) => ButtonSegment(
+                icon: _IconWithCount(
+                  watchCount: e.$2.watchCount,
+                  icon: Icon(e.$2.icon),
+                  idx: e.$1,
+                ),
+                value: e.$1 + 1,
+              ),
+            ),
+          ],
+          selected: {state.currentPage},
+        ),
       ),
     );
   }
@@ -76,16 +75,15 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
 
 class _IconWithCount extends StatefulWidget {
   const _IconWithCount({
+    super.key,
     required this.watchCount,
     required this.icon,
-    required this.background,
-    required this.foreground,
+    required this.idx,
   });
 
   final Icon icon;
   final WatchFire<int>? watchCount;
-  final Color background;
-  final Color foreground;
+  final int idx;
 
   @override
   State<_IconWithCount> createState() => __IconWithCountState();
@@ -119,6 +117,8 @@ class __IconWithCountState extends State<_IconWithCount> {
 
   @override
   Widget build(BuildContext context) {
+    final page = SelectedGridPage.of(context);
+
     return widget.watchCount == null
         ? widget.icon
         : Row(
@@ -126,8 +126,12 @@ class __IconWithCountState extends State<_IconWithCount> {
               widget.icon,
               const Padding(padding: EdgeInsets.only(left: 2)),
               Badge.count(
-                backgroundColor: widget.background,
-                textColor: widget.foreground,
+                backgroundColor: widget.idx + 1 == page
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                textColor: widget.idx + 1 == page
+                    ? Theme.of(context).colorScheme.onSecondary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 alignment: Alignment.bottomCenter,
                 count: count,
               ),

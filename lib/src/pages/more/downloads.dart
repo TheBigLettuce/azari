@@ -22,7 +22,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class Downloads extends StatefulWidget {
@@ -45,9 +44,7 @@ class Downloads extends StatefulWidget {
 class _DownloadsState extends State<Downloads> {
   DownloadManager get downloadManager => widget.downloadManager;
 
-  late final StreamSubscription<void> _updates;
-
-  late final ChainedFilterResourceSource<int, DownloadHandle> filter;
+  late final ChainedFilterResourceSource<String, DownloadHandle> filter;
 
   late final state = GridSkeletonState<DownloadHandle>();
 
@@ -81,18 +78,11 @@ class _DownloadsState extends State<Downloads> {
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
-
-    // Downloader.g.markStale();
-
-    _updates = downloadManager.watch((_) {
-      filter.clearRefresh();
-    });
   }
 
   @override
   void dispose() {
     gridSettings.cancel();
-    _updates.cancel();
     filter.destroy();
 
     searchFocus.dispose();
@@ -121,8 +111,9 @@ class _DownloadsState extends State<Downloads> {
         //     final n = 6 - children.length;
 
         //     if (!n.isNegative && n != 0) {
-        //       downloadManager.addAll(children);
-        //       Downloader.g.addAll(
+        //       // downloadManager.addAll(children);
+
+        //       downloadManager.putAll(
         //         [
         //           ...children,
         //           ...DownloadFile.nextNumber(children.length),
@@ -149,7 +140,7 @@ class _DownloadsState extends State<Downloads> {
           return;
         }
 
-        downloadManager.remove(selected);
+        downloadManager.removeAll(selected.map((e) => e.key));
       },
       true,
     );
@@ -163,58 +154,60 @@ class _DownloadsState extends State<Downloads> {
       watch: gridSettings.watch,
       child: WrapGridPage(
         provided: widget.generateGlue,
-        child: GridSkeleton(
-          state,
-          (context) => GridFrame<DownloadHandle>(
-            key: state.gridKey,
-            slivers: [
-              SegmentLayout<DownloadHandle>(
-                segments: _makeSegments(context),
-                localizations: l8n,
-                suggestionPrefix: const [],
-                getCell: filter.forIdxUnsafe,
-                progress: filter.progress,
-                gridSeed: state.gridSeed,
-                storage: filter.backingStorage,
+        child: GridFrame<DownloadHandle>(
+          key: state.gridKey,
+          slivers: [
+            SegmentLayout<DownloadHandle>(
+              segments: _makeSegments(context),
+              localizations: l8n,
+              suggestionPrefix: const [],
+              progress: filter.progress,
+              gridSeed: state.gridSeed,
+              storage: filter.backingStorage,
+            ),
+          ],
+          functionality: GridFunctionality(
+            search: OverrideGridSearchWidget(
+              SearchAndFocus(
+                FilteringSearchWidget(
+                  hint: l8n.downloadsPageName,
+                  filter: filter,
+                  textController: searchTextController,
+                  localTagDictionary: widget.db.localTagDictionary,
+                  focusNode: searchFocus,
+                ),
+                searchFocus,
+              ),
+            ),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            source: filter,
+          ),
+          mainFocus: state.mainFocus,
+          description: GridDescription(
+            actions: [
+              delete(context),
+              GridAction(
+                Icons.restart_alt_rounded,
+                (selected) {
+                  downloadManager.restartAll(selected, state.settings);
+                },
+                false,
               ),
             ],
-            functionality: GridFunctionality(
-              search: OverrideGridSearchWidget(
-                SearchAndFocus(
-                  FilteringSearchWidget(
-                    hint: l8n.downloadsPageName,
-                    filter: filter,
-                    textController: searchTextController,
-                    localTagDictionary: widget.db.localTagDictionary,
-                    focusNode: searchFocus,
-                  ),
-                  searchFocus,
-                ),
-              ),
-              selectionGlue: GlueProvider.generateOf(context)(),
-              source: filter,
-            ),
-            mainFocus: state.mainFocus,
-            description: GridDescription(
-              actions: [
-                delete(context),
-              ],
-              // menuButtonItems: [
-              //   IconButton(
-              //     onPressed: Downloader.g.restartFailed,
-              //     icon: const Icon(Icons.download_rounded),
-              //   ),
-              //   IconButton(
-              //     onPressed: Downloader.g.removeAll,
-              //     icon: const Icon(Icons.close),
-              //   ),
-              // ],
-              keybindsDescription: l8n.downloadsPageName,
-              inlineMenuButtonItems: true,
-              gridSeed: state.gridSeed,
-            ),
+            // menuButtonItems: [
+            //   IconButton(
+            //     onPressed: Downloader.g.restartFailed,
+            //     icon: const Icon(Icons.download_rounded),
+            //   ),
+            //   IconButton(
+            //     onPressed: Downloader.g.removeAll,
+            //     icon: const Icon(Icons.close),
+            //   ),
+            // ],
+            keybindsDescription: l8n.downloadsPageName,
+            inlineMenuButtonItems: true,
+            gridSeed: state.gridSeed,
           ),
-          canPop: true,
         ),
       ),
     );

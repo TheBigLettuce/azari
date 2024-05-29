@@ -16,10 +16,9 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/cached_db_values.dart";
-import "package:gallery/src/pages/booru/add_to_bookmarks_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
@@ -36,7 +35,6 @@ import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/notifiers/pause_video.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -44,7 +42,7 @@ class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
     super.key,
     this.generateGlue,
-    required this.pagingRegistry,
+    this.pagingRegistry,
     this.overrideSafeMode,
     required this.db,
     this.name,
@@ -57,7 +55,7 @@ class BooruRestoredPage extends StatefulWidget {
   final String? name;
   final Booru booru;
   final String tags;
-  final PagingStateRegistry pagingRegistry;
+  final PagingStateRegistry? pagingRegistry;
   final SafeMode? overrideSafeMode;
   final void Function(String? e) saveSelectedPage;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
@@ -172,10 +170,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
-  // late final StreamSubscription<void> favoritesWatcher;
-  // late final StreamSubscription<void> blacklistedWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
 
-  // final postValues = PostValuesCache();
   late final SearchLaunchGrid search;
 
   late final RestoredBooruPageState pagingState;
@@ -184,6 +180,24 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   GridSkeletonState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
   GridPostSource get source => pagingState.source;
+
+  RestoredBooruPageState makePageEntry(String name) {
+    final secondary = widget.db.secondaryGrid(
+      widget.booru,
+      name,
+      widget.name == null,
+    );
+
+    return RestoredBooruPageState(
+      widget.booru,
+      widget.tags,
+      secondary.tagManager,
+      secondary,
+      hiddenBooruPost,
+      gridBookmarks,
+      widget.name != null,
+    );
+  }
 
   @override
   void initState() {
@@ -194,23 +208,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
     widget.saveSelectedPage(name);
 
-    pagingState = widget.pagingRegistry.getOrRegister(name, () {
-      final secondary = widget.db.secondaryGrid(
-        widget.booru,
-        name,
-        widget.name == null,
-      );
-
-      return RestoredBooruPageState(
-        widget.booru,
-        widget.tags,
-        secondary.tagManager,
-        secondary,
-        hiddenBooruPost,
-        gridBookmarks,
-        widget.name != null,
-      );
-    });
+    pagingState =
+        widget.pagingRegistry?.getOrRegister(name, () => makePageEntry(name)) ??
+            makePageEntry(name);
 
     if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
       gridBookmarks.add(
@@ -249,30 +249,32 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       setState(() {});
     });
 
-    // favoritesWatcher = favoritePosts.watch((event) {
-    // state.refreshingStatus.mutation.notify();
-    // setState(() {});
-    // });
-
-    // blacklistedWatcher = hiddenBooruPost.watch((_) {
-    // state.refreshingStatus.mutation.notify();
-    // });
+    favoritesWatcher = favoritePosts.backingStorage.watch((event) {
+      source.backingStorage.addAll([]);
+    });
   }
 
   @override
   void dispose() {
-    // blacklistedWatcher.cancel();
     settingsWatcher.cancel();
-    // favoritesWatcher.cancel();
+    favoritesWatcher.cancel();
 
-    // postValues.clear();
-
-    if (!isRestart) {
+    if (widget.pagingRegistry == null) {
       widget.saveSelectedPage(null);
       if (!pagingState.addToBookmarks) {
         gridBookmarks.delete(pagingState.secondaryGrid.name);
       }
-      widget.pagingRegistry.removeDispose(pagingState.secondaryGrid.name);
+      pagingState.dispose(pagingState.addToBookmarks);
+    } else {
+      if (!isRestart) {
+        widget.saveSelectedPage(null);
+        if (!pagingState.addToBookmarks) {
+          gridBookmarks.delete(pagingState.secondaryGrid.name);
+        }
+        (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
+                as RestoredBooruPageState)
+            .dispose(pagingState.addToBookmarks);
+      }
     }
 
     search.dispose();
@@ -290,8 +292,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
-    final registry = PagingStateRegistry();
-
     Navigator.push<void>(
       context,
       MaterialPageRoute(
@@ -303,12 +303,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             overrideSafeMode: safeMode,
             db: widget.db,
             saveSelectedPage: (s) {},
-            pagingRegistry: registry,
           );
         },
       ),
     ).then((value) {
-      registry.dispose();
       PauseVideoNotifier.maybePauseOf(context, false);
     });
   }
@@ -324,15 +322,18 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           builder: (context) {
             return BooruAPINotifier(
               api: api,
-              child: GridSkeleton(
-                state,
-                (context) => GridFrame<Post>(
+              child: GridPopScope(
+                searchTextController: null,
+                filter: null,
+                searchFocus: null,
+                child: GridFrame<Post>(
                   key: state.gridKey,
                   slivers: [
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,
                       gridSeed: state.gridSeed,
+                      unselectOnUpdate: false,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
                         buttonText: AppLocalizations.of(context)!.openInBrowser,
@@ -390,6 +391,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                         favoritePosts,
                         showDeleteSnackbar: true,
                       ),
+                      BooruGridActions.hide(context, hiddenBooruPost),
                     ],
                     inlineMenuButtonItems: true,
                     keybindsDescription:
@@ -397,7 +399,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     gridSeed: state.gridSeed,
                   ),
                 ),
-                canPop: true,
               ),
             );
           },

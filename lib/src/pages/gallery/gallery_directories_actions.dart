@@ -93,6 +93,7 @@ class SystemGalleryDirectoriesActions {
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
     DirectoryTagService directoryTags,
+    FavoriteFileService favoriteFile,
   ) {
     return GridAction(
       Icons.merge_rounded,
@@ -109,6 +110,7 @@ class SystemGalleryDirectoriesActions {
           segment,
           directoryMetadata,
           directoryTags,
+          favoriteFile,
         );
       },
       true,
@@ -125,6 +127,7 @@ class SystemGalleryDirectoriesActions {
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
     DirectoryTagService directoryTags,
+    FavoriteFileService favoriteFile,
   ) async {
     bool requireAuth = false;
 
@@ -151,6 +154,7 @@ class SystemGalleryDirectoriesActions {
       dirs.map((e) => e.bucketId).toList(),
       directoryTags,
       directoryMetadata,
+      favoriteFile,
     );
 
     return Navigator.push<void>(

@@ -22,6 +22,7 @@ class ImageViewBody extends StatelessWidget {
     required this.onPressedLeft,
     required this.onPressedRight,
   });
+
   final void Function(int idx) onPageChanged;
   final PageController pageController;
   final void Function() onTap;

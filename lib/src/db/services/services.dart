@@ -34,7 +34,6 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
-import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -290,9 +289,9 @@ abstract class SourceStorage<K, V> extends ReadOnlyStorage<K, V> {
 
   void addAll(Iterable<V> l, [bool silent = false]);
 
-  List<V> removeAll(Iterable<K> idx);
+  List<V> removeAll(Iterable<K> idx, [bool silent = false]);
 
-  void clear();
+  void clear([bool silent = false]);
 
   void destroy();
 
@@ -351,13 +350,16 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
   }
 
   @override
-  void clear() {
+  void clear([bool silent = false]) {
     map_.clear();
-    _events.add(count);
+
+    if (!silent) {
+      _events.add(count);
+    }
   }
 
   @override
-  List<V> removeAll(Iterable<K> idx) {
+  List<V> removeAll(Iterable<K> idx, [bool silent = false]) {
     final l = <V>[];
 
     for (final e in idx) {
@@ -367,7 +369,9 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
       }
     }
 
-    _events.add(count);
+    if (!silent) {
+      _events.add(count);
+    }
 
     return l;
   }
@@ -463,13 +467,16 @@ class ListStorage<V> extends SourceStorage<int, V> {
   }
 
   @override
-  void clear() {
+  void clear([bool silent = false]) {
     list.clear();
-    _events.add(count);
+
+    if (!silent) {
+      _events.add(count);
+    }
   }
 
   @override
-  List<V> removeAll(Iterable<int> idx) {
+  List<V> removeAll(Iterable<int> idx, [bool silent = false]) {
     final l = <V>[];
 
     for (final e in idx) {
@@ -478,7 +485,9 @@ class ListStorage<V> extends SourceStorage<int, V> {
       }
     }
 
-    _events.add(count);
+    if (!silent) {
+      _events.add(count);
+    }
 
     return l;
   }
@@ -514,20 +523,19 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     this._original,
     this._filterStorage, {
     this.prefilter = _doNothing,
+    this.onCompletelyEmpty = _doNothing,
     required this.filter,
     required this.allowedFilteringModes,
     required this.allowedSortingModes,
     required FilteringMode initialFilteringMode,
     required SortingMode initialSortingMode,
   })  : assert(
-          allowedFilteringModes.isEmpty
-              ? true
-              : allowedFilteringModes.contains(initialFilteringMode),
+          allowedFilteringModes.isEmpty ||
+              allowedFilteringModes.contains(initialFilteringMode),
         ),
         assert(
-          allowedSortingModes.isEmpty
-              ? true
-              : allowedSortingModes.contains(initialSortingMode),
+          allowedSortingModes.isEmpty ||
+              allowedSortingModes.contains(initialSortingMode),
         ),
         _mode = initialFilteringMode,
         _sorting = initialSortingMode {
@@ -565,6 +573,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final Set<SortingMode> allowedSortingModes;
 
   final void Function() prefilter;
+  final void Function() onCompletelyEmpty;
 
   FilteringMode _mode;
   SortingMode _sorting;
@@ -608,7 +617,11 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
     _sorting = s;
 
-    clearRefresh();
+    if (_original is SortingResourceSource<K, V>) {
+      _original.clearRefreshSorting(sortingMode);
+    } else {
+      clearRefresh();
+    }
   }
 
   final ChainedFilterFnc<V> filter;
@@ -625,20 +638,24 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
       return count;
     }
 
-    backingStorage.clear();
+    backingStorage.clear(true);
 
     if (_original.backingStorage.count == 0) {
+      backingStorage.addAll([]);
+      onCompletelyEmpty();
       return 0;
     }
 
     prefilter();
 
-    // var offset = 0;
     dynamic data;
 
     final buffer = <V>[];
 
-    for (final e in _original.backingStorage) {
+    for (final e in _original is SortingResourceSource<K, V> ||
+            sortingMode == SortingMode.none
+        ? _original.backingStorage
+        : _original.backingStorage.trySorted(sortingMode)) {
       buffer.add(e);
 
       if (buffer.length == 40) {
@@ -653,45 +670,6 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
     backingStorage
         .addAll(filter(buffer, filteringMode, sortingMode, true, data).$1);
-
-    // for (;;) {
-    //   var sorted = _original.backingStorage.skip(offset).take(40);
-    //   final end = sorted.length != 40;
-    //   offset += 40;
-
-    //   (sorted, data) = filter(sorted, filteringMode, sortingMode, end, data);
-    //   // for (var element in sorted) {
-    //   //   element.isarId = null;
-    //   // }
-
-    //   final l = <V>[];
-    //   var count = 0;
-    //   for (final elem in sorted) {
-    //     count++;
-    //     l.add(elem);
-    //     if (count == 40) {
-    //       backingStorage.addAll(l);
-    //       l.clear();
-    //       count = 0;
-    //     }
-    //   }
-
-    //   if (l.isNotEmpty) {
-    //     backingStorage.addAll(l);
-    //   }
-
-    //   if (end) {
-    //     break;
-    //   }
-    // }
-
-    // final origCount_ = _original.count;
-    // for (final (i, e) in _original.backingStorage.indexed) {
-    //   final keep = filter(e, _mode, _sorting);
-    //   if (keep) {
-    //     backingStorage.add(e, i != origCount_ - 1);
-    //   }
-    // }
 
     return count;
   }
@@ -808,9 +786,12 @@ extension ResourceSourceExt<K, V> on ResourceSource<K, V> {
 
 abstract interface class SortingResourceSource<K, V>
     extends ResourceSource<K, V> {
-  Future<int> clearRefreshSorting(SortingMode sortingMode);
+  Future<int> clearRefreshSorting(
+    SortingMode sortingMode, [
+    bool silent = false,
+  ]);
 
-  Future<int> nextSorting(SortingMode sortingMode);
+  Future<int> nextSorting(SortingMode sortingMode, [bool silent = false]);
 }
 
 abstract interface class ResourceSource<K, V> {
@@ -939,12 +920,6 @@ abstract interface class LocalTagsService {
     String filename,
     void Function(LocalTagsData) f,
   );
-
-  // StreamSubscription<List<ImageTag>> watchImagePinned(
-  //   List<String> tags,
-  //   void Function(List<ImageTag>) f, {
-  //   String? withFilename,
-  // });
 }
 
 enum TagType {

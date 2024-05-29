@@ -25,16 +25,12 @@ import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_noti
 class WrapImageViewSkeleton extends StatelessWidget {
   const WrapImageViewSkeleton({
     super.key,
-    required this.mainFocus,
     required this.controller,
     required this.scaffoldKey,
     required this.bottomSheetController,
-    required this.scrollController,
     required this.child,
   });
 
-  final FocusNode mainFocus;
-  final ScrollController scrollController;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final AnimationController controller;
   final DraggableScrollableController bottomSheetController;
@@ -123,11 +119,7 @@ class WrapImageViewSkeleton extends StatelessWidget {
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
                                         color:
-                                            ElevationOverlay.applySurfaceTint(
-                                          colorScheme.surface,
-                                          colorScheme.surfaceTint,
-                                          3 / 2.5,
-                                        ),
+                                            colorScheme.surfaceContainerHighest,
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(4),

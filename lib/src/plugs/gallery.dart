@@ -53,6 +53,7 @@ abstract class GalleryPlug {
     DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
+    required AppLocalizations localizations,
   });
 
   void notify(String? target);
@@ -192,18 +193,21 @@ mixin GalleryDirectory
             GalleryFilesPageType.trash,
             db.directoryTags,
             db.directoryMetadata,
+            db.favoriteFiles,
           ),
         "favorites" => api.files(
             d,
             GalleryFilesPageType.favorites,
             db.directoryTags,
             db.directoryMetadata,
+            db.favoriteFiles,
           ),
         String() => api.files(
             d,
             GalleryFilesPageType.normal,
             db.directoryTags,
             db.directoryMetadata,
+            db.favoriteFiles,
           ),
       };
 
@@ -385,17 +389,33 @@ mixin GalleryFile
     final tagManager = TagManager.of(context);
 
     return callback != null
-        ? [
+        ? <ImageViewAction>[
             actions.chooseAction().asImageView(this),
           ]
         : api.type.isTrash()
-            ? [
+            ? <ImageViewAction>[
                 actions.restoreFromTrash().asImageView(this),
               ]
-            : [
-                actions
-                    .addToFavoritesAction(this, db.favoriteFiles)
-                    .asImageView(this),
+            : <ImageViewAction>[
+                ImageViewAction(
+                  Icons.star_rounded,
+                  (selected) {
+                    FilesActionsMixin.favoriteOrUnfavorite(
+                        context, [this], db.favoriteFiles);
+                  },
+                  animate: true,
+                  watch: (f, [bool fire = false]) {
+                    return db.favoriteFiles
+                        .streamSingle(id, fire)
+                        .map<(IconData?, Color?, bool?)>((e) {
+                      return (
+                        e ? Icons.star_rounded : Icons.star_border_rounded,
+                        e ? Colors.yellow.shade900 : null,
+                        !e
+                      );
+                    }).listen(f);
+                  },
+                ),
                 actions.deleteAction().asImageView(this),
                 ImageViewAction(
                   Icons.copy,
@@ -407,6 +427,7 @@ mixin GalleryFile
                       tagManager,
                       db.favoriteFiles,
                       db.localTags,
+                      api.parent,
                     );
                   },
                 ),
@@ -420,6 +441,7 @@ mixin GalleryFile
                       tagManager,
                       db.favoriteFiles,
                       db.localTags,
+                      api.parent,
                     );
                   },
                 ),
@@ -466,19 +488,20 @@ mixin GalleryFile
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
+    final db = DatabaseConnectionNotifier.of(context);
+
     if (excludeDuplicate) {
       final stickers = <Sticker>[
-        // ...injectedStickers.map((e) => e.icon).map((e) => Sticker(e)),
-        // ...defaultStickers(context, this),
+        ...defaultStickersFile(context, this, db.localTags),
       ];
 
       return stickers.isEmpty ? const [] : stickers;
     }
 
     return [
-      // ...injectedStickers,
-      // ...defaultStickers(context, this),
-      // if (isFavorite) const Sticker(Icons.star_rounded, important: true),
+      ...defaultStickersFile(context, this, db.localTags),
+      if (db.favoriteFiles.cachedValues.containsKey(id))
+        const Sticker(Icons.star_rounded, important: true),
     ];
   }
 
@@ -529,47 +552,6 @@ mixin GalleryFile
           .watchImageLocal(c.widgets.alias(false), f, localTag: localTags);
 }
 
-// @collection
-// class SystemGalleryDirectoryFile extends FileBase with File {
-//   SystemGalleryDirectoryFile({
-//     required this.id,
-//     required this.bucketId,
-//     required this.name,
-//     required this.isVideo,
-//     required this.isGif,
-//     required this.size,
-//     required this.height,
-//     required this.isDuplicate,
-//     required this.isFavorite,
-//     required this.width,
-//     required this.tagsFlat,
-//     required this.isOriginal,
-//     required this.lastModified,
-//     required this.originalUri,
-//   });
-
-//   factory SystemGalleryDirectoryFile.fromDirectoryFile(DirectoryFile? e) =>
-//       SystemGalleryDirectoryFile(
-//         id: e!.id,
-//         bucketId: e.bucketId,
-//         name: e.name,
-//         size: e.size,
-//         isDuplicate: RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*").hasMatch(e.name),
-//         isFavorite: FavoriteFile.isFavorite(e.id),
-//         lastModified: e.lastModified,
-//         height: e.height,
-//         width: e.width,
-//         isGif: e.isGif,
-//         isOriginal: PostTags.g.isOriginal(e.name),
-//         originalUri: e.originalUri,
-//         isVideo: e.isVideo,
-//         tagsFlat: PostTags.g.getTagsPost(e.name).join(" "),
-//       );
-
-//   @override
-//   Id? isarId;
-// }
-
 class GalleryFileInfo extends StatefulWidget {
   const GalleryFileInfo({super.key, required this.file});
 
@@ -579,8 +561,7 @@ class GalleryFileInfo extends StatefulWidget {
   State<GalleryFileInfo> createState() => _GalleryFileInfoState();
 }
 
-class _GalleryFileInfoState extends State<GalleryFileInfo>
-    with GalleryFileFunctionalityMixin {
+class _GalleryFileInfoState extends State<GalleryFileInfo> {
   int currentPage = 0;
 
   GalleryFile get file => widget.file;

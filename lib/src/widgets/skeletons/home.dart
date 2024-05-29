@@ -35,7 +35,7 @@ class HomeSkeleton extends StatelessWidget {
       value: navBarStyleForTheme(
         Theme.of(context),
         transparent: !noNavBar,
-        elevation: !noNavBar,
+        highTone: !noNavBar,
       ),
       child: Scaffold(
         extendBody: extendBody,

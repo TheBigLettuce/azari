@@ -154,8 +154,8 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
   }
 
   @override
-  void refreshTrashed() {
-    _channel.invokeMethod("refreshTrashed");
+  void refreshTrashed(SortingMode sortingMode) {
+    _channel.invokeMethod("refreshTrashed", sortingMode.sortingIdAndroid);
   }
 
   @override

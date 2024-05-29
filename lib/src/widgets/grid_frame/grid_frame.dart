@@ -532,7 +532,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         children: [
           if (atHomePage && widget.description.pullToRefresh)
             RefreshIndicator(
-              onRefresh: source.clearRefresh,
+              onRefresh: () {
+                selection.reset(true);
+
+                return source.clearRefresh();
+              },
               child: mainBody(context, page),
             )
           else
@@ -796,4 +800,24 @@ class _PlayAnimationNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(_PlayAnimationNotifier oldWidget) =>
       play != oldWidget.play;
+}
+
+class SelectedGridPage extends InheritedWidget {
+  const SelectedGridPage({
+    super.key,
+    required this.page,
+    required super.child,
+  });
+
+  final int page;
+
+  static int? of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<SelectedGridPage>();
+
+    return widget!.page;
+  }
+
+  @override
+  bool updateShouldNotify(SelectedGridPage oldWidget) => page != oldWidget.page;
 }

@@ -432,10 +432,8 @@ class ImageViewState extends State<ImageView>
             controller: bottomSheetController,
             child: WrapImageViewSkeleton(
               scaffoldKey: key,
-              scrollController: scrollController,
               bottomSheetController: bottomSheetController,
               controller: animationController,
-              mainFocus: mainFocus,
               child: ImageViewBody(
                 key: ValueKey(refreshTries),
                 onPressedLeft: drawCell(currentPage, true) is NetVideo ||
@@ -538,8 +536,8 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     }
 
     return PopScope(
-      canPop: currentPixels.isNegative &&
-          WrapImageViewSkeleton.minPixelsFor(context) != currentPixels,
+      canPop: currentPixels.isNegative ||
+          WrapImageViewSkeleton.minPixelsFor(context) == currentPixels,
       onPopInvoked: tryScroll,
       child: IgnorePointer(
         ignoring: ignorePointer,

@@ -24,4 +24,7 @@ abstract interface class FavoriteFileService {
   void addAll(List<int> ids);
 
   void deleteAll(List<int> ids);
+
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
+  Stream<bool> streamSingle(int id, [bool fire = false]);
 }

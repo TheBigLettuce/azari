@@ -13,6 +13,20 @@ abstract class SegmentKey {
   String translatedString(AppLocalizations context);
 }
 
+sealed class SegmentInjectedCellType<T> {}
+
+abstract class AsyncCell<T> implements SegmentInjectedCellType<T> {
+  Key uniqueKey();
+
+  StreamSubscription<T?> watch(void Function(T?) f, [bool fire = false]);
+}
+
+class SyncCell<T> implements SegmentInjectedCellType<T> {
+  const SyncCell(this.value);
+
+  final T value;
+}
+
 /// Segments of the grid.
 class Segments<T> {
   const Segments(
@@ -38,7 +52,7 @@ class Segments<T> {
 
   /// [injectedSegments] make it possible to add foreign cell on the segmented grid.
   /// [segment] is not called on [injectedSegments].
-  final List<T> injectedSegments;
+  final List<SegmentInjectedCellType<T>> injectedSegments;
 
   /// Segmentation function.
   /// If [sticky] is true, then even if the cell is single standing it will appear

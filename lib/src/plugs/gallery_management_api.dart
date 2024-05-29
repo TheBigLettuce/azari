@@ -48,7 +48,7 @@ abstract interface class GalleryManagementApi {
 
   void refreshGallery();
 
-  void refreshTrashed();
+  void refreshTrashed(SortingMode sortingMode);
 
   void addToTrash(List<String> uris);
 
@@ -123,7 +123,7 @@ class DummyGalleryManagementApi implements GalleryManagementApi {
   void refreshGallery() {}
 
   @override
-  void refreshTrashed() {}
+  void refreshTrashed(SortingMode sortingMode) {}
 
   @override
   void removeFromTrash(List<String> uris) {}

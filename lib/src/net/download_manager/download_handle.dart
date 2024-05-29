@@ -71,7 +71,10 @@ mixin _StatisticsTimer {
 
   void _start() {
     _refresher ??= Stream<void>.periodic(1.seconds).listen((event) {
-      // StatisticsGeneral.addTimeDownload(1.seconds.inMilliseconds);
+      StatisticsGeneralService.db()
+          .current
+          .add(timeDownload: 1.seconds.inMilliseconds)
+          .save();
     });
   }
 

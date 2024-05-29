@@ -30,7 +30,7 @@ class _Dbs {
     required this.secondaryGridDbDir,
   });
 
-  final _favoriteFilesCachedValues = <int, bool>{};
+  final _favoriteFilesCachedValues = <int, void>{};
   // final _favoritePostsCachedValues = <(int, Booru), FavoritePostData>{};
   final _localTagsCachedValues = <String, String>{};
   final _hiddenBooruPostCachedValues = <(int, Booru), String>{};

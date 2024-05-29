@@ -48,10 +48,6 @@ abstract class FileFilters {
     String searchText,
     PostTags postTags,
   ) {
-    if (searchText.isEmpty) {
-      return (cells, null);
-    }
-
     return (
       cells.where(
         (element) => !postTags.contains(element.name, searchText),
@@ -78,7 +74,7 @@ abstract class FileFilters {
   ) {
     return (
       cells.where(
-        (element) => localTags.cachedValues[element.name]?.isEmpty ?? false,
+        (element) => !localTags.cachedValues.containsKey(element.name),
       ),
       null
     );

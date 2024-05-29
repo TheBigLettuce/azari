@@ -7,6 +7,7 @@
 
 import "dart:async";
 
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
@@ -27,10 +28,12 @@ class _AndroidGallery implements GalleryAPIDirectories {
     this.blacklistedDirectory,
     this.directoryTag, {
     required this.temporary,
+    required this.localizations,
   });
 
   final BlacklistedDirectoryService blacklistedDirectory;
   final DirectoryTagService directoryTag;
+  final AppLocalizations localizations;
 
   final bool temporary;
   final time = DateTime.now();
@@ -41,8 +44,15 @@ class _AndroidGallery implements GalleryAPIDirectories {
   _AndroidGalleryFiles? bindFiles;
 
   @override
+  TrashCell get trashCell => source.trashCell;
+
+  @override
+  late final _AndroidSource source = _AndroidSource(TrashCell(localizations));
+
+  @override
   void close() {
     source.destroy();
+    trashCell.dispose();
     bindFiles = null;
     if (temporary == false) {
       _global!._currentApi = null;
@@ -57,19 +67,21 @@ class _AndroidGallery implements GalleryAPIDirectories {
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
+    FavoriteFileService favoriteFile,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
 
     return bindFiles = _AndroidGalleryFiles(
-      source: _AndroidFileSourceJoined([d.bucketId]),
+      source: _AndroidFileSourceJoined([d.bucketId], type, favoriteFile),
       bucketId: d.bucketId,
       target: d.name,
       type: type,
       parent: this,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
+      favoriteFile: favoriteFile,
     );
   }
 
@@ -78,26 +90,29 @@ class _AndroidGallery implements GalleryAPIDirectories {
     List<String> bucketIds,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
+    FavoriteFileService favoriteFile,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
 
     return bindFiles = _JoinedDirectories(
-      source: _AndroidFileSourceJoined(bucketIds),
+      source: _AndroidFileSourceJoined(
+        bucketIds,
+        GalleryFilesPageType.normal,
+        favoriteFile,
+      ),
       directories: bucketIds,
       parent: this,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
+      favoriteFile: favoriteFile,
     );
   }
-
-  @override
-  final _AndroidSource source = _AndroidSource();
 }
 
 class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
-  _AndroidSource();
+  _AndroidSource(this.trashCell);
 
   @override
   int get count => backingStorage.count;
@@ -111,6 +126,8 @@ class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
   @override
   final SourceStorage<int, GalleryDirectory> backingStorage = ListStorage();
 
+  final TrashCell trashCell;
+
   @override
   Future<int> clearRefresh() {
     if (progress.inRefreshing) {
@@ -120,6 +137,7 @@ class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
 
     backingStorage.clear();
     GalleryManagementApi.current().refreshGallery();
+    trashCell.refresh();
 
     return Future.value(count);
   }
@@ -129,6 +147,7 @@ class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
 
   @override
   void destroy() {
+    trashCell.dispose();
     backingStorage.destroy();
     progress.close();
   }

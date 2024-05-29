@@ -15,6 +15,7 @@ import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -27,7 +28,6 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class MangaPage extends StatefulWidget {
@@ -70,7 +70,7 @@ class _MangaPageState extends State<MangaPage> {
     return Future.value(l);
   });
 
-  final GlobalKey<_PinnedMangaWidgetState> _pinnedKey = GlobalKey();
+  // final GlobalKey<_PinnedMangaWidgetState> _pinnedKey = GlobalKey();
 
   bool dirty = false;
 
@@ -179,9 +179,12 @@ class _MangaPageState extends State<MangaPage> {
 
   @override
   Widget build(BuildContext context) {
-    final child = GridSkeleton<CompactMangaData>(
-      state,
-      (context) => GridFrame<CompactMangaData>(
+    final child = GridPopScope(
+      searchTextController: null,
+      filter: null,
+      searchFocus: null,
+      rootNavigatorPop: widget.procPop,
+      child: GridFrame<CompactMangaData>(
         key: state.gridKey,
         slivers: [
           _ReadingLayout(
@@ -222,11 +225,6 @@ class _MangaPageState extends State<MangaPage> {
           gridSeed: state.gridSeed,
         ),
       ),
-      canPop: false,
-      secondarySelectionHide: () {
-        _pinnedKey.currentState?.state.gridKey.currentState?.selection.reset();
-      },
-      onPop: widget.procPop,
     );
 
     return GridConfiguration(
@@ -242,6 +240,16 @@ class _MangaPageState extends State<MangaPage> {
     );
   }
 }
+
+//  GridSkeleton<CompactMangaData>(
+//     state,
+//     (context) =>,
+//     canPop: false,
+//     secondarySelectionHide: () {
+//       _pinnedKey.currentState?.state.gridKey.currentState?.selection.reset();
+//     },
+//     onPop: widget.procPop,
+//   );
 
 class _ReadingLayout extends StatefulWidget {
   const _ReadingLayout({
