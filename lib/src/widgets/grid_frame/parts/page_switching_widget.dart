@@ -75,7 +75,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
 
 class _IconWithCount extends StatefulWidget {
   const _IconWithCount({
-    super.key,
+    // super.key,
     required this.watchCount,
     required this.icon,
     required this.idx,
@@ -119,6 +119,8 @@ class __IconWithCountState extends State<_IconWithCount> {
   Widget build(BuildContext context) {
     final page = SelectedGridPage.of(context);
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return widget.watchCount == null
         ? widget.icon
         : Row(
@@ -127,11 +129,11 @@ class __IconWithCountState extends State<_IconWithCount> {
               const Padding(padding: EdgeInsets.only(left: 2)),
               Badge.count(
                 backgroundColor: widget.idx + 1 == page
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ? colorScheme.secondary
+                    : colorScheme.surfaceContainerHighest,
                 textColor: widget.idx + 1 == page
-                    ? Theme.of(context).colorScheme.onSecondary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ? colorScheme.onSecondary
+                    : colorScheme.onSurfaceVariant,
                 alignment: Alignment.bottomCenter,
                 count: count,
               ),

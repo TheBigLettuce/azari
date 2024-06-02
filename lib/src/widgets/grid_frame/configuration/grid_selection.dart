@@ -100,9 +100,11 @@ class GridSelection<T extends CellBase> {
 
   void selectUnselectUntil(
     BuildContext context,
-    int indx, {
+    int indx_, {
     List<int>? selectFrom,
   }) {
+    var indx = indx_;
+
     if (lastSelected != null) {
       final last = selectFrom?.indexOf(lastSelected!) ?? lastSelected!;
       indx = selectFrom?.indexOf(indx) ?? indx;

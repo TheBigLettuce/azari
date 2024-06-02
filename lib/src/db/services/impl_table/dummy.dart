@@ -8,6 +8,7 @@
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
@@ -84,7 +85,8 @@ class DummyServicesImplTable
   @override
   SecondaryGridService secondaryGrid(
     Booru booru,
-    String name, [
+    String name,
+    SafeMode? safeMode, [
     bool create = false,
   ]) =>
       throw UnimplementedError();
@@ -155,32 +157,37 @@ class DummyServicesImplTable
 
   @override
   BlacklistedDirectoryData makeBlacklistedDirectoryData(
-          String bucketId, String name) =>
+    String bucketId,
+    String name,
+  ) =>
       throw UnimplementedError();
 
   @override
-  AnimeGenre makeAnimeGenre(
-      {required String title,
-      required int id,
-      required bool unpressable,
-      required bool explicit}) {
+  AnimeGenre makeAnimeGenre({
+    required String title,
+    required int id,
+    required bool unpressable,
+    required bool explicit,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  AnimeRelation makeAnieRelation(
-      {required int id,
-      required String thumbUrl,
-      required String title,
-      required String type}) {
-    // TODO: implement makeAnieRelation
+  AnimeRelation makeAnimeRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  AnimeCharacter makeAnimeCharacter(
-      {required String imageUrl, required String name, required String role}) {
-    // TODO: implement makeAnimeCharacter
+  AnimeCharacter makeAnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
+  }) {
     throw UnimplementedError();
   }
 }

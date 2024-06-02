@@ -15,8 +15,10 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
 import "package:permission_handler/permission_handler.dart";
@@ -69,7 +71,12 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  Future<void> _launch([Booru? replaceBooru, int? replaceId]) async {
+  Future<void> _launch(
+    DownloadManager downloadManager,
+    PostTags postTags, [
+    Booru? replaceBooru,
+    int? replaceId,
+  ]) async {
     if (inProcessLoading) {
       return;
     }
@@ -111,7 +118,7 @@ class _SinglePostState extends State<SinglePost> {
         1,
         (__) => value.content(),
         // key: key,
-        download: (_) => value.download(context),
+        download: (_) => value.download(downloadManager, postTags),
       );
     } catch (e, trace) {
       try {
@@ -182,20 +189,22 @@ class _SinglePostState extends State<SinglePost> {
     }
   }
 
-  Future<void> _qrCode() async {
+  Future<void> _qrCode(
+    DownloadManager downloadManager,
+    PostTags postTags,
+    AppLocalizations l8n,
+  ) async {
     final camera = await Permission.camera.request();
 
-    if (!camera.isGranted) {
+    if (!camera.isGranted && mounted) {
       return Navigator.push<void>(
         context,
         DialogRoute(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text(AppLocalizations.of(context)!.error),
-              content: Text(
-                AppLocalizations.of(context)!.cameraPermQrCodeErr,
-              ),
+              title: Text(l8n.error),
+              content: Text(l8n.cameraPermQrCodeErr),
             );
           },
         ),
@@ -211,7 +220,13 @@ class _SinglePostState extends State<SinglePost> {
       } else {
         try {
           final f = value.split("_");
-          return _launch(Booru.fromPrefix(f[0]), int.parse(f[1]));
+
+          return _launch(
+            downloadManager,
+            postTags,
+            Booru.fromPrefix(f[0]),
+            int.parse(f[1]),
+          );
         } catch (_) {}
       }
     }
@@ -219,6 +234,10 @@ class _SinglePostState extends State<SinglePost> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+    final downloadManager = DownloadManager.of(context);
+    final postTags = PostTags.fromContext(context);
+
     return MenuAnchor(
       menuChildren: menuItems,
       controller: menuController,
@@ -233,7 +252,7 @@ class _SinglePostState extends State<SinglePost> {
           ),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded),
-            onPressed: _qrCode,
+            onPressed: () => _qrCode(downloadManager, postTags, l8n),
           ),
           IconButton(
             icon: const Icon(Icons.content_paste),
@@ -245,7 +264,7 @@ class _SinglePostState extends State<SinglePost> {
               effects: const [RotateEffect()],
               autoPlay: false,
             ),
-            onPressed: _launch,
+            onPressed: () => _launch(downloadManager, postTags),
           ),
         ],
       ),

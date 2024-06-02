@@ -13,11 +13,13 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({
+    this.playAnimationOn = const [],
     required this.source,
     required this.selectionGlue,
     this.registerNotifiers,
@@ -43,6 +45,8 @@ class GridFunctionality<T extends CellBase> {
   final void Function(double pos)? updateScrollPosition;
 
   final InheritedWidget Function(Widget child)? registerNotifiers;
+
+  final List<WatchFire<dynamic>> playAnimationOn;
 
   final GridSettingsButton? settingsButton;
 

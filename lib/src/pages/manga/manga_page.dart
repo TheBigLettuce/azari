@@ -70,8 +70,6 @@ class _MangaPageState extends State<MangaPage> {
     return Future.value(l);
   });
 
-  // final GlobalKey<_PinnedMangaWidgetState> _pinnedKey = GlobalKey();
-
   bool dirty = false;
 
   bool inInner = false;
@@ -169,16 +167,18 @@ class _MangaPageState extends State<MangaPage> {
     );
   }
 
-  List<PageLabel> pages(BuildContext context) => [
-        PageLabel(AppLocalizations.of(context)!.mangaReadingLabel),
+  List<PageLabel> pages(BuildContext context, AppLocalizations l8n) => [
+        PageLabel(l8n.mangaReadingLabel),
         PageLabel(
-          AppLocalizations.of(context)!.mangaPinnedLabel,
+          l8n.mangaPinnedLabel,
           count: pinnedManga.count,
         ),
       ];
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     final child = GridPopScope(
       searchTextController: null,
       filter: null,
@@ -212,16 +212,14 @@ class _MangaPageState extends State<MangaPage> {
             },
           ),
         ),
-        mainFocus: state.mainFocus,
         description: GridDescription(
           actions: const [],
-          pullToRefresh: false,
           pages: PageSwitcherLabel(
-            pages(context),
+            pages(context, l8n),
             _buildPage,
           ),
           showAppBar: false,
-          keybindsDescription: AppLocalizations.of(context)!.mangaPage,
+          keybindsDescription: l8n.mangaPage,
           gridSeed: state.gridSeed,
         ),
       ),
@@ -241,19 +239,9 @@ class _MangaPageState extends State<MangaPage> {
   }
 }
 
-//  GridSkeleton<CompactMangaData>(
-//     state,
-//     (context) =>,
-//     canPop: false,
-//     secondarySelectionHide: () {
-//       _pinnedKey.currentState?.state.gridKey.currentState?.selection.reset();
-//     },
-//     onPop: widget.procPop,
-//   );
-
 class _ReadingLayout extends StatefulWidget {
   const _ReadingLayout({
-    super.key,
+    // super.key,
     required this.source,
     required this.startReading,
     required this.gridSeed,
@@ -482,6 +470,8 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       sliver: true,
       watch: gridSettings.watch,
@@ -500,7 +490,6 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
             selectionGlue: widget.glue,
             source: source,
           ),
-          mainFocus: state.mainFocus,
           description: GridDescription(
             actions: [
               GridAction(
@@ -518,10 +507,9 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context)!.mangaUnpinned),
+                      content: Text(l8n.mangaUnpinned),
                       action: SnackBarAction(
-                        label: AppLocalizations.of(context)!.undoLabel,
+                        label: l8n.undoLabel,
                         onPressed: () => reAdd(deleted),
                       ),
                     ),

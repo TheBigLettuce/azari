@@ -58,6 +58,8 @@ class _MenuWrapperState extends State<MenuWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onLongPressStart: (details) {
         final RenderBox overlay = Navigator.of(context)
@@ -76,8 +78,8 @@ class _MenuWrapperState extends State<MenuWrapper> {
             reverseCurve: Easing.standardDecelerate,
             duration: const Duration(milliseconds: 280),
           ),
-          shadowColor: Theme.of(context).colorScheme.surface,
-          surfaceTintColor: Theme.of(context).colorScheme.primary,
+          shadowColor: colorScheme.surface,
+          surfaceTintColor: colorScheme.primary,
           constraints:
               const BoxConstraints(minWidth: 56 * 2.5, maxWidth: 56 * 2.5),
           context: context,

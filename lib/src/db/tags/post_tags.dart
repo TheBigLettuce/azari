@@ -45,12 +45,17 @@ class DisassembleResult {
     return "${booru.prefix}_$id - $md5$ext";
   }
 
+  static final _numbersLetters = RegExp(r"^[a-zA-Z0-9]+$");
+  static final _numbersLettersLowercase = RegExp(r"^[a-z0-9]+$");
+
   /// Tries to disassemble the [filename] into the convenient class.
   /// Throws on error, with the reason string.
   static ErrorOr<DisassembleResult> fromFilename(
-    String filename, {
+    String filename_, {
     Booru? suppliedBooru,
   }) {
+    var filename = filename_;
+
     final Booru booru;
     if (suppliedBooru == null) {
       final split = filename.split("_");
@@ -95,8 +100,7 @@ class DisassembleResult {
       return ErrorOr.error(DisassembleResultError.noExtension.translatedString);
     }
 
-    final numbersLetters = RegExp(r"^[a-z0-9]+$");
-    if (!numbersLetters.hasMatch(hashAndExt.first)) {
+    if (!_numbersLettersLowercase.hasMatch(hashAndExt.first)) {
       return ErrorOr.error(
         DisassembleResultError.hashIsInvalid.translatedString,
       );
@@ -112,8 +116,7 @@ class DisassembleResult {
       return ErrorOr.error(DisassembleResultError.hashIsnt32.translatedString);
     }
 
-    final lettersAndNumbers = RegExp(r"^[a-zA-Z0-9]+$");
-    if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
+    if (!_numbersLetters.hasMatch(hashAndExt.last)) {
       return ErrorOr.error(
         DisassembleResultError.extensionInvalid.translatedString,
       );
@@ -131,7 +134,7 @@ class DisassembleResult {
 }
 
 class ErrorOr<T> {
-  const ErrorOr.error(String Function(BuildContext context) error)
+  const ErrorOr.error(String Function(AppLocalizations l8n) error)
       : _error = error,
         _data = null;
   const ErrorOr.value(T result)
@@ -139,12 +142,12 @@ class ErrorOr<T> {
         _error = null;
 
   final T? _data;
-  final String Function(BuildContext context)? _error;
+  final String Function(AppLocalizations l8n)? _error;
 
   T asValue() => _data!;
   T? maybeValue() => _data;
 
-  String? asError(BuildContext context) => _error!(context);
+  String? asError(AppLocalizations l8n) => _error!(l8n);
 
   bool get hasError => _error != null;
   bool get hasValue => _data != null;
@@ -257,75 +260,6 @@ class PostTags {
   }
 }
 
-/// Restore local tags from the backup.
-/// The backup is just an copy of the Isar DB.
-/// In case of any error reverts back.
-// Future<void> restore(void Function(String? error) onDone) async {
-//   final tagsFile = joinAll([Dbs.g.appStorageDir, "localTags"]);
-//   final tagsBakFile = joinAll([Dbs.g.appStorageDir, "localTags.bak"]);
-
-//   try {
-//     final outputFile =
-//         await PlatformFunctions.pickFileAndCopy(Dbs.g.appStorageDir);
-//     await Isar.openSync(
-//       [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-//       directory: Dbs.g.appStorageDir,
-//       inspector: false,
-//       name: outputFile.split("/").last,
-//     ).close();
-
-//     await tagsDb.copyToFile(tagsBakFile);
-
-//     await tagsDb.close();
-
-//     io.File("$tagsFile.isar").deleteSync();
-//     io.File(outputFile).renameSync("$tagsFile.isar");
-
-//     tagsDb = DbsOpen.localTags();
-
-//     io.File(tagsBakFile).deleteSync();
-
-//     onDone(null);
-//   } catch (e) {
-//     try {
-//       if (io.File(tagsBakFile).existsSync()) {
-//         if (io.File("$tagsFile.isar").existsSync()) {
-//           io.File("$tagsFile.isar").deleteSync();
-//         }
-//         io.File(tagsBakFile).renameSync("$tagsFile.isar");
-//       }
-//     } catch (_) {}
-//     onDone(e.toString());
-//   }
-// }
-
-// /// Make a copy of the tags DB.
-// /// Calls [onDone] with null error when complete,
-// /// or with non-null error when something went wrong.
-// Future<void> copy(void Function(String? error) onDone) async {
-//   try {
-//     final plug = await chooseDownloadMoverPlug();
-
-//     final output = joinAll([
-//       Dbs.g.temporaryDbDir,
-//       "${DateTime.now().microsecondsSinceEpoch}_savedtags.bin",
-//     ]);
-
-//     await tagsDb.copyToFile(output);
-
-//     plug.move(
-//       MoveOp(
-//         source: output,
-//         rootDir: SettingsService.currentData.path.path,
-//         targetDir: "backup",
-//       ),
-//     );
-//     onDone(null);
-//   } catch (e) {
-//     onDone(e.toString());
-//   }
-// }
-
 enum DisassembleResultError {
   extensionInvalid,
   noPrefix,
@@ -337,24 +271,19 @@ enum DisassembleResultError {
   extensionTooLong,
   hashIsnt32;
 
-  String translatedString(BuildContext context) => switch (this) {
+  String translatedString(AppLocalizations l8n) => switch (this) {
         DisassembleResultError.extensionInvalid =>
-          AppLocalizations.of(context)!.disassembleExtensionInvalid,
-        DisassembleResultError.noPrefix =>
-          AppLocalizations.of(context)!.disassembleNoPrefix,
-        DisassembleResultError.numbersAndHash =>
-          AppLocalizations.of(context)!.disassembleNumbersAndHash,
+          l8n.disassembleExtensionInvalid,
+        DisassembleResultError.noPrefix => l8n.disassembleNoPrefix,
+        DisassembleResultError.numbersAndHash => l8n.disassembleNumbersAndHash,
         DisassembleResultError.prefixNotRegistred =>
-          AppLocalizations.of(context)!.disassemblePrefixNotRegistred,
+          l8n.disassemblePrefixNotRegistred,
         DisassembleResultError.invalidPostNumber =>
-          AppLocalizations.of(context)!.disassembleInvalidPostNumber,
-        DisassembleResultError.noExtension =>
-          AppLocalizations.of(context)!.disassembleNoExtension,
-        DisassembleResultError.hashIsInvalid =>
-          AppLocalizations.of(context)!.disassembleHashIsInvalid,
+          l8n.disassembleInvalidPostNumber,
+        DisassembleResultError.noExtension => l8n.disassembleNoExtension,
+        DisassembleResultError.hashIsInvalid => l8n.disassembleHashIsInvalid,
         DisassembleResultError.extensionTooLong =>
-          AppLocalizations.of(context)!.disassembleExtensionTooLong,
-        DisassembleResultError.hashIsnt32 =>
-          AppLocalizations.of(context)!.disassembleHashIsnt32,
+          l8n.disassembleExtensionTooLong,
+        DisassembleResultError.hashIsnt32 => l8n.disassembleHashIsnt32,
       };
 }

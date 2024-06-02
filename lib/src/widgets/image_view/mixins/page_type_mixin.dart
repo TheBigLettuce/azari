@@ -21,6 +21,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   int refreshTries = 0;
 
   (Contentable, int)? _currentCell;
+  // ignore: use_late_for_private_fields_and_variables
   (Contentable, int)? _previousCell;
   (Contentable, int)? _nextCell;
 

@@ -28,6 +28,9 @@ class AnimeNameWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     Widget title() => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -37,29 +40,23 @@ class AnimeNameWidget extends StatelessWidget {
                 this.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: safeMode == AnimeSafeMode.h ||
-                              safeMode == AnimeSafeMode.ecchi
-                          ? Colors.pink.withOpacity(0.8)
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.8),
-                    ),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: safeMode == AnimeSafeMode.h ||
+                          safeMode == AnimeSafeMode.ecchi
+                      ? Colors.pink.withOpacity(0.8)
+                      : colorScheme.onSurface.withOpacity(0.8),
+                ),
               ),
             ),
             Text(
               "$titleEnglish / $titleJapanese",
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w300,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.8),
-                  ),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w300,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
             ),
           ],
         );
@@ -72,19 +69,13 @@ class AnimeNameWidget extends StatelessWidget {
               textStyle:
                   safeMode == AnimeSafeMode.h || safeMode == AnimeSafeMode.ecchi
                       ? TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimary
-                              .withOpacity(0.8),
+                          color: colorScheme.onPrimary.withOpacity(0.8),
                         )
                       : null,
               decoration: safeMode == AnimeSafeMode.h ||
                       safeMode == AnimeSafeMode.ecchi
                   ? BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.8),
+                      color: colorScheme.primary.withOpacity(0.8),
                       borderRadius: const BorderRadius.all(Radius.circular(4)),
                     )
                   : null,

@@ -12,6 +12,8 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     BuildContext context,
     List<GalleryFile> selected,
   ) {
+    final l8n = AppLocalizations.of(context)!;
+
     return Navigator.of(context, rootNavigator: true).push(
       DialogRoute(
         context: context,
@@ -19,12 +21,12 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           return AlertDialog(
             title: Text(
               selected.length == 1
-                  ? "${AppLocalizations.of(context)!.tagDeleteDialogTitle} ${selected.first.name}"
-                  : "${AppLocalizations.of(context)!.tagDeleteDialogTitle}"
+                  ? "${l8n.tagDeleteDialogTitle} ${selected.first.name}"
+                  : "${l8n.tagDeleteDialogTitle}"
                       " ${selected.length}"
-                      " ${AppLocalizations.of(context)!.itemPlural}",
+                      " ${l8n.elementPlural}",
             ),
-            content: Text(AppLocalizations.of(context)!.youCanRestoreFromTrash),
+            content: Text(l8n.youCanRestoreFromTrash),
             actions: [
               TextButton(
                 onPressed: () {
@@ -38,13 +40,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                       .save();
                   Navigator.pop(context);
                 },
-                child: Text(AppLocalizations.of(context)!.yes),
+                child: Text(l8n.yes),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text(AppLocalizations.of(context)!.no),
+                child: Text(l8n.no),
               ),
             ],
           );
@@ -65,15 +67,15 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<GalleryFile> bulkRename() {
-    return GridAction(
-      Icons.edit,
-      (selected) {
-        _changeName(context, selected);
-      },
-      false,
-    );
-  }
+  // GridAction<GalleryFile> bulkRename() {
+  //   return GridAction(
+  //     Icons.edit,
+  //     (selected) {
+  //       _changeName(context, selected);
+  //     },
+  //     false,
+  //   );
+  // }
 
   GridAction<GalleryFile> saveTagsAction(
     GalleryPlug plug,
@@ -83,7 +85,14 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.tag_rounded,
       (selected) {
-        _saveTags(context, selected, plug, postTags, localTags);
+        _saveTags(
+          context,
+          selected,
+          plug,
+          postTags,
+          localTags,
+          AppLocalizations.of(context)!,
+        );
       },
       true,
     );
@@ -97,15 +106,19 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.new_label_rounded,
       (selected) {
-        openAddTagDialog(context, (v, delete) {
-          if (delete) {
-            localTags.removeSingle(selected.map((e) => e.name).toList(), v);
-          } else {
-            localTags.addMultiple(selected.map((e) => e.name).toList(), v);
-          }
+        openAddTagDialog(
+          context,
+          (v, delete) {
+            if (delete) {
+              localTags.removeSingle(selected.map((e) => e.name).toList(), v);
+            } else {
+              localTags.addMultiple(selected.map((e) => e.name).toList(), v);
+            }
 
-          refresh();
-        });
+            refresh();
+          },
+          AppLocalizations.of(context)!,
+        );
       },
       false,
     );
@@ -226,15 +239,14 @@ mixin FilesActionsMixin on State<GalleryFiles> {
   ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
-    // print(localTags.cachedValues[selected.first.name]?.split(" "));
-
     final List<String> searchPrefix = [];
-    for (final tag in localTags.cachedValues[selected.first.name]?.split(" ") ??
-        const <String>[]) {
+    for (final tag in selected.first.tagsFlat.split(" ")) {
       if (tagManager.pinned.exists(tag)) {
         searchPrefix.add(tag);
       }
     }
+
+    final l8n = AppLocalizations.of(context)!;
 
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
@@ -246,9 +258,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
               icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-              move
-                  ? AppLocalizations.of(context)!.chooseMoveDestination
-                  : AppLocalizations.of(context)!.chooseCopyDestination,
+              move ? l8n.moveTo : l8n.copyTo,
               (chosen, newDir) {
                 if (chosen == null && newDir == null) {
                   throw "both are empty";
@@ -258,9 +268,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        move
-                            ? AppLocalizations.of(context)!.cantMoveSameDest
-                            : AppLocalizations.of(context)!.cantCopySameDest,
+                        move ? l8n.cantMoveSameDest : l8n.cantCopySameDest,
                       ),
                     ),
                   );
@@ -274,7 +282,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          AppLocalizations.of(context)!.cantCopyToTrash,
+                          l8n.cantCopyToTrash,
                         ),
                       ),
                     );
@@ -316,7 +324,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
               joinable: false,
               suggestFor: searchPrefix,
             ),
-            localizations: AppLocalizations.of(context)!,
+            l8n: AppLocalizations.of(context)!,
           );
         },
       ),
@@ -328,6 +336,8 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     List<GalleryFile> selected,
     FavoriteFileService favoriteFile,
   ) {
+    final l8n = AppLocalizations.of(context)!;
+
     final toDelete = <int>[];
     final toAdd = <int>[];
 
@@ -348,9 +358,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
+          content: Text(l8n.deletedFromFavorites),
           action: SnackBarAction(
-            label: AppLocalizations.of(context)!.undoLabel,
+            label: l8n.undoLabel,
             onPressed: () {
               favoriteFile.addAll(toDelete);
             },
@@ -366,11 +376,12 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryPlug plug,
     PostTags postTags,
     LocalTagsService localTags,
+    AppLocalizations l8n,
   ) async {
     if (_isSavingTags) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.tagSavingInProgress),
+          content: Text(l8n.tagSavingInProgress),
         ),
       );
       return;
@@ -378,11 +389,11 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     _isSavingTags = true;
 
     final notifi = await chooseNotificationPlug().newProgress(
-      "${AppLocalizations.of(context)!.savingTagsSaving}"
-          " ${selected.length == 1 ? '1 ${AppLocalizations.of(context)!.tagSingular}' : '${selected.length} ${AppLocalizations.of(context)!.tagPlural}'}",
+      "${l8n.savingTagsSaving}"
+          " ${selected.length == 1 ? '1 ${l8n.tagSingular}' : '${selected.length} ${l8n.tagPlural}'}",
       savingTagsNotifId,
       "Saving tags",
-      AppLocalizations.of(context)!.savingTags,
+      l8n.savingTags,
     );
     notifi.setTotal(selected.length);
 
@@ -398,64 +409,66 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     _isSavingTags = false;
   }
 
-  void _changeName(
-    BuildContext context,
-    List<GalleryFile> selected,
-  ) {
-    if (selected.isEmpty) {
-      return;
-    }
-    Navigator.of(context, rootNavigator: true).push(
-      DialogRoute<void>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(AppLocalizations.of(context)!.bulkRenameTitle),
-            content: TextFormField(
-              autofocus: true,
-              initialValue: "*",
-              autovalidateMode: AutovalidateMode.always,
-              validator: (value) {
-                if (value == null) {
-                  return AppLocalizations.of(context)!.valueIsNull;
-                }
-                if (value.isEmpty) {
-                  return AppLocalizations.of(context)!.newNameShouldntBeEmpty;
-                }
+  // void _changeName(
+  //   BuildContext context,
+  //   List<GalleryFile> selected,
+  // ) {
+  //   if (selected.isEmpty) {
+  //     return;
+  //   }
 
-                if (!value.contains("*")) {
-                  return AppLocalizations.of(context)!
-                      .newNameShouldIncludeOneStar;
-                }
+  //   final l8n = AppLocalizations.of(context)!;
 
-                return null;
-              },
-              onFieldSubmitted: (value) async {
-                if (value.isEmpty) {
-                  return;
-                }
-                final idx = value.indexOf("*");
-                if (idx == -1) {
-                  return;
-                }
+  //   Navigator.of(context, rootNavigator: true).push(
+  //     DialogRoute<void>(
+  //       context: context,
+  //       builder: (context) {
+  //         return AlertDialog(
+  //           title: Text(l8n.bulkRenameTitle),
+  //           content: TextFormField(
+  //             autofocus: true,
+  //             initialValue: "*",
+  //             autovalidateMode: AutovalidateMode.always,
+  //             validator: (value) {
+  //               if (value == null) {
+  //                 return l8n.valueIsNull;
+  //               }
+  //               if (value.isEmpty) {
+  //                 return l8n.newNameShouldntBeEmpty;
+  //               }
 
-                final matchBefore = value.substring(0, idx);
-                final api = GalleryManagementApi.current();
+  //               if (!value.contains("*")) {
+  //                 return l8n.newNameShouldIncludeOneStar;
+  //               }
 
-                for (final (i, e) in selected.indexed) {
-                  await api.rename(
-                    e.originalUri,
-                    "$matchBefore${e.name}",
-                    i == selected.length - 1,
-                  );
-                }
+  //               return null;
+  //             },
+  //             onFieldSubmitted: (value) async {
+  //               if (value.isEmpty) {
+  //                 return;
+  //               }
+  //               final idx = value.indexOf("*");
+  //               if (idx == -1) {
+  //                 return;
+  //               }
 
-                Navigator.pop(context);
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
+  //               final matchBefore = value.substring(0, idx);
+  //               final api = GalleryManagementApi.current();
+
+  //               for (final (i, e) in selected.indexed) {
+  //                 await api.rename(
+  //                   e.originalUri,
+  //                   "$matchBefore${e.name}",
+  //                   i == selected.length - 1,
+  //                 );
+  //               }
+
+  //               Navigator.pop(context);
+  //             },
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 }

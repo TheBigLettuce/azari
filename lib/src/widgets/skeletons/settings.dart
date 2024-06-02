@@ -30,6 +30,7 @@ class SettingsSkeleton extends StatelessWidget {
     this.autofocus = true,
     this.extendBodyBehindAppBar = false,
   });
+
   final String pageDescription;
   final SkeletonState state;
   final Widget child;
@@ -54,19 +55,22 @@ class SettingsSkeleton extends StatelessWidget {
 
     final insets = MediaQuery.viewPaddingOf(context);
 
+    final theme = Theme.of(context);
+
     return CallbackShortcuts(
       bindings: {
         ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription,
-            () {
-          state.mainFocus.requestFocus();
-        }),
+        ...keybindDescription(
+          context,
+          describeKeys(bindings),
+          pageDescription,
+          () {},
+        ),
       },
       child: Focus(
         autofocus: autofocus,
-        focusNode: state.mainFocus,
         child: AnnotatedRegion(
-          value: navBarStyleForTheme(Theme.of(context)),
+          value: navBarStyleForTheme(theme),
           child: Scaffold(
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.endContained,
@@ -89,10 +93,7 @@ class SettingsSkeleton extends StatelessWidget {
                             title: Text(
                               pageDescription,
                               style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.color,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                             ),
                           ),

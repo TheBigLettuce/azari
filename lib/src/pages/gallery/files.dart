@@ -26,8 +26,6 @@ import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files_filters.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
@@ -87,6 +85,9 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   LocalTagsService get localTags => widget.db.localTags;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
 
+  final GlobalKey<BarIconState> _favoriteButtonKey = GlobalKey();
+  final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
+
   GalleryAPIFiles get api => widget.api;
 
   AppLifecycleListener? _listener;
@@ -121,9 +122,14 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       },
       prefilter: () {
         if (filter.filteringMode == FilteringMode.favorite) {
-          _switcherKey.currentState?.setPage(2);
+          _favoriteButtonKey.currentState?.toggle(true);
+          _duplicateButtonKey.currentState?.toggle(false);
+        } else if (filter.filteringMode == FilteringMode.duplicate) {
+          _duplicateButtonKey.currentState?.toggle(true);
+          _favoriteButtonKey.currentState?.toggle(false);
         } else {
-          _switcherKey.currentState?.setPage(0);
+          _duplicateButtonKey.currentState?.toggle(false);
+          _favoriteButtonKey.currentState?.toggle(false);
         }
 
         if (filter.filteringMode == FilteringMode.same) {
@@ -267,35 +273,12 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     filter.filteringMode = FilteringMode.tag;
   }
 
-  bool _filterFavorites(BuildContext context, int page) {
-    switch (page) {
-      case 1:
-        final gridState = state.gridKey.currentState;
-
-        if (gridState != null) {
-          if (gridState.selection.count == gridState.source.count) {
-            gridState.selection.reset(true);
-          } else {
-            gridState.selection.selectAll(context);
-          }
-        }
-
-        return false;
-      case 2:
-        filter.filteringMode = FilteringMode.favorite;
-
-        return true;
-      default:
-        filter.filteringMode = FilteringMode.noFilter;
-
-        return true;
-    }
-  }
-
-  final GlobalKey<ToggableLabelSwitcherWidgetState> _switcherKey = GlobalKey();
-
   @override
   Widget build(BuildContext context) {
+    // final statistics = StatisticsGalleryService.db().current;
+    final theme = Theme.of(context);
+    final l8n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
@@ -306,214 +289,334 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
           filter: filter,
           searchFocus: searchFocus,
           child: Builder(
-              builder: (context) => GridFrame<GalleryFile>(
-                    key: state.gridKey,
-                    slivers: [
-                      CurrentGridSettingsLayout<GalleryFile>(
-                        source: filter.backingStorage,
-                        progress: filter.progress,
-                        gridSeed: state.gridSeed,
-                      ),
-                    ],
-                    functionality: GridFunctionality(
-                      settingsButton:
-                          GridSettingsButton.fromWatchable(gridSettings),
-                      registerNotifiers: (child) {
-                        return FilesDataNotifier(
-                          actions: this,
-                          api: widget.api,
-                          nestedCallback: widget.callback,
-                          child: OnBooruTagPressed(
-                            onPressed: _onBooruTagPressed,
-                            child: child,
+            builder: (context) => GridFrame<GalleryFile>(
+              key: state.gridKey,
+              slivers: [
+                if (!api.type.isFavorites())
+                  Builder(
+                    builder: (context) {
+                      return IconBarGridHeader(
+                        icons: [
+                          BarIcon(
+                            icon: Icons.select_all_rounded,
+                            onPressed: () {
+                              final gridExtras =
+                                  GridExtrasNotifier.of<GalleryFile>(context);
+
+                              if (gridExtras.selection.count ==
+                                  gridExtras.functionality.source.count) {
+                                gridExtras.selection.reset(true);
+                              } else {
+                                gridExtras.selection.selectAll(context);
+                              }
+
+                              return null;
+                            },
+                          ),
+                          BarIcon(
+                            key: _duplicateButtonKey,
+                            icon: FilteringMode.duplicate.icon,
+                            onPressed: () {
+                              if (filter.filteringMode ==
+                                  FilteringMode.duplicate) {
+                                filter.filteringMode = FilteringMode.noFilter;
+                                return false;
+                              } else {
+                                filter.filteringMode = FilteringMode.duplicate;
+                                return true;
+                              }
+                            },
+                          ),
+                          BarIcon(
+                            key: _favoriteButtonKey,
+                            icon: FilteringMode.favorite.icon,
+                            onPressed: () {
+                              if (filter.filteringMode ==
+                                  FilteringMode.favorite) {
+                                filter.filteringMode = FilteringMode.noFilter;
+                                return false;
+                              } else {
+                                filter.filteringMode = FilteringMode.favorite;
+                                return true;
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                CurrentGridSettingsLayout<GalleryFile>(
+                  source: filter.backingStorage,
+                  progress: filter.progress,
+                  gridSeed: state.gridSeed,
+                ),
+                GridFooter<StatisticsGalleryData>(
+                  storage: filter.backingStorage,
+                  name: widget.dirName,
+                  statistics: (
+                    (value) => [
+                          StatisticsCard(
+                            subtitle: value.viewedFiles.toString(),
+                            title: l8n.cardFilesViewed,
+                          ),
+                          StatisticsCard(
+                            subtitle: value.filesSwiped.toString(),
+                            title: l8n.cardFilesSwiped,
+                          ),
+                          StatisticsCard(
+                            subtitle: value.moved.toString(),
+                            title: l8n.cardMoved,
+                          ),
+                          StatisticsCard(
+                            subtitle: value.copied.toString(),
+                            title: l8n.cardCopied,
+                          ),
+                        ],
+                    widget.db.statisticsGallery.watch,
+                  ),
+                ),
+              ],
+              functionality: GridFunctionality(
+                settingsButton: GridSettingsButton.fromWatchable(gridSettings),
+                registerNotifiers: (child) {
+                  return FilesDataNotifier(
+                    actions: this,
+                    api: widget.api,
+                    nestedCallback: widget.callback,
+                    child: OnBooruTagPressed(
+                      onPressed: _onBooruTagPressed,
+                      child: child,
+                    ),
+                  );
+                },
+                backButton: CallbackGridBackButton(
+                  onPressed: () {
+                    if (filter.filteringMode != FilteringMode.noFilter) {
+                      filter.filteringMode = FilteringMode.noFilter;
+                      return;
+                    }
+                    Navigator.pop(context);
+                  },
+                ),
+                selectionGlue: GlueProvider.generateOf(context)(),
+                source: filter,
+                search: OverrideGridSearchWidget(
+                  SearchAndFocus(
+                    FilteringSearchWidget(
+                      hint: widget.dirName,
+                      filter: filter,
+                      textController: searchTextController,
+                      localTagDictionary: widget.db.localTagDictionary,
+                      focusNode: searchFocus,
+                    ),
+                    searchFocus,
+                  ),
+                ),
+              ),
+              description: GridDescription(
+                overrideEmptyWidgetNotice:
+                    api.type.isFavorites() ? l8n.someFilesShownNotice : null,
+                actions: widget.callback != null
+                    ? const []
+                    : api.type.isTrash()
+                        ? [
+                            restoreFromTrash(),
+                          ]
+                        : [
+                            if (api.type.isFavorites())
+                              setFavoritesThumbnailAction(
+                                widget.db.miscSettings,
+                              ),
+                            if (miscSettings.filesExtendedActions) ...[
+                              // bulkRename(),
+                              saveTagsAction(plug, postTags, localTags),
+                              addTag(
+                                context,
+                                () => api.source.clearRefreshSorting(
+                                  filter.sortingMode,
+                                  true,
+                                ),
+                                localTags,
+                              ),
+                            ],
+                            addToFavoritesAction(null, favoriteFiles),
+                            deleteAction(),
+                            copyAction(
+                              widget.tagManager,
+                              favoriteFiles,
+                              localTags,
+                              api.parent,
+                            ),
+                            moveAction(
+                              widget.tagManager,
+                              favoriteFiles,
+                              localTags,
+                              api.parent,
+                            ),
+                          ],
+                menuButtonItems: [
+                  if (widget.callback == null && api.type.isTrash())
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).push(
+                          DialogRoute<void>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(l8n.emptyTrashTitle),
+                                content: Text(
+                                  l8n.thisIsPermanent,
+                                  style: TextStyle(
+                                    color: Colors.red.harmonizeWith(
+                                      theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      GalleryManagementApi.current()
+                                          .emptyTrash();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(l8n.yes),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(l8n.no),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         );
                       },
-                      backButton: CallbackGridBackButton(
+                      icon: const Icon(Icons.delete_sweep_outlined),
+                    ),
+                  if (widget.callback != null)
+                    Builder(
+                      builder: (context) => IconButton(
                         onPressed: () {
-                          if (filter.filteringMode != FilteringMode.noFilter) {
-                            filter.filteringMode = FilteringMode.noFilter;
+                          if (filter.progress.inRefreshing) {
                             return;
                           }
-                          Navigator.pop(context);
-                        },
-                      ),
-                      selectionGlue: GlueProvider.generateOf(context)(),
-                      source: filter,
-                      search: OverrideGridSearchWidget(
-                        SearchAndFocus(
-                          FilteringSearchWidget(
-                            hint: widget.dirName,
-                            filter: filter,
-                            textController: searchTextController,
-                            localTagDictionary: widget.db.localTagDictionary,
-                            focusNode: searchFocus,
-                          ),
-                          searchFocus,
-                        ),
-                      ),
-                    ),
-                    mainFocus: state.mainFocus,
-                    description: GridDescription(
-                      overrideEmptyWidgetNotice: api.type.isFavorites()
-                          ? "Some files can't be shown"
-                          : null, // TODO: change
-                      showPageSwitcherAsHeader: true,
-                      pages: api.type.isFavorites()
-                          ? null
-                          : PageSwitcherToggable(
-                              [
-                                PageToaggable(
-                                  Icons.select_all_rounded,
-                                  active: widget.callback == null,
-                                ),
-                                PageToaggable(FilteringMode.favorite.icon),
-                              ],
-                              _filterFavorites,
-                              stateKey: _switcherKey,
-                            ),
-                      actions: widget.callback != null
-                          ? const []
-                          : api.type.isTrash()
-                              ? [
-                                  restoreFromTrash(),
-                                ]
-                              : [
-                                  if (api.type.isFavorites())
-                                    setFavoritesThumbnailAction(
-                                        widget.db.miscSettings),
-                                  if (miscSettings.filesExtendedActions) ...[
-                                    bulkRename(),
-                                    saveTagsAction(plug, postTags, localTags),
-                                    addTag(
-                                      context,
-                                      () => api.source.clearRefreshSorting(
-                                        filter.sortingMode,
-                                        true,
-                                      ),
-                                      localTags,
-                                    ),
-                                  ],
-                                  addToFavoritesAction(null, favoriteFiles),
-                                  deleteAction(),
-                                  copyAction(
-                                    widget.tagManager,
-                                    favoriteFiles,
-                                    localTags,
-                                    api.parent,
-                                  ),
-                                  moveAction(
-                                    widget.tagManager,
-                                    favoriteFiles,
-                                    localTags,
-                                    api.parent,
-                                  ),
-                                ],
-                      menuButtonItems: [
-                        if (widget.callback == null && api.type.isTrash())
-                          IconButton(
-                            onPressed: () {
-                              Navigator.of(context, rootNavigator: true).push(
-                                DialogRoute<void>(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: Text(
-                                        AppLocalizations.of(context)!
-                                            .emptyTrashTitle,
-                                      ),
-                                      content: Text(
-                                        AppLocalizations.of(context)!
-                                            .thisIsPermanent,
-                                        style: TextStyle(
-                                          color: Colors.red.harmonizeWith(
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            GalleryManagementApi.current()
-                                                .emptyTrash();
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                            AppLocalizations.of(context)!.yes,
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                              AppLocalizations.of(context)!.no),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
+
+                          final upTo = filter.backingStorage.count;
+
+                          try {
+                            final n = math.Random.secure().nextInt(upTo);
+
+                            final gridState = state.gridKey.currentState;
+                            if (gridState != null) {
+                              final cell = gridState.source.forIdxUnsafe(n);
+                              cell.onPress(
+                                context,
+                                gridState.widget.functionality,
+                                cell,
+                                n,
                               );
-                            },
-                            icon: const Icon(Icons.delete_sweep_outlined),
-                          ),
-                        if (widget.callback != null)
-                          Builder(
-                            builder: (context) => IconButton(
-                              onPressed: () {
-                                if (filter.progress.inRefreshing) {
-                                  return;
-                                }
+                            }
+                          } catch (e, trace) {
+                            _log.logDefaultImportant(
+                              "getting random number".errorMessage(e),
+                              trace,
+                            );
 
-                                final upTo = filter.backingStorage.count;
+                            return;
+                          }
 
-                                try {
-                                  final n = math.Random.secure().nextInt(upTo);
-
-                                  final gridState = state.gridKey.currentState;
-                                  if (gridState != null) {
-                                    final cell =
-                                        gridState.source.forIdxUnsafe(n);
-                                    cell.onPress(
-                                      context,
-                                      gridState.widget.functionality,
-                                      cell,
-                                      n,
-                                    );
-                                  }
-                                } catch (e, trace) {
-                                  _log.logDefaultImportant(
-                                    "getting random number".errorMessage(e),
-                                    trace,
-                                  );
-
-                                  return;
-                                }
-
-                                if (widget.callback!.returnBack) {
-                                  Navigator.pop(context);
-                                  Navigator.pop(context);
-                                }
-                              },
-                              icon: const Icon(Icons.casino_outlined),
-                            ),
-                          ),
-                      ],
-
-                      inlineMenuButtonItems: true,
-                      bottomWidget: widget.callback != null
-                          ? CopyMovePreview.hintWidget(
-                              context,
-                              AppLocalizations.of(context)!.chooseFileNotice,
-                              widget.callback!.icon,
-                            )
-                          : null,
-                      keybindsDescription: widget.dirName,
-                      gridSeed: state.gridSeed,
+                          if (widget.callback!.returnBack) {
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          }
+                        },
+                        icon: const Icon(Icons.casino_outlined),
+                      ),
                     ),
-                  )),
+                ],
+                inlineMenuButtonItems: true,
+                bottomWidget: widget.callback != null
+                    ? CopyMovePreview.hintWidget(
+                        context,
+                        l8n.pickFileNotice,
+                        widget.callback!.icon,
+                      )
+                    : null,
+                keybindsDescription: widget.dirName,
+                gridSeed: state.gridSeed,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BarIcon extends StatefulWidget {
+  const BarIcon({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final bool? Function() onPressed;
+
+  @override
+  State<BarIcon> createState() => BarIconState();
+}
+
+class BarIconState extends State<BarIcon> {
+  bool _toggled = false;
+
+  void toggle(bool v) => setState(() {
+        _toggled = v;
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.filled(
+      isSelected: _toggled,
+      onPressed: () {
+        final ret = widget.onPressed();
+        if (ret != null) {
+          setState(() {
+            _toggled = ret;
+          });
+        }
+      },
+      icon: Icon(widget.icon),
+    );
+  }
+}
+
+class IconBarGridHeader extends StatelessWidget {
+  const IconBarGridHeader({
+    super.key,
+    required this.icons,
+  });
+
+  final List<BarIcon> icons;
+
+  @override
+  Widget build(BuildContext context) {
+    final gestureInsets = MediaQuery.systemGestureInsetsOf(context);
+
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8 + gestureInsets.right * 0.5,
+        vertical: 4,
+      ),
+      sliver: SliverToBoxAdapter(
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: icons,
+          ),
         ),
       ),
     );
@@ -608,4 +711,206 @@ class FilesDataNotifier extends InheritedWidget {
       api != oldWidget.api ||
       nestedCallback != oldWidget.nestedCallback ||
       actions != oldWidget.actions;
+}
+
+class GridFooter<T> extends StatefulWidget {
+  const GridFooter({
+    super.key,
+    required this.storage,
+    this.name,
+    this.statistics,
+  });
+
+  final ReadOnlyStorage<dynamic, dynamic> storage;
+  final String? name;
+
+  final (List<Widget> Function(T), WatchFire<T>)? statistics;
+
+  @override
+  State<GridFooter<T>> createState() => _GridFooterState();
+}
+
+class _GridFooterState<T> extends State<GridFooter<T>> {
+  late final StreamSubscription<int> watcher;
+
+  @override
+  void initState() {
+    super.initState();
+
+    watcher = widget.storage.watch((_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l8n = AppLocalizations.of(context)!;
+
+    if (widget.storage.isEmpty) {
+      return const SliverPadding(padding: EdgeInsets.zero);
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      sliver: SliverToBoxAdapter(
+        child: Center(
+          child: Column(
+            children: [
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  children: [
+                    if (widget.name != null)
+                      TextSpan(
+                        text: "${widget.name}\n",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    TextSpan(
+                      text:
+                          "${widget.storage.count} ${widget.storage.count == 1 ? l8n.elementSingular : l8n.elementPlural}",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (widget.statistics != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    "~",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              if (widget.statistics != null)
+                _StatisticsPanel<T>(statistics: widget.statistics!),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatisticsPanel<T> extends StatefulWidget {
+  const _StatisticsPanel({
+    super.key,
+    required this.statistics,
+  });
+
+  final (List<Widget> Function(T), WatchFire<T>) statistics;
+
+  @override
+  State<_StatisticsPanel<T>> createState() => __StatisticsPanelState();
+}
+
+class __StatisticsPanelState<T> extends State<_StatisticsPanel<T>> {
+  late final StreamSubscription<T> subscr;
+
+  T? value;
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.statistics.$2(
+      (e) {
+        setState(() {
+          value = e;
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == null) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+
+    final values = widget.statistics.$1(value as T);
+
+    return SizedBox(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: <Widget>[
+          ...values.take(values.length - 1).fold<List<Widget>>([], (v, w) {
+            v.add(w);
+            v.add(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  "・",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.15),
+                  ),
+                ),
+              ),
+            );
+
+            return v;
+          }),
+          values.last,
+        ],
+      ),
+    );
+  }
+}
+
+class StatisticsCard extends StatelessWidget {
+  const StatisticsCard({
+    super.key,
+    required this.subtitle,
+    required this.title,
+  });
+
+  final String subtitle;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: "$subtitle\n",
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
+            ),
+          ),
+          TextSpan(
+            text: title,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

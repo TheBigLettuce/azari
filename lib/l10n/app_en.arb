@@ -257,32 +257,32 @@
     "@filterHint": {
         "description": "Filter hint in the filter bar"
     },
-    "itemSingular": "item",
-    "@itemSingular": {
-        "description": "Delete item singular"
+    "elementSingular": "element",
+    "@elementSingular": {
+        "description": "Element item singular"
     },
-    "itemPlural": "items",
-    "@itemPlural": {
-        "description": "Delete item plural"
+    "elementPlural": "elements",
+    "@elementPlural": {
+        "description": "Element item plural"
     },
-    "chooseMoveDestination": "Choose move destination",
-    "@chooseMoveDestination": {
+    "moveTo": "Move to",
+    "@moveTo": {
         "description": "Showed when moving files in Android gallery"
     },
-    "chooseCopyDestination": "Choose copy destination",
-    "@chooseCopyDestination": {
+    "copyTo": "Copy to",
+    "@copyTo": {
         "description": "Showed when copying files in Android gallery"
     },
-    "cantCopySameDest": "Can't copy to same destination",
+    "cantCopySameDest": "Can't copy to the same destination",
     "@cantCopySameDest": {
         "description": "Showed when the original folder from which the file is being copied is selected"
     },
-    "cantMoveSameDest": "Can't move to same destination",
+    "cantMoveSameDest": "Can't move to the same destination",
     "@cantMoveSameDest": {
         "description": "Showed when the original folder from which the file is being moved is selected"
     },
-    "chooseFileNotice": "Choose file",
-    "@chooseFileNotice": {
+    "pickFileNotice": "Pick a file",
+    "@pickFileNotice": {
         "description": "Showed when the app is asked to pick a file"
     },
     "couldntRestoreBackup": "Couldn't restore backup: {error}",
@@ -1322,8 +1322,8 @@
     "@tagValidationError": {
         "description": "Tag validation error"
     },
-    "unstickyDirectory": "Unsticky directory",
-    "@unstickyDirectory": {
+    "unstickyStickyDirectory": "Unsticky/sticky directory",
+    "@unstickyStickyDirectory": {
         "description": "Gallery auth reasons"
     },
     "unblurDirectory": "Unblur directory",
@@ -1357,5 +1357,49 @@
     "redownloadLabel": "Redownload",
     "@redownloadLabel": {
         "description": "Redownload file button label"
+    },
+    "enumDownloadStatusOnHold": "On hold",
+    "@enumDownloadStatusOnHold": {
+        "description": "DownloadStatus.onHold"
+    },
+    "enumDownloadStatusFailed": "Failed",
+    "@enumDownloadStatusFailed": {
+        "description": "DownloadStatus.failed"
+    },
+    "enumDownloadStatusInProgress": "In progress",
+    "@enumDownloadStatusInProgress": {
+        "description": "DownloadStatus.inProgress"
+    },
+    "suggestionsLabel": "Suggestions",
+    "@suggestionsLabel": {
+        "description": "Segmented grid suggestions block"
+    },
+    "directoriesAuthMessage": "Some directories require authentication",
+    "@directoriesAuthMessage": {
+        "description": "Showed when trying to pin/unpin/blur/unblur/unlock locked directory mixed with unlocked ones"
+    },
+    "authLabel": "Auth",
+    "@authLabel": {
+        "description": "Auth for changes of the locked directories button label"
+    },
+    "changeGroupReason": "Change group on directories",
+    "@changeGroupReason": {
+        "description": "Auth reasons"
+    },
+    "hideDirectoryReason": "Hide directory",
+    "@hideDirectoryReason": {
+        "description": "Auth reasons"
+    },
+    "joinDirectoriesReason": "Join directories",
+    "@joinDirectoriesReason": {
+        "description": "Auth reasons"
+    },
+    "showAnimeManga": "Show anime and manga pages",
+    "@showAnimeManga": {
+        "description": "Settings"
+    },
+    "someFilesShownNotice": "Some files can't be shown",
+    "@someFilesShownNotice": {
+        "description": "Gallery favorites page notice when some files have been filtered"
     }
 }

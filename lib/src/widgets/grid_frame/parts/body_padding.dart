@@ -10,12 +10,11 @@ part of "../grid_frame.dart";
 class _BodyWrapping extends StatelessWidget {
   const _BodyWrapping({
     required this.bindings,
-    required this.mainFocus,
     required this.pageName,
     // required this.pageSwitcherNoBar,
     required this.children,
   });
-  final FocusNode mainFocus;
+
   final String pageName;
   final Map<SingleActivatorDescription, void Function()> bindings;
   // final Widget? pageSwitcherNoBar;
@@ -31,13 +30,13 @@ class _BodyWrapping extends StatelessWidget {
           describeKeys(bindings),
           pageName,
           () {
-            mainFocus.requestFocus();
+            // mainFocus.requestFocus();
           },
         ),
       },
       child: Focus(
         autofocus: true,
-        focusNode: mainFocus,
+        // focusNode: mainFocus,
         child: Column(
           children: [
             // if (pageSwitcherNoBar != null) pageSwitcherNoBar!,

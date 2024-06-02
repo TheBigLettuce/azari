@@ -53,6 +53,7 @@ mixin _AnimatedIconsMixin on State<Home> {
     BuildContext context,
     int currentRoute,
     SettingsData settings,
+    bool showAnimeMangaPages,
   ) =>
       [
         _BooruIcon(
@@ -64,14 +65,16 @@ mixin _AnimatedIconsMixin on State<Home> {
           isSelected: currentRoute == _ChangePageMixin.kGalleryPageRoute,
           controller: galleryIconController,
         ),
-        _MangaIcon(
-          isSelected: currentRoute == _ChangePageMixin.kMangaPageRoute,
-          controller: favoritesIconController,
-        ),
-        _AnimeIcon(
-          isSelected: currentRoute == _ChangePageMixin.kAnimePageRoute,
-          controller: animeIconController,
-        ),
+        if (showAnimeMangaPages)
+          _MangaIcon(
+            isSelected: currentRoute == _ChangePageMixin.kMangaPageRoute,
+            controller: favoritesIconController,
+          ),
+        if (showAnimeMangaPages)
+          _AnimeIcon(
+            isSelected: currentRoute == _ChangePageMixin.kAnimePageRoute,
+            controller: animeIconController,
+          ),
         NavigationDestination(
           icon: Icon(
             Icons.more_horiz,
@@ -80,17 +83,6 @@ mixin _AnimatedIconsMixin on State<Home> {
                 : null,
           ),
           label: AppLocalizations.of(context)!.more,
-        ),
-      ];
-
-  List<Widget> iconsGalleryNotes(BuildContext context) => [
-        NavigationDestination(
-          icon: const Icon(Icons.collections),
-          label: AppLocalizations.of(context)!.galleryLabel,
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.sticky_note_2),
-          label: AppLocalizations.of(context)!.notesPage,
         ),
       ];
 }

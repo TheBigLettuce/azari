@@ -200,10 +200,13 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return AnimeInfoTheme(
       mode: entry.explicit,
       child: SettingsSkeleton(
-        AppLocalizations.of(context)!.watchingTab,
+        l8n.watchingTab,
         widget.state,
         fab: _watched
             ? null
@@ -248,7 +251,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                     //   ScaffoldMessenger.of(context).showSnackBar(
                     //     SnackBar(
                     //       content: Text(
-                    //         AppLocalizations.of(context)!.cantWatchThree,
+                    //         l8n.cantWatchThree,
                     //       ),
                     //     ),
                     //   );
@@ -256,8 +259,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                   },
                   icon: Icon(
                     Icons.play_arrow_rounded,
-                    color:
-                        _backlog ? null : Theme.of(context).colorScheme.primary,
+                    color: _backlog ? null : theme.colorScheme.primary,
                   ),
                 ),
               ...CardPanel.defaultButtons(
@@ -275,10 +277,10 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          AppLocalizations.of(context)!.removeFromWatched,
+                          l8n.removeFromWatched,
                         ),
                         action: SnackBarAction(
-                          label: AppLocalizations.of(context)!.undoLabel,
+                          label: l8n.undoLabel,
                           onPressed: () {
                             watchedAnimeEntries.add(prevEntry);
                           },

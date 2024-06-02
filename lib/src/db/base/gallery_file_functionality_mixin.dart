@@ -25,15 +25,13 @@ List<Sticker> defaultStickersFile(
   GalleryFile file,
   LocalTagsService localTags,
 ) {
-  final tags = localTags.cachedValues[file.name];
-
   return [
     if (file.isVideo) Sticker(FilteringMode.video.icon),
     if (file.isGif) Sticker(FilteringMode.gif.icon),
-    if (tags?.contains("original") ?? false)
+    if (file.tagsFlat.contains("original"))
       Sticker(FilteringMode.original.icon),
     if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
-    if (tags?.contains("translated") ?? false)
+    if (file.tagsFlat.contains("translated"))
       const Sticker(Icons.translate_outlined),
   ];
 }

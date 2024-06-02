@@ -37,14 +37,23 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
 
   static ImageViewStatistics asImageViewStatistics() {
     final db = _currentDb.statisticsBooru;
+    final daily = _currentDb.statisticsDaily;
 
     return ImageViewStatistics(
       swiped: () => db.current.add(swiped: 1).save(),
-      viewed: () => db.current.add(viewed: 1).save(),
+      viewed: () {
+        db.current.add(viewed: 1).save();
+        daily.current.add(swipedBoth: 1).save();
+      },
     );
   }
 
   StatisticsBooruData get current;
 
   void add(StatisticsBooruData data);
+
+  StreamSubscription<StatisticsBooruData> watch(
+    void Function(StatisticsBooruData) f, [
+    bool fire = false,
+  ]);
 }

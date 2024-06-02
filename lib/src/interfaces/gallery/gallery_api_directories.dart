@@ -36,6 +36,7 @@ abstract class GalleryAPIDirectories {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   );
 
   GalleryAPIFiles joinedFiles(
@@ -43,17 +44,18 @@ abstract class GalleryAPIDirectories {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   );
 
   void close();
 }
 
 class TrashCell implements AsyncCell<GalleryDirectory> {
-  TrashCell(this.localizations);
+  TrashCell(this.l8n);
 
   final _events = StreamController<GalleryDirectory?>.broadcast();
   // final _key = UniqueKey();
-  final AppLocalizations localizations;
+  final AppLocalizations l8n;
 
   GalleryDirectory? _currentData;
   Future<int?>? _trashFuture;
@@ -69,7 +71,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
           ? null
           : GalleryDirectory.forPlatform(
               bucketId: "trash",
-              name: localizations.galleryDirectoryTrash,
+              name: l8n.galleryDirectoryTrash,
               tag: "",
               volumeName: "",
               relativeLoc: "",

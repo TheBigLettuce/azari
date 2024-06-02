@@ -38,11 +38,13 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return SettingsSkeleton(
-      AppLocalizations.of(context)!.dashboardPage,
+      l8n.dashboardPage,
       state,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.dashboardPage),
+        title: Text(l8n.dashboardPage),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -56,44 +58,43 @@ class _DashboardState extends State<Dashboard> {
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardTimeSpent,
-                      title: AppLocalizations.of(context)!.hoursShort(
+                      subtitle: l8n.cardTimeSpent,
+                      title: l8n.hoursShort(
                         Duration(milliseconds: general.timeSpent).inHours,
                       ),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardScrollerUp,
+                      subtitle: l8n.cardScrollerUp,
                       title: general.scrolledUp.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardTagsSaved,
+                      subtitle: l8n.cardTagsSaved,
                       title: postTagsCount,
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardRefreshes,
+                      subtitle: l8n.cardRefreshes,
                       title: general.refreshes.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardDownloadTime,
-                      title: AppLocalizations.of(context)!.hoursShort(
+                      subtitle: l8n.cardDownloadTime,
+                      title: l8n.hoursShort(
                         Duration(milliseconds: general.timeDownload).inHours,
                       ),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardPostsViewed,
+                      subtitle: l8n.cardPostsViewed,
                       title: booru.viewed.toString(),
                     ),
                     DashboardCard(
-                      subtitle:
-                          AppLocalizations.of(context)!.cardPostsDownloaded,
+                      subtitle: l8n.cardPostsDownloaded,
                       title: booru.downloaded.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardPostsSwiped,
+                      subtitle: l8n.cardPostsSwiped,
                       title: booru.swiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardBooruSwitches,
+                      subtitle: l8n.cardBooruSwitches,
                       title: booru.booruSwitches.toString(),
                     ),
                   ],
@@ -101,36 +102,35 @@ class _DashboardState extends State<Dashboard> {
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle:
-                          AppLocalizations.of(context)!.cardDirectoriesViewed,
+                      subtitle: l8n.cardDirectoriesViewed,
                       title: gallery.viewedDirectories.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardFilesViewed,
+                      subtitle: l8n.cardFilesViewed,
                       title: gallery.viewedFiles.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardFilesSwiped,
+                      subtitle: l8n.cardFilesSwiped,
                       title: gallery.filesSwiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardJoinedTimes,
+                      subtitle: l8n.cardJoinedTimes,
                       title: gallery.joined.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardSameFiltered,
+                      subtitle: l8n.cardSameFiltered,
                       title: gallery.sameFiltered.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardTrashed,
+                      subtitle: l8n.cardTrashed,
                       title: gallery.deleted.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardCopied,
+                      subtitle: l8n.cardCopied,
                       title: gallery.copied.toString(),
                     ),
                     DashboardCard(
-                      subtitle: AppLocalizations.of(context)!.cardMoved,
+                      subtitle: l8n.cardMoved,
                       title: gallery.moved.toString(),
                     ),
                   ],

@@ -23,6 +23,7 @@ abstract class SettingsPath {
 
 abstract class SettingsData {
   const SettingsData({
+    required this.showAnimeMangaPages,
     required this.selectedBooru,
     required this.quality,
     required this.safeMode,
@@ -38,11 +39,13 @@ abstract class SettingsData {
   final SafeMode safeMode;
 
   final bool showWelcomePage;
+  final bool showAnimeMangaPages;
 
   @ignore
   SettingsService get s => _currentDb.settings;
 
   SettingsData copy({
+    bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,
@@ -60,7 +63,10 @@ abstract interface class SettingsService implements ServiceMarker {
 
   void add(SettingsData data);
 
-  StreamSubscription<SettingsData?> watch(void Function(SettingsData? s) f);
+  StreamSubscription<SettingsData?> watch(
+    void Function(SettingsData? s) f, [
+    bool fire = false,
+  ]);
 
   Future<bool> chooseDirectory(
     void Function(String) onError, {

@@ -49,12 +49,15 @@ class SynopsisBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final textTheme = theme.copyWith(
       textTheme: theme.textTheme.copyWith(
         bodyMedium: theme.textTheme.bodyMedium?.copyWith(
           overflow: TextOverflow.fade,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+          color: colorScheme.onSurface.withOpacity(0.8),
         ),
       ),
     );
@@ -62,8 +65,7 @@ class SynopsisBackground extends StatelessWidget {
     return Wrap(
       direction: Axis.vertical,
       children: [
-        if (showLabel)
-          BodySegmentLabel(text: AppLocalizations.of(context)!.synopsisLabel),
+        if (showLabel) BodySegmentLabel(text: l8n.synopsisLabel),
         Padding(
           padding: const EdgeInsets.only(bottom: 4, right: 4),
           child: AnimatedContainer(
@@ -81,10 +83,7 @@ class SynopsisBackground extends StatelessWidget {
                         child: Icon(
                           const IconData(0x2726),
                           size: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.8),
+                          color: colorScheme.onSurface.withOpacity(0.8),
                           applyTextScaling: true,
                         ),
                       );
@@ -96,7 +95,7 @@ class SynopsisBackground extends StatelessWidget {
                         borderSide: BorderSide.none,
                       ),
                       a: TextStyle(
-                        color: theme.colorScheme.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                   )
@@ -107,8 +106,7 @@ class SynopsisBackground extends StatelessWidget {
                   ),
           ),
         ),
-        if (background.isNotEmpty)
-          BodySegmentLabel(text: AppLocalizations.of(context)!.backgroundLabel),
+        if (background.isNotEmpty) BodySegmentLabel(text: l8n.backgroundLabel),
         if (background.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 4, right: 4),
@@ -124,9 +122,7 @@ class SynopsisBackground extends StatelessWidget {
                       styleSheet: MarkdownStyleSheet.fromTheme(
                         textTheme,
                       ).copyWith(
-                        a: TextStyle(
-                          color: theme.colorScheme.primary,
-                        ),
+                        a: TextStyle(color: colorScheme.primary),
                       ),
                     )
                   : SelectableText(

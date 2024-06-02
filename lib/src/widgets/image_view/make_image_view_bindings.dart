@@ -16,59 +16,62 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
   PageController pageController, {
   required void Function()? download,
   required void Function() onTap,
-}) =>
-    {
-      SingleActivatorDescription(
-        AppLocalizations.of(context)!.back,
-        const SingleActivator(LogicalKeyboardKey.escape),
-      ): () {
-        if (scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
+}) {
+  final l8n = AppLocalizations.of(context)!;
+
+  return {
+    SingleActivatorDescription(
+      l8n.back,
+      const SingleActivator(LogicalKeyboardKey.escape),
+    ): () {
+      if (scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
+        scaffoldKey.currentState?.closeEndDrawer();
+      } else {
+        Navigator.pop(context);
+      }
+    },
+    SingleActivatorDescription(
+      l8n.showImageInfo,
+      const SingleActivator(LogicalKeyboardKey.keyI, control: true),
+    ): () {
+      if (scaffoldKey.currentState != null) {
+        if (scaffoldKey.currentState!.isEndDrawerOpen) {
           scaffoldKey.currentState?.closeEndDrawer();
         } else {
-          Navigator.pop(context);
+          scaffoldKey.currentState?.openEndDrawer();
         }
-      },
+      }
+    },
+    if (download != null)
       SingleActivatorDescription(
-        AppLocalizations.of(context)!.showImageInfo,
-        const SingleActivator(LogicalKeyboardKey.keyI, control: true),
+        l8n.downloadImage,
+        const SingleActivator(LogicalKeyboardKey.keyD, control: true),
       ): () {
-        if (scaffoldKey.currentState != null) {
-          if (scaffoldKey.currentState!.isEndDrawerOpen) {
-            scaffoldKey.currentState?.closeEndDrawer();
-          } else {
-            scaffoldKey.currentState?.openEndDrawer();
-          }
-        }
+        download();
       },
-      if (download != null)
-        SingleActivatorDescription(
-          AppLocalizations.of(context)!.downloadImage,
-          const SingleActivator(LogicalKeyboardKey.keyD, control: true),
-        ): () {
-          download();
-        },
-      SingleActivatorDescription(
-        AppLocalizations.of(context)!.hideAppBar,
-        const SingleActivator(LogicalKeyboardKey.space, control: true),
-      ): () {
-        onTap();
-      },
-      SingleActivatorDescription(
-        AppLocalizations.of(context)!.nextImage,
-        const SingleActivator(LogicalKeyboardKey.arrowRight),
-      ): () {
-        pageController.nextPage(
-          duration: const Duration(milliseconds: 500),
-          curve: Easing.standard,
-        );
-      },
-      SingleActivatorDescription(
-        AppLocalizations.of(context)!.previousImage,
-        const SingleActivator(LogicalKeyboardKey.arrowLeft),
-      ): () {
-        pageController.previousPage(
-          duration: const Duration(milliseconds: 500),
-          curve: Easing.standard,
-        );
-      },
-    };
+    SingleActivatorDescription(
+      l8n.hideAppBar,
+      const SingleActivator(LogicalKeyboardKey.space, control: true),
+    ): () {
+      onTap();
+    },
+    SingleActivatorDescription(
+      l8n.nextImage,
+      const SingleActivator(LogicalKeyboardKey.arrowRight),
+    ): () {
+      pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Easing.standard,
+      );
+    },
+    SingleActivatorDescription(
+      l8n.previousImage,
+      const SingleActivator(LogicalKeyboardKey.arrowLeft),
+    ): () {
+      pageController.previousPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Easing.standard,
+      );
+    },
+  };
+}

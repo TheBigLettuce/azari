@@ -138,7 +138,6 @@ class _FilteringSearchWidgetState<T extends CellBase>
 
 class _FilteringWidget extends StatefulWidget {
   const _FilteringWidget({
-    super.key,
     required this.currentFilter,
     required this.enabledModes,
     required this.select,
@@ -227,12 +226,11 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                   ? [
                       SegmentedButtonValue(
                         currentSorting,
-                        currentSorting.translatedString(context),
+                        currentSorting.translatedString(l8n),
                       ),
                     ]
                   : widget.enabledSorting.map(
-                      (e) =>
-                          SegmentedButtonValue(e, e.translatedString(context)),
+                      (e) => SegmentedButtonValue(e, e.translatedString(l8n)),
                     ),
               title: l8n.sortingModesLabel,
             ),

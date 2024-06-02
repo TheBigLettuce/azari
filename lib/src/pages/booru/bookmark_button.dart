@@ -100,7 +100,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     if (m.isEmpty) {
       for (final e in gridStates) {
-        final grid = widget.db.secondaryGrid(e.booru, e.name);
+        final grid = widget.db.secondaryGrid(e.booru, e.name, null);
         final List<Post> p = getSingle(grid);
 
         List<Post>? l = m[e.name];
@@ -148,14 +148,12 @@ class _BookmarkPageState extends State<BookmarkPage> {
     ).whenComplete(_procUpdate);
   }
 
-  List<Widget> makeList(BuildContext context) {
+  List<Widget> makeList(BuildContext context, ThemeData theme) {
     final timeNow = DateTime.now();
     final list = <Widget>[];
 
-    final titleStyle = Theme.of(context)
-        .textTheme
-        .titleSmall!
-        .copyWith(color: Theme.of(context).colorScheme.secondary);
+    final titleStyle = theme.textTheme.titleSmall!
+        .copyWith(color: theme.colorScheme.secondary);
 
     (int, int, int)? time;
 
@@ -170,7 +168,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
       List<Post>? posts = m[e.name];
       if (posts == null) {
-        final grid = widget.db.secondaryGrid(e.booru, e.name);
+        final grid = widget.db.secondaryGrid(e.booru, e.name, null);
         posts = getSingle(grid);
 
         m[e.name] = posts;
@@ -200,6 +198,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SliverPadding(
       padding: EdgeInsets.only(
         bottom: GridBottomPaddingProvider.of(context, true),
@@ -211,7 +211,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               ),
             )
           : SliverList.list(
-              children: makeList(context),
+              children: makeList(context, theme),
             ),
     );
   }
@@ -230,6 +230,8 @@ class BookmarkListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: Column(
@@ -238,20 +240,17 @@ class BookmarkListTile extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.9),
-                  letterSpacing: -0.4,
-                ),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.primary.withOpacity(0.9),
+              letterSpacing: -0.4,
+            ),
           ),
           Text(
             subtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withOpacity(0.8),
-                  letterSpacing: 0.8,
-                ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+              letterSpacing: 0.8,
+            ),
           ),
         ],
       ),
@@ -286,6 +285,9 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context).longestSide * 0.2;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l8n = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: () {
@@ -296,10 +298,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withOpacity(0.25),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.25),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(25),
                 bottomRight: Radius.circular(25),
@@ -345,9 +344,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                       : child.animate().fadeIn();
                                 },
                                 colorBlendMode: BlendMode.color,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer
+                                color: colorScheme.primaryContainer
                                     .withOpacity(0.4),
                                 image: e.thumbnail(),
                                 fit: BoxFit.cover,
@@ -371,25 +368,18 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                       children: [
                         Text(
                           widget.title,
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withOpacity(0.9),
-                                    letterSpacing: -0.4,
-                                  ),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.primary.withOpacity(0.9),
+                            letterSpacing: -0.4,
+                          ),
                         ),
                         Text(
                           widget.subtitle,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant
-                                        .withOpacity(0.8),
-                                    letterSpacing: 0.8,
-                                  ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                colorScheme.onSurfaceVariant.withOpacity(0.8),
+                            letterSpacing: 0.8,
+                          ),
                         ),
                       ],
                     ),
@@ -402,7 +392,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                             builder: (context) {
                               return AlertDialog(
                                 title: Text(
-                                  AppLocalizations.of(context)!.delete,
+                                  l8n.delete,
                                 ),
                                 content: ListTile(
                                   title: Text(widget.state.tags),
@@ -415,6 +405,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                           .secondaryGrid(
                                             widget.state.booru,
                                             widget.state.name,
+                                            null,
                                           )
                                           .destroy()
                                           .then(
@@ -426,15 +417,11 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                         },
                                       );
                                     },
-                                    child: Text(
-                                      AppLocalizations.of(context)!.yes,
-                                    ),
+                                    child: Text(l8n.yes),
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
-                                    child: Text(
-                                      AppLocalizations.of(context)!.no,
-                                    ),
+                                    child: Text(l8n.no),
                                   ),
                                 ],
                               );

@@ -19,6 +19,8 @@ class _BooruIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return NavigationDestination(
       icon: Animate(
         autoPlay: true,
@@ -26,7 +28,7 @@ class _BooruIcon extends StatelessWidget {
         effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
         child: Icon(
           Icons.image,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),
       label: label,

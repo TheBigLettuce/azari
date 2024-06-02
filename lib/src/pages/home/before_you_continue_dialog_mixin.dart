@@ -20,29 +20,29 @@ mixin _BeforeYouContinueDialogMixin {
             DialogRoute<void>(
               context: context,
               builder: (context) {
-                final localizations = AppLocalizations.of(context)!;
+                final l8n = AppLocalizations.of(context)!;
 
                 return AlertDialog(
-                  title: Text(localizations.beforeYouContinueTitle),
-                  content: Text(localizations.needChooseDirectory),
+                  title: Text(l8n.beforeYouContinueTitle),
+                  content: Text(l8n.needChooseDirectory),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: Text(localizations.later),
+                      child: Text(l8n.later),
                     ),
                     TextButton(
                       onPressed: () {
                         SettingsService.db().chooseDirectory(
                           (e) {},
-                          emptyResult: localizations.emptyResult,
-                          pickDirectory: localizations.pickDirectory,
-                          validDirectory: localizations.chooseValidDirectory,
+                          emptyResult: l8n.emptyResult,
+                          pickDirectory: l8n.pickDirectory,
+                          validDirectory: l8n.chooseValidDirectory,
                         );
                         Navigator.pop(context);
                       },
-                      child: Text(localizations.choose),
+                      child: Text(l8n.choose),
                     ),
                   ],
                 );

@@ -118,8 +118,7 @@ class WrapImageViewSkeleton extends StatelessWidget {
                                   SliverToBoxAdapter(
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
-                                        color:
-                                            colorScheme.surfaceContainerHighest,
+                                        color: colorScheme.surfaceContainerHigh,
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(4),
@@ -239,6 +238,8 @@ class _PinnedTagsRow extends StatelessWidget {
     final theme = Theme.of(context);
     final res = ImageTagsNotifier.resOf(context);
 
+    final l8n = AppLocalizations.of(context)!;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: tags
@@ -261,7 +262,7 @@ class _PinnedTagsRow extends StatelessWidget {
                         radioDialog<SafeMode>(
                           context,
                           SafeMode.values
-                              .map((e) => (e, e.translatedString(context))),
+                              .map((e) => (e, e.translatedString(l8n))),
                           SettingsService.db().current.safeMode,
                           (value) {
                             OnBooruTagPressed.maybePressOf(
@@ -271,7 +272,7 @@ class _PinnedTagsRow extends StatelessWidget {
                               overrideSafeMode: value,
                             );
                           },
-                          title: AppLocalizations.of(context)!.chooseSafeMode,
+                          title: l8n.chooseSafeMode,
                           allowSingle: true,
                         );
                       },

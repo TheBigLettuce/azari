@@ -74,7 +74,6 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
           selectionGlue: widget.generateGlue(),
           source: source,
         ),
-        mainFocus: state.mainFocus,
         description: GridDescription(
           showAppBar: false,
           pullToRefresh: false,

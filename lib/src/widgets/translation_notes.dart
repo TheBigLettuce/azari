@@ -22,9 +22,11 @@ class TranslationNotes extends StatefulWidget {
   final Booru booru;
 
   static Widget tile(BuildContext context, int postId, Booru booru) {
+    final l8n = AppLocalizations.of(context)!;
+
     return ListTile(
-      title: Text(AppLocalizations.of(context)!.hasTranslations),
-      subtitle: Text(AppLocalizations.of(context)!.tapToView),
+      title: Text(l8n.hasTranslations),
+      subtitle: Text(l8n.tapToView),
       onTap: () {
         Navigator.push(
           context,

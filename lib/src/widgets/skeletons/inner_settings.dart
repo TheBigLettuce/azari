@@ -45,12 +45,12 @@ class InnerSettingsSkeleton extends StatelessWidget {
         ...bindings,
         ...keybindDescription(context, describeKeys(bindings), pageDescription,
             () {
-          state.mainFocus.requestFocus();
+          // state.mainFocus.requestFocus();
         }),
       },
       child: Focus(
         autofocus: true,
-        focusNode: state.mainFocus,
+        // focusNode: state.mainFocus,
         child: Scaffold(
           drawerEnableOpenDragGesture:
               MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,

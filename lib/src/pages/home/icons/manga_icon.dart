@@ -17,6 +17,8 @@ class _MangaIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return NavigationDestination(
       icon: Animate(
         controller: controller,
@@ -27,10 +29,7 @@ class _MangaIcon extends StatelessWidget {
             angle: pi / -5,
             duration: 440.ms,
             colors: [
-              Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withOpacity(isSelected ? 1 : 0),
+              colorScheme.primary.withOpacity(isSelected ? 1 : 0),
               Colors.red,
               Colors.orange,
               Colors.yellow,
@@ -44,7 +43,7 @@ class _MangaIcon extends StatelessWidget {
         ],
         child: Icon(
           Icons.book_rounded,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          color: isSelected ? colorScheme.primary : null,
         ),
       ),
       label: AppLocalizations.of(context)!.mangaPage,

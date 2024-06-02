@@ -74,7 +74,7 @@ abstract class FileFilters {
   ) {
     return (
       cells.where(
-        (element) => !localTags.cachedValues.containsKey(element.name),
+        (element) => element.tagsFlat.isEmpty,
       ),
       null
     );
@@ -104,8 +104,7 @@ abstract class FileFilters {
   ) {
     return (
       cells.where(
-        (element) =>
-            localTags.cachedValues[element.name]?.contains("original") ?? false,
+        (element) => element.tagsFlat.contains("original"),
       ),
       null
     );
@@ -145,28 +144,29 @@ abstract class FileFilters {
 
     if (end) {
       if (accu.skipped != 0) {
-        ScaffoldMessenger.of(context).removeCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.resultsIncomplete),
-            duration: const Duration(seconds: 20),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.loadMoreLabel,
-              onPressed: () {
-                _loadNextThumbnails(source, () {
-                  try {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(AppLocalizations.of(context)!.loaded),
-                      ),
-                    );
-                    performSearch();
-                  } catch (_) {}
-                });
-              },
+        ScaffoldMessenger.of(context)
+          ..removeCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.resultsIncomplete),
+              duration: const Duration(seconds: 20),
+              action: SnackBarAction(
+                label: AppLocalizations.of(context)!.loadMoreLabel,
+                onPressed: () {
+                  _loadNextThumbnails(source, () {
+                    try {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!.loaded),
+                        ),
+                      );
+                      performSearch();
+                    } catch (_) {}
+                  });
+                },
+              ),
             ),
-          ),
-        );
+          );
       }
 
       return (
@@ -203,7 +203,9 @@ abstract class FileFilters {
 }
 
 Future<void> _loadNextThumbnails(
-    ResourceSource<int, GalleryFile> source, void Function() callback) async {
+  ResourceSource<int, GalleryFile> source,
+  void Function() callback,
+) async {
   final thumbnailService = ThumbnailService.db();
 
   var offset = 0;

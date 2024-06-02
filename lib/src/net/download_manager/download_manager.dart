@@ -11,6 +11,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -20,8 +21,8 @@ import "package:gallery/src/plugs/notifications.dart";
 import "package:path/path.dart" as path;
 
 part "download_entry.dart";
-part "download_status.dart";
 part "download_handle.dart";
+part "download_status.dart";
 
 class DownloadManager extends MapStorage<String, _DownloadEntry>
     with _StatisticsTimer
@@ -272,24 +273,24 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   Future<void> _download(String url) async {
     final entry = map_[url]!;
 
+    final dir = await GalleryManagementApi.current()
+        .ensureDownloadDirectoryExists(entry.data.site);
+    final filePath = path.joinAll([dir, entry.data.name]);
+
+    if (await GalleryManagementApi.current().fileExists(filePath)) {
+      _failed(entry);
+      _tryAddNew();
+      return;
+    }
+
+    final progress = await notificationPlug.newProgress(
+      entry.data.name,
+      _notificationId += 1,
+      entry.data.site,
+      "Downloader",
+    );
+
     try {
-      final dir = await GalleryManagementApi.current()
-          .ensureDownloadDirectoryExists(entry.data.site);
-      final filePath = path.joinAll([dir, entry.data.name]);
-
-      if (await GalleryManagementApi.current().fileExists(filePath)) {
-        _failed(entry);
-        _tryAddNew();
-        return;
-      }
-
-      final progress = await notificationPlug.newProgress(
-        entry.data.name,
-        _notificationId += 1,
-        entry.data.site,
-        "Downloader",
-      );
-
       _start();
 
       _log.logDefault("Started download: ${entry.data}".message);
@@ -319,6 +320,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
         stackTrace,
       );
 
+      progress.done();
       _failed(entry);
     }
 
@@ -354,25 +356,6 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
-
-  // Future<void> _removeTempContentsDownloads() async {
-  //   try {
-  //     final tempd = await getTemporaryDirectory();
-  //     final downld = Directory(path.join(tempd.path, "downloads"));
-  //     if (!downld.existsSync()) {
-  //       return;
-  //     }
-
-  //     downld.list().map((event) {
-  //       event.deleteSync(recursive: true);
-  //     }).drain<void>();
-  //   } catch (e, trace) {
-  //     _log.logDefaultImportant(
-  //       "deleting temp directories".errorMessage(e),
-  //       trace,
-  //     );
-  //   }
-  // }
 }
 
 

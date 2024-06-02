@@ -77,6 +77,9 @@ class BaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final body = Center(
@@ -95,14 +98,11 @@ class BaseCard extends StatelessWidget {
                   children: [
                     DefaultTextStyle.merge(
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: DefaultTextStyle.of(context).style.color ??
-                                Theme.of(context)
-                                    .colorScheme
-                                    .secondary
-                                    .withOpacity(0.8),
-                            letterSpacing: 0.8,
-                          ),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: DefaultTextStyle.of(context).style.color ??
+                            colorScheme.secondary.withOpacity(0.8),
+                        letterSpacing: 0.8,
+                      ),
                       child: Padding(
                         padding: height == null
                             ? EdgeInsets.zero
@@ -118,12 +118,9 @@ class BaseCard extends StatelessWidget {
                     if (constraints.maxWidth > 50)
                       DefaultTextStyle.merge(
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.6),
-                            ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                         child: Padding(
                           padding: EdgeInsets.only(
                             left: leanLeft ? 0 : 16,
@@ -151,11 +148,11 @@ class BaseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           onTap: onPressed,
           onLongPress: onLongPressed,
-          splashColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          splashColor: colorScheme.onSurface.withOpacity(0.6),
           child: Card.filled(
             clipBehavior: Clip.antiAlias,
             color: transparentBackground || backgroundImage != null
-                ? Theme.of(context).colorScheme.onSurface.withOpacity(0)
+                ? colorScheme.onSurface.withOpacity(0)
                 : null,
             child: SizedBox(
               width: width,

@@ -16,7 +16,8 @@ abstract class FavoritesActions {
   static GridAction<T> addToGroup<T extends CellBase>(
     BuildContext context,
     String? Function(List<T>) initalValue,
-    void Function(List<T>, String, bool) onSubmitted,
+    Future<void Function(BuildContext)?> Function(List<T>, String, bool)
+        onSubmitted,
     bool showPinButton,
   ) {
     return GridAction(
@@ -53,9 +54,11 @@ class _GroupDialogWidget<T> extends StatefulWidget {
     required this.selected,
     required this.showPinButton,
   });
+
   final List<T> selected;
   final String? Function(List<T>) initalValue;
-  final void Function(List<T>, String, bool) onSubmitted;
+  final Future<void Function(BuildContext)?> Function(List<T>, String, bool)
+      onSubmitted;
   final bool showPinButton;
 
   @override
@@ -67,10 +70,10 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return AlertDialog(
-      title: Text(
-        AppLocalizations.of(context)!.group,
-      ),
+      title: Text(l8n.group),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -78,12 +81,18 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
             autofocus: true,
             initialValue: widget.initalValue(widget.selected),
             onFieldSubmitted: (value) {
-              widget.onSubmitted(widget.selected, value, toPin);
+              widget.onSubmitted(widget.selected, value, toPin).then((e) {
+                if (mounted) {
+                  e?.call(context);
+                }
+
+                Navigator.pop(context);
+              });
             },
           ),
           if (widget.showPinButton)
             SwitchListTile(
-              title: Text(AppLocalizations.of(context)!.pinGroupLabel),
+              title: Text(l8n.pinGroupLabel),
               value: toPin,
               onChanged: (b) {
                 toPin = b;

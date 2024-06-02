@@ -41,9 +41,9 @@ abstract class BooruAPI {
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  });
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  );
 
   /// Get the post's notes.
   /// Usually used for translations.
@@ -55,9 +55,9 @@ abstract class BooruAPI {
   Future<(List<Post>, int?)> fromPost(
     int postId,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  });
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  );
 
   /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<BooruTag>> completeTag(String tag);

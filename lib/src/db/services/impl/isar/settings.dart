@@ -53,6 +53,7 @@ class IsarSettingsService implements SettingsService {
   SettingsData get current =>
       _Dbs.g.main.isarSettings.getSync(0) ??
       const IsarSettings(
+        showAnimeMangaPages: false,
         showWelcomePage: true,
         path: IsarSettingsPath(),
         selectedBooru: Booru.gelbooru,
@@ -62,8 +63,8 @@ class IsarSettingsService implements SettingsService {
 
   @override
   StreamSubscription<SettingsData?> watch(
-    void Function(SettingsData? s) f, {
+    void Function(SettingsData? s) f, [
     bool fire = false,
-  }) =>
+  ]) =>
       _Dbs.g.main.isarSettings.watchObject(0, fireImmediately: fire).listen(f);
 }

@@ -63,6 +63,8 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
   @override
   Widget build(BuildContext context) {
     final rightPadding = MediaQuery.systemGestureInsetsOf(context).right;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top),
@@ -89,10 +91,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                           hintText: AppLocalizations.of(context)!.filterHint,
                           border: InputBorder.none,
                           hintStyle: TextStyle(
-                            fontSize: Theme.of(context)
-                                .tabBarTheme
-                                .labelStyle
-                                ?.fontSize,
+                            fontSize: theme.tabBarTheme.labelStyle?.fontSize,
                           ),
                         ),
                         controller: widget.controller,
@@ -110,10 +109,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                             },
                             child: Icon(
                               Icons.close_rounded,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.8),
+                              color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                         ),
@@ -133,11 +129,11 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                 begin: Alignment.centerRight,
                 end: Alignment.centerLeft,
                 colors: [
-                  Theme.of(context).colorScheme.surface,
-                  Theme.of(context).colorScheme.surface.withOpacity(0.7),
-                  Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                  Theme.of(context).colorScheme.surface.withOpacity(0.3),
-                  Theme.of(context).colorScheme.surface.withOpacity(0),
+                  colorScheme.surface,
+                  colorScheme.surface.withOpacity(0.7),
+                  colorScheme.surface.withOpacity(0.5),
+                  colorScheme.surface.withOpacity(0.3),
+                  colorScheme.surface.withOpacity(0),
                 ],
               ),
             ),
@@ -160,10 +156,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                   },
                   icon: Icon(
                     Icons.search,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceTint
-                        .withOpacity(0.8),
+                    color: colorScheme.surfaceTint.withOpacity(0.8),
                   ),
                 ),
               ),

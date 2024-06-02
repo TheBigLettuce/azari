@@ -49,60 +49,56 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l8n = AppLocalizations.of(context)!;
+
     final addItems = state.addItems(context);
 
     return AbsorbPointer(
       absorbing: widget.disabled,
       child: DefaultSelectionStyle(
         child: Theme(
-          data: Theme.of(context).copyWith(
+          data: theme.copyWith(
             searchBarTheme: SearchBarThemeData(
               overlayColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.onPrimary.withOpacity(0.05),
+                colorScheme.onPrimary.withOpacity(0.05),
               ),
               textStyle: WidgetStatePropertyAll(
                 TextStyle(
                   color: widget.disabled
-                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                      : Theme.of(context).colorScheme.onPrimary,
+                      ? colorScheme.onSurface.withOpacity(0.4)
+                      : colorScheme.onPrimary,
                 ),
               ),
               elevation: const WidgetStatePropertyAll(0),
               backgroundColor: WidgetStatePropertyAll(
                 widget.disabled
-                    ? Theme.of(context).colorScheme.surface.withOpacity(0.4)
-                    : Theme.of(context)
-                        .colorScheme
-                        .surfaceTint
-                        .withOpacity(0.8),
+                    ? colorScheme.surface.withOpacity(0.4)
+                    : colorScheme.surfaceTint.withOpacity(0.8),
               ),
               hintStyle: WidgetStatePropertyAll(
                 TextStyle(
                   color: widget.disabled
-                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
-                      : Theme.of(context)
-                          .colorScheme
-                          .onPrimary
-                          .withOpacity(0.5),
+                      ? colorScheme.onSurface.withOpacity(0.5)
+                      : colorScheme.onPrimary.withOpacity(0.5),
                 ),
               ),
             ),
             badgeTheme: BadgeThemeData(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              textColor: Theme.of(context)
-                  .colorScheme
-                  .onPrimaryContainer
-                  .withOpacity(0.8),
+              backgroundColor: colorScheme.primaryContainer,
+              textColor: colorScheme.onPrimaryContainer.withOpacity(0.8),
             ),
-            hintColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+            hintColor: colorScheme.onPrimary.withOpacity(0.5),
           ),
           child: SearchAnchor(
             builder: (context, controller) {
+              final theme = Theme.of(context);
+              final colorScheme = theme.colorScheme;
+
               return InkWell(
-                splashColor:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                hoverColor:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                splashColor: colorScheme.onSurface.withOpacity(0.8),
+                hoverColor: colorScheme.onSurface.withOpacity(0.8),
                 onTap: controller.openView,
                 borderRadius: BorderRadius.circular(25),
                 child: AbsorbPointer(
@@ -115,11 +111,8 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                                 Icons.search_rounded,
                                 size: 18,
                                 color: widget.disabled
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.4)
-                                    : Theme.of(context).colorScheme.onPrimary,
+                                    ? colorScheme.onSurface.withOpacity(0.4)
+                                    : colorScheme.onPrimary,
                               ),
                     constraints: const BoxConstraints.expand(
                       height: 38,
@@ -127,7 +120,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                     ),
                     hintText: widget.disabled || state.searchTextAsLabel
                         ? widget.getTags()
-                        : AppLocalizations.of(context)!.searchHint,
+                        : l8n.searchHint,
                     onSubmitted: widget.disabled
                         ? null
                         : (value) {
@@ -148,8 +141,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
             viewOnSubmitted: (value) {
               state.onSubmit(context, value);
             },
-            viewHintText:
-                "${AppLocalizations.of(context)!.searchHint} ${widget.hint ?? ''}",
+            viewHintText: "${l8n.searchHint} ${widget.hint ?? ''}",
             searchController: searchController,
             suggestionsBuilder: (suggestionsContext, controller) {
               if (controller.text.isEmpty) {
@@ -207,15 +199,12 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                                             TextSpan(text: e.tag),
                                             TextSpan(
                                               text: "  ${e.count}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
+                                              style: theme.textTheme.bodySmall
                                                   ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.25),
-                                                  ),
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withOpacity(0.25),
+                                              ),
                                             ),
                                           ],
                                         ),

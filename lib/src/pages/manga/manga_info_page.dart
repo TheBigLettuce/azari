@@ -110,7 +110,9 @@ class _MangaInfoPageState extends State<MangaInfoPage>
 
   @override
   Widget build(BuildContext context) {
-    final cardUnknownValue = AppLocalizations.of(context)!.cardUnknownValue;
+    final theme = Theme.of(context);
+    final l8n = AppLocalizations.of(context)!;
+    final cardUnknownValue = l8n.cardUnknownValue;
 
     return WrapFutureRestartable(
       newStatus: newFuture,
@@ -118,7 +120,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
         return AnimeInfoTheme(
           mode: entry.safety,
           child: SettingsSkeleton(
-            AppLocalizations.of(context)!.mangaInfoPage,
+            l8n.mangaInfoPage,
             state,
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -149,9 +151,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                     },
                     icon: Icon(
                       Icons.push_pin_rounded,
-                      color: isPinned
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
+                      color: isPinned ? theme.colorScheme.primary : null,
                     ),
                   ),
                   IconButton(
@@ -184,9 +184,8 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                           safeMode: entry.safety,
                           info: [
                             UnsizedCard(
-                              subtitle:
-                                  Text(AppLocalizations.of(context)!.cardYear),
-                              tooltip: AppLocalizations.of(context)!.cardYear,
+                              subtitle: Text(l8n.cardYear),
+                              tooltip: l8n.cardYear,
                               title: Text(
                                 entry.year == 0
                                     ? cardUnknownValue
@@ -197,15 +196,14 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                             if (score != null)
                               UnsizedCard(
                                 subtitle: Text(
-                                  AppLocalizations.of(context)!.cardScore,
+                                  l8n.cardScore,
                                 ),
                                 title: Text(
                                   score!.isNegative
                                       ? cardUnknownValue
                                       : score!.toString(),
                                 ),
-                                tooltip:
-                                    AppLocalizations.of(context)!.cardScore,
+                                tooltip: l8n.cardScore,
                                 transparentBackground: true,
                               )
                             else
@@ -223,18 +221,17 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                               ),
                             UnsizedCard(
                               subtitle: Text(
-                                AppLocalizations.of(context)!.cardStatus,
+                                l8n.cardStatus,
                               ),
-                              tooltip: AppLocalizations.of(context)!.cardStatus,
+                              tooltip: l8n.cardStatus,
                               title: Text(entry.status),
                               transparentBackground: true,
                             ),
                             UnsizedCard(
                               subtitle: Text(
-                                AppLocalizations.of(context)!.cardVolumes,
+                                l8n.cardVolumes,
                               ),
-                              tooltip:
-                                  AppLocalizations.of(context)!.cardVolumes,
+                              tooltip: l8n.cardVolumes,
                               title: Text(
                                 entry.volumes.isNegative
                                     ? cardUnknownValue
@@ -244,10 +241,9 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                             ),
                             UnsizedCard(
                               subtitle: Text(
-                                AppLocalizations.of(context)!.cardDemographics,
+                                l8n.cardDemographics,
                               ),
-                              tooltip: AppLocalizations.of(context)!
-                                  .cardDemographics,
+                              tooltip: l8n.cardDemographics,
                               title: Text(
                                 entry.demographics.isEmpty
                                     ? cardUnknownValue

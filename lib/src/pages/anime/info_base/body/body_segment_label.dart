@@ -18,14 +18,15 @@ class BodySegmentLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final child = Text(
       text,
-      // textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
-          ),
+      style: theme.textTheme.titleLarge!.copyWith(
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        color: theme.colorScheme.onSurface.withOpacity(0.75),
+      ),
     );
 
     const padding = EdgeInsets.only(bottom: 8, top: 12);

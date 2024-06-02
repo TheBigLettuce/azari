@@ -10,6 +10,8 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/pages/more/blacklisted_posts.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
@@ -41,14 +43,19 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.db.blacklistedDirectories;
 
-  // late final StreamSubscription<void> blacklistedWatcher;
-
   late final state = GridSkeletonState<BlacklistedDirectoryData>();
 
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
+
+  final gridConfiguration = GridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.grid,
+  );
 
   @override
   void initState() {
@@ -66,16 +73,10 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
-
-    // blacklistedWatcher = blacklistedDirectory.watch((event) {
-    //   filter.clearRefresh();
-    //   setState(() {});
-    // });
   }
 
   @override
   void dispose() {
-    // blacklistedWatcher.cancel();
     state.dispose();
     searchTextController.dispose();
     searchFocus.dispose();
@@ -89,83 +90,85 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage(
-      provided: widget.generateGlue,
-      child: GridFrame<BlacklistedDirectoryData>(
-        key: state.gridKey,
-        slivers: [
-          ListLayout<BlacklistedDirectoryData>(
-            hideThumbnails: false,
-            source: filter.backingStorage,
-            progress: filter.progress,
-          ),
-        ],
-        functionality: GridFunctionality(
-          registerNotifiers: (child) => HideBlacklistedImagesNotifier(
-            hiding: hideBlacklistedImages,
-            child: child,
-          ),
-          search: OverrideGridSearchWidget(
-            SearchAndFocus(
-              FilteringSearchWidget(
-                hint: AppLocalizations.of(context)!.blacklistedPage,
-                filter: filter,
-                textController: searchTextController,
-                localTagDictionary: widget.db.localTagDictionary,
-                focusNode: searchFocus,
+    return GridConfiguration(
+      watch: gridConfiguration.watch,
+      child: WrapGridPage(
+        provided: widget.generateGlue,
+        child: GridFrame<BlacklistedDirectoryData>(
+          key: state.gridKey,
+          slivers: [
+            ListLayout<BlacklistedDirectoryData>(
+              hideThumbnails: false,
+              source: filter.backingStorage,
+              progress: filter.progress,
+            ),
+          ],
+          functionality: GridFunctionality(
+            registerNotifiers: (child) => HideBlacklistedImagesNotifier(
+              hiding: hideBlacklistedImages,
+              child: child,
+            ),
+            search: OverrideGridSearchWidget(
+              SearchAndFocus(
+                FilteringSearchWidget(
+                  hint: AppLocalizations.of(context)!.blacklistedPage,
+                  filter: filter,
+                  textController: searchTextController,
+                  localTagDictionary: widget.db.localTagDictionary,
+                  focusNode: searchFocus,
+                ),
+                searchFocus,
               ),
-              searchFocus,
             ),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            source: filter,
           ),
-          selectionGlue: GlueProvider.generateOf(context)(),
-          source: filter,
-        ),
-        mainFocus: state.mainFocus,
-        description: GridDescription(
-          pages: PageSwitcherIcons(
-            const [PageIcon(Icons.image)],
-            (context, state, i) => PageDescription(
-              appIcons: [
-                IconButton(
-                  onPressed: () {
-                    hideBlacklistedImages = !hideBlacklistedImages;
+          description: GridDescription(
+            pages: PageSwitcherIcons(
+              const [PageIcon(Icons.image)],
+              (context, state, i) => PageDescription(
+                appIcons: [
+                  IconButton(
+                    onPressed: () {
+                      hideBlacklistedImages = !hideBlacklistedImages;
 
-                    setState(() {});
-                  },
-                  icon: hideBlacklistedImages
-                      ? const Icon(Icons.image_rounded)
-                      : const Icon(Icons.hide_image_rounded),
-                ),
-              ],
-              slivers: [
-                BlacklistedPostsPage(
-                  generateGlue: widget.generateGlue,
-                  conroller: state.controller,
-                  db: widget.db.hiddenBooruPost,
-                ),
-              ],
+                      setState(() {});
+                    },
+                    icon: hideBlacklistedImages
+                        ? const Icon(Icons.image_rounded)
+                        : const Icon(Icons.hide_image_rounded),
+                  ),
+                ],
+                slivers: [
+                  BlacklistedPostsPage(
+                    generateGlue: widget.generateGlue,
+                    conroller: state.controller,
+                    db: widget.db.hiddenBooruPost,
+                  ),
+                ],
+              ),
+              overrideHomeIcon: const Icon(Icons.folder),
             ),
-            overrideHomeIcon: const Icon(Icons.folder),
+            actions: [
+              GridAction(
+                Icons.restore_page,
+                (selected) {
+                  blacklistedDirectory.backingStorage.removeAll(
+                    selected.map((e) => e.bucketId).toList(),
+                  );
+                },
+                true,
+              ),
+            ],
+            menuButtonItems: [
+              IconButton(
+                onPressed: blacklistedDirectory.backingStorage.clear,
+                icon: const Icon(Icons.delete),
+              ),
+            ],
+            keybindsDescription: AppLocalizations.of(context)!.blacklistedPage,
+            gridSeed: state.gridSeed,
           ),
-          actions: [
-            GridAction(
-              Icons.restore_page,
-              (selected) {
-                blacklistedDirectory.backingStorage.removeAll(
-                  selected.map((e) => e.bucketId).toList(),
-                );
-              },
-              true,
-            ),
-          ],
-          menuButtonItems: [
-            IconButton(
-              onPressed: blacklistedDirectory.backingStorage.clear,
-              icon: const Icon(Icons.delete),
-            ),
-          ],
-          keybindsDescription: AppLocalizations.of(context)!.blacklistedPage,
-          gridSeed: state.gridSeed,
         ),
       ),
     );

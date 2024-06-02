@@ -9,6 +9,7 @@ import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/home.dart";
 
 abstract interface class PostsSourceService<K, V>
@@ -28,6 +29,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
   BooruAPI get api;
   BooruTagging get excluded;
   PagingEntry get entry;
+  SafeMode get safeMode;
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -43,6 +45,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       return count;
     }
     progress.inRefreshing = true;
+    progress.error = null;
 
     clear();
 
@@ -51,7 +54,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     entry.updateTime();
 
     try {
-      final list = await api.page(0, tags, excluded);
+      final list = await api.page(0, tags, excluded, safeMode);
       entry.setOffset(0);
       currentSkipped = list.$2;
       backingStorage.addAll(filter(list.$1));
@@ -94,6 +97,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
             : p.id,
         tags,
         excluded,
+        safeMode,
       );
 
       if (list.$1.isEmpty && currentSkipped == null) {
@@ -120,9 +124,6 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
 }
 
 abstract class GridPostSource extends PostsSourceService<int, Post> {
-  // @override
-  // PostsOptimizedStorage get backingStorage;
-
   Post? get currentlyLast;
 }
 
@@ -132,8 +133,6 @@ abstract class PostsOptimizedStorage extends SourceStorage<(int, Booru), Post> {
   List<Post> get firstFiveRelaxed;
 
   List<Post> get firstFiveAll;
-
-  // Post? get currentlyLast;
 
   static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }

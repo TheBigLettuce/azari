@@ -13,11 +13,9 @@ enum ThemeType {
 
   const ThemeType();
 
-  String translatedString(BuildContext context) => switch (this) {
-        ThemeType.systemAccent =>
-          AppLocalizations.of(context)!.enumThemeTypeSystemAccent,
-        ThemeType.secretPink =>
-          AppLocalizations.of(context)!.enumThemeTypeSecretPink,
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        ThemeType.systemAccent => l8n.enumThemeTypeSystemAccent,
+        ThemeType.secretPink => l8n.enumThemeTypeSecretPink,
       };
 }
 

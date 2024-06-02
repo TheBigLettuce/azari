@@ -51,14 +51,16 @@ abstract base class AnimeCharacter
 
   @override
   Widget info(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return SliverList.list(
       children: [
         addInfoTile(
-          title: AppLocalizations.of(context)!.sourceFileInfoPage,
+          title: l8n.sourceFileInfoPage,
           subtitle: imageUrl,
         ),
         addInfoTile(
-          title: AppLocalizations.of(context)!.role,
+          title: l8n.role,
           subtitle: role,
         ),
       ],

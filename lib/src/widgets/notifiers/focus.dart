@@ -11,17 +11,15 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
   const FocusNotifier({
     super.key,
     required super.notifier,
-    required this.focusMain,
     required super.child,
   });
-  final void Function() focusMain;
 
   static FocusNotifierData of(BuildContext context) {
     final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
 
     return FocusNotifierData(
       hasFocus: widget.notifier?.hasFocus ?? false,
-      unfocus: widget.focusMain,
+      unfocus: widget.notifier?.unfocus ?? () {},
     );
   }
 }

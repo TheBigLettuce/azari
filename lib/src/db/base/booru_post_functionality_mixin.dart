@@ -32,13 +32,15 @@ enum PostContentType {
   image;
 }
 
-void showQr(BuildContext context, String prefix, int id) {
-  Navigator.push(
+Future<void> showQr(BuildContext context, String prefix, int id) {
+  return Navigator.push(
     context,
     DialogRoute<void>(
       themes: InheritedTheme.capture(from: context, to: null),
       context: context,
       builder: (context) {
+        final theme = Theme.of(context);
+
         return AlertDialog(
           content: Container(
             decoration: const BoxDecoration(
@@ -49,7 +51,7 @@ void showQr(BuildContext context, String prefix, int id) {
             clipBehavior: Clip.antiAlias,
             child: QrImageView(
               data: "${prefix}_$id",
-              backgroundColor: Theme.of(context).colorScheme.onSurface,
+              backgroundColor: theme.colorScheme.onSurface,
               size: 320,
             ),
           ),
@@ -168,7 +170,7 @@ class _PostInfoState extends State<PostInfo> {
       post.id,
     );
 
-    final localizations = AppLocalizations.of(context)!;
+    final l8n = AppLocalizations.of(context)!;
 
     return SliverMainAxisGroup(
       slivers: [
@@ -176,9 +178,9 @@ class _PostInfoState extends State<PostInfo> {
           padding: const EdgeInsets.only(left: 16),
           sliver: LabelSwitcherWidget(
             pages: [
-              PageLabel(localizations.infoHeadline),
+              PageLabel(l8n.infoHeadline),
               PageLabel(
-                localizations.tagsInfoPage,
+                l8n.tagsInfoPage,
                 count: ImageTagsNotifier.of(context).length,
               ),
             ],
@@ -194,7 +196,7 @@ class _PostInfoState extends State<PostInfo> {
               MenuWrapper(
                 title: post.fileDownloadUrl(),
                 child: ListTile(
-                  title: Text(localizations.urlInfoPage),
+                  title: Text(l8n.urlInfoPage),
                   subtitle: Text(post.fileDownloadUrl()),
                   onTap: () => launchUrl(
                     Uri.parse(post.fileDownloadUrl()),
@@ -203,21 +205,21 @@ class _PostInfoState extends State<PostInfo> {
                 ),
               ),
               ListTile(
-                title: Text(localizations.widthInfoPage),
-                subtitle: Text(localizations.pixels(post.width)),
+                title: Text(l8n.widthInfoPage),
+                subtitle: Text(l8n.pixels(post.width)),
               ),
               ListTile(
-                title: Text(localizations.heightInfoPage),
-                subtitle: Text(localizations.pixels(post.height)),
+                title: Text(l8n.heightInfoPage),
+                subtitle: Text(l8n.pixels(post.height)),
               ),
               ListTile(
-                title: Text(localizations.createdAtInfoPage),
-                subtitle: Text(localizations.date(post.createdAt)),
+                title: Text(l8n.createdAtInfoPage),
+                subtitle: Text(l8n.date(post.createdAt)),
               ),
               MenuWrapper(
                 title: post.sourceUrl,
                 child: ListTile(
-                  title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+                  title: Text(l8n.sourceFileInfoPage),
                   subtitle: Text(post.sourceUrl),
                   onTap: post.sourceUrl.isNotEmpty &&
                           Uri.tryParse(post.sourceUrl) != null
@@ -229,11 +231,11 @@ class _PostInfoState extends State<PostInfo> {
                 ),
               ),
               ListTile(
-                title: Text(localizations.ratingInfoPage),
-                subtitle: Text(post.rating.translatedName(context)),
+                title: Text(l8n.ratingInfoPage),
+                subtitle: Text(post.rating.translatedName(l8n)),
               ),
               ListTile(
-                title: Text(localizations.scoreInfoPage),
+                title: Text(l8n.scoreInfoPage),
                 subtitle: Text(post.score.toString()),
               ),
               if (post.tags.contains("translated"))

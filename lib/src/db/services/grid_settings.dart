@@ -140,23 +140,12 @@ enum GridLayoutType {
 
   const GridLayoutType();
 
-  String translatedString(BuildContext context) => switch (this) {
-        GridLayoutType.grid =>
-          AppLocalizations.of(context)!.enumGridLayoutTypeGrid,
-        GridLayoutType.list =>
-          AppLocalizations.of(context)!.enumGridLayoutTypeList,
-        GridLayoutType.gridQuilted =>
-          AppLocalizations.of(context)!.enumGridLayoutTypeGridQuilted,
-        GridLayoutType.gridMasonry =>
-          AppLocalizations.of(context)!.enumGridLayoutTypeGridMasonry,
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        GridLayoutType.grid => l8n.enumGridLayoutTypeGrid,
+        GridLayoutType.list => l8n.enumGridLayoutTypeList,
+        GridLayoutType.gridQuilted => l8n.enumGridLayoutTypeGridQuilted,
+        GridLayoutType.gridMasonry => l8n.enumGridLayoutTypeGridMasonry,
       };
-
-  // GridLayouter<T> layout<T extends CellBase>() => switch (this) {
-  //       GridLayoutType.list => ListLayout<T>(),
-  //       GridLayoutType.grid => GridLayout<T>(),
-  //       GridLayoutType.gridQuilted => GridQuiltedLayout<T>(),
-  //       GridLayoutType.gridMasonry => GridMasonryLayout<T>(),
-  //     };
 }
 
 typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(

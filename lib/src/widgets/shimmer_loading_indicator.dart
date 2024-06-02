@@ -13,21 +13,19 @@ class ShimmerLoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Animate(
       onComplete: (controller) => controller.repeat(),
       effects: [
         ShimmerEffect(
-          color:
-              Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
           delay: const Duration(seconds: 2),
           duration: const Duration(milliseconds: 500),
         ),
       ],
       child: Container(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withOpacity(0.5),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
       ),
     );
   }

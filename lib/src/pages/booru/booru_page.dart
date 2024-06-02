@@ -14,9 +14,11 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/bookmark_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -216,7 +218,6 @@ class _BooruPageState extends State<BooruPage> {
     search = SearchLaunchGrid(
       SearchLaunchGridData(
         completeTag: pagingState.api.completeTag,
-        mainFocus: state.mainFocus,
         header: _LatestAndExcluded(
           key: _tagsWidgetKey,
           api: pagingState.api,
@@ -304,7 +305,9 @@ class _BooruPageState extends State<BooruPage> {
     super.dispose();
   }
 
-  void _download(int i) => source.forIdx(i)?.download(context);
+  void _download(int i) => source
+      .forIdx(i)
+      ?.download(DownloadManager.of(context), PostTags.fromContext(context));
 
   final scrollController = ScrollController();
 
@@ -332,6 +335,7 @@ class _BooruPageState extends State<BooruPage> {
     );
   }
 
+  // ignore: use_setters_to_change_properties
   void _setSecondaryName(String? name) {
     pagingState.restoreSecondaryGrid = name;
   }
@@ -381,11 +385,14 @@ class _BooruPageState extends State<BooruPage> {
                       },
                     ),
                   ),
+                  GridFooter<void>(storage: source.backingStorage),
                 ],
                 overrideController: scrollController,
                 functionality: GridFunctionality(
-                  settingsButton:
-                      GridSettingsButton.fromWatchable(gridSettings),
+                  settingsButton: GridSettingsButton.fromWatchable(
+                    gridSettings,
+                    SafeModeButton(settingsWatcher: state.settings.s.watch),
+                  ),
                   selectionGlue: GlueProvider.generateOf(context)(),
                   source: source,
                   download: _download,
@@ -425,7 +432,8 @@ class _BooruPageState extends State<BooruPage> {
                     [
                       PageIcon(
                         Icons.favorite_rounded,
-                        watchCount: favoritePosts.backingStorage.watch,
+                        watchCount:
+                            favoriteBooruState.filter.backingStorage.watch,
                       ),
                       PageIcon(
                         Icons.bookmarks_rounded,
@@ -480,11 +488,11 @@ class _BooruPageState extends State<BooruPage> {
                     },
                   ),
                   inlineMenuButtonItems: true,
+                  animationsOnSourceWatch: false,
                   pageName: l8n.booruLabel,
                   keybindsDescription: l8n.booruGridPageName,
                   gridSeed: state.gridSeed,
                 ),
-                mainFocus: state.mainFocus,
                 initalScrollPosition: pagingState.offset,
               ),
             ),

@@ -15,18 +15,16 @@ class GridDescription<T extends CellBase> {
     required this.gridSeed,
     required this.keybindsDescription,
     this.showAppBar = true,
-    // this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
     this.asSliver = false,
-    // this.settingsButton,
     this.inlineMenuButtonItems = false,
     this.menuButtonItems,
     this.footer,
     this.pages,
     this.pageName,
     this.overrideEmptyWidgetNotice,
-    this.showPageSwitcherAsHeader = false,
     this.appBarSnap = true,
+    this.animationsOnSourceWatch = true,
   });
 
   /// Displayed in the keybinds info page name.
@@ -44,14 +42,13 @@ class GridDescription<T extends CellBase> {
   final PreferredSizeWidget? bottomWidget;
 
   final bool showAppBar;
-  // final bool ignoreEmptyWidgetOnNoContent;
   final bool pullToRefresh;
+  final bool animationsOnSourceWatch;
 
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
   final bool asSliver;
   final bool appBarSnap;
-  final bool showPageSwitcherAsHeader;
 
   final int gridSeed;
 
@@ -60,8 +57,6 @@ class GridDescription<T extends CellBase> {
   final PageSwitcherInterface<T>? pages;
 
   final PreferredSizeWidget? footer;
-
-  // final GridFrameSettingsButton? settingsButton;
 
   /// Items added in the menu button's children, after the [searchWidget], or the page name
   /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,

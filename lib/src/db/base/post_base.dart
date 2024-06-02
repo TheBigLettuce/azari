@@ -37,15 +37,11 @@ enum PostRating {
   questionable,
   explicit;
 
-  String translatedName(BuildContext context) => switch (this) {
-        PostRating.general =>
-          AppLocalizations.of(context)!.enumPostRatingGeneral,
-        PostRating.sensitive =>
-          AppLocalizations.of(context)!.enumPostRatingSensitive,
-        PostRating.questionable =>
-          AppLocalizations.of(context)!.enumPostRatingQuestionable,
-        PostRating.explicit =>
-          AppLocalizations.of(context)!.enumPostRatingExplicit,
+  String translatedName(AppLocalizations l8n) => switch (this) {
+        PostRating.general => l8n.enumPostRatingGeneral,
+        PostRating.sensitive => l8n.enumPostRatingSensitive,
+        PostRating.questionable => l8n.enumPostRatingQuestionable,
+        PostRating.explicit => l8n.enumPostRatingExplicit,
       };
 
   SafeMode get asSafeMode => switch (this) {
@@ -163,8 +159,8 @@ extension MultiplePostDownloadExt on List<Post> {
 }
 
 extension PostDownloadExt on Post {
-  void download(BuildContext context) {
-    DownloadManager.of(context).addLocalTags(
+  void download(DownloadManager downloadManager, PostTags postTags) {
+    downloadManager.addLocalTags(
       [
         DownloadEntryTags.d(
           tags: tags,
@@ -180,7 +176,7 @@ extension PostDownloadExt on Post {
         ),
       ],
       SettingsService.db().current,
-      PostTags.fromContext(context),
+      postTags,
     );
   }
 }
@@ -264,6 +260,8 @@ abstract mixin class Post<T extends ContentableCell>
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
+    final theme = Theme.of(context);
+
     final db = DatabaseConnectionNotifier.of(context);
     final favorites = db.favoritePosts;
     final hidden = db.hiddenBooruPost;
@@ -284,8 +282,7 @@ abstract mixin class Post<T extends ContentableCell>
                 ? Icons.favorite_rounded
                 : Icons.favorite_border_rounded,
             isFavorite_
-                ? Colors.red
-                    .harmonizeWith(Theme.of(context).colorScheme.primary)
+                ? Colors.red.harmonizeWith(theme.colorScheme.primary)
                 : null,
             !isFavorite_,
           ),
@@ -293,24 +290,12 @@ abstract mixin class Post<T extends ContentableCell>
           fire,
         ),
       ),
-      // if (this is FavoritePostData)
-      //   FavoritesActions.addToGroup<CellBase>(
-      //     context,
-      //     (selected) => (selected.first as FavoritePostData).group,
-      //     (selected, value, toPin) {
-      //       for (final FavoritePostData e in selected.cast()) {
-      //         e.group = value.isEmpty ? null : value;
-      //       }
-
-      //       favorites.addRemove(selected.cast());
-
-      //       Navigator.of(context, rootNavigator: true).pop();
-      //     },
-      //     false,
-      //   ).asImageView(this),
       ImageViewAction(
         Icons.download,
-        (_) => download(context),
+        (_) => download(
+          DownloadManager.of(context),
+          PostTags.fromContext(context),
+        ),
         animate: true,
       ),
       if (this is! FavoritePostData)
@@ -336,8 +321,7 @@ abstract mixin class Post<T extends ContentableCell>
               return (
                 null,
                 e
-                    ? Colors.lightBlue
-                        .harmonizeWith(Theme.of(context).colorScheme.primary)
+                    ? Colors.lightBlue.harmonizeWith(theme.colorScheme.primary)
                     : null,
                 null
               );

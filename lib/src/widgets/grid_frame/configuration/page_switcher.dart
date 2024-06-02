@@ -55,144 +55,46 @@ sealed class PageSwitcherInterface<T extends CellBase> {
   Widget switcherWidget(BuildContext context, GridFrameState<T> state);
 }
 
-class PageSwitcherToggable<T extends CellBase>
-    implements PageSwitcherInterface<T> {
-  const PageSwitcherToggable(
-    this.pages,
-    this.toggle, {
-    required this.stateKey,
-  });
+// class PageSwitcherToggable<T extends CellBase>
+//     implements PageSwitcherInterface<T> {
+//   const PageSwitcherToggable(
+//     this.pages,
+//     this.toggle, {
+//     required this.stateKey,
+//   });
 
-  final List<PageToaggable> pages;
+//   final List<PageToaggable> pages;
 
-  final bool Function(BuildContext context, int i) toggle;
+//   final bool Function(BuildContext context, int i) toggle;
 
-  final GlobalKey<ToggableLabelSwitcherWidgetState> stateKey;
+//   final GlobalKey<ToggableLabelSwitcherWidgetState> stateKey;
 
-  @override
-  PageDescription Function(
-    BuildContext context,
-    GridFrameState<T> state,
-    // ignore: prefer_function_declarations_over_variables
-    int i,
-  ) get buildPage => _noWidget;
+//   @override
+//   PageDescription Function(
+//     BuildContext context,
+//     GridFrameState<T> state,
+//     // ignore: prefer_function_declarations_over_variables
+//     int i,
+//   ) get buildPage => _noWidget;
 
-  PageDescription _noWidget(
-    BuildContext context,
-    GridFrameState<T> state,
-    int i,
-  ) {
-    return const PageDescription(
-      slivers: [SliverPadding(padding: EdgeInsets.zero)],
-    );
-  }
+//   PageDescription _noWidget(
+//     BuildContext context,
+//     GridFrameState<T> state,
+//     int i,
+//   ) {
+//     return const PageDescription(
+//       slivers: [SliverPadding(padding: EdgeInsets.zero)],
+//     );
+//   }
 
-  @override
-  Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
-      ToggableLabelSwitcherWidget<T>(
-        key: stateKey,
-        pages: pages,
-        toggle: toggle,
-      );
-}
-
-class ToggableLabelSwitcherWidget<T extends CellBase> extends StatefulWidget {
-  const ToggableLabelSwitcherWidget({
-    super.key,
-    required this.pages,
-    required this.toggle,
-  });
-  final List<PageToaggable> pages;
-  final bool Function(BuildContext, int) toggle;
-
-  @override
-  State<ToggableLabelSwitcherWidget> createState() =>
-      ToggableLabelSwitcherWidgetState();
-}
-
-class ToggableLabelSwitcherWidgetState
-    extends State<ToggableLabelSwitcherWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController controller;
-
-  int currentPage = 0;
-
-  void setPage(int p) {
-    setState(() {
-      currentPage = p;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = AnimationController(
-      value: 1,
-      duration: const Duration(milliseconds: 120),
-      vsync: this,
-    );
-    controller.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pages = widget.pages;
-    final gestureInsets = MediaQuery.systemGestureInsetsOf(context);
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 8 + gestureInsets.left * 0.5,
-        right: 8 + gestureInsets.right * 0.5,
-      ),
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          // mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: pages.indexed.map((value) {
-            final (idx, label) = value;
-
-            return IconButton.filled(
-              isSelected: idx + 1 == currentPage,
-              onPressed: !label.active
-                  ? null
-                  : idx + 1 == currentPage
-                      ? () {
-                          widget.toggle(context, 0);
-
-                          setState(() {
-                            currentPage = 0;
-                          });
-                        }
-                      : () {
-                          controller.reverse().then((value) {
-                            if (widget.toggle(context, idx + 1)) {
-                              setState(() {
-                                currentPage = idx + 1;
-                              });
-                            }
-
-                            controller.value = 1;
-                          });
-                        },
-              icon: Icon(label.icon),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
+//       ToggableLabelSwitcherWidget<T>(
+//         key: stateKey,
+//         pages: pages,
+//         toggle: toggle,
+//       );
+// }
 
 class PageSwitcherLabel<T extends CellBase>
     implements PageSwitcherInterface<T> {

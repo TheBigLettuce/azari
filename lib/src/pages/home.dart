@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
 import "dart:math";
 
 import "package:flutter/material.dart";
@@ -51,16 +52,34 @@ class _HomeState extends State<Home>
         _ChangePageMixin,
         _AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
+  late final StreamSubscription<void> _settingsSubscription;
+
   final state = SkeletonState();
   final settings = SettingsService.db().current;
 
   bool isRefreshing = false;
 
   bool hideNavBar = false;
+  late bool showAnimeMangaPages = settings.showAnimeMangaPages;
 
   @override
   void initState() {
     super.initState();
+
+    _settingsSubscription = settings.s.watch((s) {
+      if (showAnimeMangaPages != s!.showAnimeMangaPages) {
+        setState(() {
+          showAnimeMangaPages = s.showAnimeMangaPages;
+          if (showAnimeMangaPages &&
+              currentRoute == _ChangePageMixin.kMangaPageRoute) {
+            currentRoute = _ChangePageMixin.kMorePageRoute;
+          } else if (!showAnimeMangaPages &&
+              currentRoute == _ChangePageMixin.kMorePageRoute) {
+            currentRoute = _ChangePageMixin.kMangaPageRoute;
+          }
+        });
+      }
+    });
 
     initChangePage(this, settings);
     initIcons(this);
@@ -76,6 +95,7 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
+    _settingsSubscription.cancel();
     disposeIcons();
     disposeChangePage();
 
@@ -88,6 +108,8 @@ class _HomeState extends State<Home>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return PopScope(
       canPop: widget.callback != null,
       onPopInvoked: (pop) => _procPopAll(this, pop),
@@ -100,22 +122,26 @@ class _HomeState extends State<Home>
                 : {GluePreferences.persistentBarHeight},
             child: HomeSkeleton(
               state,
-              (context) => _currentPage(context, this),
+              (context) => _currentPage(context, this, showAnimeMangaPages),
               navBar: _NavBar(
                 noNavigationIcons: widget.callback != null,
                 icons: this,
                 child: NavigationBar(
                   labelBehavior:
                       NavigationDestinationLabelBehavior.onlyShowSelected,
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainer
-                      .withOpacity(0.95),
+                  backgroundColor:
+                      theme.colorScheme.surfaceContainer.withOpacity(0.95),
                   selectedIndex: currentRoute,
-                  onDestinationSelected: (route) => _switchPage(this, route),
+                  onDestinationSelected: (route) =>
+                      _switchPage(this, route, showAnimeMangaPages),
                   destinations: widget.callback != null
-                      ? iconsGalleryNotes(context)
-                      : icons(context, currentRoute, settings),
+                      ? const []
+                      : icons(
+                          context,
+                          currentRoute,
+                          settings,
+                          showAnimeMangaPages,
+                        ),
                 ),
               ),
               extendBody: true,
@@ -134,6 +160,7 @@ class _NavBar extends StatelessWidget {
     required this.noNavigationIcons,
     required this.child,
   });
+
   final bool noNavigationIcons;
   final _AnimatedIconsMixin icons;
   final Widget child;

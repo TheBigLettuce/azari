@@ -17,6 +17,7 @@ class _AppBar extends StatelessWidget {
     required this.searchWidget,
     required this.pageName,
   });
+
   final Widget? title;
   final Widget? leading;
   final List<Widget> actions;
@@ -27,13 +28,14 @@ class _AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return searchWidget is PageNameSearchWidget
         ? SliverAppBar.large(
             title: Text(pageName),
           )
         : SliverAppBar(
-            backgroundColor:
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+            backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
             actions: actions,
             centerTitle: true,
             title: title,

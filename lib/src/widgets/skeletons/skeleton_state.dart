@@ -14,39 +14,13 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class SkeletonState {
   SkeletonState();
-  final FocusNode mainFocus = FocusNode();
+  // final FocusNode mainFocus = FocusNode();
   final gridSeed = math.Random().nextInt(948512342);
 
   void dispose() {
-    mainFocus.dispose();
+    // mainFocus.dispose();
   }
 }
-
-// class GridSkeletonRefreshingState<T extends CellBase>
-//     extends GridSkeletonState<T> {
-//   GridSkeletonRefreshingState({
-//     int initalCellCount = 0,
-//     bool Function() reachedEnd = _alwaysTrue,
-//     required GridRefreshType clearRefresh,
-//     Future<int> Function()? next,
-//     GridRefreshingStatus<T>? overrideRefreshStatus,
-//   }) : refreshingStatus = overrideRefreshStatus ??
-//             GridRefreshingStatus<T>(
-//               initalCellCount,
-//               reachedEnd,
-//               refreshType: clearRefresh,
-//               next: next,
-//             );
-//   final GridRefreshingStatus<T> refreshingStatus;
-
-//   @override
-//   void dispose() {
-//     super.dispose();
-//     refreshingStatus.dispose();
-//   }
-
-//   static bool _alwaysTrue() => true;
-// }
 
 class GridSkeletonState<T extends CellBase> extends SkeletonState {
   GridSkeletonState();
@@ -54,28 +28,3 @@ class GridSkeletonState<T extends CellBase> extends SkeletonState {
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
   SettingsData settings = SettingsService.db().current;
 }
-
-// class GridSkeletonStateFilter<T extends CellBase>
-//     extends GridSkeletonRefreshingState<T> {
-//   GridSkeletonStateFilter({
-//     required this.filter,
-//     required this.transform,
-//     this.hook = _doNothing,
-//     this.filteringModes = const {},
-//     this.sortingModes = const {},
-//     this.defaultMode = FilteringMode.noFilter,
-//     this.unsetFilteringModeOnReset = true,
-//     super.initalCellCount = 0,
-//     required super.clearRefresh,
-//     super.next,
-//   });
-//   final FilterInterface<T> filter;
-//   final Set<FilteringMode> filteringModes;
-//   final Set<SortingMode> sortingModes;
-//   final bool unsetFilteringModeOnReset;
-//   final FilteringMode defaultMode;
-//   final void Function(FilteringMode selected) hook;
-//   final T Function(T cell) transform;
-
-//   static void _doNothing(FilteringMode m) {}
-// }

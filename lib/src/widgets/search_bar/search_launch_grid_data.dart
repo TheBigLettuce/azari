@@ -10,7 +10,6 @@ import "package:gallery/src/interfaces/booru/booru_api.dart";
 
 class SearchLaunchGridData {
   const SearchLaunchGridData({
-    required this.mainFocus,
     required this.completeTag,
     required this.searchText,
     required this.addItems,
@@ -21,7 +20,6 @@ class SearchLaunchGridData {
     this.searchTextAsLabel = false,
   });
 
-  final FocusNode mainFocus;
   final List<Widget> Function(BuildContext) addItems;
   final String searchText;
   final void Function(BuildContext, String) onSubmit;

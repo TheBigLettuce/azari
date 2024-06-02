@@ -51,6 +51,8 @@ class _WrapGridPageState extends State<WrapGridPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final child = SelectionCountNotifier(
       count: glueState.count,
       countUpdateTimes: glueState.countUpdateTimes,
@@ -63,7 +65,7 @@ class _WrapGridPageState extends State<WrapGridPage>
     return widget.addScaffold
         ? AnnotatedRegion(
             value: navBarStyleForTheme(
-              Theme.of(context),
+              theme,
               transparent: false,
               highTone: false,
             ),

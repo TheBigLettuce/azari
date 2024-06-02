@@ -22,6 +22,9 @@ class LoadTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l8n = AppLocalizations.of(context)!;
+
     return SliverPadding(
       padding: const EdgeInsets.all(4),
       sliver: SliverToBoxAdapter(
@@ -31,7 +34,7 @@ class LoadTags extends StatelessWidget {
               padding: const EdgeInsets.only(
                 bottom: 8,
               ),
-              child: Text(AppLocalizations.of(context)!.loadTags),
+              child: Text(l8n.loadTags),
             ),
             FilledButton(
               onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
@@ -56,10 +59,7 @@ class LoadTags extends StatelessWidget {
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              AppLocalizations.of(context)!
-                                  .notValidFilename(e.toString()),
-                            ),
+                            content: Text(l8n.notValidFilename(e.toString())),
                           ),
                         );
                       }
@@ -69,7 +69,7 @@ class LoadTags extends StatelessWidget {
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     )
                   : Text("From ${res.booru.string}"),

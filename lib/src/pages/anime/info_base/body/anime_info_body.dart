@@ -97,18 +97,17 @@ class AnimeStaff extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return entry.staff.isEmpty
         ? const SizedBox.shrink()
         : Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               entry.staff.join(", "),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.4),
-                  ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              ),
             ),
           );
   }
@@ -133,6 +132,8 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return FutureBuilder(
       future: _future,
       builder: (context, snapshot) {
@@ -141,7 +142,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BodySegmentLabel(
-                text: AppLocalizations.of(context)!.animePicturesLabel,
+                text: l8n.animePicturesLabel,
               ),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide *
@@ -188,8 +189,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
 
                       setState(() {});
                     },
-                    child:
-                        Text(AppLocalizations.of(context)!.animeLoadPictures),
+                    child: Text(l8n.animeLoadPictures),
                   ),
                 );
         }

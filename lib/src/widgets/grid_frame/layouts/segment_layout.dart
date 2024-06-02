@@ -463,11 +463,7 @@ class _SegRowHCell<T extends CellBase> extends StatefulWidget {
 }
 
 class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
-  late final items = widget.val.cells
-      .where((e) => e.$1 is! AsyncCell<T>)
-      .map((e) => (e.$1 as SyncCell<T>, e.$2))
-      .toList();
-
+  final _addedCells = <(SyncCell<T>, bool)>[];
   late final List<StreamSubscription<T?>> _watchers;
 
   @override
@@ -477,17 +473,23 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
     _watchers = widget.val.cells
         .where((e) => e.$1 is AsyncCell<T>)
         .map(
-          (e) => (e.$1 as AsyncCell<T>).watch((newE) {
-            if (newE != null) {
-              items.removeWhere(
-                  (e) => e.$1.value.uniqueKey() == newE.uniqueKey());
-              items.add((SyncCell(newE), false));
-            } else {
-              items.removeWhere((e2) =>
-                  e2.$1.value.uniqueKey() ==
-                  (e.$1 as AsyncCell<T>).uniqueKey());
-            }
-          }),
+          (e) => (e.$1 as AsyncCell<T>).watch(
+            (newE) {
+              if (newE != null) {
+                _addedCells.removeWhere(
+                  (e) => e.$1.value.uniqueKey() == newE.uniqueKey(),
+                );
+                _addedCells.add((SyncCell(newE), false));
+              } else {
+                _addedCells.removeWhere(
+                  (e2) =>
+                      e2.$1.value.uniqueKey() ==
+                      (e.$1 as AsyncCell<T>).uniqueKey(),
+                );
+              }
+            },
+            true,
+          ),
         )
         .toList();
   }
@@ -503,6 +505,12 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
 
   @override
   Widget build(BuildContext context) {
+    late final items = widget.val.cells
+            .where((e) => e.$1 is! AsyncCell<T>)
+            .map((e) => (e.$1 as SyncCell<T>, e.$2))
+            .toList() +
+        _addedCells;
+
     if (items.isEmpty) {
       return const SliverPadding(padding: EdgeInsets.zero);
     }
@@ -522,7 +530,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
           childAspectRatio: widget.config.aspectRatio.value,
         ),
         itemBuilder: (context, idx) {
-          final (cell as SyncCell<T>, blur) = items[idx];
+          final (cell, blur) = items[idx];
 
           return WrapSelection<T>(
             selection: widget.selection,
@@ -754,6 +762,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     final toSticky = modifiers.contains(SegmentModifier.sticky);
     final toBlur = modifiers.contains(SegmentModifier.blur);
     final toAuth = modifiers.contains(SegmentModifier.auth);
+    final l8n = AppLocalizations.of(context)!;
 
     return SliverPadding(
       padding: const EdgeInsets.all(4),
@@ -782,8 +791,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                   final success =
                                       await LocalAuthentication().authenticate(
                                     localizedReason:
-                                        AppLocalizations.of(context)!
-                                            .unstickyDirectory,
+                                        l8n.unstickyStickyDirectory,
                                   );
 
                                   if (!success) {
@@ -804,15 +812,9 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                 }
 
                                 unawaited(HapticFeedback.vibrate());
-                                // unawaited(
-                                //   gridFunctionality.refreshingStatus.refresh(),
-                                // );
                               },
                               child: Text(
-                                toSticky
-                                    ? AppLocalizations.of(context)!.unpinTag
-                                    : AppLocalizations.of(context)!
-                                        .pinGroupLabel,
+                                toSticky ? l8n.unpinTag : l8n.pinGroupLabel,
                               ),
                             ),
                           PopupMenuItem(
@@ -820,8 +822,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                               if (toAuth && canAuthBiometric) {
                                 final success =
                                     await LocalAuthentication().authenticate(
-                                  localizedReason: AppLocalizations.of(context)!
-                                      .unblurDirectory,
+                                  localizedReason: l8n.unblurDirectory,
                                 );
 
                                 if (!success) {
@@ -842,14 +843,9 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                               }
 
                               unawaited(HapticFeedback.vibrate());
-                              // unawaited(
-                              //   gridFunctionality.refreshingStatus.refresh(),
-                              // );
                             },
                             child: Text(
-                              toBlur
-                                  ? AppLocalizations.of(context)!.unblur
-                                  : AppLocalizations.of(context)!.blur,
+                              toBlur ? l8n.unblur : l8n.blur,
                             ),
                           ),
                           if (segmentLabel.seg != segments.unsegmentedLabel &&
@@ -863,9 +859,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                       final success =
                                           await LocalAuthentication()
                                               .authenticate(
-                                        localizedReason:
-                                            AppLocalizations.of(context)!
-                                                .lockDirectory,
+                                        localizedReason: l8n.lockDirectory,
                                       );
 
                                       if (!success) {
@@ -885,16 +879,9 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                       }
 
                                       unawaited(HapticFeedback.vibrate());
-                                      // unawaited(
-                                      //   gridFunctionality.refreshingStatus
-                                      //       .refresh(),
-                                      // );
                                     },
                               child: Text(
-                                toAuth
-                                    ? AppLocalizations.of(context)!
-                                        .notRequireAuth
-                                    : AppLocalizations.of(context)!.requireAuth,
+                                toAuth ? l8n.notRequireAuth : l8n.requireAuth,
                               ),
                             ),
                         ],

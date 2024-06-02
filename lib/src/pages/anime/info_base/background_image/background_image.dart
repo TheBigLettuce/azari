@@ -40,6 +40,8 @@ class BackgroundImageBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       clipBehavior: Clip.antiAlias,
       width: width,
@@ -50,10 +52,10 @@ class BackgroundImageBase extends StatelessWidget {
           end: Alignment.topCenter,
           colors: gradient ??
               [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.8),
-                Theme.of(context).colorScheme.surface.withOpacity(0.6),
-                Theme.of(context).colorScheme.surface.withOpacity(0.4),
+                colorScheme.surface,
+                colorScheme.surface.withOpacity(0.8),
+                colorScheme.surface.withOpacity(0.6),
+                colorScheme.surface.withOpacity(0.4),
               ],
         ),
       ),

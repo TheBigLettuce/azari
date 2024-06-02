@@ -89,25 +89,25 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  }) {
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) {
     pageSaver.page = p;
 
     return _commonPosts(
       tags,
       p,
       excludedTags,
-      overrideSafeMode: overrideSafeMode,
+      safeMode,
     );
   }
 
   Future<(List<Post>, int?)> _commonPosts(
     String tags,
     int p,
-    BooruTagging excludedTags, {
-    required SafeMode? overrideSafeMode,
-  }) async {
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) async {
     final excluded = excludedTags.get(-1).map((e) => "-${e.tag} ").toList();
 
     final String excludedTagsString = switch (excluded.isNotEmpty) {
@@ -115,8 +115,7 @@ class Gelbooru implements BooruAPI {
       false => "",
     };
 
-    final String safeMode =
-        switch (overrideSafeMode ?? SettingsService.db().current.safeMode) {
+    final String safeMode_ = switch (safeMode) {
       SafeMode.none => "",
       SafeMode.normal => "rating:general",
       SafeMode.relaxed => "-rating:explicit -rating:questionable",
@@ -128,7 +127,7 @@ class Gelbooru implements BooruAPI {
       "q": "index",
       "pid": p.toString(),
       "json": "1",
-      "tags": "$safeMode $excludedTagsString $tags",
+      "tags": "$safeMode_ $excludedTagsString $tags",
       "limit": numberOfElementsPerRefresh().toString(),
     };
 
@@ -141,7 +140,9 @@ class Gelbooru implements BooruAPI {
       LogReq(LogReq.page(booru, p), _log),
     );
 
-    return (GelbooruPostRet.fromJson(resp.data!).posts, null);
+    return resp.data!["post"] == null
+        ? (<Post>[], null)
+        : (GelbooruPostRet.fromJson(resp.data!).posts, null);
   }
 
   @override
@@ -174,14 +175,14 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> fromPost(
     int _,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  }) {
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) {
     final f = _commonPosts(
       tags,
       pageSaver.page + 1,
       excludedTags,
-      overrideSafeMode: overrideSafeMode,
+      safeMode,
     );
 
     return f.then((value) {

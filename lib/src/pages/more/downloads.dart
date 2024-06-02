@@ -5,8 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
-
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
@@ -92,43 +90,16 @@ class _DownloadsState extends State<Downloads> {
     super.dispose();
   }
 
-  Segments<DownloadHandle> _makeSegments(BuildContext context) => Segments(
-        AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
+  Segments<DownloadHandle> _makeSegments(
+    BuildContext context,
+    AppLocalizations l8n,
+  ) =>
+      Segments(
+        l8n.unknownSegmentsPlaceholder,
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         injectedLabel: "",
-        segment: (e) => e.data.status.name,
-        // onLabelPressed: (label, children) {
-        //   if (children.isEmpty) {
-        //     return;
-        //   }
-
-        //   if (label == kDownloadInProgress) {
-        //     Downloader.g.markStale(override: children);
-        //   } else if (label == kDownloadOnHold) {
-        //     Downloader.g.addAll(children, state.settings);
-        //   } else if (label == kDownloadFailed) {
-        //     final n = 6 - children.length;
-
-        //     if (!n.isNegative && n != 0) {
-        //       // downloadManager.addAll(children);
-
-        //       downloadManager.putAll(
-        //         [
-        //           ...children,
-        //           ...DownloadFile.nextNumber(children.length),
-        //         ],
-        //         state.settings,
-        //       );
-        //     } else {
-        //       downloadManager.putAll(
-        //         children.map((e) => e.data),
-        //         state.settings,
-        //       );
-        //       // Downloader.g.addAll(children, state.settings);
-        //     }
-        //   }
-        // },
+        segment: (e) => e.data.status.translatedString(l8n),
         caps: SegmentCapability.alwaysPinned(),
       );
 
@@ -158,7 +129,7 @@ class _DownloadsState extends State<Downloads> {
           key: state.gridKey,
           slivers: [
             SegmentLayout<DownloadHandle>(
-              segments: _makeSegments(context),
+              segments: _makeSegments(context, l8n),
               localizations: l8n,
               suggestionPrefix: const [],
               progress: filter.progress,
@@ -182,7 +153,6 @@ class _DownloadsState extends State<Downloads> {
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
-          mainFocus: state.mainFocus,
           description: GridDescription(
             actions: [
               delete(context),
@@ -194,16 +164,12 @@ class _DownloadsState extends State<Downloads> {
                 false,
               ),
             ],
-            // menuButtonItems: [
-            //   IconButton(
-            //     onPressed: Downloader.g.restartFailed,
-            //     icon: const Icon(Icons.download_rounded),
-            //   ),
-            //   IconButton(
-            //     onPressed: Downloader.g.removeAll,
-            //     icon: const Icon(Icons.close),
-            //   ),
-            // ],
+            menuButtonItems: [
+              IconButton(
+                onPressed: downloadManager.clear,
+                icon: const Icon(Icons.close),
+              ),
+            ],
             keybindsDescription: l8n.downloadsPageName,
             inlineMenuButtonItems: true,
             gridSeed: state.gridSeed,

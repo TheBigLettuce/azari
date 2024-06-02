@@ -79,6 +79,8 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final icn = Icon(data.$1, color: data.$2);
 
     return Padding(
@@ -97,8 +99,6 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                 borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
               ),
             ),
-            // backgroundColor:
-            //     data.$2 != null ? WidgetStatePropertyAll(data.$2) : null,
           ),
           onPressed: widget.whenSingleContext != null &&
                   SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
@@ -131,10 +131,8 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                   autoPlay: false,
                   child: widget.addBadge
                       ? Badge.count(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primaryContainer,
-                          textColor:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          backgroundColor: colorScheme.primaryContainer,
+                          textColor: colorScheme.onPrimaryContainer,
                           count: SelectionCountNotifier.countOf(context),
                           child: icn,
                           // child: iconBtn(context),
@@ -143,10 +141,8 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                 )
               : widget.addBadge
                   ? Badge.count(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primaryContainer,
-                      textColor:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
+                      backgroundColor: colorScheme.primaryContainer,
+                      textColor: colorScheme.onPrimaryContainer,
                       count: SelectionCountNotifier.countOf(context),
                       child: icn,
                       // child: iconBtn(context),

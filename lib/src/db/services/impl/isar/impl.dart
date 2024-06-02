@@ -59,6 +59,7 @@ import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/home.dart";
@@ -78,11 +79,7 @@ part "foundation/dbs.dart";
 part "foundation/initalize_db.dart";
 part "settings.dart";
 
-final _futures = <(int, AnimeMetadata), Future>{};
-
-// void initIsarDb() {
-//   initalizeDb(false);
-// }
+final _futures = <(int, AnimeMetadata), Future<void>>{};
 
 class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
   IsarPostsOptimizedStorage(this.db, this.closeDb);
@@ -92,7 +89,6 @@ class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
 
   IsarCollection<PostIsar> get _collection => db.postIsars;
 
-  // @override
   Post? get currentlyLast => _collection.where().sortById().findFirstSync();
 
   @override
@@ -189,13 +185,14 @@ class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
 class IsarCurrentBooruSource extends GridPostSource
     with GridPostSourceRefreshNext {
   IsarCurrentBooruSource({
+    required this.safeMode_,
     required Isar db,
     required this.api,
     required this.excluded,
     required this.entry,
     required this.tags,
     required this.filters,
-  }) : backingStorage = _IsarPostsStorage(db);
+  }) : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false);
 
   @override
   final BooruAPI api;
@@ -203,6 +200,11 @@ class IsarCurrentBooruSource extends GridPostSource
   final BooruTagging excluded;
   @override
   final PagingEntry entry;
+
+  final SafeMode Function() safeMode_;
+
+  @override
+  SafeMode get safeMode => safeMode_();
 
   @override
   final _IsarPostsStorage backingStorage;
@@ -276,9 +278,13 @@ class _IsarCollectionReverseIterable<V> extends Iterable<V> {
 }
 
 class _IsarPostsStorage extends SourceStorage<int, Post> {
-  _IsarPostsStorage(this.db);
+  _IsarPostsStorage(
+    this.db, {
+    required this.closeOnDestroy,
+  });
 
   final Isar db;
+  final bool closeOnDestroy;
 
   IsarCollection<PostIsar> get _collection => db.postIsars;
 
@@ -331,7 +337,8 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
   }
 
   @override
-  void destroy([bool delete = false]) => db.close(deleteFromDisk: delete);
+  void destroy([bool delete = false]) =>
+      closeOnDestroy ? db.close(deleteFromDisk: delete) : null;
 
   @override
   Post operator [](int index) => get(index)!;
@@ -426,12 +433,14 @@ class IsarSourceStorage<K, V, CollectionType extends V>
 class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
   const IsarSavedAnimeCharatersService();
 
+  Isar get db => _Dbs.g.anime;
+
+  IsarCollection<IsarSavedAnimeCharacters> get collection =>
+      db.isarSavedAnimeCharacters;
+
   @override
   List<AnimeCharacter> load(int id, AnimeMetadata site) =>
-      _Dbs.g.anime.isarSavedAnimeCharacters
-          .getByIdSiteSync(id, site)
-          ?.characters ??
-      const [];
+      collection.getByIdSiteSync(id, site)?.characters ?? const [];
 
   @override
   bool addAsync(AnimeEntryData entry, AnimeAPI api) {
@@ -441,8 +450,8 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
 
     _futures[(entry.id, entry.site)] = api.characters(entry)
       ..then((value) {
-        _Dbs.g.anime.writeTxnSync(
-          () => _Dbs.g.anime.isarSavedAnimeCharacters.putByIdSiteSync(
+        db.writeTxnSync(
+          () => collection.putByIdSiteSync(
             IsarSavedAnimeCharacters(
               characters: value.cast(),
               id: entry.id,
@@ -462,22 +471,19 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
     void Function(List<AnimeCharacter>?) f, [
     bool fire = false,
   ]) {
-    var e =
-        _Dbs.g.anime.isarSavedAnimeCharacters.getByIdSiteSync(id, site)?.isarId;
-    e ??= _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarSavedAnimeCharacters.putByIdSiteSync(
+    var e = collection.getByIdSiteSync(id, site)?.isarId;
+    e ??= db.writeTxnSync(
+      () => collection.putByIdSiteSync(
         IsarSavedAnimeCharacters(characters: const [], id: id, site: site),
       ),
     );
 
-    return _Dbs.g.anime.isarSavedAnimeCharacters
+    return collection
         .where()
         .idSiteEqualTo(id, site)
         .watchLazy(fireImmediately: fire)
         .map(
-          (event) => _Dbs.g.anime.isarSavedAnimeCharacters
-              .getByIdSiteSync(id, site)
-              ?.characters,
+          (event) => collection.getByIdSiteSync(id, site)?.characters,
         )
         .listen(f);
   }
@@ -486,19 +492,20 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
 class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
   const IsarLocalTagDictionaryService();
 
+  Isar get db => _Dbs.g.localTags;
+
+  IsarCollection<IsarLocalTagDictionary> get collection =>
+      db.isarLocalTagDictionarys;
+
   @override
   void add(List<String> tags) {
-    _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.isarLocalTagDictionarys.putAllSync(
+    db.writeTxnSync(
+      () => collection.putAllSync(
         tags
             .map(
               (e) => IsarLocalTagDictionary(
                 e,
-                (_Dbs.g.localTags.isarLocalTagDictionarys
-                            .getByTagSync(e)
-                            ?.frequency ??
-                        0) +
-                    1,
+                (collection.getByTagSync(e)?.frequency ?? 0) + 1,
               ),
             )
             .toList(),
@@ -508,7 +515,7 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
 
   @override
   Future<List<BooruTag>> complete(String string) async {
-    final result = _Dbs.g.localTags.isarLocalTagDictionarys
+    final result = collection
         .filter()
         .tagContains(string)
         .sortByFrequencyDesc()
@@ -562,10 +569,14 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   //   );
   // }
 
+  Isar get db => _Dbs.g.anime;
+
+  IsarCollection<IsarSavedAnimeEntry> get collection => db.isarSavedAnimeEntrys;
+
   @override
   void unsetIsWatchingAll(List<SavedAnimeEntryData> entries) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarSavedAnimeEntrys.putAllBySiteIdSync(
+    db.writeTxnSync(
+      () => collection.putAllBySiteIdSync(
         (entries as List<IsarSavedAnimeEntry>)
             .map((e) => e.copy(inBacklog: true))
             .toList(),
@@ -574,21 +585,16 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   }
 
   @override
-  List<SavedAnimeEntryData> get backlogAll => _Dbs.g.anime.isarSavedAnimeEntrys
-      .filter()
-      .inBacklogEqualTo(true)
-      .findAllSync();
+  List<SavedAnimeEntryData> get backlogAll =>
+      collection.filter().inBacklogEqualTo(true).findAllSync();
 
   @override
   List<SavedAnimeEntryData> get currentlyWatchingAll =>
-      _Dbs.g.anime.isarSavedAnimeEntrys
-          .filter()
-          .inBacklogEqualTo(false)
-          .findAllSync();
+      collection.filter().inBacklogEqualTo(false).findAllSync();
 
   @override
   SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
-      _Dbs.g.anime.isarSavedAnimeEntrys.getBySiteIdSync(site, id);
+      collection.getBySiteIdSync(site, id);
 
   @override
   void update(AnimeEntryData e) {
@@ -602,11 +608,11 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   }
 
   @override
-  int get count => _Dbs.g.anime.isarSavedAnimeEntrys.countSync();
+  int get count => collection.countSync();
 
   @override
   (bool, bool) isWatchingBacklog(int id, AnimeMetadata site) {
-    final e = _Dbs.g.anime.isarSavedAnimeEntrys.getBySiteIdSync(site, id);
+    final e = collection.getBySiteIdSync(site, id);
 
     if (e == null) {
       return (false, false);
@@ -617,8 +623,8 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
 
   @override
   void deleteAll(List<(int, AnimeMetadata)> ids) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarSavedAnimeEntrys.deleteAllBySiteIdSync(
+    db.writeTxnSync(
+      () => collection.deleteAllBySiteIdSync(
         ids.map((e) => e.$2).toList(),
         ids.map((e) => e.$1).toList(),
       ),
@@ -627,9 +633,8 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
 
   @override
   void reAdd(List<SavedAnimeEntryData> entries) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarSavedAnimeEntrys
-          .putAllSync(entries as List<IsarSavedAnimeEntry>),
+    db.writeTxnSync(
+      () => collection.putAllSync(entries.cast()),
     );
   }
 
@@ -642,8 +647,8 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
       return;
     }
 
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarSavedAnimeEntrys.putAllBySiteIdSync(
+    db.writeTxnSync(
+      () => collection.putAllBySiteIdSync(
         entries
             .where(
               (element) => !watchedAnime.watched(element.id, element.site),
@@ -683,9 +688,7 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
     void Function(void) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.anime.isarSavedAnimeEntrys
-          .watchLazy(fireImmediately: fire)
-          .listen(f);
+      collection.watchLazy(fireImmediately: fire).listen(f);
 
   @override
   StreamSubscription<SavedAnimeEntryData?> watch(
@@ -694,12 +697,12 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
     void Function(SavedAnimeEntryData?) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.anime.isarSavedAnimeEntrys
+      collection
           .where()
           .siteIdEqualTo(site, id)
           .watchLazy(fireImmediately: fire)
           .map((event) {
-        return _Dbs.g.anime.isarSavedAnimeEntrys.getBySiteIdSync(site, id);
+        return collection.getBySiteIdSync(site, id);
       }).listen(f);
 
   @override
@@ -707,7 +710,7 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
     void Function(int p1) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.anime.isarSavedAnimeEntrys
+      collection
           .watchLazy(fireImmediately: fire)
           .map((event) => count)
           .listen(f);
@@ -716,15 +719,19 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
 class IsarVideoService implements VideoSettingsService {
   const IsarVideoService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarVideoSettings> get collection => db.isarVideoSettings;
+
   @override
   VideoSettingsData get current =>
-      _Dbs.g.main.isarVideoSettings.getSync(0) ??
+      collection.getSync(0) ??
       const IsarVideoSettings(looping: true, volume: 1);
 
   @override
   void add(VideoSettingsData data) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarVideoSettings.putSync(data as IsarVideoSettings),
+    db.writeTxnSync(
+      () => collection.putSync(data as IsarVideoSettings),
     );
   }
 }
@@ -732,9 +739,13 @@ class IsarVideoService implements VideoSettingsService {
 class IsarMiscSettingsService implements MiscSettingsService {
   const IsarMiscSettingsService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarMiscSettings> get collection => db.isarMiscSettings;
+
   @override
   MiscSettingsData get current =>
-      _Dbs.g.main.isarMiscSettings.getSync(0) ??
+      collection.getSync(0) ??
       const IsarMiscSettings(
         animeWatchingOrderReversed: false,
         animeAlwaysLoadFromNet: false,
@@ -746,8 +757,8 @@ class IsarMiscSettingsService implements MiscSettingsService {
 
   @override
   void add(MiscSettingsData data) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarMiscSettings.putSync(data as IsarMiscSettings),
+    db.writeTxnSync(
+      () => collection.putSync(data as IsarMiscSettings),
     );
   }
 
@@ -755,15 +766,16 @@ class IsarMiscSettingsService implements MiscSettingsService {
   StreamSubscription<MiscSettingsData?> watch(
     void Function(MiscSettingsData?) f, [
     bool fire = false,
-  ]) {
-    return _Dbs.g.main.isarMiscSettings
-        .watchObject(0, fireImmediately: fire)
-        .listen(f);
-  }
+  ]) =>
+      collection.watchObject(0, fireImmediately: fire).listen(f);
 }
 
 class IsarHiddenBooruPostService implements HiddenBooruPostService {
   const IsarHiddenBooruPostService();
+
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarHiddenBooruPost> get collection => db.isarHiddenBooruPosts;
 
   @override
   Map<(int, Booru), String> get cachedValues =>
@@ -775,9 +787,9 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
       return;
     }
 
-    _Dbs.g.main.writeTxnSync(
+    db.writeTxnSync(
       () {
-        _Dbs.g.main.isarHiddenBooruPosts.putAllSync(booru.cast());
+        collection.putAllSync(booru.cast());
 
         for (final e in booru) {
           cachedValues[(e.postId, e.booru)] = e.thumbUrl;
@@ -792,9 +804,9 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
       return;
     }
 
-    _Dbs.g.main.writeTxnSync(
+    db.writeTxnSync(
       () {
-        _Dbs.g.main.isarHiddenBooruPosts.deleteAllByPostIdBooruSync(
+        collection.deleteAllByPostIdBooruSync(
           booru.map((e) => e.$1).toList(),
           booru.map((e) => e.$2).toList(),
         );
@@ -808,11 +820,11 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
 
   @override
   StreamSubscription<void> watch(void Function(void) f) =>
-      _Dbs.g.main.isarHiddenBooruPosts.watchLazy().listen(f);
+      collection.watchLazy().listen(f);
 
   @override
   Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) =>
-      _Dbs.g.main.isarHiddenBooruPosts
+      collection
           .where()
           .postIdBooruEqualTo(id, booru)
           .watchLazy(fireImmediately: fire)
@@ -822,8 +834,12 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
 class IsarFavoritePostService implements FavoritePostSourceService {
   IsarFavoritePostService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarFavoriteBooru> get collection => db.isarFavoriteBoorus;
+
   @override
-  int get count => _Dbs.g.main.isarFavoriteBoorus.countSync();
+  int get count => collection.countSync();
 
   @override
   bool isFavorite(int id, Booru booru) =>
@@ -870,17 +886,15 @@ class IsarFavoritePostService implements FavoritePostSourceService {
 
     final deleteCopy = toRemoveInts.isEmpty
         ? null
-        : _Dbs.g.main.isarFavoriteBoorus
-            .getAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
+        : collection.getAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
 
-    _Dbs.g.main.writeTxnSync(() {
-      _Dbs.g.main.isarFavoriteBoorus.putAllByIdBooruSync(toAdd);
+    db.writeTxnSync(() {
+      collection.putAllByIdBooruSync(toAdd);
       for (final e in toAdd) {
         backingStorage[(e.id, e.booru)] = e;
       }
 
-      _Dbs.g.main.isarFavoriteBoorus
-          .deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
+      collection.deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
       for (final e in toRemoveBoorus.indexed) {
         backingStorage.removeAll([(toRemoveInts[e.$1], e.$2)]);
       }
@@ -919,7 +933,7 @@ class IsarFavoritePostService implements FavoritePostSourceService {
     void Function(T p1) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.main.isarFavoriteBoorus
+      collection
           .where()
           .idBooruEqualTo(id, booru)
           .watch(fireImmediately: fire)
@@ -930,23 +944,26 @@ class IsarFavoritePostService implements FavoritePostSourceService {
 class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   const IsarWatchedAnimeEntryService();
 
+  Isar get db => _Dbs.g.anime;
+
+  IsarCollection<IsarWatchedAnimeEntry> get collection =>
+      db.isarWatchedAnimeEntrys;
+
   @override
-  bool watched(int id, AnimeMetadata site) {
-    return _Dbs.g.anime.isarWatchedAnimeEntrys.getBySiteIdSync(site, id) !=
-        null;
-  }
+  bool watched(int id, AnimeMetadata site) =>
+      collection.getBySiteIdSync(site, id) != null;
 
   @override
   void delete(int id, AnimeMetadata site) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarWatchedAnimeEntrys.deleteBySiteIdSync(site, id),
+    db.writeTxnSync(
+      () => collection.deleteBySiteIdSync(site, id),
     );
   }
 
   @override
   void deleteAll(List<(int, AnimeMetadata)> ids) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarWatchedAnimeEntrys.deleteAllBySiteIdSync(
+    db.writeTxnSync(
+      () => collection.deleteAllBySiteIdSync(
         ids.map((e) => e.$2).toList(),
         ids.map((e) => e.$1).toList(),
       ),
@@ -954,11 +971,10 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   }
 
   @override
-  int get count => _Dbs.g.anime.isarWatchedAnimeEntrys.countSync();
+  int get count => collection.countSync();
 
   @override
-  List<WatchedAnimeEntryData> get all =>
-      _Dbs.g.anime.isarWatchedAnimeEntrys.where().findAllSync();
+  List<WatchedAnimeEntryData> get all => collection.where().findAllSync();
 
   @override
   void update(AnimeEntryData e) {
@@ -973,23 +989,21 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
 
   @override
   void add(WatchedAnimeEntryData entry) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarWatchedAnimeEntrys
-          .putBySiteIdSync(entry as IsarWatchedAnimeEntry),
+    db.writeTxnSync(
+      () => collection.putBySiteIdSync(entry as IsarWatchedAnimeEntry),
     );
   }
 
   @override
   void reAdd(List<WatchedAnimeEntryData> entries) {
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarWatchedAnimeEntrys
-          .putAllSync(entries as List<IsarWatchedAnimeEntry>),
+    db.writeTxnSync(
+      () => collection.putAllSync(entries.cast()),
     );
   }
 
   @override
   WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
-      _Dbs.g.anime.isarWatchedAnimeEntrys.getBySiteIdSync(site, id);
+      collection.getBySiteIdSync(site, id);
 
   @override
   void moveAllReversed(
@@ -1005,8 +1019,8 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   void moveAll(List<AnimeEntryData> entries, SavedAnimeEntriesService s) {
     s.deleteAll(entries.toIds);
 
-    _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarWatchedAnimeEntrys.putAllBySiteIdSync(
+    db.writeTxnSync(
+      () => collection.putAllBySiteIdSync(
         entries
             .map(
               (entry) => IsarWatchedAnimeEntry(
@@ -1014,7 +1028,7 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
                 explicit: entry.explicit,
                 date: DateTime.now(),
                 site: entry.site,
-                relations: entry.relations as List<IsarAnimeRelation>,
+                relations: entry.relations.cast(),
                 background: entry.background,
                 thumbUrl: entry.thumbUrl,
                 title: entry.title,
@@ -1024,11 +1038,11 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
                 synopsis: entry.synopsis,
                 year: entry.year,
                 id: entry.id,
-                staff: entry.staff as List<IsarAnimeRelation>,
+                staff: entry.staff.cast(),
                 siteUrl: entry.siteUrl,
                 isAiring: entry.isAiring,
                 titleSynonyms: entry.titleSynonyms,
-                genres: entry.genres as List<IsarAnimeGenre>,
+                genres: entry.genres.cast(),
                 trailerUrl: entry.trailerUrl,
                 episodes: entry.episodes,
               ),
@@ -1042,11 +1056,8 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
   StreamSubscription<void> watchAll(
     void Function(void) f, [
     bool fire = false,
-  ]) {
-    return _Dbs.g.anime.isarWatchedAnimeEntrys
-        .watchLazy(fireImmediately: fire)
-        .listen(f);
-  }
+  ]) =>
+      collection.watchLazy(fireImmediately: fire).listen(f);
 
   @override
   StreamSubscription<WatchedAnimeEntryData?> watchSingle(
@@ -1054,22 +1065,21 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
     AnimeMetadata site,
     void Function(WatchedAnimeEntryData?) f, [
     bool fire = false,
-  ]) {
-    return _Dbs.g.anime.isarWatchedAnimeEntrys
-        .where()
-        .siteIdEqualTo(site, id)
-        .watchLazy(fireImmediately: fire)
-        .map((event) {
-      return maybeGet(id, site);
-    }).listen(f);
-  }
+  ]) =>
+      collection
+          .where()
+          .siteIdEqualTo(site, id)
+          .watchLazy(fireImmediately: fire)
+          .map((event) {
+        return maybeGet(id, site);
+      }).listen(f);
 
   @override
   StreamSubscription<int> watchCount(
     void Function(int p1) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.anime.isarWatchedAnimeEntrys
+      collection
           .watchLazy(fireImmediately: fire)
           .map((event) => count)
           .listen(f);
@@ -1078,27 +1088,24 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
 class IsarDownloadFileService implements DownloadFileService {
   const IsarDownloadFileService();
 
-  @override
-  List<DownloadFileData> get inProgressAll => _Dbs.g.main.isarDownloadFiles
-      .where()
-      .statusEqualTo(DownloadStatus.inProgress)
-      .findAllSync();
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarDownloadFile> get collection => db.isarDownloadFiles;
 
   @override
-  List<DownloadFileData> get failedAll => _Dbs.g.main.isarDownloadFiles
-      .where()
-      .statusEqualTo(DownloadStatus.failed)
-      .findAllSync();
+  List<IsarDownloadFile> get inProgressAll =>
+      collection.where().statusEqualTo(DownloadStatus.inProgress).findAllSync();
+
+  @override
+  List<DownloadFileData> get failedAll =>
+      collection.where().statusEqualTo(DownloadStatus.failed).findAllSync();
 
   @override
   void markInProgressAsFailed() {
-    final inProgress = _Dbs.g.main.isarDownloadFiles
-        .where()
-        .statusEqualTo(DownloadStatus.inProgress)
-        .findAllSync();
+    final inProgress = inProgressAll;
 
-    _Dbs.g.main.writeTxnSync(() {
-      _Dbs.g.main.isarDownloadFiles.putAllByUrlSync(
+    db.writeTxnSync(() {
+      collection.putAllByUrlSync(
         inProgress.map<IsarDownloadFile>((e) => e.toFailed()).toList(),
       );
     });
@@ -1106,36 +1113,33 @@ class IsarDownloadFileService implements DownloadFileService {
 
   @override
   void saveAll(List<DownloadFileData> l) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarDownloadFiles.putAllSync(l.cast()),
+    db.writeTxnSync(
+      () => collection.putAllSync(l.cast()),
     );
   }
 
   @override
   void deleteAll(List<String> urls) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarDownloadFiles.deleteAllByUrlSync(urls),
+    db.writeTxnSync(
+      () => collection.deleteAllByUrlSync(urls),
     );
   }
 
   @override
-  DownloadFileData? get(String url) =>
-      _Dbs.g.main.isarDownloadFiles.getByUrlSync(url);
+  DownloadFileData? get(String url) => collection.getByUrlSync(url);
 
   @override
-  bool exist(String url) =>
-      _Dbs.g.main.isarDownloadFiles.getByUrlSync(url) != null;
+  bool exist(String url) => collection.getByUrlSync(url) != null;
 
   @override
   bool notExist(String url) => !exist(url);
 
   @override
-  void clear() =>
-      _Dbs.g.main.writeTxnSync(() => _Dbs.g.main.isarDownloadFiles.clearSync());
+  void clear() => db.writeTxnSync(() => collection.clearSync());
 
   @override
   DownloadFileData? next() {
-    return _Dbs.g.main.isarDownloadFiles
+    return collection
         .where()
         .statusEqualTo(DownloadStatus.onHold)
         .findFirstSync();
@@ -1143,11 +1147,11 @@ class IsarDownloadFileService implements DownloadFileService {
 
   @override
   List<DownloadFileData> nextNumber(int minus) {
-    if (_Dbs.g.main.isarDownloadFiles.countSync() < 6) {
+    if (collection.countSync() < 6) {
       return const [];
     }
 
-    return _Dbs.g.main.isarDownloadFiles
+    return collection
         .where()
         .statusEqualTo(DownloadStatus.onHold)
         .sortByDateDesc()
@@ -1159,9 +1163,14 @@ class IsarDownloadFileService implements DownloadFileService {
 class IsarStatisticsGeneralService implements StatisticsGeneralService {
   const IsarStatisticsGeneralService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarStatisticsGeneral> get collection =>
+      db.isarStatisticsGenerals;
+
   @override
   StatisticsGeneralData get current =>
-      _Dbs.g.main.isarStatisticsGenerals.getSync(0) ??
+      collection.getSync(0) ??
       const IsarStatisticsGeneral(
         timeDownload: 0,
         timeSpent: 0,
@@ -1171,9 +1180,8 @@ class IsarStatisticsGeneralService implements StatisticsGeneralService {
 
   @override
   void add(StatisticsGeneralData data) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarStatisticsGenerals
-          .putSync(data as IsarStatisticsGeneral),
+    db.writeTxnSync(
+      () => collection.putSync(data as IsarStatisticsGeneral),
     );
   }
 }
@@ -1181,9 +1189,14 @@ class IsarStatisticsGeneralService implements StatisticsGeneralService {
 class IsarStatisticsGalleryService implements StatisticsGalleryService {
   const IsarStatisticsGalleryService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarStatisticsGallery> get collection =>
+      db.isarStatisticsGallerys;
+
   @override
   StatisticsGalleryData get current =>
-      _Dbs.g.main.isarStatisticsGallerys.getSync(0) ??
+      collection.getSync(0) ??
       const IsarStatisticsGallery(
         copied: 0,
         deleted: 0,
@@ -1197,11 +1210,20 @@ class IsarStatisticsGalleryService implements StatisticsGalleryService {
 
   @override
   void add(StatisticsGalleryData data) {
-    _Dbs.g.main.writeTxnSync(
-      () => _Dbs.g.main.isarStatisticsGallerys
-          .putSync(data as IsarStatisticsGallery),
+    db.writeTxnSync(
+      () => collection.putSync(data as IsarStatisticsGallery),
     );
   }
+
+  @override
+  StreamSubscription<StatisticsGalleryData> watch(
+    void Function(StatisticsGalleryData p1) f, [
+    bool fire = false,
+  ]) =>
+      collection
+          .watchObjectLazy(0, fireImmediately: fire)
+          .map((e) => current)
+          .listen(f);
 }
 
 class IsarStatisticsBooruService implements StatisticsBooruService {
@@ -1224,14 +1246,28 @@ class IsarStatisticsBooruService implements StatisticsBooruService {
           _Dbs.g.main.isarStatisticsBoorus.putSync(data as IsarStatisticsBooru),
     );
   }
+
+  @override
+  StreamSubscription<StatisticsBooruData> watch(
+    void Function(StatisticsBooruData p1) f, [
+    bool fire = false,
+  ]) =>
+      _Dbs.g.main.isarStatisticsBoorus
+          .watchObjectLazy(0, fireImmediately: fire)
+          .map((e) => current)
+          .listen(f);
 }
 
 class IsarDailyStatisticsService implements StatisticsDailyService {
   const IsarDailyStatisticsService();
 
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarDailyStatistics> get collection => db.isarDailyStatistics;
+
   @override
   StatisticsDailyData get current =>
-      _Dbs.g.main.isarDailyStatistics.getSync(0) ??
+      collection.getSync(0) ??
       IsarDailyStatistics(
         swipedBoth: 0,
         date: DateTime.now(),
@@ -1240,15 +1276,18 @@ class IsarDailyStatisticsService implements StatisticsDailyService {
 
   @override
   void add(StatisticsDailyData data) {
-    _Dbs.g.main.writeTxnSync(
-      () =>
-          _Dbs.g.main.isarDailyStatistics.putSync(data as IsarDailyStatistics),
+    db.writeTxnSync(
+      () => collection.putSync(data as IsarDailyStatistics),
     );
   }
 }
 
 class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   IsarBlacklistedDirectoryService();
+
+  Isar get db => _Dbs.g.blacklisted;
+
+  IsarCollection<IsarDailyStatistics> get collection => db.isarDailyStatistics;
 
   @override
   late final IsarSourceStorage<String, BlacklistedDirectoryData,
@@ -2241,9 +2280,6 @@ class IsarLocalTagsService implements LocalTagsService {
   @override
   int get count => _Dbs.g.localTags.isarLocalTags.countSync();
 
-  @override
-  Map<String, String> get cachedValues => _Dbs.g._localTagsCachedValues;
-
   /// Returns tags for the [filename], or empty list if there are none.
   @override
   List<String> get(String filename) {
@@ -2257,8 +2293,6 @@ class IsarLocalTagsService implements LocalTagsService {
       () {
         _Dbs.g.localTags.isarLocalTags
             .putByFilenameSync(IsarLocalTags(filename, tags));
-
-        cachedValues[filename] = tags.join(" ");
       },
     );
   }
@@ -2269,10 +2303,6 @@ class IsarLocalTagsService implements LocalTagsService {
       _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(
         tags.cast(),
       );
-
-      for (final e in tags) {
-        cachedValues[e.filename] = e.tags.join(" ");
-      }
     });
   }
 
@@ -2295,10 +2325,6 @@ class IsarLocalTagsService implements LocalTagsService {
     return _Dbs.g.localTags.writeTxnSync(
       () {
         _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags);
-
-        for (final e in newTags) {
-          cachedValues[e.filename] = e.tags.join(" ");
-        }
       },
     );
   }
@@ -2308,8 +2334,6 @@ class IsarLocalTagsService implements LocalTagsService {
     _Dbs.g.localTags.writeTxnSync(
       () {
         _Dbs.g.localTags.isarLocalTags.deleteByFilenameSync(filename);
-
-        cachedValues.remove(filename);
       },
     );
   }
@@ -2332,10 +2356,6 @@ class IsarLocalTagsService implements LocalTagsService {
     return _Dbs.g.localTags.writeTxnSync(
       () {
         _Dbs.g.localTags.isarLocalTags.putAllByFilenameSync(newTags);
-
-        for (final e in newTags) {
-          cachedValues[e.filename] = e.tags.join(" ");
-        }
       },
     );
   }
@@ -2661,10 +2681,23 @@ class IsarSecondaryGridService implements SecondaryGridService {
         excluded: excluded,
         entry: entry,
         tags: tags,
+        safeMode_: () => currentState.safeMode,
         filters: [
           (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
         ],
       );
+
+  @override
+  StreamSubscription<GridState> watch(
+    void Function(GridState s) f, [
+    bool fire = false,
+  ]) =>
+      _mainGrid.isarGridStates
+          .where()
+          .nameEqualTo(name)
+          .watchLazy(fireImmediately: fire)
+          .map((e) => currentState)
+          .listen(f);
 }
 
 class IsarMainGridService implements MainGridService {
@@ -2741,6 +2774,7 @@ class IsarMainGridService implements MainGridService {
         excluded: excluded,
         entry: entry,
         tags: "",
+        safeMode_: () => SettingsService.db().current.safeMode,
         filters: [
           (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
         ],

@@ -17,6 +17,8 @@ class _GalleryIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return NavigationDestination(
       icon: Animate(
         autoPlay: false,
@@ -25,7 +27,7 @@ class _GalleryIcon extends StatelessWidget {
         effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
         child: Icon(
           Icons.collections,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),
       label: AppLocalizations.of(context)!.galleryLabel,

@@ -9,9 +9,10 @@ part of "../configuration/grid_fab_type.dart";
 
 class _Fab extends StatefulWidget {
   const _Fab({
-    super.key,
+    // super.key,
     required this.controller,
   });
+
   final ScrollController controller;
 
   @override
@@ -92,12 +93,6 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
           end: 1,
           curve: Easing.standard,
         ),
-        // RotateEffect(
-        //   duration: Duration(milliseconds: 100),
-        //   curve: Easing.emphasizedAccelerate,
-        //   begin: 0,
-        //   end: 1,
-        // ),
         ScaleEffect(
           delay: Duration(milliseconds: 80),
           duration: Duration(milliseconds: 180),

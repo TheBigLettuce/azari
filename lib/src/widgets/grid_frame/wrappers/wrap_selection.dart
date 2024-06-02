@@ -164,6 +164,9 @@ class __WrappedSelectionCoreState<T extends CellBase>
       );
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final child = Stack(
       children: [
         Align(
@@ -173,8 +176,8 @@ class __WrappedSelectionCoreState<T extends CellBase>
             child: AnimatedContainer(
               decoration: BoxDecoration(
                 color: selection.isSelected(thisIndx)
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.primary.withOpacity(0),
+                    ? colorScheme.primary
+                    : colorScheme.primary.withOpacity(0),
                 borderRadius: BorderRadius.circular(15),
               ),
               duration: const Duration(milliseconds: 160),
@@ -217,7 +220,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                color: colorScheme.primaryContainer.withOpacity(0.15),
               ),
               child: const SizedBox.expand(),
             ),
@@ -228,21 +231,22 @@ class __WrappedSelectionCoreState<T extends CellBase>
               child: Align(
                 alignment: Alignment.topRight,
                 child: SizedBox(
-                  width: Theme.of(context).iconTheme.size,
-                  height: Theme.of(context).iconTheme.size,
+                  width: theme.iconTheme.size,
+                  height: theme.iconTheme.size,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.5),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.check_outlined,
-                      color: Theme.of(context).brightness != Brightness.light
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.primaryContainer,
-                      shadows: const [
-                        Shadow(),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: colorScheme.primaryFixedDim,
+                        shadows: const [
+                          Shadow(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -271,7 +275,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
           begin: 0,
           end: 0.1,
           curve: Easing.standardAccelerate,
-          color: Theme.of(context).colorScheme.primary,
+          color: colorScheme.primary,
         ),
       ],
       child: child,

@@ -87,28 +87,28 @@ class Danbooru implements BooruAPI {
   Future<(List<Post>, int?)> page(
     int i,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  }) =>
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) =>
       _commonPosts(
         tags,
         excludedTags,
         page: i,
-        overrideSafeMode: overrideSafeMode,
+        safeMode: safeMode,
       );
 
   @override
   Future<(List<Post>, int?)> fromPost(
     int postId,
     String tags,
-    BooruTagging excludedTags, {
-    SafeMode? overrideSafeMode,
-  }) =>
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) =>
       _commonPosts(
         tags,
         excludedTags,
         postid: postId,
-        overrideSafeMode: overrideSafeMode,
+        safeMode: safeMode,
       );
 
   Future<(List<Post>, int?)> _commonPosts(
@@ -116,7 +116,7 @@ class Danbooru implements BooruAPI {
     BooruTagging excludedTags, {
     int? postid,
     int? page,
-    required SafeMode? overrideSafeMode,
+    required SafeMode safeMode,
   }) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
@@ -124,8 +124,7 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
-    String safeModeS() =>
-        switch (overrideSafeMode ?? SettingsService.db().current.safeMode) {
+    String safeModeS() => switch (safeMode) {
           SafeMode.normal => "rating:g",
           SafeMode.none => "",
           SafeMode.relaxed => "rating:g,s",

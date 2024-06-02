@@ -5,7 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 enum DisplayQuality {
@@ -14,10 +13,8 @@ enum DisplayQuality {
 
   const DisplayQuality();
 
-  String translatedString(BuildContext context) => switch (this) {
-        DisplayQuality.original =>
-          AppLocalizations.of(context)!.enumDisplayQualityOriginal,
-        DisplayQuality.sample =>
-          AppLocalizations.of(context)!.enumDisplayQualitySample,
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        DisplayQuality.original => l8n.enumDisplayQualityOriginal,
+        DisplayQuality.sample => l8n.enumDisplayQualitySample,
       };
 }

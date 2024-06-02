@@ -99,6 +99,8 @@ class _CardShellState extends State<CardShell> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final child = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,9 +113,9 @@ class _CardShellState extends State<CardShell> {
           safeMode: widget.safeMode,
         ),
         Theme(
-          data: Theme.of(context).copyWith(
+          data: theme.copyWith(
             iconTheme: IconThemeData(
-              color: Theme.of(context).iconTheme.color?.withOpacity(0.8),
+              color: theme.iconTheme.color?.withOpacity(0.8),
             ),
           ),
           child: SizedBox(
@@ -143,7 +145,7 @@ class _CardShellState extends State<CardShell> {
         color: widget.safeMode == AnimeSafeMode.h ||
                 widget.safeMode == AnimeSafeMode.ecchi
             ? Colors.pink.withOpacity(0.8)
-            : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+            : theme.colorScheme.secondary.withOpacity(0.8),
       ),
       child: widget._sliver
           ? SliverPadding(

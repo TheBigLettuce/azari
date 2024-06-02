@@ -12,9 +12,9 @@ enum DownloadStatus {
   failed,
   inProgress;
 
-  String translatedString(BuildContext context) => switch (this) {
-        DownloadStatus.onHold => "On hold", // TODO: change
-        DownloadStatus.failed => "Failed",
-        DownloadStatus.inProgress => "In progress",
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        DownloadStatus.onHold => l8n.enumDownloadStatusOnHold,
+        DownloadStatus.failed => l8n.enumDownloadStatusFailed,
+        DownloadStatus.inProgress => l8n.enumDownloadStatusInProgress,
       };
 }

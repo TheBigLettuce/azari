@@ -15,6 +15,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required super.directoryMetadata,
     required super.directoryTag,
     required super.favoriteFile,
+    required super.localTags,
   }) : super(
           bucketId: "",
           type: GalleryFilesPageType.normal,
@@ -37,6 +38,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
   _AndroidGalleryFiles({
+    required this.localTags,
     required this.favoriteFile,
     required this.directoryMetadata,
     required this.directoryTag,
@@ -79,6 +81,9 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
 
   @override
   final FavoriteFileService favoriteFile;
+
+  @override
+  final LocalTagsService localTags;
 }
 
 class _AndroidFileSourceJoined

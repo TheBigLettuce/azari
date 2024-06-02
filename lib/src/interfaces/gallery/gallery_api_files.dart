@@ -13,6 +13,7 @@ abstract class GalleryAPIFiles {
   DirectoryTagService get directoryTag;
   DirectoryMetadataService get directoryMetadata;
   FavoriteFileService get favoriteFile;
+  LocalTagsService get localTags;
 
   SortingResourceSource<int, GalleryFile> get source;
 

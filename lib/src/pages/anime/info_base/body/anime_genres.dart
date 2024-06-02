@@ -22,6 +22,8 @@ class AnimeGenres<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final child = ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: SingleChildScrollView(
@@ -32,7 +34,7 @@ class AnimeGenres<T> extends StatelessWidget {
           children: genres
               .map(
                 (e) => ActionChip(
-                  surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+                  surfaceTintColor: theme.colorScheme.surfaceTint,
                   elevation: 4,
                   visualDensity: VisualDensity.compact,
                   label: Text(title(e.$1)),

@@ -71,6 +71,10 @@ class _ChapterTileState extends State<ChapterTile> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l8n = AppLocalizations.of(context)!;
+
     return MenuWrapper(
       items: [
         PopupMenuItem(
@@ -85,7 +89,7 @@ class _ChapterTileState extends State<ChapterTile> {
 
             widget.finishRead();
           },
-          child: Text(AppLocalizations.of(context)!.mangaMarkAsRead),
+          child: Text(l8n.mangaMarkAsRead),
         ),
         PopupMenuItem(
           onTap: () {
@@ -96,20 +100,16 @@ class _ChapterTileState extends State<ChapterTile> {
 
             widget.finishRead();
           },
-          child: Text(AppLocalizations.of(context)!.mangaRemoveProgress),
+          child: Text(l8n.mangaRemoveProgress),
         ),
       ],
       includeCopy: false,
-      title: AppLocalizations.of(context)!
-          .mangaChapterName(widget.chapter.chapter),
+      title: l8n.mangaChapterName(widget.chapter.chapter),
       child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 4),
         child: DecoratedBox(
           decoration: ShapeDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withOpacity(0.2),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
@@ -164,23 +164,20 @@ class _ChapterTileState extends State<ChapterTile> {
                   child: Text(
                     widget.chapter.chapter,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
+                      color: colorScheme.secondary,
                     ),
                   ),
                 ),
                 const Padding(padding: EdgeInsets.only(left: 6)),
                 Text(
                   progress == widget.chapter.pages
-                      ? AppLocalizations.of(context)!.mangaProgressDone
+                      ? l8n.mangaProgressDone
                       : progress == null
                           ? widget.chapter.pages.toString()
                           : "$progress / ${widget.chapter.pages}",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
               ],
             ),

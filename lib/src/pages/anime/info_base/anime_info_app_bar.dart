@@ -69,17 +69,19 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AppBar(
       title: Text(
         widget.cell.alias(false),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(
-                clampDouble(
-                  Easing.emphasizedAccelerate.transform(animation.value),
-                  0,
-                  1,
-                ),
-              ),
+          color: colorScheme.onSurface.withOpacity(
+            clampDouble(
+              Easing.emphasizedAccelerate.transform(animation.value),
+              0,
+              1,
+            ),
+          ),
         ),
       ),
       actions: [
@@ -95,10 +97,10 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
           icon: const Icon(Icons.image),
         ),
       ],
-      surfaceTintColor: Theme.of(context).colorScheme.surface.withOpacity(0),
+      surfaceTintColor: colorScheme.surface.withOpacity(0),
       backgroundColor: ColorTween(
-        begin: Theme.of(context).colorScheme.surface.withOpacity(0),
-        end: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+        begin: colorScheme.surface.withOpacity(0),
+        end: colorScheme.surface.withOpacity(0.8),
       ).transform(Easing.emphasizedAccelerate.transform(animation.value)),
       // title: Text(widget.entry.title),
     );

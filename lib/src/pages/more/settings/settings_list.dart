@@ -73,6 +73,8 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   void showDialog(String s) {
+    final l8n = AppLocalizations.of(context)!;
+
     Navigator.of(context).push(
       DialogRoute<void>(
         context: context,
@@ -82,10 +84,10 @@ class _SettingsListState extends State<SettingsList> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text(AppLocalizations.of(context)!.ok),
+              child: Text(l8n.ok),
             ),
           ],
-          title: Text(AppLocalizations.of(context)!.error),
+          title: Text(l8n.error),
           content: Text(s),
         ),
       ),
@@ -95,27 +97,27 @@ class _SettingsListState extends State<SettingsList> {
   List<Widget> makeList(
     BuildContext context,
     TextStyle titleStyle,
-    AppLocalizations localizations,
+    AppLocalizations l8n,
   ) =>
       [
-        SettingsLabel(localizations.booruLabel, titleStyle),
+        SettingsLabel(l8n.booruLabel, titleStyle),
         MenuWrapper(
           title: _settings.path.path,
           child: ListTile(
-            title: Text(localizations.downloadDirectorySetting),
+            title: Text(l8n.downloadDirectorySetting),
             subtitle: Text(_settings.path.pathDisplay),
             onTap: () async {
               await SettingsService.db().chooseDirectory(
                 showDialog,
-                emptyResult: localizations.emptyResult,
-                pickDirectory: localizations.pickDirectory,
-                validDirectory: localizations.chooseValidDirectory,
+                emptyResult: l8n.emptyResult,
+                pickDirectory: l8n.pickDirectory,
+                validDirectory: l8n.chooseValidDirectory,
               );
             },
           ),
         ),
         ListTile(
-          title: Text(localizations.selectedBooruSetting),
+          title: Text(l8n.selectedBooruSetting),
           subtitle: Text(_settings.selectedBooru.string),
           onTap: () => radioDialog(
             context,
@@ -126,36 +128,36 @@ class _SettingsListState extends State<SettingsList> {
                 selectBooru(context, _settings, value);
               }
             },
-            title: localizations.selectedBooruSetting,
+            title: l8n.selectedBooruSetting,
           ),
         ),
         ListTile(
-          title: Text(localizations.settingsTheme),
+          title: Text(l8n.settingsTheme),
           onTap: () => radioDialog(
             context,
-            ThemeType.values.map((e) => (e, e.translatedString(context))),
+            ThemeType.values.map((e) => (e, e.translatedString(l8n))),
             _miscSettings.themeType,
             (value) {
               if (value != null) {
                 selectTheme(context, _miscSettings, value);
               }
             },
-            title: localizations.settingsTheme,
+            title: l8n.settingsTheme,
           ),
-          subtitle: Text(_miscSettings.themeType.translatedString(context)),
+          subtitle: Text(_miscSettings.themeType.translatedString(l8n)),
         ),
         ListTile(
-          title: Text(localizations.imageDisplayQualitySetting),
+          title: Text(l8n.imageDisplayQualitySetting),
           onTap: () => radioDialog(
             context,
-            DisplayQuality.values.map((e) => (e, e.translatedString(context))),
+            DisplayQuality.values.map((e) => (e, e.translatedString(l8n))),
             _settings.quality,
             (value) => _settings.copy(quality: value).save(),
-            title: localizations.imageDisplayQualitySetting,
+            title: l8n.imageDisplayQualitySetting,
           ),
-          subtitle: Text(_settings.quality.translatedString(context)),
+          subtitle: Text(_settings.quality.translatedString(l8n)),
         ),
-        SettingsLabel(localizations.miscLabel, titleStyle),
+        SettingsLabel(l8n.miscLabel, titleStyle),
         // ListTile(
         //   title: Text(localizations.savedTagsCount),
         //   trailing: PopupMenuButton(
@@ -215,10 +217,10 @@ class _SettingsListState extends State<SettingsList> {
           future: thumbnailCount,
           builder: (context, data) {
             return ListTile(
-              title: Text(localizations.thumbnailsCSize),
+              title: Text(l8n.thumbnailsCSize),
               subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, localizations))
-                  : Text(localizations.loadingPlaceholder),
+                  ? Text(_calculateMBSize(data.data!, l8n))
+                  : Text(l8n.loadingPlaceholder),
               trailing: PopupMenuButton(
                 itemBuilder: (context) {
                   return [
@@ -232,13 +234,13 @@ class _SettingsListState extends State<SettingsList> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: Text(localizations.areYouSure),
+                                  title: Text(l8n.areYouSure),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text(localizations.no),
+                                      child: Text(l8n.no),
                                     ),
                                     TextButton(
                                       onPressed: () {
@@ -252,7 +254,7 @@ class _SettingsListState extends State<SettingsList> {
                                         setState(() {});
                                         Navigator.pop(context);
                                       },
-                                      child: Text(localizations.yes),
+                                      child: Text(l8n.yes),
                                     ),
                                   ],
                                 );
@@ -260,7 +262,7 @@ class _SettingsListState extends State<SettingsList> {
                             ),
                           );
                         },
-                        child: Text(localizations.purgeThumbnails),
+                        child: Text(l8n.purgeThumbnails),
                       ),
                     ),
                   ];
@@ -274,10 +276,10 @@ class _SettingsListState extends State<SettingsList> {
           future: pinnedThumbnailCount,
           builder: (context, data) {
             return ListTile(
-              title: Text(localizations.pinnedThumbnailsSize),
+              title: Text(l8n.pinnedThumbnailsSize),
               subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, localizations))
-                  : Text(localizations.loadingPlaceholder),
+                  ? Text(_calculateMBSize(data.data!, l8n))
+                  : Text(l8n.loadingPlaceholder),
               trailing: PopupMenuButton(
                 itemBuilder: (context) {
                   return [
@@ -291,13 +293,13 @@ class _SettingsListState extends State<SettingsList> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: Text(localizations.areYouSure),
+                                  title: Text(l8n.areYouSure),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text(localizations.no),
+                                      child: Text(l8n.no),
                                     ),
                                     TextButton(
                                       onPressed: () {
@@ -317,7 +319,7 @@ class _SettingsListState extends State<SettingsList> {
                                         setState(() {});
                                         Navigator.pop(context);
                                       },
-                                      child: Text(localizations.yes),
+                                      child: Text(l8n.yes),
                                     ),
                                   ],
                                 );
@@ -325,7 +327,7 @@ class _SettingsListState extends State<SettingsList> {
                             ),
                           );
                         },
-                        child: Text(localizations.purgeThumbnails),
+                        child: Text(l8n.purgeThumbnails),
                       ),
                     ),
                   ];
@@ -341,7 +343,7 @@ class _SettingsListState extends State<SettingsList> {
               .current
               .copy(filesExtendedActions: value)
               .save(),
-          title: Text(localizations.extendedFilesGridActions),
+          title: Text(l8n.extendedFilesGridActions),
         ),
         MenuWrapper(
           title: "GPL-2.0-only",
@@ -356,20 +358,24 @@ class _SettingsListState extends State<SettingsList> {
                 ),
               );
             },
-            title: Text(localizations.licenseSetting),
+            title: Text(l8n.licenseSetting),
             subtitle: const Text("GPL-2.0-only"),
           ),
         ),
         SwitchListTile(
+          title: Text(l8n.animeAlwaysOnline),
           value: _miscSettings.animeAlwaysLoadFromNet,
-          onChanged: (value) => MiscSettingsService.db()
-              .current
-              .copy(animeAlwaysLoadFromNet: value)
-              .save(),
-          title: Text(localizations.animeAlwaysOnline),
+          onChanged: (value) =>
+              _miscSettings.copy(animeAlwaysLoadFromNet: value).save(),
+        ),
+        SwitchListTile(
+          title: Text(l8n.showAnimeManga),
+          value: _settings.showAnimeMangaPages,
+          onChanged: (value) =>
+              _settings.copy(showAnimeMangaPages: value).save(),
         ),
         ListTile(
-          title: Text(localizations.openWelcomePageSetting),
+          title: Text(l8n.openWelcomePageSetting),
           onTap: () {
             Navigator.push(
               context,
@@ -395,19 +401,19 @@ class _SettingsListState extends State<SettingsList> {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context)
-        .textTheme
-        .titleSmall!
-        .copyWith(color: Theme.of(context).colorScheme.secondary);
+    final theme = Theme.of(context);
 
-    final localizations = AppLocalizations.of(context)!;
+    final titleStyle = theme.textTheme.titleSmall!
+        .copyWith(color: theme.colorScheme.secondary);
+
+    final l8n = AppLocalizations.of(context)!;
 
     return widget.sliver
         ? SliverList.list(
-            children: makeList(context, titleStyle, localizations),
+            children: makeList(context, titleStyle, l8n),
           )
         : ListView(
-            children: makeList(context, titleStyle, localizations),
+            children: makeList(context, titleStyle, l8n),
           );
   }
 }

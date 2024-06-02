@@ -173,8 +173,7 @@ class MorePage extends StatelessWidget {
                 child: Icon(
                   const IconData(0x963F),
                   size: 78,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  color: theme.colorScheme.onSurface.withOpacity(0.1),
                   applyTextScaling: true,
                 ),
               ),

@@ -26,10 +26,11 @@ class SystemGalleryDirectoriesActions {
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
     BlacklistedDirectoryService blacklistedDirectory,
+    AppLocalizations l8n,
   ) {
     return GridAction(
       Icons.hide_image_outlined,
-      (selected) async {
+      (selected) {
         final requireAuth = <BlacklistedDirectoryData>[];
         final noAuth = <BlacklistedDirectoryData>[];
 
@@ -46,39 +47,45 @@ class SystemGalleryDirectoriesActions {
           }
         }
 
-        if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
-          final success = await LocalAuthentication()
-              .authenticate(localizedReason: "Hide directory"); // TODO: change
-          if (!success) {
-            return;
+        if (noAuth.isEmpty && requireAuth.isNotEmpty) {
+          void onSuccess(bool success) {
+            if (!success || !context.mounted) {
+              return;
+            }
+
+            blacklistedDirectory.backingStorage.addAll(
+              noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth,
+            );
+
+            if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l8n.directoriesAuthMessage),
+                  action: SnackBarAction(
+                    label: l8n.authLabel,
+                    onPressed: () async {
+                      final success = await LocalAuthentication().authenticate(
+                        localizedReason: l8n.hideDirectoryReason,
+                      );
+                      if (!success) {
+                        return;
+                      }
+
+                      blacklistedDirectory.backingStorage.addAll(requireAuth);
+                    },
+                  ),
+                ),
+              );
+            }
           }
-        }
 
-        blacklistedDirectory.backingStorage.addAll(
-          noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth,
-        );
-
-        if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                "Some directories require authentication",
-              ), // TODO: change
-              action: SnackBarAction(
-                label: "Auth",
-                onPressed: () async {
-                  final success = await LocalAuthentication().authenticate(
-                    localizedReason: "Hide directory",
-                  ); // TODO: change
-                  if (!success) {
-                    return;
-                  }
-
-                  blacklistedDirectory.backingStorage.addAll(requireAuth);
-                },
-              ),
-            ),
-          );
+          if (canAuthBiometric) {
+            LocalAuthentication()
+                .authenticate(localizedReason: l8n.hideDirectoryReason)
+                .then(onSuccess);
+          } else {
+            onSuccess(true);
+          }
         }
       },
       true,
@@ -94,6 +101,8 @@ class SystemGalleryDirectoriesActions {
     DirectoryMetadataService directoryMetadata,
     DirectoryTagService directoryTags,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
+    AppLocalizations l8n,
   ) {
     return GridAction(
       Icons.merge_rounded,
@@ -102,7 +111,7 @@ class SystemGalleryDirectoriesActions {
           context,
           selected.length == 1
               ? selected.first.name
-              : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
+              : "${selected.length} ${l8n.directoriesPlural}",
           selected,
           api,
           callback,
@@ -111,6 +120,8 @@ class SystemGalleryDirectoriesActions {
           directoryMetadata,
           directoryTags,
           favoriteFile,
+          localTags,
+          l8n,
         );
       },
       true,
@@ -128,7 +139,9 @@ class SystemGalleryDirectoriesActions {
     DirectoryMetadataService directoryMetadata,
     DirectoryTagService directoryTags,
     FavoriteFileService favoriteFile,
-  ) async {
+    LocalTagsService localTags,
+    AppLocalizations l8n,
+  ) {
     bool requireAuth = false;
 
     for (final e in dirs) {
@@ -139,40 +152,46 @@ class SystemGalleryDirectoriesActions {
       }
     }
 
-    if (requireAuth && canAuthBiometric) {
-      final success = await LocalAuthentication()
-          .authenticate(localizedReason: "Join directories"); // TODO: change
-
-      if (!success) {
-        return;
+    Future<void> onSuccess(bool success) {
+      if (!success || !context.mounted) {
+        return Future.value();
       }
+
+      StatisticsGalleryService.db().current.add(joined: 1).save();
+
+      final joined = api.joinedFiles(
+        dirs.map((e) => e.bucketId).toList(),
+        directoryTags,
+        directoryMetadata,
+        favoriteFile,
+        localTags,
+      );
+
+      return Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            return GalleryFiles(
+              secure: requireAuth,
+              generateGlue: generate,
+              api: joined,
+              callback: callback,
+              dirName: label,
+              bucketId: "joinedDir",
+              db: DatabaseConnectionNotifier.of(context),
+              tagManager: TagManager.of(context),
+            );
+          },
+        ),
+      );
     }
 
-    StatisticsGalleryService.db().current.add(joined: 1).save();
-
-    final joined = api.joinedFiles(
-      dirs.map((e) => e.bucketId).toList(),
-      directoryTags,
-      directoryMetadata,
-      favoriteFile,
-    );
-
-    return Navigator.push<void>(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return GalleryFiles(
-            secure: requireAuth,
-            generateGlue: generate,
-            api: joined,
-            callback: callback,
-            dirName: label,
-            bucketId: "joinedDir",
-            db: DatabaseConnectionNotifier.of(context),
-            tagManager: TagManager.of(context),
-          );
-        },
-      ),
-    );
+    if (requireAuth && canAuthBiometric) {
+      return LocalAuthentication()
+          .authenticate(localizedReason: l8n.joinDirectoriesReason)
+          .then(onSuccess);
+    } else {
+      return onSuccess(true);
+    }
   }
 }

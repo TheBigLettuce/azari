@@ -28,7 +28,6 @@ import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/anime/anime.dart";
-import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
@@ -123,7 +122,8 @@ abstract interface class ServicesImplTable
   MainGridService mainGrid(Booru booru);
   SecondaryGridService secondaryGrid(
     Booru booru,
-    String name, [
+    String name,
+    SafeMode? safeMode, [
     bool create = false,
   ]);
 }
@@ -189,7 +189,7 @@ mixin ServicesObjFactoryExt {
     required bool explicit,
   });
 
-  AnimeRelation makeAnieRelation({
+  AnimeRelation makeAnimeRelation({
     required int id,
     required String thumbUrl,
     required String title,
@@ -208,7 +208,6 @@ typedef DbConn = ServicesImplTable;
 
 class DatabaseConnectionNotifier extends InheritedWidget {
   const DatabaseConnectionNotifier._({
-    super.key,
     required this.downloadManager,
     required this.db,
     required super.child,
@@ -507,7 +506,31 @@ class ListStorage<V> extends SourceStorage<int, V> {
 
   @override
   StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
-      _events.stream.listen(f);
+      _events.stream.transform<int>(
+        StreamTransformer((input, cancelOnError) {
+          final controller = StreamController<int>(sync: true);
+          controller.onListen = () {
+            final subscription = input.listen(
+              controller.add,
+              onError: controller.addError,
+              onDone: controller.close,
+              cancelOnError: cancelOnError,
+            );
+            controller
+              ..onPause = subscription.pause
+              ..onResume = subscription.resume
+              ..onCancel = subscription.cancel;
+          };
+
+          if (fire) {
+            Timer.run(() {
+              controller.add(count);
+            });
+          }
+
+          return controller.stream.listen(null);
+        }),
+      ).listen(f);
 }
 
 typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
@@ -756,7 +779,10 @@ class ClosableRefreshProgress implements RefreshingProgress {
 
   set inRefreshing(bool b) {
     _refresh = b;
-    _events.add(b);
+
+    if (!_events.isClosed) {
+      _events.add(b);
+    }
   }
 
   @override
@@ -905,8 +931,6 @@ abstract class LocalTagsData {
 abstract interface class LocalTagsService {
   int get count;
 
-  Map<String, String> get cachedValues;
-
   List<String> get(String filename);
 
   void add(String filename, List<String> tags);
@@ -1014,7 +1038,6 @@ abstract interface class TagManager implements ServiceMarker {
 
 class _TagManagerAnchor extends InheritedWidget {
   const _TagManagerAnchor({
-    super.key,
     required this.tagManager,
     required super.child,
   });
@@ -1132,6 +1155,11 @@ abstract interface class SecondaryGridService {
 
   GridState get currentState;
   set currentState(GridState state);
+
+  StreamSubscription<GridState> watch(
+    void Function(GridState s) f, [
+    bool fire = false,
+  ]);
 
   TagManager get tagManager;
 

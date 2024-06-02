@@ -23,7 +23,6 @@ import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:gallery/src/widgets/restart_widget.dart";
 import "package:gallery/welcome_pages.dart";
 import "package:local_auth/local_auth.dart";
-// import 'package:google_fonts/google_fonts.dart';
 import "package:package_info_plus/package_info_plus.dart";
 
 late final String azariVersion;
@@ -156,7 +155,8 @@ Future<void> mainPickfile() async {
       objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
 
   runApp(
-    DatabaseConnectionNotifier.current(TagManager.wrapAnchor(
+    DatabaseConnectionNotifier.current(
+      TagManager.wrapAnchor(
         tagManager,
         MaterialApp(
           title: "Azari",
@@ -171,13 +171,15 @@ Future<void> mainPickfile() async {
               return Home(
                 callback: CallbackDescriptionNested(
                     icon: Icons.file_open_rounded,
-                    AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
+                    AppLocalizations.of(context)!.pickFileNotice, (chosen) {
                   const AndroidApiFunctions().returnUri(chosen.originalUri);
                 }),
               );
             },
           ),
-        ))),
+        ),
+      ),
+    ),
   );
 }
 
@@ -235,8 +237,10 @@ void changeExceptionErrorColors() {
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
+// ignore: unreachable_from_main
 bool get canAuthBiometric => _canUseAuth;
 
+// ignore: unreachable_from_main
 SystemUiOverlayStyle navBarStyleForTheme(
   ThemeData theme, {
   bool transparent = true,

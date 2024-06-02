@@ -70,27 +70,27 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     List<AnimeRelation>? staff,
   });
 
-  @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<AnimeEntryData> functionality,
-    AnimeEntryData cell,
-    int idx,
-  ) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return AnimeInfoPage(
-            id: cell.id,
-            entry: cell,
-            apiFactory: cell.site.api,
-            db: DatabaseConnectionNotifier.of(context),
-          );
-        },
-      ),
-    );
-  }
+  // @override
+  // void onPress(
+  //   BuildContext context,
+  //   GridFunctionality<AnimeEntryData> functionality,
+  //   AnimeEntryData cell,
+  //   int idx,
+  // ) {
+  //   Navigator.push<void>(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) {
+  //         return AnimeInfoPage(
+  //           id: cell.id,
+  //           entry: cell,
+  //           apiFactory: cell.site.api,
+  //           db: DatabaseConnectionNotifier.of(context),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 }
 
 abstract interface class WatchedAnimeEntryService implements ServiceMarker {

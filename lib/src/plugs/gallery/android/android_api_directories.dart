@@ -68,6 +68,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
@@ -82,6 +83,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
       favoriteFile: favoriteFile,
+      localTags: localTags,
     );
   }
 
@@ -91,6 +93,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
@@ -107,6 +110,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
       favoriteFile: favoriteFile,
+      localTags: localTags,
     );
   }
 }

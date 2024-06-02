@@ -25,6 +25,7 @@ PopupMenuItem<void> launchGridSafeModeItem(
   BuildContext context,
   String tag,
   void Function(BuildContext, String, [SafeMode?]) launchGrid,
+  AppLocalizations l8n,
 ) =>
     PopupMenuItem(
       onTap: () {
@@ -34,14 +35,14 @@ PopupMenuItem<void> launchGridSafeModeItem(
 
         radioDialog<SafeMode>(
           context,
-          SafeMode.values.map((e) => (e, e.translatedString(context))),
+          SafeMode.values.map((e) => (e, e.translatedString(l8n))),
           SettingsService.db().current.safeMode,
           (value) => launchGrid(context, tag, value),
-          title: AppLocalizations.of(context)!.chooseSafeMode,
+          title: l8n.chooseSafeMode,
           allowSingle: true,
         );
       },
-      child: Text(AppLocalizations.of(context)!.launchWithSafeMode),
+      child: Text(l8n.launchWithSafeMode),
     );
 
 class DrawerTagsWidget extends StatefulWidget with DbConnHandle<TagManager> {
@@ -85,7 +86,11 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
     super.dispose();
   }
 
-  List<PopupMenuItem<void>> makeItems(BuildContext context, String tag) {
+  List<PopupMenuItem<void>> makeItems(
+    BuildContext context,
+    String tag,
+    AppLocalizations l8n,
+  ) {
     return [
       PopupMenuItem(
         onTap: () {
@@ -96,9 +101,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
           }
         },
         child: Text(
-          excluded.exists(tag)
-              ? AppLocalizations.of(context)!.removeFromExcluded
-              : AppLocalizations.of(context)!.addToExcluded,
+          excluded.exists(tag) ? l8n.removeFromExcluded : l8n.addToExcluded,
         ),
       ),
       if (widget.launchGrid != null)
@@ -106,6 +109,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
           context,
           tag,
           widget.launchGrid!,
+          l8n,
         ),
       if (widget.addRemoveTag)
         PopupMenuItem(
@@ -114,9 +118,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
                 .localTags
                 .removeSingle([widget.filename], tag);
           },
-          child: Text(
-            AppLocalizations.of(context)!.delete,
-          ),
+          child: Text(l8n.delete),
         ),
       PopupMenuItem(
         onTap: () {
@@ -128,18 +130,20 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
 
           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
         },
-        child: Text(
-          pinned.exists(tag)
-              ? AppLocalizations.of(context)!.unpinTag
-              : AppLocalizations.of(context)!.pinTag,
-        ),
+        child: Text(pinned.exists(tag) ? l8n.unpinTag : l8n.pinTag),
       ),
     ];
   }
 
-  Widget makeTile(BuildContext context, String e, bool pinned) => MenuWrapper(
+  Widget makeTile(
+    BuildContext context,
+    String e,
+    bool pinned,
+    AppLocalizations l8n,
+  ) =>
+      MenuWrapper(
         title: e,
-        items: makeItems(context, e),
+        items: makeItems(context, e, l8n),
         child: RawChip(
           elevation: 0,
           clipBehavior: Clip.antiAlias,
@@ -191,7 +195,10 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
       filteredTags = tags;
     }
 
-    final tiles = filteredTags.map((e) => makeTile(context, e.tag, e.favorite));
+    final l8n = AppLocalizations.of(context)!;
+
+    final tiles =
+        filteredTags.map((e) => makeTile(context, e.tag, e.favorite, l8n));
 
     return SliverPadding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
@@ -208,6 +215,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
 void openAddTagDialog(
   BuildContext context,
   void Function(String, bool) onSubmit,
+  AppLocalizations l8n,
 ) {
   final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
   bool delete = false;
@@ -218,7 +226,7 @@ void openAddTagDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.addTag),
+          title: Text(l8n.addTag),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -228,20 +236,20 @@ void openAddTagDialog(
                   enabled: true,
                   validator: (value) {
                     if (value == null) {
-                      return AppLocalizations.of(context)!.valueIsNull;
+                      return l8n.valueIsNull;
                     }
 
                     final v = value.trim();
                     if (v.isEmpty) {
-                      return AppLocalizations.of(context)!.valueIsEmpty;
+                      return l8n.valueIsEmpty;
                     }
 
                     if (v.length <= 1) {
-                      return AppLocalizations.of(context)!.valueIsEmpty;
+                      return l8n.valueIsEmpty;
                     }
 
                     if (regexp.hasMatch(v)) {
-                      return AppLocalizations.of(context)!.tagValidationError;
+                      return l8n.tagValidationError;
                     }
 
                     return null;
@@ -260,7 +268,7 @@ void openAddTagDialog(
               StatefulBuilder(
                 builder: (context, setState) {
                   return SwitchListTile(
-                    title: Text(AppLocalizations.of(context)!.delete),
+                    title: Text(l8n.delete),
                     value: delete,
                     onChanged: (v) {
                       delete = v;

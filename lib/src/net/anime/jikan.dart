@@ -160,7 +160,7 @@ AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) => objFactory
 List<AnimeRelation> _fromMeta(api.BuiltList<api.Meta> l) {
   return l
       .map(
-        (e) => objFactory.makeAnieRelation(
+        (e) => objFactory.makeAnimeRelation(
           thumbUrl: e.url,
           title: e.name,
           type: e.type,
@@ -194,7 +194,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     siteUrl: e.url,
     staff: e.producers
         .map(
-          (e) => objFactory.makeAnieRelation(
+          (e) => objFactory.makeAnimeRelation(
             title: e.name,
             type: e.type,
             id: e.malId,

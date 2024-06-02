@@ -24,59 +24,54 @@ class CardPanel extends StatefulWidget {
   final AnimeEntryData entry;
   final EdgeInsets viewPadding;
 
-  static List<Widget> defaultInfo(BuildContext context, AnimeEntryData entry) =>
-      [
-        UnsizedCard(
-          subtitle: Text(AppLocalizations.of(context)!.cardYear),
-          tooltip: AppLocalizations.of(context)!.cardYear,
-          title: Text(
-            entry.year == 0
-                ? AppLocalizations.of(context)!.cardUnknownValue
-                : entry.year.toString(),
-          ),
-          transparentBackground: true,
+  static List<Widget> defaultInfo(BuildContext context, AnimeEntryData entry) {
+    final l8n = AppLocalizations.of(context)!;
+
+    return [
+      UnsizedCard(
+        subtitle: Text(l8n.cardYear),
+        tooltip: l8n.cardYear,
+        title: Text(
+          entry.year == 0 ? l8n.cardUnknownValue : entry.year.toString(),
         ),
-        UnsizedCard(
-          subtitle: Text(AppLocalizations.of(context)!.cardScore),
-          tooltip: AppLocalizations.of(context)!.cardScore,
-          title: Text(
-            entry.score == 0
-                ? AppLocalizations.of(context)!.cardUnknownValue
-                : entry.score.toString(),
-          ),
-          transparentBackground: true,
+        transparentBackground: true,
+      ),
+      UnsizedCard(
+        subtitle: Text(l8n.cardScore),
+        tooltip: l8n.cardScore,
+        title: Text(
+          entry.score == 0 ? l8n.cardUnknownValue : entry.score.toString(),
         ),
-        UnsizedCard(
-          subtitle: Text(AppLocalizations.of(context)!.cardAiring),
-          tooltip: AppLocalizations.of(context)!.cardAiring,
-          title: Text(
-            entry.isAiring
-                ? AppLocalizations.of(context)!.yes
-                : AppLocalizations.of(context)!.no,
-          ),
-          transparentBackground: true,
+        transparentBackground: true,
+      ),
+      UnsizedCard(
+        subtitle: Text(l8n.cardAiring),
+        tooltip: l8n.cardAiring,
+        title: Text(
+          entry.isAiring ? l8n.yes : l8n.no,
         ),
-        UnsizedCard(
-          subtitle: Text(AppLocalizations.of(context)!.cardEpisodes),
-          tooltip: AppLocalizations.of(context)!.cardEpisodes,
-          title: Text(
-            entry.episodes == 0
-                ? AppLocalizations.of(context)!.cardUnknownValue
-                : entry.episodes.toString(),
-          ),
-          transparentBackground: true,
+        transparentBackground: true,
+      ),
+      UnsizedCard(
+        subtitle: Text(l8n.cardEpisodes),
+        tooltip: l8n.cardEpisodes,
+        title: Text(
+          entry.episodes == 0
+              ? l8n.cardUnknownValue
+              : entry.episodes.toString(),
         ),
-        UnsizedCard(
-          subtitle: Text(AppLocalizations.of(context)!.cardType),
-          tooltip: AppLocalizations.of(context)!.cardType,
-          title: Text(
-            entry.type.isEmpty
-                ? AppLocalizations.of(context)!.cardUnknownValue
-                : entry.type.toLowerCase(),
-          ),
-          transparentBackground: true,
+        transparentBackground: true,
+      ),
+      UnsizedCard(
+        subtitle: Text(l8n.cardType),
+        tooltip: l8n.cardType,
+        title: Text(
+          entry.type.isEmpty ? l8n.cardUnknownValue : entry.type.toLowerCase(),
         ),
-      ];
+        transparentBackground: true,
+      ),
+    ];
+  }
 
   static List<Widget> defaultButtons(
     BuildContext context,

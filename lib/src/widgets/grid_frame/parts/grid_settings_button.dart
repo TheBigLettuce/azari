@@ -11,10 +11,10 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
 
@@ -25,8 +25,15 @@ class GridSettingsButton extends StatelessWidget {
     this.header,
   });
 
-  factory GridSettingsButton.fromWatchable(WatchableGridSettingsData w) =>
-      GridSettingsButton(add: (d) => w.current = d, watch: w.watch);
+  factory GridSettingsButton.fromWatchable(
+    WatchableGridSettingsData w, [
+    Widget? header,
+  ]) =>
+      GridSettingsButton(
+        add: (d) => w.current = d,
+        watch: w.watch,
+        header: header,
+      );
 
   final void Function(GridSettingsData) add;
 
@@ -37,12 +44,13 @@ class GridSettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return IconButton(
       onPressed: () {
         showModalBottomSheet<void>(
           context: context,
-          backgroundColor:
-              Theme.of(context).colorScheme.surface.withOpacity(0.95),
+          backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
           isScrollControlled: true,
           showDragHandle: true,
           useRootNavigator: true,
@@ -138,6 +146,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final newValues =
         textController.text.isNotEmpty ? _filter : widget.values.toList()
           ..sort((e1, e2) {
@@ -234,7 +244,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: theme.textTheme.bodyLarge,
                   ),
                 ),
                 if (widget.enableFilter)
@@ -243,7 +253,6 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                       alignment: Alignment.centerRight,
                       child: FocusNotifier(
                         notifier: searchFocus,
-                        focusMain: searchFocus.unfocus,
                         child: Builder(
                           builder: (context) {
                             return AutocompleteSearchBar(
@@ -294,35 +303,92 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   }
 }
 
-class SafeModeButton extends StatelessWidget {
+class SafeModeButton extends StatefulWidget {
   const SafeModeButton({
     super.key,
-    required this.safeMode,
-    this.selectSafeMode,
-  });
+    this.settingsWatcher,
+    this.secondaryGrid,
+  }) : assert(settingsWatcher == null || secondaryGrid == null);
 
-  final SafeMode safeMode;
-  final void Function(SafeMode?)? selectSafeMode;
+  final WatchFire<SettingsData?>? settingsWatcher;
+  final SecondaryGridService? secondaryGrid;
+
+  @override
+  State<SafeModeButton> createState() => _SafeModeButtonState();
+}
+
+class _SafeModeButtonState extends State<SafeModeButton> {
+  late final StreamSubscription<SettingsData?>? settingsWatcher;
+  late final StreamSubscription<GridState>? stateWatcher;
+
+  SettingsData? _settings;
+  GridState? _stateSettings;
+
+  @override
+  void initState() {
+    super.initState();
+
+    settingsWatcher = widget.settingsWatcher?.call(
+      (s) {
+        _settings = s;
+
+        setState(() {});
+      },
+      true,
+    );
+
+    stateWatcher = widget.secondaryGrid?.watch(
+      (s) {
+        _stateSettings = s;
+
+        setState(() {});
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    settingsWatcher?.cancel();
+    stateWatcher?.cancel();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      child: Text(AppLocalizations.of(context)!.safeModeSetting),
-      onPressed: () => radioDialog<SafeMode>(
-        context,
-        SafeMode.values.map((e) => (e, e.translatedString(context))),
-        safeMode,
-        (value) {
-          (selectSafeMode ??
-              (value) {
-                SettingsService.db().current.copy(safeMode: value).save();
-              })(value);
+    final l8n = AppLocalizations.of(context)!;
 
-          Navigator.pop(context);
-        },
-        title: AppLocalizations.of(context)!.safeModeSetting,
-      ),
-    );
+    return SegmentedButtonGroup<SafeMode>(
+      select: (e) {
+        _settings?.copy(safeMode: e).save();
+        _stateSettings?.copy(safeMode: e).saveSecondary(widget.secondaryGrid!);
+      },
+      selected: _settings?.safeMode ?? _stateSettings?.safeMode,
+      values: SafeMode.values
+          .map((e) => SegmentedButtonValue(e, e.translatedString(l8n))),
+      title: l8n.safeModeSetting,
+      variant: SegmentedButtonVariant.segments,
+    )
+
+        // TextButton(
+        // child: Text(),
+        //   onPressed: () => radioDialog<SafeMode>(
+        //     context,
+        //     SafeMode.values.map((e) => (e, e.translatedString(l8n))),
+        //     safeMode,
+        //     (value) {
+        //       (selectSafeMode ??
+        //           (value) {
+        //             SettingsService.db().current.copy(safeMode: value).save();
+        //           })(value);
+
+        //       Navigator.pop(context);
+        //     },
+        //     title: l8n.safeModeSetting,
+        //   ),
+        // )
+        ;
   }
 }
 
@@ -376,6 +442,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridAspectRatio aspectRatio,
     void Function(GridAspectRatio?) select,
+    AppLocalizations l8n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
@@ -383,7 +450,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       selected: aspectRatio,
       values: GridAspectRatio.values
           .map((e) => SegmentedButtonValue(e, e.value.toString())),
-      title: AppLocalizations.of(context)!.aspectRatio,
+      title: l8n.aspectRatio,
     );
   }
 
@@ -391,6 +458,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridColumn columns,
     void Function(GridColumn?) select,
+    AppLocalizations l8n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
@@ -398,7 +466,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       selected: columns,
       values: GridColumn.values
           .map((e) => SegmentedButtonValue(e, e.number.toString())),
-      title: AppLocalizations.of(context)!.gridColumns,
+      title: l8n.gridColumns,
     );
   }
 
@@ -406,14 +474,15 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridLayoutType selectGridLayout,
     void Function(GridLayoutType?) select,
+    AppLocalizations l8n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
       select: select,
       selected: selectGridLayout,
       values: GridLayoutType.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(context))),
-      title: AppLocalizations.of(context)!.layoutLabel,
+          .map((e) => SegmentedButtonValue(e, e.translatedString(l8n))),
+      title: l8n.layoutLabel,
     );
   }
 
@@ -421,10 +490,11 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     bool hideName,
     void Function(bool) select,
+    AppLocalizations l8n,
   ) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(AppLocalizations.of(context)!.hideNames),
+      title: Text(l8n.hideNames),
       value: hideName,
       onChanged: (_) => select(!hideName),
     );
@@ -444,6 +514,9 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       );
     }
 
+    final theme = Theme.of(context);
+    final l8n = AppLocalizations.of(context)!;
+
     return SizedBox(
       width: double.infinity,
       child: Padding(
@@ -454,8 +527,8 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
             children: [
               Center(
                 child: Text(
-                  AppLocalizations.of(context)!.settingsLabel,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  l8n.settingsLabel,
+                  style: theme.textTheme.titleLarge,
                 ),
               ),
               if (widget.header != null) widget.header!,
@@ -463,21 +536,25 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 context,
                 _gridSettings!.hideName,
                 (n) => add(_gridSettings!.copy(hideName: n)),
+                l8n,
               ),
               _gridLayout(
                 context,
                 _gridSettings!.layoutType,
                 (t) => add(_gridSettings!.copy(layoutType: t)),
+                l8n,
               ),
               _ratio(
                 context,
                 _gridSettings!.aspectRatio,
                 (r) => add(_gridSettings!.copy(aspectRatio: r)),
+                l8n,
               ),
               _columns(
                 context,
                 _gridSettings!.columns,
                 (c) => add(_gridSettings!.copy(columns: c)),
+                l8n,
               ),
               const Padding(padding: EdgeInsets.only(bottom: 8)),
             ],

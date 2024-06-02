@@ -12,11 +12,14 @@ class _AnimeIcon extends StatelessWidget {
     required this.controller,
     required this.isSelected,
   });
+
   final bool isSelected;
   final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return NavigationDestination(
       icon: Animate(
         controller: controller,
@@ -33,7 +36,7 @@ class _AnimeIcon extends StatelessWidget {
         ],
         child: Icon(
           Icons.video_library,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),
       label: AppLocalizations.of(context)!.animePage,

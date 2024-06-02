@@ -27,7 +27,7 @@ class DummyGallery implements GalleryPlug {
     DirectoryTagService directoryTag, {
     bool? temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations localizations,
+    required AppLocalizations l8n,
   }) {
     return _DummyDirectories();
   }
@@ -48,12 +48,16 @@ class _DummyDirectories implements GalleryAPIDirectories {
       GenericListSource(() => Future.value([]));
 
   @override
+  TrashCell get trashCell => throw UnimplementedError();
+
+  @override
   GalleryAPIFiles files(
     GalleryDirectory d,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     throw UnimplementedError();
   }
@@ -64,10 +68,8 @@ class _DummyDirectories implements GalleryAPIDirectories {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
+    LocalTagsService localTags,
   ) {
     throw UnimplementedError();
   }
-
-  @override
-  TrashCell get trashCell => throw UnimplementedError();
 }

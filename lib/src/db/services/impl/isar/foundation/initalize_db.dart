@@ -10,7 +10,9 @@ part of "../impl.dart";
 bool _initalized = false;
 
 Future<DownloadManager> initalizeIsarDb(
-    bool temporary, ServicesImplTable db) async {
+  bool temporary,
+  ServicesImplTable db,
+) async {
   if (_initalized) {
     return throw "already initalized";
   }
@@ -147,12 +149,6 @@ Future<DownloadManager> initalizeIsarDb(
   }
 
   for (final e in _IsarCollectionReverseIterable(
-    _IsarCollectionIterator(_Dbs.g.localTags.isarLocalTags, reversed: false),
-  )) {
-    _dbs._localTagsCachedValues[e.filename] = e.tags.join(" ");
-  }
-
-  for (final e in _IsarCollectionReverseIterable(
     _IsarCollectionIterator(
       _Dbs.g.blacklisted.isarFavoriteFiles,
       reversed: false,
@@ -174,5 +170,26 @@ Future<DownloadManager> initalizeIsarDb(
     downloader.restoreFile(e);
   }
 
+  await _removeTempContentsDownloads();
+
   return downloader;
+}
+
+Future<void> _removeTempContentsDownloads() async {
+  try {
+    final tempd = await getTemporaryDirectory();
+    final downld = Directory(path.join(tempd.path, "downloads"));
+    if (!downld.existsSync()) {
+      return;
+    }
+
+    await for (final e in downld.list()) {
+      e.deleteSync(recursive: true);
+    }
+  } catch (e, trace) {
+    LogTarget.unknown.logDefaultImportant(
+      "deleting temp directories".errorMessage(e),
+      trace,
+    );
+  }
 }

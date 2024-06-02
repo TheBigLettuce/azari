@@ -63,6 +63,13 @@ class GridConfiguration extends StatefulWidget {
     return widget!.config;
   }
 
+  static GridSettingsWatcher watcherOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
+
+    return widget!.watcher;
+  }
+
   @override
   State<GridConfiguration> createState() => _GridConfigurationState();
 }
@@ -101,18 +108,24 @@ class _GridConfigurationState extends State<GridConfiguration> {
           : const SizedBox.shrink();
     }
 
-    return _GridConfigurationNotifier(config: config!, child: widget.child);
+    return _GridConfigurationNotifier(
+      config: config!,
+      watcher: widget.watch,
+      child: widget.child,
+    );
   }
 }
 
 class _GridConfigurationNotifier extends InheritedWidget {
   const _GridConfigurationNotifier({
-    super.key,
+    // super.key,
     required this.config,
+    required this.watcher,
     required super.child,
   });
 
   final GridSettingsData config;
+  final GridSettingsWatcher watcher;
 
   @override
   bool updateShouldNotify(_GridConfigurationNotifier oldWidget) =>
@@ -127,7 +140,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
     this.initalScrollPosition = 0,
     required this.functionality,
     this.onDispose,
-    required this.mainFocus,
+    // required this.mainFocus,
     this.belowMainFocus,
     this.overrideController,
     required this.description,
@@ -138,7 +151,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   final double initalScrollPosition;
 
   /// The main focus node of the grid.
-  final FocusNode mainFocus;
+  // final FocusNode mainFocus;
 
   final GridFunctionality<T> functionality;
 
@@ -163,6 +176,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     with GridSubpageState<T> {
   late ScrollController controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
+  final _animationsKey = GlobalKey<_PlayAnimationsState>();
+
+  late final StreamSubscription<int>? _subscription;
 
   late final selection = GridSelection<T>(
     widget.description.actions,
@@ -196,6 +212,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     super.initState();
 
     final description = widget.description;
+
+    _subscription = widget.description.animationsOnSourceWatch
+        ? widget.functionality.source.backingStorage.watch((_) {
+            _animationsKey.currentState?.enableAnimationsFor();
+          })
+        : null;
 
     controller = description.asSliver && widget.overrideController != null
         ? widget.overrideController!
@@ -254,6 +276,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   @override
   void dispose() {
+    _subscription?.cancel();
     if (widget.overrideController == null) {
       controller.dispose();
     }
@@ -324,7 +347,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   double appBarBottomWidgetSize(PageDescription? page) =>
       ((page?.search == null && !atHomePage) || widget.description.pages == null
           ? 0
-          : (widget.description.showPageSwitcherAsHeader ? 0 : 40 + 16)) +
+          : (40 + 16)) +
       (page == null ? 4 : 0);
 
   bool get hideAppBar =>
@@ -391,8 +414,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               ),
               child: _BottomWidget(
                 progress: source.progress,
-                routeChanger: (page != null && page.search == null) ||
-                        widget.description.showPageSwitcherAsHeader
+                routeChanger: page != null && page.search == null
                     ? const SizedBox.shrink()
                     : widget.description.pages?.switcherWidget(context, this),
                 child: Padding(
@@ -424,16 +446,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           child: widget.description.pages!.switcherWidget(context, this),
         ),
       if (appBar != null) appBar,
-      if (page != null)
-        ...page.slivers
-      else ...[
-        if (widget.description.showPageSwitcherAsHeader &&
-            widget.description.pages != null)
-          SliverToBoxAdapter(
-            child: widget.description.pages!.switcherWidget(context, this),
-          ),
-        ...widget.slivers,
-      ],
+      if (page != null) ...page.slivers else ...widget.slivers,
       if (currentPage == 0)
         _WrapPadding(
           footer: description.footer,
@@ -488,11 +501,15 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     final FocusNode? searchFocus = page?.search?.focus ??
         (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
+    final gridSettingsWatcher = GridConfiguration.watcherOf(context);
+
     if (description.asSliver) {
       return PlayAnimations(
+        key: _animationsKey,
+        playAnimationsOn:
+            widget.functionality.playAnimationOn + [gridSettingsWatcher],
         child: FocusNotifier(
           notifier: searchFocus,
-          focusMain: widget.mainFocus.requestFocus,
           child: _GridSelectionCountHolder(
             calculatePadding: _bottomPadding,
             key: _holderKey,
@@ -527,7 +544,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     Widget child(BuildContext context) {
       final Widget ret = _BodyWrapping(
         bindings: const {},
-        mainFocus: widget.mainFocus,
+        // mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
         children: [
           if (atHomePage && widget.description.pullToRefresh)
@@ -603,9 +620,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     }
 
     return PlayAnimations(
+      key: _animationsKey,
+      playAnimationsOn:
+          widget.functionality.playAnimationOn + [gridSettingsWatcher],
       child: FocusNotifier(
         notifier: searchFocus,
-        focusMain: widget.mainFocus.requestFocus,
+        // focusMain: widget.mainFocus.requestFocus,
         child: _GridSelectionCountHolder(
           key: _holderKey,
           calculatePadding: _bottomPadding,
@@ -624,7 +644,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 }
 
 class _LinearProgressIndicator extends StatefulWidget {
-  const _LinearProgressIndicator({super.key, required this.progress});
+  const _LinearProgressIndicator({required this.progress});
 
   final RefreshingProgress progress;
 
@@ -746,8 +766,13 @@ class GridExtrasNotifier<T extends CellBase> extends InheritedWidget {
 }
 
 class PlayAnimations extends StatefulWidget {
-  const PlayAnimations({super.key, required this.child});
+  const PlayAnimations({
+    required super.key,
+    required this.playAnimationsOn,
+    required this.child,
+  });
 
+  final List<WatchFire<dynamic>> playAnimationsOn;
   final Widget child;
 
   static bool? maybeOf(BuildContext context) {
@@ -762,6 +787,8 @@ class PlayAnimations extends StatefulWidget {
 }
 
 class _PlayAnimationsState extends State<PlayAnimations> {
+  final List<StreamSubscription<void>> _subsc = [];
+
   bool play = false;
 
   void enableAnimationsFor([
@@ -781,6 +808,28 @@ class _PlayAnimationsState extends State<PlayAnimations> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    for (final e in widget.playAnimationsOn) {
+      _subsc.add(
+        e((_) {
+          enableAnimationsFor();
+        }),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final e in _subsc) {
+      e.cancel();
+    }
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return _PlayAnimationNotifier(
       play: play,
@@ -791,10 +840,10 @@ class _PlayAnimationsState extends State<PlayAnimations> {
 
 class _PlayAnimationNotifier extends InheritedWidget {
   const _PlayAnimationNotifier({
-    super.key,
     required this.play,
     required super.child,
   });
+
   final bool play;
 
   @override

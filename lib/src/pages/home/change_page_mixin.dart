@@ -53,7 +53,11 @@ mixin _ChangePageMixin on State<Home> {
     }
   }
 
-  void _switchPage(_AnimatedIconsMixin icons, int to) {
+  void _switchPage(
+    _AnimatedIconsMixin icons,
+    int to,
+    bool showAnimeMangaPages,
+  ) {
     if (to == currentRoute) {
       return;
     }
@@ -72,7 +76,7 @@ mixin _ChangePageMixin on State<Home> {
       icons.pageFadeAnimation.reset();
       setState(() {});
 
-      _animateIcons(icons);
+      _animateIcons(icons, showAnimeMangaPages);
 
       icons.pageRiseAnimation.forward();
     });
@@ -80,44 +84,69 @@ mixin _ChangePageMixin on State<Home> {
 
   void _procPop(_AnimatedIconsMixin icons, bool pop) {
     if (!pop) {
-      _switchPage(icons, kBooruPageRoute);
+      _switchPage(
+        icons,
+        kBooruPageRoute,
+        SettingsService.db().current.showAnimeMangaPages,
+      );
     }
   }
 
   void _procPopA(_AnimatedIconsMixin icons, bool pop) {
     if (!pop) {
-      _switchPage(icons, kMangaPageRoute);
+      final showAnimeMangaPages =
+          SettingsService.db().current.showAnimeMangaPages;
+
+      _switchPage(
+        icons,
+        showAnimeMangaPages ? kMangaPageRoute : kGalleryPageRoute,
+        showAnimeMangaPages,
+      );
     }
   }
 
-  void _animateIcons(_AnimatedIconsMixin icons) {
-    switch (currentRoute) {
-      case kBooruPageRoute:
-        icons.booruIconController
-            .reverse()
-            .then((value) => icons.booruIconController.forward());
-      case kGalleryPageRoute:
-        icons.galleryIconController
-            .reverse()
-            .then((value) => icons.galleryIconController.forward());
-      case kMangaPageRoute:
-        icons.favoritesIconController
-            .reverse()
-            .then((value) => icons.favoritesIconController.forward());
-      case kAnimePageRoute:
-        icons.animeIconController
-            .forward()
-            .then((value) => icons.animeIconController.value = 0);
-    }
+  Future<void> _animateIcons(
+    _AnimatedIconsMixin icons,
+    bool showAnimeMangaPages,
+  ) {
+    return !showAnimeMangaPages
+        ? switch (currentRoute) {
+            kBooruPageRoute => icons.booruIconController
+                .reverse()
+                .then((value) => icons.booruIconController.forward()),
+            kGalleryPageRoute => icons.galleryIconController
+                .reverse()
+                .then((value) => icons.galleryIconController.forward()),
+            int() => Future.value(),
+          }
+        : switch (currentRoute) {
+            kBooruPageRoute => icons.booruIconController
+                .reverse()
+                .then((value) => icons.booruIconController.forward()),
+            kGalleryPageRoute => icons.galleryIconController
+                .reverse()
+                .then((value) => icons.galleryIconController.forward()),
+            kMangaPageRoute => icons.favoritesIconController
+                .reverse()
+                .then((value) => icons.favoritesIconController.forward()),
+            kAnimePageRoute => icons.animeIconController
+                .forward()
+                .then((value) => icons.animeIconController.value = 0),
+            int() => Future.value(),
+          };
   }
 
-  Widget _currentPage(BuildContext context, _AnimatedIconsMixin icons) {
+  Widget _currentPage(
+    BuildContext context,
+    _AnimatedIconsMixin icons,
+    bool showAnimeMangaPages,
+  ) {
     if (widget.callback != null) {
       return GalleryDirectories(
         nestedCallback: widget.callback,
         procPop: (pop) => _procPop(icons, pop),
         db: DatabaseConnectionNotifier.of(context),
-        localizations: AppLocalizations.of(context)!,
+        l8n: AppLocalizations.of(context)!,
       );
     }
 
@@ -146,42 +175,67 @@ mixin _ChangePageMixin on State<Home> {
           const ThenEffect(delay: Duration(milliseconds: 50)),
         ],
         controller: icons.pageFadeAnimation,
-        child: switch (currentRoute) {
-          kBooruPageRoute => _NavigatorShell(
-              navigatorKey: mainKey,
-              child: BooruPage(
-                pagingRegistry: pagingRegistry,
-                procPop: (pop) => _procPopA(icons, pop),
-                db: DatabaseConnectionNotifier.of(context),
-              ),
-            ),
-          kGalleryPageRoute => _NavigatorShell(
-              navigatorKey: galleryKey,
-              child: GalleryDirectories(
-                procPop: (pop) => _procPop(icons, pop),
-                db: DatabaseConnectionNotifier.of(context),
-                localizations: AppLocalizations.of(context)!,
-              ),
-            ),
-          kMangaPageRoute => _NavigatorShell(
-              navigatorKey: mangaKey,
-              child: MangaPage(
-                procPop: (pop) => _procPop(icons, pop),
-                db: DatabaseConnectionNotifier.of(context),
-              ),
-            ),
-          kAnimePageRoute => AnimePage(
-              procPop: (pop) => _procPop(icons, pop),
-              db: DatabaseConnectionNotifier.of(context),
-            ),
-          kMorePageRoute => _NavigatorShell(
-              navigatorKey: moreKey,
-              child: MorePage(
-                db: DatabaseConnectionNotifier.of(context),
-              ),
-            ),
-          int() => throw "unimpl",
-        },
+        child: showAnimeMangaPages
+            ? switch (currentRoute) {
+                kBooruPageRoute => _NavigatorShell(
+                    navigatorKey: mainKey,
+                    child: BooruPage(
+                      pagingRegistry: pagingRegistry,
+                      procPop: (pop) => _procPopA(icons, pop),
+                      db: DatabaseConnectionNotifier.of(context),
+                    ),
+                  ),
+                kGalleryPageRoute => _NavigatorShell(
+                    navigatorKey: galleryKey,
+                    child: GalleryDirectories(
+                      procPop: (pop) => _procPop(icons, pop),
+                      db: DatabaseConnectionNotifier.of(context),
+                      l8n: AppLocalizations.of(context)!,
+                    ),
+                  ),
+                kMangaPageRoute => _NavigatorShell(
+                    navigatorKey: mangaKey,
+                    child: MangaPage(
+                      procPop: (pop) => _procPop(icons, pop),
+                      db: DatabaseConnectionNotifier.of(context),
+                    ),
+                  ),
+                kAnimePageRoute => AnimePage(
+                    procPop: (pop) => _procPop(icons, pop),
+                    db: DatabaseConnectionNotifier.of(context),
+                  ),
+                kMorePageRoute => _NavigatorShell(
+                    navigatorKey: moreKey,
+                    child: MorePage(
+                      db: DatabaseConnectionNotifier.of(context),
+                    ),
+                  ),
+                int() => throw "unimpl",
+              }
+            : switch (currentRoute) {
+                kBooruPageRoute => _NavigatorShell(
+                    navigatorKey: mainKey,
+                    child: BooruPage(
+                      pagingRegistry: pagingRegistry,
+                      procPop: (pop) => _procPopA(icons, pop),
+                      db: DatabaseConnectionNotifier.of(context),
+                    ),
+                  ),
+                kGalleryPageRoute => _NavigatorShell(
+                    navigatorKey: galleryKey,
+                    child: GalleryDirectories(
+                      procPop: (pop) => _procPop(icons, pop),
+                      db: DatabaseConnectionNotifier.of(context),
+                      l8n: AppLocalizations.of(context)!,
+                    ),
+                  ),
+                int() => _NavigatorShell(
+                    navigatorKey: moreKey,
+                    child: MorePage(
+                      db: DatabaseConnectionNotifier.of(context),
+                    ),
+                  ),
+              },
       ),
     );
   }

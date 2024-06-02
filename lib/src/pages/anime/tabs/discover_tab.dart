@@ -212,7 +212,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
             selectionGlue: GlueProvider.generateOf(context)(),
             source: source,
           ),
-          mainFocus: state.mainFocus,
           description: GridDescription(
             actions:
                 DiscoverTab.actions(savedAnimeEntries, watchedAnimeEntries),

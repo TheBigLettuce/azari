@@ -107,7 +107,6 @@ class __FinishedTabState extends State<_FinishedTab> {
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
-          mainFocus: state.mainFocus,
           description: GridDescription(
             actions: [
               GridAction(

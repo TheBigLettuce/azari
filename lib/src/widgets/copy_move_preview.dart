@@ -25,80 +25,72 @@ class CopyMovePreview extends StatefulWidget {
     BuildContext context,
     String title,
     IconData icon,
-  ) =>
-      PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Padding(
-          padding:
-              const EdgeInsets.only(left: 24, bottom: 12, top: 12, right: 24),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: DecoratedBox(
-                      decoration: ShapeDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .secondaryContainer
-                            .withOpacity(0.25),
-                        shape: const StadiumBorder(),
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60),
+      child: Padding(
+        padding:
+            const EdgeInsets.only(left: 24, bottom: 12, top: 12, right: 24),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: colorScheme.secondaryContainer.withOpacity(0.25),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        right: 16,
+                        left: 16,
+                        bottom: 4,
+                        top: 4,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          right: 16,
-                          left: 16,
-                          bottom: 4,
-                          top: 4,
-                        ),
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSecondaryContainer
-                                        .withOpacity(0.8),
-                                  ),
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color:
+                              colorScheme.onSecondaryContainer.withOpacity(0.8),
                         ),
                       ),
                     ),
                   ),
                 ),
-                const Padding(padding: EdgeInsets.only(right: 8)),
-                DecoratedBox(
-                  decoration: ShapeDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withOpacity(0.35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      icon,
-                      size: 20,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onPrimaryContainer
-                          .withOpacity(0.8),
-                    ),
+              ),
+              const Padding(padding: EdgeInsets.only(right: 8)),
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-              ],
-            ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   @override
   State<CopyMovePreview> createState() => _CopyMovePreviewState();

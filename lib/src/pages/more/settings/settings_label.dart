@@ -18,10 +18,8 @@ class SettingsLabel extends StatelessWidget {
   final TextStyle style;
   final bool removePadding;
 
-  static TextStyle defaultStyle(BuildContext context) => Theme.of(context)
-      .textTheme
-      .titleSmall!
-      .copyWith(color: Theme.of(context).colorScheme.secondary);
+  static TextStyle defaultStyle(BuildContext context, ThemeData theme) =>
+      theme.textTheme.titleSmall!.copyWith(color: theme.colorScheme.secondary);
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +55,8 @@ class _MenuLabelState extends State<MenuLabel> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () {
         expandTitle = !expandTitle;
@@ -65,10 +65,10 @@ class _MenuLabelState extends State<MenuLabel> {
       },
       child: Text(
         widget.title,
-        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 0.6,
-            ),
+        style: theme.textTheme.titleSmall!.copyWith(
+          color: theme.colorScheme.primary,
+          letterSpacing: 0.6,
+        ),
         maxLines: expandTitle ? null : 1,
         overflow: expandTitle ? null : TextOverflow.ellipsis,
       ),

@@ -19,6 +19,7 @@ import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
@@ -111,10 +112,17 @@ class IoServicesImplTable
   @override
   SecondaryGridService secondaryGrid(
     Booru booru,
-    String name, [
+    String name,
+    SafeMode? safeMode, [
     bool create = false,
-  ]) =>
-      IsarSecondaryGridService.booru(booru, name, create);
+  ]) {
+    final api = IsarSecondaryGridService.booru(booru, name, create);
+    if (safeMode != null) {
+      api.currentState.copy(safeMode: safeMode).saveSecondary(api);
+    }
+
+    return api;
+  }
 }
 
 mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
@@ -228,7 +236,7 @@ mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
       );
 
   @override
-  AnimeRelation makeAnieRelation({
+  AnimeRelation makeAnimeRelation({
     required int id,
     required String thumbUrl,
     required String title,

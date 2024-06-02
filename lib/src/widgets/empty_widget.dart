@@ -47,6 +47,9 @@ class EmptyWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l8n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(left: 8, right: 8),
@@ -59,21 +62,18 @@ class EmptyWidget extends StatelessWidget {
                     : "${chooseKaomoji(gridSeed)}\n",
                 style: TextStyle(
                   fontSize: mini ? 14 : 14 * 2,
-                  color: error == null
-                      ? null
-                      : Theme.of(context).colorScheme.error,
+                  color: error == null ? null : colorScheme.error,
                 ),
               ),
               TextSpan(
                 text: overrideEmpty ??
                     (error == null
-                        ? "${AppLocalizations.of(context)!.emptyValue}..."
-                        : "${AppLocalizations.of(context)!.error} — $error"),
+                        ? "${l8n.emptyValue}..."
+                        : "${l8n.error} — $error"),
                 style: TextStyle(
                   overflow: TextOverflow.ellipsis,
-                  color: error == null
-                      ? null
-                      : Theme.of(context).colorScheme.error.withOpacity(0.6),
+                  color:
+                      error == null ? null : colorScheme.error.withOpacity(0.6),
                   fontStyle: error != null ? null : FontStyle.italic,
                   fontSize: error != null
                       ? mini
@@ -88,7 +88,7 @@ class EmptyWidget extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             overflow: TextOverflow.ellipsis,
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+            color: colorScheme.secondary.withOpacity(0.5),
             fontSize: mini ? 12 : null,
           ),
         ),

@@ -22,6 +22,7 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
@@ -53,7 +54,7 @@ abstract class GalleryPlug {
     DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations localizations,
+    required AppLocalizations l8n,
   });
 
   void notify(String? target);
@@ -154,109 +155,120 @@ mixin GalleryDirectory
     GridFunctionality<GalleryDirectory> functionality,
     GalleryDirectory cell,
     int idx,
-  ) async {
+  ) {
+    final l8n = AppLocalizations.of(context)!;
+
     final (api, callback, nestedCallback, segmentFnc) =
         DirectoriesDataNotifier.of(context);
 
     if (callback != null) {
-      // functionality.refreshingStatus.mutation.cellCount = 0;
-
       Navigator.pop(context);
       callback(cell, null);
+
+      return Future.value();
     } else {
       bool requireAuth = false;
 
-      if (canAuthBiometric) {
-        requireAuth = DatabaseConnectionNotifier.of(context)
-                .directoryMetadata
-                .get(segmentFnc(cell))
-                ?.requireAuth ??
-            false;
-        if (requireAuth) {
-          final success = await LocalAuthentication().authenticate(
-            localizedReason: AppLocalizations.of(context)!.openDirectory,
-          );
-          if (!success) {
-            return;
-          }
+      Future<void> onSuccess(bool success) {
+        if (!success || !context.mounted) {
+          return Future.value();
         }
+
+        StatisticsGalleryService.db().current.add(viewedDirectories: 1).save();
+        final d = cell;
+
+        final db = DatabaseConnectionNotifier.of(context);
+
+        final apiFiles = switch (cell.bucketId) {
+          "trash" => api.files(
+              d,
+              GalleryFilesPageType.trash,
+              db.directoryTags,
+              db.directoryMetadata,
+              db.favoriteFiles,
+              db.localTags,
+            ),
+          "favorites" => api.files(
+              d,
+              GalleryFilesPageType.favorites,
+              db.directoryTags,
+              db.directoryMetadata,
+              db.favoriteFiles,
+              db.localTags,
+            ),
+          String() => api.files(
+              d,
+              GalleryFilesPageType.normal,
+              db.directoryTags,
+              db.directoryMetadata,
+              db.favoriteFiles,
+              db.localTags,
+            ),
+        };
+
+        final glue = GlueProvider.generateOf(context);
+
+        return Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(
+            builder: (context) => switch (cell.bucketId) {
+              "favorites" => GalleryFiles(
+                  generateGlue: glue,
+                  api: apiFiles,
+                  secure: requireAuth,
+                  callback: nestedCallback,
+                  dirName: l8n.galleryDirectoriesFavorites,
+                  bucketId: "favorites",
+                  db: DatabaseConnectionNotifier.of(context),
+                  tagManager: TagManager.of(context),
+                ),
+              "trash" => GalleryFiles(
+                  api: apiFiles,
+                  generateGlue: glue,
+                  secure: requireAuth,
+                  callback: nestedCallback,
+                  dirName: l8n.galleryDirectoryTrash,
+                  bucketId: "trash",
+                  db: DatabaseConnectionNotifier.of(context),
+                  tagManager: TagManager.of(context),
+                ),
+              String() => GalleryFiles(
+                  generateGlue: glue,
+                  api: apiFiles,
+                  secure: requireAuth,
+                  dirName: d.name,
+                  callback: nestedCallback,
+                  bucketId: d.bucketId,
+                  db: DatabaseConnectionNotifier.of(context),
+                  tagManager: TagManager.of(context),
+                )
+            },
+          ),
+        );
       }
 
-      StatisticsGalleryService.db().current.add(viewedDirectories: 1).save();
-      final d = cell;
+      requireAuth = DatabaseConnectionNotifier.of(context)
+              .directoryMetadata
+              .get(segmentFnc(cell))
+              ?.requireAuth ??
+          false;
 
-      final db = DatabaseConnectionNotifier.of(context);
-
-      final apiFiles = switch (cell.bucketId) {
-        "trash" => api.files(
-            d,
-            GalleryFilesPageType.trash,
-            db.directoryTags,
-            db.directoryMetadata,
-            db.favoriteFiles,
-          ),
-        "favorites" => api.files(
-            d,
-            GalleryFilesPageType.favorites,
-            db.directoryTags,
-            db.directoryMetadata,
-            db.favoriteFiles,
-          ),
-        String() => api.files(
-            d,
-            GalleryFilesPageType.normal,
-            db.directoryTags,
-            db.directoryMetadata,
-            db.favoriteFiles,
-          ),
-      };
-
-      final glue = GlueProvider.generateOf(context);
-
-      return Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => switch (cell.bucketId) {
-            "favorites" => GalleryFiles(
-                generateGlue: glue,
-                api: apiFiles,
-                secure: requireAuth,
-                callback: nestedCallback,
-                dirName:
-                    AppLocalizations.of(context)!.galleryDirectoriesFavorites,
-                bucketId: "favorites",
-                db: DatabaseConnectionNotifier.of(context),
-                tagManager: TagManager.of(context),
-              ),
-            "trash" => GalleryFiles(
-                api: apiFiles,
-                generateGlue: glue,
-                secure: requireAuth,
-                callback: nestedCallback,
-                dirName: AppLocalizations.of(context)!.galleryDirectoryTrash,
-                bucketId: "trash",
-                db: DatabaseConnectionNotifier.of(context),
-                tagManager: TagManager.of(context),
-              ),
-            String() => GalleryFiles(
-                generateGlue: glue,
-                api: apiFiles,
-                secure: requireAuth,
-                dirName: d.name,
-                callback: nestedCallback,
-                bucketId: d.bucketId,
-                db: DatabaseConnectionNotifier.of(context),
-                tagManager: TagManager.of(context),
-              )
-          },
-        ),
-      );
+      if (canAuthBiometric && requireAuth) {
+        return LocalAuthentication()
+            .authenticate(
+              localizedReason: l8n.openDirectory,
+            )
+            .then(onSuccess);
+      } else {
+        return onSuccess(true);
+      }
     }
   }
 }
 
 class FileBase {
   const FileBase({
+    required this.tagsFlat,
     required this.id,
     required this.bucketId,
     required this.name,
@@ -288,11 +300,8 @@ class FileBase {
   final bool isVideo;
   final bool isGif;
 
-  // final bool isOriginal;
-
-  // final String tagsFlat;
+  final String tagsFlat;
   final bool isDuplicate;
-  // final bool isFavorite;
 }
 
 class AndroidGalleryFile extends FileBase with GalleryFile {
@@ -308,6 +317,7 @@ class AndroidGalleryFile extends FileBase with GalleryFile {
     required super.width,
     required super.lastModified,
     required super.originalUri,
+    required super.tagsFlat,
   });
 }
 
@@ -323,6 +333,7 @@ mixin GalleryFile
         AppBarButtonable,
         Stickerable {
   static GalleryFile forPlatform({
+    required String tagsFlat,
     required int id,
     required String bucketId,
     required String name,
@@ -347,6 +358,7 @@ mixin GalleryFile
         width: width,
         lastModified: lastModified,
         originalUri: originalUri,
+        tagsFlat: tagsFlat,
       );
 
   @override
@@ -401,7 +413,10 @@ mixin GalleryFile
                   Icons.star_rounded,
                   (selected) {
                     FilesActionsMixin.favoriteOrUnfavorite(
-                        context, [this], db.favoriteFiles);
+                      context,
+                      [this],
+                      db.favoriteFiles,
+                    );
                   },
                   animate: true,
                   watch: (f, [bool fire = false]) {
@@ -602,15 +617,17 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     final filename = file.name;
     final res = ImageTagsNotifier.resOf(context);
 
+    final l8n = AppLocalizations.of(context)!;
+
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.only(left: 16),
           sliver: LabelSwitcherWidget(
             pages: [
-              PageLabel(AppLocalizations.of(context)!.infoHeadline),
+              PageLabel(l8n.infoHeadline),
               PageLabel(
-                AppLocalizations.of(context)!.tagsInfoPage,
+                l8n.tagsInfoPage,
                 count: ImageTagsNotifier.of(context).length,
               ),
             ],
@@ -626,7 +643,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
               MenuWrapper(
                 title: filename,
                 child: addInfoTile(
-                  title: AppLocalizations.of(context)!.nameTitle,
+                  title: l8n.nameTitle,
                   subtitle: filename,
                   trailing: plug.temporary
                       ? null
@@ -638,10 +655,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    title: Text(
-                                      AppLocalizations.of(context)!
-                                          .enterNewNameTitle,
-                                    ),
+                                    title: Text(l8n.enterNewNameTitle),
                                     content: TextFormField(
                                       autofocus: true,
                                       initialValue: filename,
@@ -651,8 +665,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                       ),
                                       validator: (value) {
                                         if (value == null) {
-                                          return AppLocalizations.of(context)!
-                                              .valueIsNull;
+                                          return l8n.valueIsNull;
                                         }
 
                                         final res =
@@ -660,7 +673,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                           value,
                                         );
                                         if (res.hasError) {
-                                          return res.asError(context);
+                                          return res.asError(l8n);
                                         }
 
                                         return null;
@@ -682,21 +695,21 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 ),
               ),
               addInfoTile(
-                title: AppLocalizations.of(context)!.dateModified,
-                subtitle: AppLocalizations.of(context)!.date(
+                title: l8n.dateModified,
+                subtitle: l8n.date(
                   DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
                 ),
               ),
               addInfoTile(
-                title: AppLocalizations.of(context)!.widthInfoPage,
-                subtitle: AppLocalizations.of(context)!.pixels(file.width),
+                title: l8n.widthInfoPage,
+                subtitle: l8n.pixels(file.width),
               ),
               addInfoTile(
-                title: AppLocalizations.of(context)!.heightInfoPage,
-                subtitle: AppLocalizations.of(context)!.pixels(file.height),
+                title: l8n.heightInfoPage,
+                subtitle: l8n.pixels(file.height),
               ),
               addInfoTile(
-                title: AppLocalizations.of(context)!.sizeInfoPage,
+                title: l8n.sizeInfoPage,
                 subtitle: kbMbSize(context, file.size),
               ),
               // if (res != null && file.tagsFlat.contains("translated"))
@@ -732,13 +745,17 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                       final db =
                           DatabaseConnectionNotifier.of(context).localTags;
 
-                      openAddTagDialog(context, (v, delete) {
-                        if (delete) {
-                          db.removeSingle([filename], v);
-                        } else {
-                          db.addMultiple([filename], v);
-                        }
-                      });
+                      openAddTagDialog(
+                        context,
+                        (v, delete) {
+                          if (delete) {
+                            db.removeSingle([filename], v);
+                          } else {
+                            db.addMultiple([filename], v);
+                          }
+                        },
+                        l8n,
+                      );
                     },
                     icon: const Icon(Icons.add_rounded),
                     visualDensity: VisualDensity.compact,
@@ -796,6 +813,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
   @override
   Widget build(BuildContext context) {
     final res = widget.res;
+    final l8n = AppLocalizations.of(context)!;
 
     return RawChip(
       isEnabled: _status == null,
@@ -805,10 +823,13 @@ class _RedownloadTileState extends State<RedownloadTile> {
               final dio = BooruAPI.defaultClientForBooru(res!.booru);
               final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
 
+              final downloadManager = DownloadManager.of(context);
+              final postTags = PostTags.fromContext(context);
+
               _status = api.singlePost(res.id).then((post) {
                 GalleryManagementApi.current().deleteFiles([widget.file]);
 
-                post.download(context);
+                post.download(downloadManager, postTags);
 
                 return null;
               }).onError((error, stackTrace) {
@@ -827,9 +848,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               setState(() {});
             },
       avatar: const Icon(Icons.download_outlined),
-      label: Text(
-        AppLocalizations.of(context)!.redownloadLabel,
-      ),
+      label: Text(l8n.redownloadLabel),
     );
   }
 }

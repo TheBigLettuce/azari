@@ -100,7 +100,6 @@ class LinuxApiFunctions implements PlatformApi {
 
   @override
   Future<void> setWallpaper(int id) {
-    // TODO: implement setWallpaper
     throw UnimplementedError();
   }
 }

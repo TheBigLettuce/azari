@@ -31,9 +31,12 @@ class HomeSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AnnotatedRegion(
       value: navBarStyleForTheme(
-        Theme.of(context),
+        theme,
         transparent: !noNavBar,
         highTone: !noNavBar,
       ),
@@ -91,8 +94,8 @@ class HomeSkeleton extends StatelessWidget {
                       duration: 200.ms,
                       curve: Easing.standard,
                       color: ElevationOverlay.applySurfaceTint(
-                        Theme.of(context).colorScheme.surface,
-                        Theme.of(context).colorScheme.surfaceTint,
+                        colorScheme.surface,
+                        colorScheme.surfaceTint,
                         3,
                       ).withOpacity(0.8),
                       child: Padding(
@@ -109,10 +112,7 @@ class HomeSkeleton extends StatelessWidget {
                                 Icon(
                                   Icons.signal_wifi_off_outlined,
                                   size: 14,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.8),
+                                  color: colorScheme.onSurface.withOpacity(0.8),
                                 ),
                                 const Padding(
                                   padding: EdgeInsets.only(right: 4),
@@ -120,10 +120,8 @@ class HomeSkeleton extends StatelessWidget {
                                 Text(
                                   AppLocalizations.of(context)!.noInternet,
                                   style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.8),
+                                    color:
+                                        colorScheme.onSurface.withOpacity(0.8),
                                   ),
                                 ),
                               ],

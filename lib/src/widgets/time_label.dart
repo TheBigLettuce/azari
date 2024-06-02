@@ -26,16 +26,17 @@ class TimeLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     if (time == (now.day, now.month, now.year)) {
       return SettingsLabel(
-        AppLocalizations.of(context)!.todayLabel,
+        l8n.todayLabel,
         titleStyle,
         removePadding: removePadding,
       );
     } else {
       return SettingsLabel(
-        AppLocalizations.of(context)!
-            .dateSimple(DateTime(time.$3, time.$2, time.$1)),
+        l8n.dateSimple(DateTime(time.$3, time.$2, time.$1)),
         titleStyle,
         removePadding: removePadding,
       );

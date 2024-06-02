@@ -81,25 +81,29 @@ class _GalleryImpl implements GalleryApi {
           }
 
           return !data.requireAuth && !data.blur;
-        }).map((e) => GalleryFile.forPlatform(
-              id: e!.id,
-              bucketId: e.bucketId,
-              name: e.name,
-              lastModified: e.lastModified,
-              originalUri: e.originalUri,
-              height: e.height,
-              width: e.width,
-              size: e.size,
-              isVideo: e.isVideo,
-              isGif: e.isGif,
-              isDuplicate: _regxp.hasMatch(e.name),
-            )),
+        }).map(
+          (e) => GalleryFile.forPlatform(
+            tagsFlat: api.localTags.get(e!.name).join(" "),
+            id: e.id,
+            bucketId: e.bucketId,
+            name: e.name,
+            lastModified: e.lastModified,
+            originalUri: e.originalUri,
+            height: e.height,
+            width: e.width,
+            size: e.size,
+            isVideo: e.isVideo,
+            isGif: e.isGif,
+            isDuplicate: _regxp.hasMatch(e.name),
+          ),
+        ),
       );
     } else {
       api.source.backingStorage.addAll(
         f.map(
           (e) => GalleryFile.forPlatform(
-            id: e!.id,
+            tagsFlat: api.localTags.get(e!.name).join(" "),
+            id: e.id,
             bucketId: e.bucketId,
             name: e.name,
             lastModified: e.lastModified,

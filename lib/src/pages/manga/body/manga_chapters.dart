@@ -192,7 +192,8 @@ class _MangaChaptersState extends State<MangaChapters> {
     }
   }
 
-  Widget chapterWidget(BuildContext context) => PopupMenuButton(
+  Widget chapterWidget(BuildContext context, AppLocalizations l8n) =>
+      PopupMenuButton(
         position: PopupMenuPosition.under,
         shape: const BeveledRectangleBorder(),
         clipBehavior: Clip.antiAlias,
@@ -205,8 +206,8 @@ class _MangaChaptersState extends State<MangaChapters> {
                     .save();
               },
               child: settings.hideRead
-                  ? Text(AppLocalizations.of(context)!.mangaShowRead)
-                  : Text(AppLocalizations.of(context)!.mangaHideRead),
+                  ? Text(l8n.mangaShowRead)
+                  : Text(l8n.mangaHideRead),
             ),
             PopupMenuItem<void>(
               onTap: () {
@@ -222,7 +223,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                 setState(() {});
               },
               child: Text(
-                AppLocalizations.of(context)!.mangaClearCachedMangaChapters,
+                l8n.mangaClearCachedMangaChapters,
               ),
             ),
           ];
@@ -233,12 +234,14 @@ class _MangaChaptersState extends State<MangaChapters> {
             foregroundColor:
                 WidgetStatePropertyAll(Theme.of(context).colorScheme.primary),
           ),
-          child: Text(AppLocalizations.of(context)!.settingsLabel),
+          child: Text(l8n.settingsLabel),
         ),
       );
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return FutureBuilder(
       future: _future,
       builder: (context, snapshot) {
@@ -246,7 +249,7 @@ class _MangaChaptersState extends State<MangaChapters> {
           return _ChapterBody(
             scrollController: widget.scrollController,
             list: list,
-            settingsButton: chapterWidget(context),
+            settingsButton: chapterWidget(context, l8n),
             api: widget.api,
             entry: widget.entry,
             onFinishRead: _onFinishRead,
@@ -264,10 +267,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(
-                                AppLocalizations.of(context)!
-                                    .mangaLoadNextChapters,
-                              ),
+                            : Text(l8n.mangaLoadNextChapters),
                       ),
                     ),
                   )
@@ -293,8 +293,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                   )
                 : FilledButton(
                     onPressed: _loadChapters,
-                    child:
-                        Text(AppLocalizations.of(context)!.mangaLoadChapters),
+                    child: Text(l8n.mangaLoadChapters),
                   ),
           );
         }

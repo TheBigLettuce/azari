@@ -33,11 +33,10 @@ Future<void> init() async {
       // final context = restartKey.currentContext;
       // if (context != null) {}
     },
-    onDidReceiveBackgroundNotificationResponse: notifBackground,
   );
 
   await FlutterLocalNotificationsPlugin().cancelAll();
 }
 
-@pragma("vm:entry-point")
-void notifBackground(NotificationResponse res) {}
+// @pragma("vm:entry-point")
+// void notifBackground(NotificationResponse res) {}

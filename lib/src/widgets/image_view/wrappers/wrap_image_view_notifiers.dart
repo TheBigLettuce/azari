@@ -153,7 +153,6 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                   data: _searchData,
                   child: FocusNotifier(
                     notifier: _searchData.searchFocus,
-                    focusMain: widget.mainFocus.requestFocus,
                     child: CurrentContentNotifier(
                       content: widget.currentCell,
                       child: LoadingProgressNotifier(

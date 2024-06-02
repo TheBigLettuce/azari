@@ -106,11 +106,13 @@ class AutocompleteWidget extends StatelessWidget {
             )
             .toList();
 
+        final theme = Theme.of(context);
+
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
-            color: Theme.of(context).colorScheme.surface,
-            surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+            color: theme.colorScheme.surface,
+            surfaceTintColor: theme.colorScheme.surfaceTint,
             clipBehavior: Clip.antiAlias,
             borderRadius: BorderRadius.circular(25),
             elevation: 4,
@@ -132,7 +134,7 @@ class AutocompleteWidget extends StatelessWidget {
                       }
 
                       return Container(
-                        color: highlight ? Theme.of(context).focusColor : null,
+                        color: highlight ? theme.focusColor : null,
                         child: tiles[index],
                       );
                     },
@@ -222,6 +224,7 @@ class AutocompleteSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     final notifier = FocusNotifier.of(context);
@@ -301,10 +304,8 @@ class AutocompleteSearchBar extends StatelessWidget {
                   : maxWidth,
             ),
             hintText: notifier.hasFocus && !disable
-                ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
-                : customHint ??
-                    searchTextOverride ??
-                    AppLocalizations.of(context)!.searchHint,
+                ? "${searchTextOverride ?? l8n.searchHint} ${customHint ?? ''}"
+                : customHint ?? searchTextOverride ?? l8n.searchHint,
             controller: textController,
             focusNode: focusNode,
             trailing: notifier.hasFocus && !disable

@@ -26,20 +26,23 @@ class VideoControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appBarVisibility = AppBarVisibilityNotifier.of(context);
+
     return Animate(
       effects: const [
         FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500)),
       ],
       autoPlay: false,
-      target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+      target: appBarVisibility ? 0 : 1,
       child: IgnorePointer(
-        ignoring: !AppBarVisibilityNotifier.of(context),
+        ignoring: !appBarVisibility,
         child: Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
             width: 60,
             child: Card.filled(
-              color: Theme.of(context).appBarTheme.backgroundColor,
+              color: theme.appBarTheme.backgroundColor,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -79,13 +82,13 @@ class VideoControls extends StatelessWidget {
                       Icons.loop_outlined,
                       color: controller.value.isLooping
                           ? Colors.blue.harmonizeWith(
-                              Theme.of(context).colorScheme.primary,
+                              theme.colorScheme.primary,
                             )
                           : null,
                     ),
                   ),
                   Divider(
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+                    color: theme.iconTheme.color?.withOpacity(0.5),
                   ),
                   _VideoTime(controller: controller),
                   _VideoSeekBackward(controller: controller),
@@ -131,6 +134,8 @@ class __PlayButtonState extends State<_PlayButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return IconButton(
       onPressed: () {
         if (widget.controller.value.isBuffering) {
@@ -151,8 +156,7 @@ class __PlayButtonState extends State<_PlayButton> {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.blue
-                    .harmonizeWith(Theme.of(context).colorScheme.primary),
+                color: Colors.blue.harmonizeWith(theme.colorScheme.primary),
               ),
             )
           : widget.controller.value.isPlaying
@@ -236,6 +240,8 @@ class __VideoTimeState extends State<_VideoTime> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.all(8),
       child: SizedBox(
@@ -248,14 +254,14 @@ class __VideoTimeState extends State<_VideoTime> {
                 TextSpan(
                   text: _minutesSeconds(widget.controller.value.position),
                   style: TextStyle(
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.6),
+                    color: theme.iconTheme.color?.withOpacity(0.6),
                   ),
                 ),
                 TextSpan(
                   text:
                       "\n${_minutesSeconds(widget.controller.value.duration)}",
                   style: TextStyle(
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.2),
+                    color: theme.iconTheme.color?.withOpacity(0.2),
                   ),
                 ),
               ],

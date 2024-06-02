@@ -13,9 +13,11 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
@@ -185,6 +187,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     final secondary = widget.db.secondaryGrid(
       widget.booru,
       name,
+      widget.overrideSafeMode,
       widget.name == null,
     );
 
@@ -212,6 +215,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         widget.pagingRegistry?.getOrRegister(name, () => makePageEntry(name)) ??
             makePageEntry(name);
 
+    pagingState.tagManager.latest.add(widget.tags);
+
     if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
       gridBookmarks.add(
         objFactory.makeGridBookmark(
@@ -226,7 +231,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     search = SearchLaunchGrid(
       SearchLaunchGridData(
         completeTag: api.completeTag,
-        mainFocus: state.mainFocus,
         header: TagsWidget(
           tagging: tagManager.latest,
           onPress: (tag, safeMode) {
@@ -282,7 +286,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     super.dispose();
   }
 
-  void _download(int i) => source.forIdx(i)?.download(context);
+  void _download(int i) => source
+      .forIdx(i)
+      ?.download(DownloadManager.of(context), PostTags.fromContext(context));
 
   void _onTagPressed(
     BuildContext context,
@@ -313,6 +319,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
@@ -336,7 +344,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       unselectOnUpdate: false,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
-                        buttonText: AppLocalizations.of(context)!.openInBrowser,
+                        buttonText: l8n.openInBrowser,
                         onPressed: () {
                           launchUrl(
                             Uri.https(api.booru.url),
@@ -345,12 +353,17 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                         },
                       ),
                     ),
+                    GridFooter<void>(
+                      storage: source.backingStorage,
+                      name: source.tags,
+                    ),
                   ],
-                  mainFocus: state.mainFocus,
                   initalScrollPosition: pagingState.offset,
                   functionality: GridFunctionality(
-                    settingsButton:
-                        GridSettingsButton.fromWatchable(gridSettings),
+                    settingsButton: GridSettingsButton.fromWatchable(
+                      gridSettings,
+                      SafeModeButton(secondaryGrid: pagingState.secondaryGrid),
+                    ),
                     updateScrollPosition: pagingState.setOffset,
                     download: _download,
                     selectionGlue: GlueProvider.generateOf(context)(),
@@ -393,9 +406,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       ),
                       BooruGridActions.hide(context, hiddenBooruPost),
                     ],
+                    animationsOnSourceWatch: false,
                     inlineMenuButtonItems: true,
-                    keybindsDescription:
-                        AppLocalizations.of(context)!.booruGridPageName,
+                    keybindsDescription: l8n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),
                 ),

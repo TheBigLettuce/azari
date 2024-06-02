@@ -28,7 +28,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
-final _futures = <(int, AnimeMetadata), Future>{};
+final _futures = <(int, AnimeMetadata), Future<void>>{};
 
 class MemoryOnlyServicesImplTable
     with MemoryOnlyServicesImplTableObjInstExt
@@ -123,7 +123,8 @@ class MemoryOnlyServicesImplTable
   @override
   SecondaryGridService secondaryGrid(
     Booru booru,
-    String name, [
+    String name,
+    SafeMode? safeMode, [
     bool create = false,
   ]) =>
       throw UnimplementedError();
@@ -220,26 +221,31 @@ mixin MemoryOnlyServicesImplTableObjInstExt implements ServicesObjFactoryExt {
       PlainBlacklistedDirectoryData(bucketId, name);
 
   @override
-  AnimeGenre makeAnimeGenre(
-          {required String title,
-          required int id,
-          required bool unpressable,
-          required bool explicit}) =>
+  AnimeGenre makeAnimeGenre({
+    required String title,
+    required int id,
+    required bool unpressable,
+    required bool explicit,
+  }) =>
       throw UnimplementedError();
 
   @override
-  AnimeRelation makeAnieRelation(
-      {required int id,
-      required String thumbUrl,
-      required String title,
-      required String type}) {
+  AnimeRelation makeAnimeRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  }) {
     // TODO: implement makeAnieRelation
     throw UnimplementedError();
   }
 
   @override
-  AnimeCharacter makeAnimeCharacter(
-      {required String imageUrl, required String name, required String role}) {
+  AnimeCharacter makeAnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
+  }) {
     // TODO: implement makeAnimeCharacter
     throw UnimplementedError();
   }
@@ -386,7 +392,7 @@ class PlainTagData extends TagData {
 }
 
 class MemoryTagManager implements TagManager {
-  MemoryTagManager(Booru booru);
+  MemoryTagManager();
 
   @override
   final BooruTagging excluded = MemoryBooruTagging(TagType.excluded);
@@ -415,10 +421,12 @@ class PlainSettingsData extends SettingsData {
     required super.quality,
     required super.safeMode,
     required super.showWelcomePage,
+    required super.showAnimeMangaPages,
   });
 
   @override
   SettingsData copy({
+    bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,
@@ -426,6 +434,7 @@ class PlainSettingsData extends SettingsData {
     bool? showWelcomePage,
   }) =>
       PlainSettingsData(
+        showAnimeMangaPages: showAnimeMangaPages ?? this.showAnimeMangaPages,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
         safeMode: safeMode ?? this.safeMode,
@@ -462,6 +471,7 @@ class MemorySettingsService implements SettingsService {
   SettingsData get current =>
       _current ??
       const PlainSettingsData(
+        showAnimeMangaPages: false,
         path: PlainSettingsPath("_", "*not supported on web*"),
         selectedBooru: Booru.danbooru,
         quality: DisplayQuality.sample,
@@ -470,7 +480,10 @@ class MemorySettingsService implements SettingsService {
       );
 
   @override
-  StreamSubscription<SettingsData?> watch(void Function(SettingsData? s) f) =>
+  StreamSubscription<SettingsData?> watch(
+    void Function(SettingsData? s) f, [
+    bool fire = false,
+  ]) =>
       _events.stream.listen(f);
 }
 
@@ -1610,8 +1623,10 @@ class MemoryDirectoryMetadataService implements DirectoryMetadataService {
       );
 
   @override
-  StreamSubscription<void> watch(void Function(void p1) f,
-      [bool fire = false]) {
+  StreamSubscription<void> watch(
+    void Function(void p1) f, [
+    bool fire = false,
+  ]) {
     // TODO: implement watch
     throw UnimplementedError();
   }
@@ -1667,10 +1682,12 @@ class MemoryFavoriteFileService implements FavoriteFileService {
         StreamTransformer((input, cancelOnError) {
           final controller = StreamController<int>(sync: true);
           controller.onListen = () {
-            final subscription = input.listen(controller.add,
-                onError: controller.addError,
-                onDone: controller.close,
-                cancelOnError: cancelOnError);
+            final subscription = input.listen(
+              controller.add,
+              onError: controller.addError,
+              onDone: controller.close,
+              cancelOnError: cancelOnError,
+            );
             controller
               ..onPause = subscription.pause
               ..onResume = subscription.resume
@@ -1723,7 +1740,6 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
   final _val = <String, PlainBlacklistedDirectoryData>{};
   final _events = StreamController<void>.broadcast();
 
-  @override
   void addAll(List<GalleryDirectory> directories) {
     for (final e in directories) {
       _val[e.bucketId] = PlainBlacklistedDirectoryData(e.bucketId, e.name);
@@ -1731,13 +1747,11 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
     _events.add(null);
   }
 
-  @override
   void clear() {
     _val.clear();
     _events.add(null);
   }
 
-  @override
   void deleteAll(List<String> bucketIds) {
     for (final e in bucketIds) {
       _val.remove(e);
@@ -1763,7 +1777,6 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
   // ResourceSource<BlacklistedDirectoryData, String> makeSource() =>
   //     GenericListSource(() => Future.value(_val.values.toList()));
 
-  @override
   StreamSubscription<void> watch(
     void Function(void p1) f, [
     bool fire = false,
@@ -1830,7 +1843,6 @@ class PlainBooruTag extends BooruTag {
 }
 
 class MemoryLocalTagsService implements LocalTagsService {
-  @override
   final Map<String, String> cachedValues = {};
 
   final _events = StreamController<String>.broadcast();
@@ -2138,7 +2150,8 @@ class MemoryHiddenBooruPostService implements HiddenBooruPostService {
   @override
   void addAll(List<HiddenBooruPostData> booru) {
     cachedValues.addEntries(
-        booru.map((e) => MapEntry((e.postId, e.booru), e.thumbUrl)));
+      booru.map((e) => MapEntry((e.postId, e.booru), e.thumbUrl)),
+    );
 
     _events.add(null);
   }
@@ -2232,7 +2245,6 @@ class MapPostsOptimizedStorage extends MapStorage<(int, Booru), Post>
     implements PostsOptimizedStorage {
   MapPostsOptimizedStorage() : super(PostsOptimizedStorage.postTransformKey);
 
-  @override
   Post? currentlyLast;
 
   @override
@@ -2298,6 +2310,10 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
     // TODO: implement destroy
   }
 
+  @override
+  // TODO: implement safeMode
+  SafeMode get safeMode => throw UnimplementedError();
+
   // @override
   // final PostsOptimizedStorage backingStorage;
 
@@ -2350,7 +2366,7 @@ class MemoryMainGridService implements MainGridService {
   PostsOptimizedStorage get savedPosts => _storage;
 
   @override
-  late final TagManager tagManager = MemoryTagManager(booru);
+  late final TagManager tagManager = MemoryTagManager();
 }
 
 class MemoryStatisticsGeneralData extends StatisticsGeneralData {
@@ -2443,6 +2459,15 @@ class MemoryStatisticsGalleryService implements StatisticsGalleryService {
     viewedDirectories: 0,
     viewedFiles: 0,
   );
+
+  @override
+  StreamSubscription<StatisticsGalleryData> watch(
+    void Function(StatisticsGalleryData p1) f, [
+    bool fire = false,
+  ]) {
+    // TODO: implement watch
+    throw UnimplementedError();
+  }
 }
 
 class PlainStatisticsBooruData extends StatisticsBooruData {
@@ -2481,6 +2506,15 @@ class MemoryStatisticsBooruService implements StatisticsBooruService {
     swiped: 0,
     viewed: 0,
   );
+
+  @override
+  StreamSubscription<StatisticsBooruData> watch(
+    void Function(StatisticsBooruData p1) f, [
+    bool fire = false,
+  ]) {
+    // TODO: implement watch
+    throw UnimplementedError();
+  }
 }
 
 class PlainStatisticsDailyData extends StatisticsDailyData {

@@ -25,6 +25,8 @@ class _AnimeNewsState extends State<AnimeNews> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return widget.news.isEmpty
         ? const EmptyWidget(gridSeed: 0)
         : ClipRRect(
@@ -69,15 +71,10 @@ class _AnimeNewsState extends State<AnimeNews> {
                                 ),
                                 child: Text(
                                   AppLocalizations.of(context)!.date(e.$2.date),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.6),
-                                      ),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6),
+                                  ),
                                 ),
                               ),
                               ListTile(

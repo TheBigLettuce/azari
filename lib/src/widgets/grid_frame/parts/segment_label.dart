@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/widgets/menu_wrapper.dart";
+import "package:flutter/services.dart";
 
 class SegmentLabel extends StatelessWidget {
   const SegmentLabel(
@@ -18,6 +18,7 @@ class SegmentLabel extends StatelessWidget {
     required this.sticky,
     this.overridePinnedIcon,
   });
+
   final String text;
   final List<PopupMenuItem<void>> menuItems;
   final void Function()? onPress;
@@ -28,6 +29,7 @@ class SegmentLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rightGesture = MediaQuery.systemGestureInsetsOf(context).right;
+    final theme = Theme.of(context);
 
     final row = Row(
       textBaseline: TextBaseline.alphabetic,
@@ -37,26 +39,27 @@ class SegmentLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.baseline,
       children: [
-        Container(
-          clipBehavior: onPress == null ? Clip.none : Clip.antiAlias,
-          padding: onPress == null
-              ? const EdgeInsets.all(8)
-              : const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 8),
-          decoration: onPress == null
-              ? null
-              : BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: Theme.of(context)
-                      .colorScheme
-                      .secondaryContainer
-                      .withOpacity(0.4),
-                ),
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                ),
+        _MenuAnchor(
+          onPress: onPress,
+          menuItems: menuItems,
+          child: Container(
+            clipBehavior: onPress == null ? Clip.none : Clip.antiAlias,
+            padding: onPress == null
+                ? const EdgeInsets.all(8)
+                : const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+            decoration: onPress == null
+                ? null
+                : ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withOpacity(0.4),
+                  ),
+            child: Text(
+              text,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
           ),
         ),
         if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
@@ -68,30 +71,73 @@ class SegmentLabel extends StatelessWidget {
       ],
     );
 
-    return MenuWrapper(
-      title: text,
-      items: menuItems,
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: 8,
-          top: 16,
-          right: rightGesture == 0 ? 8 : rightGesture / 2,
-        ),
-        child: GestureDetector(
-          onTap: onPress,
-          child: hidePinnedIcon && overridePinnedIcon == null
-              ? row
-              : SizedBox.fromSize(
-                  size: Size.fromHeight(
-                    (Theme.of(context).textTheme.headlineMedium?.fontSize ??
-                            24) +
-                        8 +
-                        16,
-                  ),
-                  child: row,
-                ),
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: 8,
+        top: 16,
+        right: rightGesture == 0 ? 8 : rightGesture / 2,
       ),
+      child: hidePinnedIcon && overridePinnedIcon == null
+          ? row
+          : SizedBox.fromSize(
+              size: Size.fromHeight(
+                (theme.textTheme.headlineMedium?.fontSize ?? 24) + 8 + 16,
+              ),
+              child: row,
+            ),
+    );
+  }
+}
+
+class _MenuAnchor extends StatelessWidget {
+  const _MenuAnchor({
+    // super.key,
+    required this.menuItems,
+    required this.onPress,
+    required this.child,
+  });
+
+  final void Function()? onPress;
+  final List<PopupMenuItem<void>> menuItems;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPress,
+      onLongPress: () {
+        final RenderBox button = context.findRenderObject()! as RenderBox;
+        final RenderBox overlay = Navigator.of(context)
+            .overlay!
+            .context
+            .findRenderObject()! as RenderBox;
+
+        final offset = Offset(0, button.size.height) + const Offset(0, 2);
+
+        final RelativeRect position = RelativeRect.fromRect(
+          Rect.fromPoints(
+            button.localToGlobal(offset, ancestor: overlay),
+            button.localToGlobal(
+              button.size.bottomRight(Offset.zero) + offset,
+              ancestor: overlay,
+            ),
+          ),
+          Offset.zero & overlay.size,
+        );
+
+        HapticFeedback.mediumImpact();
+
+        showMenu(
+          context: context,
+          position: position,
+          constraints: BoxConstraints(
+            minWidth: button.size.width,
+            maxWidth: button.size.width,
+          ),
+          items: menuItems,
+        );
+      },
+      child: child,
     );
   }
 }
@@ -108,6 +154,7 @@ class MediumSegmentLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rightGesture = MediaQuery.systemGestureInsetsOf(context).right;
+    final theme = Theme.of(context);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -125,10 +172,9 @@ class MediumSegmentLabel extends StatelessWidget {
         children: [
           Text(
             text,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                ),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
+            ),
           ),
           if (trailingWidget != null) trailingWidget!,
         ],

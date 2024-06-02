@@ -83,8 +83,8 @@ enum SortingMode {
         SortingMode.size => 1,
       };
 
-  String translatedString(BuildContext context) => switch (this) {
-        SortingMode.none => AppLocalizations.of(context)!.enumSortringModeNone,
-        SortingMode.size => AppLocalizations.of(context)!.enumSortringModeSize,
+  String translatedString(AppLocalizations l8n) => switch (this) {
+        SortingMode.none => l8n.enumSortringModeNone,
+        SortingMode.size => l8n.enumSortringModeSize,
       };
 }

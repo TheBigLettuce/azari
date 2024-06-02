@@ -314,29 +314,24 @@ class _InitalSettingsState extends State<InitalSettings> {
   }
 
   void _nextPage() {
-    if (PlatformApi.current().requiresPermissions) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) {
-            return AndroidPermissionsPage(
-              doNotLaunchHome: widget.doNotLaunchHome,
-            );
-          },
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) {
-            return CongratulationPage(
-              doNotLaunchHome: widget.doNotLaunchHome,
-            );
-          },
-        ),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      PlatformApi.current().requiresPermissions
+          ? MaterialPageRoute<void>(
+              builder: (context) {
+                return AndroidPermissionsPage(
+                  doNotLaunchHome: widget.doNotLaunchHome,
+                );
+              },
+            )
+          : MaterialPageRoute<void>(
+              builder: (context) {
+                return CongratulationPage(
+                  doNotLaunchHome: widget.doNotLaunchHome,
+                );
+              },
+            ),
+    );
   }
 
   @override
@@ -407,7 +402,7 @@ class _InitalSettingsState extends State<InitalSettings> {
                 radioDialog(
                   context,
                   DisplayQuality.values
-                      .map((e) => (e, e.translatedString(context))),
+                      .map((e) => (e, e.translatedString(l8n))),
                   settings.quality,
                   (value) {
                     settings.copy(quality: value).save();
@@ -416,7 +411,7 @@ class _InitalSettingsState extends State<InitalSettings> {
                 );
               },
               label:
-                  "${l8n.imageDisplayQualitySetting}: ${settings.quality.translatedString(context)}",
+                  "${l8n.imageDisplayQualitySetting}: ${settings.quality.translatedString(l8n)}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -424,7 +419,7 @@ class _InitalSettingsState extends State<InitalSettings> {
               onPressed: () {
                 radioDialog(
                   context,
-                  SafeMode.values.map((e) => (e, e.translatedString(context))),
+                  SafeMode.values.map((e) => (e, e.translatedString(l8n))),
                   settings.safeMode,
                   (value) {
                     settings.copy(safeMode: value).save();
@@ -433,7 +428,7 @@ class _InitalSettingsState extends State<InitalSettings> {
                 );
               },
               label:
-                  "${l8n.safeModeSetting}: ${settings.safeMode.translatedString(context)}",
+                  "${l8n.safeModeSetting}: ${settings.safeMode.translatedString(l8n)}",
               variant: ButtonVariant.secondary,
             ),
           ],

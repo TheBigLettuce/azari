@@ -47,6 +47,9 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     if (widget.bottomSheetVariant) {
       return FutureBuilder(
         key: ValueKey(count),
@@ -82,7 +85,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
                     setState(() {});
                   },
-                  child: Text(AppLocalizations.of(context)!.tryAgain),
+                  child: Text(l8n.tryAgain),
                 ),
                 const Padding(padding: EdgeInsets.only(bottom: 8)),
               ],
@@ -103,7 +106,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
       builder: (context, snapshot) {
         if (!snapshot.hasData && !snapshot.hasError) {
           return AnnotatedRegion(
-            value: navBarStyleForTheme(Theme.of(context), highTone: false),
+            value: navBarStyleForTheme(theme, highTone: false),
             child: const Scaffold(
               body: Center(
                 child: SizedBox(
@@ -115,7 +118,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
           );
         } else if (snapshot.hasError) {
           return AnnotatedRegion(
-            value: navBarStyleForTheme(Theme.of(context)),
+            value: navBarStyleForTheme(theme),
             child: Scaffold(
               appBar: AppBar(),
               body: Center(
@@ -133,7 +136,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
                         setState(() {});
                       },
-                      child: Text(AppLocalizations.of(context)!.tryAgain),
+                      child: Text(l8n.tryAgain),
                     ),
                   ],
                 ),
@@ -142,8 +145,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
           );
         } else {
           return DecoratedBox(
-            decoration:
-                BoxDecoration(color: Theme.of(context).colorScheme.surface),
+            decoration: BoxDecoration(color: theme.colorScheme.surface),
             child:
                 widget.builder(context, snapshot.data as T).animate().fadeIn(),
           );

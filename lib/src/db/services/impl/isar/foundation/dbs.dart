@@ -31,8 +31,6 @@ class _Dbs {
   });
 
   final _favoriteFilesCachedValues = <int, void>{};
-  // final _favoritePostsCachedValues = <(int, Booru), FavoritePostData>{};
-  final _localTagsCachedValues = <String, String>{};
   final _hiddenBooruPostCachedValues = <(int, Booru), String>{};
 
   final _currentBooruDbs = <Booru, Isar>{};
@@ -80,15 +78,6 @@ abstract class _DbsOpen {
     );
   }
 
-  // static Isar secondaryGrid({bool temporary = true}) {
-  //   return Isar.openSync(
-  //     [PostIsarSchema, IsarGridBooruPagingSchema],
-  //     directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
-  //     inspector: false,
-  //     name: _microsecSinceEpoch(),
-  //   );
-  // }
-
   static Isar secondaryGridName(String name, bool create) {
     if (!create &&
         !File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
@@ -102,21 +91,4 @@ abstract class _DbsOpen {
       name: name,
     );
   }
-  // static Isar androidGalleryDirectories([bool temporary = true]) =>
-  //     Isar.openSync(
-  //       kDirectoriesSchemas,
-  //       directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
-  //       inspector: false,
-  //       name: temporary ? _microsecSinceEpoch() : "systemGalleryDirectories",
-  //     );
-
-  // static Isar androidGalleryFiles() => Isar.openSync(
-  //       kFilesSchemas,
-  //       directory: _dbs.temporaryDbDir,
-  //       inspector: false,
-  //       name: _microsecSinceEpoch(),
-  //     );
-
-  static String _microsecSinceEpoch() =>
-      DateTime.now().microsecondsSinceEpoch.toString();
 }

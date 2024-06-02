@@ -123,6 +123,8 @@ class SingleTagWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l8n = AppLocalizations.of(context)!;
+
     return MenuWrapper(
       title: tag.tag,
       items: [
@@ -133,12 +135,13 @@ class SingleTagWidget extends StatelessWidget {
             (context, _, [safeMode]) {
               onPress!(tag.tag, safeMode);
             },
+            l8n,
           ),
         PopupMenuItem(
           onTap: () {
             tagging.delete(tag.tag);
           },
-          child: Text(AppLocalizations.of(context)!.delete),
+          child: Text(l8n.delete),
         ),
       ],
       child: FilledButton.tonal(
