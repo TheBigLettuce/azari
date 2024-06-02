@@ -134,7 +134,7 @@ class DisassembleResult {
 }
 
 class ErrorOr<T> {
-  const ErrorOr.error(String Function(AppLocalizations l8n) error)
+  const ErrorOr.error(String Function(AppLocalizations l10n) error)
       : _error = error,
         _data = null;
   const ErrorOr.value(T result)
@@ -142,12 +142,12 @@ class ErrorOr<T> {
         _error = null;
 
   final T? _data;
-  final String Function(AppLocalizations l8n)? _error;
+  final String Function(AppLocalizations l10n)? _error;
 
   T asValue() => _data!;
   T? maybeValue() => _data;
 
-  String? asError(AppLocalizations l8n) => _error!(l8n);
+  String? asError(AppLocalizations l10n) => _error!(l10n);
 
   bool get hasError => _error != null;
   bool get hasValue => _data != null;
@@ -271,19 +271,19 @@ enum DisassembleResultError {
   extensionTooLong,
   hashIsnt32;
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
+  String translatedString(AppLocalizations l10n) => switch (this) {
         DisassembleResultError.extensionInvalid =>
-          l8n.disassembleExtensionInvalid,
-        DisassembleResultError.noPrefix => l8n.disassembleNoPrefix,
-        DisassembleResultError.numbersAndHash => l8n.disassembleNumbersAndHash,
+          l10n.disassembleExtensionInvalid,
+        DisassembleResultError.noPrefix => l10n.disassembleNoPrefix,
+        DisassembleResultError.numbersAndHash => l10n.disassembleNumbersAndHash,
         DisassembleResultError.prefixNotRegistred =>
-          l8n.disassemblePrefixNotRegistred,
+          l10n.disassemblePrefixNotRegistred,
         DisassembleResultError.invalidPostNumber =>
-          l8n.disassembleInvalidPostNumber,
-        DisassembleResultError.noExtension => l8n.disassembleNoExtension,
-        DisassembleResultError.hashIsInvalid => l8n.disassembleHashIsInvalid,
+          l10n.disassembleInvalidPostNumber,
+        DisassembleResultError.noExtension => l10n.disassembleNoExtension,
+        DisassembleResultError.hashIsInvalid => l10n.disassembleHashIsInvalid,
         DisassembleResultError.extensionTooLong =>
-          l8n.disassembleExtensionTooLong,
-        DisassembleResultError.hashIsnt32 => l8n.disassembleHashIsnt32,
+          l10n.disassembleExtensionTooLong,
+        DisassembleResultError.hashIsnt32 => l10n.disassembleHashIsnt32,
       };
 }

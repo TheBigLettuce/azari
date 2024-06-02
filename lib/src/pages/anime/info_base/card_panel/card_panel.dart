@@ -25,48 +25,48 @@ class CardPanel extends StatefulWidget {
   final EdgeInsets viewPadding;
 
   static List<Widget> defaultInfo(BuildContext context, AnimeEntryData entry) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return [
       UnsizedCard(
-        subtitle: Text(l8n.cardYear),
-        tooltip: l8n.cardYear,
+        subtitle: Text(l10n.cardYear),
+        tooltip: l10n.cardYear,
         title: Text(
-          entry.year == 0 ? l8n.cardUnknownValue : entry.year.toString(),
+          entry.year == 0 ? l10n.cardUnknownValue : entry.year.toString(),
         ),
         transparentBackground: true,
       ),
       UnsizedCard(
-        subtitle: Text(l8n.cardScore),
-        tooltip: l8n.cardScore,
+        subtitle: Text(l10n.cardScore),
+        tooltip: l10n.cardScore,
         title: Text(
-          entry.score == 0 ? l8n.cardUnknownValue : entry.score.toString(),
+          entry.score == 0 ? l10n.cardUnknownValue : entry.score.toString(),
         ),
         transparentBackground: true,
       ),
       UnsizedCard(
-        subtitle: Text(l8n.cardAiring),
-        tooltip: l8n.cardAiring,
+        subtitle: Text(l10n.cardAiring),
+        tooltip: l10n.cardAiring,
         title: Text(
-          entry.isAiring ? l8n.yes : l8n.no,
+          entry.isAiring ? l10n.yes : l10n.no,
         ),
         transparentBackground: true,
       ),
       UnsizedCard(
-        subtitle: Text(l8n.cardEpisodes),
-        tooltip: l8n.cardEpisodes,
+        subtitle: Text(l10n.cardEpisodes),
+        tooltip: l10n.cardEpisodes,
         title: Text(
           entry.episodes == 0
-              ? l8n.cardUnknownValue
+              ? l10n.cardUnknownValue
               : entry.episodes.toString(),
         ),
         transparentBackground: true,
       ),
       UnsizedCard(
-        subtitle: Text(l8n.cardType),
-        tooltip: l8n.cardType,
+        subtitle: Text(l10n.cardType),
+        tooltip: l10n.cardType,
         title: Text(
-          entry.type.isEmpty ? l8n.cardUnknownValue : entry.type.toLowerCase(),
+          entry.type.isEmpty ? l10n.cardUnknownValue : entry.type.toLowerCase(),
         ),
         transparentBackground: true,
       ),

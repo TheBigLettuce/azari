@@ -224,7 +224,7 @@ class AutocompleteSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     final notifier = FocusNotifier.of(context);
@@ -304,8 +304,8 @@ class AutocompleteSearchBar extends StatelessWidget {
                   : maxWidth,
             ),
             hintText: notifier.hasFocus && !disable
-                ? "${searchTextOverride ?? l8n.searchHint} ${customHint ?? ''}"
-                : customHint ?? searchTextOverride ?? l8n.searchHint,
+                ? "${searchTextOverride ?? l10n.searchHint} ${customHint ?? ''}"
+                : customHint ?? searchTextOverride ?? l10n.searchHint,
             controller: textController,
             focusNode: focusNode,
             trailing: notifier.hasFocus && !disable

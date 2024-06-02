@@ -23,7 +23,7 @@ class LoadTags extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SliverPadding(
       padding: const EdgeInsets.all(4),
@@ -34,7 +34,7 @@ class LoadTags extends StatelessWidget {
               padding: const EdgeInsets.only(
                 bottom: 8,
               ),
-              child: Text(l8n.loadTags),
+              child: Text(l10n.loadTags),
             ),
             FilledButton(
               onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
@@ -59,7 +59,7 @@ class LoadTags extends StatelessWidget {
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(l8n.notValidFilename(e.toString())),
+                            content: Text(l10n.notValidFilename(e.toString())),
                           ),
                         );
                       }

@@ -352,7 +352,7 @@ class _BooruPageState extends State<BooruPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return FavoriteBooruStateHolder(
       db: widget.db,
@@ -376,7 +376,7 @@ class _BooruPageState extends State<BooruPage> {
                     unselectOnUpdate: false,
                     buildEmpty: (e) => EmptyWidgetWithButton(
                       error: e,
-                      buttonText: l8n.openInBrowser,
+                      buttonText: l10n.openInBrowser,
                       onPressed: () {
                         launchUrl(
                           Uri.https(pagingState.api.booru.url),
@@ -489,8 +489,8 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                   inlineMenuButtonItems: true,
                   animationsOnSourceWatch: false,
-                  pageName: l8n.booruLabel,
-                  keybindsDescription: l8n.booruGridPageName,
+                  pageName: l10n.booruLabel,
+                  keybindsDescription: l10n.booruGridPageName,
                   gridSeed: state.gridSeed,
                 ),
                 initalScrollPosition: pagingState.offset,
@@ -530,7 +530,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
@@ -548,7 +548,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text(l8n.searchSinglePost),
+                        title: Text(l10n.searchSinglePost),
                         content: SinglePost(
                           tagManager: widget.tagManager,
                           db: widget.db,
@@ -578,7 +578,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                       context: context,
                       builder: (context) {
                         return AlertDialog(
-                          title: Text(l8n.addToExcluded),
+                          title: Text(l10n.addToExcluded),
                           content: AutocompleteWidget(
                             null,
                             (s) {},
@@ -612,7 +612,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
 
               setState(() {});
             },
-            child: Text(l8n.showExcludedTags),
+            child: Text(l10n.showExcludedTags),
           ),
       ],
     );

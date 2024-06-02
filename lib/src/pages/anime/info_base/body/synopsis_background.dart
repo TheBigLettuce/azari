@@ -49,7 +49,7 @@ class SynopsisBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -65,7 +65,7 @@ class SynopsisBackground extends StatelessWidget {
     return Wrap(
       direction: Axis.vertical,
       children: [
-        if (showLabel) BodySegmentLabel(text: l8n.synopsisLabel),
+        if (showLabel) BodySegmentLabel(text: l10n.synopsisLabel),
         Padding(
           padding: const EdgeInsets.only(bottom: 4, right: 4),
           child: AnimatedContainer(
@@ -106,7 +106,7 @@ class SynopsisBackground extends StatelessWidget {
                   ),
           ),
         ),
-        if (background.isNotEmpty) BodySegmentLabel(text: l8n.backgroundLabel),
+        if (background.isNotEmpty) BodySegmentLabel(text: l10n.backgroundLabel),
         if (background.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 4, right: 4),

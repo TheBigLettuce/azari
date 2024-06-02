@@ -54,7 +54,7 @@ abstract class GalleryPlug {
     DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations l8n,
+    required AppLocalizations l10n,
   });
 
   void notify(String? target);
@@ -156,7 +156,7 @@ mixin GalleryDirectory
     GalleryDirectory cell,
     int idx,
   ) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final (api, callback, nestedCallback, segmentFnc) =
         DirectoriesDataNotifier.of(context);
@@ -217,7 +217,7 @@ mixin GalleryDirectory
                   api: apiFiles,
                   secure: requireAuth,
                   callback: nestedCallback,
-                  dirName: l8n.galleryDirectoriesFavorites,
+                  dirName: l10n.galleryDirectoriesFavorites,
                   bucketId: "favorites",
                   db: DatabaseConnectionNotifier.of(context),
                   tagManager: TagManager.of(context),
@@ -227,7 +227,7 @@ mixin GalleryDirectory
                   generateGlue: glue,
                   secure: requireAuth,
                   callback: nestedCallback,
-                  dirName: l8n.galleryDirectoryTrash,
+                  dirName: l10n.galleryDirectoryTrash,
                   bucketId: "trash",
                   db: DatabaseConnectionNotifier.of(context),
                   tagManager: TagManager.of(context),
@@ -256,7 +256,7 @@ mixin GalleryDirectory
       if (canAuthBiometric && requireAuth) {
         return LocalAuthentication()
             .authenticate(
-              localizedReason: l8n.openDirectory,
+              localizedReason: l10n.openDirectory,
             )
             .then(onSuccess);
       } else {
@@ -617,7 +617,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     final filename = file.name;
     final res = ImageTagsNotifier.resOf(context);
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SliverMainAxisGroup(
       slivers: [
@@ -625,9 +625,9 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
           padding: const EdgeInsets.only(left: 16),
           sliver: LabelSwitcherWidget(
             pages: [
-              PageLabel(l8n.infoHeadline),
+              PageLabel(l10n.infoHeadline),
               PageLabel(
-                l8n.tagsInfoPage,
+                l10n.tagsInfoPage,
                 count: ImageTagsNotifier.of(context).length,
               ),
             ],
@@ -643,7 +643,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
               MenuWrapper(
                 title: filename,
                 child: addInfoTile(
-                  title: l8n.nameTitle,
+                  title: l10n.nameTitle,
                   subtitle: filename,
                   trailing: plug.temporary
                       ? null
@@ -655,7 +655,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    title: Text(l8n.enterNewNameTitle),
+                                    title: Text(l10n.enterNewNameTitle),
                                     content: TextFormField(
                                       autofocus: true,
                                       initialValue: filename,
@@ -665,7 +665,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                       ),
                                       validator: (value) {
                                         if (value == null) {
-                                          return l8n.valueIsNull;
+                                          return l10n.valueIsNull;
                                         }
 
                                         final res =
@@ -673,7 +673,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                           value,
                                         );
                                         if (res.hasError) {
-                                          return res.asError(l8n);
+                                          return res.asError(l10n);
                                         }
 
                                         return null;
@@ -695,21 +695,21 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 ),
               ),
               addInfoTile(
-                title: l8n.dateModified,
-                subtitle: l8n.date(
+                title: l10n.dateModified,
+                subtitle: l10n.date(
                   DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
                 ),
               ),
               addInfoTile(
-                title: l8n.widthInfoPage,
-                subtitle: l8n.pixels(file.width),
+                title: l10n.widthInfoPage,
+                subtitle: l10n.pixels(file.width),
               ),
               addInfoTile(
-                title: l8n.heightInfoPage,
-                subtitle: l8n.pixels(file.height),
+                title: l10n.heightInfoPage,
+                subtitle: l10n.pixels(file.height),
               ),
               addInfoTile(
-                title: l8n.sizeInfoPage,
+                title: l10n.sizeInfoPage,
                 subtitle: kbMbSize(context, file.size),
               ),
               // if (res != null && file.tagsFlat.contains("translated"))
@@ -754,7 +754,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                             db.addMultiple([filename], v);
                           }
                         },
-                        l8n,
+                        l10n,
                       );
                     },
                     icon: const Icon(Icons.add_rounded),
@@ -813,7 +813,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
   @override
   Widget build(BuildContext context) {
     final res = widget.res;
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return RawChip(
       isEnabled: _status == null,
@@ -848,7 +848,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               setState(() {});
             },
       avatar: const Icon(Icons.download_outlined),
-      label: Text(l8n.redownloadLabel),
+      label: Text(l10n.redownloadLabel),
     );
   }
 }

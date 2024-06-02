@@ -20,9 +20,9 @@ enum SafeMode {
         SafeMode.relaxed => to == normal || to == relaxed,
       };
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
-        SafeMode.normal => l8n.enumSafeModeNormal,
-        SafeMode.none => l8n.enumSafeModeNone,
-        SafeMode.relaxed => l8n.enumSafeModeRelaxed,
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        SafeMode.normal => l10n.enumSafeModeNormal,
+        SafeMode.none => l10n.enumSafeModeNone,
+        SafeMode.relaxed => l10n.enumSafeModeRelaxed,
       };
 }

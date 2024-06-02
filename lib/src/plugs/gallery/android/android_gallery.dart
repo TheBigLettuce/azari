@@ -22,13 +22,13 @@ class AndroidGallery implements GalleryPlug {
     DirectoryTagService directoryTag, {
     required bool temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations l8n,
+    required AppLocalizations l10n,
   }) {
     final api = _AndroidGallery(
       blacklistedDirectory,
       directoryTag,
       temporary: temporaryDb,
-      localizations: l8n,
+      localizations: l10n,
     );
     _global!._currentApi = api;
 

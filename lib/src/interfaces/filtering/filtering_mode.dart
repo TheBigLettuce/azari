@@ -54,19 +54,19 @@ enum FilteringMode {
   /// Icon displayed in search bar.
   final IconData icon;
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
-        FilteringMode.favorite => l8n.enumFilteringModeFavorite,
-        FilteringMode.original => l8n.enumFilteringModeOriginal,
-        FilteringMode.duplicate => l8n.enumFilteringModeDuplicate,
-        FilteringMode.same => l8n.enumFilteringModeSame,
-        FilteringMode.video => l8n.enumFilteringModeVideo,
-        FilteringMode.gif => l8n.enumFilteringModeGif,
-        FilteringMode.tag => l8n.enumFilteringModeTag,
-        FilteringMode.noFilter => l8n.enumFilteringModeNoFilter,
-        FilteringMode.tagReversed => l8n.enumFilteringModeTagReversed,
-        FilteringMode.untagged => l8n.enumFilteringModeUntagged,
-        FilteringMode.group => l8n.enumFilteringModeGroup,
-        FilteringMode.ungrouped => l8n.enumFilteringModeUngrouped,
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        FilteringMode.favorite => l10n.enumFilteringModeFavorite,
+        FilteringMode.original => l10n.enumFilteringModeOriginal,
+        FilteringMode.duplicate => l10n.enumFilteringModeDuplicate,
+        FilteringMode.same => l10n.enumFilteringModeSame,
+        FilteringMode.video => l10n.enumFilteringModeVideo,
+        FilteringMode.gif => l10n.enumFilteringModeGif,
+        FilteringMode.tag => l10n.enumFilteringModeTag,
+        FilteringMode.noFilter => l10n.enumFilteringModeNoFilter,
+        FilteringMode.tagReversed => l10n.enumFilteringModeTagReversed,
+        FilteringMode.untagged => l10n.enumFilteringModeUntagged,
+        FilteringMode.group => l10n.enumFilteringModeGroup,
+        FilteringMode.ungrouped => l10n.enumFilteringModeUngrouped,
       };
 }
 
@@ -83,8 +83,8 @@ enum SortingMode {
         SortingMode.size => 1,
       };
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
-        SortingMode.none => l8n.enumSortringModeNone,
-        SortingMode.size => l8n.enumSortringModeSize,
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        SortingMode.none => l10n.enumSortringModeNone,
+        SortingMode.size => l10n.enumSortringModeSize,
       };
 }

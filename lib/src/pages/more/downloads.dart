@@ -92,14 +92,14 @@ class _DownloadsState extends State<Downloads> {
 
   Segments<DownloadHandle> _makeSegments(
     BuildContext context,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) =>
       Segments(
-        l8n.unknownSegmentsPlaceholder,
+        l10n.unknownSegmentsPlaceholder,
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         injectedLabel: "",
-        segment: (e) => e.data.status.translatedString(l8n),
+        segment: (e) => e.data.status.translatedString(l10n),
         caps: SegmentCapability.alwaysPinned(),
       );
 
@@ -119,7 +119,7 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -129,8 +129,8 @@ class _DownloadsState extends State<Downloads> {
           key: state.gridKey,
           slivers: [
             SegmentLayout<DownloadHandle>(
-              segments: _makeSegments(context, l8n),
-              localizations: l8n,
+              segments: _makeSegments(context, l10n),
+              localizations: l10n,
               suggestionPrefix: const [],
               progress: filter.progress,
               gridSeed: state.gridSeed,
@@ -141,7 +141,7 @@ class _DownloadsState extends State<Downloads> {
             search: OverrideGridSearchWidget(
               SearchAndFocus(
                 FilteringSearchWidget(
-                  hint: l8n.downloadsPageName,
+                  hint: l10n.downloadsPageName,
                   filter: filter,
                   textController: searchTextController,
                   localTagDictionary: widget.db.localTagDictionary,
@@ -170,7 +170,7 @@ class _DownloadsState extends State<Downloads> {
                 icon: const Icon(Icons.close),
               ),
             ],
-            keybindsDescription: l8n.downloadsPageName,
+            keybindsDescription: l10n.downloadsPageName,
             inlineMenuButtonItems: true,
             gridSeed: state.gridSeed,
           ),

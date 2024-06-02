@@ -17,11 +17,11 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
   required void Function()? download,
   required void Function() onTap,
 }) {
-  final l8n = AppLocalizations.of(context)!;
+  final l10n = AppLocalizations.of(context)!;
 
   return {
     SingleActivatorDescription(
-      l8n.back,
+      l10n.back,
       const SingleActivator(LogicalKeyboardKey.escape),
     ): () {
       if (scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
@@ -31,7 +31,7 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
       }
     },
     SingleActivatorDescription(
-      l8n.showImageInfo,
+      l10n.showImageInfo,
       const SingleActivator(LogicalKeyboardKey.keyI, control: true),
     ): () {
       if (scaffoldKey.currentState != null) {
@@ -44,19 +44,19 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
     },
     if (download != null)
       SingleActivatorDescription(
-        l8n.downloadImage,
+        l10n.downloadImage,
         const SingleActivator(LogicalKeyboardKey.keyD, control: true),
       ): () {
         download();
       },
     SingleActivatorDescription(
-      l8n.hideAppBar,
+      l10n.hideAppBar,
       const SingleActivator(LogicalKeyboardKey.space, control: true),
     ): () {
       onTap();
     },
     SingleActivatorDescription(
-      l8n.nextImage,
+      l10n.nextImage,
       const SingleActivator(LogicalKeyboardKey.arrowRight),
     ): () {
       pageController.nextPage(
@@ -65,7 +65,7 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
       );
     },
     SingleActivatorDescription(
-      l8n.previousImage,
+      l10n.previousImage,
       const SingleActivator(LogicalKeyboardKey.arrowLeft),
     ): () {
       pageController.previousPage(

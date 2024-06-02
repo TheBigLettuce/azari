@@ -287,7 +287,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
     final size = MediaQuery.sizeOf(context).longestSide * 0.2;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: () {
@@ -392,7 +392,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                             builder: (context) {
                               return AlertDialog(
                                 title: Text(
-                                  l8n.delete,
+                                  l10n.delete,
                                 ),
                                 content: ListTile(
                                   title: Text(widget.state.tags),
@@ -417,11 +417,11 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                         },
                                       );
                                     },
-                                    child: Text(l8n.yes),
+                                    child: Text(l10n.yes),
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
-                                    child: Text(l8n.no),
+                                    child: Text(l10n.no),
                                   ),
                                 ],
                               );

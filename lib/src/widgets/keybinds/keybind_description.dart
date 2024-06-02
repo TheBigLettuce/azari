@@ -19,7 +19,7 @@ Map<SingleActivator, Null Function()> keybindDescription(
   void Function() focusMain,
 ) {
   final theme = Theme.of(context);
-  final l8n = AppLocalizations.of(context)!;
+  final l10n = AppLocalizations.of(context)!;
 
   return {
     const SingleActivator(LogicalKeyboardKey.keyK, shift: true, control: true):
@@ -29,7 +29,7 @@ Map<SingleActivator, Null Function()> keybindDescription(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: theme.dialogBackgroundColor.withOpacity(0.5),
-          title: Text(l8n.keybindsFor(pageName)),
+          title: Text(l10n.keybindsFor(pageName)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView(
@@ -48,7 +48,7 @@ Map<SingleActivator, Null Function()> keybindDescription(
                     title: Text(
                       describeKey(
                         SingleActivatorDescription(
-                          l8n.keybindsDialog,
+                          l10n.keybindsDialog,
                           const SingleActivator(
                             LogicalKeyboardKey.keyK,
                             shift: true,

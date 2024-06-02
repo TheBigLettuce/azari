@@ -51,7 +51,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final addItems = state.addItems(context);
 
@@ -120,7 +120,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                     ),
                     hintText: widget.disabled || state.searchTextAsLabel
                         ? widget.getTags()
-                        : l8n.searchHint,
+                        : l10n.searchHint,
                     onSubmitted: widget.disabled
                         ? null
                         : (value) {
@@ -141,7 +141,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
             viewOnSubmitted: (value) {
               state.onSubmit(context, value);
             },
-            viewHintText: "${l8n.searchHint} ${widget.hint ?? ''}",
+            viewHintText: "${l10n.searchHint} ${widget.hint ?? ''}",
             searchController: searchController,
             suggestionsBuilder: (suggestionsContext, controller) {
               if (controller.text.isEmpty) {

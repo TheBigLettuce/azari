@@ -119,7 +119,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final ret = <Widget>[
       SliverToBoxAdapter(
@@ -136,8 +136,8 @@ class __ChapterBodyState extends State<_ChapterBody> {
                 icon: const Icon(Icons.navigate_next_rounded),
                 label: Text(
                   _chapterStale == null
-                      ? l8n.mangaStartReading
-                      : l8n.mangaContinueReading,
+                      ? l10n.mangaStartReading
+                      : l10n.mangaContinueReading,
                 ),
               ),
             ),
@@ -153,7 +153,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12, top: 16),
             child: Text(
-              l8n.mangaVolumeName(e.$2),
+              l10n.mangaVolumeName(e.$2),
               style: SettingsLabel.defaultStyle(context, theme),
             ),
           ),

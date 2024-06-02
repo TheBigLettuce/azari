@@ -37,11 +37,11 @@ enum PostRating {
   questionable,
   explicit;
 
-  String translatedName(AppLocalizations l8n) => switch (this) {
-        PostRating.general => l8n.enumPostRatingGeneral,
-        PostRating.sensitive => l8n.enumPostRatingSensitive,
-        PostRating.questionable => l8n.enumPostRatingQuestionable,
-        PostRating.explicit => l8n.enumPostRatingExplicit,
+  String translatedName(AppLocalizations l10n) => switch (this) {
+        PostRating.general => l10n.enumPostRatingGeneral,
+        PostRating.sensitive => l10n.enumPostRatingSensitive,
+        PostRating.questionable => l10n.enumPostRatingQuestionable,
+        PostRating.explicit => l10n.enumPostRatingExplicit,
       };
 
   SafeMode get asSafeMode => switch (this) {

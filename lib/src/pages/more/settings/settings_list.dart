@@ -73,7 +73,7 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   void showDialog(String s) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     Navigator.of(context).push(
       DialogRoute<void>(
@@ -84,10 +84,10 @@ class _SettingsListState extends State<SettingsList> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text(l8n.ok),
+              child: Text(l10n.ok),
             ),
           ],
-          title: Text(l8n.error),
+          title: Text(l10n.error),
           content: Text(s),
         ),
       ),
@@ -97,27 +97,27 @@ class _SettingsListState extends State<SettingsList> {
   List<Widget> makeList(
     BuildContext context,
     TextStyle titleStyle,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) =>
       [
-        SettingsLabel(l8n.booruLabel, titleStyle),
+        SettingsLabel(l10n.booruLabel, titleStyle),
         MenuWrapper(
           title: _settings.path.path,
           child: ListTile(
-            title: Text(l8n.downloadDirectorySetting),
+            title: Text(l10n.downloadDirectorySetting),
             subtitle: Text(_settings.path.pathDisplay),
             onTap: () async {
               await SettingsService.db().chooseDirectory(
                 showDialog,
-                emptyResult: l8n.emptyResult,
-                pickDirectory: l8n.pickDirectory,
-                validDirectory: l8n.chooseValidDirectory,
+                emptyResult: l10n.emptyResult,
+                pickDirectory: l10n.pickDirectory,
+                validDirectory: l10n.chooseValidDirectory,
               );
             },
           ),
         ),
         ListTile(
-          title: Text(l8n.selectedBooruSetting),
+          title: Text(l10n.selectedBooruSetting),
           subtitle: Text(_settings.selectedBooru.string),
           onTap: () => radioDialog(
             context,
@@ -128,36 +128,36 @@ class _SettingsListState extends State<SettingsList> {
                 selectBooru(context, _settings, value);
               }
             },
-            title: l8n.selectedBooruSetting,
+            title: l10n.selectedBooruSetting,
           ),
         ),
         ListTile(
-          title: Text(l8n.settingsTheme),
+          title: Text(l10n.settingsTheme),
           onTap: () => radioDialog(
             context,
-            ThemeType.values.map((e) => (e, e.translatedString(l8n))),
+            ThemeType.values.map((e) => (e, e.translatedString(l10n))),
             _miscSettings.themeType,
             (value) {
               if (value != null) {
                 selectTheme(context, _miscSettings, value);
               }
             },
-            title: l8n.settingsTheme,
+            title: l10n.settingsTheme,
           ),
-          subtitle: Text(_miscSettings.themeType.translatedString(l8n)),
+          subtitle: Text(_miscSettings.themeType.translatedString(l10n)),
         ),
         ListTile(
-          title: Text(l8n.imageDisplayQualitySetting),
+          title: Text(l10n.imageDisplayQualitySetting),
           onTap: () => radioDialog(
             context,
-            DisplayQuality.values.map((e) => (e, e.translatedString(l8n))),
+            DisplayQuality.values.map((e) => (e, e.translatedString(l10n))),
             _settings.quality,
             (value) => _settings.copy(quality: value).save(),
-            title: l8n.imageDisplayQualitySetting,
+            title: l10n.imageDisplayQualitySetting,
           ),
-          subtitle: Text(_settings.quality.translatedString(l8n)),
+          subtitle: Text(_settings.quality.translatedString(l10n)),
         ),
-        SettingsLabel(l8n.miscLabel, titleStyle),
+        SettingsLabel(l10n.miscLabel, titleStyle),
         // ListTile(
         //   title: Text(localizations.savedTagsCount),
         //   trailing: PopupMenuButton(
@@ -217,10 +217,10 @@ class _SettingsListState extends State<SettingsList> {
           future: thumbnailCount,
           builder: (context, data) {
             return ListTile(
-              title: Text(l8n.thumbnailsCSize),
+              title: Text(l10n.thumbnailsCSize),
               subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, l8n))
-                  : Text(l8n.loadingPlaceholder),
+                  ? Text(_calculateMBSize(data.data!, l10n))
+                  : Text(l10n.loadingPlaceholder),
               trailing: PopupMenuButton(
                 itemBuilder: (context) {
                   return [
@@ -234,13 +234,13 @@ class _SettingsListState extends State<SettingsList> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: Text(l8n.areYouSure),
+                                  title: Text(l10n.areYouSure),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text(l8n.no),
+                                      child: Text(l10n.no),
                                     ),
                                     TextButton(
                                       onPressed: () {
@@ -254,7 +254,7 @@ class _SettingsListState extends State<SettingsList> {
                                         setState(() {});
                                         Navigator.pop(context);
                                       },
-                                      child: Text(l8n.yes),
+                                      child: Text(l10n.yes),
                                     ),
                                   ],
                                 );
@@ -262,7 +262,7 @@ class _SettingsListState extends State<SettingsList> {
                             ),
                           );
                         },
-                        child: Text(l8n.purgeThumbnails),
+                        child: Text(l10n.purgeThumbnails),
                       ),
                     ),
                   ];
@@ -276,10 +276,10 @@ class _SettingsListState extends State<SettingsList> {
           future: pinnedThumbnailCount,
           builder: (context, data) {
             return ListTile(
-              title: Text(l8n.pinnedThumbnailsSize),
+              title: Text(l10n.pinnedThumbnailsSize),
               subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, l8n))
-                  : Text(l8n.loadingPlaceholder),
+                  ? Text(_calculateMBSize(data.data!, l10n))
+                  : Text(l10n.loadingPlaceholder),
               trailing: PopupMenuButton(
                 itemBuilder: (context) {
                   return [
@@ -293,13 +293,13 @@ class _SettingsListState extends State<SettingsList> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: Text(l8n.areYouSure),
+                                  title: Text(l10n.areYouSure),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text(l8n.no),
+                                      child: Text(l10n.no),
                                     ),
                                     TextButton(
                                       onPressed: () {
@@ -319,7 +319,7 @@ class _SettingsListState extends State<SettingsList> {
                                         setState(() {});
                                         Navigator.pop(context);
                                       },
-                                      child: Text(l8n.yes),
+                                      child: Text(l10n.yes),
                                     ),
                                   ],
                                 );
@@ -327,7 +327,7 @@ class _SettingsListState extends State<SettingsList> {
                             ),
                           );
                         },
-                        child: Text(l8n.purgeThumbnails),
+                        child: Text(l10n.purgeThumbnails),
                       ),
                     ),
                   ];
@@ -343,7 +343,7 @@ class _SettingsListState extends State<SettingsList> {
               .current
               .copy(filesExtendedActions: value)
               .save(),
-          title: Text(l8n.extendedFilesGridActions),
+          title: Text(l10n.extendedFilesGridActions),
         ),
         MenuWrapper(
           title: "GPL-2.0-only",
@@ -358,24 +358,24 @@ class _SettingsListState extends State<SettingsList> {
                 ),
               );
             },
-            title: Text(l8n.licenseSetting),
+            title: Text(l10n.licenseSetting),
             subtitle: const Text("GPL-2.0-only"),
           ),
         ),
         SwitchListTile(
-          title: Text(l8n.animeAlwaysOnline),
+          title: Text(l10n.animeAlwaysOnline),
           value: _miscSettings.animeAlwaysLoadFromNet,
           onChanged: (value) =>
               _miscSettings.copy(animeAlwaysLoadFromNet: value).save(),
         ),
         SwitchListTile(
-          title: Text(l8n.showAnimeManga),
+          title: Text(l10n.showAnimeManga),
           value: _settings.showAnimeMangaPages,
           onChanged: (value) =>
               _settings.copy(showAnimeMangaPages: value).save(),
         ),
         ListTile(
-          title: Text(l8n.openWelcomePageSetting),
+          title: Text(l10n.openWelcomePageSetting),
           onTap: () {
             Navigator.push(
               context,
@@ -406,14 +406,14 @@ class _SettingsListState extends State<SettingsList> {
     final titleStyle = theme.textTheme.titleSmall!
         .copyWith(color: theme.colorScheme.secondary);
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return widget.sliver
         ? SliverList.list(
-            children: makeList(context, titleStyle, l8n),
+            children: makeList(context, titleStyle, l10n),
           )
         : ListView(
-            children: makeList(context, titleStyle, l8n),
+            children: makeList(context, titleStyle, l10n),
           );
   }
 }

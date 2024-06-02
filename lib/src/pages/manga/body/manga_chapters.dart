@@ -192,7 +192,7 @@ class _MangaChaptersState extends State<MangaChapters> {
     }
   }
 
-  Widget chapterWidget(BuildContext context, AppLocalizations l8n) =>
+  Widget chapterWidget(BuildContext context, AppLocalizations l10n) =>
       PopupMenuButton(
         position: PopupMenuPosition.under,
         shape: const BeveledRectangleBorder(),
@@ -206,8 +206,8 @@ class _MangaChaptersState extends State<MangaChapters> {
                     .save();
               },
               child: settings.hideRead
-                  ? Text(l8n.mangaShowRead)
-                  : Text(l8n.mangaHideRead),
+                  ? Text(l10n.mangaShowRead)
+                  : Text(l10n.mangaHideRead),
             ),
             PopupMenuItem<void>(
               onTap: () {
@@ -223,7 +223,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                 setState(() {});
               },
               child: Text(
-                l8n.mangaClearCachedMangaChapters,
+                l10n.mangaClearCachedMangaChapters,
               ),
             ),
           ];
@@ -234,13 +234,13 @@ class _MangaChaptersState extends State<MangaChapters> {
             foregroundColor:
                 WidgetStatePropertyAll(Theme.of(context).colorScheme.primary),
           ),
-          child: Text(l8n.settingsLabel),
+          child: Text(l10n.settingsLabel),
         ),
       );
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return FutureBuilder(
       future: _future,
@@ -249,7 +249,7 @@ class _MangaChaptersState extends State<MangaChapters> {
           return _ChapterBody(
             scrollController: widget.scrollController,
             list: list,
-            settingsButton: chapterWidget(context, l8n),
+            settingsButton: chapterWidget(context, l10n),
             api: widget.api,
             entry: widget.entry,
             onFinishRead: _onFinishRead,
@@ -267,7 +267,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(l8n.mangaLoadNextChapters),
+                            : Text(l10n.mangaLoadNextChapters),
                       ),
                     ),
                   )
@@ -293,7 +293,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                   )
                 : FilledButton(
                     onPressed: _loadChapters,
-                    child: Text(l8n.mangaLoadChapters),
+                    child: Text(l10n.mangaLoadChapters),
                   ),
           );
         }

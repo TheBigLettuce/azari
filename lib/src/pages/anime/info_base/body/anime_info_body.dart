@@ -132,7 +132,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return FutureBuilder(
       future: _future,
@@ -142,7 +142,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BodySegmentLabel(
-                text: l8n.animePicturesLabel,
+                text: l10n.animePicturesLabel,
               ),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide *
@@ -189,7 +189,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
 
                       setState(() {});
                     },
-                    child: Text(l8n.animeLoadPictures),
+                    child: Text(l10n.animeLoadPictures),
                   ),
                 );
         }

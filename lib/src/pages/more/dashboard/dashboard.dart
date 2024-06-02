@@ -38,13 +38,13 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SettingsSkeleton(
-      l8n.dashboardPage,
+      l10n.dashboardPage,
       state,
       appBar: AppBar(
-        title: Text(l8n.dashboardPage),
+        title: Text(l10n.dashboardPage),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -58,43 +58,43 @@ class _DashboardState extends State<Dashboard> {
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: l8n.cardTimeSpent,
-                      title: l8n.hoursShort(
+                      subtitle: l10n.cardTimeSpent,
+                      title: l10n.hoursShort(
                         Duration(milliseconds: general.timeSpent).inHours,
                       ),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardScrollerUp,
+                      subtitle: l10n.cardScrollerUp,
                       title: general.scrolledUp.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardTagsSaved,
+                      subtitle: l10n.cardTagsSaved,
                       title: postTagsCount,
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardRefreshes,
+                      subtitle: l10n.cardRefreshes,
                       title: general.refreshes.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardDownloadTime,
-                      title: l8n.hoursShort(
+                      subtitle: l10n.cardDownloadTime,
+                      title: l10n.hoursShort(
                         Duration(milliseconds: general.timeDownload).inHours,
                       ),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardPostsViewed,
+                      subtitle: l10n.cardPostsViewed,
                       title: booru.viewed.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardPostsDownloaded,
+                      subtitle: l10n.cardPostsDownloaded,
                       title: booru.downloaded.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardPostsSwiped,
+                      subtitle: l10n.cardPostsSwiped,
                       title: booru.swiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardBooruSwitches,
+                      subtitle: l10n.cardBooruSwitches,
                       title: booru.booruSwitches.toString(),
                     ),
                   ],
@@ -102,35 +102,35 @@ class _DashboardState extends State<Dashboard> {
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: l8n.cardDirectoriesViewed,
+                      subtitle: l10n.cardDirectoriesViewed,
                       title: gallery.viewedDirectories.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardFilesViewed,
+                      subtitle: l10n.cardFilesViewed,
                       title: gallery.viewedFiles.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardFilesSwiped,
+                      subtitle: l10n.cardFilesSwiped,
                       title: gallery.filesSwiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardJoinedTimes,
+                      subtitle: l10n.cardJoinedTimes,
                       title: gallery.joined.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardSameFiltered,
+                      subtitle: l10n.cardSameFiltered,
                       title: gallery.sameFiltered.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardTrashed,
+                      subtitle: l10n.cardTrashed,
                       title: gallery.deleted.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardCopied,
+                      subtitle: l10n.cardCopied,
                       title: gallery.copied.toString(),
                     ),
                     DashboardCard(
-                      subtitle: l8n.cardMoved,
+                      subtitle: l10n.cardMoved,
                       title: gallery.moved.toString(),
                     ),
                   ],

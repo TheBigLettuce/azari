@@ -200,13 +200,13 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return AnimeInfoTheme(
       mode: entry.explicit,
       child: SettingsSkeleton(
-        l8n.watchingTab,
+        l10n.watchingTab,
         widget.state,
         fab: _watched
             ? null
@@ -277,10 +277,10 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          l8n.removeFromWatched,
+                          l10n.removeFromWatched,
                         ),
                         action: SnackBarAction(
-                          label: l8n.undoLabel,
+                          label: l10n.undoLabel,
                           onPressed: () {
                             watchedAnimeEntries.add(prevEntry);
                           },

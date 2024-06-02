@@ -319,7 +319,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -344,7 +344,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       unselectOnUpdate: false,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
-                        buttonText: l8n.openInBrowser,
+                        buttonText: l10n.openInBrowser,
                         onPressed: () {
                           launchUrl(
                             Uri.https(api.booru.url),
@@ -408,7 +408,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ],
                     animationsOnSourceWatch: false,
                     inlineMenuButtonItems: true,
-                    keybindsDescription: l8n.booruGridPageName,
+                    keybindsDescription: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),
                 ),

@@ -25,7 +25,7 @@ PopupMenuItem<void> launchGridSafeModeItem(
   BuildContext context,
   String tag,
   void Function(BuildContext, String, [SafeMode?]) launchGrid,
-  AppLocalizations l8n,
+  AppLocalizations l10n,
 ) =>
     PopupMenuItem(
       onTap: () {
@@ -35,14 +35,14 @@ PopupMenuItem<void> launchGridSafeModeItem(
 
         radioDialog<SafeMode>(
           context,
-          SafeMode.values.map((e) => (e, e.translatedString(l8n))),
+          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
           SettingsService.db().current.safeMode,
           (value) => launchGrid(context, tag, value),
-          title: l8n.chooseSafeMode,
+          title: l10n.chooseSafeMode,
           allowSingle: true,
         );
       },
-      child: Text(l8n.launchWithSafeMode),
+      child: Text(l10n.launchWithSafeMode),
     );
 
 class DrawerTagsWidget extends StatefulWidget with DbConnHandle<TagManager> {
@@ -89,7 +89,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
   List<PopupMenuItem<void>> makeItems(
     BuildContext context,
     String tag,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return [
       PopupMenuItem(
@@ -101,7 +101,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
           }
         },
         child: Text(
-          excluded.exists(tag) ? l8n.removeFromExcluded : l8n.addToExcluded,
+          excluded.exists(tag) ? l10n.removeFromExcluded : l10n.addToExcluded,
         ),
       ),
       if (widget.launchGrid != null)
@@ -109,7 +109,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
           context,
           tag,
           widget.launchGrid!,
-          l8n,
+          l10n,
         ),
       if (widget.addRemoveTag)
         PopupMenuItem(
@@ -118,7 +118,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
                 .localTags
                 .removeSingle([widget.filename], tag);
           },
-          child: Text(l8n.delete),
+          child: Text(l10n.delete),
         ),
       PopupMenuItem(
         onTap: () {
@@ -130,7 +130,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
 
           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
         },
-        child: Text(pinned.exists(tag) ? l8n.unpinTag : l8n.pinTag),
+        child: Text(pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag),
       ),
     ];
   }
@@ -139,11 +139,11 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
     BuildContext context,
     String e,
     bool pinned,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) =>
       MenuWrapper(
         title: e,
-        items: makeItems(context, e, l8n),
+        items: makeItems(context, e, l10n),
         child: RawChip(
           elevation: 0,
           clipBehavior: Clip.antiAlias,
@@ -195,10 +195,10 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
       filteredTags = tags;
     }
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final tiles =
-        filteredTags.map((e) => makeTile(context, e.tag, e.favorite, l8n));
+        filteredTags.map((e) => makeTile(context, e.tag, e.favorite, l10n));
 
     return SliverPadding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
@@ -215,7 +215,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget>
 void openAddTagDialog(
   BuildContext context,
   void Function(String, bool) onSubmit,
-  AppLocalizations l8n,
+  AppLocalizations l10n,
 ) {
   final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
   bool delete = false;
@@ -226,7 +226,7 @@ void openAddTagDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(l8n.addTag),
+          title: Text(l10n.addTag),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -236,20 +236,20 @@ void openAddTagDialog(
                   enabled: true,
                   validator: (value) {
                     if (value == null) {
-                      return l8n.valueIsNull;
+                      return l10n.valueIsNull;
                     }
 
                     final v = value.trim();
                     if (v.isEmpty) {
-                      return l8n.valueIsEmpty;
+                      return l10n.valueIsEmpty;
                     }
 
                     if (v.length <= 1) {
-                      return l8n.valueIsEmpty;
+                      return l10n.valueIsEmpty;
                     }
 
                     if (regexp.hasMatch(v)) {
-                      return l8n.tagValidationError;
+                      return l10n.tagValidationError;
                     }
 
                     return null;
@@ -268,7 +268,7 @@ void openAddTagDialog(
               StatefulBuilder(
                 builder: (context, setState) {
                   return SwitchListTile(
-                    title: Text(l8n.delete),
+                    title: Text(l10n.delete),
                     value: delete,
                     onChanged: (v) {
                       delete = v;

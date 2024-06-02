@@ -238,7 +238,7 @@ class _PinnedTagsRow extends StatelessWidget {
     final theme = Theme.of(context);
     final res = ImageTagsNotifier.resOf(context);
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -262,7 +262,7 @@ class _PinnedTagsRow extends StatelessWidget {
                         radioDialog<SafeMode>(
                           context,
                           SafeMode.values
-                              .map((e) => (e, e.translatedString(l8n))),
+                              .map((e) => (e, e.translatedString(l10n))),
                           SettingsService.db().current.safeMode,
                           (value) {
                             OnBooruTagPressed.maybePressOf(
@@ -272,7 +272,7 @@ class _PinnedTagsRow extends StatelessWidget {
                               overrideSafeMode: value,
                             );
                           },
-                          title: l8n.chooseSafeMode,
+                          title: l10n.chooseSafeMode,
                           allowSingle: true,
                         );
                       },

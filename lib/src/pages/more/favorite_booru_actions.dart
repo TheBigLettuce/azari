@@ -70,10 +70,10 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      title: Text(l8n.group),
+      title: Text(l10n.group),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -92,7 +92,7 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
           ),
           if (widget.showPinButton)
             SwitchListTile(
-              title: Text(l8n.pinGroupLabel),
+              title: Text(l10n.pinGroupLabel),
               value: toPin,
               onChanged: (b) {
                 toPin = b;

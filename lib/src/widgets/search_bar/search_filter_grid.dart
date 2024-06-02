@@ -189,7 +189,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SizedBox(
       width: double.infinity,
@@ -199,7 +199,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              l8n.filteringLabel,
+              l10n.filteringLabel,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SegmentedButtonGroup<FilteringMode>(
@@ -212,11 +212,11 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                   .map(
                     (e) => SegmentedButtonValue(
                       e,
-                      e.translatedString(l8n),
+                      e.translatedString(l10n),
                       icon: e.icon,
                     ),
                   ),
-              title: l8n.filteringModesLabel,
+              title: l10n.filteringModesLabel,
             ),
             SegmentedButtonGroup<SortingMode>(
               variant: SegmentedButtonVariant.segments,
@@ -226,13 +226,13 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                   ? [
                       SegmentedButtonValue(
                         currentSorting,
-                        currentSorting.translatedString(l8n),
+                        currentSorting.translatedString(l10n),
                       ),
                     ]
                   : widget.enabledSorting.map(
-                      (e) => SegmentedButtonValue(e, e.translatedString(l8n)),
+                      (e) => SegmentedButtonValue(e, e.translatedString(l10n)),
                     ),
-              title: l8n.sortingModesLabel,
+              title: l10n.sortingModesLabel,
             ),
             const Padding(padding: EdgeInsets.only(bottom: 8)),
           ],

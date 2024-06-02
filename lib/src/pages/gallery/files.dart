@@ -277,7 +277,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   Widget build(BuildContext context) {
     // final statistics = StatisticsGalleryService.db().current;
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -357,19 +357,19 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                     (value) => [
                           StatisticsCard(
                             subtitle: value.viewedFiles.toString(),
-                            title: l8n.cardFilesViewed,
+                            title: l10n.cardFilesViewed,
                           ),
                           StatisticsCard(
                             subtitle: value.filesSwiped.toString(),
-                            title: l8n.cardFilesSwiped,
+                            title: l10n.cardFilesSwiped,
                           ),
                           StatisticsCard(
                             subtitle: value.moved.toString(),
-                            title: l8n.cardMoved,
+                            title: l10n.cardMoved,
                           ),
                           StatisticsCard(
                             subtitle: value.copied.toString(),
-                            title: l8n.cardCopied,
+                            title: l10n.cardCopied,
                           ),
                         ],
                     widget.db.statisticsGallery.watch,
@@ -415,7 +415,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
               ),
               description: GridDescription(
                 overrideEmptyWidgetNotice:
-                    api.type.isFavorites() ? l8n.someFilesShownNotice : null,
+                    api.type.isFavorites() ? l10n.someFilesShownNotice : null,
                 actions: widget.callback != null
                     ? const []
                     : api.type.isTrash()
@@ -463,9 +463,9 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: Text(l8n.emptyTrashTitle),
+                                title: Text(l10n.emptyTrashTitle),
                                 content: Text(
-                                  l8n.thisIsPermanent,
+                                  l10n.thisIsPermanent,
                                   style: TextStyle(
                                     color: Colors.red.harmonizeWith(
                                       theme.colorScheme.primary,
@@ -479,13 +479,13 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                                           .emptyTrash();
                                       Navigator.pop(context);
                                     },
-                                    child: Text(l8n.yes),
+                                    child: Text(l10n.yes),
                                   ),
                                   TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
                                     },
-                                    child: Text(l8n.no),
+                                    child: Text(l10n.no),
                                   ),
                                 ],
                               );
@@ -540,7 +540,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 bottomWidget: widget.callback != null
                     ? CopyMovePreview.hintWidget(
                         context,
-                        l8n.pickFileNotice,
+                        l10n.pickFileNotice,
                         widget.callback!.icon,
                       )
                     : null,
@@ -750,7 +750,7 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     if (widget.storage.isEmpty) {
       return const SliverPadding(padding: EdgeInsets.zero);
@@ -775,7 +775,7 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
                       ),
                     TextSpan(
                       text:
-                          "${widget.storage.count} ${widget.storage.count == 1 ? l8n.elementSingular : l8n.elementPlural}",
+                          "${widget.storage.count} ${widget.storage.count == 1 ? l10n.elementSingular : l10n.elementPlural}",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),

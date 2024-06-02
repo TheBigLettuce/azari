@@ -85,7 +85,7 @@ class __FinishedTabState extends State<_FinishedTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -117,10 +117,10 @@ class __FinishedTabState extends State<_FinishedTab> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        l8n.deletedFromWatched,
+                        l10n.deletedFromWatched,
                       ),
                       action: SnackBarAction(
-                        label: l8n.undoLabel,
+                        label: l10n.undoLabel,
                         onPressed: () {
                           watchedAnimeEntries.reAdd(selected);
                         },
@@ -137,7 +137,7 @@ class __FinishedTabState extends State<_FinishedTab> {
                 true,
               ),
             ],
-            keybindsDescription: l8n.finishedTab,
+            keybindsDescription: l10n.finishedTab,
             showAppBar: false,
             gridSeed: state.gridSeed,
           ),

@@ -57,7 +57,7 @@ class FavoriteBooruPage extends StatelessWidget {
   }
 
   GridFrame<FavoritePostData> child(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridFrame<FavoritePostData>(
       key: state.state.gridKey,
@@ -112,8 +112,8 @@ class FavoriteBooruPage extends StatelessWidget {
         actions: state.gridActions(),
         showAppBar: !asSliver,
         asSliver: asSliver,
-        keybindsDescription: l8n.favoritesLabel,
-        pageName: l8n.favoritesLabel,
+        keybindsDescription: l10n.favoritesLabel,
+        pageName: l10n.favoritesLabel,
         gridSeed: state.state.gridSeed,
       ),
     );

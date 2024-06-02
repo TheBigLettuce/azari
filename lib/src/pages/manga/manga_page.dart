@@ -167,17 +167,17 @@ class _MangaPageState extends State<MangaPage> {
     );
   }
 
-  List<PageLabel> pages(BuildContext context, AppLocalizations l8n) => [
-        PageLabel(l8n.mangaReadingLabel),
+  List<PageLabel> pages(BuildContext context, AppLocalizations l10n) => [
+        PageLabel(l10n.mangaReadingLabel),
         PageLabel(
-          l8n.mangaPinnedLabel,
+          l10n.mangaPinnedLabel,
           count: pinnedManga.count,
         ),
       ];
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final child = GridPopScope(
       searchTextController: null,
@@ -215,11 +215,11 @@ class _MangaPageState extends State<MangaPage> {
         description: GridDescription(
           actions: const [],
           pages: PageSwitcherLabel(
-            pages(context, l8n),
+            pages(context, l10n),
             _buildPage,
           ),
           showAppBar: false,
-          keybindsDescription: l8n.mangaPage,
+          keybindsDescription: l10n.mangaPage,
           gridSeed: state.gridSeed,
         ),
       ),
@@ -470,7 +470,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       sliver: true,
@@ -507,9 +507,9 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(l8n.mangaUnpinned),
+                      content: Text(l10n.mangaUnpinned),
                       action: SnackBarAction(
-                        label: l8n.undoLabel,
+                        label: l10n.undoLabel,
                         onPressed: () => reAdd(deleted),
                       ),
                     ),

@@ -51,11 +51,11 @@ abstract class GalleryAPIDirectories {
 }
 
 class TrashCell implements AsyncCell<GalleryDirectory> {
-  TrashCell(this.l8n);
+  TrashCell(this.l10n);
 
   final _events = StreamController<GalleryDirectory?>.broadcast();
   // final _key = UniqueKey();
-  final AppLocalizations l8n;
+  final AppLocalizations l10n;
 
   GalleryDirectory? _currentData;
   Future<int?>? _trashFuture;
@@ -71,7 +71,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
           ? null
           : GalleryDirectory.forPlatform(
               bucketId: "trash",
-              name: l8n.galleryDirectoryTrash,
+              name: l10n.galleryDirectoryTrash,
               tag: "",
               volumeName: "",
               relativeLoc: "",

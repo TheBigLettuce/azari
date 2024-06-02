@@ -146,7 +146,7 @@ mixin _ChangePageMixin on State<Home> {
         nestedCallback: widget.callback,
         procPop: (pop) => _procPop(icons, pop),
         db: DatabaseConnectionNotifier.of(context),
-        l8n: AppLocalizations.of(context)!,
+        l10n: AppLocalizations.of(context)!,
       );
     }
 
@@ -190,7 +190,7 @@ mixin _ChangePageMixin on State<Home> {
                     child: GalleryDirectories(
                       procPop: (pop) => _procPop(icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
-                      l8n: AppLocalizations.of(context)!,
+                      l10n: AppLocalizations.of(context)!,
                     ),
                   ),
                 kMangaPageRoute => _NavigatorShell(
@@ -226,7 +226,7 @@ mixin _ChangePageMixin on State<Home> {
                     child: GalleryDirectories(
                       procPop: (pop) => _procPop(icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
-                      l8n: AppLocalizations.of(context)!,
+                      l10n: AppLocalizations.of(context)!,
                     ),
                   ),
                 int() => _NavigatorShell(

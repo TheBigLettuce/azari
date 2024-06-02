@@ -26,7 +26,7 @@ class SystemGalleryDirectoriesActions {
     String Function(GalleryDirectory) segment,
     DirectoryMetadataService directoryMetadata,
     BlacklistedDirectoryService blacklistedDirectory,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return GridAction(
       Icons.hide_image_outlined,
@@ -60,12 +60,12 @@ class SystemGalleryDirectoriesActions {
             if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(l8n.directoriesAuthMessage),
+                  content: Text(l10n.directoriesAuthMessage),
                   action: SnackBarAction(
-                    label: l8n.authLabel,
+                    label: l10n.authLabel,
                     onPressed: () async {
                       final success = await LocalAuthentication().authenticate(
-                        localizedReason: l8n.hideDirectoryReason,
+                        localizedReason: l10n.hideDirectoryReason,
                       );
                       if (!success) {
                         return;
@@ -81,7 +81,7 @@ class SystemGalleryDirectoriesActions {
 
           if (canAuthBiometric) {
             LocalAuthentication()
-                .authenticate(localizedReason: l8n.hideDirectoryReason)
+                .authenticate(localizedReason: l10n.hideDirectoryReason)
                 .then(onSuccess);
           } else {
             onSuccess(true);
@@ -102,7 +102,7 @@ class SystemGalleryDirectoriesActions {
     DirectoryTagService directoryTags,
     FavoriteFileService favoriteFile,
     LocalTagsService localTags,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return GridAction(
       Icons.merge_rounded,
@@ -111,7 +111,7 @@ class SystemGalleryDirectoriesActions {
           context,
           selected.length == 1
               ? selected.first.name
-              : "${selected.length} ${l8n.directoriesPlural}",
+              : "${selected.length} ${l10n.directoriesPlural}",
           selected,
           api,
           callback,
@@ -121,7 +121,7 @@ class SystemGalleryDirectoriesActions {
           directoryTags,
           favoriteFile,
           localTags,
-          l8n,
+          l10n,
         );
       },
       true,
@@ -140,7 +140,7 @@ class SystemGalleryDirectoriesActions {
     DirectoryTagService directoryTags,
     FavoriteFileService favoriteFile,
     LocalTagsService localTags,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     bool requireAuth = false;
 
@@ -188,7 +188,7 @@ class SystemGalleryDirectoriesActions {
 
     if (requireAuth && canAuthBiometric) {
       return LocalAuthentication()
-          .authenticate(localizedReason: l8n.joinDirectoriesReason)
+          .authenticate(localizedReason: l10n.joinDirectoriesReason)
           .then(onSuccess);
     } else {
       return onSuccess(true);

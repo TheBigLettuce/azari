@@ -762,7 +762,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     final toSticky = modifiers.contains(SegmentModifier.sticky);
     final toBlur = modifiers.contains(SegmentModifier.blur);
     final toAuth = modifiers.contains(SegmentModifier.auth);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SliverPadding(
       padding: const EdgeInsets.all(4),
@@ -791,7 +791,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                   final success =
                                       await LocalAuthentication().authenticate(
                                     localizedReason:
-                                        l8n.unstickyStickyDirectory,
+                                        l10n.unstickyStickyDirectory,
                                   );
 
                                   if (!success) {
@@ -814,7 +814,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                 unawaited(HapticFeedback.vibrate());
                               },
                               child: Text(
-                                toSticky ? l8n.unpinTag : l8n.pinGroupLabel,
+                                toSticky ? l10n.unpinTag : l10n.pinGroupLabel,
                               ),
                             ),
                           PopupMenuItem(
@@ -822,7 +822,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                               if (toAuth && canAuthBiometric) {
                                 final success =
                                     await LocalAuthentication().authenticate(
-                                  localizedReason: l8n.unblurDirectory,
+                                  localizedReason: l10n.unblurDirectory,
                                 );
 
                                 if (!success) {
@@ -845,7 +845,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                               unawaited(HapticFeedback.vibrate());
                             },
                             child: Text(
-                              toBlur ? l8n.unblur : l8n.blur,
+                              toBlur ? l10n.unblur : l10n.blur,
                             ),
                           ),
                           if (segmentLabel.seg != segments.unsegmentedLabel &&
@@ -859,7 +859,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                       final success =
                                           await LocalAuthentication()
                                               .authenticate(
-                                        localizedReason: l8n.lockDirectory,
+                                        localizedReason: l10n.lockDirectory,
                                       );
 
                                       if (!success) {
@@ -881,7 +881,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                                       unawaited(HapticFeedback.vibrate());
                                     },
                               child: Text(
-                                toAuth ? l8n.notRequireAuth : l8n.requireAuth,
+                                toAuth ? l10n.notRequireAuth : l10n.requireAuth,
                               ),
                             ),
                         ],

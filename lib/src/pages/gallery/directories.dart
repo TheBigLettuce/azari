@@ -43,7 +43,7 @@ class GalleryDirectories extends StatefulWidget {
     this.showBackButton = false,
     this.providedApi,
     required this.db,
-    required this.l8n,
+    required this.l10n,
   }) : assert(!(callback != null && nestedCallback != null));
 
   final CallbackDescription? callback;
@@ -53,7 +53,7 @@ class GalleryDirectories extends StatefulWidget {
   final bool wrapGridPage;
 
   final GalleryAPIDirectories? providedApi;
-  final AppLocalizations l8n;
+  final AppLocalizations l10n;
 
   final DbConn db;
 
@@ -113,7 +113,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         widget.db.directoryTags,
         temporaryDb: widget.callback != null || widget.nestedCallback != null,
         setCurrentApi: widget.callback == null,
-        l8n: widget.l8n,
+        l10n: widget.l10n,
       );
 
   bool isThumbsLoading = false;
@@ -214,20 +214,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   Segments<GalleryDirectory> _makeSegments(BuildContext context) {
     return Segments(
-      widget.l8n.segmentsUncategorized,
+      widget.l10n.segmentsUncategorized,
       injectedLabel: widget.callback != null || widget.nestedCallback != null
-          ? widget.l8n.suggestionsLabel
-          : widget.l8n.segmentsSpecial,
+          ? widget.l10n.suggestionsLabel
+          : widget.l10n.segmentsSpecial,
       displayFirstCellInSpecial:
           widget.callback != null || widget.nestedCallback != null,
-      caps: directoryMetadata.caps(widget.l8n.segmentsSpecial),
+      caps: directoryMetadata.caps(widget.l10n.segmentsSpecial),
       segment: _segmentCell,
       injectedSegments: [
         if (favoriteFiles.isNotEmpty())
           SyncCell(
             GalleryDirectory.forPlatform(
               bucketId: "favorites",
-              name: widget.l8n.galleryDirectoriesFavorites, // change
+              name: widget.l10n.galleryDirectoriesFavorites, // change
               tag: "",
               volumeName: "",
               relativeLoc: "",
@@ -254,7 +254,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 directoryTags,
                 favoriteFiles,
                 widget.db.localTags,
-                widget.l8n,
+                widget.l10n,
               ),
     );
   }
@@ -264,7 +264,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     List<GalleryDirectory> selected,
     String value,
     bool toPin,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) async {
     final requireAuth = <GalleryDirectory>[];
     final noAuth = <GalleryDirectory>[];
@@ -280,7 +280,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
     if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
       final success = await LocalAuthentication()
-          .authenticate(localizedReason: l8n.changeGroupReason);
+          .authenticate(localizedReason: l10n.changeGroupReason);
       if (!success) {
         return null;
       }
@@ -301,7 +301,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       if (toPin) {
         if (await directoryMetadata.canAuth(
           value,
-          l8n.unstickyStickyDirectory,
+          l10n.unstickyStickyDirectory,
         )) {
           directoryMetadata.getOrCreate(value).copyBools(sticky: true).save();
         }
@@ -314,12 +314,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       return (BuildContext context) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l8n.directoriesAuthMessage),
+            content: Text(l10n.directoriesAuthMessage),
             action: SnackBarAction(
-              label: l8n.authLabel,
+              label: l10n.authLabel,
               onPressed: () async {
                 final success = await LocalAuthentication()
-                    .authenticate(localizedReason: l8n.changeGroupReason);
+                    .authenticate(localizedReason: l10n.changeGroupReason);
                 if (!success) {
                   return;
                 }
@@ -348,7 +348,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   void _add(GridSettingsData d) => gridSettings.current = d;
 
   Widget child(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridPopScope(
       filter: filter,
@@ -365,7 +365,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             suggestionPrefix: widget.callback?.suggestFor ?? const [],
             storage: filter.backingStorage,
             progress: filter.progress,
-            localizations: widget.l8n,
+            localizations: widget.l10n,
           ),
         ],
         functionality: GridFunctionality(
@@ -385,7 +385,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           search: OverrideGridSearchWidget(
             SearchAndFocus(
               FilteringSearchWidget(
-                hint: widget.l8n.directoriesHint,
+                hint: widget.l10n.directoriesHint,
                 filter: filter,
                 textController: searchTextController,
                 localTagDictionary: widget.db.localTagDictionary,
@@ -409,7 +409,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       directoryTags,
                       favoriteFiles,
                       widget.db.localTags,
-                      widget.l8n,
+                      widget.l10n,
                     ),
                 ]
               : [
@@ -425,7 +425,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
                       return t;
                     },
-                    (s, v, t) => _addToGroup(context, s, v, t, l8n),
+                    (s, v, t) => _addToGroup(context, s, v, t, l10n),
                     true,
                   ),
                   SystemGalleryDirectoriesActions.blacklist(
@@ -433,7 +433,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     _segmentCell,
                     directoryMetadata,
                     blacklistedDirectories,
-                    widget.l8n,
+                    widget.l10n,
                   ),
                   SystemGalleryDirectoriesActions.joinedDirectories(
                     context,
@@ -445,7 +445,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     directoryTags,
                     favoriteFiles,
                     widget.db.localTags,
-                    widget.l8n,
+                    widget.l10n,
                   ),
                 ],
           footer: widget.callback?.preview,
@@ -487,7 +487,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 )
               : null,
           inlineMenuButtonItems: true,
-          keybindsDescription: widget.l8n.androidGKeybindsDescription,
+          keybindsDescription: widget.l10n.androidGKeybindsDescription,
           gridSeed: state.gridSeed,
         ),
       ),

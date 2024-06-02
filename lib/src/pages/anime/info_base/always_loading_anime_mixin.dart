@@ -47,7 +47,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     if (widget.bottomSheetVariant) {
@@ -85,7 +85,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
                     setState(() {});
                   },
-                  child: Text(l8n.tryAgain),
+                  child: Text(l10n.tryAgain),
                 ),
                 const Padding(padding: EdgeInsets.only(bottom: 8)),
               ],
@@ -136,7 +136,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
                         setState(() {});
                       },
-                      child: Text(l8n.tryAgain),
+                      child: Text(l10n.tryAgain),
                     ),
                   ],
                 ),

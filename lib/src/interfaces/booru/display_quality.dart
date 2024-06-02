@@ -13,8 +13,8 @@ enum DisplayQuality {
 
   const DisplayQuality();
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
-        DisplayQuality.original => l8n.enumDisplayQualityOriginal,
-        DisplayQuality.sample => l8n.enumDisplayQualitySample,
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        DisplayQuality.original => l10n.enumDisplayQualityOriginal,
+        DisplayQuality.sample => l10n.enumDisplayQualitySample,
       };
 }

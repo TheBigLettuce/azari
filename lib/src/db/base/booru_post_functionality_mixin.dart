@@ -170,7 +170,7 @@ class _PostInfoState extends State<PostInfo> {
       post.id,
     );
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SliverMainAxisGroup(
       slivers: [
@@ -178,9 +178,9 @@ class _PostInfoState extends State<PostInfo> {
           padding: const EdgeInsets.only(left: 16),
           sliver: LabelSwitcherWidget(
             pages: [
-              PageLabel(l8n.infoHeadline),
+              PageLabel(l10n.infoHeadline),
               PageLabel(
-                l8n.tagsInfoPage,
+                l10n.tagsInfoPage,
                 count: ImageTagsNotifier.of(context).length,
               ),
             ],
@@ -196,7 +196,7 @@ class _PostInfoState extends State<PostInfo> {
               MenuWrapper(
                 title: post.fileDownloadUrl(),
                 child: ListTile(
-                  title: Text(l8n.urlInfoPage),
+                  title: Text(l10n.urlInfoPage),
                   subtitle: Text(post.fileDownloadUrl()),
                   onTap: () => launchUrl(
                     Uri.parse(post.fileDownloadUrl()),
@@ -205,21 +205,21 @@ class _PostInfoState extends State<PostInfo> {
                 ),
               ),
               ListTile(
-                title: Text(l8n.widthInfoPage),
-                subtitle: Text(l8n.pixels(post.width)),
+                title: Text(l10n.widthInfoPage),
+                subtitle: Text(l10n.pixels(post.width)),
               ),
               ListTile(
-                title: Text(l8n.heightInfoPage),
-                subtitle: Text(l8n.pixels(post.height)),
+                title: Text(l10n.heightInfoPage),
+                subtitle: Text(l10n.pixels(post.height)),
               ),
               ListTile(
-                title: Text(l8n.createdAtInfoPage),
-                subtitle: Text(l8n.date(post.createdAt)),
+                title: Text(l10n.createdAtInfoPage),
+                subtitle: Text(l10n.date(post.createdAt)),
               ),
               MenuWrapper(
                 title: post.sourceUrl,
                 child: ListTile(
-                  title: Text(l8n.sourceFileInfoPage),
+                  title: Text(l10n.sourceFileInfoPage),
                   subtitle: Text(post.sourceUrl),
                   onTap: post.sourceUrl.isNotEmpty &&
                           Uri.tryParse(post.sourceUrl) != null
@@ -231,11 +231,11 @@ class _PostInfoState extends State<PostInfo> {
                 ),
               ),
               ListTile(
-                title: Text(l8n.ratingInfoPage),
-                subtitle: Text(post.rating.translatedName(l8n)),
+                title: Text(l10n.ratingInfoPage),
+                subtitle: Text(post.rating.translatedName(l10n)),
               ),
               ListTile(
-                title: Text(l8n.scoreInfoPage),
+                title: Text(l10n.scoreInfoPage),
                 subtitle: Text(post.score.toString()),
               ),
               if (post.tags.contains("translated"))

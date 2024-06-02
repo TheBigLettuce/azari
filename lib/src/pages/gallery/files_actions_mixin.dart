@@ -12,7 +12,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     BuildContext context,
     List<GalleryFile> selected,
   ) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Navigator.of(context, rootNavigator: true).push(
       DialogRoute(
@@ -21,12 +21,12 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           return AlertDialog(
             title: Text(
               selected.length == 1
-                  ? "${l8n.tagDeleteDialogTitle} ${selected.first.name}"
-                  : "${l8n.tagDeleteDialogTitle}"
+                  ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
+                  : "${l10n.tagDeleteDialogTitle}"
                       " ${selected.length}"
-                      " ${l8n.elementPlural}",
+                      " ${l10n.elementPlural}",
             ),
-            content: Text(l8n.youCanRestoreFromTrash),
+            content: Text(l10n.youCanRestoreFromTrash),
             actions: [
               TextButton(
                 onPressed: () {
@@ -40,13 +40,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                       .save();
                   Navigator.pop(context);
                 },
-                child: Text(l8n.yes),
+                child: Text(l10n.yes),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text(l8n.no),
+                child: Text(l10n.no),
               ),
             ],
           );
@@ -246,7 +246,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
       }
     }
 
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
@@ -258,7 +258,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
               icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-              move ? l8n.moveTo : l8n.copyTo,
+              move ? l10n.moveTo : l10n.copyTo,
               (chosen, newDir) {
                 if (chosen == null && newDir == null) {
                   throw "both are empty";
@@ -268,7 +268,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        move ? l8n.cantMoveSameDest : l8n.cantCopySameDest,
+                        move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
                       ),
                     ),
                   );
@@ -282,7 +282,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          l8n.cantCopyToTrash,
+                          l10n.cantCopyToTrash,
                         ),
                       ),
                     );
@@ -324,7 +324,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
               joinable: false,
               suggestFor: searchPrefix,
             ),
-            l8n: AppLocalizations.of(context)!,
+            l10n: AppLocalizations.of(context)!,
           );
         },
       ),
@@ -336,7 +336,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     List<GalleryFile> selected,
     FavoriteFileService favoriteFile,
   ) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final toDelete = <int>[];
     final toAdd = <int>[];
@@ -358,9 +358,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l8n.deletedFromFavorites),
+          content: Text(l10n.deletedFromFavorites),
           action: SnackBarAction(
-            label: l8n.undoLabel,
+            label: l10n.undoLabel,
             onPressed: () {
               favoriteFile.addAll(toDelete);
             },
@@ -376,12 +376,12 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryPlug plug,
     PostTags postTags,
     LocalTagsService localTags,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) async {
     if (_isSavingTags) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l8n.tagSavingInProgress),
+          content: Text(l10n.tagSavingInProgress),
         ),
       );
       return;
@@ -389,11 +389,11 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     _isSavingTags = true;
 
     final notifi = await chooseNotificationPlug().newProgress(
-      "${l8n.savingTagsSaving}"
-          " ${selected.length == 1 ? '1 ${l8n.tagSingular}' : '${selected.length} ${l8n.tagPlural}'}",
+      "${l10n.savingTagsSaving}"
+          " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
       savingTagsNotifId,
       "Saving tags",
-      l8n.savingTags,
+      l10n.savingTags,
     );
     notifi.setTotal(selected.length);
 

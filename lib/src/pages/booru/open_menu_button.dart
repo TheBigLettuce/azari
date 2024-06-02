@@ -27,7 +27,7 @@ class OpenMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return PopupMenuButton(
       itemBuilder: (_) {
@@ -36,7 +36,7 @@ class OpenMenuButton extends StatelessWidget {
             context,
             controller.text,
             launchGrid,
-            l8n,
+            l10n,
           ),
         ]);
       },

@@ -74,11 +74,11 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return _WrapPadding(
-      title: l8n.welcomePermissions,
-      explanation: l8n.welcomePermissionsExplanation,
+      title: l10n.welcomePermissions,
+      explanation: l10n.welcomePermissionsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: SingleChildScrollView(
@@ -96,7 +96,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                         resultVideos.isGranted && resultPhotos.isGranted;
                   });
                 },
-                label: l8n.permissionsPhotosVideos,
+                label: l10n.permissionsPhotosVideos,
                 variant: photoAndVideos
                     ? ButtonVariant.selected
                     : ButtonVariant.normal,
@@ -110,7 +110,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     mediaLocation = result.isGranted;
                   });
                 },
-                label: l8n.permissionsMediaLocation,
+                label: l10n.permissionsMediaLocation,
                 variant: mediaLocation
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -125,7 +125,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                       manageMedia = result;
                     });
                   },
-                  label: l8n.permissionsManageMedia,
+                  label: l10n.permissionsManageMedia,
                   variant: manageMedia
                       ? ButtonVariant.selected
                       : ButtonVariant.secondary,
@@ -139,7 +139,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     notifications = result.isGranted;
                   });
                 },
-                label: l8n.permissionsNotifications,
+                label: l10n.permissionsNotifications,
                 variant: notifications
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -165,7 +165,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     ),
                   );
                 },
-          label: Text(l8n.welcomeNextLabel),
+          label: Text(l10n.welcomeNextLabel),
         ),
       ],
     );
@@ -188,14 +188,14 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return _WrapPadding(
-      title: l8n.welcomeWelcome,
+      title: l10n.welcomeWelcome,
       addCenteredIcon: true,
       body: Text(
-        l8n.welcomeSomeSettings,
+        l10n.welcomeSomeSettings,
         style: theme.textTheme.bodyLarge,
       ),
       buttons: [
@@ -213,7 +213,7 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
             );
           },
-          label: Text(l8n.welcomeNextLabel),
+          label: Text(l10n.welcomeNextLabel),
         ),
       ],
     );
@@ -229,23 +229,23 @@ class CongratulationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Stack(
       children: [
         _WrapPadding(
-          title: l8n.welcomeDone,
+          title: l10n.welcomeDone,
           addCenteredIcon: true,
           body: Center(
             child: Text(
-              l8n.welcomeFinishBody,
+              l10n.welcomeFinishBody,
               style: theme.textTheme.bodyLarge,
             ),
           ),
           buttons: [
             FilledButton.icon(
-              label: Text(l8n.welcomeFinishLabel),
+              label: Text(l10n.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
                 SettingsService.db()
@@ -336,12 +336,12 @@ class _InitalSettingsState extends State<InitalSettings> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return _WrapPadding(
-      title: l8n.welcomeInitalSettings,
-      explanation: l8n.welcomeInitalSettingsExplanation,
+      title: l10n.welcomeInitalSettings,
+      explanation: l10n.welcomeInitalSettingsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: Column(
@@ -358,14 +358,14 @@ class _InitalSettingsState extends State<InitalSettings> {
 
                     setState(() {});
                   },
-                  emptyResult: l8n.emptyResult,
-                  pickDirectory: l8n.pickDirectory,
-                  validDirectory: l8n.chooseValidDirectory,
+                  emptyResult: l10n.emptyResult,
+                  pickDirectory: l10n.pickDirectory,
+                  validDirectory: l10n.chooseValidDirectory,
                 );
               },
               label: Text(
                 settings.path.isEmpty
-                    ? l8n.downloadDirectorySetting
+                    ? l10n.downloadDirectorySetting
                     : settings.path.pathDisplay,
               ),
             ),
@@ -390,10 +390,10 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(selectedBooru: value).save();
                   },
-                  title: l8n.booruLabel,
+                  title: l10n.booruLabel,
                 );
               },
-              label: "${l8n.booruLabel}: ${settings.selectedBooru.string}",
+              label: "${l10n.booruLabel}: ${settings.selectedBooru.string}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -402,16 +402,16 @@ class _InitalSettingsState extends State<InitalSettings> {
                 radioDialog(
                   context,
                   DisplayQuality.values
-                      .map((e) => (e, e.translatedString(l8n))),
+                      .map((e) => (e, e.translatedString(l10n))),
                   settings.quality,
                   (value) {
                     settings.copy(quality: value).save();
                   },
-                  title: l8n.imageDisplayQualitySetting,
+                  title: l10n.imageDisplayQualitySetting,
                 );
               },
               label:
-                  "${l8n.imageDisplayQualitySetting}: ${settings.quality.translatedString(l8n)}",
+                  "${l10n.imageDisplayQualitySetting}: ${settings.quality.translatedString(l10n)}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -419,16 +419,16 @@ class _InitalSettingsState extends State<InitalSettings> {
               onPressed: () {
                 radioDialog(
                   context,
-                  SafeMode.values.map((e) => (e, e.translatedString(l8n))),
+                  SafeMode.values.map((e) => (e, e.translatedString(l10n))),
                   settings.safeMode,
                   (value) {
                     settings.copy(safeMode: value).save();
                   },
-                  title: l8n.safeModeSetting,
+                  title: l10n.safeModeSetting,
                 );
               },
               label:
-                  "${l8n.safeModeSetting}: ${settings.safeMode.translatedString(l8n)}",
+                  "${l10n.safeModeSetting}: ${settings.safeMode.translatedString(l10n)}",
               variant: ButtonVariant.secondary,
             ),
           ],
@@ -438,7 +438,7 @@ class _InitalSettingsState extends State<InitalSettings> {
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
           onPressed: settings.path.isEmpty ? null : _nextPage,
-          label: Text(l8n.welcomeNextLabel),
+          label: Text(l10n.welcomeNextLabel),
         ),
       ],
     );

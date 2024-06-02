@@ -32,6 +32,8 @@ class MorePage extends StatelessWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme.onSurface.withOpacity(0.8);
 
+    final l10n = AppLocalizations.of(context)!;
+
     final (time, stream) = TimeSpentNotifier.streamOf(context);
 
     final timeNow = DateTime.now();
@@ -124,7 +126,7 @@ class MorePage extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  "${AppLocalizations.of(context)!.date(timeNow)} $emoji",
+                  "${l10n.date(timeNow)} $emoji",
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.9),
                   ),
@@ -152,7 +154,7 @@ class MorePage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "Pictures seen today",
+                        l10n.cardPicturesSeenToday,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: color.withOpacity(0.7),
                         ),
@@ -198,6 +200,7 @@ class TimeSpentWidget extends StatefulWidget {
     required this.stream,
     required this.initalDuration,
   });
+
   final Stream<Duration> stream;
   final Duration initalDuration;
 
@@ -261,6 +264,8 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
     final theme = Theme.of(context);
     final color = theme.colorScheme.onSurface.withOpacity(0.8);
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +277,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
           ),
         ),
         Text(
-          "Time spent today",
+          l10n.cardTimeSpentToday,
           style: theme.textTheme.titleMedium?.copyWith(
             color: color.withOpacity(0.7),
           ),

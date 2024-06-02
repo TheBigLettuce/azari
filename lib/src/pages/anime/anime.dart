@@ -165,7 +165,7 @@ class _AnimePageState extends State<AnimePage>
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     final tabBar = TabBar(
       padding: const EdgeInsets.only(right: 24),
@@ -174,12 +174,12 @@ class _AnimePageState extends State<AnimePage>
       controller: tabController,
       tabs: [
         TabWithCount(
-          l8n.watchingTab,
+          l10n.watchingTab,
           savedAnimeEntries.watchCount,
         ),
-        Tab(text: l8n.discoverTab),
+        Tab(text: l10n.discoverTab),
         TabWithCount(
-          l8n.finishedTab,
+          l10n.finishedTab,
           watchedAnimeEntries.watchCount,
         ),
       ],
@@ -190,7 +190,7 @@ class _AnimePageState extends State<AnimePage>
       onPopInvoked:
           tabKey.currentState?._showSearchField ?? false ? _procHideTab : null,
       child: SettingsSkeleton(
-        l8n.animePage,
+        l10n.animePage,
         state,
         appBar: PreferredSize(
           preferredSize: tabBar.preferredSize +

@@ -192,7 +192,7 @@ class _SinglePostState extends State<SinglePost> {
   Future<void> _qrCode(
     DownloadManager downloadManager,
     PostTags postTags,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) async {
     final camera = await Permission.camera.request();
 
@@ -203,8 +203,8 @@ class _SinglePostState extends State<SinglePost> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text(l8n.error),
-              content: Text(l8n.cameraPermQrCodeErr),
+              title: Text(l10n.error),
+              content: Text(l10n.cameraPermQrCodeErr),
             );
           },
         ),
@@ -234,7 +234,7 @@ class _SinglePostState extends State<SinglePost> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final downloadManager = DownloadManager.of(context);
     final postTags = PostTags.fromContext(context);
 
@@ -252,7 +252,7 @@ class _SinglePostState extends State<SinglePost> {
           ),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded),
-            onPressed: () => _qrCode(downloadManager, postTags, l8n),
+            onPressed: () => _qrCode(downloadManager, postTags, l10n),
           ),
           IconButton(
             icon: const Icon(Icons.content_paste),

@@ -290,7 +290,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -314,7 +314,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                       gridSeed: state.gridSeed,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
-                        buttonText: l8n.openInBrowser,
+                        buttonText: l10n.openInBrowser,
                         onPressed: () {
                           launchUrl(
                             widget.siteUri,
@@ -333,7 +333,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                           initialValue: currentSearch,
                           decoration: InputDecoration(
                             hintText:
-                                "${l8n.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
+                                "${l10n.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
                             border: InputBorder.none,
                           ),
                           focusNode: searchFocus,
@@ -418,7 +418,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                         ),
                       ),
                     ],
-                    keybindsDescription: l8n.searchAnimePage,
+                    keybindsDescription: l10n.searchAnimePage,
                     gridSeed: state.gridSeed,
                   ),
                 ),
@@ -512,7 +512,7 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -524,7 +524,7 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                l8n.animeSearchSearching,
+                l10n.animeSearchSearching,
                 style: theme.textTheme.titleLarge,
               ),
               if (widget.header != null)
@@ -554,7 +554,7 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
                         widget.idFromGenre(e.value).$2,
                       ),
                     ),
-                    title: l8n.animeSearchGenres,
+                    title: l10n.animeSearchGenres,
                   );
                 },
                 newStatus: widget.genreFuture,
@@ -571,7 +571,7 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
                     ),
                     const Padding(padding: EdgeInsets.only(right: 4)),
                     Text(
-                      l8n.usingApi(widget.info),
+                      l10n.usingApi(widget.info),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),

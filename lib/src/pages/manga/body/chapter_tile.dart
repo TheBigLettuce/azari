@@ -73,7 +73,7 @@ class _ChapterTileState extends State<ChapterTile> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return MenuWrapper(
       items: [
@@ -89,7 +89,7 @@ class _ChapterTileState extends State<ChapterTile> {
 
             widget.finishRead();
           },
-          child: Text(l8n.mangaMarkAsRead),
+          child: Text(l10n.mangaMarkAsRead),
         ),
         PopupMenuItem(
           onTap: () {
@@ -100,11 +100,11 @@ class _ChapterTileState extends State<ChapterTile> {
 
             widget.finishRead();
           },
-          child: Text(l8n.mangaRemoveProgress),
+          child: Text(l10n.mangaRemoveProgress),
         ),
       ],
       includeCopy: false,
-      title: l8n.mangaChapterName(widget.chapter.chapter),
+      title: l10n.mangaChapterName(widget.chapter.chapter),
       child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 4),
         child: DecoratedBox(
@@ -171,7 +171,7 @@ class _ChapterTileState extends State<ChapterTile> {
                 const Padding(padding: EdgeInsets.only(left: 6)),
                 Text(
                   progress == widget.chapter.pages
-                      ? l8n.mangaProgressDone
+                      ? l10n.mangaProgressDone
                       : progress == null
                           ? widget.chapter.pages.toString()
                           : "$progress / ${widget.chapter.pages}",

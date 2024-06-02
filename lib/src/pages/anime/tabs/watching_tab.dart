@@ -112,7 +112,7 @@ class __WatchingTabState extends State<_WatchingTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -129,7 +129,7 @@ class __WatchingTabState extends State<_WatchingTab> {
               padding: const EdgeInsets.only(left: 14, right: 14),
               sliver: SliverToBoxAdapter(
                 child: MediumSegmentLabel(
-                  l8n.watchingLabel,
+                  l10n.watchingLabel,
                   trailingWidget: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() {
@@ -154,7 +154,7 @@ class __WatchingTabState extends State<_WatchingTab> {
                   controller: scrollController,
                   glue: GlueProvider.generateOf(context)(),
                   db: widget.db,
-                  l8n: l8n,
+                  l10n: l10n,
                 ),
               )
             else
@@ -167,7 +167,7 @@ class __WatchingTabState extends State<_WatchingTab> {
               padding: const EdgeInsets.only(left: 14, right: 14),
               sliver: SliverToBoxAdapter(
                 child: MediumSegmentLabel(
-                  l8n.backlogLabel,
+                  l10n.backlogLabel,
                   trailingWidget: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
@@ -238,9 +238,9 @@ class __WatchingTabState extends State<_WatchingTab> {
                   savedAnimeEntries.deleteAll(selected.toIds);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(l8n.deletedFromBacklog),
+                      content: Text(l10n.deletedFromBacklog),
                       action: SnackBarAction(
-                        label: l8n.undoLabel,
+                        label: l10n.undoLabel,
                         onPressed: () {
                           savedAnimeEntries.reAdd(selected);
                         },
@@ -256,7 +256,7 @@ class __WatchingTabState extends State<_WatchingTab> {
                 true,
               ),
             ],
-            keybindsDescription: l8n.watchingTab,
+            keybindsDescription: l10n.watchingTab,
             showAppBar: false,
             // ignoreEmptyWidgetOnNoContent: true,
             gridSeed: state.gridSeed,
@@ -285,7 +285,7 @@ class _CurrentlyWatching extends StatefulWidget {
     required this.watchingRight,
     required this.glue,
     required this.db,
-    required this.l8n,
+    required this.l10n,
   });
 
   final bool watchingRight;
@@ -293,7 +293,7 @@ class _CurrentlyWatching extends StatefulWidget {
   final ScrollController controller;
   final SelectionGlue glue;
 
-  final AppLocalizations l8n;
+  final AppLocalizations l10n;
 
   final DbConn db;
 
@@ -323,9 +323,9 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
           savedAnimeEntries.deleteAll(selected.toIds);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.l8n.deletedFromBacklog),
+              content: Text(widget.l10n.deletedFromBacklog),
               action: SnackBarAction(
-                label: widget.l8n.undoLabel,
+                label: widget.l10n.undoLabel,
                 onPressed: () {
                   savedAnimeEntries.reAdd(selected);
                 },

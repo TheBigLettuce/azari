@@ -357,7 +357,7 @@ class _SafeModeButtonState extends State<SafeModeButton> {
 
   @override
   Widget build(BuildContext context) {
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SegmentedButtonGroup<SafeMode>(
       select: (e) {
@@ -366,8 +366,8 @@ class _SafeModeButtonState extends State<SafeModeButton> {
       },
       selected: _settings?.safeMode ?? _stateSettings?.safeMode,
       values: SafeMode.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(l8n))),
-      title: l8n.safeModeSetting,
+          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      title: l10n.safeModeSetting,
       variant: SegmentedButtonVariant.segments,
     )
 
@@ -442,7 +442,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridAspectRatio aspectRatio,
     void Function(GridAspectRatio?) select,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
@@ -450,7 +450,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       selected: aspectRatio,
       values: GridAspectRatio.values
           .map((e) => SegmentedButtonValue(e, e.value.toString())),
-      title: l8n.aspectRatio,
+      title: l10n.aspectRatio,
     );
   }
 
@@ -458,7 +458,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridColumn columns,
     void Function(GridColumn?) select,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
@@ -466,7 +466,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       selected: columns,
       values: GridColumn.values
           .map((e) => SegmentedButtonValue(e, e.number.toString())),
-      title: l8n.gridColumns,
+      title: l10n.gridColumns,
     );
   }
 
@@ -474,15 +474,15 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     GridLayoutType selectGridLayout,
     void Function(GridLayoutType?) select,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
       select: select,
       selected: selectGridLayout,
       values: GridLayoutType.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(l8n))),
-      title: l8n.layoutLabel,
+          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      title: l10n.layoutLabel,
     );
   }
 
@@ -490,11 +490,11 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     bool hideName,
     void Function(bool) select,
-    AppLocalizations l8n,
+    AppLocalizations l10n,
   ) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(l8n.hideNames),
+      title: Text(l10n.hideNames),
       value: hideName,
       onChanged: (_) => select(!hideName),
     );
@@ -515,7 +515,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     }
 
     final theme = Theme.of(context);
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return SizedBox(
       width: double.infinity,
@@ -527,7 +527,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
             children: [
               Center(
                 child: Text(
-                  l8n.settingsLabel,
+                  l10n.settingsLabel,
                   style: theme.textTheme.titleLarge,
                 ),
               ),
@@ -536,25 +536,25 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 context,
                 _gridSettings!.hideName,
                 (n) => add(_gridSettings!.copy(hideName: n)),
-                l8n,
+                l10n,
               ),
               _gridLayout(
                 context,
                 _gridSettings!.layoutType,
                 (t) => add(_gridSettings!.copy(layoutType: t)),
-                l8n,
+                l10n,
               ),
               _ratio(
                 context,
                 _gridSettings!.aspectRatio,
                 (r) => add(_gridSettings!.copy(aspectRatio: r)),
-                l8n,
+                l10n,
               ),
               _columns(
                 context,
                 _gridSettings!.columns,
                 (c) => add(_gridSettings!.copy(columns: c)),
-                l8n,
+                l10n,
               ),
               const Padding(padding: EdgeInsets.only(bottom: 8)),
             ],

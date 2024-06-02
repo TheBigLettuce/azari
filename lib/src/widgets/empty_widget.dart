@@ -48,7 +48,7 @@ class EmptyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final l8n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Padding(
@@ -68,8 +68,8 @@ class EmptyWidget extends StatelessWidget {
               TextSpan(
                 text: overrideEmpty ??
                     (error == null
-                        ? "${l8n.emptyValue}..."
-                        : "${l8n.error} — $error"),
+                        ? "${l10n.emptyValue}..."
+                        : "${l10n.error} — $error"),
                 style: TextStyle(
                   overflow: TextOverflow.ellipsis,
                   color:

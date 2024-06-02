@@ -27,7 +27,7 @@ class DummyGallery implements GalleryPlug {
     DirectoryTagService directoryTag, {
     bool? temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations l8n,
+    required AppLocalizations l10n,
   }) {
     return _DummyDirectories();
   }

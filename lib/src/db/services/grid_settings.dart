@@ -140,11 +140,11 @@ enum GridLayoutType {
 
   const GridLayoutType();
 
-  String translatedString(AppLocalizations l8n) => switch (this) {
-        GridLayoutType.grid => l8n.enumGridLayoutTypeGrid,
-        GridLayoutType.list => l8n.enumGridLayoutTypeList,
-        GridLayoutType.gridQuilted => l8n.enumGridLayoutTypeGridQuilted,
-        GridLayoutType.gridMasonry => l8n.enumGridLayoutTypeGridMasonry,
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
+        GridLayoutType.list => l10n.enumGridLayoutTypeList,
+        GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
+        GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
       };
 }
 

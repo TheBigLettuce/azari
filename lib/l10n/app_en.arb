@@ -1401,5 +1401,13 @@
     "someFilesShownNotice": "Some files can't be shown",
     "@someFilesShownNotice": {
         "description": "Gallery favorites page notice when some files have been filtered"
+    },
+    "cardPicturesSeenToday": "Pictures seen today",
+    "@cardPicturesSeenToday": {
+        "description": "Statistics cards"
+    },
+    "cardTimeSpentToday": "Time spent today",
+    "@cardTimeSpentToday": {
+        "description": "Statistics cards"
     }
 }
