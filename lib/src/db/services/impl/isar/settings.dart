@@ -53,6 +53,7 @@ class IsarSettingsService implements SettingsService {
   SettingsData get current =>
       _Dbs.g.main.isarSettings.getSync(0) ??
       const IsarSettings(
+        extraSafeFilters: true,
         showAnimeMangaPages: false,
         showWelcomePage: true,
         path: IsarSettingsPath(),

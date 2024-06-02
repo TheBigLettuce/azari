@@ -54,10 +54,16 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     entry.updateTime();
 
     try {
+      final settings = SettingsService.db().current;
+
       final list = await api.page(0, tags, excluded, safeMode);
       entry.setOffset(0);
       currentSkipped = list.$2;
-      backingStorage.addAll(filter(list.$1));
+      backingStorage.addAll(
+        settings.extraSafeFilters
+            ? filter(list.$1)
+            : filter(list.$1).where(_extraTags),
+      );
     } catch (e) {
       progress.error = e;
     }
@@ -91,6 +97,8 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     }
 
     try {
+      final settings = SettingsService.db().current;
+
       final list = await api.fromPost(
         currentSkipped != null && currentSkipped! < p.id
             ? currentSkipped!
@@ -105,7 +113,11 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       } else {
         currentSkipped = list.$2;
         final oldCount = count;
-        backingStorage.addAll(filter(list.$1));
+        backingStorage.addAll(
+          settings.extraSafeFilters
+              ? filter(list.$1)
+              : filter(list.$1).where(_extraTags),
+        );
 
         entry.updateTime();
 
@@ -120,6 +132,16 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     progress.inRefreshing = false;
 
     return count;
+  }
+
+  bool _extraTags(Post e) {
+    for (final e in e.tags) {
+      if (BooruAPI.additionalSafetyTags.containsKey(e)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 

@@ -1409,5 +1409,18 @@
     "cardTimeSpentToday": "Time spent today",
     "@cardTimeSpentToday": {
         "description": "Statistics cards"
+    },
+    "extraSafeModeFilters": "Extra safe mode filters",
+    "@extraSafeModeFilters": {
+        "description": "Settings, extra safe mode filters switch tile"
+    },
+    "blacklistsTags": "Blacklists {tags}.",
+    "@blacklistsTags": {
+        "description": "Blacklists tags subtitle of the extra safe mode switch tile",
+        "placeholders": {
+            "tags": {
+                "type": "String"
+            }
+        }
     }
 }

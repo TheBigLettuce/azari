@@ -764,6 +764,86 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     final toAuth = modifiers.contains(SegmentModifier.auth);
     final l10n = AppLocalizations.of(context)!;
 
+    final isBooru = segmentLabel.seg == "Booru";
+    final isSpecial = segmentLabel.seg == segments.injectedLabel;
+    final isUnsegmented = segmentLabel.seg == segments.unsegmentedLabel;
+
+    Future<void> sticky() async {
+      if (toAuth && canAuthBiometric) {
+        final success = await LocalAuthentication().authenticate(
+          localizedReason: l10n.unstickyStickyDirectory,
+        );
+
+        if (!success) {
+          return;
+        }
+      }
+
+      if (toSticky) {
+        segments.caps.removeModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.sticky},
+        );
+      } else {
+        segments.caps.addModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.sticky},
+        );
+      }
+
+      unawaited(HapticFeedback.vibrate());
+    }
+
+    Future<void> blur() async {
+      if (toAuth && canAuthBiometric) {
+        final success = await LocalAuthentication().authenticate(
+          localizedReason: l10n.unblurDirectory,
+        );
+
+        if (!success) {
+          return;
+        }
+      }
+
+      if (toBlur) {
+        segments.caps.removeModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.blur},
+        );
+      } else {
+        segments.caps.addModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.blur},
+        );
+      }
+
+      unawaited(HapticFeedback.vibrate());
+    }
+
+    Future<void> auth() async {
+      final success = await LocalAuthentication().authenticate(
+        localizedReason: l10n.lockDirectory,
+      );
+
+      if (!success) {
+        return;
+      }
+
+      if (toAuth) {
+        segments.caps.removeModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.auth},
+        );
+      } else {
+        segments.caps.addModifiers(
+          [segmentLabel.seg],
+          const {SegmentModifier.auth},
+        );
+      }
+
+      unawaited(HapticFeedback.vibrate());
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.all(4),
       sliver: DecoratedSliver(
@@ -777,114 +857,33 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
               sliver: SliverToBoxAdapter(
                 child: SegmentLabel(
                   segmentLabel.seg,
-                  hidePinnedIcon: segments.hidePinnedIcon,
-                  onPress: segmentLabel.onLabelPressed,
-                  sticky: toSticky,
-                  menuItems: segments.caps.ignoreButtons
+                  icons: segments.caps.ignoreButtons ||
+                          isUnsegmented ||
+                          isSpecial ||
+                          isBooru
                       ? const []
                       : [
-                          if (segmentLabel.unstickable &&
-                              segmentLabel.seg != segments.unsegmentedLabel)
-                            PopupMenuItem(
-                              onTap: () async {
-                                if (toAuth && canAuthBiometric) {
-                                  final success =
-                                      await LocalAuthentication().authenticate(
-                                    localizedReason:
-                                        l10n.unstickyStickyDirectory,
-                                  );
-
-                                  if (!success) {
-                                    return;
-                                  }
-                                }
-
-                                if (toSticky) {
-                                  segments.caps.removeModifiers(
-                                    [segmentLabel.seg],
-                                    const {SegmentModifier.sticky},
-                                  );
-                                } else {
-                                  segments.caps.addModifiers(
-                                    [segmentLabel.seg],
-                                    const {SegmentModifier.sticky},
-                                  );
-                                }
-
-                                unawaited(HapticFeedback.vibrate());
-                              },
-                              child: Text(
-                                toSticky ? l10n.unpinTag : l10n.pinGroupLabel,
-                              ),
-                            ),
-                          PopupMenuItem(
-                            onTap: () async {
-                              if (toAuth && canAuthBiometric) {
-                                final success =
-                                    await LocalAuthentication().authenticate(
-                                  localizedReason: l10n.unblurDirectory,
-                                );
-
-                                if (!success) {
-                                  return;
-                                }
-                              }
-
-                              if (toBlur) {
-                                segments.caps.removeModifiers(
-                                  [segmentLabel.seg],
-                                  const {SegmentModifier.blur},
-                                );
-                              } else {
-                                segments.caps.addModifiers(
-                                  [segmentLabel.seg],
-                                  const {SegmentModifier.blur},
-                                );
-                              }
-
-                              unawaited(HapticFeedback.vibrate());
-                            },
-                            child: Text(
-                              toBlur ? l10n.unblur : l10n.blur,
-                            ),
+                          IconButton.filled(
+                            isSelected: toBlur,
+                            onPressed: blur,
+                            icon: const Icon(Icons.blur_on_rounded),
                           ),
-                          if (segmentLabel.seg != segments.unsegmentedLabel &&
-                              segments.unsegmentedLabel != segmentLabel.seg &&
-                              segmentLabel.seg != "Booru")
-                            PopupMenuItem(
-                              enabled: canAuthBiometric,
-                              onTap: !canAuthBiometric
-                                  ? null
-                                  : () async {
-                                      final success =
-                                          await LocalAuthentication()
-                                              .authenticate(
-                                        localizedReason: l10n.lockDirectory,
-                                      );
-
-                                      if (!success) {
-                                        return;
-                                      }
-
-                                      if (toAuth) {
-                                        segments.caps.removeModifiers(
-                                          [segmentLabel.seg],
-                                          const {SegmentModifier.auth},
-                                        );
-                                      } else {
-                                        segments.caps.addModifiers(
-                                          [segmentLabel.seg],
-                                          const {SegmentModifier.auth},
-                                        );
-                                      }
-
-                                      unawaited(HapticFeedback.vibrate());
-                                    },
-                              child: Text(
-                                toAuth ? l10n.notRequireAuth : l10n.requireAuth,
-                              ),
+                          if (canAuthBiometric)
+                            IconButton.filled(
+                              isSelected: toAuth,
+                              onPressed: auth,
+                              icon: toAuth
+                                  ? const Icon(Icons.lock_rounded)
+                                  : const Icon(Icons.lock_open_rounded),
                             ),
+                          IconButton.filled(
+                            isSelected: toSticky,
+                            onPressed: sticky,
+                            icon: const Icon(Icons.push_pin_outlined),
+                          ),
                         ],
+                  onPress: segmentLabel.onLabelPressed,
+                  sticky: toSticky,
                 ),
               ),
             ),

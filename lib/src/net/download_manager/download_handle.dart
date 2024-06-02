@@ -65,21 +65,3 @@ class _DownloadEntry implements DownloadHandle {
     return watcher!.stream.listen(f);
   }
 }
-
-mixin _StatisticsTimer {
-  StreamSubscription<void>? _refresher;
-
-  void _start() {
-    _refresher ??= Stream<void>.periodic(1.seconds).listen((event) {
-      StatisticsGeneralService.db()
-          .current
-          .add(timeDownload: 1.seconds.inMilliseconds)
-          .save();
-    });
-  }
-
-  void _turnOff() {
-    _refresher?.cancel();
-    _refresher = null;
-  }
-}

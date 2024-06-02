@@ -11,6 +11,7 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/display_quality.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/pages/more/settings/settings_label.dart";
@@ -373,6 +374,14 @@ class _SettingsListState extends State<SettingsList> {
           value: _settings.showAnimeMangaPages,
           onChanged: (value) =>
               _settings.copy(showAnimeMangaPages: value).save(),
+        ),
+        SwitchListTile(
+          title: Text(l10n.extraSafeModeFilters),
+          subtitle: Text(
+            l10n.blacklistsTags(BooruAPI.additionalSafetyTags.keys.join(", ")),
+          ),
+          value: _settings.extraSafeFilters,
+          onChanged: (value) => _settings.copy(extraSafeFilters: value).save(),
         ),
         ListTile(
           title: Text(l10n.openWelcomePageSetting),

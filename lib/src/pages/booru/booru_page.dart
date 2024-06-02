@@ -98,8 +98,6 @@ class _MainGridPagingState implements PagingEntry {
   bool needToRefresh(Duration microseconds) =>
       mainGrid.time.isBefore(DateTime.now().subtract(microseconds));
 
-  // int? currentSkipped;
-
   String? restoreSecondaryGrid;
 
   @override

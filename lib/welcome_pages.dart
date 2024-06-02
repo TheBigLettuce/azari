@@ -431,6 +431,16 @@ class _InitalSettingsState extends State<InitalSettings> {
                   "${l10n.safeModeSetting}: ${settings.safeMode.translatedString(l10n)}",
               variant: ButtonVariant.secondary,
             ),
+            _ButtonWithPadding(
+              icon: const Icon(Icons.no_adult_content_rounded),
+              onPressed: () => settings
+                  .copy(extraSafeFilters: !settings.extraSafeFilters)
+                  .save(),
+              label: l10n.extraSafeModeFilters,
+              variant: settings.extraSafeFilters
+                  ? ButtonVariant.selectedUnselectable
+                  : ButtonVariant.secondary,
+            ),
           ],
         ),
       ),
@@ -551,6 +561,7 @@ class _WrapPadding extends StatelessWidget {
 
 enum ButtonVariant {
   selected,
+  selectedUnselectable,
   secondary,
   normal;
 }
@@ -578,9 +589,7 @@ class _ButtonWithPadding extends StatelessWidget {
               label: Text(label),
             )
           : FilledButton.tonalIcon(
-              icon: variant == ButtonVariant.selected
-                  ? const Icon(Icons.check_rounded)
-                  : icon,
+              icon: const Icon(Icons.check_rounded),
               onPressed: variant == ButtonVariant.selected ? null : onPressed,
               label: Text(label),
             ),

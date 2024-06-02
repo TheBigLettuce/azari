@@ -136,30 +136,39 @@ class MorePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  TimeSpentWidget(
-                    stream: stream,
-                    initalDuration: time,
+                  Expanded(
+                    child: Center(
+                      child: TimeSpentWidget(
+                        stream: stream,
+                        initalDuration: time,
+                      ),
+                    ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        StatisticsDailyService.db()
-                            .current
-                            .swipedBoth
-                            .toString(),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: color,
-                        ),
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            StatisticsDailyService.db()
+                                .current
+                                .swipedBoth
+                                .toString(),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: color,
+                            ),
+                          ),
+                          Text(
+                            l10n.cardPicturesSeenToday,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: color.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        l10n.cardPicturesSeenToday,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: color.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -278,6 +287,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
         ),
         Text(
           l10n.cardTimeSpentToday,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             color: color.withOpacity(0.7),
           ),

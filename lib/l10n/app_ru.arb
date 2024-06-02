@@ -446,5 +446,14 @@
     "showAnimeManga": "Показывать странницы аниме и манги",
     "someFilesShownNotice": "Некоторые файлы не могут быть отображены",
     "cardPicturesSeenToday": "Изображений просмотрено сегодня",
-    "cardTimeSpentToday": "Время проведено сегодня"
+    "cardTimeSpentToday": "Время проведено сегодня",
+    "extraSafeModeFilters": "Дополнительный контент фильтр",
+    "blacklistsTags": "Скрывает теги {tags}.",
+    "@blacklistsTags": {
+        "placeholders": {
+            "tags": {
+                "type": "String"
+            }
+        }
+    }
 }

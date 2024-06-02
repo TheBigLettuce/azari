@@ -62,6 +62,16 @@ abstract class BooruAPI {
   /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<BooruTag>> completeTag(String tag);
 
+  static Map<String, void> get additionalSafetyTags => const {
+        "guro": null,
+        "loli": null,
+        "shota": null,
+        "bestiality": null,
+        "gore": null,
+        "ryona": null,
+        "scat": null,
+      };
+
   /// Sets the cookies for all the requests done with the [client].
   /// This is useful with Cloudlfare, but currently is usesless.
   // void setCookies(List<Cookie> cookies);

@@ -231,11 +231,19 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     search = SearchLaunchGrid(
       SearchLaunchGridData(
         completeTag: api.completeTag,
-        header: TagsWidget(
-          tagging: tagManager.latest,
-          onPress: (tag, safeMode) {
-            _onTagPressed(context, state.settings.selectedBooru, tag, safeMode);
-          },
+        header: Padding(
+          padding: const EdgeInsets.only(top: 8, left: 8),
+          child: TagsWidget(
+            tagging: tagManager.latest,
+            onPress: (tag, safeMode) {
+              _onTagPressed(
+                context,
+                state.settings.selectedBooru,
+                tag,
+                safeMode,
+              );
+            },
+          ),
         ),
         searchText: pagingState.source.tags,
         addItems: (_) => const [],

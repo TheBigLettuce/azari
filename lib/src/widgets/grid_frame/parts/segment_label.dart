@@ -12,19 +12,17 @@ class SegmentLabel extends StatelessWidget {
   const SegmentLabel(
     this.text, {
     super.key,
-    required this.hidePinnedIcon,
     this.menuItems = const [],
     required this.onPress,
     required this.sticky,
-    this.overridePinnedIcon,
+    required this.icons,
   });
 
   final String text;
   final List<PopupMenuItem<void>> menuItems;
   final void Function()? onPress;
   final bool sticky;
-  final bool hidePinnedIcon;
-  final Widget? overridePinnedIcon;
+  final List<Widget> icons;
 
   @override
   Widget build(BuildContext context) {
@@ -33,41 +31,50 @@ class SegmentLabel extends StatelessWidget {
 
     final row = Row(
       textBaseline: TextBaseline.alphabetic,
-      mainAxisAlignment: overridePinnedIcon == null && hidePinnedIcon
+      mainAxisAlignment: icons.isEmpty
           ? MainAxisAlignment.start
           : MainAxisAlignment.spaceBetween,
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.baseline,
       children: [
-        _MenuAnchor(
-          onPress: onPress,
-          menuItems: menuItems,
-          child: Container(
-            clipBehavior: onPress == null ? Clip.none : Clip.antiAlias,
-            padding: onPress == null
-                ? const EdgeInsets.all(8)
-                : const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-            decoration: onPress == null
-                ? null
-                : ShapeDecoration(
-                    shape: const StadiumBorder(),
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withOpacity(0.4),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _MenuAnchor(
+              onPress: onPress,
+              menuItems: menuItems,
+              child: Container(
+                clipBehavior: onPress == null ? Clip.none : Clip.antiAlias,
+                padding: onPress == null
+                    ? const EdgeInsets.all(8)
+                    : const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 8,
+                        bottom: 8,
+                      ),
+                decoration: onPress == null
+                    ? null
+                    : ShapeDecoration(
+                        shape: const StadiumBorder(),
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withOpacity(0.4),
+                      ),
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.8),
                   ),
-            child: Text(
-              text,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
               ),
             ),
           ),
         ),
-        if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
-          overridePinnedIcon ??
-              const IconButton.filled(
-                onPressed: null,
-                icon: Icon(Icons.push_pin_outlined),
-              ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Row(children: icons),
+        ),
       ],
     );
 
@@ -77,7 +84,7 @@ class SegmentLabel extends StatelessWidget {
         top: 16,
         right: rightGesture == 0 ? 8 : rightGesture / 2,
       ),
-      child: hidePinnedIcon && overridePinnedIcon == null
+      child: icons.isEmpty
           ? row
           : SizedBox.fromSize(
               size: Size.fromHeight(
@@ -103,40 +110,43 @@ class _MenuAnchor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      customBorder: const StadiumBorder(),
       onTap: onPress,
-      onLongPress: () {
-        final RenderBox button = context.findRenderObject()! as RenderBox;
-        final RenderBox overlay = Navigator.of(context)
-            .overlay!
-            .context
-            .findRenderObject()! as RenderBox;
+      onLongPress: menuItems.isEmpty
+          ? null
+          : () {
+              final RenderBox button = context.findRenderObject()! as RenderBox;
+              final RenderBox overlay = Navigator.of(context)
+                  .overlay!
+                  .context
+                  .findRenderObject()! as RenderBox;
 
-        final offset = Offset(0, button.size.height) + const Offset(0, 2);
+              final offset = Offset(0, button.size.height) + const Offset(0, 2);
 
-        final RelativeRect position = RelativeRect.fromRect(
-          Rect.fromPoints(
-            button.localToGlobal(offset, ancestor: overlay),
-            button.localToGlobal(
-              button.size.bottomRight(Offset.zero) + offset,
-              ancestor: overlay,
-            ),
-          ),
-          Offset.zero & overlay.size,
-        );
+              final RelativeRect position = RelativeRect.fromRect(
+                Rect.fromPoints(
+                  button.localToGlobal(offset, ancestor: overlay),
+                  button.localToGlobal(
+                    button.size.bottomRight(Offset.zero) + offset,
+                    ancestor: overlay,
+                  ),
+                ),
+                Offset.zero & overlay.size,
+              );
 
-        HapticFeedback.mediumImpact();
+              HapticFeedback.mediumImpact();
 
-        showMenu(
-          context: context,
-          position: position,
-          constraints: BoxConstraints(
-            minWidth: button.size.width,
-            maxWidth: button.size.width,
-          ),
-          items: menuItems,
-        );
-      },
+              showMenu(
+                context: context,
+                position: position,
+                constraints: BoxConstraints(
+                  minWidth: button.size.width,
+                  maxWidth: button.size.width,
+                ),
+                items: menuItems,
+              );
+            },
       child: child,
     );
   }

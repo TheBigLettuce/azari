@@ -25,9 +25,17 @@ part "download_handle.dart";
 part "download_status.dart";
 
 class DownloadManager extends MapStorage<String, _DownloadEntry>
-    with _StatisticsTimer
     implements ResourceSource<String, _DownloadEntry> {
-  DownloadManager(this._db) : super((e) => e.data.url);
+  DownloadManager(this._db) : super((e) => e.data.url) {
+    _refresher = Stream<void>.periodic(1.seconds).listen((event) {
+      if (_inWork != 0) {
+        StatisticsGeneralService.db()
+            .current
+            .add(timeDownload: 1.seconds.inMilliseconds)
+            .save();
+      }
+    });
+  }
 
   factory DownloadManager.of(BuildContext context) =>
       DatabaseConnectionNotifier.downloadManagerOf(context);
@@ -43,6 +51,8 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
 
   static const _log = LogTarget.downloader;
   static const int maximum = 6;
+
+  late final StreamSubscription<void> _refresher;
 
   void restoreFile(DownloadFileData f) {
     map_[f.url] = _DownloadEntry(
@@ -69,6 +79,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   void destroy() {
     super.destroy();
     progress.close();
+    _refresher.cancel();
 
     _client.close();
   }
@@ -186,10 +197,6 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   void _tryAddNew() {
     final newAdd = maximum - _inWork;
     if (newAdd.isNegative || newAdd == 0) {
-      if (_inWork == 0) {
-        _turnOff();
-      }
-
       return;
     }
 
@@ -291,8 +298,6 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     );
 
     try {
-      _start();
-
       _log.logDefault("Started download: ${entry.data}".message);
 
       await _client.download(

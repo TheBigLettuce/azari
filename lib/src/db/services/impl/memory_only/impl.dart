@@ -422,10 +422,15 @@ class PlainSettingsData extends SettingsData {
     required super.safeMode,
     required super.showWelcomePage,
     required super.showAnimeMangaPages,
+    required super.extraSafeFilters,
   });
 
   @override
+  final SettingsPath path;
+
+  @override
   SettingsData copy({
+    bool? extraSafeFilters,
     bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
@@ -440,10 +445,8 @@ class PlainSettingsData extends SettingsData {
         safeMode: safeMode ?? this.safeMode,
         showWelcomePage: showWelcomePage ?? this.showWelcomePage,
         path: this.path,
+        extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
       );
-
-  @override
-  final SettingsPath path;
 }
 
 class MemorySettingsService implements SettingsService {
@@ -471,6 +474,7 @@ class MemorySettingsService implements SettingsService {
   SettingsData get current =>
       _current ??
       const PlainSettingsData(
+        extraSafeFilters: true,
         showAnimeMangaPages: false,
         path: PlainSettingsPath("_", "*not supported on web*"),
         selectedBooru: Booru.danbooru,

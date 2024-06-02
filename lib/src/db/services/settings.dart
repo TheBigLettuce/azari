@@ -23,6 +23,7 @@ abstract class SettingsPath {
 
 abstract class SettingsData {
   const SettingsData({
+    required this.extraSafeFilters,
     required this.showAnimeMangaPages,
     required this.selectedBooru,
     required this.quality,
@@ -40,11 +41,13 @@ abstract class SettingsData {
 
   final bool showWelcomePage;
   final bool showAnimeMangaPages;
+  final bool extraSafeFilters;
 
   @ignore
   SettingsService get s => _currentDb.settings;
 
   SettingsData copy({
+    bool? extraSafeFilters,
     bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,

@@ -12,6 +12,7 @@ import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
 import "package:gallery/src/widgets/notifiers/current_content.dart";
 import "package:gallery/src/widgets/notifiers/filter.dart";
@@ -60,7 +61,8 @@ class WrapImageViewNotifiers extends StatefulWidget {
 }
 
 class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
-  bool _isAppbarShown = true;
+  final _bottomSheetKey = GlobalKey<__BottomSheetPopScopeState>();
+
   bool _isPaused = false;
   double? _loadingProgress = 1;
 
@@ -68,6 +70,8 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
+
+  void toggle() => _bottomSheetKey.currentState?.toggle();
 
   @override
   void initState() {
@@ -79,21 +83,6 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     _searchData.dispose();
 
     super.dispose();
-  }
-
-  void toggle() {
-    final platformApi = PlatformApi.current();
-
-    setState(() => _isAppbarShown = !_isAppbarShown);
-
-    if (_isAppbarShown) {
-      platformApi.setFullscreen(false);
-      widget.controller.reverse();
-    } else {
-      widget.controller
-          .forward()
-          .then((value) => platformApi.setFullscreen(true));
-    }
   }
 
   void pauseVideo() {
@@ -157,8 +146,10 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                       content: widget.currentCell,
                       child: LoadingProgressNotifier(
                         progress: _loadingProgress,
-                        child: AppBarVisibilityNotifier(
-                          isShown: _isAppbarShown,
+                        child: _BottomSheetPopScope(
+                          key: _bottomSheetKey,
+                          controller: widget.bottomSheetController,
+                          animationController: widget.controller,
                           child: widget.child,
                         ),
                       ),
@@ -182,6 +173,7 @@ class _TagWatchers extends StatefulWidget {
     required this.currentCell,
     required this.child,
   });
+
   final List<ImageTag> Function(Contentable)? tags;
   final StreamSubscription<List<ImageTag>> Function(
     Contentable,
@@ -307,4 +299,118 @@ class ImageTag {
 
   final String tag;
   final bool favorite;
+}
+
+class _BottomSheetPopScope extends StatefulWidget {
+  const _BottomSheetPopScope({
+    required super.key,
+    required this.controller,
+    required this.animationController,
+    required this.child,
+  });
+
+  final AnimationController animationController;
+  final DraggableScrollableController controller;
+  final Widget child;
+
+  @override
+  State<_BottomSheetPopScope> createState() => __BottomSheetPopScopeState();
+}
+
+class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
+  bool ignorePointer = false;
+  double currentPixels = -1;
+
+  bool _isAppbarShown = true;
+
+  void toggle() {
+    final platformApi = PlatformApi.current();
+
+    setState(() => _isAppbarShown = !_isAppbarShown);
+
+    if (_isAppbarShown) {
+      platformApi.setFullscreen(false);
+      widget.animationController.reverse();
+    } else {
+      widget.animationController
+          .forward()
+          .then((value) => platformApi.setFullscreen(true));
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.addListener(listener);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(listener);
+
+    super.dispose();
+  }
+
+  void listener() {
+    if (widget.controller.pixels == currentPixels) {
+      return;
+    }
+
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      try {
+        setState(() {
+          currentPixels = widget.controller.pixels;
+        });
+      } catch (_) {}
+    });
+  }
+
+  void tryScroll(bool _) {
+    if (!_isAppbarShown) {
+      toggle();
+      return;
+    }
+
+    setState(() {
+      ignorePointer = true;
+    });
+
+    widget.controller
+        .animateTo(
+          0,
+          duration: const Duration(milliseconds: 200),
+          curve: Easing.emphasizedAccelerate,
+        )
+        .then(
+          (value) => setState(() {
+            ignorePointer = false;
+            widget.controller.reset();
+          }),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.controller.isAttached) {
+      return AppBarVisibilityNotifier(
+        isShown: _isAppbarShown,
+        child: widget.child,
+      );
+    }
+
+    return PopScope(
+      canPop: _isAppbarShown &&
+          (currentPixels.isNegative ||
+              WrapImageViewSkeleton.minPixelsFor(context) == currentPixels),
+      onPopInvoked: tryScroll,
+      child: IgnorePointer(
+        ignoring: ignorePointer,
+        child: AppBarVisibilityNotifier(
+          isShown: _isAppbarShown,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
 }
