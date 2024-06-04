@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -159,61 +157,6 @@ class _SettingsListState extends State<SettingsList> {
           subtitle: Text(_settings.quality.translatedString(l10n)),
         ),
         SettingsLabel(l10n.miscLabel, titleStyle),
-        // ListTile(
-        //   title: Text(localizations.savedTagsCount),
-        //   trailing: PopupMenuButton(
-        //     icon: const Icon(Icons.more_horiz_outlined),
-        //     itemBuilder: (context) {
-        //       return [
-        //         PopupMenuItem<void>(
-        //           enabled: false,
-        //           child: TextButton(
-        //             onPressed: () {
-        //               PostTags.g.restore((err) {
-        //                 if (err != null) {
-        //                   ScaffoldMessenger.of(context).showSnackBar(
-        //                     SnackBar(
-        //                       duration: 1.minutes,
-        //                       content:
-        //                           Text(localizations.couldntRestoreBackup(err)),
-        //                     ),
-        //                   );
-        //                 } else {
-        //                   setState(() {});
-        //                 }
-        //               });
-        //             },
-        //             child: Text(localizations.restore),
-        //           ),
-        //         ),
-        //         PopupMenuItem<void>(
-        //           enabled: false,
-        //           child: TextButton(
-        //             onPressed: () {
-        //               PostTags.g.copy((err) {
-        //                 if (err != null) {
-        //                   ScaffoldMessenger.of(context).showSnackBar(
-        //                     SnackBar(
-        //                       content: Text(localizations.couldntBackup(err)),
-        //                     ),
-        //                   );
-        //                 } else {
-        //                   ScaffoldMessenger.of(context).showSnackBar(
-        //                     SnackBar(
-        //                       content: Text(localizations.backupSuccess),
-        //                     ),
-        //                   );
-        //                 }
-        //               });
-        //             },
-        //             child: Text(localizations.backup),
-        //           ),
-        //         ),
-        //       ];
-        //     },
-        //   ),
-        //   subtitle: Text(PostTags.g.savedTagsCount().toString()),
-        // ),
         FutureBuilder(
           future: thumbnailCount,
           builder: (context, data) {

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -72,10 +70,6 @@ abstract class BooruAPI {
         "scat": null,
       };
 
-  /// Sets the cookies for all the requests done with the [client].
-  /// This is useful with Cloudlfare, but currently is usesless.
-  // void setCookies(List<Cookie> cookies);
-
   /// [fromSettings] returns a selected *booru API, consulting the settings.
   /// Some *booru have no way to retreive posts down
   /// of a post number, in this case [page] comes in handy:
@@ -89,9 +83,7 @@ abstract class BooruAPI {
   }
 
   static Dio defaultClientForBooru(Booru booru) {
-    // final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
     final Dio dio = Dio();
-    // dio.interceptors.add(CookieManager(jar));
 
     return dio;
   }

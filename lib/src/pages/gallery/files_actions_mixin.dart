@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -66,16 +64,6 @@ mixin FilesActionsMixin on State<GalleryFiles> {
       false,
     );
   }
-
-  // GridAction<GalleryFile> bulkRename() {
-  //   return GridAction(
-  //     Icons.edit,
-  //     (selected) {
-  //       _changeName(context, selected);
-  //     },
-  //     false,
-  //   );
-  // }
 
   GridAction<GalleryFile> saveTagsAction(
     GalleryPlug plug,
@@ -408,67 +396,4 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     plug.notify(null);
     _isSavingTags = false;
   }
-
-  // void _changeName(
-  //   BuildContext context,
-  //   List<GalleryFile> selected,
-  // ) {
-  //   if (selected.isEmpty) {
-  //     return;
-  //   }
-
-  //   final l8n = AppLocalizations.of(context)!;
-
-  //   Navigator.of(context, rootNavigator: true).push(
-  //     DialogRoute<void>(
-  //       context: context,
-  //       builder: (context) {
-  //         return AlertDialog(
-  //           title: Text(l8n.bulkRenameTitle),
-  //           content: TextFormField(
-  //             autofocus: true,
-  //             initialValue: "*",
-  //             autovalidateMode: AutovalidateMode.always,
-  //             validator: (value) {
-  //               if (value == null) {
-  //                 return l8n.valueIsNull;
-  //               }
-  //               if (value.isEmpty) {
-  //                 return l8n.newNameShouldntBeEmpty;
-  //               }
-
-  //               if (!value.contains("*")) {
-  //                 return l8n.newNameShouldIncludeOneStar;
-  //               }
-
-  //               return null;
-  //             },
-  //             onFieldSubmitted: (value) async {
-  //               if (value.isEmpty) {
-  //                 return;
-  //               }
-  //               final idx = value.indexOf("*");
-  //               if (idx == -1) {
-  //                 return;
-  //               }
-
-  //               final matchBefore = value.substring(0, idx);
-  //               final api = GalleryManagementApi.current();
-
-  //               for (final (i, e) in selected.indexed) {
-  //                 await api.rename(
-  //                   e.originalUri,
-  //                   "$matchBefore${e.name}",
-  //                   i == selected.length - 1,
-  //                 );
-  //               }
-
-  //               Navigator.pop(context);
-  //             },
-  //           ),
-  //         );
-  //       },
-  //     ),
-  //   );
-  // }
 }

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -12,7 +10,6 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/make_tags.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 
@@ -88,7 +85,7 @@ class _TagsWidgetState extends State<TagsWidget> {
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),

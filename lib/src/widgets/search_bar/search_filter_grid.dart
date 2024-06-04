@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -101,10 +99,7 @@ class _FilteringSearchWidgetState<T extends CellBase>
         textController,
         (p0) {},
         (p0) {},
-        () {
-          focusNode.unfocus();
-          // widget.instance._state.mainFocus.requestFocus();
-        },
+        focusNode.unfocus,
         widget.localTagDictionary.complete,
         focusNode,
         swapSearchIcon: true,
@@ -138,7 +133,10 @@ class _FilteringSearchWidgetState<T extends CellBase>
 }
 
 class _FilterIcon extends StatefulWidget {
-  const _FilterIcon({super.key, required this.filter});
+  const _FilterIcon({
+    // super.key,
+    required this.filter,
+  });
 
   final ChainedFilterResourceSource<dynamic, dynamic> filter;
 
@@ -184,12 +182,12 @@ class __FilterIconState extends State<_FilterIcon>
   Widget build(BuildContext context) {
     return Animate(
       controller: controller,
-      effects: [
+      effects: const [
         SlideEffect(
           duration: Durations.short4,
           curve: Easing.emphasizedDecelerate,
           begin: Offset(-1, 0),
-          end: Offset(0, 0),
+          end: Offset.zero,
         ),
         FadeEffect(
           delay: Durations.short1,

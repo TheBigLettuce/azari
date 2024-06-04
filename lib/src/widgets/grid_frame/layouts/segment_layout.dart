@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -551,120 +549,11 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
               animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
-
-          // switch (cell) {
-          //   AsyncCell<T>() => _AsyncCell(
-          //       key: cell.uniqueKey(),
-          //       data: cell,
-          //       selection: widget.selection,
-          //       gridFunctionality: widget.gridFunctionality,
-          //       segments: widget.segments,
-          //       config: widget.config,
-          //       blur: blur,
-          //     ),
-          //   SyncCell<T>() =>,
-          // };
         },
       ),
     );
   }
 }
-
-// class _SegRowHCell<T extends CellBase> extends StatelessWidget {
-//   const _SegRowHCell({
-//     super.key,
-//     required this.selection,
-//     required this.val,
-//     required this.gridFunctionality,
-//     required this.segments,
-//     required this.config,
-//   });
-
-//   final GridSelection<T> selection;
-//   final _HeaderWithCells<T> val;
-//   final GridFunctionality<T> gridFunctionality;
-//   final Segments<T> segments;
-//   final GridSettingsData config;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return;
-//   }
-// }
-
-// class _AsyncCell<T extends CellBase> extends StatefulWidget {
-//   const _AsyncCell({
-//     required super.key,
-//     required this.data,
-//     required this.selection,
-//     required this.gridFunctionality,
-//     required this.segments,
-//     required this.config,
-//     required this.blur,
-//   });
-
-//   final AsyncCell<T> data;
-//   final GridSelection<T> selection;
-//   final GridFunctionality<T> gridFunctionality;
-//   final Segments<T> segments;
-//   final GridSettingsData config;
-//   final bool blur;
-
-//   @override
-//   State<_AsyncCell<T>> createState() => __AsyncCellState();
-// }
-
-// class __AsyncCellState<T extends CellBase> extends State<_AsyncCell<T>> {
-//   late final StreamSubscription<T?> _watcher;
-
-//   T? _data;
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     _watcher = widget.data.watch(
-//       (cell) {
-//         setState(() {
-//           _data = cell;
-//         });
-//       },
-//       true,
-//     );
-//   }
-
-//   @override
-//   void dispose() {
-//     _watcher.cancel();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return _data == null
-//         ? const SizedBox.shrink()
-//         : WrapSelection<T>(
-//             selection: widget.selection,
-//             description: _data!.description(),
-//             onPressed:
-//                 _data!.tryAsPressable<T>(context, widget.gridFunctionality, -1),
-//             functionality: widget.gridFunctionality,
-//             selectFrom: null,
-//             thisIndx: -1,
-//             child: GridCell.frameDefault<T>(
-//               context,
-//               -1,
-//               _data!,
-//               blur: widget.blur,
-//               isList: false,
-//               imageAlign: Alignment.topCenter,
-//               hideTitle: widget.config.hideName,
-//               animated: PlayAnimations.maybeOf(context) ?? false,
-//             ),
-//           );
-//   }
-// }
 
 class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
   const _SegRowHIdx({

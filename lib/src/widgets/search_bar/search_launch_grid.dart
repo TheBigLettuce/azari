@@ -1,12 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -139,64 +136,6 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                         icon: const Icon(Icons.search_rounded),
                       ),
                     );
-
-              //  Stack(
-              //     alignment: Alignment.center,
-              //     children: [
-              //       Animate(
-              //         effects: const [
-              //           SlideEffect(
-              //             delay: Duration(milliseconds: 80),
-              //             duration: Durations.medium4,
-              //             curve: Easing.standard,
-              //             begin: Offset(-0.5, 0),
-              //             end: Offset(0.8, 0),
-              //           ),
-              //           FadeEffect(
-              //             duration: Durations.medium4,
-              //             curve: Easing.standard,
-              //             begin: 0,
-              //             end: 1,
-              //           ),
-              //           ThenEffect(delay: Durations.long1),
-              //           SlideEffect(
-              //             delay: Duration(milliseconds: 80),
-              //             duration: Durations.medium4,
-              //             curve: Easing.standard,
-              //             begin: Offset.zero,
-              //             end: Offset(-0.8, 0),
-              //           ),
-              //           FadeEffect(
-              //             duration: Durations.medium4,
-              //             curve: Easing.standard,
-              //             begin: 1,
-              //             end: 0,
-              //           ),
-              //         ],
-              //         child: DecoratedBox(
-              //           decoration: ShapeDecoration(
-              //             shape: const StadiumBorder(),
-              //             color: colorScheme.secondaryContainer,
-              //           ),
-              //           child: Padding(
-              //             padding: const EdgeInsets.symmetric(
-              //               horizontal: 10,
-              //               vertical: 4,
-              //             ),
-              //             child: Text(
-              //               "Search here",
-              //               style: theme.textTheme.titleMedium?.copyWith(
-              //                 color: colorScheme.onSecondaryContainer
-              //                     .withOpacity(0.9),
-              //               ),
-              //             ),
-              //           ),
-              //         ),
-              //       )
-              //       ,
-              //      ,
-              //     ],
-              //   );
             },
             viewTrailing: [
               ...addItems,

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -11,13 +9,11 @@ class _BodyWrapping extends StatelessWidget {
   const _BodyWrapping({
     required this.bindings,
     required this.pageName,
-    // required this.pageSwitcherNoBar,
     required this.children,
   });
 
   final String pageName;
   final Map<SingleActivatorDescription, void Function()> bindings;
-  // final Widget? pageSwitcherNoBar;
   final List<Widget> children;
 
   @override
@@ -29,17 +25,13 @@ class _BodyWrapping extends StatelessWidget {
           context,
           describeKeys(bindings),
           pageName,
-          () {
-            // mainFocus.requestFocus();
-          },
+          () {},
         ),
       },
       child: Focus(
         autofocus: true,
-        // focusNode: mainFocus,
         child: Column(
           children: [
-            // if (pageSwitcherNoBar != null) pageSwitcherNoBar!,
             Expanded(
               child: Stack(
                 children: children,

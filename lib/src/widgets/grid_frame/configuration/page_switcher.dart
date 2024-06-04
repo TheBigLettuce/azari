@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -54,47 +52,6 @@ sealed class PageSwitcherInterface<T extends CellBase> {
 
   Widget switcherWidget(BuildContext context, GridFrameState<T> state);
 }
-
-// class PageSwitcherToggable<T extends CellBase>
-//     implements PageSwitcherInterface<T> {
-//   const PageSwitcherToggable(
-//     this.pages,
-//     this.toggle, {
-//     required this.stateKey,
-//   });
-
-//   final List<PageToaggable> pages;
-
-//   final bool Function(BuildContext context, int i) toggle;
-
-//   final GlobalKey<ToggableLabelSwitcherWidgetState> stateKey;
-
-//   @override
-//   PageDescription Function(
-//     BuildContext context,
-//     GridFrameState<T> state,
-//     // ignore: prefer_function_declarations_over_variables
-//     int i,
-//   ) get buildPage => _noWidget;
-
-//   PageDescription _noWidget(
-//     BuildContext context,
-//     GridFrameState<T> state,
-//     int i,
-//   ) {
-//     return const PageDescription(
-//       slivers: [SliverPadding(padding: EdgeInsets.zero)],
-//     );
-//   }
-
-//   @override
-//   Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
-//       ToggableLabelSwitcherWidget<T>(
-//         key: stateKey,
-//         pages: pages,
-//         toggle: toggle,
-//       );
-// }
 
 class PageSwitcherLabel<T extends CellBase>
     implements PageSwitcherInterface<T> {

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -247,10 +245,8 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
     var hours = microseconds ~/ Duration.microsecondsPerHour;
     microseconds = microseconds.remainder(Duration.microsecondsPerHour);
 
-    // Correcting for being negative after first division, instead of before,
-    // to avoid negating min-int, -(2^31-1), of a native int64.
     if (negative) {
-      hours = 0 - hours; // Not using `-hours` to avoid creating -0.0 on web.
+      hours = 0 - hours;
       microseconds = 0 - microseconds;
       sign = "-";
     }

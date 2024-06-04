@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -49,16 +47,11 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         _previousCell = (c2, i - 1);
 
         final content = c2;
-        if (content is NetImage) {
-          // WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-          // precacheImage(content.provider, context);
-          // });
+        if (widget.preloadNextPictures && content is NetImage) {
+          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+            precacheImage(content.provider, context);
+          });
         }
-
-        // if (_previousCell!.$1 is SystemGalleryDirectoryFile) {
-        //   PlatformFunctions.preloadImage(
-        //       (_previousCell!.$1 as SystemGalleryDirectoryFile).originalUri);
-        // }
       }
     }
 
@@ -69,16 +62,11 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         _nextCell = (c3, i + 1);
 
         final content = c3;
-        if (content is NetImage) {
-          // WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-          // precacheImage(content.provider, context);
-          // });
+        if (widget.preloadNextPictures && content is NetImage) {
+          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+            precacheImage(content.provider, context);
+          });
         }
-
-        // if (_nextCell!.$1 is SystemGalleryDirectoryFile) {
-        //   PlatformFunctions.preloadImage(
-        //       (_nextCell!.$1 as SystemGalleryDirectoryFile).originalUri);
-        // }
       }
     }
   }

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -106,23 +104,14 @@ class _SinglePostState extends State<SinglePost> {
         value = await booru.singlePost(n);
       }
 
-      // final key = GlobalKey<ImageViewState>();
-
-      // final favoritesWatcher = widget.db.watch((event) {
-      //   key.currentState?.setState(() {});
-      // });
-
       return ImageView.launchWrapped(
-        // ignore: use_build_context_synchronously
         context,
         1,
         (__) => value.content(),
-        // key: key,
         download: (_) => value.download(downloadManager, postTags),
       );
     } catch (e, trace) {
       try {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.toString())));
       } catch (_) {}
@@ -244,7 +233,6 @@ class _SinglePostState extends State<SinglePost> {
       child: SearchBar(
         hintText: AppLocalizations.of(context)!.goPostHint,
         controller: controller,
-        // leading: widget.overrideLeading ?? const Icon(Icons.search),
         trailing: [
           IconButton(
             icon: const Icon(Icons.close),

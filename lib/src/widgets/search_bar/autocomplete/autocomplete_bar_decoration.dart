@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -35,7 +33,6 @@ InputDecoration autocompleteBarDecoration(
                   icon: Badge.count(
                     count: searchCount ?? 0,
                     isLabelVisible: searchCount != null,
-                    // child: const Icon(Icons.search_rounded),
                   ),
                   padding: EdgeInsets.zero,
                 )
@@ -50,7 +47,6 @@ InputDecoration autocompleteBarDecoration(
         icon: const Icon(Icons.close),
       ),
       hintText: hint,
-      // fillColor: Colors.black,
       border: roundBorders
           ? const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(50)),

@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -278,7 +276,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
   @override
   Widget build(BuildContext context) {
-    // final statistics = StatisticsGalleryService.db().current;
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
@@ -439,7 +436,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                                 widget.db.miscSettings,
                               ),
                             if (miscSettings.filesExtendedActions) ...[
-                              // bulkRename(),
                               saveTagsAction(plug, postTags, localTags),
                               addTag(
                                 context,

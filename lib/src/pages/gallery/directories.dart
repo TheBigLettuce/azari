@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -120,8 +118,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   bool isThumbsLoading = false;
 
-  // int? trashThumbId;
-
   final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
 
@@ -201,7 +197,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     }
 
     state.dispose();
-    // Dbs.g.clearTemporaryImages();
     lifecycleListener.dispose();
 
     super.dispose();
@@ -234,7 +229,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           SyncCell(
             GalleryDirectory.forPlatform(
               bucketId: "favorites",
-              name: widget.l10n.galleryDirectoriesFavorites, // change
+              name: widget.l10n.galleryDirectoriesFavorites,
               tag: "",
               volumeName: "",
               relativeLoc: "",
@@ -467,7 +462,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                           .chooseDirectory(temporary: true)
                           .then((value) => value!.path),
                     );
-                    // ignore: use_build_context_synchronously
                     Navigator.pop(context);
                   } catch (e, trace) {
                     _log.logDefaultImportant(
@@ -475,7 +469,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       trace,
                     );
 
-                    // ignore: use_build_context_synchronously
                     Navigator.pop(context);
                   }
                 },

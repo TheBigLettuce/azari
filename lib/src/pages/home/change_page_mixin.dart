@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -8,8 +6,6 @@
 part of "../home.dart";
 
 mixin _ChangePageMixin on State<Home> {
-  // late final Isar mainGrid;
-
   final pagingRegistry = PagingStateRegistry();
 
   final mainKey = GlobalKey<NavigatorState>();
@@ -40,13 +36,10 @@ mixin _ChangePageMixin on State<Home> {
     mangaKey.currentState?.maybePop();
   }
 
-  void initChangePage(_AnimatedIconsMixin icons, SettingsData settings) {
-    // mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
-  }
+  void initChangePage(_AnimatedIconsMixin icons, SettingsData settings) {}
 
   void disposeChangePage() {
     if (!themeIsChanging) {
-      // mainGrid.close().then((value) => restartOver());
       pagingRegistry.dispose();
     } else {
       themeChangeOver();

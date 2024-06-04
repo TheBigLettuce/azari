@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -83,28 +81,6 @@ class _GridMasonryLayoutState<T extends CellBase>
         delegate: SliverChildBuilderDelegate(childCount: source.count,
             (context, idx) {
           final cell = getCell(idx);
-
-          // final cell = state.getCell(indx);
-
-          // final n1 = switch (columns) {
-          //   2 => 4,
-          //   3 => 3,
-          //   4 => 3,
-          //   5 => 3,
-          //   6 => 3,
-          //   int() => 4,
-          // };
-
-          // final n2 = switch (columns) {
-          //   2 => 40,
-          //   3 => 40,
-          //   4 => 30,
-          //   5 => 30,
-          //   6 => 20,
-          //   int() => 40,
-          // };
-
-          // final int i = ((randomNumber + indx) % 5 + n1) * n2;
 
           final rem = ((widget.randomNumber + idx) % 11) * 0.5;
           final maxHeight = (size / config.aspectRatio.value) +

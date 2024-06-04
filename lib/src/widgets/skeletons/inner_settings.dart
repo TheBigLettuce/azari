@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -43,14 +41,15 @@ class InnerSettingsSkeleton extends StatelessWidget {
     return CallbackShortcuts(
       bindings: {
         ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription,
-            () {
-          // state.mainFocus.requestFocus();
-        }),
+        ...keybindDescription(
+          context,
+          describeKeys(bindings),
+          pageDescription,
+          () {},
+        ),
       },
       child: Focus(
         autofocus: true,
-        // focusNode: state.mainFocus,
         child: Scaffold(
           drawerEnableOpenDragGesture:
               MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,

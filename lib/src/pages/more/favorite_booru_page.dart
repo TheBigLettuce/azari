@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -62,22 +60,6 @@ class FavoriteBooruPage extends StatelessWidget {
     return GridFrame<FavoritePostData>(
       key: state.state.gridKey,
       slivers: [
-        // if (state.segments != null)
-        //   SegmentLayout<FavoritePostData>(
-        //     progress: state.filter.progress,
-        //     localizations: l8n,
-        //     segments: Segments(
-        //       l8n.segmentsUncategorized,
-        //       injectedLabel: "",
-        //       caps: SegmentCapability.empty(),
-        //       hidePinnedIcon: true,
-        //       prebuiltSegments: state.segments,
-        //     ),
-        //     suggestionPrefix: const [],
-        //     gridSeed: state.state.gridSeed,
-        //     storage: state.filter.backingStorage,
-        //   )
-        // else
         CurrentGridSettingsLayout<FavoritePostData>(
           source: state.filter.backingStorage,
           progress: state.filter.progress,
@@ -179,10 +161,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   WatchableGridSettingsData get gridSettings =>
       widget.db.gridSettings.favoritePosts;
 
-  late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
   late final StreamSubscription<SettingsData?> settingsWatcher;
-
-  MiscSettingsData miscSettings = MiscSettingsService.db().current;
 
   final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
@@ -236,7 +215,6 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
 
   void disposeFavoriteBooruState() {
     settingsWatcher.cancel();
-    miscSettingsWatcher.cancel();
     filter.destroy();
 
     searchFocus.dispose();
@@ -311,7 +289,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
         SortingMode.none,
         SortingMode.size,
       },
-      initialFilteringMode: miscSettings.favoritesPageMode,
+      initialFilteringMode: MiscSettingsService.db().current.favoritesPageMode,
       initialSortingMode: SortingMode.none,
     );
 
@@ -320,12 +298,6 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
       filter.clearRefresh();
-    });
-
-    miscSettingsWatcher = miscSettings.s.watch((s) {
-      miscSettings = s!;
-
-      // setState(() {});
     });
 
     filter.clearRefresh();
@@ -338,7 +310,6 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   List<GridAction<FavoritePostData>> gridActions() {
     return [
       BooruGridActions.download(context, state.settings.selectedBooru),
-      // _groupButton(context),
       BooruGridActions.favorites(
         context,
         favoritePosts,
@@ -347,49 +318,3 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     ];
   }
 }
-
-
-
-
-  // late final loader = LinearIsarLoader<FavoritePostData>(
-  //     FavoriteBooruSchema, Dbs.g.main, (offset, limit, s, sort, mode) {
-  //   if (mode == FilteringMode.group) {
-  //     if (s.isEmpty) {
-  //       return Dbs.g.main.favoriteBoorus
-  //           .where()
-  //           .sortByGroupDesc()
-  //           .thenByCreatedAtDesc()
-  //           .offset(offset)
-  //           .limit(limit)
-  //           .findAllSync();
-  //     }
-
-  //     return Dbs.g.main.favoriteBoorus
-  //         .filter()
-  //         .groupContains(s)
-  //         .sortByGroupDesc()
-  //         .thenByCreatedAtDesc()
-  //         .offset(offset)
-  //         .limit(limit)
-  //         .findAllSync();
-  //   } else if (mode == FilteringMode.same) {
-  //     return Dbs.g.main.favoriteBoorus
-  //         .filter()
-  //         // ignore: inference_failure_on_function_invocation
-  //         .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
-  //         .sortByMd5()
-  //         .thenByCreatedAtDesc()
-  //         .offset(offset)
-  //         .limit(limit)
-  //         .findAllSync();
-  //   }
-
-  //   return Dbs.g.main.favoriteBoorus
-  //       .filter()
-  //       // ignore: inference_failure_on_function_invocation
-  //       .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
-  //       .sortByCreatedAtDesc()
-  //       .offset(offset)
-  //       .limit(limit)
-  //       .findAllSync();
-  // })

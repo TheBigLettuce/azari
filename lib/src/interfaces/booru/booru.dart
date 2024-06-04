@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -18,7 +16,7 @@ enum Booru {
     required this.url,
   });
 
-  // Name. starting with an uppercase letter.
+  /// Name. starting with an uppercase letter.
   final String string;
 
   /// Prefix ensures that the filenames will be unique.

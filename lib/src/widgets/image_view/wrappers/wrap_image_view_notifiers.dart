@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -27,7 +25,6 @@ import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({
     super.key,
-    // required this.registerNotifiers,
     required this.onTagRefresh,
     required this.hardRefresh,
     required this.currentCell,
@@ -43,7 +40,6 @@ class WrapImageViewNotifiers extends StatefulWidget {
   final void Function() onTagRefresh;
   final Contentable currentCell;
   final FocusNode mainFocus;
-  // final InheritedWidget Function(Widget child)? registerNotifiers;
   final void Function([bool refreshPalette]) hardRefresh;
   final BuildContext? gridContext;
   final AnimationController controller;

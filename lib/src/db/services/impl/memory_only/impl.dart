@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -1777,10 +1775,6 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
     return l;
   }
 
-  // @override
-  // ResourceSource<BlacklistedDirectoryData, String> makeSource() =>
-  //     GenericListSource(() => Future.value(_val.values.toList()));
-
   StreamSubscription<void> watch(
     void Function(void p1) f, [
     bool fire = false,
@@ -2025,25 +2019,10 @@ class PlainFavoritePostData extends FavoritePostData {
 }
 
 class MemoryFavoritePostService implements FavoritePostSourceService {
-  // @override
-  // final Map<(int id, Booru booru), FavoritePostData> cachedValues = {};
-
   final _eventsCount = StreamController<int>.broadcast();
-  // final _events = StreamController<(int, Booru)>.broadcast();
 
   @override
   int get count => backingStorage.length;
-
-  // @override
-  // void addAllFileUrl(List<FavoritePostData> favorites) {
-  //   cachedValues.addEntries(favorites.map((e) => MapEntry((e.id, e.booru), e)));
-
-  //   for (final e in favorites) {
-  //     _events.add((e.id, e.booru));
-  //   }
-
-  //   _eventsVoid.add(null);
-  // }
 
   @override
   bool isFavorite(int id, Booru booru) =>
@@ -2086,21 +2065,10 @@ class MemoryFavoritePostService implements FavoritePostSourceService {
       }
     }
 
-    // for (final e in posts) {
-    //   _events.add((e.id, e.booru));
-    // }
-
     _eventsCount.add(count);
 
     return deleted;
   }
-
-  // @override
-  // StreamSubscription<int> watch(
-  //   void Function(int p1) f, [
-  //   bool fire = false,
-  // ]) =>
-  //     _eventsCount.stream.listen(f);
 
   @override
   final MapStorage<(int, Booru), FavoritePostData> backingStorage =
@@ -2132,17 +2100,7 @@ class MemoryFavoritePostService implements FavoritePostSourceService {
     void Function(T p1) f, [
     bool fire = false,
   ]) =>
-      throw UnimplementedError()
-      // _events.stream.transform<T>(
-      //   StreamTransformer.fromHandlers(
-      //     handleData: (data, sink) {
-      //       if (data.$1 == id && data.$2 == booru) {
-      //         sink.add(transform(backingStorage.map_.containsKey(data)));
-      //       }
-      //     },
-      //   ),
-      // ).listen(f)
-      ;
+      throw UnimplementedError();
 }
 
 class MemoryHiddenBooruPostService implements HiddenBooruPostService {
@@ -2276,7 +2234,6 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
     this.entry,
     this.excluded,
     this.filters,
-    // this.backingStorage,
   );
 
   @override
@@ -2317,18 +2274,6 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   @override
   // TODO: implement safeMode
   SafeMode get safeMode => throw UnimplementedError();
-
-  // @override
-  // final PostsOptimizedStorage backingStorage;
-
-  // @override
-  // int get count => backingStorage.count;
-
-  // @override
-  // void destroy() {
-  //   progress.close();
-  //   backingStorage.destroy();
-  // }
 }
 
 class MemoryMainGridService implements MainGridService {

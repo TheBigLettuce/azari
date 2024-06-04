@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -528,46 +526,6 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
 
 class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   const IsarSavedAnimeEntriesService();
-
-  // void _unsetIsWatching() {
-  //   final current = get(isarId!, false);
-  //   Dbs.g.anime.writeTxnSync(
-  //     () => Dbs.g.anime.savedAnimeEntrys
-  //         .putBySiteIdSync(current.copy(inBacklog: true)),
-  //   );
-  // }
-
-  // bool _setCurrentlyWatching() {
-  //   final current = get(isarId!, false);
-  //   if (!current.inBacklog ||
-  //       Dbs.g.anime.savedAnimeEntrys
-  //               .filter()
-  //               .inBacklogEqualTo(false)
-  //               .countSync() >=
-  //           3) {
-  //     return false;
-  //   }
-
-  //   Dbs.g.anime.writeTxnSync(
-  //     () => Dbs.g.anime.savedAnimeEntrys
-  //         .putBySiteIdSync(current.copy(inBacklog: false)),
-  //   );
-
-  //   return true;
-  // }
-
-// void deleteAllIds(List<(int, AnimeMetadata)> ids) {
-  //   if (ids.isEmpty) {
-  //     return;
-  //   }
-
-  //   Dbs.g.anime.writeTxnSync(
-  //     () => Dbs.g.anime.savedAnimeEntrys.deleteAllBySiteIdSync(
-  //       ids.map((e) => e.$2).toList(),
-  //       ids.map((e) => e.$1).toList(),
-  //     ),
-  //   );
-  // }
 
   Isar get db => _Dbs.g.anime;
 

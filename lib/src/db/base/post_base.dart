@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -22,7 +20,6 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";

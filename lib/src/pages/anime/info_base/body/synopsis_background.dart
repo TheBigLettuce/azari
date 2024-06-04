@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -77,9 +75,9 @@ class SynopsisBackground extends StatelessWidget {
                     selectable: true,
                     styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
                     data: synopsis,
-                    bulletBuilder: (index, style) {
+                    bulletBuilder: (parameters) {
                       return Transform.rotate(
-                        angle: -pi / Random(index).nextInt(100),
+                        angle: -pi / Random(parameters.index).nextInt(100),
                         child: Icon(
                           const IconData(0x2726),
                           size: 12,

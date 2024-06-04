@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -34,7 +32,6 @@ import "package:gallery/src/widgets/notifiers/selection_count.dart";
 part "configuration/grid_action.dart";
 part "configuration/grid_description.dart";
 part "configuration/grid_selection.dart";
-part "configuration/mutation.dart";
 part "configuration/search_and_focus.dart";
 part "configuration/segments.dart";
 part "parts/app_bar.dart";
@@ -140,7 +137,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
     this.initalScrollPosition = 0,
     required this.functionality,
     this.onDispose,
-    // required this.mainFocus,
     this.belowMainFocus,
     this.overrideController,
     required this.description,
@@ -149,9 +145,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   /// [initalScrollPosition] is needed for the state restoration.
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
   final double initalScrollPosition;
-
-  /// The main focus node of the grid.
-  // final FocusNode mainFocus;
 
   final GridFunctionality<T> functionality;
 
@@ -263,10 +256,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       });
     }
   }
-
-  // void enableAnimationsFor([
-  //   Duration duration = const Duration(milliseconds: 300),
-  // ]) {}
 
   void resetFab() {
     setState(() {
@@ -469,7 +458,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       ),
       child: Scrollbar(
         interactive: false,
-        // thumbVisibility: !Platform.isAndroid && !Platform.isIOS,
         controller: controller,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -544,7 +532,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     Widget child(BuildContext context) {
       final Widget ret = _BodyWrapping(
         bindings: const {},
-        // mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
         children: [
           if (atHomePage && widget.description.pullToRefresh)
@@ -630,7 +617,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           widget.functionality.playAnimationOn + [gridSettingsWatcher],
       child: FocusNotifier(
         notifier: searchFocus,
-        // focusMain: widget.mainFocus.requestFocus,
         child: _GridSelectionCountHolder(
           key: _holderKey,
           calculatePadding: _bottomPadding,

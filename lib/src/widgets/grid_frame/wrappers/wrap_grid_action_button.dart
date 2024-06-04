@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -60,11 +58,6 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
 
     _subscr = widget.watch?.call(
       (d) {
-        // if (d.$3 != null && !data.$3 && d.$3!) {
-        //   _controller?.reset();
-        //   _controller?.animateTo(1).then((value) => _controller?.animateBack(0));
-        // }
-
         if (data.$2 != d.$2) {
           final theme = Theme.of(context);
           final iconColor =

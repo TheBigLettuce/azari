@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-//
 // Copyright (C) 2023 Bob
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -15,7 +13,6 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
