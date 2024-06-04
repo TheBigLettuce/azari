@@ -839,7 +839,8 @@ class _RedownloadTileState extends State<RedownloadTile> {
           ? null
           : () {
               final dio = BooruAPI.defaultClientForBooru(res!.booru);
-              final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
+              final api =
+                  BooruAPI.fromEnum(res.booru, dio, PageSaver.noPersist());
 
               final downloadManager = DownloadManager.of(context);
               final postTags = PostTags.fromContext(context);

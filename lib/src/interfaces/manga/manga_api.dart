@@ -14,6 +14,7 @@ import "package:gallery/src/interfaces/cell/sticker.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/manga/launch_reader.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";

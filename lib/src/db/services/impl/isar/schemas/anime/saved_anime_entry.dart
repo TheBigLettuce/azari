@@ -7,7 +7,6 @@ import "dart:async";
 
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "saved_anime_entry.g.dart";
@@ -58,7 +57,7 @@ class IsarAnimeRelation implements AnimeRelation {
 }
 
 @collection
-class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
+class IsarSavedAnimeEntry extends SavedAnimeEntryData {
   IsarSavedAnimeEntry({
     required this.genres,
     required super.id,
@@ -83,7 +82,6 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData implements IsarEntryId {
     required super.episodes,
   });
 
-  @override
   Id? isarId;
 
   @override

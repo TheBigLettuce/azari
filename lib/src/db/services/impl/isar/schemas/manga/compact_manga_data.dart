@@ -4,16 +4,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:isar/isar.dart";
 
 part "compact_manga_data.g.dart";
 
 @collection
-class IsarCompactMangaData extends CompactMangaDataBase
-    with CompactMangaData
-    implements IsarEntryId {
+class IsarCompactMangaData extends CompactMangaDataBase with CompactMangaData {
   IsarCompactMangaData({
     required super.mangaId,
     required super.site,
@@ -21,6 +18,5 @@ class IsarCompactMangaData extends CompactMangaDataBase
     required super.title,
   });
 
-  @override
   Id? isarId;
 }

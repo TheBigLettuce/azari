@@ -9,7 +9,7 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/booru/strip_html.dart";
+import "package:gallery/src/net/booru/strip_html.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/net/booru/conventers/danbooru.dart";
 import "package:gallery/src/net/cloudflare_exception.dart";

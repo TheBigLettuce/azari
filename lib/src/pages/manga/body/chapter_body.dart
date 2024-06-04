@@ -92,7 +92,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
       setState(() {});
     }
 
-    ReadMangaChaptersService.launchReader(
+    launchReader(
       context,
       ReaderData(
         api: widget.api,
@@ -111,6 +111,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
         },
       ),
       addNextChapterButton: true,
+      readChapters: widget.db,
     );
   }
 

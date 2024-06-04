@@ -57,7 +57,7 @@ class _SinglePostState extends State<SinglePost> {
 
     final booru = SettingsService.db().current.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
-    booruApi = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
+    booruApi = BooruAPI.fromEnum(booru, client, PageSaver.noPersist());
   }
 
   @override
@@ -83,7 +83,7 @@ class _SinglePostState extends State<SinglePost> {
 
     BooruAPI booru;
     if (replaceBooru != null) {
-      booru = BooruAPI.fromEnum(replaceBooru, client, EmptyPageSaver());
+      booru = BooruAPI.fromEnum(replaceBooru, client, PageSaver.noPersist());
     } else {
       booru = booruApi;
     }

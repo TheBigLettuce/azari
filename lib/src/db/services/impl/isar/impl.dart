@@ -49,6 +49,9 @@ import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_diction
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/posts_source.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
@@ -219,9 +222,6 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   String tags;
-
-  @override
-  int get count => backingStorage.count;
 
   @override
   void destroy() {
@@ -797,9 +797,6 @@ class IsarFavoritePostService implements FavoritePostSourceService {
   IsarCollection<IsarFavoriteBooru> get collection => db.isarFavoriteBoorus;
 
   @override
-  int get count => collection.countSync();
-
-  @override
   bool isFavorite(int id, Booru booru) =>
       backingStorage.map_.containsKey((id, booru));
 
@@ -1275,9 +1272,6 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
           .where((element) => element != null)
           .cast<BlacklistedDirectoryData>()
           .toList();
-
-  @override
-  int get count => backingStorage.count;
 
   @override
   bool get hasNext => false;

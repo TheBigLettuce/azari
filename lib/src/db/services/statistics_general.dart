@@ -9,6 +9,14 @@ extension StatisticsGeneralDataExt on StatisticsGeneralData {
   void save() => _currentDb.statisticsGeneral.add(this);
 }
 
+abstract interface class StatisticsGeneralService implements ServiceMarker {
+  factory StatisticsGeneralService.db() => _currentDb.statisticsGeneral;
+
+  StatisticsGeneralData get current;
+
+  void add(StatisticsGeneralData data);
+}
+
 abstract class StatisticsGeneralData {
   const StatisticsGeneralData({
     required this.refreshes,
@@ -28,12 +36,4 @@ abstract class StatisticsGeneralData {
     int? scrolledUp,
     int? refreshes,
   });
-}
-
-abstract interface class StatisticsGeneralService implements ServiceMarker {
-  factory StatisticsGeneralService.db() => _currentDb.statisticsGeneral;
-
-  StatisticsGeneralData get current;
-
-  void add(StatisticsGeneralData data);
 }

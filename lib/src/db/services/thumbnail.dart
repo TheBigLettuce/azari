@@ -5,6 +5,18 @@
 
 part of "services.dart";
 
+abstract interface class ThumbnailService {
+  factory ThumbnailService.db() => _currentDb.thumbnails;
+
+  void clear();
+
+  ThumbnailData? get(int id);
+
+  void delete(int id);
+
+  void addAll(List<ThumbId> l);
+}
+
 abstract class ThumbnailData {
   const ThumbnailData(
     this.id,
@@ -19,16 +31,4 @@ abstract class ThumbnailData {
   @Index()
   final int differenceHash;
   final DateTime updatedAt;
-}
-
-abstract interface class ThumbnailService {
-  factory ThumbnailService.db() => _currentDb.thumbnails;
-
-  void clear();
-
-  ThumbnailData? get(int id);
-
-  void delete(int id);
-
-  void addAll(List<ThumbId> l);
 }

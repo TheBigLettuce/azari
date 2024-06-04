@@ -16,7 +16,7 @@ enum Booru {
     required this.url,
   });
 
-  /// Name. starting with an uppercase letter.
+  /// Name, starting with an uppercase letter.
   final String string;
 
   /// Prefix ensures that the filenames will be unique.
@@ -39,6 +39,7 @@ enum Booru {
     };
   }
 
+  /// Constructs a link to the search page of the booru, outside the app.
   Uri browserLinkSearch(String tags) {
     return switch (this) {
       Booru.gelbooru => Uri.https(url, "/index.php", {

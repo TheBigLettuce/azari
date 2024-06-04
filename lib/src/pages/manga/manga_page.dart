@@ -8,12 +8,16 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/pages/manga/launch_reader.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -113,7 +117,7 @@ class _MangaPageState extends State<MangaPage> {
 
     inInner = true;
 
-    ReadMangaChaptersService.launchReader(
+    launchReader(
       context,
       ReaderData(
         api: api,
@@ -128,6 +132,7 @@ class _MangaPageState extends State<MangaPage> {
         onNextPage: (p, cell) {},
       ),
       addNextChapterButton: true,
+      readChapters: widget.db.readMangaChapters,
     ).then((value) {
       _procReload();
     });

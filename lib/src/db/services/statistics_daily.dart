@@ -9,6 +9,14 @@ extension StatisticsDailyDataExt on StatisticsDailyData {
   void save() => _currentDb.statisticsDaily.add(this);
 }
 
+abstract interface class StatisticsDailyService implements ServiceMarker {
+  factory StatisticsDailyService.db() => _currentDb.statisticsDaily;
+
+  StatisticsDailyData get current;
+
+  void add(StatisticsDailyData data);
+}
+
 abstract class StatisticsDailyData {
   const StatisticsDailyData({
     required this.swipedBoth,
@@ -28,12 +36,4 @@ abstract class StatisticsDailyData {
   });
 
   StatisticsDailyData add({required int swipedBoth});
-}
-
-abstract interface class StatisticsDailyService implements ServiceMarker {
-  factory StatisticsDailyService.db() => _currentDb.statisticsDaily;
-
-  StatisticsDailyData get current;
-
-  void add(StatisticsDailyData data);
 }

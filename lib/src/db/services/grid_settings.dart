@@ -5,6 +5,90 @@
 
 part of "services.dart";
 
+typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
+  void Function(GridSettingsData) f, [
+  bool fire,
+]);
+
+abstract interface class GridSettingsService {
+  WatchableGridSettingsData get animeDiscovery;
+  WatchableGridSettingsData get booru;
+  WatchableGridSettingsData get directories;
+  WatchableGridSettingsData get favoritePosts;
+  WatchableGridSettingsData get files;
+}
+
+abstract interface class WatchableGridSettingsData {
+  GridSettingsData get current;
+  set current(GridSettingsData d);
+
+  StreamSubscription<GridSettingsData> watch(
+    void Function(GridSettingsData) f, [
+    bool fire = false,
+  ]);
+}
+
+abstract class CancellableWatchableGridSettingsData
+    implements WatchableGridSettingsData {
+  void cancel();
+}
+
+enum GridLayoutType {
+  grid(),
+  list(),
+  gridQuilted(),
+  gridMasonry();
+
+  const GridLayoutType();
+
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
+        GridLayoutType.list => l10n.enumGridLayoutTypeList,
+        GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
+        GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
+      };
+}
+
+abstract class GridSettingsData {
+  const GridSettingsData({
+    required this.aspectRatio,
+    required this.columns,
+    required this.layoutType,
+    required this.hideName,
+  });
+
+  static CancellableWatchableGridSettingsData noPersist({
+    required bool hideName,
+    required GridAspectRatio aspectRatio,
+    required GridColumn columns,
+    required GridLayoutType layoutType,
+  }) =>
+      _InpersistentSettingsWatcher(
+        _UnsavableSettingsData(
+          aspectRatio: aspectRatio,
+          columns: columns,
+          layoutType: layoutType,
+          hideName: hideName,
+        ),
+      );
+
+  final bool hideName;
+  @enumerated
+  final GridAspectRatio aspectRatio;
+  @enumerated
+  final GridColumn columns;
+
+  @enumerated
+  final GridLayoutType layoutType;
+
+  GridSettingsData copy({
+    bool? hideName,
+    GridAspectRatio? aspectRatio,
+    GridColumn? columns,
+    GridLayoutType? layoutType,
+  });
+}
+
 class _UnsavableSettingsData extends GridSettingsData {
   const _UnsavableSettingsData({
     required super.aspectRatio,
@@ -26,11 +110,6 @@ class _UnsavableSettingsData extends GridSettingsData {
         layoutType: layoutType ?? this.layoutType,
         hideName: hideName ?? this.hideName,
       );
-}
-
-abstract class CancellableWatchableGridSettingsData
-    implements WatchableGridSettingsData {
-  void cancel();
 }
 
 class _InpersistentSettingsWatcher
@@ -88,83 +167,4 @@ class _InpersistentSettingsWatcher
 
   @override
   void cancel() => _events.close();
-}
-
-abstract class GridSettingsData {
-  const GridSettingsData({
-    required this.aspectRatio,
-    required this.columns,
-    required this.layoutType,
-    required this.hideName,
-  });
-
-  static CancellableWatchableGridSettingsData noPersist({
-    required bool hideName,
-    required GridAspectRatio aspectRatio,
-    required GridColumn columns,
-    required GridLayoutType layoutType,
-  }) =>
-      _InpersistentSettingsWatcher(
-        _UnsavableSettingsData(
-          aspectRatio: aspectRatio,
-          columns: columns,
-          layoutType: layoutType,
-          hideName: hideName,
-        ),
-      );
-
-  final bool hideName;
-  @enumerated
-  final GridAspectRatio aspectRatio;
-  @enumerated
-  final GridColumn columns;
-
-  @enumerated
-  final GridLayoutType layoutType;
-
-  GridSettingsData copy({
-    bool? hideName,
-    GridAspectRatio? aspectRatio,
-    GridColumn? columns,
-    GridLayoutType? layoutType,
-  });
-}
-
-enum GridLayoutType {
-  grid(),
-  list(),
-  gridQuilted(),
-  gridMasonry();
-
-  const GridLayoutType();
-
-  String translatedString(AppLocalizations l10n) => switch (this) {
-        GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
-        GridLayoutType.list => l10n.enumGridLayoutTypeList,
-        GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
-        GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
-      };
-}
-
-typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
-  void Function(GridSettingsData) f, [
-  bool fire,
-]);
-
-abstract interface class WatchableGridSettingsData {
-  GridSettingsData get current;
-  set current(GridSettingsData d);
-
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData) f, [
-    bool fire = false,
-  ]);
-}
-
-abstract interface class GridSettingsService {
-  WatchableGridSettingsData get animeDiscovery;
-  WatchableGridSettingsData get booru;
-  WatchableGridSettingsData get directories;
-  WatchableGridSettingsData get favoritePosts;
-  WatchableGridSettingsData get files;
 }

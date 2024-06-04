@@ -9,13 +9,12 @@ import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "favorite_booru.g.dart";
 
 @collection
-class IsarFavoriteBooru extends FavoritePostData implements IsarEntryId {
+class IsarFavoriteBooru extends FavoritePostData {
   IsarFavoriteBooru({
     required super.height,
     required super.id,
@@ -34,6 +33,5 @@ class IsarFavoriteBooru extends FavoritePostData implements IsarEntryId {
     required super.type,
   });
 
-  @override
   Id? isarId;
 }

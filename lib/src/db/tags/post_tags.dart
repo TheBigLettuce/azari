@@ -173,7 +173,7 @@ class PostTags {
   ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
     final api =
-        BooruAPI.fromEnum(dissassembled.booru, client, EmptyPageSaver());
+        BooruAPI.fromEnum(dissassembled.booru, client, PageSaver.noPersist());
 
     try {
       final post = await api.singlePost(dissassembled.id);

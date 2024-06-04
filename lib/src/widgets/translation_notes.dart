@@ -55,7 +55,7 @@ class _TranslationNotesState extends State<TranslationNotes> {
     super.initState();
 
     dio = BooruAPI.defaultClientForBooru(widget.booru);
-    f = BooruAPI.fromEnum(widget.booru, dio, EmptyPageSaver())
+    f = BooruAPI.fromEnum(widget.booru, dio, PageSaver.noPersist())
         .notes(widget.postId);
   }
 

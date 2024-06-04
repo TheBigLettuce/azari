@@ -101,7 +101,7 @@ Future<void> loadNetworkThumb(
   final res = DisassembleResult.fromFilename(filename).maybeValue();
   if (res != null) {
     final client = BooruAPI.defaultClientForBooru(res.booru);
-    final api = BooruAPI.fromEnum(res.booru, client, EmptyPageSaver());
+    final api = BooruAPI.fromEnum(res.booru, client, PageSaver.noPersist());
 
     try {
       final post = await api.singlePost(res.id);

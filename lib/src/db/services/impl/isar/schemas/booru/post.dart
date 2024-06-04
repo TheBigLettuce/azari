@@ -8,15 +8,12 @@ import "dart:async";
 import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "post.g.dart";
 
 @collection
-class PostIsar extends PostBase
-    with Post<Post>, DefaultPostPressable<Post>
-    implements IsarEntryId {
+class PostIsar extends PostBase with Post<Post>, DefaultPostPressable<Post> {
   PostIsar({
     required super.height,
     required super.id,
@@ -34,7 +31,6 @@ class PostIsar extends PostBase
     required super.type,
   });
 
-  @override
   Id? isarId;
 
   static List<PostIsar> copyTo(Iterable<Post> post) => post

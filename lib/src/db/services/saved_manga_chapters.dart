@@ -52,24 +52,24 @@ extension MangaChapterExt on List<MangaChapter> {
   }
 }
 
-class MangaChapter {
-  const MangaChapter({
-    required this.chapter,
-    required this.pages,
-    required this.title,
-    required this.volume,
-    required this.id,
-    required this.translator,
-  });
+abstract interface class SavedMangaChaptersService implements ServiceMarker {
+  int count(String mangaId, MangaMeta site);
 
-  final String id;
+  void clear(String mangaId, MangaMeta site);
 
-  final String title;
-  final String chapter;
-  final String volume;
-  final String translator;
+  void add(
+    String mangaId,
+    MangaMeta site,
+    List<MangaChapter> chapters,
+    int page,
+  );
 
-  final int pages;
+  (List<MangaChapter>, int)? get(
+    String mangaId,
+    MangaMeta site,
+    ChaptersSettingsData? settings,
+    ReadMangaChaptersService readManga,
+  );
 }
 
 abstract class SavedMangaChaptersData {
@@ -90,22 +90,22 @@ abstract class SavedMangaChaptersData {
   final int page;
 }
 
-abstract interface class SavedMangaChaptersService implements ServiceMarker {
-  int count(String mangaId, MangaMeta site);
+class MangaChapter {
+  const MangaChapter({
+    required this.chapter,
+    required this.pages,
+    required this.title,
+    required this.volume,
+    required this.id,
+    required this.translator,
+  });
 
-  void clear(String mangaId, MangaMeta site);
+  final String id;
 
-  void add(
-    String mangaId,
-    MangaMeta site,
-    List<MangaChapter> chapters,
-    int page,
-  );
+  final String title;
+  final String chapter;
+  final String volume;
+  final String translator;
 
-  (List<MangaChapter>, int)? get(
-    String mangaId,
-    MangaMeta site,
-    ChaptersSettingsData? settings,
-    ReadMangaChaptersService readManga,
-  );
+  final int pages;
 }

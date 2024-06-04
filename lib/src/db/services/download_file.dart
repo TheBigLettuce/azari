@@ -5,6 +5,24 @@
 
 part of "services.dart";
 
+abstract interface class DownloadFileService implements ServiceMarker {
+  List<DownloadFileData> get inProgressAll;
+  List<DownloadFileData> get failedAll;
+
+  void saveAll(List<DownloadFileData> l);
+  void deleteAll(List<String> urls);
+
+  DownloadFileData? get(String url);
+  bool exist(String url);
+  bool notExist(String url) => !exist(url);
+
+  DownloadFileData? next();
+  List<DownloadFileData> nextNumber(int minus);
+
+  void markInProgressAsFailed();
+  void clear();
+}
+
 abstract class DownloadFileData implements CellBase, Thumbnailable {
   const DownloadFileData({
     required this.status,
@@ -56,22 +74,4 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
 
   @override
   String alias(bool isList) => name;
-}
-
-abstract interface class DownloadFileService implements ServiceMarker {
-  List<DownloadFileData> get inProgressAll;
-  List<DownloadFileData> get failedAll;
-
-  void saveAll(List<DownloadFileData> l);
-  void deleteAll(List<String> urls);
-
-  DownloadFileData? get(String url);
-  bool exist(String url);
-  bool notExist(String url) => !exist(url);
-
-  DownloadFileData? next();
-  List<DownloadFileData> nextNumber(int minus);
-
-  void markInProgressAsFailed();
-  void clear();
 }

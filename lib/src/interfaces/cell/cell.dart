@@ -16,9 +16,8 @@ extension CellsExt on CellBase {
     int idx,
   ) {
     if (this is Pressable<T>) {
-      return () {
-        (this as Pressable<T>).onPress(context, functionality, this as T, idx);
-      };
+      return () => (this as Pressable<T>)
+          .onPress(context, functionality, this as T, idx);
     }
 
     return null;
@@ -88,16 +87,11 @@ class CellStaticData {
   final int titleLines;
 }
 
-abstract interface class IsarEntryId {
-  /// Common pattern of the implementations of [Cell] is that they are all an Isar schema.
-  /// However, this property can be ignored, together with the setter.
-  /// This is only useful for the internal implementations, not used in the [GridFrame].
-  /// No asumptions can be made about this property.
-  int? get isarId;
-  set isarId(int? i);
-}
-
+/// Marker class to make [CellBase] implementations pressable.
+/// [Pressable] requires the type parameter to have correct type
+/// [GridFunctionality] and [onPress].cell.
 abstract interface class Pressable<T extends CellBase> {
+  /// Potentially, [onPress] can open any page, or not open a page at all.
   void onPress(
     BuildContext context,
     GridFunctionality<T> functionality,
@@ -106,18 +100,20 @@ abstract interface class Pressable<T extends CellBase> {
   );
 }
 
+/// Marker class to make [CellBase] implementations thumbnailable.
 abstract interface class Thumbnailable {
   ImageProvider thumbnail();
 }
 
+/// Marker class to make [CellBase] implementations stickerable.
+/// Also used by [ImageView].
 abstract interface class Stickerable {
+  /// Some buttons in [ImageView]'s bottom bar have the same meaning
+  /// as some stickers, [excludeDuplicate] should remove those.
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate);
 }
 
+/// Marker class to make [CellBase] implementations downloadable.
 abstract interface class Downloadable {
-  /// Url to the file to download.
-  /// This can be unimplemented.
-  /// Not implementing this assumes that clicking on the grid will take to an other page,
-  /// requires [GridFrame.overrideOnPress] to be not null, which makes [fileDownloadUrl] never to be called.
-  String? fileDownloadUrl();
+  String fileDownloadUrl();
 }

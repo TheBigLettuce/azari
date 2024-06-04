@@ -7,19 +7,17 @@ import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "hidden_booru_post.g.dart";
 
 @collection
-class IsarHiddenBooruPost extends HiddenBooruPostData implements IsarEntryId {
+class IsarHiddenBooruPost extends HiddenBooruPostData {
   IsarHiddenBooruPost(
     super.booru,
     super.postId,
     super.thumbUrl,
   );
 
-  @override
   Id? isarId;
 }

@@ -9,6 +9,28 @@ extension SettingsDataExt on SettingsData {
   void save() => SettingsService.db().add(this);
 }
 
+abstract interface class SettingsService implements ServiceMarker {
+  const SettingsService();
+
+  factory SettingsService.db() => _currentDb.settings;
+
+  SettingsData get current;
+
+  void add(SettingsData data);
+
+  StreamSubscription<SettingsData?> watch(
+    void Function(SettingsData? s) f, [
+    bool fire = false,
+  ]);
+
+  Future<bool> chooseDirectory(
+    void Function(String) onError, {
+    required String emptyResult,
+    required String pickDirectory,
+    required String validDirectory,
+  });
+}
+
 abstract class SettingsPath {
   const SettingsPath();
 
@@ -52,27 +74,5 @@ abstract class SettingsData {
     DisplayQuality? quality,
     SafeMode? safeMode,
     bool? showWelcomePage,
-  });
-}
-
-abstract interface class SettingsService implements ServiceMarker {
-  const SettingsService();
-
-  factory SettingsService.db() => _currentDb.settings;
-
-  SettingsData get current;
-
-  void add(SettingsData data);
-
-  StreamSubscription<SettingsData?> watch(
-    void Function(SettingsData? s) f, [
-    bool fire = false,
-  ]);
-
-  Future<bool> chooseDirectory(
-    void Function(String) onError, {
-    required String emptyResult,
-    required String pickDirectory,
-    required String validDirectory,
   });
 }

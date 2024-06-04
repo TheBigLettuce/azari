@@ -5,6 +5,23 @@
 
 part of "services.dart";
 
+extension MiscSettingsDataExt on MiscSettingsData {
+  void save() => _currentDb.miscSettings.add(this);
+}
+
+abstract interface class MiscSettingsService implements ServiceMarker {
+  factory MiscSettingsService.db() => _currentDb.miscSettings;
+
+  MiscSettingsData get current;
+
+  void add(MiscSettingsData data);
+
+  StreamSubscription<MiscSettingsData?> watch(
+    void Function(MiscSettingsData?) f, [
+    bool fire = false,
+  ]);
+}
+
 enum ThemeType {
   systemAccent(),
   secretPink();
@@ -15,10 +32,6 @@ enum ThemeType {
         ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
         ThemeType.secretPink => l10n.enumThemeTypeSecretPink,
       };
-}
-
-extension MiscSettingsDataExt on MiscSettingsData {
-  void save() => _currentDb.miscSettings.add(this);
 }
 
 abstract class MiscSettingsData {
@@ -54,17 +67,4 @@ abstract class MiscSettingsData {
     bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
   });
-}
-
-abstract interface class MiscSettingsService implements ServiceMarker {
-  factory MiscSettingsService.db() => _currentDb.miscSettings;
-
-  MiscSettingsData get current;
-
-  void add(MiscSettingsData data);
-
-  StreamSubscription<MiscSettingsData?> watch(
-    void Function(MiscSettingsData?) f, [
-    bool fire = false,
-  ]);
 }

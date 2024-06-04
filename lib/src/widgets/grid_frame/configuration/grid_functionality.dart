@@ -6,7 +6,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";

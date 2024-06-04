@@ -4,6 +4,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
@@ -21,6 +24,20 @@ abstract interface class PostsSourceService<K, V>
   set tags(String t);
 
   void clear();
+}
+
+abstract class GridPostSource extends PostsSourceService<int, Post> {
+  Post? get currentlyLast;
+}
+
+abstract class PostsOptimizedStorage extends SourceStorage<(int, Booru), Post> {
+  List<Post> get firstFiveNormal;
+
+  List<Post> get firstFiveRelaxed;
+
+  List<Post> get firstFiveAll;
+
+  static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }
 
 mixin GridPostSourceRefreshNext implements GridPostSource {
@@ -141,18 +158,4 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
 
     return true;
   }
-}
-
-abstract class GridPostSource extends PostsSourceService<int, Post> {
-  Post? get currentlyLast;
-}
-
-abstract class PostsOptimizedStorage extends SourceStorage<(int, Booru), Post> {
-  List<Post> get firstFiveNormal;
-
-  List<Post> get firstFiveRelaxed;
-
-  List<Post> get firstFiveAll;
-
-  static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }

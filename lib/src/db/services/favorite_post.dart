@@ -5,6 +5,23 @@
 
 part of "services.dart";
 
+abstract interface class FavoritePostSourceService
+    implements
+        ResourceSource<(int id, Booru booru), FavoritePostData>,
+        ServiceMarker {
+  List<Post> addRemove(List<Post> posts);
+
+  bool isFavorite(int id, Booru booru);
+
+  StreamSubscription<T> watchSingle<T>(
+    int id,
+    Booru booru,
+    T Function(bool) transform,
+    void Function(T) f, [
+    bool fire = false,
+  ]);
+}
+
 abstract class FavoritePostData extends PostBase
     with Post<FavoritePostData>, DefaultPostPressable<FavoritePostData> {
   FavoritePostData({
@@ -33,21 +50,4 @@ abstract class FavoritePostData extends PostBase
 
   @override
   String toString() => "FavoritePostData: $id";
-}
-
-abstract interface class FavoritePostSourceService
-    implements
-        ResourceSource<(int id, Booru booru), FavoritePostData>,
-        ServiceMarker {
-  List<Post> addRemove(List<Post> posts);
-
-  bool isFavorite(int id, Booru booru);
-
-  StreamSubscription<T> watchSingle<T>(
-    int id,
-    Booru booru,
-    T Function(bool) transform,
-    void Function(T) f, [
-    bool fire = false,
-  ]);
 }

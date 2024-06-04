@@ -5,6 +5,19 @@
 
 part of "services.dart";
 
+abstract interface class SavedAnimeCharactersService implements ServiceMarker {
+  List<AnimeCharacter> load(int id, AnimeMetadata site);
+
+  bool addAsync(AnimeEntryData entry, AnimeAPI api);
+
+  StreamSubscription<List<AnimeCharacter>?> watch(
+    int id,
+    AnimeMetadata site,
+    void Function(List<AnimeCharacter>?) f, [
+    bool fire = false,
+  ]);
+}
+
 abstract base class AnimeCharacter
     implements
         AnimeCell,
@@ -39,7 +52,7 @@ abstract base class AnimeCharacter
   String alias(bool isList) => name;
 
   @override
-  String? fileDownloadUrl() => imageUrl;
+  String fileDownloadUrl() => imageUrl;
 
   @override
   Contentable openImage() => NetImage(
@@ -86,17 +99,4 @@ mixin AnimeCharacterDbScope<W extends DbConnHandle<SavedAnimeCharactersService>>
     bool fire = false,
   ]) =>
       widget.db.watch(id, site, f);
-}
-
-abstract interface class SavedAnimeCharactersService implements ServiceMarker {
-  List<AnimeCharacter> load(int id, AnimeMetadata site);
-
-  bool addAsync(AnimeEntryData entry, AnimeAPI api);
-
-  StreamSubscription<List<AnimeCharacter>?> watch(
-    int id,
-    AnimeMetadata site,
-    void Function(List<AnimeCharacter>?) f, [
-    bool fire = false,
-  ]);
 }

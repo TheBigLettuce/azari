@@ -6,16 +6,13 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "blacklisted_directory.g.dart";
 
 @collection
-class IsarBlacklistedDirectory extends BlacklistedDirectoryData
-    implements IsarEntryId {
+class IsarBlacklistedDirectory extends BlacklistedDirectoryData {
   IsarBlacklistedDirectory(super.bucketId, super.name);
 
-  @override
   Id? isarId;
 }

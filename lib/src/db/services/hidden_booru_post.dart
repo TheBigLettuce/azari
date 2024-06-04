@@ -5,6 +5,22 @@
 
 part of "services.dart";
 
+extension HiddenBooruPostServiceExt on HiddenBooruPostService {
+  bool isHidden(int id, Booru booru) => cachedValues.containsKey((id, booru));
+}
+
+abstract interface class HiddenBooruPostService implements ServiceMarker {
+  factory HiddenBooruPostService.db() => _currentDb.hiddenBooruPost;
+
+  Map<(int, Booru), String> get cachedValues;
+
+  void addAll(List<HiddenBooruPostData> booru);
+  void removeAll(List<(int, Booru)> booru);
+
+  StreamSubscription<void> watch(void Function(void) f);
+  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]);
+}
+
 abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
   const HiddenBooruPostData(
     this.booru,
@@ -32,20 +48,4 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
 
   @override
   CellStaticData description() => const CellStaticData();
-}
-
-extension HiddenBooruPostServiceExt on HiddenBooruPostService {
-  bool isHidden(int id, Booru booru) => cachedValues.containsKey((id, booru));
-}
-
-abstract interface class HiddenBooruPostService implements ServiceMarker {
-  factory HiddenBooruPostService.db() => _currentDb.hiddenBooruPost;
-
-  Map<(int, Booru), String> get cachedValues;
-
-  void addAll(List<HiddenBooruPostData> booru);
-  void removeAll(List<(int, Booru)> booru);
-
-  StreamSubscription<void> watch(void Function(void) f);
-  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]);
 }

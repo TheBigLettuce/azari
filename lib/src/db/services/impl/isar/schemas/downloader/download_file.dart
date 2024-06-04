@@ -6,14 +6,13 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:isar/isar.dart";
 
 part "download_file.g.dart";
 
 @collection
-class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
+class IsarDownloadFile extends DownloadFileData {
   IsarDownloadFile({
     required super.status,
     required super.name,
@@ -24,7 +23,6 @@ class IsarDownloadFile extends DownloadFileData implements IsarEntryId {
     this.isarId,
   });
 
-  @override
   Id? isarId;
 
   @override

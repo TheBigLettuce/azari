@@ -8,6 +8,9 @@ import "dart:async";
 import "package:async/async.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/posts_source.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
@@ -1793,10 +1796,6 @@ class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
   }
 
   @override
-  // TODO: implement count
-  int get count => throw UnimplementedError();
-
-  @override
   void destroy() {
     // TODO: implement destroy
   }
@@ -2020,9 +2019,6 @@ class PlainFavoritePostData extends FavoritePostData {
 
 class MemoryFavoritePostService implements FavoritePostSourceService {
   final _eventsCount = StreamController<int>.broadcast();
-
-  @override
-  int get count => backingStorage.length;
 
   @override
   bool isFavorite(int id, Booru booru) =>
@@ -2257,10 +2253,6 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   @override
   // TODO: implement backingStorage
   SourceStorage<int, Post> get backingStorage => throw UnimplementedError();
-
-  @override
-  // TODO: implement count
-  int get count => throw UnimplementedError();
 
   @override
   // TODO: implement currentlyLast

@@ -9,6 +9,12 @@ extension VideoSettingsDataExt on VideoSettingsData {
   void save() => _currentDb.videoSettings.add(this);
 }
 
+abstract interface class VideoSettingsService implements ServiceMarker {
+  VideoSettingsData get current;
+
+  void add(VideoSettingsData data);
+}
+
 abstract class VideoSettingsData {
   const VideoSettingsData({
     required this.looping,
@@ -28,10 +34,4 @@ mixin VideoSettingsDbScope<W extends DbConnHandle<VideoSettingsService>>
 
   @override
   void add(VideoSettingsData data) => widget.db.add(data);
-}
-
-abstract interface class VideoSettingsService implements ServiceMarker {
-  VideoSettingsData get current;
-
-  void add(VideoSettingsData data);
 }

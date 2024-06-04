@@ -5,17 +5,6 @@
 
 part of "services.dart";
 
-abstract class PinnedThumbnailData {
-  const PinnedThumbnailData(this.id, this.differenceHash, this.path);
-
-  final Id id;
-
-  @Index()
-  final String path;
-  @Index()
-  final int differenceHash;
-}
-
 abstract interface class PinnedThumbnailService {
   factory PinnedThumbnailService.db() => _currentDb.pinnedThumbnails;
 
@@ -25,4 +14,15 @@ abstract interface class PinnedThumbnailService {
   PinnedThumbnailData? get(int id);
 
   bool delete(int id);
+}
+
+abstract class PinnedThumbnailData {
+  const PinnedThumbnailData(this.id, this.differenceHash, this.path);
+
+  final Id id;
+
+  @Index()
+  final String path;
+  @Index()
+  final int differenceHash;
 }

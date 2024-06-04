@@ -98,9 +98,6 @@ class _AndroidFileSourceJoined
   late final StreamSubscription<int>? _favoritesWatcher;
 
   @override
-  int get count => backingStorage.count;
-
-  @override
   bool get hasNext => false;
 
   @override

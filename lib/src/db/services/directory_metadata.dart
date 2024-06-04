@@ -9,6 +9,26 @@ extension DirectoryMetadataDataExt on DirectoryMetadataData {
   void save() => _currentDb.directoryMetadata.add(this);
 }
 
+abstract interface class DirectoryMetadataService implements ServiceMarker {
+  SegmentCapability caps(String specialLabel);
+
+  DirectoryMetadataData? get(String id);
+  DirectoryMetadataData getOrCreate(String id);
+
+  Future<bool> canAuth(String id, String reason);
+
+  void add(DirectoryMetadataData data);
+
+  void put(
+    String id, {
+    required bool blur,
+    required bool auth,
+    required bool sticky,
+  });
+
+  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+}
+
 abstract class DirectoryMetadataData {
   const DirectoryMetadataData(
     this.categoryName,
@@ -32,24 +52,4 @@ abstract class DirectoryMetadataData {
     bool? sticky,
     bool? requireAuth,
   });
-}
-
-abstract interface class DirectoryMetadataService implements ServiceMarker {
-  SegmentCapability caps(String specialLabel);
-
-  DirectoryMetadataData? get(String id);
-  DirectoryMetadataData getOrCreate(String id);
-
-  Future<bool> canAuth(String id, String reason);
-
-  void add(DirectoryMetadataData data);
-
-  void put(
-    String id, {
-    required bool blur,
-    required bool auth,
-    required bool sticky,
-  });
-
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
 }

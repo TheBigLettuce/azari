@@ -6,16 +6,13 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:isar/isar.dart";
 
 part "pinned_manga.g.dart";
 
 @collection
-class IsarPinnedManga extends CompactMangaDataBase
-    with PinnedManga
-    implements IsarEntryId {
+class IsarPinnedManga extends CompactMangaDataBase with PinnedManga {
   IsarPinnedManga({
     required super.mangaId,
     required super.site,
@@ -23,6 +20,5 @@ class IsarPinnedManga extends CompactMangaDataBase
     required super.title,
   });
 
-  @override
   Id? isarId;
 }

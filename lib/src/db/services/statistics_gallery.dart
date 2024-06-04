@@ -9,6 +9,32 @@ extension StatisticsGalleryDataExt on StatisticsGalleryData {
   void save() => _currentDb.statisticsGallery.add(this);
 }
 
+abstract interface class StatisticsGalleryService implements ServiceMarker {
+  factory StatisticsGalleryService.db() => _currentDb.statisticsGallery;
+
+  static ImageViewStatistics asImageViewStatistics() {
+    final db = _currentDb.statisticsGallery;
+    final daily = _currentDb.statisticsDaily;
+
+    return ImageViewStatistics(
+      swiped: () => db.current.add(filesSwiped: 1).save(),
+      viewed: () {
+        db.current.add(viewedFiles: 1).save();
+        daily.current.add(swipedBoth: 1).save();
+      },
+    );
+  }
+
+  StatisticsGalleryData get current;
+
+  void add(StatisticsGalleryData data);
+
+  StreamSubscription<StatisticsGalleryData> watch(
+    void Function(StatisticsGalleryData) f, [
+    bool fire = false,
+  ]);
+}
+
 abstract class StatisticsGalleryData {
   const StatisticsGalleryData({
     required this.copied,
@@ -40,30 +66,4 @@ abstract class StatisticsGalleryData {
     int? copied,
     int? moved,
   });
-}
-
-abstract interface class StatisticsGalleryService implements ServiceMarker {
-  factory StatisticsGalleryService.db() => _currentDb.statisticsGallery;
-
-  static ImageViewStatistics asImageViewStatistics() {
-    final db = _currentDb.statisticsGallery;
-    final daily = _currentDb.statisticsDaily;
-
-    return ImageViewStatistics(
-      swiped: () => db.current.add(filesSwiped: 1).save(),
-      viewed: () {
-        db.current.add(viewedFiles: 1).save();
-        daily.current.add(swipedBoth: 1).save();
-      },
-    );
-  }
-
-  StatisticsGalleryData get current;
-
-  void add(StatisticsGalleryData data);
-
-  StreamSubscription<StatisticsGalleryData> watch(
-    void Function(StatisticsGalleryData) f, [
-    bool fire = false,
-  ]);
 }

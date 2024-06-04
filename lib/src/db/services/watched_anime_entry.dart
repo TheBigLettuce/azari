@@ -14,6 +14,48 @@ extension WatchedAnimeEntryDataListExt on List<WatchedAnimeEntryData> {
       map((e) => (e.id, e.site)).toList();
 }
 
+abstract interface class WatchedAnimeEntryService implements ServiceMarker {
+  int get count;
+
+  List<WatchedAnimeEntryData> get all;
+
+  bool watched(int id, AnimeMetadata site);
+
+  void delete(int id, AnimeMetadata site);
+  void deleteAll(List<(int id, AnimeMetadata site)> ids);
+
+  void update(AnimeEntryData e);
+  void add(WatchedAnimeEntryData entry);
+  void reAdd(List<WatchedAnimeEntryData> entries);
+
+  WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
+  void moveAllReversed(
+    List<WatchedAnimeEntryData> entries,
+    SavedAnimeEntriesService savedAnimeEntries,
+  );
+  void moveAll(
+    List<AnimeEntryData> entries,
+    SavedAnimeEntriesService savedAnimeEntries,
+  );
+
+  StreamSubscription<void> watchAll(
+    void Function(void) f, [
+    bool fire = false,
+  ]);
+
+  StreamSubscription<int> watchCount(
+    void Function(int) f, [
+    bool fire = false,
+  ]);
+
+  StreamSubscription<WatchedAnimeEntryData?> watchSingle(
+    int id,
+    AnimeMetadata site,
+    void Function(WatchedAnimeEntryData?) f, [
+    bool fire = false,
+  ]);
+}
+
 abstract class WatchedAnimeEntryData extends AnimeEntryData {
   const WatchedAnimeEntryData({
     required super.site,
@@ -67,46 +109,4 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
   });
-}
-
-abstract interface class WatchedAnimeEntryService implements ServiceMarker {
-  int get count;
-
-  List<WatchedAnimeEntryData> get all;
-
-  bool watched(int id, AnimeMetadata site);
-
-  void delete(int id, AnimeMetadata site);
-  void deleteAll(List<(int id, AnimeMetadata site)> ids);
-
-  void update(AnimeEntryData e);
-  void add(WatchedAnimeEntryData entry);
-  void reAdd(List<WatchedAnimeEntryData> entries);
-
-  WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
-  void moveAllReversed(
-    List<WatchedAnimeEntryData> entries,
-    SavedAnimeEntriesService savedAnimeEntries,
-  );
-  void moveAll(
-    List<AnimeEntryData> entries,
-    SavedAnimeEntriesService savedAnimeEntries,
-  );
-
-  StreamSubscription<void> watchAll(
-    void Function(void) f, [
-    bool fire = false,
-  ]);
-
-  StreamSubscription<int> watchCount(
-    void Function(int) f, [
-    bool fire = false,
-  ]);
-
-  StreamSubscription<WatchedAnimeEntryData?> watchSingle(
-    int id,
-    AnimeMetadata site,
-    void Function(WatchedAnimeEntryData?) f, [
-    bool fire = false,
-  ]);
 }

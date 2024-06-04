@@ -5,6 +5,12 @@
 
 part of "services.dart";
 
+abstract interface class CompactMangaDataService {
+  void addAll(List<CompactMangaData> l);
+
+  CompactMangaData? get(String mangaId, MangaMeta site);
+}
+
 class CompactMangaDataBase {
   const CompactMangaDataBase({
     required this.mangaId,
@@ -69,10 +75,4 @@ mixin CompactMangaData
       return value;
     });
   }
-}
-
-abstract interface class CompactMangaDataService {
-  void addAll(List<CompactMangaData> l);
-
-  CompactMangaData? get(String mangaId, MangaMeta site);
 }

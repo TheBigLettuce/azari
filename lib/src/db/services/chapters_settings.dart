@@ -9,6 +9,16 @@ extension ChaptersSettingsDataExt on ChaptersSettingsData {
   void save() => _currentDb.chaptersSettings.add(this);
 }
 
+abstract interface class ChaptersSettingsService implements ServiceMarker {
+  ChaptersSettingsData get current;
+
+  void add(ChaptersSettingsData data);
+
+  StreamSubscription<ChaptersSettingsData?> watch(
+    void Function(ChaptersSettingsData? c) f,
+  );
+}
+
 abstract class ChaptersSettingsData {
   const ChaptersSettingsData({
     required this.hideRead,
@@ -19,14 +29,4 @@ abstract class ChaptersSettingsData {
   ChaptersSettingsData copy({
     bool? hideRead,
   });
-}
-
-abstract interface class ChaptersSettingsService implements ServiceMarker {
-  ChaptersSettingsData get current;
-
-  void add(ChaptersSettingsData data);
-
-  StreamSubscription<ChaptersSettingsData?> watch(
-    void Function(ChaptersSettingsData? c) f,
-  );
 }

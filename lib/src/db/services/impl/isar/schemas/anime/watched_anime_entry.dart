@@ -9,14 +9,12 @@ import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entr
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:isar/isar.dart";
 
 part "watched_anime_entry.g.dart";
 
 @collection
-class IsarWatchedAnimeEntry extends WatchedAnimeEntryData
-    implements IsarEntryId {
+class IsarWatchedAnimeEntry extends WatchedAnimeEntryData {
   IsarWatchedAnimeEntry({
     required super.date,
     required this.relations,
@@ -41,7 +39,6 @@ class IsarWatchedAnimeEntry extends WatchedAnimeEntryData
     required this.staff,
   });
 
-  @override
   Id? isarId;
 
   @override

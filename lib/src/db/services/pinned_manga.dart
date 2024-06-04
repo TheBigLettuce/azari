@@ -5,6 +5,22 @@
 
 part of "services.dart";
 
+abstract interface class PinnedMangaService implements ServiceMarker {
+  int get count;
+
+  bool exist(String mangaId, MangaMeta site);
+
+  List<PinnedManga> getAll(int limit);
+
+  void addAll(List<MangaEntry> l);
+  void reAdd(List<PinnedManga> l);
+
+  List<PinnedManga> deleteAll(List<(MangaId, MangaMeta)> ids);
+  void deleteSingle(String mangaId, MangaMeta site);
+
+  StreamSubscription<void> watch(void Function(void) f);
+}
+
 mixin PinnedManga
     implements
         CompactMangaDataBase,
@@ -82,20 +98,4 @@ mixin PinnedMangaDbScope<W extends DbConnHandle<PinnedMangaService>>
 
   @override
   StreamSubscription<void> watch(void Function(void) f) => widget.db.watch(f);
-}
-
-abstract interface class PinnedMangaService implements ServiceMarker {
-  int get count;
-
-  bool exist(String mangaId, MangaMeta site);
-
-  List<PinnedManga> getAll(int limit);
-
-  void addAll(List<MangaEntry> l);
-  void reAdd(List<PinnedManga> l);
-
-  List<PinnedManga> deleteAll(List<(MangaId, MangaMeta)> ids);
-  void deleteSingle(String mangaId, MangaMeta site);
-
-  StreamSubscription<void> watch(void Function(void) f);
 }

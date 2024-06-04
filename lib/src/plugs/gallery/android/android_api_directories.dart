@@ -6,6 +6,9 @@
 import "dart:async";
 
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
@@ -113,9 +116,6 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
 class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
   _AndroidSource(this.trashCell);
-
-  @override
-  int get count => backingStorage.count;
 
   @override
   bool get hasNext => false;

@@ -5,6 +5,11 @@
 
 part of "services.dart";
 
+abstract interface class BlacklistedDirectoryService
+    implements ResourceSource<String, BlacklistedDirectoryData>, ServiceMarker {
+  List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
+}
+
 abstract class BlacklistedDirectoryData implements CellBase {
   const BlacklistedDirectoryData(this.bucketId, this.name);
 
@@ -21,9 +26,4 @@ abstract class BlacklistedDirectoryData implements CellBase {
 
   @override
   String alias(bool isList) => name;
-}
-
-abstract interface class BlacklistedDirectoryService
-    implements ResourceSource<String, BlacklistedDirectoryData>, ServiceMarker {
-  List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
 }

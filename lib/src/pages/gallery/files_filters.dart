@@ -5,6 +5,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/plugs/gallery.dart";

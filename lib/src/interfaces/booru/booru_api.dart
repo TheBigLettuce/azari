@@ -13,29 +13,29 @@ import "package:gallery/src/net/booru/gelbooru.dart";
 
 /// The interface to interact with the various booru APIs.
 ///
-/// Implemenations of this interface should hold no state, other than the [client].
-/// In case when booru API doesn't support getting posts down a certain post number,
-/// it should keep the page number and increase it after calls to [fromPost],
-/// return the current page in [currentPage], return true in [wouldBecomeStale]
-/// and reset page number after calls to [page].
+/// Implementations of this interface should hold no state, other than the internal
+/// network client(like Dio).
+/// If the booru API doesn't support getting posts down a certain post number,
+/// the implementation should use [PageSaver] to save and retreive the page,
+/// and always return true when accessing [wouldBecomeStale] property.
 abstract class BooruAPI {
   const BooruAPI();
 
-  /// Some booru do not support pulling posts down a certain post number,
-  /// this flag reflects this.
+  /// Some booru do not support pulling posts down a certain post number.
+  /// This makes the data stale after a time, requiring more refreshes.
+  /// This flag exists to optimize paging-based implementations, for example,
+  /// refreshing when the saved booru post data is too old.
   bool get wouldBecomeStale;
 
-  /// Booru enum of this API. All the boorus should be added to this enum.
+  /// Booru enum of this API. All the supported boorus should be added to this enum.
   Booru get booru;
 
   /// Get a single post by it's id.
-  /// This is used in many places, like tags and single post loading in the "Tags" page.
   Future<Post> singlePost(int id);
 
   /// Get posts by a certain page.
-  /// This is only used to refresh the grid, the code which loads and presets the posts uses [fromPost] for further posts loading.
-  /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
-  /// and return it in [currentPage].
+  /// This is only used to refresh the grid,
+  /// the code which loads and presets the posts uses [fromPost] for further posts loading.
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
@@ -48,8 +48,6 @@ abstract class BooruAPI {
   Future<Iterable<String>> notes(int postId);
 
   /// Get posts down a certain post number.
-  /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
-  /// and use paging to load the posts.
   Future<(List<Post>, int?)> fromPost(
     int postId,
     String tags,
@@ -60,6 +58,7 @@ abstract class BooruAPI {
   /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<BooruTag>> completeTag(String tag);
 
+  /// Additional tag filters.
   static Map<String, void> get additionalSafetyTags => const {
         "guro": null,
         "loli": null,
@@ -70,10 +69,10 @@ abstract class BooruAPI {
         "scat": null,
       };
 
-  /// [fromSettings] returns a selected *booru API, consulting the settings.
-  /// Some *booru have no way to retreive posts down
-  /// of a post number, in this case [page] comes in handy:
-  /// that is, it makes refreshes on restore few.
+  /// [fromSettings] returns a selected booru API from the DB.
+  /// Some booru have no way to retreive posts down a certain post number,
+  /// in such a case the implementation is likely to use paging,
+  /// and should use provided [pageSaver] for this purpose.
   static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
     return BooruAPI.fromEnum(
       SettingsService.db().current.selectedBooru,
@@ -82,12 +81,15 @@ abstract class BooruAPI {
     );
   }
 
+  /// Constructs a default Dio client instance for [BooruAPI].
   static Dio defaultClientForBooru(Booru booru) {
     final Dio dio = Dio();
 
     return dio;
   }
 
+  /// Sometimes, it is needed to constuct [BooruAPI] instance which isn't the
+  /// current selected/used one.
   static BooruAPI fromEnum(Booru booru, Dio client, PageSaver pageSaver) {
     return switch (booru) {
       Booru.danbooru => Danbooru(client),
@@ -103,15 +105,20 @@ class BooruTag {
   final int count;
 }
 
+/// Paging helper for [BooruAPI] implementations.
+/// This class expects a some kind of persistence of it's implementors,
+/// if no persistence is needed use [PageSaver.noPersist].
 abstract class PageSaver {
   const PageSaver();
+
+  factory PageSaver.noPersist() = _EmptyPageSaver;
 
   int get page;
   set page(int p);
 }
 
-class EmptyPageSaver implements PageSaver {
-  EmptyPageSaver();
+class _EmptyPageSaver implements PageSaver {
+  _EmptyPageSaver();
 
   @override
   int page = 0;

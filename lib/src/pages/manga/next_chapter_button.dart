@@ -6,6 +6,7 @@
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/pages/manga/launch_reader.dart";
 
 enum SkipDirection {
   right,
@@ -124,7 +125,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
 
     widget.reloadChapters();
 
-    ReadMangaChaptersService.launchReader(
+    launchReader(
       context,
       ReaderData(
         chapterNumber: chapterNumber,
@@ -140,6 +141,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
       ),
       addNextChapterButton: true,
       replace: true,
+      readChapters: widget.db.readMangaChapters,
     );
   }
 

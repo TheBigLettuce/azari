@@ -9,27 +9,6 @@ extension StatisticsBooruDataExt on StatisticsBooruData {
   void save() => _currentDb.statisticsBooru.add(this);
 }
 
-abstract class StatisticsBooruData {
-  const StatisticsBooruData({
-    required this.booruSwitches,
-    required this.downloaded,
-    required this.swiped,
-    required this.viewed,
-  });
-
-  final int viewed;
-  final int downloaded;
-  final int swiped;
-  final int booruSwitches;
-
-  StatisticsBooruData add({
-    int? viewed,
-    int? downloaded,
-    int? swiped,
-    int? booruSwitches,
-  });
-}
-
 abstract interface class StatisticsBooruService implements ServiceMarker {
   factory StatisticsBooruService.db() => _currentDb.statisticsBooru;
 
@@ -54,4 +33,25 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
     void Function(StatisticsBooruData) f, [
     bool fire = false,
   ]);
+}
+
+abstract class StatisticsBooruData {
+  const StatisticsBooruData({
+    required this.booruSwitches,
+    required this.downloaded,
+    required this.swiped,
+    required this.viewed,
+  });
+
+  final int viewed;
+  final int downloaded;
+  final int swiped;
+  final int booruSwitches;
+
+  StatisticsBooruData add({
+    int? viewed,
+    int? downloaded,
+    int? swiped,
+    int? booruSwitches,
+  });
 }
