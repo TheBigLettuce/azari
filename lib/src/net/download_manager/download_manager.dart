@@ -256,6 +256,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   }
 
   void _complete(String url) {
+    StatisticsBooruService.db().current.add(downloaded: 1).save();
     _remove(url);
     _inWork -= 1;
     addAll([]);

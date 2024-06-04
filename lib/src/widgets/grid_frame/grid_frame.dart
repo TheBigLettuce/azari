@@ -552,6 +552,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               onRefresh: () {
                 selection.reset(true);
 
+                if (source is ChainedFilterResourceSource) {
+                  return (source as ChainedFilterResourceSource)
+                      .refreshOriginal();
+                }
+
                 return source.clearRefresh();
               },
               child: mainBody(context, page),

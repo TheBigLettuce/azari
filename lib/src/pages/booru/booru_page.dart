@@ -30,6 +30,8 @@ import "package:gallery/src/pages/more/favorite_booru_page.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/pages/more/tags/single_post.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
+import "package:gallery/src/widgets/azari_icon.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
@@ -274,7 +276,6 @@ class _BooruPageState extends State<BooruPage> {
                 tags: e.tags,
                 saveSelectedPage: _setSecondaryName,
                 name: e.name,
-                wrapScaffold: true,
               );
             },
           ),
@@ -351,6 +352,7 @@ class _BooruPageState extends State<BooruPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return FavoriteBooruStateHolder(
       db: widget.db,
@@ -393,16 +395,27 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                   selectionGlue: GlueProvider.generateOf(context)(),
                   source: source,
-                  download: _download,
+                  backButton: OverrideGridBackButton(
+                    search.searchWidget(
+                      context,
+                      hint: pagingState.api.booru.name,
+                    ),
+                  ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
-                      search.searchWidget(
-                        context,
-                        hint: pagingState.api.booru.name,
+                      Transform.rotate(
+                        angle: 0.4363323,
+                        child: Icon(
+                          const IconData(0x963F),
+                          size: 22,
+                          color: theme.colorScheme.onSurface.withOpacity(0.2),
+                          applyTextScaling: true,
+                        ),
                       ),
                       search.searchFocus,
                     ),
                   ),
+                  download: _download,
                   updateScrollPosition: pagingState.setOffset,
                   registerNotifiers: (child) => OnBooruTagPressed(
                     onPressed: (context, booru, value, safeMode) {

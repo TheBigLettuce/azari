@@ -8,6 +8,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -88,7 +89,7 @@ class _FilteringSearchWidgetState<T extends CellBase>
                 },
               );
             },
-            icon: Icon(filter.filteringMode.icon),
+            icon: _FilterIcon(filter: filter),
             padding: EdgeInsets.zero,
           ),
         if (widget.addItems != null) ...widget.addItems!,
@@ -133,6 +134,73 @@ class _FilteringSearchWidgetState<T extends CellBase>
           onSubmit: (_) {},
         ),
     };
+  }
+}
+
+class _FilterIcon extends StatefulWidget {
+  const _FilterIcon({super.key, required this.filter});
+
+  final ChainedFilterResourceSource<dynamic, dynamic> filter;
+
+  @override
+  State<_FilterIcon> createState() => __FilterIconState();
+}
+
+class __FilterIconState extends State<_FilterIcon>
+    with SingleTickerProviderStateMixin {
+  late FilteringMode filteringMode = widget.filter.filteringMode;
+
+  late final StreamSubscription<void> subscr;
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(vsync: this);
+
+    subscr = widget.filter.watchFilter((f) {
+      if (filteringMode != f) {
+        controller.reverse().then((_) {
+          filteringMode = f;
+
+          setState(() {});
+
+          controller.forward();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      controller: controller,
+      effects: [
+        SlideEffect(
+          duration: Durations.short4,
+          curve: Easing.emphasizedDecelerate,
+          begin: Offset(-1, 0),
+          end: Offset(0, 0),
+        ),
+        FadeEffect(
+          delay: Durations.short1,
+          duration: Durations.short4,
+          curve: Easing.standard,
+          begin: 0,
+          end: 1,
+        ),
+      ],
+      child: Icon(filteringMode.icon),
+    );
   }
 }
 

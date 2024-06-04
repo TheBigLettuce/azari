@@ -45,10 +45,10 @@ class ImageViewBottomAppBar extends StatelessWidget {
                           () {
                             e.onPress(CurrentContentNotifier.of(context));
                           },
-                          false,
                           play: e.play,
                           color: e.color,
                           onLongPress: null,
+                          animation: e.animation,
                           animate: e.animate,
                           whenSingleContext: null,
                           watch: e.watch,

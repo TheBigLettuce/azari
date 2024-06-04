@@ -11,7 +11,6 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
@@ -161,13 +160,23 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
     }
 
     final child = newValues.isEmpty
-        ? const EmptyWidget(gridSeed: 0, mini: true)
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                AppLocalizations.of(context)!.emptyValue,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ),
+          )
         : switch (widget.variant) {
             SegmentedButtonVariant.segments => SingleChildScrollView(
                 controller: controller,
                 scrollDirection: Axis.horizontal,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: SegmentedButton<T>(
                     emptySelectionAllowed:
                         widget.selected == null || widget.allowUnselect,
@@ -236,7 +245,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 8, top: 4, right: 8),
+            padding:
+                const EdgeInsets.only(bottom: 8, top: 4, left: 8, right: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -492,11 +502,14 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     void Function(bool) select,
     AppLocalizations l10n,
   ) {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(l10n.hideNames),
-      value: hideName,
-      onChanged: (_) => select(!hideName),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(l10n.hideNames),
+        value: hideName,
+        onChanged: (_) => select(!hideName),
+      ),
     );
   }
 
@@ -519,46 +532,43 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
 
     return SizedBox(
       width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Text(
-                  l10n.settingsLabel,
-                  style: theme.textTheme.titleLarge,
-                ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Text(
+                l10n.settingsLabel,
+                style: theme.textTheme.titleLarge,
               ),
-              if (widget.header != null) widget.header!,
-              _hideName(
-                context,
-                _gridSettings!.hideName,
-                (n) => add(_gridSettings!.copy(hideName: n)),
-                l10n,
-              ),
-              _gridLayout(
-                context,
-                _gridSettings!.layoutType,
-                (t) => add(_gridSettings!.copy(layoutType: t)),
-                l10n,
-              ),
-              _ratio(
-                context,
-                _gridSettings!.aspectRatio,
-                (r) => add(_gridSettings!.copy(aspectRatio: r)),
-                l10n,
-              ),
-              _columns(
-                context,
-                _gridSettings!.columns,
-                (c) => add(_gridSettings!.copy(columns: c)),
-                l10n,
-              ),
-              const Padding(padding: EdgeInsets.only(bottom: 8)),
-            ],
-          ),
+            ),
+            if (widget.header != null) widget.header!,
+            _hideName(
+              context,
+              _gridSettings!.hideName,
+              (n) => add(_gridSettings!.copy(hideName: n)),
+              l10n,
+            ),
+            _gridLayout(
+              context,
+              _gridSettings!.layoutType,
+              (t) => add(_gridSettings!.copy(layoutType: t)),
+              l10n,
+            ),
+            _ratio(
+              context,
+              _gridSettings!.aspectRatio,
+              (r) => add(_gridSettings!.copy(aspectRatio: r)),
+              l10n,
+            ),
+            _columns(
+              context,
+              _gridSettings!.columns,
+              (c) => add(_gridSettings!.copy(columns: c)),
+              l10n,
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 8)),
+          ],
         ),
       ),
     );

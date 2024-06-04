@@ -15,6 +15,7 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/tags/tags_widget.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
@@ -200,6 +201,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final list = makeList(context, theme);
+
     return SliverPadding(
       padding: EdgeInsets.only(
         bottom: GridBottomPaddingProvider.of(context, true),
@@ -211,7 +214,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               ),
             )
           : SliverList.list(
-              children: makeList(context, theme),
+              children: list,
             ),
     );
   }
@@ -281,7 +284,24 @@ class _BookmarkListTile extends StatefulWidget {
   State<_BookmarkListTile> createState() => __BookmarkListTileState();
 }
 
-class __BookmarkListTileState extends State<_BookmarkListTile> {
+class __BookmarkListTileState extends State<_BookmarkListTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController animationController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    animationController = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context).longestSide * 0.2;
@@ -289,154 +309,179 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return GestureDetector(
-      onTap: () {
-        widget.onPressed(context, widget.state);
-      },
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.25),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-            child: SizedBox(
-              height: size,
-              width: double.infinity,
-            ),
-          ),
-          Column(
-            children: [
-              SizedBox(
-                height: size,
-                child: ClipPath.shape(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Row(
-                        children: List.generate(
-                          widget.posts.length,
-                          (index) {
-                            final e = widget.posts[index];
-
-                            return SizedBox(
-                              width: constraints.maxWidth / 5,
-                              height: double.infinity,
-                              child: Image(
-                                frameBuilder: (
-                                  context,
-                                  child,
-                                  frame,
-                                  wasSynchronouslyLoaded,
-                                ) {
-                                  if (wasSynchronouslyLoaded) {
-                                    return child;
-                                  }
-
-                                  return frame == null
-                                      ? const ShimmerLoadingIndicator()
-                                      : child.animate().fadeIn();
-                                },
-                                colorBlendMode: BlendMode.color,
-                                color: colorScheme.primaryContainer
-                                    .withOpacity(0.4),
-                                image: e.thumbnail(),
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+    return Animate(
+      autoPlay: false,
+      value: 0,
+      controller: animationController,
+      effects: const [
+        FadeEffect(
+          delay: Duration(milliseconds: 80),
+          duration: Durations.medium4,
+          curve: Easing.standard,
+          begin: 1,
+          end: 0,
+        ),
+        SlideEffect(
+          duration: Durations.medium4,
+          curve: Easing.emphasizedDecelerate,
+          begin: Offset.zero,
+          end: Offset(1, 0),
+        ),
+      ],
+      child: GestureDetector(
+        onTap: () {
+          widget.onPressed(context, widget.state);
+        },
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.25),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(25),
+                  bottomRight: Radius.circular(25),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(25),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.primary.withOpacity(0.9),
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        Text(
-                          widget.subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color:
-                                colorScheme.onSurfaceVariant.withOpacity(0.8),
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ],
+              child: SizedBox(
+                height: size,
+                width: double.infinity,
+              ),
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  height: size,
+                  child: ClipPath.shape(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
                     ),
-                    IconButton.filledTonal(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          DialogRoute<void>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text(
-                                  l10n.delete,
-                                ),
-                                content: ListTile(
-                                  title: Text(widget.state.tags),
-                                  subtitle: Text(widget.state.time.toString()),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      widget.db
-                                          .secondaryGrid(
-                                            widget.state.booru,
-                                            widget.state.name,
-                                            null,
-                                          )
-                                          .destroy()
-                                          .then(
-                                        (value) {
-                                          widget.db.gridBookmarks
-                                              .delete(widget.state.name);
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Row(
+                          children: List.generate(
+                            widget.posts.length,
+                            (index) {
+                              final e = widget.posts[index];
 
-                                          Navigator.pop(context);
-                                        },
-                                      );
-                                    },
-                                    child: Text(l10n.yes),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text(l10n.no),
-                                  ),
-                                ],
+                              return SizedBox(
+                                width: constraints.maxWidth / 5,
+                                height: double.infinity,
+                                child: Image(
+                                  frameBuilder: (
+                                    context,
+                                    child,
+                                    frame,
+                                    wasSynchronouslyLoaded,
+                                  ) {
+                                    if (wasSynchronouslyLoaded) {
+                                      return child;
+                                    }
+
+                                    return frame == null
+                                        ? const ShimmerLoadingIndicator()
+                                        : child.animate().fadeIn();
+                                  },
+                                  colorBlendMode: BlendMode.color,
+                                  color: colorScheme.primaryContainer
+                                      .withOpacity(0.4),
+                                  image: e.thumbnail(),
+                                  fit: BoxFit.cover,
+                                ),
                               );
                             },
                           ),
                         );
                       },
-                      icon: const Icon(Icons.delete_outline_rounded),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.primary.withOpacity(0.9),
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          Text(
+                            widget.subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:
+                                  colorScheme.onSurfaceVariant.withOpacity(0.8),
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton.filledTonal(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            DialogRoute<void>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(
+                                    l10n.delete,
+                                  ),
+                                  content: ListTile(
+                                    title: Text(widget.state.tags),
+                                    subtitle:
+                                        Text(widget.state.time.toString()),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        widget.db
+                                            .secondaryGrid(
+                                              widget.state.booru,
+                                              widget.state.name,
+                                              null,
+                                            )
+                                            .destroy()
+                                            .then(
+                                          (value) {
+                                            Navigator.pop(context);
+
+                                            animationController
+                                                .forward()
+                                                .then((_) {
+                                              widget.db.gridBookmarks
+                                                  .delete(widget.state.name);
+                                            });
+                                          },
+                                        );
+                                      },
+                                      child: Text(l10n.yes),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(l10n.no),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

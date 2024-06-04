@@ -595,6 +595,9 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
 
+  final StreamController<FilteringMode> _filterEvents =
+      StreamController.broadcast();
+
   final void Function() prefilter;
   final void Function() onCompletelyEmpty;
 
@@ -621,6 +624,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     }
 
     _mode = f;
+    _filterEvents.add(f);
 
     clearRefresh();
   }
@@ -654,6 +658,12 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
   @override
   bool get hasNext => false;
+
+  Future<int> refreshOriginal() async {
+    await _original.clearRefresh();
+
+    return count;
+  }
 
   @override
   Future<int> clearRefresh() async {
@@ -708,9 +718,15 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
   @override
   void destroy() {
+    _filterEvents.close();
     backingStorage.destroy();
     _originalSubscr.cancel();
   }
+
+  StreamSubscription<FilteringMode> watchFilter(
+    void Function(FilteringMode) f,
+  ) =>
+      _filterEvents.stream.listen(f);
 }
 
 class _EmptyProgress implements RefreshingProgress {

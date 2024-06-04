@@ -41,6 +41,7 @@ import "package:gallery/src/widgets/make_tags.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
+import "package:gallery/src/widgets/restart_widget.dart";
 import "package:gallery/src/widgets/search_bar/search_text_field.dart";
 import "package:gallery/src/widgets/set_wallpaper_tile.dart";
 import "package:isar/isar.dart";
@@ -712,9 +713,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 title: l10n.sizeInfoPage,
                 subtitle: kbMbSize(context, file.size),
               ),
-              // if (res != null && file.tagsFlat.contains("translated"))
-              // TranslationNotes.tile(context, res.id, res.booru),
-              if (res != null && filesExtended)
+              if (res != null)
                 RedownloadTile(key: file.uniqueKey(), file: file, res: res),
               if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
             ],
@@ -801,11 +800,32 @@ class RedownloadTile extends StatefulWidget {
 }
 
 class _RedownloadTileState extends State<RedownloadTile> {
-  Future<void>? _status;
+  ValueNotifier<Future<void>?>? notifier;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (notifier == null) {
+      notifier = GlobalProgressTab.maybeOf(context)
+          ?.get<Future<void>?>("redownloadTile", () => ValueNotifier(null));
+
+      notifier?.addListener(listener);
+    }
+  }
+
+  void listener() {
+    setState(() {});
+  }
 
   @override
   void dispose() {
-    _status?.ignore();
+    notifier?.removeListener(listener);
 
     super.dispose();
   }
@@ -816,8 +836,8 @@ class _RedownloadTileState extends State<RedownloadTile> {
     final l10n = AppLocalizations.of(context)!;
 
     return RawChip(
-      isEnabled: _status == null,
-      onPressed: _status != null
+      isEnabled: notifier != null && notifier?.value == null,
+      onPressed: notifier == null || notifier?.value != null
           ? null
           : () {
               final dio = BooruAPI.defaultClientForBooru(res!.booru);
@@ -826,7 +846,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               final downloadManager = DownloadManager.of(context);
               final postTags = PostTags.fromContext(context);
 
-              _status = api.singlePost(res.id).then((post) {
+              notifier?.value = api.singlePost(res.id).then((post) {
                 GalleryManagementApi.current().deleteFiles([widget.file]);
 
                 post.download(downloadManager, postTags);
@@ -843,9 +863,8 @@ class _RedownloadTileState extends State<RedownloadTile> {
                 return null;
               }).whenComplete(() {
                 dio.close(force: true);
+                notifier?.value = null;
               });
-
-              setState(() {});
             },
       avatar: const Icon(Icons.download_outlined),
       label: Text(l10n.redownloadLabel),

@@ -571,7 +571,7 @@ internal class Mover(
                             height = cursor.getLong(media_height),
                             width = cursor.getLong(media_width),
                             size = cursor.getInt(size).toLong(),
-                            bucketName = cursor.getString(bucket_name),
+                            bucketName = cursor.getString(bucket_name) ?: "",
                         )
                     )
 

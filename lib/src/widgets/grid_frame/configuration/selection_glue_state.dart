@@ -67,7 +67,6 @@ class SelectionGlueState {
           WrapGridActionButton(
             e.icon,
             c,
-            false,
             animate: e.animate,
             color: e.color,
             onLongPress: e.onLongPress == null
@@ -76,6 +75,7 @@ class SelectionGlueState {
                     selection.use(e.onLongPress!, e.closeOnPress);
                   },
             play: e.play,
+            animation: const [],
             whenSingleContext: e.showOnlyWhenSingle ? context : null,
           ),
           c

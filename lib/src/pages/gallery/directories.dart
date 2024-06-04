@@ -95,6 +95,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
   late final StreamSubscription<void> blacklistedWatcher;
   late final StreamSubscription<void> directoryTagWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
+
   late final AppLifecycleListener lifecycleListener;
 
   MiscSettingsData miscSettings = MiscSettingsService.db().current;
@@ -159,6 +161,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       api.source.clearRefresh();
     });
 
+    favoritesWatcher = favoriteFiles.watch((_) {
+      api.source.clearRefresh();
+    });
+
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
@@ -180,6 +186,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   void dispose() {
+    favoritesWatcher.cancel();
     directoryTagWatcher.cancel();
     blacklistedWatcher.cancel();
     settingsWatcher.cancel();
@@ -192,7 +199,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     if (widget.providedApi == null) {
       api.close();
     }
-    // search.dispose();
+
     state.dispose();
     // Dbs.g.clearTemporaryImages();
     lifecycleListener.dispose();

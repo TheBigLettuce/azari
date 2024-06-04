@@ -8,6 +8,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
@@ -63,49 +64,85 @@ class _TagsWidgetState extends State<TagsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return _tags.isEmpty
-        ? Row(
-            children: [
-              if (widget.leading != null) widget.leading!,
-              EmptyWidget(
-                gridSeed: 0,
-                mini: true,
-                overrideEmpty: AppLocalizations.of(context)!.noBooruTags,
-              ),
-            ],
-          )
-        : SizedBox(
-            height: 38,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Animate(
+      effects: slideFadeEffects,
+      child: _tags.isEmpty
+          ? Row(
               children: [
                 if (widget.leading != null) widget.leading!,
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(25),
-                    child: ListView.builder(
-                      key: ValueKey(refreshes),
-                      itemCount: _tags.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: SingleTagWidget(
-                            tag: _tags[index],
-                            tagging: widget.tagging,
-                            onPress: widget.onPress,
-                            redBackground: widget.redBackground,
-                          ),
-                        );
-                      },
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.label_off_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      const Padding(padding: EdgeInsets.only(right: 4)),
+                      Text(
+                        l10n.noBooruTags,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ],
+            )
+          : SizedBox(
+              height: 38,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.leading != null) widget.leading!,
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(25),
+                      child: ListView.builder(
+                        key: ValueKey(refreshes),
+                        itemCount: _tags.length,
+                        scrollDirection: Axis.horizontal,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: SingleTagWidget(
+                              tag: _tags[index],
+                              tagging: widget.tagging,
+                              onPress: widget.onPress,
+                              redBackground: widget.redBackground,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
+    );
   }
 }
+
+const slideFadeEffects = <Effect<dynamic>>[
+  SlideEffect(
+    curve: Easing.emphasizedDecelerate,
+    duration: Durations.medium4,
+    begin: Offset(0.2, 0),
+    end: Offset.zero,
+  ),
+  FadeEffect(
+    delay: Duration(milliseconds: 80),
+    curve: Easing.standard,
+    duration: Durations.medium4,
+    begin: 0,
+    end: 1,
+  ),
+];
 
 class SingleTagWidget extends StatelessWidget {
   const SingleTagWidget({

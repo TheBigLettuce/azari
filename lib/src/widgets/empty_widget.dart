@@ -17,11 +17,10 @@ class EmptyWidget extends StatelessWidget {
     this.error,
     this.overrideEmpty,
     required this.gridSeed,
-    this.mini = false,
   });
+
   final String? error;
   final String? overrideEmpty;
-  final bool mini;
   final int gridSeed;
 
   static String unwrapDioError(Object? error) {
@@ -61,7 +60,7 @@ class EmptyWidget extends StatelessWidget {
                     ? "(ﾟヘﾟ)？" "\n"
                     : "${chooseKaomoji(gridSeed)}\n",
                 style: TextStyle(
-                  fontSize: mini ? 14 : 14 * 2,
+                  fontSize: 14 * 2,
                   color: error == null ? null : colorScheme.error,
                 ),
               ),
@@ -75,11 +74,7 @@ class EmptyWidget extends StatelessWidget {
                   color:
                       error == null ? null : colorScheme.error.withOpacity(0.6),
                   fontStyle: error != null ? null : FontStyle.italic,
-                  fontSize: error != null
-                      ? mini
-                          ? 14
-                          : 14 * 2
-                      : null,
+                  fontSize: error != null ? 14 * 2 : null,
                 ),
               ),
             ],
@@ -89,7 +84,6 @@ class EmptyWidget extends StatelessWidget {
           style: TextStyle(
             overflow: TextOverflow.ellipsis,
             color: colorScheme.secondary.withOpacity(0.5),
-            fontSize: mini ? 12 : null,
           ),
         ),
       ),

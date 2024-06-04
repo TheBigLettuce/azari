@@ -130,6 +130,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
         } else {
           _duplicateButtonKey.currentState?.toggle(false);
           _favoriteButtonKey.currentState?.toggle(false);
+          beforeButtons = null;
         }
 
         if (filter.filteringMode == FilteringMode.same) {
@@ -273,6 +274,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     filter.filteringMode = FilteringMode.tag;
   }
 
+  FilteringMode? beforeButtons;
+
   @override
   Widget build(BuildContext context) {
     // final statistics = StatisticsGalleryService.db().current;
@@ -319,9 +322,13 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                             onPressed: () {
                               if (filter.filteringMode ==
                                   FilteringMode.duplicate) {
-                                filter.filteringMode = FilteringMode.noFilter;
+                                filter.filteringMode = beforeButtons ==
+                                        FilteringMode.duplicate
+                                    ? FilteringMode.noFilter
+                                    : (beforeButtons ?? FilteringMode.noFilter);
                                 return false;
                               } else {
+                                beforeButtons = filter.filteringMode;
                                 filter.filteringMode = FilteringMode.duplicate;
                                 return true;
                               }
@@ -333,9 +340,13 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                             onPressed: () {
                               if (filter.filteringMode ==
                                   FilteringMode.favorite) {
-                                filter.filteringMode = FilteringMode.noFilter;
+                                filter.filteringMode = beforeButtons ==
+                                        FilteringMode.favorite
+                                    ? FilteringMode.noFilter
+                                    : beforeButtons ?? FilteringMode.noFilter;
                                 return false;
                               } else {
+                                beforeButtons = filter.filteringMode;
                                 filter.filteringMode = FilteringMode.favorite;
                                 return true;
                               }

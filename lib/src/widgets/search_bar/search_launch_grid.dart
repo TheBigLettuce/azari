@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -96,40 +97,106 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
               final theme = Theme.of(context);
               final colorScheme = theme.colorScheme;
 
-              return InkWell(
-                splashColor: colorScheme.onSurface.withOpacity(0.8),
-                hoverColor: colorScheme.onSurface.withOpacity(0.8),
-                onTap: controller.openView,
-                borderRadius: BorderRadius.circular(25),
-                child: AbsorbPointer(
-                  child: SearchBar(
-                    side: const WidgetStatePropertyAll(BorderSide.none),
-                    leading:
-                        state.swapSearchIconWithAddItems && addItems.length == 1
-                            ? addItems.first
-                            : Icon(
-                                Icons.search_rounded,
-                                size: 18,
-                                color: widget.disabled
-                                    ? colorScheme.onSurface.withOpacity(0.4)
-                                    : colorScheme.onPrimary,
-                              ),
-                    constraints: const BoxConstraints.expand(
-                      height: 38,
-                      width: 114,
-                    ),
-                    hintText: widget.disabled || state.searchTextAsLabel
-                        ? widget.getTags()
-                        : l10n.searchHint,
-                    onSubmitted: widget.disabled
-                        ? null
-                        : (value) {
-                            searchController.closeView(null);
-                            state.onSubmit(context, value);
-                          },
-                  ),
-                ),
-              );
+              return widget.disabled
+                  ? InkWell(
+                      splashColor: colorScheme.onSurface.withOpacity(0.8),
+                      hoverColor: colorScheme.onSurface.withOpacity(0.8),
+                      onTap: controller.openView,
+                      borderRadius: BorderRadius.circular(25),
+                      child: AbsorbPointer(
+                        child: SearchBar(
+                          side: const WidgetStatePropertyAll(BorderSide.none),
+                          leading: state.swapSearchIconWithAddItems &&
+                                  addItems.length == 1
+                              ? addItems.first
+                              : Icon(
+                                  Icons.search_rounded,
+                                  size: 18,
+                                  color: widget.disabled
+                                      ? colorScheme.onSurface.withOpacity(0.4)
+                                      : colorScheme.onPrimary,
+                                ),
+                          constraints: const BoxConstraints.expand(
+                            height: 38,
+                            width: 114,
+                          ),
+                          hintText: widget.disabled || state.searchTextAsLabel
+                              ? widget.getTags()
+                              : l10n.searchHint,
+                          onSubmitted: widget.disabled
+                              ? null
+                              : (value) {
+                                  searchController.closeView(null);
+                                  state.onSubmit(context, value);
+                                },
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: IconButton.filledTonal(
+                        onPressed: controller.openView,
+                        visualDensity: VisualDensity.comfortable,
+                        icon: const Icon(Icons.search_rounded),
+                      ),
+                    );
+
+              //  Stack(
+              //     alignment: Alignment.center,
+              //     children: [
+              //       Animate(
+              //         effects: const [
+              //           SlideEffect(
+              //             delay: Duration(milliseconds: 80),
+              //             duration: Durations.medium4,
+              //             curve: Easing.standard,
+              //             begin: Offset(-0.5, 0),
+              //             end: Offset(0.8, 0),
+              //           ),
+              //           FadeEffect(
+              //             duration: Durations.medium4,
+              //             curve: Easing.standard,
+              //             begin: 0,
+              //             end: 1,
+              //           ),
+              //           ThenEffect(delay: Durations.long1),
+              //           SlideEffect(
+              //             delay: Duration(milliseconds: 80),
+              //             duration: Durations.medium4,
+              //             curve: Easing.standard,
+              //             begin: Offset.zero,
+              //             end: Offset(-0.8, 0),
+              //           ),
+              //           FadeEffect(
+              //             duration: Durations.medium4,
+              //             curve: Easing.standard,
+              //             begin: 1,
+              //             end: 0,
+              //           ),
+              //         ],
+              //         child: DecoratedBox(
+              //           decoration: ShapeDecoration(
+              //             shape: const StadiumBorder(),
+              //             color: colorScheme.secondaryContainer,
+              //           ),
+              //           child: Padding(
+              //             padding: const EdgeInsets.symmetric(
+              //               horizontal: 10,
+              //               vertical: 4,
+              //             ),
+              //             child: Text(
+              //               "Search here",
+              //               style: theme.textTheme.titleMedium?.copyWith(
+              //                 color: colorScheme.onSecondaryContainer
+              //                     .withOpacity(0.9),
+              //               ),
+              //             ),
+              //           ),
+              //         ),
+              //       )
+              //       ,
+              //      ,
+              //     ],
+              //   );
             },
             viewTrailing: [
               ...addItems,

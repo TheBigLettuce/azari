@@ -92,122 +92,12 @@ class WrapImageViewSkeleton extends StatelessWidget {
                       ),
                       child: IgnorePointer(
                         ignoring: !AppBarVisibilityNotifier.of(context),
-                        child: DraggableScrollableSheet(
-                          controller: bottomSheetController,
-                          expand: false,
-                          snap: true,
-                          shouldCloseOnMinExtent: false,
-                          maxChildSize: 1 -
-                              ((kToolbarHeight + viewPadding.top + 8) /
-                                  min.height),
-                          minChildSize: minSize,
-                          initialChildSize: minSize,
-                          builder: (context, scrollController) {
-                            if (widgets is! Infoable) {
-                              return const ImageViewBottomAppBar();
-                            }
-
-                            return GestureDeadZones(
-                              left: true,
-                              right: true,
-                              child: CustomScrollView(
-                                key: ValueKey((viewPadding.bottom, min)),
-                                clipBehavior: Clip.antiAlias,
-                                controller: scrollController,
-                                slivers: [
-                                  SliverToBoxAdapter(
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.surfaceContainerHigh,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4),
-                                        child: SizedBox(
-                                          height: 18,
-                                          child: Stack(
-                                            children: [
-                                              if (stickers.isNotEmpty)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    left: 8,
-                                                  ),
-                                                  child: Row(
-                                                    children: stickers
-                                                        .map(
-                                                          (e) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                              right: 8,
-                                                            ),
-                                                            child: Icon(
-                                                              e.icon,
-                                                              size: 16,
-                                                              color: e.important
-                                                                  ? colorScheme
-                                                                      .secondary
-                                                                  : colorScheme
-                                                                      .onSurface
-                                                                      .withOpacity(
-                                                                      0.6,
-                                                                    ),
-                                                            ),
-                                                          ),
-                                                        )
-                                                        .toList(),
-                                                  ),
-                                                ),
-                                              const Padding(
-                                                padding:
-                                                    EdgeInsets.only(right: 8),
-                                                child: _PinnedTagsRow(),
-                                              ),
-                                              Align(
-                                                child: _BottomSheetButton(
-                                                  bottomSheetController:
-                                                      bottomSheetController,
-                                                  minSize: minSize,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SliverAppBar(
-                                    automaticallyImplyLeading: false,
-                                    titleSpacing: 0,
-                                    toolbarHeight: 80,
-                                    title: ImageViewBottomAppBar(),
-                                    pinned: true,
-                                  ),
-                                  _AnimatedBottomPadding(
-                                    bottomSheetController:
-                                        bottomSheetController,
-                                    minPixels: minPixels(widgets, viewPadding),
-                                  ),
-                                  Builder(
-                                    builder: (context) {
-                                      FocusNotifier.of(context);
-                                      ImageViewInfoTilesRefreshNotifier.of(
-                                        context,
-                                      );
-
-                                      return widgets.tryAsInfoable(context)!;
-                                    },
-                                  ),
-                                  SliverPadding(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.viewPaddingOf(context)
-                                          .bottom,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                        child: _SlidingBottomBar(
+                          minSize: minSize,
+                          widgets: widgets,
+                          bottomSheetController: bottomSheetController,
+                          viewPadding: viewPadding,
+                          min: min,
                         ),
                       ),
                     ),
@@ -223,6 +113,147 @@ class WrapImageViewSkeleton extends StatelessWidget {
         ),
       ),
       body: child,
+    );
+  }
+}
+
+class _SlidingBottomBar extends StatefulWidget {
+  const _SlidingBottomBar({
+    super.key,
+    required this.minSize,
+    required this.widgets,
+    required this.bottomSheetController,
+    required this.viewPadding,
+    required this.min,
+  });
+
+  final double minSize;
+  final ContentWidgets widgets;
+  final DraggableScrollableController bottomSheetController;
+  final EdgeInsets viewPadding;
+  final Size min;
+
+  @override
+  State<_SlidingBottomBar> createState() => __SlidingBottomBarState();
+}
+
+class __SlidingBottomBarState extends State<_SlidingBottomBar> {
+  ContentWidgets get widgets => widget.widgets;
+  DraggableScrollableController get bottomSheetController =>
+      widget.bottomSheetController;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final stickers = widgets.tryAsStickerable(context, true);
+
+    return DraggableScrollableSheet(
+      controller: bottomSheetController,
+      expand: false,
+      snap: true,
+      shouldCloseOnMinExtent: false,
+      maxChildSize: 1 -
+          ((kToolbarHeight + widget.viewPadding.top + 8) / widget.min.height),
+      minChildSize: widget.minSize,
+      initialChildSize: widget.minSize,
+      builder: (context, scrollController) {
+        if (widgets is! Infoable) {
+          return const ImageViewBottomAppBar();
+        }
+
+        return GestureDeadZones(
+          left: true,
+          right: true,
+          child: CustomScrollView(
+            key: ValueKey((widget.viewPadding.bottom, widget.min)),
+            clipBehavior: Clip.antiAlias,
+            controller: scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: SizedBox(
+                      height: 18,
+                      child: Stack(
+                        children: [
+                          if (stickers.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 8,
+                              ),
+                              child: Row(
+                                children: stickers
+                                    .map(
+                                      (e) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 8,
+                                        ),
+                                        child: Icon(
+                                          e.icon,
+                                          size: 16,
+                                          color: e.important
+                                              ? colorScheme.secondary
+                                              : colorScheme.onSurface
+                                                  .withOpacity(
+                                                  0.6,
+                                                ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: _PinnedTagsRow(),
+                          ),
+                          Align(
+                            child: _BottomSheetButton(
+                              bottomSheetController: bottomSheetController,
+                              minSize: widget.minSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SliverAppBar(
+                automaticallyImplyLeading: false,
+                titleSpacing: 0,
+                toolbarHeight: 80,
+                title: ImageViewBottomAppBar(),
+                pinned: true,
+              ),
+              _AnimatedBottomPadding(
+                bottomSheetController: bottomSheetController,
+                minPixels: WrapImageViewSkeleton.minPixels(
+                    widgets, widget.viewPadding),
+              ),
+              Builder(
+                builder: (context) {
+                  FocusNotifier.of(context);
+                  ImageViewInfoTilesRefreshNotifier.of(
+                    context,
+                  );
+
+                  return widgets.tryAsInfoable(context)!;
+                },
+              ),
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

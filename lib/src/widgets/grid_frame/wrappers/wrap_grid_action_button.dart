@@ -16,8 +16,7 @@ import "package:gallery/src/widgets/notifiers/selection_count.dart";
 class WrapGridActionButton extends StatefulWidget {
   const WrapGridActionButton(
     this.icon,
-    this.onPressed,
-    this.addBadge, {
+    this.onPressed, {
     super.key,
     this.color,
     required this.onLongPress,
@@ -25,16 +24,17 @@ class WrapGridActionButton extends StatefulWidget {
     required this.play,
     required this.animate,
     this.watch,
+    required this.animation,
   });
 
   final IconData icon;
   final void Function()? onPressed;
   final void Function()? onLongPress;
-  final bool addBadge;
   final Color? color;
   final bool animate;
   final bool play;
   final BuildContext? whenSingleContext;
+  final List<Effect<dynamic>> animation;
 
   final WatchFire<(IconData?, Color?, bool?)>? watch;
 
@@ -42,15 +42,22 @@ class WrapGridActionButton extends StatefulWidget {
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
 }
 
-class _WrapGridActionButtonState extends State<WrapGridActionButton> {
+class _WrapGridActionButtonState extends State<WrapGridActionButton>
+    with SingleTickerProviderStateMixin {
   AnimationController? _controller;
 
   StreamSubscription<(IconData?, Color?, bool?)>? _subscr;
 
   late (IconData, Color?, bool) data = (widget.icon, widget.color, widget.play);
 
+  late final AnimationController controller;
+
+  ColorTween? colorTween;
+
   @override
   void initState() {
+    controller = AnimationController(vsync: this, duration: Durations.medium2);
+
     _subscr = widget.watch?.call(
       (d) {
         // if (d.$3 != null && !data.$3 && d.$3!) {
@@ -58,9 +65,27 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
         //   _controller?.animateTo(1).then((value) => _controller?.animateBack(0));
         // }
 
-        data = (d.$1 ?? data.$1, d.$2, d.$3 ?? data.$3);
+        if (data.$2 != d.$2) {
+          final theme = Theme.of(context);
+          final iconColor =
+              theme.iconTheme.color ?? theme.colorScheme.onSurface;
 
-        // print
+          if (d.$2 != null) {
+            colorTween = ColorTween(begin: data.$2 ?? iconColor, end: d.$2);
+
+            controller
+              ..reset()
+              ..animateTo(1, curve: Easing.standard);
+          } else if (d.$2 == null && data.$2 != null) {
+            colorTween = ColorTween(begin: data.$2, end: d.$2 ?? iconColor);
+
+            controller
+              ..reset()
+              ..animateTo(1, curve: Easing.standard);
+          }
+        }
+
+        data = (d.$1 ?? data.$1, d.$2, d.$3 ?? data.$3);
 
         setState(() {});
       },
@@ -72,6 +97,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
 
   @override
   void dispose() {
+    controller.dispose();
     _subscr?.cancel();
 
     super.dispose();
@@ -79,9 +105,13 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final icn = Icon(data.$1, color: data.$2);
+    final icon = AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) => Icon(
+        data.$1,
+        color: colorTween?.transform(controller.value) ?? data.$2,
+      ),
+    );
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -106,7 +136,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
               : widget.onPressed == null
                   ? null
                   : () {
-                      if (widget.animate && widget.play) {
+                      if (widget.animate && data.$3) {
                         _controller?.reset();
                         _controller
                             ?.animateTo(1)
@@ -117,37 +147,14 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                     },
           icon: widget.animate
               ? Animate(
-                  effects: [
-                    ScaleEffect(
-                      duration: 150.ms,
-                      begin: const Offset(1, 1),
-                      end: const Offset(2, 2),
-                      curve: Easing.emphasizedAccelerate,
-                    ),
-                  ],
+                  effects: widget.animation,
                   onInit: (controller) {
                     _controller = controller;
                   },
                   autoPlay: false,
-                  child: widget.addBadge
-                      ? Badge.count(
-                          backgroundColor: colorScheme.primaryContainer,
-                          textColor: colorScheme.onPrimaryContainer,
-                          count: SelectionCountNotifier.countOf(context),
-                          child: icn,
-                          // child: iconBtn(context),
-                        )
-                      : icn,
+                  child: icon,
                 )
-              : widget.addBadge
-                  ? Badge.count(
-                      backgroundColor: colorScheme.primaryContainer,
-                      textColor: colorScheme.onPrimaryContainer,
-                      count: SelectionCountNotifier.countOf(context),
-                      child: icn,
-                      // child: iconBtn(context),
-                    )
-                  : icn,
+              : icon,
         ),
       ),
     );

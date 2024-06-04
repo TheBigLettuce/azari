@@ -62,6 +62,15 @@ class ImageViewAction {
     this.icon,
     this.onPress, {
     this.color,
+    this.animation = const [
+      ScaleEffect(
+        delay: Duration(milliseconds: 40),
+        duration: Durations.short3,
+        begin: Offset(1, 1),
+        end: Offset(2, 2),
+        curve: Easing.emphasizedDecelerate,
+      ),
+    ],
     this.animate = false,
     this.play = true,
     this.watch,
@@ -79,6 +88,7 @@ class ImageViewAction {
 
   final bool animate;
   final bool play;
+  final List<Effect<dynamic>> animation;
 
   ImageViewAction copy(
     IconData? icon,

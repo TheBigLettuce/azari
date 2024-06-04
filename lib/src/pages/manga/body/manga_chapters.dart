@@ -277,7 +277,7 @@ class _MangaChaptersState extends State<MangaChapters> {
         } else if (reachedEnd && list.isEmpty) {
           return const SliverToBoxAdapter(
             child: EmptyWidget(
-              mini: true,
+              // mini: true,
               gridSeed: 0,
             ),
           );

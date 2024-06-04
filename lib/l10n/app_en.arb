@@ -173,7 +173,7 @@
     "@deleteImageConfirm": {
         "description": "Delete image conformation, title in dialog, the file is showed separately"
     },
-    "emptyValue": "empty",
+    "emptyValue": "Empty",
     "@emptyValue": {
         "description": "Placeholder for empty value"
     },

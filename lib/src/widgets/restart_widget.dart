@@ -45,6 +45,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   final StreamController<Duration> timeListener = StreamController.broadcast();
   Duration currentDuration = Duration.zero;
   DateTime timeNow = DateTime.now();
+  final progressTab = GlobalProgressTab();
 
   @override
   void initState() {
@@ -141,28 +142,60 @@ class _RestartWidgetState extends State<RestartWidget> {
     final d = buildTheme(Brightness.dark, widget.accentColor);
     final l = buildTheme(Brightness.light, widget.accentColor);
 
-    return DatabaseConnectionNotifier.current(
-      TagManager.wrapAnchor(
-        tagManager,
-        TimeSpentNotifier(
-          timeNow,
-          ticker: timeListener.stream,
-          current: _c,
-          child: KeyedSubtree(
-            key: key,
-            child: ColoredBox(
-              color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                  ? d.colorScheme.surface
-                  : l.colorScheme.surface,
-              child: widget
-                  .child(d, l, SettingsService.db().current)
-                  .animate(effects: [const FadeEffect()]),
+    return progressTab.wrapWidget(
+      DatabaseConnectionNotifier.current(
+        TagManager.wrapAnchor(
+          tagManager,
+          TimeSpentNotifier(
+            timeNow,
+            ticker: timeListener.stream,
+            current: _c,
+            child: KeyedSubtree(
+              key: key,
+              child: ColoredBox(
+                color:
+                    MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                        ? d.colorScheme.surface
+                        : l.colorScheme.surface,
+                child: widget
+                    .child(d, l, SettingsService.db().current)
+                    .animate(effects: [const FadeEffect()]),
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class GlobalProgressTab {
+  static GlobalProgressTab? maybeOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<_ProgressTab>();
+
+    return widget?.tab;
+  }
+
+  final Map<String, ValueNotifier<dynamic>> _notifiers = {};
+
+  Widget wrapWidget(Widget child) => _ProgressTab(tab: this, child: child);
+
+  ValueNotifier<T> get<T>(String key, ValueNotifier<T> Function() factory) {
+    return _notifiers.putIfAbsent(key, factory) as ValueNotifier<T>;
+  }
+}
+
+class _ProgressTab extends InheritedWidget {
+  const _ProgressTab({
+    super.key,
+    required this.tab,
+    required super.child,
+  });
+
+  final GlobalProgressTab tab;
+
+  @override
+  bool updateShouldNotify(_ProgressTab oldWidget) => tab != oldWidget.tab;
 }
 
 class TimeSpentNotifier extends InheritedWidget {

@@ -395,10 +395,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val app = this.applicationContext as App
-        prewarmEngine(app, "main")
-
+        
         engineBindings.attach()
         engineBindings.connectivityManager.registerDefaultNetworkCallback(engineBindings.netStatus)
     }
@@ -414,7 +411,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
-        engineBindings.engine.destroy()
+        // engineBindings.engine.destroy()
         engineBindings.connectivityManager.unregisterNetworkCallback(engineBindings.netStatus)
         FlutterEngineCache.getInstance().remove("mainPickfile")
     }
