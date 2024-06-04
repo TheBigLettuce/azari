@@ -286,7 +286,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
         .ensureDownloadDirectoryExists(entry.data.site);
     final filePath = path.joinAll([dir, entry.data.name]);
 
-    if (await GalleryManagementApi.current().fileExists(filePath)) {
+    if (await GalleryManagementApi.current().files.exists(filePath)) {
       _failed(entry);
       _tryAddNew();
       return;
@@ -340,13 +340,11 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   }) async {
     final settings = SettingsService.db().current;
 
-    await GalleryManagementApi.current().move(
-      MoveOp(
-        source: filePath,
-        rootDir: settings.path.path,
-        targetDir: entry.data.site,
-      ),
-    );
+    await GalleryManagementApi.current().files.moveSingle(
+          source: filePath,
+          rootDir: settings.path.path,
+          targetDir: entry.data.site,
+        );
   }
 
   @override

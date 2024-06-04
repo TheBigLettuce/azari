@@ -8,10 +8,13 @@ import "dart:io";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
 import "package:gallery/src/plugs/gallery/dummy.dart";
+import "package:gallery/src/plugs/gallery/linux/impl.dart";
 
 GalleryPlug getApi() {
   if (Platform.isAndroid) {
     return const AndroidGallery();
+  } else if (Platform.isLinux) {
+    return const LinuxGalleryPlug();
   }
 
   return DummyGallery();

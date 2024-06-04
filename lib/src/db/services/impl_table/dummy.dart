@@ -109,13 +109,6 @@ class DummyServicesImplTable
       throw UnimplementedError();
 
   @override
-  SettingsPath makeSettingsPath({
-    required String path,
-    required String pathDisplay,
-  }) =>
-      throw UnimplementedError();
-
-  @override
   DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,

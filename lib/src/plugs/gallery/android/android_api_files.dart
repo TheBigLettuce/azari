@@ -130,7 +130,7 @@ class _AndroidFileSourceJoined
 
     progress.inRefreshing = true;
     if (type.isTrash()) {
-      GalleryManagementApi.current().refreshTrashed(sortingMode);
+      const AndroidGalleryManagementApi().refreshTrashed(sortingMode);
     } else if (type.isFavorites()) {
       int offset = 0;
 
@@ -142,14 +142,15 @@ class _AndroidFileSourceJoined
           break;
         }
 
-        await GalleryManagementApi.current().refreshFavorites(f, sortingMode);
+        await const AndroidGalleryManagementApi()
+            .refreshFavorites(f, sortingMode);
       }
     } else {
       if (bucketIds.length == 1) {
-        GalleryManagementApi.current()
+        const AndroidGalleryManagementApi()
             .refreshFiles(bucketIds.first, sortingMode);
       } else {
-        GalleryManagementApi.current()
+        const AndroidGalleryManagementApi()
             .refreshFilesMultiple(bucketIds, sortingMode);
       }
     }

@@ -16,7 +16,7 @@ import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
-import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:gallery/src/plugs/gallery_management/android.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 
@@ -28,7 +28,6 @@ class _AndroidGallery implements GalleryAPIDirectories {
   _AndroidGallery(
     this.blacklistedDirectory,
     this.directoryTag, {
-    required this.temporary,
     required this.localizations,
   });
 
@@ -36,7 +35,6 @@ class _AndroidGallery implements GalleryAPIDirectories {
   final DirectoryTagService directoryTag;
   final AppLocalizations localizations;
 
-  final bool temporary;
   final time = DateTime.now();
 
   bool isThumbsLoading = false;
@@ -55,9 +53,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     source.destroy();
     trashCell.dispose();
     bindFiles = null;
-    if (temporary == false) {
-      _global!._currentApi = null;
-    } else if (temporary) {}
+    _global!._currentApi = null;
   }
 
   @override
@@ -136,7 +132,7 @@ class _AndroidSource implements ResourceSource<int, GalleryDirectory> {
     progress.inRefreshing = true;
 
     backingStorage.clear();
-    GalleryManagementApi.current().refreshGallery();
+    const AndroidGalleryManagementApi().refreshGallery();
     trashCell.refresh();
 
     return Future.value(count);

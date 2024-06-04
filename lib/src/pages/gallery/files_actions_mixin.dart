@@ -28,9 +28,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             actions: [
               TextButton(
                 onPressed: () {
-                  GalleryManagementApi.current().addToTrash(
-                    selected.map((e) => e.originalUri).toList(),
-                  );
+                  GalleryManagementApi.current().trash.addAll(
+                        selected.map((e) => e.originalUri).toList(),
+                      );
 
                   StatisticsGalleryService.db()
                       .current
@@ -57,9 +57,9 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
-        GalleryManagementApi.current().removeFromTrash(
-          selected.map((e) => e.originalUri).toList(),
-        );
+        GalleryManagementApi.current().trash.removeAll(
+              selected.map((e) => e.originalUri).toList(),
+            );
       },
       false,
     );
@@ -279,13 +279,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
                   return _deleteDialog(context, selected);
                 } else {
-                  GalleryManagementApi.current().copyMoveFiles(
-                    chosen?.relativeLoc,
-                    chosen?.volumeName,
-                    selected,
-                    move: move,
-                    newDir: newDir,
-                  );
+                  GalleryManagementApi.current().files.copyMove(
+                        newDir ?? chosen!.relativeLoc,
+                        chosen!.volumeName,
+                        selected,
+                        move: move,
+                        newDir: newDir != null,
+                      );
 
                   if (move) {
                     StatisticsGalleryService.db()

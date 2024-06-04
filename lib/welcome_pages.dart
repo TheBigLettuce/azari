@@ -356,9 +356,7 @@ class _InitalSettingsState extends State<InitalSettings> {
 
                     setState(() {});
                   },
-                  emptyResult: l10n.emptyResult,
-                  pickDirectory: l10n.pickDirectory,
-                  validDirectory: l10n.chooseValidDirectory,
+                  l10n,
                 );
               },
               label: Text(

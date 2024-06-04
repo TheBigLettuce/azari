@@ -222,7 +222,7 @@ Future<void> _loadNextThumbnails(
       if (thumbnailService.get(file.id) == null) {
         count++;
 
-        thumbnails.add(GalleryManagementApi.current().getCachedThumb(file.id));
+        thumbnails.add(GalleryManagementApi.current().thumbs.get(file.id));
 
         if (thumbnails.length > 8) {
           thumbnailService.addAll(await thumbnails.wait);

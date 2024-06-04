@@ -42,10 +42,10 @@ class _SettingsListState extends State<SettingsList> {
   SettingsData _settings = SettingsService.db().current;
   MiscSettingsData _miscSettings = MiscSettingsService.db().current;
 
-  Future<int> thumbnailCount = GalleryManagementApi.current().thumbCacheSize();
+  Future<int> thumbnailCount = GalleryManagementApi.current().thumbs.size();
 
   Future<int> pinnedThumbnailCount =
-      GalleryManagementApi.current().thumbCacheSize(true);
+      GalleryManagementApi.current().thumbs.size(true);
 
   @override
   void initState() {
@@ -106,12 +106,7 @@ class _SettingsListState extends State<SettingsList> {
             title: Text(l10n.downloadDirectorySetting),
             subtitle: Text(_settings.path.pathDisplay),
             onTap: () async {
-              await SettingsService.db().chooseDirectory(
-                showDialog,
-                emptyResult: l10n.emptyResult,
-                pickDirectory: l10n.pickDirectory,
-                validDirectory: l10n.chooseValidDirectory,
-              );
+              await SettingsService.db().chooseDirectory(showDialog, l10n);
             },
           ),
         ),
@@ -191,7 +186,8 @@ class _SettingsListState extends State<SettingsList> {
                                         db.thumbnails.clear();
 
                                         GalleryManagementApi.current()
-                                            .clearCachedThumbs();
+                                            .thumbs
+                                            .clear();
 
                                         thumbnailCount = Future.value(0);
 
@@ -250,15 +246,13 @@ class _SettingsListState extends State<SettingsList> {
                                         db.pinnedThumbnails.clear();
 
                                         GalleryManagementApi.current()
-                                            .clearCachedThumbs(
-                                          true,
-                                        );
+                                            .thumbs
+                                            .clear(true);
 
                                         thumbnailCount =
                                             GalleryManagementApi.current()
-                                                .thumbCacheSize(
-                                          true,
-                                        );
+                                                .thumbs
+                                                .size(true);
 
                                         setState(() {});
                                         Navigator.pop(context);

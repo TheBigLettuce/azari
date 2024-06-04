@@ -65,7 +65,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
       _trashFuture = null;
     }
 
-    _trashFuture = GalleryManagementApi.current().trashThumbId().then((e) {
+    _trashFuture = GalleryManagementApi.current().trash.thumbId.then((e) {
       _currentData = e == null
           ? null
           : GalleryDirectory.forPlatform(

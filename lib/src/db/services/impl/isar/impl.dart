@@ -7,8 +7,8 @@ import "dart:async";
 import "dart:io";
 
 import "package:async/async.dart";
-import "package:file_picker/file_picker.dart";
 import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
@@ -1660,7 +1660,7 @@ class IsarThumbnailService implements ThumbnailService {
         return toDelete;
       });
 
-      GalleryManagementApi.current().deleteCachedThumbs(toDelete);
+      GalleryManagementApi.current().thumbs.removeAll(toDelete);
     }
 
     _Dbs.g.thumbnail!.writeTxnSync(() {

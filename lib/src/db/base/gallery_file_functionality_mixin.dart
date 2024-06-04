@@ -107,7 +107,8 @@ Future<void> loadNetworkThumb(
       final post = await api.singlePost(res.id);
 
       final t = await GalleryManagementApi.current()
-          .saveThumbNetwork(post.previewUrl, id);
+          .thumbs
+          .saveFromNetwork(post.previewUrl, id);
 
       thumbnails.delete(id);
       pinnedThumbnails.add(id, t.path, t.differenceHash);

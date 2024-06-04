@@ -51,8 +51,6 @@ abstract class GalleryPlug {
   GalleryAPIDirectories galleryApi(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
-    required bool temporaryDb,
-    bool setCurrentApi = true,
     required AppLocalizations l10n,
   });
 
@@ -679,6 +677,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                       },
                                       onFieldSubmitted: (value) {
                                         GalleryManagementApi.current()
+                                            .files
                                             .rename(file.originalUri, value);
 
                                         Navigator.pop(context);
@@ -846,7 +845,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
               final postTags = PostTags.fromContext(context);
 
               notifier?.value = api.singlePost(res.id).then((post) {
-                GalleryManagementApi.current().deleteFiles([widget.file]);
+                GalleryManagementApi.current().files.deleteAll([widget.file]);
 
                 post.download(downloadManager, postTags);
 

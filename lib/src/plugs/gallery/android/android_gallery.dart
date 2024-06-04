@@ -7,6 +7,7 @@ part of "android_api_directories.dart";
 
 class AndroidGallery implements GalleryPlug {
   const AndroidGallery();
+
   @override
   Future<int> get version =>
       const AndroidApiFunctions().currentMediastoreVersion();
@@ -18,14 +19,11 @@ class AndroidGallery implements GalleryPlug {
   GalleryAPIDirectories galleryApi(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
-    required bool temporaryDb,
-    bool setCurrentApi = true,
     required AppLocalizations l10n,
   }) {
     final api = _AndroidGallery(
       blacklistedDirectory,
       directoryTag,
-      temporary: temporaryDb,
       localizations: l10n,
     );
     _global!._currentApi = api;

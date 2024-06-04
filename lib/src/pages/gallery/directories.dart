@@ -113,8 +113,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       galleryPlug.galleryApi(
         widget.db.blacklistedDirectories,
         widget.db.directoryTags,
-        temporaryDb: widget.callback != null || widget.nestedCallback != null,
-        setCurrentApi: widget.callback == null,
         l10n: widget.l10n,
       );
 
@@ -461,8 +459,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     widget.callback!(
                       null,
                       await GalleryManagementApi.current()
-                          .chooseDirectory(temporary: true)
-                          .then((value) => value!.path),
+                          .chooseDirectory(l10n, temporary: true)
+                          .then((value) => value!.$2),
                     );
                     Navigator.pop(context);
                   } catch (e, trace) {

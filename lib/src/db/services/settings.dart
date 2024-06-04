@@ -24,11 +24,9 @@ abstract interface class SettingsService implements ServiceMarker {
   ]);
 
   Future<bool> chooseDirectory(
-    void Function(String) onError, {
-    required String emptyResult,
-    required String pickDirectory,
-    required String validDirectory,
-  });
+    void Function(String) onError,
+    AppLocalizations l10n,
+  );
 }
 
 abstract class SettingsPath {

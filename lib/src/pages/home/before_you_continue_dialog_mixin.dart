@@ -32,12 +32,7 @@ mixin _BeforeYouContinueDialogMixin {
                     ),
                     TextButton(
                       onPressed: () {
-                        SettingsService.db().chooseDirectory(
-                          (e) {},
-                          emptyResult: l10n.emptyResult,
-                          pickDirectory: l10n.pickDirectory,
-                          validDirectory: l10n.chooseValidDirectory,
-                        );
+                        SettingsService.db().chooseDirectory((e) {}, l10n);
                         Navigator.pop(context);
                       },
                       child: Text(l10n.choose),

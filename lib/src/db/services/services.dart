@@ -139,11 +139,6 @@ mixin ServicesObjFactoryExt {
     required String thumbUrl,
   });
 
-  SettingsPath makeSettingsPath({
-    required String path,
-    required String pathDisplay,
-  });
-
   DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,

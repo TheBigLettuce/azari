@@ -5,12 +5,55 @@
 
 import "dart:io";
 
+import "package:file_picker/file_picker.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/plugs/gallery_management/android.dart";
 import "package:gallery/src/plugs/gallery_management/dummy_io.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:path/path.dart" as path;
+import "package:path_provider/path_provider.dart";
 
 GalleryManagementApi getApi() => Platform.isAndroid
     ? const AndroidGalleryManagementApi()
-    : const DummyIoGalleryManagementApi();
+    : Platform.isAndroid
+        ? const LinuxGalleryManagementApi()
+        : const DummyIoGalleryManagementApi();
 
 void initApi() {}
+
+class LinuxGalleryManagementApi implements DummyIoGalleryManagementApi {
+  const LinuxGalleryManagementApi();
+
+  @override
+  Future<String> ensureDownloadDirectoryExists(String site) async {
+    final downloadtd = Directory(
+      path.joinAll([(await getTemporaryDirectory()).path, "downloads"]),
+    );
+
+    final dirpath = path.joinAll([downloadtd.path, site]);
+    await downloadtd.create();
+
+    await Directory(dirpath).create();
+
+    return dirpath;
+  }
+
+  @override
+  Future<(String, String)?> chooseDirectory(
+    AppLocalizations l10n, {
+    bool temporary = false,
+  }) {
+    return FilePicker.platform
+        .getDirectoryPath(dialogTitle: l10n.pickDirectory)
+        .then((e) => e == null ? null : (e, e));
+  }
+
+  @override
+  GalleryTrash get trash => const DummyGalleryTrash();
+
+  @override
+  CachedThumbs get thumbs => const DummyCachedThumbs();
+
+  @override
+  FilesManagement get files => const IoFilesManagement();
+}

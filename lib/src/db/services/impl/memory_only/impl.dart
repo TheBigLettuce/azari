@@ -168,13 +168,6 @@ mixin MemoryOnlyServicesImplTableObjInstExt implements ServicesObjFactoryExt {
       );
 
   @override
-  SettingsPath makeSettingsPath({
-    required String path,
-    required String pathDisplay,
-  }) =>
-      PlainSettingsPath(path, pathDisplay);
-
-  @override
   DownloadFileData makeDownloadFileData({
     required DownloadStatus status,
     required String name,
@@ -464,11 +457,9 @@ class MemorySettingsService implements SettingsService {
 
   @override
   Future<bool> chooseDirectory(
-    void Function(String s) onError, {
-    required String emptyResult,
-    required String pickDirectory,
-    required String validDirectory,
-  }) =>
+    void Function(String s) onError,
+    _,
+  ) =>
       Future.value(true);
 
   @override

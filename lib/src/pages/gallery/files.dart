@@ -216,7 +216,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
         },
       );
 
-      const AndroidApiFunctions().hideRecents(true);
+      PlatformApi.current().hideRecents(true);
     }
 
     api.source.clearRefreshSorting(filter.sortingMode, true);
@@ -235,7 +235,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     api.close();
     state.dispose();
 
-    const AndroidApiFunctions().hideRecents(false);
+    PlatformApi.current().hideRecents(false);
 
     super.dispose();
   }
@@ -487,7 +487,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                                   TextButton(
                                     onPressed: () {
                                       GalleryManagementApi.current()
-                                          .emptyTrash();
+                                          .trash
+                                          .empty();
                                       Navigator.pop(context);
                                     },
                                     child: Text(l10n.yes),

@@ -12,7 +12,6 @@ import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.da
 import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
@@ -160,16 +159,6 @@ mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
         site: site,
         thumbUrl: thumbUrl,
         title: title,
-      );
-
-  @override
-  SettingsPath makeSettingsPath({
-    required String path,
-    required String pathDisplay,
-  }) =>
-      IsarSettingsPath(
-        path: path,
-        pathDisplay: pathDisplay,
       );
 
   @override

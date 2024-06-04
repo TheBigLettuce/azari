@@ -34,6 +34,8 @@ abstract interface class PlatformApi {
 
   Future<void> shareMedia(String originalUri, {bool url = false});
   Future<void> setWallpaper(int id);
+
+  Future<void> hideRecents(bool hide);
 }
 
 class DummyApiFunctions implements PlatformApi {
@@ -57,6 +59,9 @@ class DummyApiFunctions implements PlatformApi {
 
   @override
   Future<void> setWallpaper(int id) => Future.value();
+
+  @override
+  Future<void> hideRecents(bool hide) => Future.value();
 }
 
 class LinuxApiFunctions implements PlatformApi {
@@ -100,6 +105,9 @@ class LinuxApiFunctions implements PlatformApi {
   Future<void> setWallpaper(int id) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> hideRecents(bool hide) => Future.value();
 }
 
 class AndroidApiFunctions implements PlatformApi {
@@ -123,8 +131,11 @@ class AndroidApiFunctions implements PlatformApi {
   @override
   Future<void> setTitle(String windowTitle) => Future.value();
 
-  void hideRecents(bool hide) {
+  @override
+  Future<void> hideRecents(bool hide) {
     _channel.invokeMethod("hideRecents", hide);
+
+    return Future.value();
   }
 
   Future<bool> requestManageMedia() {

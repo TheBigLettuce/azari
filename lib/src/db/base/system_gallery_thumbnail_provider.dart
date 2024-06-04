@@ -106,7 +106,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
       }
 
       _thumbLoadingStatus[id] =
-          GalleryManagementApi.current().getCachedThumb(id).whenComplete(() {
+          GalleryManagementApi.current().thumbs.get(id).whenComplete(() {
         _thumbLoadingStatus.remove(id);
       });
 

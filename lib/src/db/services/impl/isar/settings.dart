@@ -18,28 +18,16 @@ class IsarSettingsService implements SettingsService {
   /// Calls [onError] in case of any error and resolves to false.
   @override
   Future<bool> chooseDirectory(
-    void Function(String) onError, {
-    required String emptyResult,
-    required String pickDirectory,
-    required String validDirectory,
-  }) async {
+      void Function(String) onError, AppLocalizations l10n) async {
     late final SettingsPath resp;
 
-    if (Platform.isAndroid) {
-      try {
-        resp = (await GalleryManagementApi.current().chooseDirectory())!;
-      } catch (e) {
-        onError(emptyResult);
-        return false;
-      }
-    } else {
-      final r = await FilePicker.platform
-          .getDirectoryPath(dialogTitle: pickDirectory);
-      if (r == null) {
-        onError(validDirectory);
-        return false;
-      }
-      resp = IsarSettingsPath(path: r, pathDisplay: r);
+    try {
+      resp = await GalleryManagementApi.current()
+          .chooseDirectory(l10n)
+          .then((e) => IsarSettingsPath(path: e!.$2, pathDisplay: e.$1));
+    } catch (e) {
+      onError(l10n.emptyResult);
+      return false;
     }
 
     current.copy(path: resp).save();
