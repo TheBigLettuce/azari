@@ -8,19 +8,15 @@ import "package:gallery/src/plugs/gallery.dart";
 
 class CallbackDescription {
   const CallbackDescription(
-    this.description,
     this.c, {
-    this.preview,
-    required this.icon,
+    required this.preview,
     required this.joinable,
     required this.suggestFor,
   });
   final Future<void> Function(GalleryDirectory? chosen, String? newDir) c;
-  final String description;
   final List<String> suggestFor;
-  final IconData icon;
 
-  final PreferredSizeWidget? preview;
+  final PreferredSizeWidget preview;
 
   final bool joinable;
 

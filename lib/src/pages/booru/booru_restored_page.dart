@@ -174,6 +174,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   late final StreamSubscription<void> favoritesWatcher;
 
   late final SearchLaunchGrid search;
+  final _textKey = GlobalKey<__AppBarTextState>();
 
   late final RestoredBooruPageState pagingState;
 
@@ -235,12 +236,13 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           child: TagsWidget(
             tagging: tagManager.latest,
             onPress: (tag, safeMode) {
-              _onTagPressed(
-                context,
-                state.settings.selectedBooru,
-                tag,
-                safeMode,
-              );
+              pagingState.source.tags = tag;
+              pagingState.source.clearRefresh();
+              gridBookmarks.get(name)!.copy(tags: tag).save();
+              _textKey.currentState?.setState(() {});
+              pagingState.tagManager.latest.add(tag);
+
+              Navigator.pop(context);
             },
           ),
         ),
@@ -250,6 +252,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           pagingState.source.tags = tag;
           pagingState.source.clearRefresh();
           gridBookmarks.get(name)!.copy(tags: tag).save();
+          _textKey.currentState?.setState(() {});
+          pagingState.tagManager.latest.add(tag);
+
+          Navigator.pop(context);
         },
       ),
     );
@@ -340,7 +346,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
               child: GridPopScope(
                 searchTextController: null,
                 filter: null,
-                searchFocus: null,
                 child: GridFrame<Post>(
                   key: state.gridKey,
                   slivers: [
@@ -375,32 +380,39 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     download: _download,
                     selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
-                    search: BarSearchWidget(
-                      onChange: (str) {},
-                      trailingItems: [
-                        IconButton(
-                          icon: pagingState.addToBookmarks
-                              ? const Icon(Icons.bookmark_remove_rounded)
-                              : const Icon(Icons.bookmark_add_rounded),
-                          onPressed: () {
-                            pagingState.addToBookmarks =
-                                !pagingState.addToBookmarks;
+                    search: RawSearchWidget(
+                      (settingsButton, bottomWidget) => SliverAppBar(
+                        leading: const BackButton(),
+                        floating: true,
+                        pinned: true,
+                        snap: true,
+                        stretch: true,
+                        bottom: bottomWidget ??
+                            const PreferredSize(
+                              preferredSize: Size.zero,
+                              child: SizedBox.shrink(),
+                            ),
+                        title: _AppBarText(key: _textKey, source: source),
+                        actions: [
+                          IconButton(
+                            icon: pagingState.addToBookmarks
+                                ? const Icon(Icons.bookmark_remove_rounded)
+                                : const Icon(Icons.bookmark_add_rounded),
+                            onPressed: () {
+                              pagingState.addToBookmarks =
+                                  !pagingState.addToBookmarks;
 
-                            setState(() {});
-                          },
-                        ),
-                      ],
+                              setState(() {});
+                            },
+                          ),
+                          search.searchWidget(
+                            context,
+                            hint: pagingState.api.booru.name,
+                          ),
+                          if (settingsButton != null) settingsButton,
+                        ],
+                      ),
                     ),
-                    // OverrideGridSearchWidget(
-                    //   SearchAndFocus(
-                    //     search.searchWidget(
-                    //       context,
-                    //       hint: api.booru.name,
-                    //       disabled: pagingState.addToBookmarks,
-                    //     ),
-                    //     search.searchFocus,
-                    //   ),
-                    // ),
                     registerNotifiers: (child) => OnBooruTagPressed(
                       onPressed: _onTagPressed,
                       child: BooruAPINotifier(api: api, child: child),
@@ -427,5 +439,21 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         ),
       ),
     );
+  }
+}
+
+class _AppBarText extends StatefulWidget {
+  const _AppBarText({required super.key, required this.source});
+
+  final GridPostSource source;
+
+  @override
+  State<_AppBarText> createState() => __AppBarTextState();
+}
+
+class __AppBarTextState extends State<_AppBarText> {
+  @override
+  Widget build(BuildContext context) {
+    return Text(widget.source.tags);
   }
 }

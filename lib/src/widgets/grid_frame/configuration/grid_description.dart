@@ -16,7 +16,6 @@ class GridDescription<T extends CellBase> {
     this.bottomWidget,
     this.asSliver = false,
     this.footer,
-    this.pages,
     this.pageName,
     this.overrideEmptyWidgetNotice,
     this.animationsOnSourceWatch = true,
@@ -45,8 +44,6 @@ class GridDescription<T extends CellBase> {
   final int gridSeed;
 
   final String? overrideEmptyWidgetNotice;
-
-  final PageSwitcherInterface<T>? pages;
 
   final PreferredSizeWidget? footer;
 }

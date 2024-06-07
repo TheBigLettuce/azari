@@ -7,12 +7,11 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 sealed class GridSearchWidget {
   const GridSearchWidget({required this.leading, required this.trailingItems});
@@ -38,7 +37,9 @@ class RawSearchWidget implements GridSearchWidget {
   List<Widget>? get trailingItems => null;
 
   final Widget Function(
-      Widget? gridSettingsButton, PreferredSizeWidget? bottomWidget) sliver;
+    Widget? gridSettingsButton,
+    PreferredSizeWidget? bottomWidget,
+  ) sliver;
 }
 
 class BarSearchWidget extends GridSearchWidget {
@@ -54,7 +55,6 @@ class BarSearchWidget extends GridSearchWidget {
   });
 
   factory BarSearchWidget.fromFilter(
-    BuildContext context,
     ChainedFilterResourceSource<dynamic, dynamic> filter, {
     TextEditingController? textEditingController,
     String? hintText,
@@ -71,30 +71,7 @@ class BarSearchWidget extends GridSearchWidget {
       trailingItems: trailingItems,
       onChange: (str) => filter.clearRefresh(),
       filterWidget: filter.allowedFilteringModes.isNotEmpty
-          ? IconButton(
-              onPressed: () {
-                showModalBottomSheet<void>(
-                  useRootNavigator: true,
-                  isScrollControlled: true,
-                  showDragHandle: true,
-                  context: context,
-                  builder: (context) {
-                    return SafeArea(
-                      child: _FilteringWidget(
-                        selectSorting: (e) => filter.sortingMode = e,
-                        currentSorting: filter.sortingMode,
-                        enabledSorting: filter.allowedSortingModes,
-                        select: (e) => filter.filteringMode = e,
-                        currentFilter: filter.filteringMode,
-                        enabledModes: filter.allowedFilteringModes,
-                      ),
-                    );
-                  },
-                );
-              },
-              icon: _FilterIcon(filter: filter),
-              padding: EdgeInsets.zero,
-            )
+          ? ChainedFilterIcon(filter: filter)
           : null,
     );
   }
@@ -105,6 +82,40 @@ class BarSearchWidget extends GridSearchWidget {
   final bool enableCount;
   final Future<List<BooruTag>> Function(String string)? complete;
   final void Function(String? str)? onChange;
+}
+
+class ChainedFilterIcon extends StatelessWidget {
+  const ChainedFilterIcon({super.key, required this.filter});
+
+  final ChainedFilterResourceSource<dynamic, dynamic> filter;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        showModalBottomSheet<void>(
+          useRootNavigator: true,
+          isScrollControlled: true,
+          showDragHandle: true,
+          context: context,
+          builder: (context) {
+            return SafeArea(
+              child: _FilteringWidget(
+                selectSorting: (e) => filter.sortingMode = e,
+                currentSorting: filter.sortingMode,
+                enabledSorting: filter.allowedSortingModes,
+                select: (e) => filter.filteringMode = e,
+                currentFilter: filter.filteringMode,
+                enabledModes: filter.allowedFilteringModes,
+              ),
+            );
+          },
+        );
+      },
+      icon: _FilterIcon(filter: filter),
+      padding: EdgeInsets.zero,
+    );
+  }
 }
 
 class _FilterIcon extends StatefulWidget {

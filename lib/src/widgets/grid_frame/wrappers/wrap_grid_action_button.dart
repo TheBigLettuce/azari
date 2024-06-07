@@ -8,7 +8,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
 class WrapGridActionButton extends StatefulWidget {

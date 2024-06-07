@@ -7,13 +7,11 @@ part of "../grid_frame.dart";
 
 class _BottomWidget extends StatefulWidget {
   const _BottomWidget({
-    this.routeChanger,
     required this.child,
     required this.progress,
   });
 
   final RefreshingProgress progress;
-  final Widget? routeChanger;
   final Widget child;
 
   @override
@@ -43,15 +41,8 @@ class __BottomWidgetState extends State<_BottomWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.routeChanger != null
-        ? Column(
-            children: [
-              widget.routeChanger!,
-              widget.child,
-            ],
-          )
-        : !progress.inRefreshing
-            ? widget.child
-            : const LinearProgressIndicator();
+    return !progress.inRefreshing
+        ? widget.child
+        : const LinearProgressIndicator();
   }
 }

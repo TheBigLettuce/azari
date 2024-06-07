@@ -16,6 +16,8 @@ class _GalleryIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final selectedGalleryPage = GallerySubPage.of(context);
 
     return NavigationDestination(
       icon: Animate(
@@ -24,11 +26,13 @@ class _GalleryIcon extends StatelessWidget {
         controller: controller,
         effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
         child: Icon(
-          isSelected ? Icons.collections_rounded : Icons.collections_outlined,
+          isSelected
+              ? selectedGalleryPage.selectedIcon
+              : selectedGalleryPage.icon,
           color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),
-      label: AppLocalizations.of(context)!.galleryLabel,
+      label: selectedGalleryPage.translatedString(l10n),
     );
   }
 }

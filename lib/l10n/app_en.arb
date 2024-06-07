@@ -315,9 +315,9 @@
     "@backup": {
         "description": "Backup button"
     },
-    "blacklistedPage": "Blacklisted",
-    "@blacklistedPage": {
-        "description": "Blacklisted directories and booru images page"
+    "blacklistedFoldersPage": "Blacklisted Folders",
+    "@blacklistedFoldersPage": {
+        "description": "Blacklisted directories page"
     },
     "currentTagTitle": "Current tag",
     "@currentTagTitle": {
@@ -802,9 +802,9 @@
     "@role": {
         "description": "Image info, role of the anime character"
     },
-    "blacklistedPostsPageName": "Blacklisted Posts",
-    "@blacklistedPostsPageName": {
-        "description": "Blacklisted posts page"
+    "hiddenPostsPageName": "Hidden Posts",
+    "@hiddenPostsPageName": {
+        "description": "Hidden posts page"
     },
     "tryAgain": "Try again",
     "@tryAgain": {
@@ -1422,5 +1422,13 @@
                 "type": "String"
             }
         }
+    },
+    "latestBookmarks": "Latest bookmarks",
+    "@latestBookmarks": {
+        "description": "Latest bookmark label in the booru drawer"
+    },
+    "noBookmarks": "No bookmarks",
+    "@noBookmarks": {
+        "description": "Showed when no latest bookmarks in the booru drawer"
     }
 }

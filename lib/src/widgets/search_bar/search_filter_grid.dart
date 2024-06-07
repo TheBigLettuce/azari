@@ -116,15 +116,6 @@ class _FilteringSearchWidgetState<T extends CellBase>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SearchBar(
-        leading: Icon(Icons.search),
-        hintText: "Hint",
-        trailing: [CircleAvatar()],
-        padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)),
-      ),
-    );
-
     return switch (filter.filteringMode) {
       FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
       FilteringMode() => AutocompleteSearchBar(

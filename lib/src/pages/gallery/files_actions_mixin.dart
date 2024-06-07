@@ -245,8 +245,6 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             providedApi: providedApi,
             db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
-              icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-              move ? l10n.moveTo : l10n.copyTo,
               (chosen, newDir) {
                 if (chosen == null && newDir == null) {
                   throw "both are empty";
@@ -303,10 +301,11 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                 return Future.value();
               },
               preview: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
+                preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
                 child: CopyMovePreview(
                   files: selected,
-                  size: 52,
+                  icon: move ? Icons.forward_rounded : Icons.copy_rounded,
+                  title: move ? l10n.moveTo : l10n.copyTo,
                 ),
               ),
               joinable: false,

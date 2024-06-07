@@ -36,7 +36,6 @@ import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
@@ -48,7 +47,6 @@ import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/make_tags.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/notifiers/pause_video.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 part "files_actions_mixin.dart";
@@ -110,7 +108,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   late final GridSkeletonState<GalleryFile> state = GridSkeletonState();
 
   final searchTextController = TextEditingController();
-  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -229,7 +226,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
     settingsWatcher.cancel();
 
     searchTextController.dispose();
-    searchFocus.dispose();
     filter.destroy();
 
     api.close();
@@ -291,7 +287,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
         child: GridPopScope(
           searchTextController: searchTextController,
           filter: filter,
-          searchFocus: searchFocus,
           child: Builder(
             builder: (context) => GridFrame<GalleryFile>(
               key: state.gridKey,
@@ -413,7 +408,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 selectionGlue: GlueProvider.generateOf(context)(),
                 source: filter,
                 search: BarSearchWidget.fromFilter(
-                  context,
                   filter,
                   hintText: widget.dirName,
                   textEditingController: searchTextController,
@@ -516,6 +510,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 // ),
               ),
               description: GridDescription(
+                footer: widget.callback?.preview,
                 overrideEmptyWidgetNotice:
                     api.type.isFavorites() ? l10n.someFilesShownNotice : null,
                 actions: widget.callback != null
@@ -555,13 +550,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                               api.parent,
                             ),
                           ],
-                bottomWidget: widget.callback != null
-                    ? CopyMovePreview.hintWidget(
-                        context,
-                        l10n.pickFileNotice,
-                        widget.callback!.icon,
-                      )
-                    : null,
                 keybindsDescription: widget.dirName,
                 gridSeed: state.gridSeed,
               ),

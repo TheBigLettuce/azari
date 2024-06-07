@@ -23,12 +23,11 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/label_switcher_widget.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
@@ -154,21 +153,6 @@ class _MangaPageState extends State<MangaPage> {
     }
   }
 
-  PageDescription _buildPage(
-    BuildContext context,
-    GridFrameState<CompactMangaData> state,
-    int i,
-  ) {
-    return PageDescription(
-      slivers: [
-        _PinnedMangaWidget(
-          glue: GlueProvider.generateOf(context)(),
-          db: pinnedManga,
-        ),
-      ],
-    );
-  }
-
   List<PageLabel> pages(BuildContext context, AppLocalizations l10n) => [
         PageLabel(l10n.mangaReadingLabel),
         PageLabel(
@@ -184,7 +168,6 @@ class _MangaPageState extends State<MangaPage> {
     final child = GridPopScope(
       searchTextController: null,
       filter: null,
-      searchFocus: null,
       rootNavigatorPop: widget.procPop,
       child: GridFrame<CompactMangaData>(
         key: state.gridKey,
@@ -213,10 +196,6 @@ class _MangaPageState extends State<MangaPage> {
         ),
         description: GridDescription(
           actions: const [],
-          pages: PageSwitcherLabel(
-            pages(context, l10n),
-            _buildPage,
-          ),
           showAppBar: false,
           keybindsDescription: l10n.mangaPage,
           gridSeed: state.gridSeed,

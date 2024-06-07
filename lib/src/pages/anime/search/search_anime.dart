@@ -220,7 +220,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
     }),
   );
 
-  final searchFocus = FocusNode();
   late final state = GridSkeletonState<T>();
   late AnimeSafeMode mode = widget.explicit;
 
@@ -269,7 +268,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
     gridSettings.cancel();
 
     state.dispose();
-    searchFocus.dispose();
 
     super.dispose();
   }
@@ -299,7 +297,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
               child: GridPopScope(
                 searchTextController: null,
                 filter: null,
-                searchFocus: searchFocus,
                 child: GridFrame<T>(
                   key: state.gridKey,
                   slivers: [

@@ -6,7 +6,9 @@
 part of "../configuration/grid_fab_type.dart";
 
 class _Fab extends StatelessWidget {
-  const _Fab({super.key});
+  const _Fab(
+      // {super.key}
+      );
 
   @override
   Widget build(BuildContext context) {

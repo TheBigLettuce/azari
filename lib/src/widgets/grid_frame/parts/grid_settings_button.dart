@@ -11,7 +11,7 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
 

@@ -17,7 +17,12 @@ mixin _ChangePageMixin on State<Home> {
 
   String? restoreBookmarksPage;
 
-  void _procPopAll(_AnimatedIconsMixin icons, bool _) {
+  void _procPopAll(
+    ValueNotifier<GallerySubPage> galleryPage,
+    ValueNotifier<MoreSubPage> morePage,
+    _AnimatedIconsMixin icons,
+    bool _,
+  ) {
     final f = mainKey.currentState?.maybePop();
     if (widget.callback != null) {
       f?.then((value) {
@@ -30,7 +35,7 @@ mixin _ChangePageMixin on State<Home> {
     galleryKey.currentState?.maybePop();
     moreKey.currentState?.maybePop().then((value) {
       if (!value) {
-        _procPop(icons, false);
+        _procPop(galleryPage, morePage, icons, false);
       }
     });
     mangaKey.currentState?.maybePop();
@@ -75,21 +80,42 @@ mixin _ChangePageMixin on State<Home> {
     });
   }
 
-  void _procPop(_AnimatedIconsMixin icons, bool pop) {
+  void _procPop(
+    ValueNotifier<GallerySubPage> galleryPage,
+    ValueNotifier<MoreSubPage> morePage,
+    _AnimatedIconsMixin icons,
+    bool pop,
+  ) {
     if (!pop) {
-      _switchPage(
-        icons,
-        kBooruPageRoute,
-        SettingsService.db().current.showAnimeMangaPages,
-      );
+      final showAnimeMangaPages =
+          SettingsService.db().current.showAnimeMangaPages;
+
+      if (currentRoute == kGalleryPageRoute &&
+          galleryPage.value != GallerySubPage.gallery) {
+        galleryPage.value = GallerySubPage.gallery;
+      } else if (currentRoute ==
+              (showAnimeMangaPages ? kGalleryPageRoute : kMangaPageRoute) &&
+          morePage.value != MoreSubPage.more) {
+        morePage.value = MoreSubPage.more;
+      } else {
+        _switchPage(
+          icons,
+          kBooruPageRoute,
+          SettingsService.db().current.showAnimeMangaPages,
+        );
+      }
     }
   }
 
   void _procPopA(
-      ValueNotifier<int> booruPage, _AnimatedIconsMixin icons, bool pop) {
+    ValueNotifier<BooruSubPage> booruPage,
+    _AnimatedIconsMixin icons,
+    bool pop,
+  ) {
     if (!pop) {
-      if (currentRoute == 0 && booruPage.value != 0) {
-        booruPage.value = 0;
+      if (currentRoute == kBooruPageRoute &&
+          booruPage.value != BooruSubPage.booru) {
+        booruPage.value = BooruSubPage.booru;
       } else {
         final showAnimeMangaPages =
             SettingsService.db().current.showAnimeMangaPages;
@@ -136,14 +162,16 @@ mixin _ChangePageMixin on State<Home> {
 
   Widget _currentPage(
     BuildContext context,
-    ValueNotifier<int> booruPage,
+    ValueNotifier<GallerySubPage> galleryPage,
+    ValueNotifier<MoreSubPage> morePage,
+    ValueNotifier<BooruSubPage> booruPage,
     _AnimatedIconsMixin icons,
     bool showAnimeMangaPages,
   ) {
     if (widget.callback != null) {
       return GalleryDirectories(
         nestedCallback: widget.callback,
-        procPop: (pop) => _procPop(icons, pop),
+        procPop: (pop) => _procPop(galleryPage, morePage, icons, pop),
         db: DatabaseConnectionNotifier.of(context),
         l10n: AppLocalizations.of(context)!,
       );
@@ -161,7 +189,7 @@ mixin _ChangePageMixin on State<Home> {
         ),
         SlideEffect(
           delay: const Duration(milliseconds: 50),
-          begin: const Offset(-0.35, 0.15),
+          begin: const Offset(0, 0.25),
           end: Offset.zero,
           duration: 280.ms,
           curve: Easing.standard,
@@ -187,7 +215,8 @@ mixin _ChangePageMixin on State<Home> {
                 kGalleryPageRoute => _NavigatorShell(
                     navigatorKey: galleryKey,
                     child: GalleryDirectories(
-                      procPop: (pop) => _procPop(icons, pop),
+                      procPop: (pop) =>
+                          _procPop(galleryPage, morePage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                       l10n: AppLocalizations.of(context)!,
                     ),
@@ -195,17 +224,21 @@ mixin _ChangePageMixin on State<Home> {
                 kMangaPageRoute => _NavigatorShell(
                     navigatorKey: mangaKey,
                     child: MangaPage(
-                      procPop: (pop) => _procPop(icons, pop),
+                      procPop: (pop) =>
+                          _procPop(galleryPage, morePage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                     ),
                   ),
                 kAnimePageRoute => AnimePage(
-                    procPop: (pop) => _procPop(icons, pop),
+                    procPop: (pop) =>
+                        _procPop(galleryPage, morePage, icons, pop),
                     db: DatabaseConnectionNotifier.of(context),
                   ),
                 kMorePageRoute => _NavigatorShell(
                     navigatorKey: moreKey,
                     child: MorePage(
+                      popScope: (pop) =>
+                          _procPop(galleryPage, morePage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                     ),
                   ),
@@ -223,7 +256,8 @@ mixin _ChangePageMixin on State<Home> {
                 kGalleryPageRoute => _NavigatorShell(
                     navigatorKey: galleryKey,
                     child: GalleryDirectories(
-                      procPop: (pop) => _procPop(icons, pop),
+                      procPop: (pop) =>
+                          _procPop(galleryPage, morePage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                       l10n: AppLocalizations.of(context)!,
                     ),
@@ -231,6 +265,8 @@ mixin _ChangePageMixin on State<Home> {
                 int() => _NavigatorShell(
                     navigatorKey: moreKey,
                     child: MorePage(
+                      popScope: (pop) =>
+                          _procPop(galleryPage, morePage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                     ),
                   ),

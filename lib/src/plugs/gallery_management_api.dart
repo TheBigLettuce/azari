@@ -118,10 +118,11 @@ class DummyFilesManagement implements FilesManagement {
   Future<bool> exists(String filePath) => Future.value(false);
 
   @override
-  Future<void> moveSingle(
-          {required String source,
-          required String rootDir,
-          required String targetDir}) =>
+  Future<void> moveSingle({
+    required String source,
+    required String rootDir,
+    required String targetDir,
+  }) =>
       Future.value();
 
   @override

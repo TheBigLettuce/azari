@@ -3,37 +3,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
-
-class SelectedBooruPage extends InheritedNotifier<ValueNotifier<int>> {
-  const SelectedBooruPage({
-    required ValueNotifier<int> notifier,
-    required super.child,
-  }) : super(notifier: notifier);
-
-  static int of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<SelectedBooruPage>();
-
-    return widget!.notifier!.value;
-  }
-
-  static void selectOf(BuildContext context, int page) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<SelectedBooruPage>();
-
-    widget!.notifier!.value = page;
-  }
-}
 
 class HomeSkeleton extends StatelessWidget {
   const HomeSkeleton(
@@ -43,13 +24,10 @@ class HomeSkeleton extends StatelessWidget {
     required this.extendBody,
     required this.navBar,
     required this.noNavBar,
-    required this.selectedBooru,
   });
   final SkeletonState state;
   final Widget Function(BuildContext) f;
   final bool extendBody;
-
-  final Booru selectedBooru;
 
   final Widget navBar;
   final bool noNavBar;
@@ -71,98 +49,8 @@ class HomeSkeleton extends StatelessWidget {
         drawerEnableOpenDragGesture: false,
         bottomNavigationBar: navBar,
         resizeToAvoidBottomInset: false,
-        drawer: Builder(
-          builder: (context) => NavigationDrawer(
-            onDestinationSelected: (value) {
-              SelectedBooruPage.selectOf(context, value);
-              Scaffold.of(context).closeDrawer();
-            },
-            selectedIndex: SelectedBooruPage.of(context),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-                child: Text(
-                  "Booru",
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-              NavigationDrawerDestination(
-                selectedIcon: const Icon(Icons.photo_rounded),
-                icon: const Icon(Icons.photo_outlined),
-                label: Text(selectedBooru.string),
-              ),
-              const NavigationDrawerDestination(
-                selectedIcon: Icon(Icons.favorite_rounded),
-                icon: Icon(Icons.favorite_outline_rounded),
-                label: Text("Favorites"),
-              ),
-              const NavigationDrawerDestination(
-                selectedIcon: Icon(Icons.bookmarks_rounded),
-                icon: Icon(Icons.bookmarks_outlined),
-                label: Text("Bookmarks"),
-              ),
-              const Padding(
-                padding:
-                    EdgeInsets.only(left: 28, right: 28, top: 16, bottom: 10),
-                child: Divider(),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 16, 10),
-                child: Text(
-                  "Latest bookmarks",
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-              ...DatabaseConnectionNotifier.of(context)
-                  .gridBookmarks
-                  .firstNumber(5)
-                  .map((e) {
-                return SizedBox(
-                  height: 56,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push<void>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return BooruRestoredPage(
-                                booru: e.booru,
-                                tags: e.tags,
-                                name: e.name,
-                                wrapScaffold: true,
-                                saveSelectedPage: (_) {},
-                                db: DatabaseConnectionNotifier.of(context),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                      customBorder: const StadiumBorder(),
-                      child: Row(
-                        children: [
-                          const Padding(
-                              padding: EdgeInsets.only(left: 28 - 16)),
-                          Icon(
-                            Icons.bookmark_outline_rounded,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const Padding(padding: EdgeInsets.only(right: 12)),
-                          Text(
-                            e.tags,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
+        drawer: _Drawer(
+          db: DatabaseConnectionNotifier.of(context),
         ),
         body: GestureDeadZones(
           right: true,
@@ -254,6 +142,159 @@ class HomeSkeleton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Drawer extends StatefulWidget {
+  const _Drawer({
+    // super.key,
+    required this.db,
+  });
+
+  final DbConn db;
+
+  @override
+  State<_Drawer> createState() => __DrawerState();
+}
+
+class __DrawerState extends State<_Drawer> {
+  GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
+  late List<GridBookmark> bookmarks = gridBookmarks.firstNumber(5);
+  late final StreamSubscription<void> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = gridBookmarks.watch(
+      (_) {
+        setState(() {
+          bookmarks = gridBookmarks.firstNumber(5);
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  final settings = SettingsService.db().current;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final selectedBooruPage = BooruSubPage.of(context);
+
+    return Builder(
+      builder: (context) => NavigationDrawer(
+        onDestinationSelected: (value) {
+          BooruSubPage.selectOf(context, BooruSubPage.fromIdx(value));
+          Scaffold.of(context).closeDrawer();
+        },
+        selectedIndex: selectedBooruPage.index,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+            child: Text(
+              l10n.booruLabel,
+              style: theme.textTheme.titleSmall,
+            ),
+          ),
+          ...BooruSubPage.values.map(
+            (e) => NavigationDrawerDestination(
+              selectedIcon: Icon(e.selectedIcon),
+              icon: Icon(e.icon),
+              label: Text(
+                e == BooruSubPage.booru
+                    ? settings.selectedBooru.string
+                    : e.translatedString(l10n),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(left: 28, right: 28, top: 16, bottom: 10),
+            child: Divider(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 16, 10),
+            child: Text(
+              l10n.latestBookmarks,
+              style: theme.textTheme.titleSmall,
+            ),
+          ),
+          if (bookmarks.isEmpty)
+            SizedBox(
+              height: 56,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 12),
+                child: Row(
+                  children: [
+                    const Padding(padding: EdgeInsets.only(left: 28 - 16)),
+                    Text(
+                      l10n.noBookmarks,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...bookmarks.map((e) {
+              return SizedBox(
+                height: 56,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 12),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return BooruRestoredPage(
+                              booru: e.booru,
+                              tags: e.tags,
+                              name: e.name,
+                              wrapScaffold: true,
+                              saveSelectedPage: (_) {},
+                              db: widget.db,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                    customBorder: const StadiumBorder(),
+                    child: Row(
+                      children: [
+                        const Padding(padding: EdgeInsets.only(left: 28 - 16)),
+                        Icon(
+                          Icons.bookmark_outline_rounded,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const Padding(padding: EdgeInsets.only(right: 12)),
+                        Text(
+                          e.tags,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+        ],
       ),
     );
   }

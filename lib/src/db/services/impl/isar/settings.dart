@@ -18,7 +18,9 @@ class IsarSettingsService implements SettingsService {
   /// Calls [onError] in case of any error and resolves to false.
   @override
   Future<bool> chooseDirectory(
-      void Function(String) onError, AppLocalizations l10n) async {
+    void Function(String) onError,
+    AppLocalizations l10n,
+  ) async {
     late final SettingsPath resp;
 
     try {

@@ -42,9 +42,7 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
   Key uniqueKey() => ValueKey((postId, booru));
 
   @override
-  String alias(bool isList) {
-    return "$postId ${booru.string}";
-  }
+  String alias(bool isList) => "$postId";
 
   @override
   CellStaticData description() => const CellStaticData();

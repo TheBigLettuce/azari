@@ -10,7 +10,8 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/more/blacklisted_page.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard.dart";
 import "package:gallery/src/pages/more/downloads.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
@@ -21,9 +22,11 @@ class MorePage extends StatelessWidget {
   const MorePage({
     super.key,
     required this.db,
+    required this.popScope,
   });
 
   final DbConn db;
+  final void Function(bool) popScope;
 
   @override
   Widget build(BuildContext context) {
@@ -37,167 +40,141 @@ class MorePage extends StatelessWidget {
     final timeNow = DateTime.now();
     final emoji = timeNow.hour > 20 || timeNow.hour <= 6 ? "🌙" : "☀️";
 
-    return Stack(
-      children: [
-        Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            bottom: 12,
-            top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.filled(
-                    icon: const Icon(Icons.dashboard_outlined),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) {
-                            return Dashboard(
-                              db: DatabaseConnectionNotifier.of(context)
-                                  .localTags,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  const Padding(padding: EdgeInsets.only(left: 8)),
-                  IconButton.filled(
-                    icon: const Icon(Icons.download_outlined),
-                    onPressed: () {
-                      final g = GlueProvider.generateOf(context);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) {
-                            return Downloads(
-                              generateGlue: g,
-                              downloadManager: DownloadManager.of(context),
-                              db: db,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  const Padding(padding: EdgeInsets.only(left: 8)),
-                  IconButton.filled(
-                    icon: const Icon(Icons.hide_image_outlined),
-                    onPressed: () {
-                      final g = GlueProvider.generateOf(context);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => BlacklistedPage(
-                            generateGlue: g,
-                            db: db,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const Padding(padding: EdgeInsets.only(left: 8)),
-                  IconButton.filled(
-                    icon: const Icon(Icons.settings_outlined),
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) {
-                            return const SettingsWidget();
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
+    return switch (MoreSubPage.of(context)) {
+      MoreSubPage.more => Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                bottom: 12,
+                top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
               ),
-              const Padding(padding: EdgeInsets.only(top: 80)),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  "${l10n.date(timeNow)} $emoji",
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.9),
-                  ),
-                ),
-              ),
-              const Padding(padding: EdgeInsets.only(top: 40)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Center(
-                      child: TimeSpentWidget(
-                        stream: stream,
-                        initalDuration: time,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton.filled(
+                        icon: const Icon(Icons.download_outlined),
+                        onPressed: () {
+                          final g = GlueProvider.generateOf(context);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (context) {
+                                return Downloads(
+                                  generateGlue: g,
+                                  downloadManager: DownloadManager.of(context),
+                                  db: db,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      const Padding(padding: EdgeInsets.only(left: 8)),
+                      IconButton.filled(
+                        icon: const Icon(Icons.settings_outlined),
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) {
+                                return const SettingsWidget();
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 80)),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      "${l10n.date(timeNow)} $emoji",
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.9),
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            StatisticsDailyService.db()
-                                .current
-                                .swipedBoth
-                                .toString(),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: color,
-                            ),
+                  const Padding(padding: EdgeInsets.only(top: 40)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: TimeSpentWidget(
+                            stream: stream,
+                            initalDuration: time,
                           ),
-                          Text(
-                            l10n.cardPicturesSeenToday,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: color.withOpacity(0.7),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                StatisticsDailyService.db()
+                                    .current
+                                    .swipedBoth
+                                    .toString(),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: color,
+                                ),
+                              ),
+                              Text(
+                                l10n.cardPicturesSeenToday,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: color.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.rotate(
+                    angle: 0.4363323,
+                    child: Icon(
+                      const IconData(0x963F),
+                      size: 78,
+                      color: theme.colorScheme.onSurface.withOpacity(0.1),
+                      applyTextScaling: true,
+                    ),
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 12)),
+                  Text(
+                    azariVersion,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.05),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Transform.rotate(
-                angle: 0.4363323,
-                child: Icon(
-                  const IconData(0x963F),
-                  size: 78,
-                  color: theme.colorScheme.onSurface.withOpacity(0.1),
-                  applyTextScaling: true,
-                ),
-              ),
-              const Padding(padding: EdgeInsets.only(top: 12)),
-              Text(
-                azariVersion,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.05),
-                ),
-              ),
-            ],
-          ),
+      MoreSubPage.dashboard => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          rootNavigatorPop: popScope,
+          child: Dashboard(db: db.localTags),
         ),
-      ],
-    );
+    };
   }
 }
 

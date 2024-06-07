@@ -9,29 +9,22 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/pages/more/blacklisted_posts.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class BlacklistedPage extends StatefulWidget {
   const BlacklistedPage({
     super.key,
-    required this.generateGlue,
     required this.db,
   });
-
-  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
 
   final DbConn db;
 
@@ -48,7 +41,6 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;
   final searchTextController = TextEditingController();
-  final searchFocus = FocusNode();
 
   final gridConfiguration = GridSettingsData.noPersist(
     hideName: false,
@@ -79,21 +71,17 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   void dispose() {
     state.dispose();
     searchTextController.dispose();
-    searchFocus.dispose();
 
     filter.destroy();
 
     super.dispose();
   }
 
-  bool hideBlacklistedImages = true;
-
   @override
   Widget build(BuildContext context) {
     return GridConfiguration(
       watch: gridConfiguration.watch,
       child: WrapGridPage(
-        provided: widget.generateGlue,
         child: GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
           slivers: [
@@ -104,12 +92,13 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             ),
           ],
           functionality: GridFunctionality(
-            registerNotifiers: (child) => HideBlacklistedImagesNotifier(
-              hiding: hideBlacklistedImages,
-              child: child,
-            ),
-            search: BarSearchWidget(
-              onChange: (str) {},
+            search: PageNameSearchWidget(
+              leading: IconButton(
+                onPressed: () {
+                  GallerySubPage.selectOf(context, GallerySubPage.gallery);
+                },
+                icon: const Icon(Icons.arrow_back),
+              ),
               trailingItems: [
                 IconButton(
                   onPressed: blacklistedDirectory.backingStorage.clear,
@@ -117,47 +106,10 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                 ),
               ],
             ),
-
-            // OverrideGridSearchWidget(
-            //   SearchAndFocus(
-            //     FilteringSearchWidget(
-            //       hint: AppLocalizations.of(context)!.blacklistedPage,
-            //       filter: filter,
-            //       textController: searchTextController,
-            //       localTagDictionary: widget.db.localTagDictionary,
-            //       focusNode: searchFocus,
-            //     ),
-            //     searchFocus,
-            //   ),
-            // ),
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
           description: GridDescription(
-            pages: PageSwitcherIcons(
-              const [PageIcon(Icons.image)],
-              (context, state, i) => PageDescription(
-                appIcons: [
-                  IconButton(
-                    onPressed: () {
-                      hideBlacklistedImages = !hideBlacklistedImages;
-
-                      setState(() {});
-                    },
-                    icon: hideBlacklistedImages
-                        ? const Icon(Icons.image_rounded)
-                        : const Icon(Icons.hide_image_rounded),
-                  ),
-                ],
-                slivers: [
-                  BlacklistedPostsPage(
-                    generateGlue: widget.generateGlue,
-                    db: widget.db.hiddenBooruPost,
-                  ),
-                ],
-              ),
-              overrideHomeIcon: const Icon(Icons.folder),
-            ),
             actions: [
               GridAction(
                 Icons.restore_page,
@@ -169,31 +121,12 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                 true,
               ),
             ],
-            keybindsDescription: AppLocalizations.of(context)!.blacklistedPage,
+            keybindsDescription:
+                AppLocalizations.of(context)!.blacklistedFoldersPage,
             gridSeed: state.gridSeed,
           ),
         ),
       ),
     );
   }
-}
-
-class HideBlacklistedImagesNotifier extends InheritedWidget {
-  const HideBlacklistedImagesNotifier({
-    super.key,
-    required this.hiding,
-    required super.child,
-  });
-  final bool hiding;
-
-  static bool of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<HideBlacklistedImagesNotifier>();
-
-    return widget!.hiding;
-  }
-
-  @override
-  bool updateShouldNotify(HideBlacklistedImagesNotifier oldWidget) =>
-      hiding != oldWidget.hiding;
 }

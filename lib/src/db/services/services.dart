@@ -378,7 +378,7 @@ class _TagManagerAnchor extends InheritedWidget {
       tagManager != oldWidget.tagManager;
 }
 
-abstract class GridBookmark {
+abstract class GridBookmark implements CellBase {
   const GridBookmark({
     required this.tags,
     required this.booru,
@@ -402,6 +402,15 @@ abstract class GridBookmark {
     Booru? booru,
     DateTime? time,
   });
+
+  @override
+  String alias(bool long) => tags;
+
+  @override
+  Key uniqueKey() => ValueKey(name);
+
+  @override
+  CellStaticData description() => const CellStaticData();
 
   @override
   String toString() => "GridBookmarkBase: $name $time";

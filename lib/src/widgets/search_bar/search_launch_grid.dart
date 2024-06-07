@@ -175,7 +175,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                   future: previousSearch!.$1,
                   builder: (context, snapshot) {
                     return !snapshot.hasData
-                        ? Center(
+                        ? const Center(
                             child: Padding(
                               padding: EdgeInsets.only(top: 40),
                               child: SizedBox(
@@ -189,7 +189,7 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                             children: snapshot.data!
                                 .map(
                                   (e) => ListTile(
-                                    leading: Icon(Icons.tag_outlined),
+                                    leading: const Icon(Icons.tag_outlined),
                                     title: Text(e.tag),
                                     onTap: () {
                                       final tags = List<String>.from(
@@ -233,7 +233,6 @@ class SearchLaunchGrid<T extends CellBase> {
   }
 
   final searchController = SearchController();
-  final FocusNode searchFocus = FocusNode();
 
   final SearchLaunchGridData _state;
 
@@ -241,7 +240,6 @@ class SearchLaunchGrid<T extends CellBase> {
 
   void dispose() {
     searchController.dispose();
-    searchFocus.dispose();
   }
 
   String _getTags() => tags;

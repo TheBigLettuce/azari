@@ -8,15 +8,15 @@ import "package:gallery/src/plugs/gallery.dart";
 
 class CallbackDescriptionNested {
   const CallbackDescriptionNested(
-    this.description,
     this.c, {
     this.returnBack = false,
-    required this.icon,
+    required this.preview,
   });
+
   final void Function(GalleryFile chosen) c;
-  final String description;
-  final IconData icon;
   final bool returnBack;
+
+  final PreferredSizeWidget preview;
 
   void call(GalleryFile chosen) {
     c(chosen);

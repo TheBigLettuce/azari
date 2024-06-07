@@ -11,9 +11,7 @@ class _AppBar extends StatelessWidget {
     required this.searchWidget,
     required this.pageName,
     required this.searchFocus,
-    required this.page,
     required this.description,
-    required this.atHomePage,
     required this.gridFunctionality,
   });
 
@@ -21,9 +19,7 @@ class _AppBar extends StatelessWidget {
   final PreferredSizeWidget? bottomWidget;
   final GridSearchWidget searchWidget;
   final String pageName;
-  final PageDescription? page;
   final GridDescription description;
-  final bool atHomePage;
   final GridFunctionality gridFunctionality;
 
   @override
@@ -32,20 +28,6 @@ class _AppBar extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final search = searchWidget;
 
-    final pageSettingsButton = page?.settingsButton;
-
-    final List<Widget>? pageActions = page != null
-        ? [
-            ...page!.appIcons,
-            if (pageSettingsButton != null) pageSettingsButton,
-          ]
-        : null;
-
-    // if (!atHomePage && page?.search == null) {
-    //   return description.pages!.switcherWidget(context, state);
-    // } else if (page?.search != null) {
-    //   return page!.search!.search;
-    // }
     final backButton = gridFunctionality.backButton;
 
     final Widget? b = switch (backButton) {
@@ -175,8 +157,12 @@ class _AppBar extends StatelessWidget {
       PageNameSearchWidget() => SliverAppBar.large(
           backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
           title: Text(pageName),
-          leading: search.leading,
-          actions: search.trailingItems,
+          leading: search.leading ?? b,
+          actions: [
+            ...?search.trailingItems,
+            if (gridFunctionality.settingsButton != null)
+              gridFunctionality.settingsButton!,
+          ],
           automaticallyImplyLeading: false,
           bottom: bottomWidget,
         ),
@@ -202,7 +188,6 @@ class _AppBar extends StatelessWidget {
                       onChanged: search.onChange,
                       focusNode: focusNode,
                       controller: textEditingController,
-                      // elevation: const WidgetStatePropertyAll(0),
                       onSubmitted: (_) => onFieldSubmitted(),
                       leading: search.leading ??
                           b ??
@@ -210,11 +195,6 @@ class _AppBar extends StatelessWidget {
                       hintText: search.hintText ?? l10n.searchHint,
                       trailing: [
                         ...?search.trailingItems,
-                        // if (search.enableCount)
-                        //   _Badge(
-                        //     source: gridFunctionality.source.backingStorage,
-                        //     child: SizedBox.shrink(),
-                        //   ),
                         if (search.filterWidget != null) search.filterWidget!,
                         if (gridFunctionality.settingsButton != null)
                           gridFunctionality.settingsButton!,
@@ -229,17 +209,11 @@ class _AppBar extends StatelessWidget {
                     focusNode: searchFocus,
                     onTapOutside: (_) => searchFocus.unfocus(),
                     controller: search.textEditingController,
-                    // elevation: const WidgetStatePropertyAll(0),
                     leading:
                         search.leading ?? b ?? const Icon(Icons.search_rounded),
                     hintText: search.hintText ?? l10n.searchHint,
                     trailing: [
                       ...?search.trailingItems,
-                      // if (search.enableCount)
-                      //   _Badge(
-                      //     source: gridFunctionality.source.backingStorage,
-                      //     child: SizedBox.shrink(),
-                      //   ),
                       if (search.filterWidget != null) search.filterWidget!,
                       if (gridFunctionality.settingsButton != null)
                         gridFunctionality.settingsButton!,
@@ -255,53 +229,14 @@ class _AppBar extends StatelessWidget {
           floating: true,
           scrolledUnderElevation: 0,
           automaticallyImplyLeading: false,
-          bottom: bottomWidget,
+          bottom: bottomWidget ??
+              const PreferredSize(
+                preferredSize: Size.zero,
+                child: SizedBox.shrink(),
+              ),
         ),
       RawSearchWidget() =>
         search.sliver(gridFunctionality.settingsButton, bottomWidget),
     };
   }
 }
-
-// class _Badge extends StatefulWidget {
-//   const _Badge({super.key, required this.source, required this.child});
-
-//   final ReadOnlyStorage<dynamic, dynamic> source;
-//   final Widget child;
-
-//   @override
-//   State<_Badge> createState() => __BadgeState();
-// }
-
-// class __BadgeState extends State<_Badge> {
-//   late final StreamSubscription<void> subsc;
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     subsc = widget.source.watch((_) {
-//       setState(() {});
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     subsc.cancel();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     return Badge.count(
-//       largeSize: 20,
-//       padding: const EdgeInsets.symmetric(horizontal: 6),
-//       backgroundColor: theme.colorScheme.surfaceContainer.withOpacity(0),
-//       textColor: theme.colorScheme.onSurface.withOpacity(0.6),
-//       count: widget.source.count,
-//     );
-//   }
-// }

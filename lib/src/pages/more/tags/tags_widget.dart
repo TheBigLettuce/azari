@@ -191,7 +191,10 @@ class SingleTagWidget extends StatelessWidget {
         ),
       ],
       child: FilledButton.tonalIcon(
-        icon: const Icon(Icons.tag_rounded),
+        icon: Icon(
+          Icons.tag_rounded,
+          color: redBackground ? Colors.black.withOpacity(0.8) : null,
+        ),
         style: ButtonStyle(
           visualDensity: VisualDensity.comfortable,
           backgroundColor: WidgetStatePropertyAll(

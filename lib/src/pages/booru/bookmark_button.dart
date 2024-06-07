@@ -9,15 +9,24 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:gallery/src/widgets/time_label.dart";
 
 class BookmarkPage extends StatefulWidget {
@@ -26,14 +35,14 @@ class BookmarkPage extends StatefulWidget {
     required this.saveSelectedPage,
     required this.generateGlue,
     required this.pagingRegistry,
-    required this.scrollUp,
+    // required this.scrollUp,
     required this.db,
   });
 
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
-  final void Function() scrollUp;
+  // final void Function() scrollUp;
 
   final DbConn db;
 
@@ -46,19 +55,33 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> settingsWatcher;
-  final List<GridBookmark> gridStates = [];
 
   SettingsData settings = SettingsService.db().current;
+
+  final state = GridSkeletonState<GridBookmark>();
+
+  final gridSettings = GridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.list,
+  );
 
   final m = <String, List<Post>>{};
 
   bool dirty = false;
   bool inInner = false;
 
+  late final source = GenericListSource<GridBookmark>(
+    () => Future.value(gridStateBooru.all),
+  );
+
   @override
   void dispose() {
+    gridSettings.cancel();
     watcher.cancel();
     settingsWatcher.cancel();
+    state.dispose();
 
     super.dispose();
   }
@@ -93,11 +116,10 @@ class _BookmarkPageState extends State<BookmarkPage> {
       };
 
   Future<void> _updateDirectly() async {
-    gridStates.clear();
-    gridStates.addAll(gridStateBooru.all);
+    await source.clearRefresh();
 
     if (m.isEmpty) {
-      for (final e in gridStates) {
+      for (final e in source.backingStorage) {
         final grid = widget.db.secondaryGrid(e.booru, e.name, null);
         final List<Post> p = getSingle(grid);
 
@@ -120,7 +142,11 @@ class _BookmarkPageState extends State<BookmarkPage> {
     inInner = false;
 
     if (dirty) {
-      widget.scrollUp();
+      state.gridKey.currentState?.controller?.animateTo(
+        0,
+        duration: const Duration(milliseconds: 180),
+        curve: Easing.standardAccelerate,
+      );
       _updateDirectly();
     }
   }
@@ -146,6 +172,95 @@ class _BookmarkPageState extends State<BookmarkPage> {
     ).whenComplete(_procUpdate);
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return GridConfiguration(
+      watch: gridSettings.watch,
+      child: WrapGridPage(
+        provided: widget.generateGlue,
+        child: Builder(
+          builder: (context) => GridFrame<GridBookmark>(
+            key: state.gridKey,
+            slivers: [
+              _BookmarkBody(
+                source: source.backingStorage,
+                m: m,
+                db: widget.db,
+                launchGrid: launchGrid,
+                getSingle: getSingle,
+                progress: source.progress,
+              ),
+            ],
+            functionality: GridFunctionality(
+              source: source,
+              search: PageNameSearchWidget(
+                leading: IconButton(
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                  icon: const Icon(Icons.menu_rounded),
+                ),
+              ),
+              selectionGlue: GlueProvider.generateOf(context)(),
+            ),
+            description: GridDescription(
+              actions: [],
+              gridSeed: state.gridSeed,
+              keybindsDescription: l10n.bookmarksPageName,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookmarkBody extends StatefulWidget {
+  const _BookmarkBody({
+    // super.key,
+    required this.source,
+    required this.m,
+    required this.db,
+    required this.launchGrid,
+    required this.getSingle,
+    required this.progress,
+  });
+
+  final ReadOnlyStorage<int, GridBookmark> source;
+  final Map<String, List<Post>> m;
+
+  final void Function(BuildContext context, GridBookmark e) launchGrid;
+
+  final List<Post> Function(SecondaryGridService grid) getSingle;
+  final RefreshingProgress progress;
+
+  final DbConn db;
+
+  @override
+  State<_BookmarkBody> createState() => __BookmarkBodyState();
+}
+
+class __BookmarkBodyState extends State<_BookmarkBody> {
+  late final StreamSubscription<void> subsc;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subsc = widget.source.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subsc.cancel();
+
+    super.dispose();
+  }
+
   List<Widget> makeList(BuildContext context, ThemeData theme) {
     final timeNow = DateTime.now();
     final list = <Widget>[];
@@ -155,7 +270,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     (int, int, int)? time;
 
-    for (final e in gridStates) {
+    for (final e in widget.source) {
       final addTime =
           time == null || time != (e.time.day, e.time.month, e.time.year);
       if (addTime) {
@@ -164,12 +279,12 @@ class _BookmarkPageState extends State<BookmarkPage> {
         list.add(TimeLabel(time, titleStyle, timeNow));
       }
 
-      List<Post>? posts = m[e.name];
+      List<Post>? posts = widget.m[e.name];
       if (posts == null) {
         final grid = widget.db.secondaryGrid(e.booru, e.name, null);
-        posts = getSingle(grid);
+        posts = widget.getSingle(grid);
 
-        m[e.name] = posts;
+        widget.m[e.name] = posts;
 
         // TODO: do something about this
         grid.close();
@@ -179,7 +294,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
         Padding(
           padding: EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
           child: _BookmarkListTile(
-            onPressed: launchGrid,
+            onPressed: widget.launchGrid,
             key: ValueKey(e.name),
             state: e,
             title: e.tags,
@@ -196,21 +311,11 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final list = makeList(context, theme);
-
-    return Padding(
-      padding: EdgeInsets.only(
-          // bottom: GridBottomPaddingProvider.of(context, true),
-          ),
-      child: gridStates.isEmpty
-          ? EmptyWidget(
-              gridSeed: 0,
-            )
-          : ListView(
-              children: list,
-            ),
+    return EmptyWidgetOrContent(
+      count: widget.source.count,
+      progress: widget.progress,
+      buildEmpty: null,
+      child: SliverList.list(children: makeList(context, Theme.of(context))),
     );
   }
 }

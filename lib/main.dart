@@ -17,6 +17,7 @@ import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:gallery/src/widgets/restart_widget.dart";
 import "package:gallery/welcome_pages.dart";
@@ -29,7 +30,8 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = MiscSettingsService.db().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
-      ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder(),
+      ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder()
+      ..[TargetPlatform.linux] = const FadeSidewaysPageTransitionBuilder(),
   );
 
   const menuTheme = MenuThemeData(
@@ -167,10 +169,19 @@ Future<void> mainPickfile() async {
             builder: (context) {
               return Home(
                 callback: CallbackDescriptionNested(
-                    icon: Icons.file_open_rounded,
-                    AppLocalizations.of(context)!.pickFileNotice, (chosen) {
-                  const AndroidApiFunctions().returnUri(chosen.originalUri);
-                }),
+                  (chosen) {
+                    const AndroidApiFunctions().returnUri(chosen.originalUri);
+                  },
+                  preview: PreferredSize(
+                    preferredSize:
+                        Size.fromHeight(CopyMovePreview.size.toDouble() - 52),
+                    child: CopyMovePreview(
+                      files: null,
+                      title: AppLocalizations.of(context)!.pickFileNotice,
+                      icon: Icons.file_open_rounded,
+                    ),
+                  ),
+                ),
               );
             },
           ),

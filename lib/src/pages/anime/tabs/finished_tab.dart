@@ -90,7 +90,6 @@ class __FinishedTabState extends State<_FinishedTab> {
       child: GridPopScope(
         searchTextController: null,
         filter: filter,
-        searchFocus: null,
         rootNavigatorPop: widget.procPop,
         child: GridFrame<WatchedAnimeEntryData>(
           key: state.gridKey,

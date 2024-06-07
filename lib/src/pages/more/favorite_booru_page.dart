@@ -24,6 +24,7 @@ import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
@@ -66,25 +67,17 @@ class FavoriteBooruPage extends StatelessWidget {
           gridSeed: state.state.gridSeed,
         ),
       ],
-      // overrideController: conroller,
       functionality: GridFunctionality(
-        search: asSliver
-            ? const PageNameSearchWidget()
-            : BarSearchWidget(
-                onChange: (str) {},
-              ),
-        //  OverrideGridSearchWidget(
-        //     SearchAndFocus(
-        //       FilteringSearchWidget(
-        //         hint: null,
-        //         filter: state.filter,
-        //         textController: state.searchTextController,
-        //         localTagDictionary: db.localTagDictionary,
-        //         focusNode: state.searchFocus,
-        //       ),
-        //       state.searchFocus,
-        //     ),
-        //   ),
+        search: PageNameSearchWidget(
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: const Icon(Icons.menu_rounded),
+          ),
+          trailingItems: [ChainedFilterIcon(filter: state.filter)],
+        ),
+        settingsButton: GridSettingsButton.fromWatchable(state.gridSettings),
         registerNotifiers: (child) => OnBooruTagPressed(
           onPressed: _onPressed,
           child: child,
@@ -166,7 +159,6 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
 
-  final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
 
   Iterable<FavoritePostData> _collector(
@@ -220,7 +212,6 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     settingsWatcher.cancel();
     filter.destroy();
 
-    searchFocus.dispose();
     searchTextController.dispose();
 
     state.dispose();

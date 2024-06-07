@@ -6,6 +6,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
@@ -43,6 +44,12 @@ class _DashboardState extends State<Dashboard> {
       state,
       appBar: AppBar(
         title: Text(l10n.dashboardPage),
+        leading: IconButton(
+          onPressed: () {
+            MoreSubPage.selectOf(context, MoreSubPage.more);
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
       child: SingleChildScrollView(
         child: Padding(

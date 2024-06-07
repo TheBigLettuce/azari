@@ -3,38 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
-
 import "package:flutter/material.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart";
-
-typedef WatchFire<T> = StreamSubscription<T> Function(
-  void Function(T), [
-  bool fire,
-]);
-
-class PageIcon {
-  const PageIcon(
-    this.icon, {
-    this.watchCount,
-  });
-
-  final IconData icon;
-  final WatchFire<int>? watchCount;
-}
-
-class PageToaggable {
-  const PageToaggable(
-    this.icon, {
-    this.active = true,
-  });
-
-  final IconData icon;
-  final bool active;
-}
 
 class PageLabel {
   const PageLabel(
@@ -44,35 +14,6 @@ class PageLabel {
 
   final String label;
   final int count;
-}
-
-sealed class PageSwitcherInterface<T extends CellBase> {
-  PageDescription Function(BuildContext context, GridFrameState<T> state, int i)
-      get buildPage;
-
-  Widget switcherWidget(BuildContext context, GridFrameState<T> state);
-}
-
-class PageSwitcherLabel<T extends CellBase>
-    implements PageSwitcherInterface<T> {
-  const PageSwitcherLabel(this.pages, this.buildPage);
-
-  final List<PageLabel> pages;
-
-  @override
-  final PageDescription Function(
-    BuildContext context,
-    GridFrameState<T> state,
-    int i,
-  ) buildPage;
-
-  @override
-  Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
-      LabelSwitcherWidget<T>(
-        pages: pages,
-        currentPage: state.currentPageF,
-        switchPage: state.switchPage,
-      );
 }
 
 class LabelSwitcherWidget<T extends CellBase> extends StatefulWidget {
@@ -242,33 +183,4 @@ class _Label extends StatelessWidget {
             ),
           );
   }
-}
-
-class PageSwitcherIcons<T extends CellBase>
-    implements PageSwitcherInterface<T> {
-  const PageSwitcherIcons(
-    this.pages,
-    this.buildPage, {
-    this.overrideHomeIcon,
-  });
-
-  final Icon? overrideHomeIcon;
-  final List<PageIcon> pages;
-
-  @override
-  final PageDescription Function(
-    BuildContext context,
-    GridFrameState<T> state,
-    int i,
-  ) buildPage;
-
-  @override
-  Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
-      PageSwitchingIconsWidget(
-        controller: GridScrollNotifier.of(context),
-        selection: state.selection,
-        padding: const EdgeInsets.only(top: 8, bottom: 8),
-        state: state,
-        pageSwitcher: this,
-      );
 }

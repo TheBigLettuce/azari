@@ -193,7 +193,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
       child: GridPopScope(
         searchTextController: null,
         filter: null,
-        searchFocus: null,
         rootNavigatorPop: widget.procPop,
         child: GridFrame<AnimeSearchEntry>(
           key: state.gridKey,

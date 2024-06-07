@@ -63,7 +63,7 @@
     },
     "delete": "Удалить",
     "deleteImageConfirm": "Удалить",
-    "emptyValue": "пусто",
+    "emptyValue": "Пусто",
     "dateModified": "Время модификации",
     "savedTagsCount": "Сохраненные теги",
     "nameTitle": "Название",
@@ -110,7 +110,7 @@
     },
     "backupSuccess": "Сохранено в Папка загрузок/backup",
     "backup": "Бэкап",
-    "blacklistedPage": "Скрытое",
+    "blacklistedFoldersPage": "Скрытые папки",
     "currentTagTitle": "Тег",
     "enterNewTagTitle": "Изменить тег",
     "valueIsEmpty": "Значение пусто",
@@ -249,7 +249,7 @@
         }
     },
     "role": "Роль",
-    "blacklistedPostsPageName": "Скрытые посты",
+    "hiddenPostsPageName": "Скрытые посты",
     "tryAgain": "Повторить",
     "animePicturesLabel": "Изображения",
     "animeLoadPictures": "Загрузить изображения",
@@ -455,5 +455,7 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "latestBookmarks": "Недавние закладки",
+    "noBookmarks": "Нет закладок"
 }

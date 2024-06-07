@@ -14,7 +14,7 @@ import "package:gallery/src/pages/anime/info_base/body/synopsis_background.dart"
 import "package:gallery/src/pages/anime/search/search_anime.dart";
 import "package:gallery/src/pages/manga/body/manga_chapters.dart";
 import "package:gallery/src/pages/manga/body/manga_relations.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/label_switcher_widget.dart";
 
 class MangaInfoBody extends StatefulWidget {
   const MangaInfoBody({

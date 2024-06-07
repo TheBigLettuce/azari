@@ -19,7 +19,6 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class Downloads extends StatefulWidget {
@@ -47,7 +46,6 @@ class _DownloadsState extends State<Downloads> {
   late final state = GridSkeletonState<DownloadHandle>();
 
   final searchTextController = TextEditingController();
-  final searchFocus = FocusNode();
 
   final gridSettings = GridSettingsData.noPersist(
     hideName: false,
@@ -83,7 +81,6 @@ class _DownloadsState extends State<Downloads> {
     gridSettings.cancel();
     filter.destroy();
 
-    searchFocus.dispose();
     searchTextController.dispose();
     state.dispose();
 
@@ -138,8 +135,7 @@ class _DownloadsState extends State<Downloads> {
             ),
           ],
           functionality: GridFunctionality(
-            search: BarSearchWidget(
-              onChange: (str) {},
+            search: PageNameSearchWidget(
               trailingItems: [
                 IconButton(
                   onPressed: downloadManager.clear,
@@ -147,18 +143,6 @@ class _DownloadsState extends State<Downloads> {
                 ),
               ],
             ),
-            // OverrideGridSearchWidget(
-            //   SearchAndFocus(
-            //     FilteringSearchWidget(
-            //       hint: l10n.downloadsPageName,
-            //       filter: filter,
-            //       textController: searchTextController,
-            //       localTagDictionary: widget.db.localTagDictionary,
-            //       focusNode: searchFocus,
-            //     ),
-            //     searchFocus,
-            //   ),
-            // ),
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),

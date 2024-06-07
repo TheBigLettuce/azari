@@ -113,7 +113,6 @@ class __WatchingTabState extends State<_WatchingTab> {
       child: GridPopScope(
         searchTextController: null,
         filter: null,
-        searchFocus: null,
         rootNavigatorPop: widget.procPop,
         child: GridFrame<SavedAnimeEntryData>(
           key: state.gridKey,
@@ -258,16 +257,6 @@ class __WatchingTabState extends State<_WatchingTab> {
     );
   }
 }
-
-// GridSkeleton<AnimeEntryData>(
-//       state,
-//       (context) => ,
-//       canPop: false,
-//       secondarySelectionHide: () {
-//         watchingKey.currentState?.selection.reset();
-//       },
-//       onPop: widget.procPop,
-//     )
 
 class _CurrentlyWatching extends StatefulWidget {
   const _CurrentlyWatching({

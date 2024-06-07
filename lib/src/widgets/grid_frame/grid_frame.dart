@@ -11,7 +11,6 @@ import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
@@ -21,9 +20,6 @@ import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
 import "package:gallery/src/widgets/keybinds/describe_keys.dart";
@@ -44,6 +40,11 @@ part "parts/bottom_widget.dart";
 part "parts/cell_provider.dart";
 part "wrappers/wrap_padding.dart";
 part "wrappers/wrap_selection.dart";
+
+typedef WatchFire<T> = StreamSubscription<T> Function(
+  void Function(T), [
+  bool fire,
+]);
 
 class GridConfiguration extends StatefulWidget {
   const GridConfiguration({
@@ -166,8 +167,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
-    with GridSubpageState<T> {
+class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
   late final ScrollController? controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
   final _animationsKey = GlobalKey<_PlayAnimationsState>();
@@ -193,18 +193,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   ResourceSource<int, T> get source => widget.functionality.source;
 
   late double lastOffset = widget.initalScrollPosition;
-
-  void switchPage(int i) {
-    if (i == currentPage) {
-      return;
-    }
-
-    onSubpageSwitchedGrid(
-      i,
-      selection,
-      controller ?? GridScrollNotifier.of(context),
-    );
-  }
 
   @override
   void initState() {
@@ -248,7 +236,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         if (source.hasNext) {
           lastOffset = controller!.offset;
 
-          if (!source.progress.canLoadMore || atNotHomePage) {
+          if (!source.progress.canLoadMore) {
             return;
           }
 
@@ -269,9 +257,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   }
 
   void _scrollListener() {
-    if (currentPage == 0) {
-      widget.functionality.updateScrollPosition?.call(controller!.offset);
-    }
+    widget.functionality.updateScrollPosition?.call(controller!.offset);
   }
 
   @override
@@ -349,54 +335,13 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             : 0);
   }
 
-  double appBarBottomWidgetSize(PageDescription? page) =>
-      ((page?.search == null && !atHomePage) || widget.description.pages == null
-          ? 0
-          : (40 + 16)) +
-      (page == null ? 4 : 0);
+  double appBarBottomWidgetSize() => 4;
 
-  bool get hideAppBar =>
-      !widget.description.showAppBar || widget.description.pages != null;
+  bool get hideAppBar => !widget.description.showAppBar;
 
   static const double loadingIndicatorSize = 4;
 
-  // List<Widget> _makeActions(
-  //   BuildContext context,
-  //   GridDescription<T> description,
-  // ) {
-  //   final ret = <Widget>[
-  //     if (widget.functionality.settingsButton != null)
-  //       widget.functionality.settingsButton!,
-  //   ];
-
-  //   if (description.menuButtonItems == null) {
-  //     return ret;
-  //   }
-
-  //   return ((!description.inlineMenuButtonItems &&
-  //               description.menuButtonItems!.length > 1)
-  //           ? [
-  //               PopupMenuButton(
-  //                 position: PopupMenuPosition.under,
-  //                 itemBuilder: (context) {
-  //                   return description.menuButtonItems!
-  //                       .map(
-  //                         (e) => PopupMenuItem<void>(
-  //                           enabled: false,
-  //                           child: e,
-  //                         ),
-  //                       )
-  //                       .toList();
-  //                 },
-  //               ),
-  //             ]
-  //           : [
-  //               ...description.menuButtonItems!,
-  //             ]) +
-  //       ret;
-  // }
-
-  List<Widget> bodySlivers(BuildContext context, PageDescription? page) {
+  List<Widget> bodySlivers(BuildContext context) {
     final description = widget.description;
     final functionality = widget.functionality;
 
@@ -404,21 +349,20 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     if (description.showAppBar) {
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
-          : PreferredSize(
-              preferredSize: Size.fromHeight(
-                appBarBottomWidgetSize(page),
-              ),
-              child: _BottomWidget(
-                progress: source.progress,
-                routeChanger: page != null && page.search == null
-                    ? const SizedBox.shrink()
-                    : widget.description.pages?.switcherWidget(context, this),
-                child: Padding(
-                  padding: EdgeInsets.only(top: page == null ? 4 : 0),
-                  child: const SizedBox.shrink(),
-                ),
-              ),
-            );
+          : functionality.search is BarSearchWidget
+              ? null
+              : PreferredSize(
+                  preferredSize: Size.fromHeight(
+                    appBarBottomWidgetSize(),
+                  ),
+                  child: _BottomWidget(
+                    progress: source.progress,
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: SizedBox.shrink(),
+                    ),
+                  ),
+                );
 
       appBar = _AppBar(
         gridFunctionality: widget.functionality,
@@ -427,36 +371,29 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         searchWidget: widget.functionality.search,
         pageName: widget.description.pageName ??
             widget.description.keybindsDescription,
-        page: page,
         description: widget.description,
-        atHomePage: !atNotHomePage,
       );
     }
 
     return [
-      if (!widget.description.showAppBar && widget.description.pages != null)
-        SliverToBoxAdapter(
-          child: widget.description.pages!.switcherWidget(context, this),
-        ),
       if (appBar != null) appBar,
-      if (page != null) ...page.slivers else ...widget.slivers,
-      if (currentPage == 0)
-        _WrapPadding(
-          footer: description.footer,
-          selectionGlue: functionality.selectionGlue,
-          child: null,
-        ),
+      ...widget.slivers,
+      _WrapPadding(
+        footer: description.footer,
+        selectionGlue: functionality.selectionGlue,
+        child: null,
+      ),
     ];
   }
 
-  Widget mainBody(BuildContext context, PageDescription? page) {
+  Widget mainBody(BuildContext context) {
     final m = MediaQuery.of(context);
 
     return MediaQuery(
       data: m.copyWith(
         padding: m.padding +
             EdgeInsets.only(
-              top: appBarBottomWidgetSize(page),
+              top: appBarBottomWidgetSize(),
               bottom: hideAppBar ? loadingIndicatorSize : 0,
             ),
       ),
@@ -468,10 +405,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           child: MediaQuery(
             data: m,
             child: CustomScrollView(
-              key: atHomePage && page != null ? const PageStorageKey(0) : null,
               controller: controller,
               physics: const AlwaysScrollableScrollPhysics(),
-              slivers: bodySlivers(context, page),
+              slivers: bodySlivers(context),
             ),
           ),
         ),
@@ -483,15 +419,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   Widget build(BuildContext context) {
     final functionality = widget.functionality;
     final description = widget.description;
-    final pageSwitcher = description.pages;
-
-    final PageDescription? page = pageSwitcher != null && atNotHomePage
-        ? pageSwitcher.buildPage(context, this, currentPage - 1)
-        : null;
-
-    // final search = functionality.search;
-    // final FocusNode? searchFocus = page?.search?.focus ??
-    // (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
     final gridSettingsWatcher = GridConfiguration.watcherOf(context);
 
@@ -521,7 +448,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                   child: Builder(
                     builder: (context) {
                       Widget child = SliverMainAxisGroup(
-                        slivers: bodySlivers(context, page),
+                        slivers: bodySlivers(context),
                       );
 
                       final r = widget.functionality.registerNotifiers;
@@ -547,7 +474,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         bindings: const {},
         pageName: widget.description.keybindsDescription,
         children: [
-          if (atHomePage && widget.description.pullToRefresh)
+          if (widget.description.pullToRefresh)
             RefreshIndicator(
               onRefresh: () {
                 selection.reset(true);
@@ -559,10 +486,10 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
                 return source.clearRefresh();
               },
-              child: mainBody(context, page),
+              child: mainBody(context),
             )
           else
-            mainBody(context, page),
+            mainBody(context),
           if (description.footer != null)
             Align(
               alignment: Alignment.bottomLeft,
@@ -577,7 +504,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                 },
               ),
             ),
-          if (hideAppBar)
+          if (hideAppBar || widget.functionality.search is BarSearchWidget)
             Align(
               alignment: Alignment.bottomCenter,
               child: Builder(

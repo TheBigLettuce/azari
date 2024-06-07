@@ -18,10 +18,11 @@ import "package:gallery/src/interfaces/logging/logging.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/gallery_directories_actions.dart";
+import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/pages/more/favorite_booru_actions.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
-import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
@@ -29,7 +30,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:local_auth/local_auth.dart";
 
@@ -118,7 +118,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   bool isThumbsLoading = false;
 
-  final searchFocus = FocusNode();
   final searchTextController = TextEditingController();
 
   @override
@@ -188,7 +187,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     settingsWatcher.cancel();
     miscSettingsWatcher.cancel();
     searchTextController.dispose();
-    searchFocus.dispose();
 
     filter.destroy();
 
@@ -355,7 +353,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     return GridPopScope(
       filter: filter,
       rootNavigatorPopCond: widget.nestedCallback != null,
-      searchFocus: searchFocus,
       searchTextController: searchTextController,
       rootNavigatorPop: widget.procPop,
       child: GridFrame<GalleryDirectory>(
@@ -385,7 +382,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             watch: gridSettings.watch,
           ),
           search: BarSearchWidget.fromFilter(
-            context,
             filter,
             textEditingController: searchTextController,
             trailingItems: [
@@ -410,21 +406,19 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     }
                   },
                   icon: const Icon(Icons.create_new_folder_outlined),
+                )
+              else
+                IconButton(
+                  onPressed: () {
+                    GallerySubPage.selectOf(
+                      context,
+                      GallerySubPage.blacklisted,
+                    );
+                  },
+                  icon: const Icon(Icons.folder_off_outlined),
                 ),
             ],
           ),
-          // OverrideGridSearchWidget(
-          //   SearchAndFocus(
-          //     FilteringSearchWidget(
-          //       hint: widget.l10n.directoriesHint,
-          //       filter: filter,
-          //       textController: searchTextController,
-          //       localTagDictionary: widget.db.localTagDictionary,
-          //       focusNode: searchFocus,
-          //     ),
-          //     searchFocus,
-          //   ),
-          // ),
         ),
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null
@@ -479,18 +473,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     widget.l10n,
                   ),
                 ],
-          footer: widget.callback?.preview,
-          bottomWidget: widget.callback != null || widget.nestedCallback != null
-              ? CopyMovePreview.hintWidget(
-                  context,
-                  widget.callback != null
-                      ? widget.callback!.description
-                      : widget.nestedCallback!.description,
-                  widget.callback != null
-                      ? widget.callback!.icon
-                      : widget.nestedCallback!.icon,
-                )
-              : null,
+          footer: widget.callback?.preview ?? widget.nestedCallback?.preview,
           keybindsDescription: widget.l10n.androidGKeybindsDescription,
           gridSeed: state.gridSeed,
         ),
@@ -500,17 +483,39 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   Widget build(BuildContext context) {
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: widget.wrapGridPage
-          ? WrapGridPage(
-              addScaffold: widget.callback != null,
-              child: Builder(
-                builder: child,
-              ),
-            )
-          : child(context),
-    );
+    if (widget.callback != null || widget.nestedCallback != null) {
+      return GridConfiguration(
+        watch: gridSettings.watch,
+        child: widget.wrapGridPage
+            ? WrapGridPage(
+                addScaffold: widget.callback != null,
+                child: Builder(
+                  builder: child,
+                ),
+              )
+            : child(context),
+      );
+    }
+
+    return switch (GallerySubPage.of(context)) {
+      GallerySubPage.gallery => GridConfiguration(
+          watch: gridSettings.watch,
+          child: widget.wrapGridPage
+              ? WrapGridPage(
+                  addScaffold: widget.callback != null,
+                  child: Builder(
+                    builder: child,
+                  ),
+                )
+              : child(context),
+        ),
+      GallerySubPage.blacklisted => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          rootNavigatorPop: widget.procPop,
+          child: BlacklistedPage(db: widget.db),
+        ),
+    };
   }
 }
 
@@ -520,12 +525,10 @@ class GridPopScope extends StatefulWidget {
     this.rootNavigatorPop,
     required this.searchTextController,
     required this.filter,
-    required this.searchFocus,
     required this.child,
     this.rootNavigatorPopCond = false,
   });
 
-  final FocusNode? searchFocus;
   final TextEditingController? searchTextController;
   final void Function(bool)? rootNavigatorPop;
   final bool rootNavigatorPopCond;
@@ -543,9 +546,6 @@ class _GridPopScopeState extends State<GridPopScope> {
   void initState() {
     super.initState();
 
-    widget.searchTextController?.addListener(_listener);
-    widget.searchFocus?.addListener(_listener);
-
     _watcher = widget.filter?.backingStorage.watch((_) {
       setState(() {});
     });
@@ -554,14 +554,8 @@ class _GridPopScopeState extends State<GridPopScope> {
   @override
   void dispose() {
     _watcher?.cancel();
-    widget.searchTextController?.removeListener(_listener);
-    widget.searchFocus?.removeListener(_listener);
 
     super.dispose();
-  }
-
-  void _listener() {
-    setState(() {});
   }
 
   @override
@@ -573,8 +567,6 @@ class _GridPopScopeState extends State<GridPopScope> {
           ? widget.rootNavigatorPopCond
           : false ||
               !glue.isOpen() &&
-                  (widget.searchFocus == null ||
-                      !widget.searchFocus!.hasFocus) &&
                   (widget.searchTextController == null ||
                       widget.searchTextController!.text.isEmpty) &&
                   (widget.filter == null ||
@@ -584,12 +576,6 @@ class _GridPopScopeState extends State<GridPopScope> {
                           widget.filter!.filteringMode ==
                               FilteringMode.noFilter)),
       onPopInvoked: (didPop) {
-        if (widget.searchFocus != null && widget.searchFocus!.hasFocus) {
-          widget.searchFocus!.unfocus();
-
-          return;
-        }
-
         if (glue.isOpen()) {
           glue.updateCount(0);
 

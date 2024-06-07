@@ -13,82 +13,15 @@ class CopyMovePreview extends StatefulWidget {
   const CopyMovePreview({
     super.key,
     required this.files,
-    required this.size,
+    required this.title,
+    required this.icon,
   });
 
-  final List<GalleryFile> files;
-  final double size;
+  final List<GalleryFile>? files;
+  final String title;
+  final IconData icon;
 
-  static PreferredSizeWidget hintWidget(
-    BuildContext context,
-    String title,
-    IconData icon,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(60),
-      child: Padding(
-        padding:
-            const EdgeInsets.only(left: 24, bottom: 12, top: 12, right: 24),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: colorScheme.secondaryContainer.withOpacity(0.25),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        right: 16,
-                        left: 16,
-                        bottom: 4,
-                        top: 4,
-                      ),
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color:
-                              colorScheme.onSecondaryContainer.withOpacity(0.8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const Padding(padding: EdgeInsets.only(right: 8)),
-              DecoratedBox(
-                decoration: ShapeDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.35),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  static const int size = 60 + 52 + 16;
 
   @override
   State<CopyMovePreview> createState() => _CopyMovePreviewState();
@@ -97,8 +30,10 @@ class CopyMovePreview extends StatefulWidget {
 class _CopyMovePreviewState extends State<CopyMovePreview> {
   final key = GlobalKey<ImageViewState>();
 
+  static const _iconsSize = 52;
+
   int calculateWidth(int i) {
-    return widget.size.toInt() + (i * 14);
+    return _iconsSize + (i * 14);
   }
 
   Widget _thumbPadding(
@@ -110,8 +45,8 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
     return Padding(
       padding: EdgeInsets.only(left: id * 14),
       child: SizedBox(
-        height: widget.size,
-        width: widget.size,
+        height: _iconsSize.toDouble(),
+        width: _iconsSize.toDouble(),
         child: GridCell(
           cell: cellData,
           imageAlign: Alignment.topCenter,
@@ -129,9 +64,9 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
   List<Widget> _previewsLimited(BuildContext context) {
     final list = <Widget>[];
 
-    final width = MediaQuery.sizeOf(context).width - 8;
+    final width = MediaQuery.sizeOf(context).width - 8 - 48;
 
-    for (final e in widget.files.indexed) {
+    for (final e in widget.files!.indexed) {
       if (calculateWidth(e.$1) > width) {
         break;
       }
@@ -144,18 +79,87 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SizedBox(
-      width: MediaQuery.sizeOf(context).width,
-      height: widget.size - 4,
-      child: Center(
-        child: Badge.count(
-          count: widget.files.length,
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 4, left: 4, bottom: 4),
-            child: Stack(
-              children: _previewsLimited(context),
+      height: CopyMovePreview.size.toDouble() - (widget.files == null ? 52 : 0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
+            color: colorScheme.surfaceContainer.withOpacity(0.95),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              SizedBox(
+                height: 60,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 24,
+                    bottom: 12,
+                    top: 12,
+                    right: 24,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox.square(dimension: 36),
+                        Text(
+                          widget.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color:
+                                colorScheme.onSurfaceVariant.withOpacity(0.8),
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: ShapeDecoration(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              widget.icon,
+                              size: 20,
+                              color: colorScheme.primary.withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.files != null)
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width,
+                  height: _iconsSize - 4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Badge.count(
+                      count: widget.files!.length,
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(right: 4, left: 4, bottom: 4),
+                        child: Stack(
+                          children: _previewsLimited(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

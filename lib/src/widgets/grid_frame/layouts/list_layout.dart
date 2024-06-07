@@ -23,6 +23,7 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
     required this.progress,
     this.buildEmpty,
     this.unselectOnUpdate = true,
+    this.itemFactory,
   });
 
   final bool hideThumbnails;
@@ -33,6 +34,8 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
   final bool unselectOnUpdate;
 
   final Widget Function(Object? error)? buildEmpty;
+
+  final Widget Function(BuildContext, int, T)? itemFactory;
 
   @override
   State<ListLayout<T>> createState() => _ListLayoutState();
@@ -79,13 +82,18 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
           itemBuilder: (context, index) {
             final cell = getCell(index);
 
-            return DefaultListTile(
-              functionality: extras.functionality,
-              selection: extras.selection,
-              cell: cell,
-              index: index,
-              hideThumbnails: widget.hideThumbnails,
-            );
+            return widget.itemFactory?.call(
+                  context,
+                  index,
+                  cell,
+                ) ??
+                DefaultListTile(
+                  functionality: extras.functionality,
+                  selection: extras.selection,
+                  cell: cell,
+                  index: index,
+                  hideThumbnails: widget.hideThumbnails,
+                );
           },
         ),
       ),
@@ -102,6 +110,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
     required this.cell,
     required this.hideThumbnails,
     this.selectionIndex,
+    this.subtitle,
+    this.trailing,
   });
 
   final GridFunctionality<T> functionality;
@@ -109,6 +119,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
   final int index;
   final int? selectionIndex;
   final T cell;
+  final String? subtitle;
+  final Widget? trailing;
   final bool hideThumbnails;
 
   @override
@@ -147,6 +159,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
                       backgroundImage: thumbnail,
                     )
                   : null,
+              subtitle: subtitle == null ? null : Text(subtitle!),
+              trailing: trailing,
               title: Text(
                 cell.alias(true),
                 softWrap: false,

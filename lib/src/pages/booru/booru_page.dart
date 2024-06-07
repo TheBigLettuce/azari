@@ -25,25 +25,21 @@ import "package:gallery/src/pages/booru/open_menu_button.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/blacklisted_posts.dart";
 import "package:gallery/src/pages/more/favorite_booru_page.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/pages/more/tags/single_post.dart";
 import "package:gallery/src/pages/more/tags/tags_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/notifiers/booru_api.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
-import "package:gallery/src/widgets/skeletons/home.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -337,52 +333,11 @@ class _BooruPageState extends State<BooruPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
-    return switch (SelectedBooruPage.of(context)) {
-      2 => GridPopScope(
+    return switch (BooruSubPage.of(context)) {
+      BooruSubPage.booru => GridPopScope(
           searchTextController: null,
           filter: null,
-          searchFocus: null,
-          rootNavigatorPop: widget.procPop,
-          child: BookmarkPage(
-            scrollUp: () {
-              GridScrollNotifier.of(context).animateTo(
-                0,
-                duration: const Duration(milliseconds: 180),
-                curve: Easing.standardAccelerate,
-              );
-            },
-            pagingRegistry: widget.pagingRegistry,
-            generateGlue: GlueProvider.generateOf(context),
-            saveSelectedPage: _setSecondaryName,
-            db: widget.db,
-          ),
-        ),
-      1 => FavoriteBooruStateHolder(
-          db: widget.db,
-          build: (context, favoriteBooruState) {
-            return GridPopScope(
-              searchTextController: favoriteBooruState.searchTextController,
-              filter: favoriteBooruState.filter,
-              searchFocus: favoriteBooruState.searchFocus,
-              rootNavigatorPop: widget.procPop,
-              child: GlueProvider(
-                generate: GlueProvider.generateOf(context),
-                child: FavoriteBooruPage(
-                  wrapGridPage: true,
-                  asSliver: false,
-                  state: favoriteBooruState,
-                  db: widget.db,
-                ),
-              ),
-            );
-          },
-        ),
-      int() => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          searchFocus: null,
           rootNavigatorPop: widget.procPop,
           child: GridConfiguration(
             watch: gridSettings.watch,
@@ -467,48 +422,6 @@ class _BooruPageState extends State<BooruPage> {
                     ),
                     BooruGridActions.hide(context, hiddenBooruPost),
                   ],
-
-                  // pages: PageSwitcherIcons(
-                  //   [
-                  //     PageIcon(
-                  //       Icons.favorite_rounded,
-                  //       watchCount:
-                  //           favoriteBooruState.filter.backingStorage.watch,
-                  //     ),
-                  //     PageIcon(
-                  //       Icons.bookmarks_rounded,
-                  //       watchCount: gridBookmarks.watch,
-                  //     ),
-                  //   ],
-                  //   (context, state, i) => switch (i) {
-                  //     0 => PageDescription(
-                  //         search: SearchAndFocus(
-                  //           FilteringSearchWidget(
-                  //             hint: null,
-                  //             filter: favoriteBooruState.filter,
-                  //             textController:
-                  //                 favoriteBooruState.searchTextController,
-                  //             localTagDictionary: widget.db.localTagDictionary,
-                  //             focusNode: favoriteBooruState.searchFocus,
-                  //           ),
-                  //           favoriteBooruState.searchFocus,
-                  //         ),
-                  //         settingsButton: GridSettingsButton.fromWatchable(
-                  //           favoriteBooruState.gridSettings,
-                  //         ),
-                  //         slivers: [
-                  //           ,
-                  //         ],
-                  //       ),
-                  //     1 => PageDescription(
-                  //         slivers: [
-                  //           ,
-                  //         ],
-                  //       ),
-                  //     int() => const PageDescription(slivers: []),
-                  //   },
-                  // ),
-
                   animationsOnSourceWatch: false,
                   pageName: l10n.booruLabel,
                   keybindsDescription: l10n.booruGridPageName,
@@ -517,6 +430,45 @@ class _BooruPageState extends State<BooruPage> {
                 initalScrollPosition: pagingState.offset,
               ),
             ),
+          ),
+        ),
+      BooruSubPage.favorites => FavoriteBooruStateHolder(
+          db: widget.db,
+          build: (context, favoriteBooruState) {
+            return GridPopScope(
+              searchTextController: favoriteBooruState.searchTextController,
+              filter: favoriteBooruState.filter,
+              rootNavigatorPop: widget.procPop,
+              child: GlueProvider(
+                generate: GlueProvider.generateOf(context),
+                child: FavoriteBooruPage(
+                  wrapGridPage: true,
+                  asSliver: false,
+                  state: favoriteBooruState,
+                  db: widget.db,
+                ),
+              ),
+            );
+          },
+        ),
+      BooruSubPage.bookmarks => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          rootNavigatorPop: widget.procPop,
+          child: BookmarkPage(
+            pagingRegistry: widget.pagingRegistry,
+            generateGlue: GlueProvider.generateOf(context),
+            saveSelectedPage: _setSecondaryName,
+            db: widget.db,
+          ),
+        ),
+      BooruSubPage.hiddenPosts => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          rootNavigatorPop: widget.procPop,
+          child: BlacklistedPostsPage(
+            generateGlue: GlueProvider.generateOf(context),
+            db: widget.db.hiddenBooruPost,
           ),
         ),
     };

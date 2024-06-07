@@ -36,6 +36,159 @@ part "home/icons/gallery_icon.dart";
 part "home/icons/manga_icon.dart";
 part "home/navigator_shell.dart";
 
+enum BooruSubPage {
+  booru(
+    icon: Icons.photo_outlined,
+    selectedIcon: Icons.photo_rounded,
+  ),
+  favorites(
+    icon: Icons.favorite_outline_rounded,
+    selectedIcon: Icons.favorite_rounded,
+  ),
+  bookmarks(
+    icon: Icons.bookmarks_outlined,
+    selectedIcon: Icons.bookmarks_rounded,
+  ),
+  hiddenPosts(
+    icon: Icons.hide_image_outlined,
+    selectedIcon: Icons.hide_image_rounded,
+  );
+
+  const BooruSubPage({
+    required this.icon,
+    required this.selectedIcon,
+  });
+
+  factory BooruSubPage.fromIdx(int idx) => switch (idx) {
+        0 => booru,
+        1 => favorites,
+        2 => bookmarks,
+        3 => hiddenPosts,
+        int() => booru,
+      };
+
+  final IconData icon;
+  final IconData selectedIcon;
+
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        BooruSubPage.booru => l10n.booruLabel,
+        BooruSubPage.favorites => l10n.favoritesLabel,
+        BooruSubPage.bookmarks => l10n.bookmarksPageName,
+        BooruSubPage.hiddenPosts => l10n.hiddenPostsPageName,
+      };
+
+  static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>
+      _SelectedBooruPage(notifier: notifier, child: child);
+
+  static BooruSubPage of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
+
+    return widget!.notifier!.value;
+  }
+
+  static void selectOf(BuildContext context, BooruSubPage page) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
+
+    widget!.notifier!.value = page;
+  }
+}
+
+enum GallerySubPage {
+  gallery(
+    icon: Icons.collections_outlined,
+    selectedIcon: Icons.collections_rounded,
+  ),
+  blacklisted(
+    icon: Icons.folder_off_outlined,
+    selectedIcon: Icons.folder_off_rounded,
+  );
+
+  const GallerySubPage({
+    required this.icon,
+    required this.selectedIcon,
+  });
+
+  factory GallerySubPage.fromIdx(int idx) => switch (idx) {
+        0 => gallery,
+        1 => blacklisted,
+        int() => gallery,
+      };
+
+  final IconData icon;
+  final IconData selectedIcon;
+
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        GallerySubPage.gallery => l10n.galleryLabel,
+        GallerySubPage.blacklisted => l10n.blacklistedFoldersPage,
+      };
+
+  static Widget wrap(ValueNotifier<GallerySubPage> notifier, Widget child) =>
+      _SelectedGalleryPage(notifier: notifier, child: child);
+
+  static GallerySubPage of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
+
+    return widget!.notifier!.value;
+  }
+
+  static void selectOf(BuildContext context, GallerySubPage page) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
+
+    widget!.notifier!.value = page;
+  }
+}
+
+enum MoreSubPage {
+  more(
+    icon: Icons.more_horiz_outlined,
+    selectedIcon: Icons.more_horiz_rounded,
+  ),
+  dashboard(
+    icon: Icons.dashboard_outlined,
+    selectedIcon: Icons.dashboard_rounded,
+  );
+
+  const MoreSubPage({
+    required this.icon,
+    required this.selectedIcon,
+  });
+
+  factory MoreSubPage.fromIdx(int idx) => switch (idx) {
+        0 => more,
+        1 => dashboard,
+        int() => more,
+      };
+
+  final IconData icon;
+  final IconData selectedIcon;
+
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        MoreSubPage.more => l10n.more,
+        MoreSubPage.dashboard => l10n.dashboardPage,
+      };
+
+  static Widget wrap(ValueNotifier<MoreSubPage> notifier, Widget child) =>
+      _SelectedMorePage(notifier: notifier, child: child);
+
+  static MoreSubPage of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
+
+    return widget!.notifier!.value;
+  }
+
+  static void selectOf(BuildContext context, MoreSubPage page) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
+
+    widget!.notifier!.value = page;
+  }
+}
+
 class Home extends StatefulWidget {
   const Home({super.key, this.callback});
   final CallbackDescriptionNested? callback;
@@ -52,7 +205,11 @@ class _HomeState extends State<Home>
         _BeforeYouContinueDialogMixin {
   late final StreamSubscription<void> _settingsSubscription;
 
-  final _booruPageNotifier = ValueNotifier<int>(0);
+  final _booruPageNotifier = ValueNotifier<BooruSubPage>(BooruSubPage.booru);
+  final _galleryPageNotifier =
+      ValueNotifier<GallerySubPage>(GallerySubPage.gallery);
+  final _morePageNotifier = ValueNotifier<MoreSubPage>(MoreSubPage.more);
+
   final state = SkeletonState();
   final settings = SettingsService.db().current;
 
@@ -94,6 +251,8 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
+    _morePageNotifier.dispose();
+    _galleryPageNotifier.dispose();
     _booruPageNotifier.dispose();
     _settingsSubscription.cancel();
     disposeIcons();
@@ -110,56 +269,85 @@ class _HomeState extends State<Home>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SelectedBooruPage(
-      notifier: _booruPageNotifier,
-      child: PopScope(
-        canPop: widget.callback != null,
-        onPopInvoked: (pop) => _procPopAll(this, pop),
-        child: Builder(
-          builder: (context) {
-            return _SelectionHolder(
-              hide: hide,
-              defaultPreferences: widget.callback != null
-                  ? {}
-                  : {GluePreferences.persistentBarHeight},
-              child: HomeSkeleton(
-                state,
-                (context) => _currentPage(
-                    context, _booruPageNotifier, this, showAnimeMangaPages),
-                selectedBooru: settings.selectedBooru,
-                navBar: _NavBar(
-                  noNavigationIcons: widget.callback != null,
-                  icons: this,
-                  child: Builder(
-                    builder: (context) => NavigationBar(
-                      labelBehavior:
-                          NavigationDestinationLabelBehavior.onlyShowSelected,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainer.withOpacity(0.95),
-                      selectedIndex: currentRoute,
-                      onDestinationSelected: (route) {
-                        if (route == 0 && currentRoute == 0) {
-                          Scaffold.of(context).openDrawer();
-                        } else {
-                          _switchPage(this, route, showAnimeMangaPages);
-                        }
-                      },
-                      destinations: widget.callback != null
-                          ? const []
-                          : icons(
-                              context,
-                              currentRoute,
-                              settings,
-                              showAnimeMangaPages,
-                            ),
+    return _SelectedMorePage(
+      notifier: _morePageNotifier,
+      child: _SelectedGalleryPage(
+        notifier: _galleryPageNotifier,
+        child: _SelectedBooruPage(
+          notifier: _booruPageNotifier,
+          child: PopScope(
+            canPop: widget.callback != null,
+            onPopInvoked: (pop) =>
+                _procPopAll(_galleryPageNotifier, _morePageNotifier, this, pop),
+            child: Builder(
+              builder: (context) {
+                return _SelectionHolder(
+                  hide: hide,
+                  defaultPreferences: widget.callback != null
+                      ? {}
+                      : {GluePreferences.persistentBarHeight},
+                  child: HomeSkeleton(
+                    state,
+                    (context) => _currentPage(
+                      context,
+                      _galleryPageNotifier,
+                      _morePageNotifier,
+                      _booruPageNotifier,
+                      this,
+                      showAnimeMangaPages,
                     ),
+                    navBar: _NavBar(
+                      noNavigationIcons: widget.callback != null,
+                      icons: this,
+                      child: Builder(
+                        builder: (context) => NavigationBar(
+                          labelBehavior: NavigationDestinationLabelBehavior
+                              .onlyShowSelected,
+                          backgroundColor: theme.colorScheme.surfaceContainer
+                              .withOpacity(0.95),
+                          selectedIndex: currentRoute,
+                          onDestinationSelected: (route) {
+                            if (route == 0 && currentRoute == 0) {
+                              Scaffold.of(context).openDrawer();
+                            } else if (route == 1 && currentRoute == 1) {
+                              _galleryPageNotifier.value =
+                                  _galleryPageNotifier.value ==
+                                          GallerySubPage.gallery
+                                      ? GallerySubPage.blacklisted
+                                      : GallerySubPage.gallery;
+                            } else if (settings.showAnimeMangaPages
+                                ? route == _ChangePageMixin.kMorePageRoute &&
+                                    currentRoute ==
+                                        _ChangePageMixin.kMorePageRoute
+                                : route == _ChangePageMixin.kMangaPageRoute &&
+                                    currentRoute ==
+                                        _ChangePageMixin.kMangaPageRoute) {
+                              _morePageNotifier.value =
+                                  _morePageNotifier.value == MoreSubPage.more
+                                      ? MoreSubPage.dashboard
+                                      : MoreSubPage.more;
+                            } else {
+                              _switchPage(this, route, showAnimeMangaPages);
+                            }
+                          },
+                          destinations: widget.callback != null
+                              ? const []
+                              : icons(
+                                  context,
+                                  currentRoute,
+                                  settings,
+                                  showAnimeMangaPages,
+                                ),
+                        ),
+                      ),
+                    ),
+                    extendBody: true,
+                    noNavBar: widget.callback != null,
                   ),
-                ),
-                extendBody: true,
-                noNavBar: widget.callback != null,
-              ),
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -301,4 +489,27 @@ class _GlueStateProvider extends InheritedWidget {
   bool updateShouldNotify(_GlueStateProvider oldWidget) {
     return state != oldWidget.state;
   }
+}
+
+class _SelectedBooruPage
+    extends InheritedNotifier<ValueNotifier<BooruSubPage>> {
+  const _SelectedBooruPage({
+    required ValueNotifier<BooruSubPage> notifier,
+    required super.child,
+  }) : super(notifier: notifier);
+}
+
+class _SelectedGalleryPage
+    extends InheritedNotifier<ValueNotifier<GallerySubPage>> {
+  const _SelectedGalleryPage({
+    required ValueNotifier<GallerySubPage> notifier,
+    required super.child,
+  }) : super(notifier: notifier);
+}
+
+class _SelectedMorePage extends InheritedNotifier<ValueNotifier<MoreSubPage>> {
+  const _SelectedMorePage({
+    required ValueNotifier<MoreSubPage> notifier,
+    required super.child,
+  }) : super(notifier: notifier);
 }

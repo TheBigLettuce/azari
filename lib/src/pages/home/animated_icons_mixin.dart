@@ -73,20 +73,34 @@ mixin _AnimatedIconsMixin on State<Home> {
             isSelected: currentRoute == _ChangePageMixin.kAnimePageRoute,
             controller: animeIconController,
           ),
-        NavigationDestination(
-          icon: Icon(
-            (showAnimeMangaPages
-                    ? currentRoute == _ChangePageMixin.kMorePageRoute
-                    : currentRoute == _ChangePageMixin.kMangaPageRoute)
-                ? Icons.more_horiz_rounded
-                : Icons.more_horiz_outlined,
-            color: (showAnimeMangaPages
-                    ? currentRoute == _ChangePageMixin.kMorePageRoute
-                    : currentRoute == _ChangePageMixin.kMangaPageRoute)
-                ? Theme.of(context).colorScheme.primary
-                : null,
-          ),
-          label: AppLocalizations.of(context)!.more,
+        _MoreIcon(
+          isSelected: showAnimeMangaPages
+              ? currentRoute == _ChangePageMixin.kMorePageRoute
+              : currentRoute == _ChangePageMixin.kMangaPageRoute,
         ),
       ];
+}
+
+class _MoreIcon extends StatelessWidget {
+  const _MoreIcon({
+    // super.key,
+    required this.isSelected,
+  });
+
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final selectedMorePage = MoreSubPage.of(context);
+
+    return NavigationDestination(
+      icon: Icon(
+        isSelected ? selectedMorePage.selectedIcon : selectedMorePage.icon,
+        color: isSelected ? theme.colorScheme.primary : null,
+      ),
+      label: selectedMorePage.translatedString(l10n),
+    );
+  }
 }
