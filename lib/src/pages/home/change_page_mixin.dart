@@ -85,16 +85,21 @@ mixin _ChangePageMixin on State<Home> {
     }
   }
 
-  void _procPopA(_AnimatedIconsMixin icons, bool pop) {
+  void _procPopA(
+      ValueNotifier<int> booruPage, _AnimatedIconsMixin icons, bool pop) {
     if (!pop) {
-      final showAnimeMangaPages =
-          SettingsService.db().current.showAnimeMangaPages;
+      if (currentRoute == 0 && booruPage.value != 0) {
+        booruPage.value = 0;
+      } else {
+        final showAnimeMangaPages =
+            SettingsService.db().current.showAnimeMangaPages;
 
-      _switchPage(
-        icons,
-        showAnimeMangaPages ? kMangaPageRoute : kGalleryPageRoute,
-        showAnimeMangaPages,
-      );
+        _switchPage(
+          icons,
+          showAnimeMangaPages ? kMangaPageRoute : kGalleryPageRoute,
+          showAnimeMangaPages,
+        );
+      }
     }
   }
 
@@ -131,6 +136,7 @@ mixin _ChangePageMixin on State<Home> {
 
   Widget _currentPage(
     BuildContext context,
+    ValueNotifier<int> booruPage,
     _AnimatedIconsMixin icons,
     bool showAnimeMangaPages,
   ) {
@@ -174,7 +180,7 @@ mixin _ChangePageMixin on State<Home> {
                     navigatorKey: mainKey,
                     child: BooruPage(
                       pagingRegistry: pagingRegistry,
-                      procPop: (pop) => _procPopA(icons, pop),
+                      procPop: (pop) => _procPopA(booruPage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                     ),
                   ),
@@ -210,7 +216,7 @@ mixin _ChangePageMixin on State<Home> {
                     navigatorKey: mainKey,
                     child: BooruPage(
                       pagingRegistry: pagingRegistry,
-                      procPop: (pop) => _procPopA(icons, pop),
+                      procPop: (pop) => _procPopA(booruPage, icons, pop),
                       db: DatabaseConnectionNotifier.of(context),
                     ),
                   ),

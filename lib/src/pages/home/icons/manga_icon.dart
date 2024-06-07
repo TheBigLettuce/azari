@@ -40,7 +40,7 @@ class _MangaIcon extends StatelessWidget {
           ),
         ],
         child: Icon(
-          Icons.book_rounded,
+          isSelected ? Icons.book_rounded : Icons.book_outlined,
           color: isSelected ? colorScheme.primary : null,
         ),
       ),

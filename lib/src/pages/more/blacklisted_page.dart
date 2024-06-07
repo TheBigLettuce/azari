@@ -108,18 +108,28 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               hiding: hideBlacklistedImages,
               child: child,
             ),
-            search: OverrideGridSearchWidget(
-              SearchAndFocus(
-                FilteringSearchWidget(
-                  hint: AppLocalizations.of(context)!.blacklistedPage,
-                  filter: filter,
-                  textController: searchTextController,
-                  localTagDictionary: widget.db.localTagDictionary,
-                  focusNode: searchFocus,
+            search: BarSearchWidget(
+              onChange: (str) {},
+              trailingItems: [
+                IconButton(
+                  onPressed: blacklistedDirectory.backingStorage.clear,
+                  icon: const Icon(Icons.delete),
                 ),
-                searchFocus,
-              ),
+              ],
             ),
+
+            // OverrideGridSearchWidget(
+            //   SearchAndFocus(
+            //     FilteringSearchWidget(
+            //       hint: AppLocalizations.of(context)!.blacklistedPage,
+            //       filter: filter,
+            //       textController: searchTextController,
+            //       localTagDictionary: widget.db.localTagDictionary,
+            //       focusNode: searchFocus,
+            //     ),
+            //     searchFocus,
+            //   ),
+            // ),
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
@@ -142,7 +152,6 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                 slivers: [
                   BlacklistedPostsPage(
                     generateGlue: widget.generateGlue,
-                    conroller: state.controller,
                     db: widget.db.hiddenBooruPost,
                   ),
                 ],
@@ -158,12 +167,6 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                   );
                 },
                 true,
-              ),
-            ],
-            menuButtonItems: [
-              IconButton(
-                onPressed: blacklistedDirectory.backingStorage.clear,
-                icon: const Icon(Icons.delete),
               ),
             ],
             keybindsDescription: AppLocalizations.of(context)!.blacklistedPage,

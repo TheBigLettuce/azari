@@ -8,14 +8,12 @@ part of "../grid_frame.dart";
 class GridSelection<T extends CellBase> {
   GridSelection(
     this.addActions,
-    this.glue,
-    this.controller, {
+    this.glue, {
     required this.noAppBar,
     required this.source,
   });
 
   final SelectionGlue glue;
-  final ScrollController Function() controller;
   final ReadOnlyStorage<int, T> source;
 
   final _selected = <int, T>{};

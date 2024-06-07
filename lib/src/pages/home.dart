@@ -52,6 +52,7 @@ class _HomeState extends State<Home>
         _BeforeYouContinueDialogMixin {
   late final StreamSubscription<void> _settingsSubscription;
 
+  final _booruPageNotifier = ValueNotifier<int>(0);
   final state = SkeletonState();
   final settings = SettingsService.db().current;
 
@@ -93,6 +94,7 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
+    _booruPageNotifier.dispose();
     _settingsSubscription.cancel();
     disposeIcons();
     disposeChangePage();
@@ -108,45 +110,57 @@ class _HomeState extends State<Home>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: widget.callback != null,
-      onPopInvoked: (pop) => _procPopAll(this, pop),
-      child: Builder(
-        builder: (context) {
-          return _SelectionHolder(
-            hide: hide,
-            defaultPreferences: widget.callback != null
-                ? {}
-                : {GluePreferences.persistentBarHeight},
-            child: HomeSkeleton(
-              state,
-              (context) => _currentPage(context, this, showAnimeMangaPages),
-              navBar: _NavBar(
-                noNavigationIcons: widget.callback != null,
-                icons: this,
-                child: NavigationBar(
-                  labelBehavior:
-                      NavigationDestinationLabelBehavior.onlyShowSelected,
-                  backgroundColor:
-                      theme.colorScheme.surfaceContainer.withOpacity(0.95),
-                  selectedIndex: currentRoute,
-                  onDestinationSelected: (route) =>
-                      _switchPage(this, route, showAnimeMangaPages),
-                  destinations: widget.callback != null
-                      ? const []
-                      : icons(
-                          context,
-                          currentRoute,
-                          settings,
-                          showAnimeMangaPages,
-                        ),
+    return SelectedBooruPage(
+      notifier: _booruPageNotifier,
+      child: PopScope(
+        canPop: widget.callback != null,
+        onPopInvoked: (pop) => _procPopAll(this, pop),
+        child: Builder(
+          builder: (context) {
+            return _SelectionHolder(
+              hide: hide,
+              defaultPreferences: widget.callback != null
+                  ? {}
+                  : {GluePreferences.persistentBarHeight},
+              child: HomeSkeleton(
+                state,
+                (context) => _currentPage(
+                    context, _booruPageNotifier, this, showAnimeMangaPages),
+                selectedBooru: settings.selectedBooru,
+                navBar: _NavBar(
+                  noNavigationIcons: widget.callback != null,
+                  icons: this,
+                  child: Builder(
+                    builder: (context) => NavigationBar(
+                      labelBehavior:
+                          NavigationDestinationLabelBehavior.onlyShowSelected,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainer.withOpacity(0.95),
+                      selectedIndex: currentRoute,
+                      onDestinationSelected: (route) {
+                        if (route == 0 && currentRoute == 0) {
+                          Scaffold.of(context).openDrawer();
+                        } else {
+                          _switchPage(this, route, showAnimeMangaPages);
+                        }
+                      },
+                      destinations: widget.callback != null
+                          ? const []
+                          : icons(
+                              context,
+                              currentRoute,
+                              settings,
+                              showAnimeMangaPages,
+                            ),
+                    ),
+                  ),
                 ),
+                extendBody: true,
+                noNavBar: widget.callback != null,
               ),
-              extendBody: true,
-              noNavBar: widget.callback != null,
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

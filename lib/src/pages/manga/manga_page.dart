@@ -163,7 +163,6 @@ class _MangaPageState extends State<MangaPage> {
       slivers: [
         _PinnedMangaWidget(
           glue: GlueProvider.generateOf(context)(),
-          controller: state.controller,
           db: pinnedManga,
         ),
       ],
@@ -207,11 +206,8 @@ class _MangaPageState extends State<MangaPage> {
           selectionGlue: GlueProvider.generateOf(context)(),
           source: source,
           fab: OverrideGridFab(
-            (scrollController) {
-              return ReadingFab(
-                api: api,
-                controller: scrollController,
-              );
+            () {
+              return ReadingFab(api: api);
             },
           ),
         ),
@@ -329,68 +325,65 @@ class ReadingFab extends StatefulWidget {
   const ReadingFab({
     super.key,
     required this.api,
-    required this.controller,
   });
   final MangaAPI api;
-  final ScrollController controller;
 
   @override
   State<ReadingFab> createState() => _ReadingFabState();
 }
 
-class _ReadingFabState extends State<ReadingFab>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController animation;
+class _ReadingFabState extends State<ReadingFab> {
+  // late final AnimationController animation;
 
   bool extended = true;
 
-  void _listener() {
-    if (widget.controller.offset == 0 && !extended) {
-      animation.reverse().then(
-            (value) => setState(() {
-              extended = true;
-            }),
-          );
-    } else if (widget.controller.offset > 0 && extended) {
-      animation.forward().then(
-            (value) => setState(() {
-              extended = false;
-            }),
-          );
-    }
-  }
+  // void _listener() {
+  //   if (widget.controller.offset == 0 && !extended) {
+  //     animation.reverse().then(
+  //           (value) => setState(() {
+  //             extended = true;
+  //           }),
+  //         );
+  //   } else if (widget.controller.offset > 0 && extended) {
+  //     animation.forward().then(
+  //           (value) => setState(() {
+  //             extended = false;
+  //           }),
+  //         );
+  //   }
+  // }
 
   @override
   void initState() {
     super.initState();
 
-    animation = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    )..addListener(() {
-        setState(() {});
-      });
+    // animation = AnimationController(
+    //   vsync: this,
+    //   duration: const Duration(milliseconds: 200),
+    // )..addListener(() {
+    //     setState(() {});
+    //   });
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      final pos = widget.controller.positions.toList();
-      if (pos.isEmpty) {
-        return;
-      }
+    // WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    //   final pos = widget.controller.positions.toList();
+    //   if (pos.isEmpty) {
+    //     return;
+    //   }
 
-      pos.first.addListener(_listener);
-    });
+    //   pos.first.addListener(_listener);
+    // });
   }
 
   @override
   void dispose() {
-    animation.dispose();
+    // animation.dispose();
 
-    final pos = widget.controller.positions.toList();
-    if (pos.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        pos.first.removeListener(_listener);
-      });
-    }
+    // final pos = widget.controller.positions.toList();
+    // if (pos.isNotEmpty) {
+    //   WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    //     pos.first.removeListener(_listener);
+    //   });
+    // }
 
     super.dispose();
   }
@@ -403,7 +396,7 @@ class _ReadingFabState extends State<ReadingFab>
         borderRadius: BorderRadius.all(Radius.circular(16)),
       ).lerpTo(
         const CircleBorder(),
-        Easing.standard.transform(animation.value),
+        Easing.standard.transform(0),
       ),
       onPressed: () {
         SearchAnimePage.launchMangaApi(
@@ -423,12 +416,12 @@ class _PinnedMangaWidget extends StatefulWidget
     with DbConnHandle<PinnedMangaService> {
   const _PinnedMangaWidget({
     required this.glue,
-    required this.controller,
+    // required this.controller,
     required this.db,
   });
 
   final SelectionGlue glue;
-  final ScrollController controller;
+  // final ScrollController controller;
 
   @override
   final PinnedMangaService db;
@@ -488,7 +481,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
               progress: source.progress,
             ),
           ],
-          overrideController: widget.controller,
+          // overrideController: widget.controller,
           functionality: GridFunctionality(
             selectionGlue: widget.glue,
             source: source,

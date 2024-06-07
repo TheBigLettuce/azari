@@ -56,8 +56,6 @@ class __WatchingTabState extends State<_WatchingTab> {
     layoutType: GridLayoutType.grid,
   );
 
-  final scrollController = ScrollController();
-
   void doFilter(String value) {
     _filteringValue = value.toLowerCase().trim();
 
@@ -101,8 +99,6 @@ class __WatchingTabState extends State<_WatchingTab> {
 
     state.dispose();
 
-    scrollController.dispose();
-
     widget.onDispose();
 
     super.dispose();
@@ -121,7 +117,6 @@ class __WatchingTabState extends State<_WatchingTab> {
         rootNavigatorPop: widget.procPop,
         child: GridFrame<SavedAnimeEntryData>(
           key: state.gridKey,
-          overrideController: scrollController,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.only(left: 14, right: 14),
@@ -149,7 +144,6 @@ class __WatchingTabState extends State<_WatchingTab> {
                   key: watchingKey,
                   filter: filterCurrent,
                   watchingRight: right,
-                  controller: scrollController,
                   glue: GlueProvider.generateOf(context)(),
                   db: widget.db,
                   l10n: l10n,
@@ -279,7 +273,6 @@ class _CurrentlyWatching extends StatefulWidget {
   const _CurrentlyWatching({
     super.key,
     required this.filter,
-    required this.controller,
     required this.watchingRight,
     required this.glue,
     required this.db,
@@ -288,7 +281,6 @@ class _CurrentlyWatching extends StatefulWidget {
 
   final bool watchingRight;
   final ChainedFilterResourceSource<int, SavedAnimeEntryData> filter;
-  final ScrollController controller;
   final SelectionGlue glue;
 
   final AppLocalizations l10n;
@@ -342,7 +334,6 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
       ),
     ],
     widget.glue,
-    () => widget.controller,
     source: filter.backingStorage,
     noAppBar: true,
     // ignoreSwipe: true,

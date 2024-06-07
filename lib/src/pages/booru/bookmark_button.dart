@@ -200,17 +200,15 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     final list = makeList(context, theme);
 
-    return SliverPadding(
+    return Padding(
       padding: EdgeInsets.only(
-        bottom: GridBottomPaddingProvider.of(context, true),
-      ),
-      sliver: gridStates.isEmpty
-          ? const SliverToBoxAdapter(
-              child: EmptyWidget(
-                gridSeed: 0,
-              ),
+          // bottom: GridBottomPaddingProvider.of(context, true),
+          ),
+      child: gridStates.isEmpty
+          ? EmptyWidget(
+              gridSeed: 0,
             )
-          : SliverList.list(
+          : ListView(
               children: list,
             ),
     );

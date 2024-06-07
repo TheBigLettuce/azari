@@ -25,12 +25,6 @@ class CallbackGridBackButton implements GridBackButtonBehaviour {
   final void Function() onPressed;
 }
 
-class CountGridBackButton implements GridBackButtonBehaviour {
-  const CountGridBackButton(this.count);
-
-  final int count;
-}
-
 class OverrideGridBackButton implements GridBackButtonBehaviour {
   const OverrideGridBackButton(this.child);
 

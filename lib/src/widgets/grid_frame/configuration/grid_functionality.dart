@@ -26,7 +26,7 @@ class GridFunctionality<T extends CellBase> {
     this.settingsButton,
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
-    this.search = const EmptyGridSearchWidget(),
+    this.search = const PageNameSearchWidget(),
   });
 
   final ResourceSource<int, T> source;

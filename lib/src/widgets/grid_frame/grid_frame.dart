@@ -7,9 +7,11 @@ import "dart:async";
 
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
@@ -23,14 +25,13 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.
 import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
 import "package:gallery/src/widgets/keybinds/describe_keys.dart";
 import "package:gallery/src/widgets/keybinds/keybind_description.dart";
 import "package:gallery/src/widgets/keybinds/single_activator_description.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
+import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
 
 part "configuration/grid_action.dart";
 part "configuration/grid_description.dart";
@@ -141,7 +142,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
     required this.functionality,
     this.onDispose,
     this.belowMainFocus,
-    this.overrideController,
     required this.description,
   });
 
@@ -160,8 +160,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
 
   final void Function()? onDispose;
 
-  final ScrollController? overrideController;
-
   final List<Widget> slivers;
 
   @override
@@ -170,11 +168,15 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
 
 class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     with GridSubpageState<T> {
-  late ScrollController controller;
+  late final ScrollController? controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
   final _animationsKey = GlobalKey<_PlayAnimationsState>();
 
   late final StreamSubscription<int>? _subscription;
+
+  late final ValueNotifier<bool>? _scrollingNotifier;
+
+  final searchFocus = FocusNode();
 
   late final selection = GridSelection<T>(
     widget.description.actions,
@@ -184,14 +186,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         _holderKey.currentState?.update();
       },
     ),
-    () => controller,
     source: widget.functionality.source.backingStorage,
     noAppBar: !widget.description.showAppBar,
   );
 
   ResourceSource<int, T> get source => widget.functionality.source;
-
-  int _refreshes = 0;
 
   late double lastOffset = widget.initalScrollPosition;
 
@@ -200,7 +199,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       return;
     }
 
-    onSubpageSwitched(i, selection, controller);
+    onSubpageSwitchedGrid(
+      i,
+      selection,
+      controller ?? GridScrollNotifier.of(context),
+    );
   }
 
   @override
@@ -215,30 +218,35 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           })
         : null;
 
-    controller = description.asSliver && widget.overrideController != null
-        ? widget.overrideController!
-        : ScrollController(initialScrollOffset: widget.initalScrollPosition);
+    controller = description.asSliver ? null : ScrollController();
+    _scrollingNotifier = description.asSliver ? null : ValueNotifier(false);
 
     if (source.count == 0) {
       source.clearRefresh();
     }
 
-    if (!description.asSliver) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        controller = widget.overrideController ?? ScrollController();
-
-        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          registerOffsetSaver(controller);
+    if (controller != null) {
+      if (widget.initalScrollPosition != 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          controller!.jumpTo(widget.initalScrollPosition);
         });
+      }
 
-        setState(() {});
+      final f = widget.functionality.updateScrollPosition;
+      if (f != null) {
+        _scrollingNotifier!.addListener(_scrollListener);
+      }
 
-        if (!source.hasNext) {
-          return;
+      controller!.addListener(() {
+        final showFab = controller!.position.userScrollDirection ==
+                ScrollDirection.forward &&
+            controller!.offset != 0;
+        if (_scrollingNotifier!.value != showFab) {
+          _scrollingNotifier.value = showFab;
         }
 
-        controller.addListener(() {
-          lastOffset = controller.offset;
+        if (source.hasNext) {
+          lastOffset = controller!.offset;
 
           if (!source.progress.canLoadMore || atNotHomePage) {
             return;
@@ -250,28 +258,29 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
           if (!source.progress.inRefreshing &&
               source.count != 0 &&
-              (controller.offset /
-                      controller.positions.first.maxScrollExtent) >=
-                  1 - (height / controller.positions.first.maxScrollExtent)) {
+              (controller!.offset /
+                      controller!.positions.first.maxScrollExtent) >=
+                  1 - (height / controller!.positions.first.maxScrollExtent)) {
             source.next();
           }
-        });
+        }
       });
     }
   }
 
-  void resetFab() {
-    setState(() {
-      _refreshes += 1;
-    });
+  void _scrollListener() {
+    if (currentPage == 0) {
+      widget.functionality.updateScrollPosition?.call(controller!.offset);
+    }
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
-    if (widget.overrideController == null) {
-      controller.dispose();
-    }
+    controller?.dispose();
+    searchFocus.dispose();
+
+    _scrollingNotifier?.dispose();
 
     widget.belowMainFocus?.requestFocus();
 
@@ -282,7 +291,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     super.dispose();
   }
 
-  void tryScrollUntil(int p, GridSettingsData config) {
+  void tryScrollUntil(
+    ScrollController controller,
+    int p,
+    GridSettingsData config,
+  ) {
     if (controller.position.maxScrollExtent.isInfinite) {
       return;
     }
@@ -347,41 +360,41 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   static const double loadingIndicatorSize = 4;
 
-  List<Widget> _makeActions(
-    BuildContext context,
-    GridDescription<T> description,
-  ) {
-    final ret = <Widget>[
-      if (widget.functionality.settingsButton != null)
-        widget.functionality.settingsButton!,
-    ];
+  // List<Widget> _makeActions(
+  //   BuildContext context,
+  //   GridDescription<T> description,
+  // ) {
+  //   final ret = <Widget>[
+  //     if (widget.functionality.settingsButton != null)
+  //       widget.functionality.settingsButton!,
+  //   ];
 
-    if (description.menuButtonItems == null) {
-      return ret;
-    }
+  //   if (description.menuButtonItems == null) {
+  //     return ret;
+  //   }
 
-    return ((!description.inlineMenuButtonItems &&
-                description.menuButtonItems!.length > 1)
-            ? [
-                PopupMenuButton(
-                  position: PopupMenuPosition.under,
-                  itemBuilder: (context) {
-                    return description.menuButtonItems!
-                        .map(
-                          (e) => PopupMenuItem<void>(
-                            enabled: false,
-                            child: e,
-                          ),
-                        )
-                        .toList();
-                  },
-                ),
-              ]
-            : [
-                ...description.menuButtonItems!,
-              ]) +
-        ret;
-  }
+  //   return ((!description.inlineMenuButtonItems &&
+  //               description.menuButtonItems!.length > 1)
+  //           ? [
+  //               PopupMenuButton(
+  //                 position: PopupMenuPosition.under,
+  //                 itemBuilder: (context) {
+  //                   return description.menuButtonItems!
+  //                       .map(
+  //                         (e) => PopupMenuItem<void>(
+  //                           enabled: false,
+  //                           child: e,
+  //                         ),
+  //                       )
+  //                       .toList();
+  //                 },
+  //               ),
+  //             ]
+  //           : [
+  //               ...description.menuButtonItems!,
+  //             ]) +
+  //       ret;
+  // }
 
   List<Widget> bodySlivers(BuildContext context, PageDescription? page) {
     final description = widget.description;
@@ -389,15 +402,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
     Widget? appBar;
     if (description.showAppBar) {
-      final pageSettingsButton = page?.settingsButton;
-
-      final List<Widget> appBarActions = page != null
-          ? [
-              ...page.appIcons,
-              if (pageSettingsButton != null) pageSettingsButton,
-            ]
-          : _makeActions(context, description);
-
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
           : PreferredSize(
@@ -416,19 +420,16 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               ),
             );
 
-      final backButton = widget.functionality.backButton;
-
       appBar = _AppBar(
-        leading: backButton is EmptyGridBackButton && backButton.inherit
-            ? null
-            : GridAppBarLeading(state: this),
-        title: GridAppBarTitle(state: this, page: page),
-        actions: appBarActions,
+        gridFunctionality: widget.functionality,
+        searchFocus: searchFocus,
         bottomWidget: bottomWidget,
         searchWidget: widget.functionality.search,
         pageName: widget.description.pageName ??
             widget.description.keybindsDescription,
-        snap: widget.description.appBarSnap,
+        page: page,
+        description: widget.description,
+        atHomePage: !atNotHomePage,
       );
     }
 
@@ -488,9 +489,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         ? pageSwitcher.buildPage(context, this, currentPage - 1)
         : null;
 
-    final search = functionality.search;
-    final FocusNode? searchFocus = page?.search?.focus ??
-        (search is OverrideGridSearchWidget ? search.widget.focus : null);
+    // final search = functionality.search;
+    // final FocusNode? searchFocus = page?.search?.focus ??
+    // (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
     final gridSettingsWatcher = GridConfiguration.watcherOf(context);
 
@@ -507,21 +508,30 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             selection: selection,
             child: CellProvider<T>(
               getCell: source.forIdxUnsafe,
-              child: GridExtrasNotifier(
-                data: GridExtrasData(tryScrollUntil, selection, functionality),
-                child: Builder(
-                  builder: (context) {
-                    Widget child = SliverMainAxisGroup(
-                      slivers: bodySlivers(context, page),
-                    );
+              child: GridScrollNotifier(
+                scrollNotifier: _scrollingNotifier ??
+                    GridScrollNotifier.notifierOf(context),
+                controller: controller ?? GridScrollNotifier.of(context),
+                child: GridExtrasNotifier(
+                  data: GridExtrasData(
+                    tryScrollUntil,
+                    selection,
+                    functionality,
+                  ),
+                  child: Builder(
+                    builder: (context) {
+                      Widget child = SliverMainAxisGroup(
+                        slivers: bodySlivers(context, page),
+                      );
 
-                    final r = widget.functionality.registerNotifiers;
-                    if (r != null) {
-                      child = r(child);
-                    }
+                      final r = widget.functionality.registerNotifiers;
+                      if (r != null) {
+                        child = r(child);
+                      }
 
-                    return child;
-                  },
+                      return child;
+                    },
+                  ),
                 ),
               ),
             ),
@@ -590,14 +600,13 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           Align(
             alignment: Alignment.bottomRight,
             child: Builder(
-              key: ValueKey((currentPage, _refreshes)),
               builder: (context) {
                 return Padding(
                   padding: EdgeInsets.only(
-                    right: 4,
-                    bottom: GridBottomPaddingProvider.of(context) + 4,
+                    right: 4 + 8,
+                    bottom: GridBottomPaddingProvider.of(context) + 4 + 8,
                   ),
-                  child: fab.widget(context, controller),
+                  child: fab.widget(context),
                 );
               },
             ),
@@ -626,9 +635,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           selection: selection,
           child: CellProvider<T>(
             getCell: source.forIdxUnsafe,
-            child: GridExtrasNotifier(
-              data: GridExtrasData(tryScrollUntil, selection, functionality),
-              child: c,
+            child: GridScrollNotifier(
+              scrollNotifier:
+                  _scrollingNotifier ?? GridScrollNotifier.notifierOf(context),
+              controller: controller ?? GridScrollNotifier.of(context),
+              child: GridExtrasNotifier(
+                data: GridExtrasData(tryScrollUntil, selection, functionality),
+                child: c,
+              ),
             ),
           ),
         ),
@@ -732,7 +746,11 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
 class GridExtrasData<T extends CellBase> {
   const GridExtrasData(this.scrollTo, this.selection, this.functionality);
 
-  final void Function(int idx, GridSettingsData config) scrollTo;
+  final void Function(
+    ScrollController controller,
+    int idx,
+    GridSettingsData config,
+  ) scrollTo;
   final GridSelection<T> selection;
   final GridFunctionality<T> functionality;
 }
@@ -756,6 +774,38 @@ class GridExtrasNotifier<T extends CellBase> extends InheritedWidget {
   @override
   bool updateShouldNotify(GridExtrasNotifier<T> oldWidget) {
     return data != oldWidget.data;
+  }
+}
+
+class GridScrollNotifier extends InheritedWidget {
+  const GridScrollNotifier({
+    required this.scrollNotifier,
+    super.key,
+    required this.controller,
+    required super.child,
+  });
+
+  final ScrollController controller;
+  final ValueNotifier<bool> scrollNotifier;
+
+  static ScrollController of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridScrollNotifier>();
+
+    return widget!.controller;
+  }
+
+  static ValueNotifier<bool> notifierOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridScrollNotifier>();
+
+    return widget!.scrollNotifier;
+  }
+
+  @override
+  bool updateShouldNotify(GridScrollNotifier oldWidget) {
+    return controller != oldWidget.controller ||
+        scrollNotifier != oldWidget.scrollNotifier;
   }
 }
 

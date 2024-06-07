@@ -8,3 +8,4 @@ Makefile
 compile_commands.json
 ,vscode
 build
+/baloo_integration

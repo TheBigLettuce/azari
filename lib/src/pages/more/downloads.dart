@@ -138,18 +138,27 @@ class _DownloadsState extends State<Downloads> {
             ),
           ],
           functionality: GridFunctionality(
-            search: OverrideGridSearchWidget(
-              SearchAndFocus(
-                FilteringSearchWidget(
-                  hint: l10n.downloadsPageName,
-                  filter: filter,
-                  textController: searchTextController,
-                  localTagDictionary: widget.db.localTagDictionary,
-                  focusNode: searchFocus,
+            search: BarSearchWidget(
+              onChange: (str) {},
+              trailingItems: [
+                IconButton(
+                  onPressed: downloadManager.clear,
+                  icon: const Icon(Icons.close),
                 ),
-                searchFocus,
-              ),
+              ],
             ),
+            // OverrideGridSearchWidget(
+            //   SearchAndFocus(
+            //     FilteringSearchWidget(
+            //       hint: l10n.downloadsPageName,
+            //       filter: filter,
+            //       textController: searchTextController,
+            //       localTagDictionary: widget.db.localTagDictionary,
+            //       focusNode: searchFocus,
+            //     ),
+            //     searchFocus,
+            //   ),
+            // ),
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
@@ -164,14 +173,7 @@ class _DownloadsState extends State<Downloads> {
                 false,
               ),
             ],
-            menuButtonItems: [
-              IconButton(
-                onPressed: downloadManager.clear,
-                icon: const Icon(Icons.close),
-              ),
-            ],
             keybindsDescription: l10n.downloadsPageName,
-            inlineMenuButtonItems: true,
             gridSeed: state.gridSeed,
           ),
         ),

@@ -20,12 +20,10 @@ class BlacklistedPostsPage extends StatefulWidget {
   const BlacklistedPostsPage({
     super.key,
     required this.generateGlue,
-    required this.conroller,
     required this.db,
   });
 
   final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
-  final ScrollController conroller;
 
   final HiddenBooruPostService db;
 
@@ -59,7 +57,6 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
       generate: widget.generateGlue,
       child: GridFrame<HiddenBooruPostData>(
         key: state.gridKey,
-        overrideController: widget.conroller,
         slivers: [
           Builder(
             builder: (context) => ListLayout<HiddenBooruPostData>(

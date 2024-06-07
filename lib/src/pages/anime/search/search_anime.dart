@@ -322,97 +322,99 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                   functionality: GridFunctionality(
                     selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
-                    search: OverrideGridSearchWidget(
-                      SearchAndFocus(
-                        TextFormField(
-                          initialValue: currentSearch,
-                          decoration: InputDecoration(
-                            hintText:
-                                "${l10n.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
-                            border: InputBorder.none,
-                          ),
-                          focusNode: searchFocus,
-                          onFieldSubmitted: (value) {
-                            final grid = state.gridKey.currentState;
-                            if (grid == null || source.progress.inRefreshing) {
-                              return;
+                    search: BarSearchWidget(
+                      onChange: (str) {},
+                      trailingItems: [
+                        SafetyButton(
+                          mode: mode,
+                          set: (m) {
+                            mode = m;
+
+                            if (source.backingStorage.isNotEmpty) {
+                              source.clearRefresh();
                             }
 
-                            currentSearch = value;
-
-                            source.clearRefresh();
+                            setState(() {});
                           },
                         ),
-                        searchFocus,
-                      ),
+                        IconButton(
+                          onPressed: () {
+                            showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              useRootNavigator: true,
+                              showDragHandle: true,
+                              builder: (context) {
+                                return SafeArea(
+                                  child: SearchOptions<I, G>(
+                                    info: widget.info,
+                                    setCurrentGenre: (g) {
+                                      currentGenre = g;
+
+                                      source.clearRefresh();
+
+                                      setState(() {});
+                                    },
+                                    initalGenreId: currentGenre,
+                                    genreFuture: () {
+                                      if (_genreFuture != null) {
+                                        return _genreFuture!;
+                                      }
+
+                                      return widget
+                                          .genres(AnimeSafeMode.safe)
+                                          .then((value) {
+                                        genres = value;
+
+                                        _genreFuture = Future.value(value);
+
+                                        setState(() {});
+
+                                        return value;
+                                      });
+                                    },
+                                    idFromGenre: widget.idFromGenre,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          icon: Icon(
+                            Icons.filter_list_outlined,
+                            color: currentGenre != null
+                                ? theme.colorScheme.primary
+                                : null,
+                          ),
+                        ),
+                      ],
                     ),
+                    // OverrideGridSearchWidget(
+                    //   SearchAndFocus(
+                    //     TextFormField(
+                    //       initialValue: currentSearch,
+                    //       decoration: InputDecoration(
+                    //         hintText:
+                    //             "${l10n.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
+                    //         border: InputBorder.none,
+                    //       ),
+                    //       focusNode: searchFocus,
+                    //       onFieldSubmitted: (value) {
+                    //         final grid = state.gridKey.currentState;
+                    //         if (grid == null || source.progress.inRefreshing) {
+                    //           return;
+                    //         }
+
+                    //         currentSearch = value;
+
+                    //         source.clearRefresh();
+                    //       },
+                    //     ),
+                    //     searchFocus,
+                    //   ),
+                    // ),
                   ),
                   description: GridDescription(
                     actions: widget.actions,
-                    inlineMenuButtonItems: true,
-                    menuButtonItems: [
-                      SafetyButton(
-                        mode: mode,
-                        set: (m) {
-                          mode = m;
-
-                          if (source.backingStorage.isNotEmpty) {
-                            source.clearRefresh();
-                          }
-
-                          setState(() {});
-                        },
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          showModalBottomSheet<void>(
-                            context: context,
-                            isScrollControlled: true,
-                            useRootNavigator: true,
-                            showDragHandle: true,
-                            builder: (context) {
-                              return SafeArea(
-                                child: SearchOptions<I, G>(
-                                  info: widget.info,
-                                  setCurrentGenre: (g) {
-                                    currentGenre = g;
-
-                                    source.clearRefresh();
-
-                                    setState(() {});
-                                  },
-                                  initalGenreId: currentGenre,
-                                  genreFuture: () {
-                                    if (_genreFuture != null) {
-                                      return _genreFuture!;
-                                    }
-
-                                    return widget
-                                        .genres(AnimeSafeMode.safe)
-                                        .then((value) {
-                                      genres = value;
-
-                                      _genreFuture = Future.value(value);
-
-                                      setState(() {});
-
-                                      return value;
-                                    });
-                                  },
-                                  idFromGenre: widget.idFromGenre,
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        icon: Icon(
-                          Icons.filter_list_outlined,
-                          color: currentGenre != null
-                              ? theme.colorScheme.primary
-                              : null,
-                        ),
-                      ),
-                    ],
                     keybindsDescription: l10n.searchAnimePage,
                     gridSeed: state.gridSeed,
                   ),

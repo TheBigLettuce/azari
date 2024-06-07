@@ -5,84 +5,16 @@
 
 part of "../configuration/grid_fab_type.dart";
 
-class _Fab extends StatefulWidget {
-  const _Fab({
-    // super.key,
-    required this.controller,
-  });
-
-  final ScrollController controller;
-
-  @override
-  State<_Fab> createState() => __FabState();
-}
-
-class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
-  bool showFab = false;
-  late final AnimationController controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = AnimationController(vsync: this);
-
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      final pos = widget.controller.positions.toList();
-      if (pos.isEmpty) {
-        return;
-      }
-
-      pos.first.isScrollingNotifier.addListener(_listener);
-    });
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-
-    final pos = widget.controller.positions.toList();
-    if (pos.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        pos.first.isScrollingNotifier.removeListener(_listener);
-      });
-    }
-
-    super.dispose();
-  }
-
-  void _updateFab({required bool fab}) {
-    if (fab != showFab) {
-      showFab = fab;
-
-      if (showFab) {
-        controller.forward();
-      } else {
-        controller.reverse();
-      }
-    }
-  }
-
-  void _listener() {
-    final controller = widget.controller;
-
-    if (controller.offset == 0) {
-      _updateFab(
-        fab: false,
-      );
-    } else {
-      _updateFab(
-        fab: !controller.position.isScrollingNotifier.value,
-      );
-    }
-  }
+class _Fab extends StatelessWidget {
+  const _Fab({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final showFab = IsScrollingNotifier.of(context);
+
     return Animate(
-      value: 0,
+      target: showFab ? 1 : 0,
       autoPlay: false,
-      controller: controller,
       effects: const [
         FadeEffect(
           delay: Duration(milliseconds: 80),
@@ -101,12 +33,13 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
       ],
       child: GestureDetector(
         onLongPress: () {
-          final scroll = widget.controller.position.maxScrollExtent;
+          final controller = GridScrollNotifier.of(context);
+          final scroll = controller.position.maxScrollExtent;
           if (scroll.isInfinite || scroll == 0) {
             return;
           }
 
-          widget.controller.animateTo(
+          controller.animateTo(
             scroll,
             duration: 200.ms,
             curve: Easing.emphasizedAccelerate,
@@ -114,7 +47,7 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
         },
         child: FloatingActionButton(
           onPressed: () {
-            widget.controller.animateTo(
+            GridScrollNotifier.of(context).animateTo(
               0,
               duration: const Duration(milliseconds: 200),
               curve: Easing.emphasizedAccelerate,
@@ -122,7 +55,7 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
 
             StatisticsGeneralService.db().current.add(scrolledUp: 1).save();
           },
-          child: const Icon(Icons.arrow_upward),
+          child: const Icon(Icons.arrow_upward_rounded),
         ),
       ),
     );

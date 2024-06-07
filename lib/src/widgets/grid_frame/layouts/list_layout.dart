@@ -101,11 +101,13 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
     required this.index,
     required this.cell,
     required this.hideThumbnails,
+    this.selectionIndex,
   });
 
   final GridFunctionality<T> functionality;
   final GridSelection<T> selection;
   final int index;
+  final int? selectionIndex;
   final T cell;
   final bool hideThumbnails;
 
@@ -120,12 +122,12 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
       description: cell.description(),
       onPressed: cell.tryAsPressable(context, functionality, index),
       functionality: functionality,
-      thisIndx: index,
+      thisIndx: selectionIndex ?? index,
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
           SelectionCountNotifier.countOf(context);
-          final isSelected = selection.isSelected(index);
+          final isSelected = selection.isSelected(selectionIndex ?? index);
 
           return DecoratedBox(
             decoration: ShapeDecoration(
@@ -141,9 +143,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
               textColor: isSelected ? theme.colorScheme.inversePrimary : null,
               leading: !hideThumbnails && thumbnail != null
                   ? CircleAvatar(
-                      backgroundColor: theme.colorScheme.surface,
-                      foregroundImage: thumbnail,
-                      onForegroundImageError: (_, __) {},
+                      backgroundColor: theme.colorScheme.surface.withOpacity(0),
+                      backgroundImage: thumbnail,
                     )
                   : null,
               title: Text(

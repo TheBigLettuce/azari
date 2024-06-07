@@ -45,7 +45,7 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
               return;
             }
 
-            state.onSubpageSwitched(set.first, selection, controller);
+            state.onSubpageSwitched(context, set.first, selection);
           },
           segments: [
             ButtonSegment(

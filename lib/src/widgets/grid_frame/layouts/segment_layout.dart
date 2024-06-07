@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -14,12 +15,14 @@ import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
+import "package:gallery/src/widgets/notifiers/selection_count.dart";
 import "package:local_auth/local_auth.dart";
 
 class SegmentLayout<T extends CellBase> extends StatefulWidget {
@@ -431,7 +434,6 @@ class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
               val: e,
               gridFunctionality: gridFunctionality,
               segments: segments,
-              config: config,
             ),
           _HeaderWithCells<CellBase>() => throw UnimplementedError(),
         },
@@ -449,14 +451,12 @@ class _SegRowHCell<T extends CellBase> extends StatefulWidget {
     required this.val,
     required this.gridFunctionality,
     required this.segments,
-    required this.config,
   });
 
   final GridSelection<T> selection;
   final _HeaderWithCells<T> val;
   final GridFunctionality<T> gridFunctionality;
   final Segments<T> segments;
-  final GridSettingsData config;
 
   @override
   State<_SegRowHCell<T>> createState() => __SegRowHCellState();
@@ -517,17 +517,17 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
 
     return SegmentCard(
       selection: widget.selection,
-      columns: widget.config.columns,
+      columns: GridColumn.three,
       gridFunctionality: widget.gridFunctionality,
       segments: widget.segments,
-      aspectRatio: widget.config.aspectRatio.value,
+      aspectRatio: GridAspectRatio.oneTwo.value,
       segmentLabel: widget.val.header,
       modifiers: widget.val.modifiers,
       sliver: SliverGrid.builder(
         itemCount: items.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: widget.config.columns.number,
-          childAspectRatio: widget.config.aspectRatio.value,
+          crossAxisCount: GridColumn.three.number,
+          childAspectRatio: GridAspectRatio.oneTwo.value,
         ),
         itemBuilder: (context, idx) {
           final (cell, blur) = items[idx];
@@ -547,7 +547,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
               blur: blur,
               isList: false,
               imageAlign: Alignment.topCenter,
-              hideTitle: widget.config.hideName,
+              hideTitle: false,
               animated: PlayAnimations.maybeOf(context) ?? false,
             ),
           );
@@ -582,6 +582,30 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
     final toBlur = val.modifiers.contains(SegmentModifier.blur);
     final getCell = CellProvider.of<T>(context);
 
+    Widget buildItem(BuildContext context, int idx) {
+      final realIdx = val.list[idx];
+      final cell = getCell(realIdx);
+
+      return WrapSelection<T>(
+        thisIndx: realIdx,
+        description: cell.description(),
+        selectFrom: predefined,
+        onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
+        functionality: gridFunctionality,
+        selection: selection,
+        child: GridCell.frameDefault(
+          context,
+          idx,
+          cell,
+          isList: false,
+          blur: toBlur,
+          imageAlign: Alignment.topCenter,
+          hideTitle: config.hideName,
+          animated: PlayAnimations.maybeOf(context) ?? false,
+        ),
+      );
+    }
+
     return SegmentCard(
       selection: selection,
       columns: config.columns,
@@ -590,37 +614,135 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       aspectRatio: config.aspectRatio.value,
       segmentLabel: val.header,
       modifiers: val.modifiers,
-      sliver: SliverGrid.builder(
-        itemCount: val.list.length,
-        gridDelegate: SliverQuiltedGridDelegate(
-          crossAxisCount: config.columns.number,
-          repeatPattern: QuiltedGridRepeatPattern.inverted,
-          pattern: config.columns.pattern(gridSeed),
-        ),
-        itemBuilder: (context, idx) {
-          final realIdx = val.list[idx];
-          final cell = getCell(realIdx);
+      sliver: switch (config.layoutType) {
+        //  GridLayoutType.gridMasonry => SliverMasonryGrid(
+        //     gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        //       crossAxisCount: config.columns.number,
+        //     ),
+        //     delegate: SliverChildBuilderDelegate(childCount: val.list.length,
+        //         (context, idx) {
+        //       final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
+        //           config.columns.number;
 
-          return WrapSelection<T>(
-            thisIndx: realIdx,
-            description: cell.description(),
-            selectFrom: predefined,
-            onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
-            functionality: gridFunctionality,
-            selection: selection,
-            child: GridCell.frameDefault(
-              context,
-              idx,
-              cell,
-              isList: false,
-              blur: toBlur,
-              imageAlign: Alignment.topCenter,
-              hideTitle: config.hideName,
-              animated: PlayAnimations.maybeOf(context) ?? false,
+        //       final rem = ((gridSeed + idx) % 11) * 0.5;
+        //       final maxHeight = (size / config.aspectRatio.value) +
+        //           (rem *
+        //                   (size *
+        //                       (0.037 +
+        //                           (config.columns.number / 100) -
+        //                           rem * 0.01)))
+        //               .toInt();
+
+        //       return ConstrainedBox(
+        //         constraints: BoxConstraints(maxHeight: maxHeight),
+        //         child: buildItem(context, idx),
+        //       );
+        //     }),
+        //   ),
+        GridLayoutType.grid || GridLayoutType.gridMasonry => SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              childAspectRatio: config.aspectRatio.value,
+              crossAxisCount: config.columns.number,
             ),
-          );
-        },
-      ),
+            itemCount: val.list.length,
+            itemBuilder: buildItem,
+          ),
+        GridLayoutType.list => SliverPadding(
+            padding: const EdgeInsets.only(right: 8, left: 8),
+            sliver: SliverList.builder(
+              itemCount: val.list.length,
+              itemBuilder: (context, idx) {
+                final realIdx = val.list[idx];
+                final cell = getCell(realIdx);
+
+                return WrapSelection(
+                  selection: selection,
+                  selectFrom: null,
+                  limitedSize: true,
+                  description: cell.description(),
+                  onPressed:
+                      cell.tryAsPressable(context, gridFunctionality, idx),
+                  functionality: gridFunctionality,
+                  thisIndx: realIdx,
+                  child: Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      SelectionCountNotifier.countOf(context);
+                      final isSelected = selection.isSelected(realIdx);
+
+                      return DecoratedBox(
+                        decoration: ShapeDecoration(
+                          shape: const StadiumBorder(),
+                          color: isSelected
+                              ? null
+                              : idx.isOdd
+                                  ? theme.colorScheme.secondary.withOpacity(0.1)
+                                  : theme.colorScheme.surfaceContainerHighest
+                                      .withOpacity(0.1),
+                        ),
+                        child: ListTile(
+                          textColor: isSelected
+                              ? theme.colorScheme.inversePrimary
+                              : null,
+                          leading: toBlur
+                              ? ClipOval(
+                                  child: ImageFiltered(
+                                    imageFilter: ImageFilter.compose(
+                                      outer: ImageFilter.blur(
+                                        sigmaX: 3.59,
+                                        sigmaY: 3.59,
+                                        tileMode: TileMode.mirror,
+                                      ),
+                                      inner: ImageFilter.dilate(
+                                        radiusX: 0.7,
+                                        radiusY: 0.7,
+                                      ),
+                                    ),
+                                    child: CircleAvatar(
+                                      backgroundColor: theme.colorScheme.surface
+                                          .withOpacity(0),
+                                      backgroundImage:
+                                          cell.tryAsThumbnailable(),
+                                    ),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  backgroundColor:
+                                      theme.colorScheme.surface.withOpacity(0),
+                                  backgroundImage: cell.tryAsThumbnailable(),
+                                ),
+                          title: Text(
+                            cell.alias(true),
+                            softWrap: false,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                                  : idx.isOdd
+                                      ? theme.colorScheme.onSurface
+                                          .withOpacity(0.8)
+                                      : theme.colorScheme.onSurface
+                                          .withOpacity(0.9),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        GridLayoutType.gridQuilted => SliverGrid.builder(
+            itemCount: val.list.length,
+            gridDelegate: SliverQuiltedGridDelegate(
+              crossAxisCount: config.columns.number,
+              repeatPattern: QuiltedGridRepeatPattern.inverted,
+              pattern: config.columns.pattern(gridSeed),
+            ),
+            itemBuilder: buildItem,
+          ),
+      },
     );
   }
 }

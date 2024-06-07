@@ -56,3 +56,4 @@ app.*.map.json
 /app
 /AppDir
 *.AppImage
+/.vscode/settings.json

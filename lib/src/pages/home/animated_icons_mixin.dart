@@ -75,8 +75,14 @@ mixin _AnimatedIconsMixin on State<Home> {
           ),
         NavigationDestination(
           icon: Icon(
-            Icons.more_horiz,
-            color: currentRoute == _ChangePageMixin.kMorePageRoute
+            (showAnimeMangaPages
+                    ? currentRoute == _ChangePageMixin.kMorePageRoute
+                    : currentRoute == _ChangePageMixin.kMangaPageRoute)
+                ? Icons.more_horiz_rounded
+                : Icons.more_horiz_outlined,
+            color: (showAnimeMangaPages
+                    ? currentRoute == _ChangePageMixin.kMorePageRoute
+                    : currentRoute == _ChangePageMixin.kMangaPageRoute)
                 ? Theme.of(context).colorScheme.primary
                 : null,
           ),

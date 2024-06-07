@@ -375,35 +375,38 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     download: _download,
                     selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
-                    search: OverrideGridSearchWidget(
-                      SearchAndFocus(
-                        search.searchWidget(
-                          context,
-                          hint: api.booru.name,
-                          disabled: pagingState.addToBookmarks,
+                    search: BarSearchWidget(
+                      onChange: (str) {},
+                      trailingItems: [
+                        IconButton(
+                          icon: pagingState.addToBookmarks
+                              ? const Icon(Icons.bookmark_remove_rounded)
+                              : const Icon(Icons.bookmark_add_rounded),
+                          onPressed: () {
+                            pagingState.addToBookmarks =
+                                !pagingState.addToBookmarks;
+
+                            setState(() {});
+                          },
                         ),
-                        search.searchFocus,
-                      ),
+                      ],
                     ),
+                    // OverrideGridSearchWidget(
+                    //   SearchAndFocus(
+                    //     search.searchWidget(
+                    //       context,
+                    //       hint: api.booru.name,
+                    //       disabled: pagingState.addToBookmarks,
+                    //     ),
+                    //     search.searchFocus,
+                    //   ),
+                    // ),
                     registerNotifiers: (child) => OnBooruTagPressed(
                       onPressed: _onTagPressed,
                       child: BooruAPINotifier(api: api, child: child),
                     ),
                   ),
                   description: GridDescription(
-                    menuButtonItems: [
-                      IconButton(
-                        icon: pagingState.addToBookmarks
-                            ? const Icon(Icons.bookmark_remove_rounded)
-                            : const Icon(Icons.bookmark_add_rounded),
-                        onPressed: () {
-                          pagingState.addToBookmarks =
-                              !pagingState.addToBookmarks;
-
-                          setState(() {});
-                        },
-                      ),
-                    ],
                     actions: [
                       BooruGridActions.download(context, api.booru),
                       BooruGridActions.favorites(
@@ -414,7 +417,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       BooruGridActions.hide(context, hiddenBooruPost),
                     ],
                     animationsOnSourceWatch: false,
-                    inlineMenuButtonItems: true,
                     keybindsDescription: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),

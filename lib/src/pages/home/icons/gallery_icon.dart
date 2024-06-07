@@ -24,7 +24,7 @@ class _GalleryIcon extends StatelessWidget {
         controller: controller,
         effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
         child: Icon(
-          Icons.collections,
+          isSelected ? Icons.collections_rounded : Icons.collections_outlined,
           color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),

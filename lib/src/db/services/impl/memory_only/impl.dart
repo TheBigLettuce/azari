@@ -1963,6 +1963,12 @@ class MemoryGridStateBooruService implements GridBookmarkService {
     bool fire = false,
   ]) =>
       _events.stream.listen(f);
+
+  @override
+  List<GridBookmark> firstNumber(int n) {
+    // TODO: implement firstNumber
+    throw UnimplementedError();
+  }
 }
 
 class PlainGridBookmark extends GridBookmark {

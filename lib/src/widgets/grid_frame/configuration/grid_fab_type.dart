@@ -6,22 +6,24 @@
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 part "../parts/fab.dart";
 
 sealed class GridFabType {
   const GridFabType();
 
-  Widget widget(BuildContext context, ScrollController controller);
+  Widget widget(BuildContext context);
 }
 
 class DefaultGridFab implements GridFabType {
   const DefaultGridFab();
 
   @override
-  Widget widget(BuildContext context, ScrollController controller) {
-    return _Fab(
-      controller: controller,
+  Widget widget(BuildContext context) {
+    return IsScrollingNotifier(
+      notifier: GridScrollNotifier.notifierOf(context),
+      child: const _Fab(),
     );
   }
 }
@@ -29,10 +31,27 @@ class DefaultGridFab implements GridFabType {
 class OverrideGridFab implements GridFabType {
   const OverrideGridFab(this.child);
 
-  final Widget Function(ScrollController) child;
+  final Widget Function() child;
 
   @override
-  Widget widget(BuildContext context, ScrollController controller) {
-    return child(controller);
+  Widget widget(BuildContext context) {
+    return IsScrollingNotifier(
+      notifier: GridScrollNotifier.notifierOf(context),
+      child: child(),
+    );
+  }
+}
+
+class IsScrollingNotifier extends InheritedNotifier<ValueNotifier<bool>> {
+  const IsScrollingNotifier({
+    required ValueNotifier<bool> notifier,
+    required super.child,
+  }) : super(notifier: notifier);
+
+  static bool of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<IsScrollingNotifier>();
+
+    return widget!.notifier!.value;
   }
 }

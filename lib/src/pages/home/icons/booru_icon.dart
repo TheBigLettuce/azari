@@ -18,18 +18,33 @@ class _BooruIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selectedBooruPage = SelectedBooruPage.of(context);
 
     return NavigationDestination(
       icon: Animate(
         autoPlay: true,
         controller: controller,
         effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
-        child: Icon(
-          Icons.image,
-          color: isSelected ? theme.colorScheme.primary : null,
-        ),
+        child: switch (selectedBooruPage) {
+          2 => Icon(
+              isSelected ? Icons.bookmark_rounded : Icons.bookmark_outline,
+              color: isSelected ? theme.colorScheme.primary : null,
+            ),
+          1 => Icon(
+              isSelected ? Icons.favorite_rounded : Icons.favorite_outline,
+              color: isSelected ? theme.colorScheme.primary : null,
+            ),
+          int() => Icon(
+              isSelected ? Icons.image_rounded : Icons.image_outlined,
+              color: isSelected ? theme.colorScheme.primary : null,
+            ),
+        },
       ),
-      label: label,
+      label: switch (selectedBooruPage) {
+        2 => "Bookmarks",
+        1 => "Favorites", // TODO: change
+        int() => label,
+      },
     );
   }
 }

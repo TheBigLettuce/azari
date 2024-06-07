@@ -356,10 +356,6 @@ abstract mixin class Post<T extends ContentableCell>
 
   @override
   Contentable content() {
-    if (HiddenBooruPostService.db().isHidden(id, booru)) {
-      return EmptyContent(this);
-    }
-
     final url = _getUrl(this);
 
     return switch (type) {

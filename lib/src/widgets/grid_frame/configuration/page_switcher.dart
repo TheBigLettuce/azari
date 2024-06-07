@@ -265,7 +265,7 @@ class PageSwitcherIcons<T extends CellBase>
   @override
   Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
       PageSwitchingIconsWidget(
-        controller: state.controller,
+        controller: GridScrollNotifier.of(context),
         selection: state.selection,
         padding: const EdgeInsets.only(top: 8, bottom: 8),
         state: state,

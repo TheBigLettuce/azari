@@ -11,6 +11,7 @@ class _WrapPadding extends StatelessWidget {
     required this.selectionGlue,
     required this.child,
   });
+
   final PreferredSizeWidget? footer;
   final SelectionGlue selectionGlue;
 
@@ -19,11 +20,11 @@ class _WrapPadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insets = EdgeInsets.only(
-      bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
+      bottom: (kFloatingActionButtonMargin * 2 + 24 + 8 + 8) +
           (selectionGlue.keyboardVisible()
               ? 0
               : MediaQuery.viewPaddingOf(context).bottom +
-                  (selectionGlue.isOpen() //&&
+                  (selectionGlue.isOpen()
                       ? selectionGlue.barHeight()
                       : selectionGlue.persistentBarHeight
                           ? selectionGlue.barHeight()

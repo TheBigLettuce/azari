@@ -26,21 +26,18 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class FavoriteBooruPage extends StatelessWidget {
   const FavoriteBooruPage({
     super.key,
     required this.state,
-    required this.conroller,
     this.asSliver = true,
     this.wrapGridPage = false,
     required this.db,
   });
 
   final FavoriteBooruPageState state;
-  final ScrollController conroller;
   final bool asSliver;
   final bool wrapGridPage;
 
@@ -69,22 +66,25 @@ class FavoriteBooruPage extends StatelessWidget {
           gridSeed: state.state.gridSeed,
         ),
       ],
-      overrideController: conroller,
+      // overrideController: conroller,
       functionality: GridFunctionality(
         search: asSliver
-            ? const EmptyGridSearchWidget()
-            : OverrideGridSearchWidget(
-                SearchAndFocus(
-                  FilteringSearchWidget(
-                    hint: null,
-                    filter: state.filter,
-                    textController: state.searchTextController,
-                    localTagDictionary: db.localTagDictionary,
-                    focusNode: state.searchFocus,
-                  ),
-                  state.searchFocus,
-                ),
+            ? const PageNameSearchWidget()
+            : BarSearchWidget(
+                onChange: (str) {},
               ),
+        //  OverrideGridSearchWidget(
+        //     SearchAndFocus(
+        //       FilteringSearchWidget(
+        //         hint: null,
+        //         filter: state.filter,
+        //         textController: state.searchTextController,
+        //         localTagDictionary: db.localTagDictionary,
+        //         focusNode: state.searchFocus,
+        //       ),
+        //       state.searchFocus,
+        //     ),
+        //   ),
         registerNotifiers: (child) => OnBooruTagPressed(
           onPressed: _onPressed,
           child: child,
@@ -107,7 +107,7 @@ class FavoriteBooruPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridConfiguration(
-      sliver: true,
+      sliver: asSliver,
       watch: state.gridSettings.watch,
       child: wrapGridPage
           ? WrapGridPage(

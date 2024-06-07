@@ -16,18 +16,15 @@ mixin GridSubpageState<T extends CellBase> on State<GridFrame<T>> {
 
   int currentPageF() => currentPage;
 
-  void registerOffsetSaver(ScrollController controller) {
-    final f = widget.functionality.updateScrollPosition;
-    if (f == null) {
-      return;
-    }
-
-    controller.position.isScrollingNotifier.addListener(() {
-      f(controller.offset);
-    });
-  }
-
   void onSubpageSwitched(
+    BuildContext context,
+    int next,
+    GridSelection<T> selection,
+  ) =>
+      onSubpageSwitchedGrid(next, selection, GridScrollNotifier.of(context));
+
+  @protected
+  void onSubpageSwitchedGrid(
     int next,
     GridSelection<T> selection,
     ScrollController controller,
@@ -41,10 +38,6 @@ mixin GridSubpageState<T extends CellBase> on State<GridFrame<T>> {
     currentPage = next;
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (next == 0) {
-        registerOffsetSaver(controller);
-      }
-
       if (atHomePage && controller.offset == 0 && savedOffset != 0) {
         controller.position.animateTo(
           savedOffset,

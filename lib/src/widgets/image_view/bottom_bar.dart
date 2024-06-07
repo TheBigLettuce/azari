@@ -35,6 +35,7 @@ class ImageViewBottomAppBar extends StatelessWidget {
             children: [
               Expanded(
                 child: Wrap(
+                  key: widgets.uniqueKey(),
                   spacing: 4,
                   children: actions
                       .map(

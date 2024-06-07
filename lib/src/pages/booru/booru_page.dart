@@ -43,6 +43,7 @@ import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.
 import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
 import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
+import "package:gallery/src/widgets/skeletons/home.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -195,7 +196,6 @@ class _BooruPageState extends State<BooruPage> {
             pagingState.needToRefresh(const Duration(hours: 1))) {
           final gridState = state.gridKey.currentState;
           if (gridState != null) {
-            gridState.resetFab();
             source.clearRefresh();
           }
 
@@ -297,7 +297,6 @@ class _BooruPageState extends State<BooruPage> {
     timeUpdater.cancel();
 
     lifecycleListener.dispose();
-    scrollController.dispose();
 
     super.dispose();
   }
@@ -305,8 +304,6 @@ class _BooruPageState extends State<BooruPage> {
   void _download(int i) => source
       .forIdx(i)
       ?.download(DownloadManager.of(context), PostTags.fromContext(context));
-
-  final scrollController = ScrollController();
 
   void _onBooruTagPressed(
     BuildContext _,
@@ -337,29 +334,56 @@ class _BooruPageState extends State<BooruPage> {
     pagingState.restoreSecondaryGrid = name;
   }
 
-  void _proc(bool didPop) {
-    final s = state.gridKey.currentState;
-    if (s != null && s.currentPage != 0) {
-      s.onSubpageSwitched(0, s.selection, s.controller);
-      return;
-    }
-
-    widget.procPop(didPop);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return FavoriteBooruStateHolder(
-      db: widget.db,
-      build: (context, favoriteBooruState) {
-        return GridPopScope(
-          searchTextController: favoriteBooruState.searchTextController,
-          filter: favoriteBooruState.filter,
-          searchFocus: favoriteBooruState.searchFocus,
-          rootNavigatorPop: _proc,
+    return switch (SelectedBooruPage.of(context)) {
+      2 => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          searchFocus: null,
+          rootNavigatorPop: widget.procPop,
+          child: BookmarkPage(
+            scrollUp: () {
+              GridScrollNotifier.of(context).animateTo(
+                0,
+                duration: const Duration(milliseconds: 180),
+                curve: Easing.standardAccelerate,
+              );
+            },
+            pagingRegistry: widget.pagingRegistry,
+            generateGlue: GlueProvider.generateOf(context),
+            saveSelectedPage: _setSecondaryName,
+            db: widget.db,
+          ),
+        ),
+      1 => FavoriteBooruStateHolder(
+          db: widget.db,
+          build: (context, favoriteBooruState) {
+            return GridPopScope(
+              searchTextController: favoriteBooruState.searchTextController,
+              filter: favoriteBooruState.filter,
+              searchFocus: favoriteBooruState.searchFocus,
+              rootNavigatorPop: widget.procPop,
+              child: GlueProvider(
+                generate: GlueProvider.generateOf(context),
+                child: FavoriteBooruPage(
+                  wrapGridPage: true,
+                  asSliver: false,
+                  state: favoriteBooruState,
+                  db: widget.db,
+                ),
+              ),
+            );
+          },
+        ),
+      int() => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          searchFocus: null,
+          rootNavigatorPop: widget.procPop,
           child: GridConfiguration(
             watch: gridSettings.watch,
             child: BooruAPINotifier(
@@ -385,7 +409,6 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                   GridFooter<void>(storage: source.backingStorage),
                 ],
-                overrideController: scrollController,
                 functionality: GridFunctionality(
                   settingsButton: GridSettingsButton.fromWatchable(
                     gridSettings,
@@ -393,24 +416,31 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                   selectionGlue: GlueProvider.generateOf(context)(),
                   source: source,
-                  backButton: OverrideGridBackButton(
-                    search.searchWidget(
-                      context,
-                      hint: pagingState.api.booru.name,
-                    ),
-                  ),
-                  search: OverrideGridSearchWidget(
-                    SearchAndFocus(
-                      Transform.rotate(
-                        angle: 0.4363323,
-                        child: Icon(
-                          const IconData(0x963F),
-                          size: 22,
-                          color: theme.colorScheme.onSurface.withOpacity(0.2),
-                          applyTextScaling: true,
+                  search: RawSearchWidget(
+                    (settingsButton, bottomWidget) => SliverAppBar(
+                      leading: Center(
+                        child: IconButton(
+                          onPressed: () {
+                            Scaffold.of(context).openDrawer();
+                          },
+                          icon: const Icon(Icons.menu_rounded),
                         ),
                       ),
-                      search.searchFocus,
+                      floating: true,
+                      pinned: true,
+                      snap: true,
+                      stretch: true,
+                      bottom: bottomWidget ??
+                          const PreferredSize(
+                            preferredSize: Size.zero,
+                            child: SizedBox.shrink(),
+                          ),
+                      centerTitle: true,
+                      title: search.searchWidget(
+                        context,
+                        hint: pagingState.api.booru.name,
+                      ),
+                      actions: [if (settingsButton != null) settingsButton],
                     ),
                   ),
                   download: _download,
@@ -437,66 +467,48 @@ class _BooruPageState extends State<BooruPage> {
                     ),
                     BooruGridActions.hide(context, hiddenBooruPost),
                   ],
-                  pages: PageSwitcherIcons(
-                    [
-                      PageIcon(
-                        Icons.favorite_rounded,
-                        watchCount:
-                            favoriteBooruState.filter.backingStorage.watch,
-                      ),
-                      PageIcon(
-                        Icons.bookmarks_rounded,
-                        watchCount: gridBookmarks.watch,
-                      ),
-                    ],
-                    (context, state, i) => switch (i) {
-                      0 => PageDescription(
-                          search: SearchAndFocus(
-                            FilteringSearchWidget(
-                              hint: null,
-                              filter: favoriteBooruState.filter,
-                              textController:
-                                  favoriteBooruState.searchTextController,
-                              localTagDictionary: widget.db.localTagDictionary,
-                              focusNode: favoriteBooruState.searchFocus,
-                            ),
-                            favoriteBooruState.searchFocus,
-                          ),
-                          settingsButton: GridSettingsButton.fromWatchable(
-                            favoriteBooruState.gridSettings,
-                          ),
-                          slivers: [
-                            GlueProvider(
-                              generate: GlueProvider.generateOf(context),
-                              child: FavoriteBooruPage(
-                                conroller: scrollController,
-                                state: favoriteBooruState,
-                                db: widget.db,
-                              ),
-                            ),
-                          ],
-                        ),
-                      1 => PageDescription(
-                          slivers: [
-                            BookmarkPage(
-                              scrollUp: () {
-                                state.controller.animateTo(
-                                  0,
-                                  duration: const Duration(milliseconds: 180),
-                                  curve: Easing.standardAccelerate,
-                                );
-                              },
-                              pagingRegistry: widget.pagingRegistry,
-                              generateGlue: GlueProvider.generateOf(context),
-                              saveSelectedPage: _setSecondaryName,
-                              db: widget.db,
-                            ),
-                          ],
-                        ),
-                      int() => const PageDescription(slivers: []),
-                    },
-                  ),
-                  inlineMenuButtonItems: true,
+
+                  // pages: PageSwitcherIcons(
+                  //   [
+                  //     PageIcon(
+                  //       Icons.favorite_rounded,
+                  //       watchCount:
+                  //           favoriteBooruState.filter.backingStorage.watch,
+                  //     ),
+                  //     PageIcon(
+                  //       Icons.bookmarks_rounded,
+                  //       watchCount: gridBookmarks.watch,
+                  //     ),
+                  //   ],
+                  //   (context, state, i) => switch (i) {
+                  //     0 => PageDescription(
+                  //         search: SearchAndFocus(
+                  //           FilteringSearchWidget(
+                  //             hint: null,
+                  //             filter: favoriteBooruState.filter,
+                  //             textController:
+                  //                 favoriteBooruState.searchTextController,
+                  //             localTagDictionary: widget.db.localTagDictionary,
+                  //             focusNode: favoriteBooruState.searchFocus,
+                  //           ),
+                  //           favoriteBooruState.searchFocus,
+                  //         ),
+                  //         settingsButton: GridSettingsButton.fromWatchable(
+                  //           favoriteBooruState.gridSettings,
+                  //         ),
+                  //         slivers: [
+                  //           ,
+                  //         ],
+                  //       ),
+                  //     1 => PageDescription(
+                  //         slivers: [
+                  //           ,
+                  //         ],
+                  //       ),
+                  //     int() => const PageDescription(slivers: []),
+                  //   },
+                  // ),
+
                   animationsOnSourceWatch: false,
                   pageName: l10n.booruLabel,
                   keybindsDescription: l10n.booruGridPageName,
@@ -506,9 +518,8 @@ class _BooruPageState extends State<BooruPage> {
               ),
             ),
           ),
-        );
-      },
-    );
+        ),
+    };
   }
 }
 

@@ -442,6 +442,8 @@ abstract interface class GridBookmarkService {
 
   GridBookmark? get(String name);
 
+  List<GridBookmark> firstNumber(int n);
+
   void delete(String name);
 
   void add(GridBookmark state);

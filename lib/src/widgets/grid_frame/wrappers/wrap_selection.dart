@@ -61,7 +61,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
               selection.selectOrUnselect(context, thisIndx);
             },
             onLeave: (data) {
-              final c = selection.controller();
+              final c = GridScrollNotifier.of(context);
               if (!c.hasClients) {
                 return;
               }

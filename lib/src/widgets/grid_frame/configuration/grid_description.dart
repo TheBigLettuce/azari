@@ -15,13 +15,10 @@ class GridDescription<T extends CellBase> {
     this.showAppBar = true,
     this.bottomWidget,
     this.asSliver = false,
-    this.inlineMenuButtonItems = false,
-    this.menuButtonItems,
     this.footer,
     this.pages,
     this.pageName,
     this.overrideEmptyWidgetNotice,
-    this.appBarSnap = true,
     this.animationsOnSourceWatch = true,
   });
 
@@ -43,10 +40,7 @@ class GridDescription<T extends CellBase> {
   final bool pullToRefresh;
   final bool animationsOnSourceWatch;
 
-  /// Makes [menuButtonItems] appear as app bar items.
-  final bool inlineMenuButtonItems;
   final bool asSliver;
-  final bool appBarSnap;
 
   final int gridSeed;
 
@@ -55,9 +49,4 @@ class GridDescription<T extends CellBase> {
   final PageSwitcherInterface<T>? pages;
 
   final PreferredSizeWidget? footer;
-
-  /// Items added in the menu button's children, after the [searchWidget], or the page name
-  /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
-  /// it is displayed directly.
-  final List<Widget>? menuButtonItems;
 }

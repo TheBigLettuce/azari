@@ -365,27 +365,27 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 GridFooter<StatisticsGalleryData>(
                   storage: filter.backingStorage,
                   name: widget.dirName,
-                  statistics: (
-                    (value) => [
-                          StatisticsCard(
-                            subtitle: value.viewedFiles.toString(),
-                            title: l10n.cardFilesViewed,
-                          ),
-                          StatisticsCard(
-                            subtitle: value.filesSwiped.toString(),
-                            title: l10n.cardFilesSwiped,
-                          ),
-                          StatisticsCard(
-                            subtitle: value.moved.toString(),
-                            title: l10n.cardMoved,
-                          ),
-                          StatisticsCard(
-                            subtitle: value.copied.toString(),
-                            title: l10n.cardCopied,
-                          ),
-                        ],
-                    widget.db.statisticsGallery.watch,
-                  ),
+                  // statistics: (
+                  //   (value) => [
+                  //         StatisticsCard(
+                  //           subtitle: value.viewedFiles.toString(),
+                  //           title: l10n.cardFilesViewed,
+                  //         ),
+                  //         StatisticsCard(
+                  //           subtitle: value.filesSwiped.toString(),
+                  //           title: l10n.cardFilesSwiped,
+                  //         ),
+                  //         StatisticsCard(
+                  //           subtitle: value.moved.toString(),
+                  //           title: l10n.cardMoved,
+                  //         ),
+                  //         StatisticsCard(
+                  //           subtitle: value.copied.toString(),
+                  //           title: l10n.cardCopied,
+                  //         ),
+                  //       ],
+                  //   widget.db.statisticsGallery.watch,
+                  // ),
                 ),
               ],
               functionality: GridFunctionality(
@@ -412,18 +412,108 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 ),
                 selectionGlue: GlueProvider.generateOf(context)(),
                 source: filter,
-                search: OverrideGridSearchWidget(
-                  SearchAndFocus(
-                    FilteringSearchWidget(
-                      hint: widget.dirName,
-                      filter: filter,
-                      textController: searchTextController,
-                      localTagDictionary: widget.db.localTagDictionary,
-                      focusNode: searchFocus,
-                    ),
-                    searchFocus,
-                  ),
+                search: BarSearchWidget.fromFilter(
+                  context,
+                  filter,
+                  hintText: widget.dirName,
+                  textEditingController: searchTextController,
+                  complete: widget.db.localTagDictionary.complete,
+                  trailingItems: [
+                    if (widget.callback == null && api.type.isTrash())
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).push(
+                            DialogRoute<void>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(l10n.emptyTrashTitle),
+                                  content: Text(
+                                    l10n.thisIsPermanent,
+                                    style: TextStyle(
+                                      color: Colors.red.harmonizeWith(
+                                        theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        GalleryManagementApi.current()
+                                            .trash
+                                            .empty();
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(l10n.yes),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(l10n.no),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_sweep_outlined),
+                      ),
+                    if (widget.callback != null)
+                      Builder(
+                        builder: (context) => IconButton(
+                          onPressed: () {
+                            if (filter.progress.inRefreshing) {
+                              return;
+                            }
+
+                            final upTo = filter.backingStorage.count;
+
+                            try {
+                              final n = math.Random.secure().nextInt(upTo);
+
+                              final gridState = state.gridKey.currentState;
+                              if (gridState != null) {
+                                final cell = gridState.source.forIdxUnsafe(n);
+                                cell.onPress(
+                                  context,
+                                  gridState.widget.functionality,
+                                  cell,
+                                  n,
+                                );
+                              }
+                            } catch (e, trace) {
+                              _log.logDefaultImportant(
+                                "getting random number".errorMessage(e),
+                                trace,
+                              );
+
+                              return;
+                            }
+
+                            if (widget.callback!.returnBack) {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            }
+                          },
+                          icon: const Icon(Icons.casino_outlined),
+                        ),
+                      ),
+                  ],
                 ),
+                // OverrideGridSearchWidget(
+                //   SearchAndFocus(
+                //     FilteringSearchWidget(
+                //       hint: widget.dirName,
+                //       filter: filter,
+                //       textController: searchTextController,
+                //       localTagDictionary: widget.db.localTagDictionary,
+                //       focusNode: searchFocus,
+                //     ),
+                //     searchFocus,
+                //   ),
+                // ),
               ),
               description: GridDescription(
                 overrideEmptyWidgetNotice:
@@ -465,90 +555,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                               api.parent,
                             ),
                           ],
-                menuButtonItems: [
-                  if (widget.callback == null && api.type.isTrash())
-                    IconButton(
-                      onPressed: () {
-                        Navigator.of(context, rootNavigator: true).push(
-                          DialogRoute<void>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text(l10n.emptyTrashTitle),
-                                content: Text(
-                                  l10n.thisIsPermanent,
-                                  style: TextStyle(
-                                    color: Colors.red.harmonizeWith(
-                                      theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      GalleryManagementApi.current()
-                                          .trash
-                                          .empty();
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(l10n.yes),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(l10n.no),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.delete_sweep_outlined),
-                    ),
-                  if (widget.callback != null)
-                    Builder(
-                      builder: (context) => IconButton(
-                        onPressed: () {
-                          if (filter.progress.inRefreshing) {
-                            return;
-                          }
-
-                          final upTo = filter.backingStorage.count;
-
-                          try {
-                            final n = math.Random.secure().nextInt(upTo);
-
-                            final gridState = state.gridKey.currentState;
-                            if (gridState != null) {
-                              final cell = gridState.source.forIdxUnsafe(n);
-                              cell.onPress(
-                                context,
-                                gridState.widget.functionality,
-                                cell,
-                                n,
-                              );
-                            }
-                          } catch (e, trace) {
-                            _log.logDefaultImportant(
-                              "getting random number".errorMessage(e),
-                              trace,
-                            );
-
-                            return;
-                          }
-
-                          if (widget.callback!.returnBack) {
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          }
-                        },
-                        icon: const Icon(Icons.casino_outlined),
-                      ),
-                    ),
-                ],
-                inlineMenuButtonItems: true,
                 bottomWidget: widget.callback != null
                     ? CopyMovePreview.hintWidget(
                         context,

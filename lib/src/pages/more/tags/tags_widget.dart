@@ -69,7 +69,11 @@ class _TagsWidgetState extends State<TagsWidget> {
       child: _tags.isEmpty
           ? Row(
               children: [
-                if (widget.leading != null) widget.leading!,
+                if (widget.leading != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: widget.leading,
+                  ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -86,6 +90,7 @@ class _TagsWidgetState extends State<TagsWidget> {
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
+                      const Padding(padding: EdgeInsets.only(right: 4)),
                     ],
                   ),
                 ),
@@ -96,25 +101,32 @@ class _TagsWidgetState extends State<TagsWidget> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.leading != null) widget.leading!,
+                  if (widget.leading != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: widget.leading,
+                    ),
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: ListView.builder(
-                        key: ValueKey(refreshes),
-                        itemCount: _tags.length,
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: SingleTagWidget(
-                              tag: _tags[index],
-                              tagging: widget.tagging,
-                              onPress: widget.onPress,
-                              redBackground: widget.redBackground,
-                            ),
-                          );
-                        },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(25),
+                        child: ListView.builder(
+                          key: ValueKey(refreshes),
+                          itemCount: _tags.length,
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: SingleTagWidget(
+                                tag: _tags[index],
+                                tagging: widget.tagging,
+                                onPress: widget.onPress,
+                                redBackground: widget.redBackground,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -178,7 +190,8 @@ class SingleTagWidget extends StatelessWidget {
           child: Text(l10n.delete),
         ),
       ],
-      child: FilledButton.tonal(
+      child: FilledButton.tonalIcon(
+        icon: const Icon(Icons.tag_rounded),
         style: ButtonStyle(
           visualDensity: VisualDensity.comfortable,
           backgroundColor: WidgetStatePropertyAll(
@@ -190,7 +203,7 @@ class SingleTagWidget extends StatelessWidget {
             : () {
                 onPress!(tag.tag, null);
               },
-        child: Text(
+        label: Text(
           tag.tag,
           style: redBackground
               ? TextStyle(color: Colors.black.withOpacity(0.8))

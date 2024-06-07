@@ -33,7 +33,9 @@ class _AnimeIcon extends StatelessWidget {
           ),
         ],
         child: Icon(
-          Icons.video_library,
+          isSelected
+              ? Icons.video_library_rounded
+              : Icons.video_library_outlined,
           color: isSelected ? theme.colorScheme.primary : null,
         ),
       ),

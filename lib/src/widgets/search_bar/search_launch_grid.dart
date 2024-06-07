@@ -174,12 +174,8 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                   key: ValueKey(previousSearch!.$2),
                   future: previousSearch!.$1,
                   builder: (context, snapshot) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        state.header,
-                        if (!snapshot.hasData)
-                          const Center(
+                    return !snapshot.hasData
+                        ? Center(
                             child: Padding(
                               padding: EdgeInsets.only(top: 40),
                               child: SizedBox(
@@ -189,58 +185,35 @@ class _LaunchingSearchWidgetState extends State<LaunchingSearchWidget> {
                               ),
                             ),
                           )
-                        else ...[
-                          const Divider(indent: 8, endIndent: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8, left: 8),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: -4,
-                              children: snapshot.data!
-                                  .map(
-                                    (e) => ActionChip(
-                                      label: RichText(
-                                        text: TextSpan(
-                                          children: [
-                                            TextSpan(text: e.tag),
-                                            TextSpan(
-                                              text: "  ${e.count}",
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: theme
-                                                    .colorScheme.onSurface
-                                                    .withOpacity(0.25),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        final tags = List<String>.from(
-                                          controller.text.split(" "),
-                                        );
+                        : ListBody(
+                            children: snapshot.data!
+                                .map(
+                                  (e) => ListTile(
+                                    leading: Icon(Icons.tag_outlined),
+                                    title: Text(e.tag),
+                                    onTap: () {
+                                      final tags = List<String>.from(
+                                        controller.text.split(" "),
+                                      );
 
-                                        if (tags.isNotEmpty) {
-                                          tags.removeLast();
-                                          tags.remove(e.tag);
-                                        }
+                                      if (tags.isNotEmpty) {
+                                        tags.removeLast();
+                                        tags.remove(e.tag);
+                                      }
 
-                                        tags.add(e.tag);
+                                      tags.add(e.tag);
 
-                                        final tagsString = tags.reduce(
-                                          (value, element) => "$value $element",
-                                        );
+                                      final tagsString = tags.reduce(
+                                        (value, element) => "$value $element",
+                                      );
 
-                                        searchController.text = "$tagsString ";
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
+                                      searchController.text = "$tagsString ";
+                                    },
+                                    trailing: Text(e.count.toString()),
+                                  ),
+                                )
+                                .toList(),
+                          );
                   },
                 ),
               ];

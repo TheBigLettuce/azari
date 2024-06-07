@@ -384,18 +384,47 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             add: _add,
             watch: gridSettings.watch,
           ),
-          search: OverrideGridSearchWidget(
-            SearchAndFocus(
-              FilteringSearchWidget(
-                hint: widget.l10n.directoriesHint,
-                filter: filter,
-                textController: searchTextController,
-                localTagDictionary: widget.db.localTagDictionary,
-                focusNode: searchFocus,
-              ),
-              searchFocus,
-            ),
+          search: BarSearchWidget.fromFilter(
+            context,
+            filter,
+            textEditingController: searchTextController,
+            trailingItems: [
+              if (widget.callback != null)
+                IconButton(
+                  onPressed: () async {
+                    try {
+                      widget.callback!(
+                        null,
+                        await GalleryManagementApi.current()
+                            .chooseDirectory(l10n, temporary: true)
+                            .then((value) => value!.$2),
+                      );
+                      Navigator.pop(context);
+                    } catch (e, trace) {
+                      _log.logDefaultImportant(
+                        "new folder in android_directories".errorMessage(e),
+                        trace,
+                      );
+
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.create_new_folder_outlined),
+                ),
+            ],
           ),
+          // OverrideGridSearchWidget(
+          //   SearchAndFocus(
+          //     FilteringSearchWidget(
+          //       hint: widget.l10n.directoriesHint,
+          //       filter: filter,
+          //       textController: searchTextController,
+          //       localTagDictionary: widget.db.localTagDictionary,
+          //       focusNode: searchFocus,
+          //     ),
+          //     searchFocus,
+          //   ),
+          // ),
         ),
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null
@@ -451,30 +480,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   ),
                 ],
           footer: widget.callback?.preview,
-          menuButtonItems: [
-            if (widget.callback != null)
-              IconButton(
-                onPressed: () async {
-                  try {
-                    widget.callback!(
-                      null,
-                      await GalleryManagementApi.current()
-                          .chooseDirectory(l10n, temporary: true)
-                          .then((value) => value!.$2),
-                    );
-                    Navigator.pop(context);
-                  } catch (e, trace) {
-                    _log.logDefaultImportant(
-                      "new folder in android_directories".errorMessage(e),
-                      trace,
-                    );
-
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.create_new_folder_outlined),
-              ),
-          ],
           bottomWidget: widget.callback != null || widget.nestedCallback != null
               ? CopyMovePreview.hintWidget(
                   context,
@@ -486,7 +491,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       : widget.nestedCallback!.icon,
                 )
               : null,
-          inlineMenuButtonItems: true,
           keybindsDescription: widget.l10n.androidGKeybindsDescription,
           gridSeed: state.gridSeed,
         ),

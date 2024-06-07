@@ -2520,6 +2520,21 @@ class IsarGridStateBooruService implements GridBookmarkService {
   }
 
   @override
+  List<GridBookmark> firstNumber(int n) {
+    if (n.isNegative) {
+      return all;
+    } else if (n == 0) {
+      return const [];
+    }
+
+    return _Dbs.g.main.isarBookmarks
+        .where()
+        .sortByTimeDesc()
+        .limit(n)
+        .findAllSync();
+  }
+
+  @override
   GridBookmark? get(String name) =>
       _Dbs.g.main.isarBookmarks.getByNameSync(name);
 
