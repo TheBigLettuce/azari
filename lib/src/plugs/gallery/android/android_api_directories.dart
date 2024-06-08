@@ -58,7 +58,8 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    GalleryDirectory d,
+    String bucketId,
+    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
@@ -70,9 +71,9 @@ class _AndroidGallery implements GalleryAPIDirectories {
     }
 
     return bindFiles = _AndroidGalleryFiles(
-      source: _AndroidFileSourceJoined([d.bucketId], type, favoriteFile),
-      bucketId: d.bucketId,
-      target: d.name,
+      source: _AndroidFileSourceJoined([bucketId], type, favoriteFile),
+      bucketId: bucketId,
+      target: name,
       type: type,
       parent: this,
       directoryMetadata: directoryMetadata,

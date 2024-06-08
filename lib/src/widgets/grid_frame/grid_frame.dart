@@ -22,9 +22,6 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
-import "package:gallery/src/widgets/keybinds/describe_keys.dart";
-import "package:gallery/src/widgets/keybinds/keybind_description.dart";
-import "package:gallery/src/widgets/keybinds/single_activator_description.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
@@ -471,8 +468,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
 
     Widget child(BuildContext context) {
       final Widget ret = _BodyWrapping(
-        bindings: const {},
-        pageName: widget.description.keybindsDescription,
         children: [
           if (widget.description.pullToRefresh)
             RefreshIndicator(
@@ -504,7 +499,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
                 },
               ),
             ),
-          if (hideAppBar || widget.functionality.search is BarSearchWidget)
+          if ((hideAppBar || widget.functionality.search is BarSearchWidget) &&
+              widget.functionality.selectionGlue.barHeight() != 0 &&
+              widget.functionality.selectionGlue.persistentBarHeight)
             Align(
               alignment: Alignment.bottomCenter,
               child: Builder(

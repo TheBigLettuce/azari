@@ -208,6 +208,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
                     return Padding(
                       padding: EdgeInsets.only(
+                        left: index == 0 ? 8 : 0,
                         right: index == newValues.length - 1 ? 8 : 4,
                       ),
                       child: ChoiceChip(

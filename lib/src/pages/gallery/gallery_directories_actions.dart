@@ -45,44 +45,37 @@ class SystemGalleryDirectoriesActions {
           }
         }
 
-        if (noAuth.isEmpty && requireAuth.isNotEmpty) {
-          void onSuccess(bool success) {
-            if (!success || !context.mounted) {
-              return;
-            }
-
-            blacklistedDirectory.backingStorage.addAll(
-              noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth,
-            );
-
-            if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.directoriesAuthMessage),
-                  action: SnackBarAction(
-                    label: l10n.authLabel,
-                    onPressed: () async {
-                      final success = await LocalAuthentication().authenticate(
-                        localizedReason: l10n.hideDirectoryReason,
-                      );
-                      if (!success) {
-                        return;
-                      }
-
-                      blacklistedDirectory.backingStorage.addAll(requireAuth);
-                    },
-                  ),
-                ),
-              );
-            }
+        if (noAuth.isNotEmpty) {
+          if (requireAuth.isNotEmpty && !canAuthBiometric) {
+            blacklistedDirectory.backingStorage.addAll(noAuth + requireAuth);
+            return;
           }
 
+          blacklistedDirectory.backingStorage.addAll(noAuth);
+        }
+
+        if (requireAuth.isNotEmpty) {
           if (canAuthBiometric) {
-            LocalAuthentication()
-                .authenticate(localizedReason: l10n.hideDirectoryReason)
-                .then(onSuccess);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.directoriesAuthMessage),
+                action: SnackBarAction(
+                  label: l10n.authLabel,
+                  onPressed: () async {
+                    final success = await LocalAuthentication().authenticate(
+                      localizedReason: l10n.hideDirectoryReason,
+                    );
+                    if (!success) {
+                      return;
+                    }
+
+                    blacklistedDirectory.backingStorage.addAll(requireAuth);
+                  },
+                ),
+              ),
+            );
           } else {
-            onSuccess(true);
+            blacklistedDirectory.backingStorage.addAll(requireAuth);
           }
         }
       },

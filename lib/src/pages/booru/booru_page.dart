@@ -444,6 +444,7 @@ class _BooruPageState extends State<BooruPage> {
                 child: FavoriteBooruPage(
                   wrapGridPage: true,
                   asSliver: false,
+                  api: pagingState.api,
                   state: favoriteBooruState,
                   db: widget.db,
                 ),

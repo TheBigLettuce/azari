@@ -152,7 +152,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   void launchGrid(BuildContext context, GridBookmark e) {
-    inInner = true;
+    BooruSubPage.selectOf(context, BooruSubPage.booru);
 
     Navigator.push<void>(
       context,
@@ -169,7 +169,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
           );
         },
       ),
-    ).whenComplete(_procUpdate);
+    );
   }
 
   @override

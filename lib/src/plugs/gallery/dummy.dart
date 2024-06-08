@@ -52,7 +52,8 @@ class _DummyDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    GalleryDirectory d,
+    String bucketId,
+    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,

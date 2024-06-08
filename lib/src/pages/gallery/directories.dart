@@ -509,11 +509,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 )
               : child(context),
         ),
-      GallerySubPage.blacklisted => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          rootNavigatorPop: widget.procPop,
-          child: BlacklistedPage(db: widget.db),
+      GallerySubPage.blacklisted => DirectoriesDataNotifier(
+          api: api,
+          nestedCallback: widget.nestedCallback,
+          callback: widget.callback,
+          segmentFnc: _segmentCell,
+          child: GridPopScope(
+            searchTextController: null,
+            filter: null,
+            rootNavigatorPop: widget.procPop,
+            child: BlacklistedPage(
+              generate: GlueProvider.generateOf(context),
+              db: widget.db,
+            ),
+          ),
         ),
     };
   }

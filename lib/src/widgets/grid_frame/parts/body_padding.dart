@@ -7,39 +7,15 @@ part of "../grid_frame.dart";
 
 class _BodyWrapping extends StatelessWidget {
   const _BodyWrapping({
-    required this.bindings,
-    required this.pageName,
     required this.children,
   });
 
-  final String pageName;
-  final Map<SingleActivatorDescription, void Function()> bindings;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: {
-        ...bindings,
-        ...keybindDescription(
-          context,
-          describeKeys(bindings),
-          pageName,
-          () {},
-        ),
-      },
-      child: Focus(
-        autofocus: true,
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: children,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return Stack(
+      children: children,
     );
   }
 }

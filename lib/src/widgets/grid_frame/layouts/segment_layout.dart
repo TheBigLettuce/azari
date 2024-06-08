@@ -487,6 +487,8 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
                       (e.$1 as AsyncCell<T>).uniqueKey(),
                 );
               }
+
+              setState(() {});
             },
             true,
           ),

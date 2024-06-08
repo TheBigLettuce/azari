@@ -178,7 +178,8 @@ mixin GalleryDirectory
 
         final apiFiles = switch (cell.bucketId) {
           "trash" => api.files(
-              d,
+              d.bucketId,
+              d.name,
               GalleryFilesPageType.trash,
               db.directoryTags,
               db.directoryMetadata,
@@ -186,7 +187,8 @@ mixin GalleryDirectory
               db.localTags,
             ),
           "favorites" => api.files(
-              d,
+              d.bucketId,
+              d.name,
               GalleryFilesPageType.favorites,
               db.directoryTags,
               db.directoryMetadata,
@@ -194,7 +196,8 @@ mixin GalleryDirectory
               db.localTags,
             ),
           String() => api.files(
-              d,
+              d.bucketId,
+              d.name,
               GalleryFilesPageType.normal,
               db.directoryTags,
               db.directoryMetadata,
@@ -407,7 +410,7 @@ mixin GalleryFile
               ]
             : <ImageViewAction>[
                 ImageViewAction(
-                  Icons.star_rounded,
+                  Icons.star_border_rounded,
                   (selected) {
                     FilesActionsMixin.favoriteOrUnfavorite(
                       context,

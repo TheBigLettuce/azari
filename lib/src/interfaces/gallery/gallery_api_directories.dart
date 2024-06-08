@@ -30,7 +30,8 @@ abstract class GalleryAPIDirectories {
   GalleryAPIFiles? get bindFiles;
 
   GalleryAPIFiles files(
-    GalleryDirectory d,
+    String bucketId,
+    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,

@@ -39,120 +39,6 @@ class _AppBar extends StatelessWidget {
       OverrideGridBackButton() => backButton.child,
     };
 
-    Widget wrapAutocomplete(
-      BarSearchWidget search,
-      Widget Function(
-        BuildContext,
-        TextEditingController,
-        FocusNode,
-        void Function(),
-      ) child,
-    ) =>
-        RawAutocomplete<String>(
-          textEditingController: search.textEditingController,
-          focusNode: search.textEditingController == null ? null : searchFocus,
-          optionsBuilder: (textEditingValue) async {
-            if (search.complete == null) {
-              return [];
-            }
-            try {
-              return (await autocompleteTag(
-                textEditingValue.text,
-                search.complete!,
-              ))
-                  .map((e) => e.tag);
-            } catch (e) {
-              return [];
-            }
-          },
-          fieldViewBuilder: child,
-          optionsViewBuilder: (
-            BuildContext context,
-            void Function(String) onSelected,
-            Iterable<String> options,
-          ) {
-            final tiles = options
-                .map(
-                  (elem) => ListTile(
-                    onTap: () {
-                      if (search.textEditingController == null) {
-                        return;
-                      }
-
-                      // if (submitOnPress) {
-                      //   focusMain();
-                      //   controller!.text = "";
-                      //   onSubmit(elem);
-                      //   return;
-                      // }
-
-                      // if (noSticky) {
-                      //   onSelected(elem);
-                      //   return;
-                      // }
-
-                      final tags = List<String>.from(
-                        search.textEditingController!.text.split(" "),
-                      );
-
-                      if (tags.isNotEmpty) {
-                        tags.removeLast();
-                        tags.remove(elem);
-                      }
-
-                      tags.add(elem);
-
-                      onSelected(tags.join(" "));
-                      search.onChange?.call(search.textEditingController!.text);
-                    },
-                    title: Text(elem),
-                  ),
-                )
-                .toList();
-
-            final theme = Theme.of(context);
-
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                color: theme.colorScheme.surface,
-                surfaceTintColor: theme.colorScheme.surfaceTint,
-                clipBehavior: Clip.antiAlias,
-                borderRadius: BorderRadius.circular(25),
-                elevation: 4,
-                child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(maxHeight: 200, maxWidth: 200),
-                  child: ListView.builder(
-                    itemCount: tiles.length,
-                    itemBuilder: (context, index) {
-                      return Builder(
-                        builder: (context) {
-                          final highlight =
-                              AutocompleteHighlightedOption.of(context) ==
-                                  index;
-                          if (highlight) {
-                            // highlightChanged(options.elementAt(index));
-                            WidgetsBinding.instance
-                                .scheduleFrameCallback((timeStamp) {
-                              Scrollable.ensureVisible(context);
-                            });
-                          }
-
-                          return Container(
-                            color: highlight ? theme.focusColor : null,
-                            child: tiles[index],
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-
     return switch (search) {
       PageNameSearchWidget() => SliverAppBar.large(
           backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
@@ -175,9 +61,10 @@ class _AppBar extends StatelessWidget {
           centerTitle: true,
           title: Center(
             child: search.complete != null
-                ? wrapAutocomplete(
-                    search,
-                    (
+                ? SearchBarAutocompleteWrapper(
+                    searchFocus: searchFocus,
+                    search: search,
+                    child: (
                       context,
                       textEditingController,
                       focusNode,
@@ -238,5 +125,130 @@ class _AppBar extends StatelessWidget {
       RawSearchWidget() =>
         search.sliver(gridFunctionality.settingsButton, bottomWidget),
     };
+  }
+}
+
+class SearchBarAutocompleteWrapper extends StatelessWidget {
+  const SearchBarAutocompleteWrapper({
+    super.key,
+    required this.search,
+    required this.child,
+    required this.searchFocus,
+  });
+
+  final BarSearchWidget search;
+  final FocusNode? searchFocus;
+  final Widget Function(
+    BuildContext,
+    TextEditingController,
+    FocusNode,
+    void Function(),
+  ) child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawAutocomplete<String>(
+      textEditingController:
+          searchFocus == null ? null : search.textEditingController,
+      focusNode: search.textEditingController == null ? null : searchFocus,
+      optionsBuilder: (textEditingValue) async {
+        if (search.complete == null) {
+          return [];
+        }
+        try {
+          return (await autocompleteTag(
+            textEditingValue.text,
+            search.complete!,
+          ))
+              .map((e) => e.tag);
+        } catch (e) {
+          return [];
+        }
+      },
+      fieldViewBuilder: child,
+      optionsViewBuilder: (
+        BuildContext context,
+        void Function(String) onSelected,
+        Iterable<String> options,
+      ) {
+        final tiles = options
+            .map(
+              (elem) => ListTile(
+                onTap: () {
+                  if (search.textEditingController == null) {
+                    return;
+                  }
+
+                  // if (submitOnPress) {
+                  //   focusMain();
+                  //   controller!.text = "";
+                  //   onSubmit(elem);
+                  //   return;
+                  // }
+
+                  // if (noSticky) {
+                  //   onSelected(elem);
+                  //   return;
+                  // }
+
+                  final tags = List<String>.from(
+                    search.textEditingController!.text.split(" "),
+                  );
+
+                  if (tags.isNotEmpty) {
+                    tags.removeLast();
+                    tags.remove(elem);
+                  }
+
+                  tags.add(elem);
+
+                  onSelected(tags.join(" "));
+                  search.onChange?.call(search.textEditingController!.text);
+                },
+                title: Text(elem),
+              ),
+            )
+            .toList();
+
+        final theme = Theme.of(context);
+
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            color: theme.colorScheme.surface,
+            surfaceTintColor: theme.colorScheme.surfaceTint,
+            clipBehavior: Clip.antiAlias,
+            borderRadius: BorderRadius.circular(25),
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
+              child: ListView.builder(
+                itemCount: tiles.length,
+                itemBuilder: (context, index) {
+                  return Builder(
+                    builder: (context) {
+                      final highlight =
+                          AutocompleteHighlightedOption.of(context) == index;
+                      if (highlight) {
+                        // highlightChanged(options.elementAt(index));
+                        WidgetsBinding.instance
+                            .scheduleFrameCallback((timeStamp) {
+                          Scrollable.ensureVisible(context);
+                        });
+                      }
+
+                      return Container(
+                        color: highlight ? theme.focusColor : null,
+                        child: tiles[index],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

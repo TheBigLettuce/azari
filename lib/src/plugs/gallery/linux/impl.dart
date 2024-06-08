@@ -64,7 +64,8 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    GalleryDirectory d,
+    String bucketId,
+    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
@@ -76,7 +77,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
     }
 
     return bindFiles = LinuxGalleryAPIFiles(
-      bucketIds: [d.bucketId],
+      bucketIds: [bucketId],
       parent: this,
       type: type,
       directoryMetadata: directoryMetadata,

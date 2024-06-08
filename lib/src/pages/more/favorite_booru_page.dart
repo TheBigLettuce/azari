@@ -15,6 +15,7 @@ import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
@@ -36,11 +37,13 @@ class FavoriteBooruPage extends StatelessWidget {
     this.asSliver = true,
     this.wrapGridPage = false,
     required this.db,
+    required this.api,
   });
 
   final FavoriteBooruPageState state;
   final bool asSliver;
   final bool wrapGridPage;
+  final BooruAPI api;
 
   final DbConn db;
 
@@ -75,7 +78,14 @@ class FavoriteBooruPage extends StatelessWidget {
             },
             icon: const Icon(Icons.menu_rounded),
           ),
-          trailingItems: [ChainedFilterIcon(filter: state.filter)],
+          trailingItems: [
+            ChainedFilterIcon(
+              filter: state.filter,
+              controller: state.searchTextController,
+              complete: api.completeTag,
+              onChange: (str) => state.filter.clearRefresh(),
+            ),
+          ],
         ),
         settingsButton: GridSettingsButton.fromWatchable(state.gridSettings),
         registerNotifiers: (child) => OnBooruTagPressed(

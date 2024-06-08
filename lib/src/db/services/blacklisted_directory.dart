@@ -10,7 +10,8 @@ abstract interface class BlacklistedDirectoryService
   List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
 }
 
-abstract class BlacklistedDirectoryData implements CellBase {
+abstract class BlacklistedDirectoryData
+    implements CellBase, Pressable<BlacklistedDirectoryData> {
   const BlacklistedDirectoryData(this.bucketId, this.name);
 
   @Index(unique: true, replace: true)
@@ -26,4 +27,44 @@ abstract class BlacklistedDirectoryData implements CellBase {
 
   @override
   String alias(bool isList) => name;
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<BlacklistedDirectoryData> functionality,
+    BlacklistedDirectoryData cell,
+    int idx,
+  ) {
+    final (api, _, _, _) = DirectoriesDataNotifier.of(context);
+    final db = DatabaseConnectionNotifier.of(context);
+
+    final filesApi = api.files(
+      bucketId,
+      name,
+      GalleryFilesPageType.normal,
+      db.directoryTags,
+      db.directoryMetadata,
+      db.favoriteFiles,
+      db.localTags,
+    );
+
+    final glue = GlueProvider.generateOf(context);
+
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return GalleryFiles(
+            api: filesApi,
+            dirName: name,
+            bucketId: bucketId,
+            secure: true,
+            generateGlue: glue,
+            db: db,
+            tagManager: TagManager.of(context),
+          );
+        },
+      ),
+    );
+  }
 }

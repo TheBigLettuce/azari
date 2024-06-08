@@ -11,6 +11,7 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 sealed class GridSearchWidget {
@@ -85,9 +86,18 @@ class BarSearchWidget extends GridSearchWidget {
 }
 
 class ChainedFilterIcon extends StatelessWidget {
-  const ChainedFilterIcon({super.key, required this.filter});
+  const ChainedFilterIcon({
+    super.key,
+    required this.filter,
+    this.controller,
+    this.onChange,
+    this.complete,
+  });
 
   final ChainedFilterResourceSource<dynamic, dynamic> filter;
+  final TextEditingController? controller;
+  final Future<List<BooruTag>> Function(String string)? complete;
+  final void Function(String?)? onChange;
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +111,15 @@ class ChainedFilterIcon extends StatelessWidget {
           builder: (context) {
             return SafeArea(
               child: _FilteringWidget(
+                complete: complete,
                 selectSorting: (e) => filter.sortingMode = e,
                 currentSorting: filter.sortingMode,
                 enabledSorting: filter.allowedSortingModes,
                 select: (e) => filter.filteringMode = e,
                 currentFilter: filter.filteringMode,
                 enabledModes: filter.allowedFilteringModes,
+                onChange: onChange,
+                controller: controller,
               ),
             );
           },
@@ -196,14 +209,20 @@ class _FilteringWidget extends StatefulWidget {
     required this.currentSorting,
     required this.enabledSorting,
     required this.selectSorting,
+    required this.onChange,
+    required this.controller,
+    required this.complete,
   });
 
+  final void Function(String?)? onChange;
+  final TextEditingController? controller;
   final FilteringMode currentFilter;
   final SortingMode currentSorting;
   final Set<FilteringMode> enabledModes;
   final Set<SortingMode> enabledSorting;
   final FilteringMode Function(FilteringMode) select;
   final void Function(SortingMode) selectSorting;
+  final Future<List<BooruTag>> Function(String string)? complete;
 
   @override
   State<_FilteringWidget> createState() => __FilteringWidgetState();
@@ -243,10 +262,10 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return SizedBox(
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8),
+    return Padding(
+      padding: MediaQuery.viewInsetsOf(context),
+      child: SizedBox(
+        width: double.infinity,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -254,6 +273,57 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               l10n.filteringLabel,
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            if (widget.controller != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                child: widget.complete != null
+                    ? SearchBarAutocompleteWrapper(
+                        search: BarSearchWidget(
+                          onChange: widget.onChange,
+                          complete: widget.complete,
+                          textEditingController: widget.controller,
+                        ),
+                        searchFocus: null,
+                        child: (
+                          context,
+                          controller,
+                          focus,
+                          onSubmitted,
+                        ) =>
+                            SearchBar(
+                          onSubmitted: (_) => onSubmitted(),
+                          focusNode: focus,
+                          controller: controller,
+                          onChanged: widget.onChange,
+                          hintText: l10n.filterHint,
+                          leading: const Icon(Icons.search_rounded),
+                          trailing: [
+                            IconButton(
+                              onPressed: () {
+                                controller.text = "";
+                                widget.onChange?.call("");
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SearchBar(
+                        controller: widget.controller,
+                        onChanged: widget.onChange,
+                        hintText: l10n.filterHint,
+                        leading: const Icon(Icons.search_rounded),
+                        trailing: [
+                          IconButton(
+                            onPressed: () {
+                              widget.controller!.text = "";
+                              widget.onChange?.call("");
+                            },
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
+                      ),
+              ),
             SegmentedButtonGroup<FilteringMode>(
               variant: SegmentedButtonVariant.chip,
               select: _selectFilter,

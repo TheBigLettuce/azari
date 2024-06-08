@@ -14,6 +14,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
@@ -24,9 +25,11 @@ class BlacklistedPage extends StatefulWidget {
   const BlacklistedPage({
     super.key,
     required this.db,
+    required this.generate,
   });
 
   final DbConn db;
+  final SelectionGlue Function([Set<GluePreferences> preferences]) generate;
 
   @override
   State<BlacklistedPage> createState() => _BlacklistedPageState();
@@ -82,6 +85,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
     return GridConfiguration(
       watch: gridConfiguration.watch,
       child: WrapGridPage(
+        provided: widget.generate,
         child: GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
           slivers: [
