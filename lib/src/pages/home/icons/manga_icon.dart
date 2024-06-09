@@ -5,11 +5,13 @@
 
 part of "../../home.dart";
 
-class _MangaIcon extends StatelessWidget {
-  const _MangaIcon({
-    required this.controller,
+class MangaDestinationIcon extends StatelessWidget {
+  const MangaDestinationIcon({
+    super.key,
     required this.isSelected,
+    required this.controller,
   });
+
   final bool isSelected;
   final AnimationController controller;
 
@@ -17,34 +19,31 @@ class _MangaIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return NavigationDestination(
-      icon: Animate(
-        controller: controller,
-        autoPlay: false,
-        target: 1,
-        effects: [
-          ShimmerEffect(
-            angle: pi / -5,
-            duration: 440.ms,
-            colors: [
-              colorScheme.primary.withOpacity(isSelected ? 1 : 0),
-              Colors.red,
-              Colors.orange,
-              Colors.yellow,
-              Colors.green,
-              Colors.blue,
-              Colors.indigo,
-              Colors.purple,
-              Colors.red,
-            ],
-          ),
-        ],
-        child: Icon(
-          isSelected ? Icons.book_rounded : Icons.book_outlined,
-          color: isSelected ? colorScheme.primary : null,
+    return Animate(
+      controller: controller,
+      autoPlay: false,
+      target: 1,
+      effects: [
+        ShimmerEffect(
+          angle: pi / -5,
+          duration: 440.ms,
+          colors: [
+            colorScheme.primary.withOpacity(isSelected ? 1 : 0),
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+            Colors.indigo,
+            Colors.purple,
+            Colors.red,
+          ],
         ),
+      ],
+      child: Icon(
+        isSelected ? Icons.book_rounded : Icons.book_outlined,
+        color: isSelected ? colorScheme.primary : null,
       ),
-      label: AppLocalizations.of(context)!.mangaPage,
     );
   }
 }

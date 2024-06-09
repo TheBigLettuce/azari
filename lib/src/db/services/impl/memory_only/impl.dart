@@ -27,6 +27,7 @@ import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 final _futures = <(int, AnimeMetadata), Future<void>>{};
@@ -138,13 +139,22 @@ mixin MemoryOnlyServicesImplTableObjInstExt implements ServicesObjFactoryExt {
     required Booru booru,
     required String name,
     required DateTime time,
+    required List<GridBookmarkThumbnail> thumbnails,
   }) =>
       PlainGridBookmark(
         tags: tags,
         booru: booru,
         name: name,
         time: time,
+        thumbnails: thumbnails.cast(),
       );
+
+  @override
+  GridBookmarkThumbnail makeGridBookmarkThumbnail({
+    required String url,
+    required PostRating rating,
+  }) =>
+      PlainGridBookmarkThumbnail(url: url, rating: rating);
 
   @override
   LocalTagsData makeLocalTagsData(
@@ -1971,13 +1981,24 @@ class MemoryGridStateBooruService implements GridBookmarkService {
   }
 }
 
+class PlainGridBookmarkThumbnail extends GridBookmarkThumbnail {
+  const PlainGridBookmarkThumbnail({
+    required super.url,
+    required super.rating,
+  });
+}
+
 class PlainGridBookmark extends GridBookmark {
   const PlainGridBookmark({
     required super.name,
     required super.time,
     required super.tags,
     required super.booru,
+    required this.thumbnails,
   });
+
+  @override
+  final List<PlainGridBookmarkThumbnail> thumbnails;
 
   @override
   GridBookmark copy({
@@ -1985,8 +2006,10 @@ class PlainGridBookmark extends GridBookmark {
     String? name,
     Booru? booru,
     DateTime? time,
+    List<GridBookmarkThumbnail>? thumbnails,
   }) =>
       PlainGridBookmark(
+        thumbnails: thumbnails?.cast() ?? this.thumbnails,
         tags: tags ?? this.tags,
         booru: booru ?? this.booru,
         name: name ?? this.name,
@@ -2196,31 +2219,6 @@ class PlainGridState extends GridState {
       );
 }
 
-class MapPostsOptimizedStorage extends MapStorage<(int, Booru), Post>
-    implements PostsOptimizedStorage {
-  MapPostsOptimizedStorage() : super(PostsOptimizedStorage.postTransformKey);
-
-  Post? currentlyLast;
-
-  @override
-  List<Post> get firstFiveAll => map_.values
-      .where((p) => p.rating.asSafeMode == SafeMode.none)
-      .take(5)
-      .toList();
-
-  @override
-  List<Post> get firstFiveNormal => map_.values
-      .where((p) => p.rating.asSafeMode == SafeMode.normal)
-      .take(5)
-      .toList();
-
-  @override
-  List<Post> get firstFiveRelaxed => map_.values
-      .where((p) => p.rating.asSafeMode == SafeMode.relaxed)
-      .take(5)
-      .toList();
-}
-
 class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   MemoryPostSource(
     this.api,
@@ -2263,6 +2261,10 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   @override
   // TODO: implement safeMode
   SafeMode get safeMode => throw UnimplementedError();
+
+  @override
+  // TODO: implement lastFive
+  List<Post<ContentableCell>> get lastFive => throw UnimplementedError();
 }
 
 class MemoryMainGridService implements MainGridService {
@@ -2297,11 +2299,6 @@ class MemoryMainGridService implements MainGridService {
         excluded,
         [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
       );
-
-  final _storage = MapPostsOptimizedStorage();
-
-  @override
-  PostsOptimizedStorage get savedPosts => _storage;
 
   @override
   late final TagManager tagManager = MemoryTagManager();

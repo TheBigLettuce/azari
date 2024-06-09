@@ -131,6 +131,7 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
       selection: selection,
       selectFrom: null,
       limitedSize: true,
+      shape: const StadiumBorder(),
       description: cell.description(),
       onPressed: cell.tryAsPressable(context, functionality, index),
       functionality: functionality,

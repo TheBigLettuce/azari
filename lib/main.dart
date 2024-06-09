@@ -174,7 +174,7 @@ Future<void> mainPickfile() async {
                   },
                   preview: PreferredSize(
                     preferredSize:
-                        Size.fromHeight(CopyMovePreview.size.toDouble() - 52),
+                        Size.fromHeight(CopyMovePreview.size.toDouble()),
                     child: CopyMovePreview(
                       files: null,
                       title: AppLocalizations.of(context)!.pickFileNotice,

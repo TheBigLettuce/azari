@@ -3,6 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
@@ -142,6 +143,7 @@ class DummyServicesImplTable
     required Booru booru,
     required String name,
     required DateTime time,
+    required List<GridBookmarkThumbnail> thumbnails,
   }) {
     throw UnimplementedError();
   }
@@ -181,4 +183,11 @@ class DummyServicesImplTable
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  GridBookmarkThumbnail makeGridBookmarkThumbnail({
+    required String url,
+    required PostRating rating,
+  }) =>
+      throw UnimplementedError();
 }

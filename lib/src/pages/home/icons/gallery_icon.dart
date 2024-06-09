@@ -5,34 +5,33 @@
 
 part of "../../home.dart";
 
-class _GalleryIcon extends StatelessWidget {
-  const _GalleryIcon({
-    required this.controller,
+class GalleryDestinationIcon extends StatelessWidget {
+  const GalleryDestinationIcon({
+    super.key,
     required this.isSelected,
+    required this.controller,
   });
+
   final bool isSelected;
   final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+
     final selectedGalleryPage = GallerySubPage.of(context);
 
-    return NavigationDestination(
-      icon: Animate(
-        autoPlay: false,
-        target: 1,
-        controller: controller,
-        effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
-        child: Icon(
-          isSelected
-              ? selectedGalleryPage.selectedIcon
-              : selectedGalleryPage.icon,
-          color: isSelected ? theme.colorScheme.primary : null,
-        ),
+    return Animate(
+      autoPlay: false,
+      target: 1,
+      controller: controller,
+      effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
+      child: Icon(
+        isSelected
+            ? selectedGalleryPage.selectedIcon
+            : selectedGalleryPage.icon,
+        color: isSelected ? theme.colorScheme.primary : null,
       ),
-      label: selectedGalleryPage.translatedString(l10n),
     );
   }
 }

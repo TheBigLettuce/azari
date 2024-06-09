@@ -5,8 +5,71 @@
 
 part of "../home.dart";
 
-mixin _AnimatedIconsMixin on State<Home> {
+enum NavigationDestinations {
+  booru,
+  gallery,
+  manga,
+  anime,
+  more;
+
+  Widget icon(
+    bool showAnimeMangaPages,
+    int currentRoute,
+    AnimatedIconsMixin mixin,
+  ) =>
+      switch (this) {
+        NavigationDestinations.booru => BooruDestinationIcon(
+            isSelected: currentRoute == ChangePageMixin.kBooruPageRoute,
+            controller: mixin.booruIconController,
+          ),
+        NavigationDestinations.gallery => GalleryDestinationIcon(
+            isSelected: currentRoute == ChangePageMixin.kGalleryPageRoute,
+            controller: mixin.galleryIconController,
+          ),
+        NavigationDestinations.manga => MangaDestinationIcon(
+            isSelected: currentRoute == ChangePageMixin.kMangaPageRoute,
+            controller: mixin.favoritesIconController,
+          ),
+        NavigationDestinations.anime => AnimeDestinationIcon(
+            isSelected: currentRoute == ChangePageMixin.kAnimePageRoute,
+            controller: mixin.animeIconController,
+          ),
+        NavigationDestinations.more => MoreDestinationIcon(
+            isSelected: currentRoute ==
+                (showAnimeMangaPages
+                    ? ChangePageMixin.kMorePageRoute
+                    : ChangePageMixin.kMangaPageRoute),
+          ),
+      };
+
+  String label(BuildContext context, AppLocalizations l10n, Booru booru) =>
+      switch (this) {
+        NavigationDestinations.booru =>
+          _booruDestinationLabel(context, l10n, booru.string),
+        NavigationDestinations.gallery =>
+          GallerySubPage.of(context).translatedString(l10n),
+        NavigationDestinations.manga => l10n.mangaPage,
+        NavigationDestinations.anime => l10n.animePage,
+        NavigationDestinations.more =>
+          MoreSubPage.of(context).translatedString(l10n),
+      };
+}
+
+String _booruDestinationLabel(
+  BuildContext context,
+  AppLocalizations l10n,
+  String label,
+) {
+  final selectedBooruPage = BooruSubPage.of(context);
+
+  return selectedBooruPage == BooruSubPage.booru
+      ? label
+      : selectedBooruPage.translatedString(l10n);
+}
+
+mixin AnimatedIconsMixin on State<Home> {
   late final AnimationController controllerNavBar;
+  late final AnimationController selectionBarController;
   late final AnimationController pageFadeAnimation;
   late final AnimationController pageRiseAnimation;
   late final AnimationController booruIconController;
@@ -23,7 +86,11 @@ mixin _AnimatedIconsMixin on State<Home> {
   }
 
   void initIcons(TickerProviderStateMixin ticker) {
-    controllerNavBar = AnimationController(vsync: ticker);
+    controllerNavBar = AnimationController(
+      vsync: ticker,
+      duration: const Duration(milliseconds: 200),
+    );
+    selectionBarController = AnimationController(vsync: ticker);
     pageFadeAnimation = AnimationController(
       vsync: ticker,
       duration: const Duration(milliseconds: 200),
@@ -37,6 +104,7 @@ mixin _AnimatedIconsMixin on State<Home> {
   }
 
   void disposeIcons() {
+    selectionBarController.dispose();
     controllerNavBar.dispose();
     pageFadeAnimation.dispose();
     pageRiseAnimation.dispose();
@@ -47,60 +115,76 @@ mixin _AnimatedIconsMixin on State<Home> {
     animeIconController.dispose();
   }
 
+  List<NavigationRailDestination> railIcons(
+    int currentRoute,
+    Booru selectedBooru,
+    bool showAnimeMangaPages,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    NavigationRailDestination item(NavigationDestinations e) =>
+        NavigationRailDestination(
+          icon: e.icon(showAnimeMangaPages, currentRoute, this),
+          label: Builder(
+            builder: (context) {
+              return Text(e.label(context, l10n, selectedBooru));
+            },
+          ),
+        );
+
+    return (!showAnimeMangaPages
+            ? const [
+                NavigationDestinations.booru,
+                NavigationDestinations.gallery,
+                NavigationDestinations.more,
+              ]
+            : NavigationDestinations.values)
+        .map(item)
+        .toList();
+  }
+
   List<Widget> icons(
     BuildContext context,
     int currentRoute,
-    SettingsData settings,
+    Booru selectedBooru,
     bool showAnimeMangaPages,
-  ) =>
-      [
-        _BooruIcon(
-          isSelected: currentRoute == _ChangePageMixin.kBooruPageRoute,
-          controller: booruIconController,
-          label: settings.selectedBooru.string,
-        ),
-        _GalleryIcon(
-          isSelected: currentRoute == _ChangePageMixin.kGalleryPageRoute,
-          controller: galleryIconController,
-        ),
-        if (showAnimeMangaPages)
-          _MangaIcon(
-            isSelected: currentRoute == _ChangePageMixin.kMangaPageRoute,
-            controller: favoritesIconController,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return (!showAnimeMangaPages
+            ? const [
+                NavigationDestinations.booru,
+                NavigationDestinations.gallery,
+                NavigationDestinations.more,
+              ]
+            : NavigationDestinations.values)
+        .map(
+          (e) => Builder(
+            builder: (context) {
+              return NavigationDestination(
+                icon: e.icon(showAnimeMangaPages, currentRoute, this),
+                label: e.label(context, l10n, selectedBooru),
+              );
+            },
           ),
-        if (showAnimeMangaPages)
-          _AnimeIcon(
-            isSelected: currentRoute == _ChangePageMixin.kAnimePageRoute,
-            controller: animeIconController,
-          ),
-        _MoreIcon(
-          isSelected: showAnimeMangaPages
-              ? currentRoute == _ChangePageMixin.kMorePageRoute
-              : currentRoute == _ChangePageMixin.kMangaPageRoute,
-        ),
-      ];
+        )
+        .toList();
+  }
 }
 
-class _MoreIcon extends StatelessWidget {
-  const _MoreIcon({
-    // super.key,
-    required this.isSelected,
-  });
+class MoreDestinationIcon extends StatelessWidget {
+  const MoreDestinationIcon({super.key, required this.isSelected});
 
   final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final selectedMorePage = MoreSubPage.of(context);
+    final theme = Theme.of(context);
 
-    return NavigationDestination(
-      icon: Icon(
-        isSelected ? selectedMorePage.selectedIcon : selectedMorePage.icon,
-        color: isSelected ? theme.colorScheme.primary : null,
-      ),
-      label: selectedMorePage.translatedString(l10n),
+    return Icon(
+      isSelected ? selectedMorePage.selectedIcon : selectedMorePage.icon,
+      color: isSelected ? theme.colorScheme.primary : null,
     );
   }
 }

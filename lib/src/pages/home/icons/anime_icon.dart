@@ -5,10 +5,11 @@
 
 part of "../../home.dart";
 
-class _AnimeIcon extends StatelessWidget {
-  const _AnimeIcon({
-    required this.controller,
+class AnimeDestinationIcon extends StatelessWidget {
+  const AnimeDestinationIcon({
+    super.key,
     required this.isSelected,
+    required this.controller,
   });
 
   final bool isSelected;
@@ -18,28 +19,23 @@ class _AnimeIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return NavigationDestination(
-      icon: Animate(
-        controller: controller,
-        autoPlay: false,
-        target: 0,
-        effects: [
-          RotateEffect(
-            delay: 50.ms,
-            duration: 400.ms,
-            begin: 0,
-            end: 1,
-            curve: Easing.emphasizedDecelerate,
-          ),
-        ],
-        child: Icon(
-          isSelected
-              ? Icons.video_library_rounded
-              : Icons.video_library_outlined,
-          color: isSelected ? theme.colorScheme.primary : null,
+    return Animate(
+      controller: controller,
+      autoPlay: false,
+      target: 0,
+      effects: [
+        RotateEffect(
+          delay: 50.ms,
+          duration: 400.ms,
+          begin: 0,
+          end: 1,
+          curve: Easing.emphasizedDecelerate,
         ),
+      ],
+      child: Icon(
+        isSelected ? Icons.video_library_rounded : Icons.video_library_outlined,
+        color: isSelected ? theme.colorScheme.primary : null,
       ),
-      label: AppLocalizations.of(context)!.animePage,
     );
   }
 }

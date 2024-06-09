@@ -23,6 +23,7 @@ class WrapGridActionButton extends StatefulWidget {
     required this.animate,
     this.watch,
     required this.animation,
+    this.iconOnly = false,
   });
 
   final IconData icon;
@@ -35,6 +36,8 @@ class WrapGridActionButton extends StatefulWidget {
   final List<Effect<dynamic>> animation;
 
   final WatchFire<(IconData?, Color?, bool?)>? watch;
+
+  final bool iconOnly;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -96,15 +99,49 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
     super.dispose();
   }
 
+  void onPressed() {
+    if (widget.animate && data.$3) {
+      _controller?.reset();
+      _controller?.animateTo(1).then((value) => _controller?.animateBack(0));
+    }
+    HapticFeedback.selectionClick();
+    widget.onPressed!();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final icon = AnimatedBuilder(
       animation: controller,
       builder: (context, child) => Icon(
         data.$1,
-        color: colorTween?.transform(controller.value) ?? data.$2,
+        color: colorTween?.transform(controller.value) ??
+            data.$2 ??
+            theme.colorScheme.onSurface,
       ),
     );
+
+    if (widget.iconOnly) {
+      return GestureDetector(
+        onTap: widget.whenSingleContext != null &&
+                SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
+            ? null
+            : widget.onPressed == null
+                ? null
+                : onPressed,
+        child: widget.animate
+            ? Animate(
+                effects: widget.animation,
+                onInit: (controller) {
+                  _controller = controller;
+                },
+                autoPlay: false,
+                child: icon,
+              )
+            : icon,
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -128,16 +165,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
               ? null
               : widget.onPressed == null
                   ? null
-                  : () {
-                      if (widget.animate && data.$3) {
-                        _controller?.reset();
-                        _controller
-                            ?.animateTo(1)
-                            .then((value) => _controller?.animateBack(0));
-                      }
-                      HapticFeedback.selectionClick();
-                      widget.onPressed!();
-                    },
+                  : onPressed,
           icon: widget.animate
               ? Animate(
                   effects: widget.animation,

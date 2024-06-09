@@ -20,6 +20,8 @@ abstract interface class PostsSourceService<K, V>
   @override
   SourceStorage<K, V> get backingStorage;
 
+  List<Post> get lastFive;
+
   String get tags;
   set tags(String t);
 
@@ -28,14 +30,6 @@ abstract interface class PostsSourceService<K, V>
 
 abstract class GridPostSource extends PostsSourceService<int, Post> {
   Post? get currentlyLast;
-}
-
-abstract class PostsOptimizedStorage extends SourceStorage<(int, Booru), Post> {
-  List<Post> get firstFiveNormal;
-
-  List<Post> get firstFiveRelaxed;
-
-  List<Post> get firstFiveAll;
 
   static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }

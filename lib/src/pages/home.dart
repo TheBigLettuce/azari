@@ -10,20 +10,18 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/glue_bottom_app_bar.dart";
 import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/more/more_page.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/plugs/network_status.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/notifiers/selection_count.dart";
 import "package:gallery/src/widgets/skeletons/home.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
@@ -88,6 +86,8 @@ enum BooruSubPage {
   }
 
   static void selectOf(BuildContext context, BooruSubPage page) {
+    GlueProvider.generateOf(context)().updateCount(0);
+
     final widget =
         context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
 
@@ -135,6 +135,8 @@ enum GallerySubPage {
   }
 
   static void selectOf(BuildContext context, GallerySubPage page) {
+    GlueProvider.generateOf(context)().updateCount(0);
+
     final widget =
         context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
 
@@ -182,6 +184,8 @@ enum MoreSubPage {
   }
 
   static void selectOf(BuildContext context, MoreSubPage page) {
+    GlueProvider.generateOf(context)().updateCount(0);
+
     final widget =
         context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
 
@@ -200,8 +204,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home>
     with
         TickerProviderStateMixin,
-        _ChangePageMixin,
-        _AnimatedIconsMixin,
+        ChangePageMixin,
+        AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
   late final StreamSubscription<void> _settingsSubscription;
 
@@ -227,11 +231,11 @@ class _HomeState extends State<Home>
         setState(() {
           showAnimeMangaPages = s.showAnimeMangaPages;
           if (showAnimeMangaPages &&
-              currentRoute == _ChangePageMixin.kMangaPageRoute) {
-            currentRoute = _ChangePageMixin.kMorePageRoute;
+              currentRoute == ChangePageMixin.kMangaPageRoute) {
+            currentRoute = ChangePageMixin.kMorePageRoute;
           } else if (!showAnimeMangaPages &&
-              currentRoute == _ChangePageMixin.kMorePageRoute) {
-            currentRoute = _ChangePageMixin.kMangaPageRoute;
+              currentRoute == ChangePageMixin.kMorePageRoute) {
+            currentRoute = ChangePageMixin.kMangaPageRoute;
           }
         });
       }
@@ -267,8 +271,6 @@ class _HomeState extends State<Home>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return _SelectedMorePage(
       notifier: _morePageNotifier,
       child: _SelectedGalleryPage(
@@ -281,69 +283,63 @@ class _HomeState extends State<Home>
                 _procPopAll(_galleryPageNotifier, _morePageNotifier, this, pop),
             child: Builder(
               builder: (context) {
-                return _SelectionHolder(
-                  hide: hide,
-                  defaultPreferences: widget.callback != null
-                      ? {}
-                      : {GluePreferences.persistentBarHeight},
-                  child: HomeSkeleton(
-                    state,
-                    (context) => _currentPage(
-                      context,
-                      _galleryPageNotifier,
-                      _morePageNotifier,
-                      _booruPageNotifier,
-                      this,
-                      showAnimeMangaPages,
-                    ),
-                    navBar: _NavBar(
-                      noNavigationIcons: widget.callback != null,
-                      icons: this,
-                      child: Builder(
-                        builder: (context) => NavigationBar(
-                          labelBehavior: NavigationDestinationLabelBehavior
-                              .onlyShowSelected,
-                          backgroundColor: theme.colorScheme.surfaceContainer
-                              .withOpacity(0.95),
-                          selectedIndex: currentRoute,
-                          onDestinationSelected: (route) {
-                            if (route == 0 && currentRoute == 0) {
-                              Scaffold.of(context).openDrawer();
-                            } else if (route == 1 && currentRoute == 1) {
-                              _galleryPageNotifier.value =
-                                  _galleryPageNotifier.value ==
-                                          GallerySubPage.gallery
-                                      ? GallerySubPage.blacklisted
-                                      : GallerySubPage.gallery;
-                            } else if (settings.showAnimeMangaPages
-                                ? route == _ChangePageMixin.kMorePageRoute &&
-                                    currentRoute ==
-                                        _ChangePageMixin.kMorePageRoute
-                                : route == _ChangePageMixin.kMangaPageRoute &&
-                                    currentRoute ==
-                                        _ChangePageMixin.kMangaPageRoute) {
-                              _morePageNotifier.value =
-                                  _morePageNotifier.value == MoreSubPage.more
-                                      ? MoreSubPage.dashboard
-                                      : MoreSubPage.more;
-                            } else {
-                              _switchPage(this, route, showAnimeMangaPages);
-                            }
-                          },
-                          destinations: widget.callback != null
-                              ? const []
-                              : icons(
-                                  context,
-                                  currentRoute,
-                                  settings,
-                                  showAnimeMangaPages,
-                                ),
-                        ),
-                      ),
-                    ),
-                    extendBody: true,
-                    noNavBar: widget.callback != null,
+                return HomeSkeleton(
+                  (context) => _currentPage(
+                    context,
+                    _galleryPageNotifier,
+                    _morePageNotifier,
+                    _booruPageNotifier,
+                    this,
+                    showAnimeMangaPages,
                   ),
+                  extendBody: true,
+                  noNavBar: widget.callback != null,
+                  animatedIcons: this,
+                  showAnimeMangaPages: showAnimeMangaPages,
+                  onDestinationSelected: (context, route) {
+                    GlueProvider.generateOf(context)().updateCount(0);
+
+                    if (route == 0 && currentRoute == 0) {
+                      Scaffold.of(context).openDrawer();
+                    } else if (route == 1 && currentRoute == 1) {
+                      final nav = galleryKey.currentState;
+                      if (nav != null) {
+                        while (nav.canPop()) {
+                          nav.pop();
+                        }
+                      }
+
+                      _galleryPageNotifier.value =
+                          _galleryPageNotifier.value == GallerySubPage.gallery
+                              ? GallerySubPage.blacklisted
+                              : GallerySubPage.gallery;
+                    } else if (showAnimeMangaPages
+                        ? route == ChangePageMixin.kMorePageRoute &&
+                            currentRoute == ChangePageMixin.kMorePageRoute
+                        : route == ChangePageMixin.kMangaPageRoute &&
+                            currentRoute == ChangePageMixin.kMangaPageRoute) {
+                      final nav = moreKey.currentState;
+                      if (nav != null) {
+                        while (nav.canPop()) {
+                          nav.pop();
+                        }
+                      }
+
+                      _morePageNotifier.value =
+                          _morePageNotifier.value == MoreSubPage.more
+                              ? MoreSubPage.dashboard
+                              : MoreSubPage.more;
+                    } else {
+                      switchPage(
+                        this,
+                        route,
+                        showAnimeMangaPages,
+                      );
+                    }
+                  },
+                  changePage: this,
+                  booru: settings.selectedBooru,
+                  callback: widget.callback,
                 );
               },
             ),
@@ -354,125 +350,8 @@ class _HomeState extends State<Home>
   }
 }
 
-class _NavBar extends StatelessWidget {
-  const _NavBar({
-    required this.icons,
-    required this.noNavigationIcons,
-    required this.child,
-  });
-
-  final bool noNavigationIcons;
-  final _AnimatedIconsMixin icons;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final glueState = _GlueStateProvider.of(context);
-    SelectionCountNotifier.countOf(context);
-
-    return noNavigationIcons
-        ? Animate(
-            controller: icons.controllerNavBar,
-            target: glueState.actions?.$1 == null ? 0 : 1,
-            effects: [
-              MoveEffect(
-                duration: 220.ms,
-                curve: Easing.emphasizedDecelerate,
-                end: Offset.zero,
-                begin:
-                    Offset(0, 100 + MediaQuery.viewPaddingOf(context).bottom),
-              ),
-            ],
-            child: GlueBottomAppBar(glueState),
-          )
-        : Animate(
-            controller: icons.controllerNavBar,
-            target: glueState.actions != null ? 1 : 0,
-            effects: [
-              const MoveEffect(
-                curve: Easing.emphasizedAccelerate,
-                begin: Offset.zero,
-                end: Offset(0, 100),
-              ),
-              SwapEffect(
-                builder: (context, _) {
-                  return glueState.actions != null
-                      ? Animate(
-                          effects: [
-                            MoveEffect(
-                              duration: 100.ms,
-                              curve: Easing.emphasizedDecelerate,
-                              begin: const Offset(0, 100),
-                              end: Offset.zero,
-                            ),
-                          ],
-                          child: GlueBottomAppBar(glueState),
-                        )
-                      : const Padding(padding: EdgeInsets.zero);
-                },
-              ),
-            ],
-            child: child,
-          );
-  }
-}
-
-class _SelectionHolder extends StatefulWidget {
-  const _SelectionHolder({
-    required this.hide,
-    required this.defaultPreferences,
-    required this.child,
-  });
-  final Widget child;
-  final Set<GluePreferences> defaultPreferences;
-
-  final void Function(bool backward) hide;
-
-  @override
-  State<_SelectionHolder> createState() => __SelectionHolderState();
-}
-
-class __SelectionHolderState extends State<_SelectionHolder> {
-  late final SelectionGlueState glueState;
-
-  @override
-  void initState() {
-    super.initState();
-
-    glueState = SelectionGlueState(hide: widget.hide);
-  }
-
-  SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
-    final s = set.isNotEmpty ? set : widget.defaultPreferences;
-
-    return glueState.glue(
-      keyboardVisible,
-      setState,
-      () => s.contains(GluePreferences.zeroSize) ? 0 : 80,
-      s.contains(GluePreferences.persistentBarHeight),
-    );
-  }
-
-  bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlueStateProvider(
-      state: glueState,
-      child: SelectionCountNotifier(
-        count: glueState.count,
-        countUpdateTimes: glueState.countUpdateTimes,
-        child: GlueProvider(
-          generate: _generate,
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-class _GlueStateProvider extends InheritedWidget {
-  const _GlueStateProvider({
+class GlueStateProvider extends InheritedWidget {
+  const GlueStateProvider({
     required this.state,
     required super.child,
   });
@@ -480,13 +359,13 @@ class _GlueStateProvider extends InheritedWidget {
 
   static SelectionGlueState of(BuildContext context) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<_GlueStateProvider>();
+        context.dependOnInheritedWidgetOfExactType<GlueStateProvider>();
 
     return widget!.state;
   }
 
   @override
-  bool updateShouldNotify(_GlueStateProvider oldWidget) {
+  bool updateShouldNotify(GlueStateProvider oldWidget) {
     return state != oldWidget.state;
   }
 }

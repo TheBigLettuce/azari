@@ -68,29 +68,6 @@ class BooruRestoredPage extends StatefulWidget {
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
 }
 
-class LocalBookmark extends GridBookmark {
-  const LocalBookmark({
-    required super.tags,
-    required super.booru,
-    required super.name,
-    required super.time,
-  });
-
-  @override
-  GridBookmark copy({
-    String? tags,
-    String? name,
-    Booru? booru,
-    DateTime? time,
-  }) =>
-      LocalBookmark(
-        tags: tags ?? this.tags,
-        booru: booru ?? this.booru,
-        name: name ?? this.name,
-        time: time ?? this.time,
-      );
-}
-
 class RestoredBooruPageState implements PagingEntry {
   RestoredBooruPageState(
     Booru booru,
@@ -224,6 +201,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
           tags: widget.tags,
+          thumbnails: const [],
         ),
       );
     }
@@ -280,6 +258,20 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       widget.saveSelectedPage(null);
       if (!pagingState.addToBookmarks) {
         gridBookmarks.delete(pagingState.secondaryGrid.name);
+      } else {
+        gridBookmarks
+            .get(pagingState.secondaryGrid.name)!
+            .copy(
+              thumbnails: source.lastFive
+                  .map(
+                    (e) => objFactory.makeGridBookmarkThumbnail(
+                      url: e.previewUrl,
+                      rating: e.rating,
+                    ),
+                  )
+                  .toList(),
+            )
+            .save();
       }
       pagingState.dispose(pagingState.addToBookmarks);
     } else {
@@ -287,6 +279,20 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         widget.saveSelectedPage(null);
         if (!pagingState.addToBookmarks) {
           gridBookmarks.delete(pagingState.secondaryGrid.name);
+        } else {
+          gridBookmarks
+              .get(pagingState.secondaryGrid.name)!
+              .copy(
+                thumbnails: source.lastFive
+                    .map(
+                      (e) => objFactory.makeGridBookmarkThumbnail(
+                        url: e.previewUrl,
+                        rating: e.rating,
+                      ),
+                    )
+                    .toList(),
+              )
+              .save();
         }
         (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
                 as RestoredBooruPageState)

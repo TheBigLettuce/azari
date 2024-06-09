@@ -15,6 +15,9 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     required this.functionality,
     required this.onPressed,
     this.limitedSize = false,
+    this.shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(15)),
+    ),
     required this.child,
   });
 
@@ -27,6 +30,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
 
   final GridFunctionality<T> functionality;
   final bool limitedSize;
+  final ShapeBorder shape;
 
   final Widget child;
 
@@ -38,6 +42,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       return _WrappedSelectionCore(
         thisIndx: thisIndx,
         selectFrom: selectFrom,
+        shape: shape,
         selection: null,
         onPressed: onPressed,
         functionality: functionality,
@@ -51,6 +56,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
             selection: selection,
             functionality: functionality,
             selectFrom: selectFrom,
+            shape: shape,
             onPressed: onPressed,
             thisIndx: thisIndx,
             limitedSize: limitedSize,
@@ -82,6 +88,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
                 child: _WrappedSelectionCore(
                   functionality: functionality,
                   thisIndx: thisIndx,
+                  shape: shape,
                   onPressed: onPressed,
                   selectFrom: selectFrom,
                   selection: selection,
@@ -101,8 +108,9 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
     required this.selection,
     required this.functionality,
     required this.onPressed,
-    required this.child,
     required this.limitedSize,
+    required this.shape,
+    required this.child,
   });
   final int thisIndx;
   final GridSelection<T>? selection;
@@ -111,6 +119,8 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
   final bool limitedSize;
 
   final void Function()? onPressed;
+
+  final ShapeBorder shape;
 
   final Widget child;
 
@@ -146,7 +156,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
   Widget build(BuildContext context) {
     if (widget.selection == null) {
       return InkWell(
-        borderRadius: BorderRadius.circular(15),
+        customBorder: widget.shape,
         onDoubleTap: widget.functionality.download != null
             ? () {
                 controller.reset();
@@ -172,11 +182,11 @@ class __WrappedSelectionCoreState<T extends CellBase>
           child: Padding(
             padding: const EdgeInsets.all(0.5),
             child: AnimatedContainer(
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
+                shape: widget.shape,
                 color: selection.isSelected(thisIndx)
                     ? colorScheme.primary
                     : colorScheme.primary.withOpacity(0),
-                borderRadius: BorderRadius.circular(15),
               ),
               duration: const Duration(milliseconds: 160),
               curve: Easing.emphasizedAccelerate,
@@ -186,7 +196,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
                 selectFrom: widget.selectFrom,
                 child: GestureDetector(
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(15),
+                    customBorder: widget.shape,
                     onDoubleTap: widget.functionality.download != null &&
                             widget.selection!.isEmpty
                         ? () {
@@ -215,8 +225,8 @@ class __WrappedSelectionCoreState<T extends CellBase>
         if (selection.isSelected(thisIndx) && !widget.limitedSize) ...[
           IgnorePointer(
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
+              decoration: ShapeDecoration(
+                shape: widget.shape,
                 color: colorScheme.primaryContainer.withOpacity(0.15),
               ),
               child: const SizedBox.expand(),

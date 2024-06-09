@@ -5,7 +5,7 @@
 
 part of "../home.dart";
 
-mixin _ChangePageMixin on State<Home> {
+mixin ChangePageMixin on State<Home> {
   final pagingRegistry = PagingStateRegistry();
 
   final mainKey = GlobalKey<NavigatorState>();
@@ -20,7 +20,7 @@ mixin _ChangePageMixin on State<Home> {
   void _procPopAll(
     ValueNotifier<GallerySubPage> galleryPage,
     ValueNotifier<MoreSubPage> morePage,
-    _AnimatedIconsMixin icons,
+    AnimatedIconsMixin icons,
     bool _,
   ) {
     final f = mainKey.currentState?.maybePop();
@@ -41,7 +41,7 @@ mixin _ChangePageMixin on State<Home> {
     mangaKey.currentState?.maybePop();
   }
 
-  void initChangePage(_AnimatedIconsMixin icons, SettingsData settings) {}
+  void initChangePage(AnimatedIconsMixin icons, SettingsData settings) {}
 
   void disposeChangePage() {
     if (!themeIsChanging) {
@@ -51,8 +51,8 @@ mixin _ChangePageMixin on State<Home> {
     }
   }
 
-  void _switchPage(
-    _AnimatedIconsMixin icons,
+  void switchPage(
+    AnimatedIconsMixin icons,
     int to,
     bool showAnimeMangaPages,
   ) {
@@ -83,7 +83,7 @@ mixin _ChangePageMixin on State<Home> {
   void _procPop(
     ValueNotifier<GallerySubPage> galleryPage,
     ValueNotifier<MoreSubPage> morePage,
-    _AnimatedIconsMixin icons,
+    AnimatedIconsMixin icons,
     bool pop,
   ) {
     if (!pop) {
@@ -98,7 +98,7 @@ mixin _ChangePageMixin on State<Home> {
           morePage.value != MoreSubPage.more) {
         morePage.value = MoreSubPage.more;
       } else {
-        _switchPage(
+        switchPage(
           icons,
           kBooruPageRoute,
           SettingsService.db().current.showAnimeMangaPages,
@@ -109,7 +109,7 @@ mixin _ChangePageMixin on State<Home> {
 
   void _procPopA(
     ValueNotifier<BooruSubPage> booruPage,
-    _AnimatedIconsMixin icons,
+    AnimatedIconsMixin icons,
     bool pop,
   ) {
     if (!pop) {
@@ -120,7 +120,7 @@ mixin _ChangePageMixin on State<Home> {
         final showAnimeMangaPages =
             SettingsService.db().current.showAnimeMangaPages;
 
-        _switchPage(
+        switchPage(
           icons,
           showAnimeMangaPages ? kMangaPageRoute : kGalleryPageRoute,
           showAnimeMangaPages,
@@ -130,7 +130,7 @@ mixin _ChangePageMixin on State<Home> {
   }
 
   Future<void> _animateIcons(
-    _AnimatedIconsMixin icons,
+    AnimatedIconsMixin icons,
     bool showAnimeMangaPages,
   ) {
     return !showAnimeMangaPages
@@ -165,7 +165,7 @@ mixin _ChangePageMixin on State<Home> {
     ValueNotifier<GallerySubPage> galleryPage,
     ValueNotifier<MoreSubPage> morePage,
     ValueNotifier<BooruSubPage> booruPage,
-    _AnimatedIconsMixin icons,
+    AnimatedIconsMixin icons,
     bool showAnimeMangaPages,
   ) {
     if (widget.callback != null) {

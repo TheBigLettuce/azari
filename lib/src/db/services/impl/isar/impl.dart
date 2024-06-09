@@ -82,107 +82,6 @@ part "settings.dart";
 
 final _futures = <(int, AnimeMetadata), Future<void>>{};
 
-class IsarPostsOptimizedStorage extends PostsOptimizedStorage {
-  IsarPostsOptimizedStorage(this.db, this.closeDb);
-
-  final Isar db;
-  final bool closeDb;
-
-  IsarCollection<PostIsar> get _collection => db.postIsars;
-
-  Post? get currentlyLast => _collection.where().sortById().findFirstSync();
-
-  @override
-  List<Post> get firstFiveNormal => _collection
-      .where()
-      .ratingEqualTo(PostRating.general)
-      .limit(5)
-      .findAllSync();
-
-  @override
-  List<Post> get firstFiveRelaxed => db.postIsars
-      .where()
-      .ratingEqualTo(PostRating.general)
-      .or()
-      .ratingEqualTo(PostRating.sensitive)
-      .limit(5)
-      .findAllSync();
-
-  @override
-  List<Post> get firstFiveAll => _collection.where().limit(5).findAllSync();
-
-  @override
-  int get count => _collection.countSync();
-
-  @override
-  Iterator<Post> get iterator =>
-      _IsarCollectionIterator(_collection, reversed: false);
-
-  @override
-  Iterable<Post> get reversed => _IsarCollectionReverseIterable(
-        _IsarCollectionIterator(_collection, reversed: true),
-      );
-
-  @override
-  Iterable<Post> trySorted(SortingMode sort) => this;
-
-  @override
-  void add(Post e, [bool silent = true]) => db.writeTxnSync(
-        () => _collection.putAllByIdBooruSync(PostIsar.copyTo([e])),
-        silent: silent,
-      );
-
-  @override
-  void addAll(Iterable<Post> l, [bool silent = false]) => db.writeTxnSync(
-        () => _collection.putAllByIdBooruSync(PostIsar.copyTo(l)),
-        silent: silent,
-      );
-
-  @override
-  void clear([bool silent = false]) =>
-      db.writeTxnSync(() => _collection.clearSync(), silent: silent);
-
-  @override
-  Post? get((int, Booru) idx) => _collection.getByIdBooruSync(idx.$1, idx.$2);
-
-  @override
-  List<Post> removeAll(Iterable<(int, Booru)> idx, [bool silent = false]) {
-    final l = <Post>[];
-
-    final ids = idx.map((e) => e.$1).toList();
-    final boorus = idx.map((e) => e.$2).toList();
-
-    l.addAll(
-      _collection
-          .getAllByIdBooruSync(ids, boorus)
-          .where((e) => e != null)
-          .cast<Post>()
-          .toList(),
-    );
-    db.writeTxnSync(
-      () => _collection.deleteAllByIdBooruSync(ids, boorus),
-      silent: silent,
-    );
-
-    return l;
-  }
-
-  @override
-  void destroy() => closeDb ? db.close(deleteFromDisk: true) : null;
-
-  @override
-  Post operator []((int, Booru) index) => get(index)!;
-
-  @override
-  void operator []=((int, Booru) index, Post value) => db.writeTxnSync(
-        () => _collection.putByIdBooruSync(PostIsar.copyTo([value]).first),
-      );
-
-  @override
-  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
-      _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
-}
-
 class IsarCurrentBooruSource extends GridPostSource
     with GridPostSourceRefreshNext {
   IsarCurrentBooruSource({
@@ -212,6 +111,14 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   final List<FilterFnc<Post>> filters;
+
+  @override
+  List<Post<ContentableCell>> get lastFive => backingStorage._collection
+      .where()
+      .ratingEqualTo(PostRating.general)
+      .sortById()
+      .limit(5)
+      .findAllSync();
 
   @override
   Post? get currentlyLast =>
@@ -2598,10 +2505,6 @@ class IsarSecondaryGridService implements SecondaryGridService {
   }
 
   @override
-  PostsOptimizedStorage get savedPosts =>
-      IsarPostsOptimizedStorage(_secondaryGrid, false);
-
-  @override
   GridState get currentState {
     GridState? state =
         _mainGrid.isarGridStates.getByNameSync(_secondaryGrid.name);
@@ -2687,10 +2590,6 @@ class IsarMainGridService implements MainGridService {
   final Isar _mainGrid;
   @override
   final IsarTagManager tagManager;
-
-  @override
-  PostsOptimizedStorage get savedPosts =>
-      IsarPostsOptimizedStorage(_mainGrid, false);
 
   @override
   int get page => _mainGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;

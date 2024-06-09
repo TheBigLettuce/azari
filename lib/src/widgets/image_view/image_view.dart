@@ -405,6 +405,8 @@ class ImageViewState extends State<ImageView>
     }
   }
 
+  final _k = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return ImageViewInfoTilesRefreshNotifier(
@@ -429,8 +431,10 @@ class ImageViewState extends State<ImageView>
             scaffoldKey: key,
             bottomSheetController: bottomSheetController,
             controller: animationController,
+            next: _onPressedRight,
+            prev: _onPressedLeft,
             child: ImageViewBody(
-              key: ValueKey(refreshTries),
+              key: _k,
               onPressedLeft: drawCell(currentPage, true) is NetVideo ||
                       drawCell(currentPage, true) is AndroidVideo
                   ? null

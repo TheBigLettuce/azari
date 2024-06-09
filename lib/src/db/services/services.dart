@@ -170,6 +170,12 @@ mixin ServicesObjFactoryExt {
     required Booru booru,
     required String name,
     required DateTime time,
+    required List<GridBookmarkThumbnail> thumbnails,
+  });
+
+  GridBookmarkThumbnail makeGridBookmarkThumbnail({
+    required String url,
+    required PostRating rating,
   });
 
   BlacklistedDirectoryData makeBlacklistedDirectoryData(
@@ -400,11 +406,14 @@ abstract class GridBookmark implements CellBase {
   @Index()
   final DateTime time;
 
+  List<GridBookmarkThumbnail> get thumbnails;
+
   GridBookmark copy({
     String? tags,
     String? name,
     Booru? booru,
     DateTime? time,
+    List<GridBookmarkThumbnail>? thumbnails,
   });
 
   @override
@@ -418,6 +427,16 @@ abstract class GridBookmark implements CellBase {
 
   @override
   String toString() => "GridBookmarkBase: $name $time";
+}
+
+abstract class GridBookmarkThumbnail {
+  const GridBookmarkThumbnail({
+    required this.url,
+    required this.rating,
+  });
+
+  final String url;
+  final PostRating rating;
 }
 
 extension GridStateBooruExt on GridBookmark {
@@ -481,8 +500,6 @@ abstract interface class MainGridService {
 
   TagManager get tagManager;
 
-  PostsOptimizedStorage get savedPosts;
-
   GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
@@ -506,8 +523,6 @@ abstract interface class SecondaryGridService {
   ]);
 
   TagManager get tagManager;
-
-  PostsOptimizedStorage get savedPosts;
 
   GridPostSource makeSource(
     BooruAPI api,

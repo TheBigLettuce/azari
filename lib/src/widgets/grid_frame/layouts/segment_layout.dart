@@ -661,6 +661,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                   selection: selection,
                   selectFrom: null,
                   limitedSize: true,
+                  shape: const StadiumBorder(),
                   description: cell.description(),
                   onPressed:
                       cell.tryAsPressable(context, gridFunctionality, idx),

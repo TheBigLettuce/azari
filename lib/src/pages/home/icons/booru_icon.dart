@@ -5,35 +5,29 @@
 
 part of "../../home.dart";
 
-class _BooruIcon extends StatelessWidget {
-  const _BooruIcon({
-    required this.controller,
+class BooruDestinationIcon extends StatelessWidget {
+  const BooruDestinationIcon({
+    super.key,
     required this.isSelected,
-    required this.label,
+    required this.controller,
   });
+
   final bool isSelected;
   final AnimationController controller;
-  final String label;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final selectedBooruPage = BooruSubPage.of(context);
 
-    return NavigationDestination(
-      icon: Animate(
-        autoPlay: true,
-        controller: controller,
-        effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
-        child: Icon(
-          isSelected ? selectedBooruPage.selectedIcon : selectedBooruPage.icon,
-          color: isSelected ? theme.colorScheme.primary : null,
-        ),
+    return Animate(
+      autoPlay: true,
+      controller: controller,
+      effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
+      child: Icon(
+        isSelected ? selectedBooruPage.selectedIcon : selectedBooruPage.icon,
+        color: isSelected ? theme.colorScheme.primary : null,
       ),
-      label: selectedBooruPage == BooruSubPage.booru
-          ? label
-          : selectedBooruPage.translatedString(l10n),
     );
   }
 }

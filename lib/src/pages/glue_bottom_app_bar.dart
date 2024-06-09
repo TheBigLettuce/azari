@@ -5,10 +5,13 @@
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
 
 class GlueBottomAppBar extends StatelessWidget {
-  const GlueBottomAppBar(this.glue, {super.key});
+  const GlueBottomAppBar(this.glue, {super.key, required this.controller});
+
+  final AnimationController controller;
   final SelectionGlueState glue;
 
   @override
@@ -17,96 +20,108 @@ class GlueBottomAppBar extends StatelessWidget {
 
     final actions = glue.actions?.$1 ?? [];
 
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        const SizedBox(
-          height: 80,
-          child: AbsorbPointer(
-            child: SizedBox.shrink(),
-          ),
+    return Animate(
+      controller: controller,
+      target: glue.actions?.$1 == null ? 0 : 1,
+      effects: [
+        MoveEffect(
+          duration: 220.ms,
+          curve: Easing.emphasizedDecelerate,
+          end: Offset.zero,
+          begin: Offset(0, 100 + MediaQuery.viewPaddingOf(context).bottom),
         ),
-        BottomAppBar(
-          color: theme.colorScheme.surface.withOpacity(0.95),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (actions.length > 4)
-                PopupMenuButton(
-                  icon: const Icon(Icons.more_vert_rounded),
-                  position: PopupMenuPosition.under,
-                  itemBuilder: (context) {
-                    return actions
-                        .getRange(0, actions.length - 3)
-                        .map(
-                          (e) => PopupMenuItem<void>(
-                            onTap: e.$2,
-                            child: AbsorbPointer(child: e.$1),
-                          ),
-                        )
-                        .toList();
-                  },
-                ),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Wrap(
-                    spacing: 4,
-                    children: actions.length < 4
-                        ? actions.map((e) => e.$1).toList()
-                        : actions
-                            .getRange(
-                              actions.length != 4
-                                  ? actions.length - 3
-                                  : actions.length - 3 - 1,
-                              actions.length,
-                            )
-                            .map((e) => e.$1)
-                            .toList(),
+      ],
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          const SizedBox(
+            height: 80,
+            child: AbsorbPointer(
+              child: SizedBox.shrink(),
+            ),
+          ),
+          BottomAppBar(
+            color: theme.colorScheme.surface.withOpacity(0.95),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (actions.length > 4)
+                  PopupMenuButton(
+                    icon: const Icon(Icons.more_vert_rounded),
+                    position: PopupMenuPosition.under,
+                    itemBuilder: (context) {
+                      return actions
+                          .getRange(0, actions.length - 3)
+                          .map(
+                            (e) => PopupMenuItem<void>(
+                              onTap: e.$2,
+                              child: AbsorbPointer(child: e.$1),
+                            ),
+                          )
+                          .toList();
+                    },
+                  ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Wrap(
+                      spacing: 4,
+                      children: actions.length < 4
+                          ? actions.map((e) => e.$1).toList()
+                          : actions
+                              .getRange(
+                                actions.length != 4
+                                    ? actions.length - 3
+                                    : actions.length - 3 - 1,
+                                actions.length,
+                              )
+                              .map((e) => e.$1)
+                              .toList(),
+                    ),
                   ),
                 ),
-              ),
-              Row(
-                children: [
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 28,
-                      minWidth: 28,
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: theme.colorScheme.primary.withOpacity(0.8),
+                Row(
+                  children: [
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 28,
+                        minWidth: 28,
                       ),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8, right: 8),
-                          child: Text(
-                            glue.count.toString(),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  theme.colorScheme.onPrimary.withOpacity(0.8),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: theme.colorScheme.primary.withOpacity(0.8),
+                        ),
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8, right: 8),
+                            child: Text(
+                              glue.count.toString(),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onPrimary
+                                    .withOpacity(0.8),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(right: 4)),
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      glue.actions?.$2();
-                      HapticFeedback.mediumImpact();
-                    },
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ],
+                    const Padding(padding: EdgeInsets.only(right: 4)),
+                    IconButton.filledTonal(
+                      onPressed: () {
+                        glue.actions?.$2();
+                        HapticFeedback.mediumImpact();
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

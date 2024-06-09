@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
@@ -12,6 +13,8 @@ import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:gallery/src/widgets/image_view/app_bar/app_bar.dart";
 import "package:gallery/src/widgets/image_view/bottom_bar.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
@@ -19,19 +22,25 @@ import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
 import "package:gallery/src/widgets/notifiers/current_content.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
+import "package:gallery/src/widgets/notifiers/loading_progress.dart";
 
-class WrapImageViewSkeleton extends StatelessWidget {
+class WrapImageViewSkeleton extends StatefulWidget {
   const WrapImageViewSkeleton({
     super.key,
     required this.controller,
     required this.scaffoldKey,
     required this.bottomSheetController,
     required this.child,
+    required this.next,
+    required this.prev,
   });
 
   final GlobalKey<ScaffoldState> scaffoldKey;
   final AnimationController controller;
   final DraggableScrollableController bottomSheetController;
+
+  final void Function() next;
+  final void Function() prev;
 
   final Widget child;
 
@@ -48,6 +57,24 @@ class WrapImageViewSkeleton extends StatelessWidget {
           : (80 + 18 + 8 + viewPadding.bottom);
 
   @override
+  State<WrapImageViewSkeleton> createState() => _WrapImageViewSkeletonState();
+}
+
+class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
+  bool showRail = false;
+  bool showDrawer = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final width = MediaQuery.sizeOf(context).width;
+
+    showRail = width >= 450;
+    showDrawer = width >= 905;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
     final stickers = widgets.tryAsStickerable(context, true);
@@ -55,17 +82,73 @@ class WrapImageViewSkeleton extends StatelessWidget {
 
     final min = MediaQuery.sizeOf(context);
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    final minSize = (minPixels(widgets, viewPadding)) / min.height;
+    final minSize =
+        (WrapImageViewSkeleton.minPixels(widgets, viewPadding)) / min.height;
+
+    final infoWidget = widgets.tryAsInfoable(context);
+    Widget drawer(Widget infoWidget) => Drawer(
+          shape: const RoundedRectangleBorder(),
+          backgroundColor: colorScheme.surface.withOpacity(0.9),
+          child: CustomScrollView(
+            slivers: [
+              Builder(
+                builder: (context) {
+                  final currentCell = CurrentContentNotifier.of(context);
+
+                  return SliverAppBar(
+                    actions: !showDrawer
+                        ? const [SizedBox.shrink()]
+                        : [
+                            IconButton(
+                              onPressed: widget.prev,
+                              icon: const Icon(Icons.navigate_before),
+                            ),
+                            IconButton(
+                              onPressed: widget.next,
+                              icon: const Icon(Icons.navigate_next),
+                            ),
+                          ],
+                    scrolledUnderElevation: 0,
+                    automaticallyImplyLeading: false,
+                    title: GestureDetector(
+                      onLongPress: () {
+                        Clipboard.setData(
+                          ClipboardData(
+                            text: currentCell.widgets.alias(false),
+                          ),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(context)!.copiedClipboard,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(currentCell.widgets.alias(false)),
+                    ),
+                  );
+                },
+              ),
+              infoWidget,
+              SliverPadding(
+                padding: EdgeInsets.only(bottom: viewPadding.bottom),
+              ),
+            ],
+          ),
+        );
 
     return Scaffold(
-      key: scaffoldKey,
+      key: widget.scaffoldKey,
       extendBodyBehindAppBar: true,
       extendBody: true,
       endDrawerEnableOpenDragGesture: false,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: stickers.isEmpty && b.isEmpty && widgets is! Infoable
+      bottomNavigationBar: showRail ||
+              (stickers.isEmpty && b.isEmpty && widgets is! Infoable)
           ? null
           : Builder(
               builder: (context) {
@@ -93,7 +176,7 @@ class WrapImageViewSkeleton extends StatelessWidget {
                         child: _SlidingBottomBar(
                           minSize: minSize,
                           widgets: widgets,
-                          bottomSheetController: bottomSheetController,
+                          bottomSheetController: widget.bottomSheetController,
                           viewPadding: viewPadding,
                           min: min,
                         ),
@@ -103,14 +186,213 @@ class WrapImageViewSkeleton extends StatelessWidget {
                 );
               },
             ),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 4),
-        child: ImageViewAppBar(
-          actions: b,
-          controller: controller,
-        ),
-      ),
-      body: child,
+      appBar: showRail
+          ? null
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight + 4),
+              child: ImageViewAppBar(
+                actions: b,
+                controller: widget.controller,
+              ),
+            ),
+      endDrawer: showRail
+          ? (!showDrawer && infoWidget != null)
+              ? drawer(infoWidget)
+              : null
+          : null,
+      body: !showRail
+          ? widget.child
+          : AnnotatedRegion(
+              value: SystemUiOverlayStyle(
+                statusBarColor: colorScheme.surface.withOpacity(0.8),
+              ),
+              child: Stack(
+                children: [
+                  if (showDrawer)
+                    Builder(
+                      builder: (context) {
+                        return Stack(
+                          children: [
+                            widget.child,
+                            if (infoWidget != null)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Animate(
+                                  effects: const [
+                                    SlideEffect(
+                                      duration: Duration(milliseconds: 500),
+                                      curve: Easing.emphasizedAccelerate,
+                                      begin: Offset.zero,
+                                      end: Offset(1, 0),
+                                    ),
+                                  ],
+                                  autoPlay: false,
+                                  target: AppBarVisibilityNotifier.of(context)
+                                      ? 0
+                                      : 1,
+                                  child: drawer(infoWidget),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    )
+                  else
+                    Stack(
+                      children: [
+                        widget.child,
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Builder(
+                            builder: (context) => Animate(
+                              effects: const [
+                                SlideEffect(
+                                  duration: Duration(milliseconds: 500),
+                                  curve: Easing.emphasizedAccelerate,
+                                  begin: Offset.zero,
+                                  end: Offset(1, 0),
+                                ),
+                              ],
+                              autoPlay: false,
+                              target:
+                                  AppBarVisibilityNotifier.of(context) ? 0 : 1,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8) +
+                                    EdgeInsets.only(
+                                      top: viewPadding.top,
+                                    ),
+                                child: IconButton.filledTonal(
+                                  onPressed: () {
+                                    widget.scaffoldKey.currentState
+                                        ?.openEndDrawer();
+                                  },
+                                  icon: const Icon(Icons.info_outlined),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  Builder(
+                    builder: (context) {
+                      final actions = widgets.tryAsActionable(context);
+
+                      return Animate(
+                        key: widgets.uniqueKey(),
+                        autoPlay: false,
+                        controller: widget.controller,
+                        effects: const [
+                          SlideEffect(
+                            duration: Duration(milliseconds: 500),
+                            curve: Easing.emphasizedAccelerate,
+                            begin: Offset.zero,
+                            end: Offset(-1, 0),
+                          ),
+                        ],
+                        child: SizedBox(
+                          height: double.infinity,
+                          width: 72,
+                          child: NavigationRail(
+                            backgroundColor:
+                                colorScheme.surface.withOpacity(0.9),
+                            leading: IconButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.arrow_back),
+                            ),
+                            groupAlignment: -0.8,
+                            trailing: ListBody(
+                              children: widgets.tryAsAppBarButtonable(context),
+                            ),
+                            destinations: [
+                              const NavigationRailDestination(
+                                icon: Icon(Icons.image),
+                                label: Text("Image"), // TODO: change
+                              ),
+                              if (actions.isEmpty)
+                                const NavigationRailDestination(
+                                  disabled: true,
+                                  icon: Icon(
+                                    Icons.image,
+                                    color: Colors.transparent,
+                                  ),
+                                  label: Text("Nothing"), // TODO: change
+                                )
+                              else
+                                ...actions.map(
+                                  (e) => NavigationRailDestination(
+                                    disabled: true,
+                                    icon: _AnimatedRailIcon(action: e),
+                                    label: const Text("Action"), // TODO: change
+                                  ),
+                                ),
+                            ],
+                            selectedIndex: 0,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: viewPadding.top),
+                    child: const _BottomLoadIndicator(
+                      preferredSize: Size.fromHeight(4),
+                      child: SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _BottomLoadIndicator extends PreferredSize {
+  const _BottomLoadIndicator({
+    required super.preferredSize,
+    required super.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = LoadingProgressNotifier.of(context);
+
+    return status == 1
+        ? child
+        : LinearProgressIndicator(
+            minHeight: 4,
+            value: status,
+          );
+  }
+}
+
+class _AnimatedRailIcon extends StatefulWidget {
+  const _AnimatedRailIcon({super.key, required this.action});
+
+  final ImageViewAction action;
+
+  @override
+  State<_AnimatedRailIcon> createState() => __AnimatedRailIconState();
+}
+
+class __AnimatedRailIconState extends State<_AnimatedRailIcon> {
+  ImageViewAction get action => widget.action;
+
+  @override
+  Widget build(BuildContext context) {
+    return WrapGridActionButton(
+      action.icon,
+      () => action.onPress(CurrentContentNotifier.of(context)),
+      onLongPress: null,
+      whenSingleContext: null,
+      play: action.play,
+      animate: action.animate,
+      animation: action.animation,
+      watch: action.watch,
+      color: action.color,
+      iconOnly: true,
     );
   }
 }

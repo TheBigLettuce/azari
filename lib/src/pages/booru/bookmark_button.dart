@@ -5,15 +5,14 @@
 
 import "dart:async";
 
+import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -35,14 +34,12 @@ class BookmarkPage extends StatefulWidget {
     required this.saveSelectedPage,
     required this.generateGlue,
     required this.pagingRegistry,
-    // required this.scrollUp,
     required this.db,
   });
 
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
-  // final void Function() scrollUp;
 
   final DbConn db;
 
@@ -66,11 +63,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
     columns: GridColumn.three,
     layoutType: GridLayoutType.list,
   );
-
-  final m = <String, List<Post>>{};
-
-  bool dirty = false;
-  bool inInner = false;
 
   late final source = GenericListSource<GridBookmark>(
     () => Future.value(gridStateBooru.all),
@@ -98,62 +90,13 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     watcher = gridStateBooru.watch(
       (event) {
-        if (inInner) {
-          dirty = true;
-        } else {
-          _updateDirectly();
-        }
+        source.clearRefresh();
       },
       true,
     );
   }
 
-  List<Post> getSingle(SecondaryGridService grid) =>
-      switch (settings.safeMode) {
-        SafeMode.normal => grid.savedPosts.firstFiveNormal,
-        SafeMode.relaxed => grid.savedPosts.firstFiveRelaxed,
-        SafeMode.none => grid.savedPosts.firstFiveAll,
-      };
-
-  Future<void> _updateDirectly() async {
-    await source.clearRefresh();
-
-    if (m.isEmpty) {
-      for (final e in source.backingStorage) {
-        final grid = widget.db.secondaryGrid(e.booru, e.name, null);
-        final List<Post> p = getSingle(grid);
-
-        List<Post>? l = m[e.name];
-        if (l == null) {
-          l = [];
-          m[e.name] = l;
-        }
-
-        l.addAll(p);
-
-        await grid.close();
-      }
-    }
-
-    setState(() {});
-  }
-
-  void _procUpdate() {
-    inInner = false;
-
-    if (dirty) {
-      state.gridKey.currentState?.controller?.animateTo(
-        0,
-        duration: const Duration(milliseconds: 180),
-        curve: Easing.standardAccelerate,
-      );
-      _updateDirectly();
-    }
-  }
-
   void launchGrid(BuildContext context, GridBookmark e) {
-    BooruSubPage.selectOf(context, BooruSubPage.booru);
-
     Navigator.push<void>(
       context,
       MaterialPageRoute(
@@ -186,10 +129,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
             slivers: [
               _BookmarkBody(
                 source: source.backingStorage,
-                m: m,
                 db: widget.db,
                 launchGrid: launchGrid,
-                getSingle: getSingle,
                 progress: source.progress,
               ),
             ],
@@ -221,19 +162,15 @@ class _BookmarkBody extends StatefulWidget {
   const _BookmarkBody({
     // super.key,
     required this.source,
-    required this.m,
     required this.db,
     required this.launchGrid,
-    required this.getSingle,
     required this.progress,
   });
 
   final ReadOnlyStorage<int, GridBookmark> source;
-  final Map<String, List<Post>> m;
 
   final void Function(BuildContext context, GridBookmark e) launchGrid;
 
-  final List<Post> Function(SecondaryGridService grid) getSingle;
   final RefreshingProgress progress;
 
   final DbConn db;
@@ -279,17 +216,6 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
         list.add(TimeLabel(time, titleStyle, timeNow));
       }
 
-      List<Post>? posts = widget.m[e.name];
-      if (posts == null) {
-        final grid = widget.db.secondaryGrid(e.booru, e.name, null);
-        posts = widget.getSingle(grid);
-
-        widget.m[e.name] = posts;
-
-        // TODO: do something about this
-        grid.close();
-      }
-
       list.add(
         Padding(
           padding: EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
@@ -300,7 +226,6 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
             title: e.tags,
             db: widget.db,
             subtitle: e.booru.string,
-            posts: posts,
           ),
         ),
       );
@@ -368,7 +293,6 @@ class _BookmarkListTile extends StatefulWidget {
     required this.title,
     required this.state,
     required this.onPressed,
-    required this.posts,
     required this.db,
   });
 
@@ -376,7 +300,6 @@ class _BookmarkListTile extends StatefulWidget {
   final String subtitle;
   final GridBookmark state;
   final void Function(BuildContext context, GridBookmark e) onPressed;
-  final List<Post> posts;
 
   final DbConn db;
 
@@ -460,9 +383,9 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
                       builder: (context, constraints) {
                         return Row(
                           children: List.generate(
-                            widget.posts.length,
+                            widget.state.thumbnails.length,
                             (index) {
-                              final e = widget.posts[index];
+                              final e = widget.state.thumbnails[index];
 
                               return SizedBox(
                                 width: constraints.maxWidth / 5,
@@ -485,7 +408,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
                                   colorBlendMode: BlendMode.color,
                                   color: colorScheme.primaryContainer
                                       .withOpacity(0.4),
-                                  image: e.thumbnail(),
+                                  image: CachedNetworkImageProvider(e.url),
                                   fit: BoxFit.cover,
                                 ),
                               );
