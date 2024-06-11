@@ -17,7 +17,17 @@ mixin AnimatedIconsMixin on State<Home> {
   late final AnimationController favoritesIconController;
   late final AnimationController animeIconController;
 
-  Future<void> hide({required bool forward, required bool rail}) {
+  void hideNavBar(bool hide) {
+    if (hide) {
+      controllerNavBar.forward();
+    } else {
+      if (selectionBarController.value == 0) {
+        controllerNavBar.reverse();
+      }
+    }
+  }
+
+  Future<void> driveAnimation({required bool forward, required bool rail}) {
     if (forward) {
       return controllerNavBar.forward().then((_) {
         final Future<void> f_ = selectionBarController.animateTo(1);

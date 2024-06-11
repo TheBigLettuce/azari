@@ -55,7 +55,6 @@ class _HomeState extends State<Home>
 
   bool isRefreshing = false;
 
-  bool hideNavBar = false;
   late bool showAnimeMangaPages = settings.showAnimeMangaPages;
 
   @override

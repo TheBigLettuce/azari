@@ -55,6 +55,7 @@ class _WrapGridPageState extends State<WrapGridPage>
         return controller.reverse();
       }
     },
+    hideNavBar: (hide) {},
   );
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
     return widget.provided?.call(set) ??

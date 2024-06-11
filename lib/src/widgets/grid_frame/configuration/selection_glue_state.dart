@@ -11,6 +11,7 @@ import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.
 
 class SelectionGlueState {
   SelectionGlueState({
+    required this.hideNavBar,
     required this.driveAnimation,
   });
 
@@ -19,6 +20,7 @@ class SelectionGlueState {
   int countUpdateTimes = 0;
 
   final Future<void> Function(bool forward) driveAnimation;
+  final void Function(bool hide) hideNavBar;
 
   void _close(void Function(void Function()) setState) {
     if (actions == null) {
@@ -99,7 +101,7 @@ class SelectionGlueState {
         return actions != null;
       },
       keyboardVisible: keyboardVisible,
-      hideNavBar: (hide) => driveAnimation(!hide),
+      hideNavBar: hideNavBar,
     );
   }
 }

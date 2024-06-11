@@ -67,8 +67,9 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
     showRail = MediaQuery.sizeOf(context).width >= 450;
   }
 
-  Future<void> _hide(bool forward) {
-    return widget.animatedIcons.hide(forward: forward, rail: showRail);
+  Future<void> _driveAnimation(bool forward) {
+    return widget.animatedIcons
+        .driveAnimation(forward: forward, rail: showRail);
   }
 
   @override
@@ -90,7 +91,8 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
     );
 
     return _SelectionHolder(
-      hide: _hide,
+      driveAnimation: _driveAnimation,
+      hideNavBar: widget.animatedIcons.hideNavBar,
       defaultPreferences: widget.callback != null || showRail
           ? {}
           : {GluePreferences.persistentBarHeight},
@@ -347,14 +349,18 @@ class _BottomNavigationBar extends StatelessWidget {
 
 class _SelectionHolder extends StatefulWidget {
   const _SelectionHolder({
-    required this.hide,
+    required this.driveAnimation,
     required this.defaultPreferences,
+    required this.hideNavBar,
     required this.child,
   });
-  final Widget child;
+
   final Set<GluePreferences> defaultPreferences;
 
-  final Future<void> Function(bool forward) hide;
+  final Future<void> Function(bool forward) driveAnimation;
+  final void Function(bool hide) hideNavBar;
+
+  final Widget child;
 
   @override
   State<_SelectionHolder> createState() => __SelectionHolderState();
@@ -367,7 +373,10 @@ class __SelectionHolderState extends State<_SelectionHolder> {
   void initState() {
     super.initState();
 
-    glueState = SelectionGlueState(driveAnimation: widget.hide);
+    glueState = SelectionGlueState(
+      driveAnimation: widget.driveAnimation,
+      hideNavBar: widget.hideNavBar,
+    );
   }
 
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
