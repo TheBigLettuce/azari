@@ -67,9 +67,15 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
     showRail = MediaQuery.sizeOf(context).width >= 450;
   }
 
+  Future<void> _hide(bool forward) {
+    return widget.animatedIcons.hide(forward: forward, rail: showRail);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
     final child = GestureDeadZones(
       right: true,
@@ -77,14 +83,14 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          _SkeletonBody(child: widget.child),
+          _SkeletonBody(bottomPadding: bottomPadding, child: widget.child),
           if (!NetworkStatus.g.hasInternet) const _NoNetworkIndicator(),
         ],
       ),
     );
 
     return _SelectionHolder(
-      hide: widget.animatedIcons.hide,
+      hide: _hide,
       defaultPreferences: widget.callback != null || showRail
           ? {}
           : {GluePreferences.persistentBarHeight},
@@ -136,15 +142,16 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
 class _SkeletonBody extends StatelessWidget {
   const _SkeletonBody({
     // super.key,
+    required this.bottomPadding,
     required this.child,
   });
+
+  final double bottomPadding;
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
-
     final data = MediaQuery.of(context);
 
     return AnimatedPadding(
@@ -347,7 +354,7 @@ class _SelectionHolder extends StatefulWidget {
   final Widget child;
   final Set<GluePreferences> defaultPreferences;
 
-  final void Function(bool backward) hide;
+  final Future<void> Function(bool forward) hide;
 
   @override
   State<_SelectionHolder> createState() => __SelectionHolderState();
@@ -360,7 +367,7 @@ class __SelectionHolderState extends State<_SelectionHolder> {
   void initState() {
     super.initState();
 
-    glueState = SelectionGlueState(hide: widget.hide);
+    glueState = SelectionGlueState(driveAnimation: widget.hide);
   }
 
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
@@ -410,27 +417,26 @@ class _NavBar extends StatelessWidget {
 
     return noNavigationIcons
         ? GlueBottomAppBar(glueState, controller: icons.selectionBarController)
-        : Animate(
-            controller: icons.controllerNavBar,
-            target: glueState.actions != null ? 1 : 0,
-            effects: [
-              const MoveEffect(
-                curve: Easing.emphasizedAccelerate,
-                begin: Offset.zero,
-                end: Offset(0, 100),
+        : Stack(
+            children: [
+              GlueBottomAppBar(
+                glueState,
+                controller: icons.selectionBarController,
               ),
-              SwapEffect(
-                builder: (context, _) {
-                  return glueState.actions != null
-                      ? GlueBottomAppBar(
-                          glueState,
-                          controller: icons.selectionBarController,
-                        )
-                      : const Padding(padding: EdgeInsets.zero);
-                },
+              Animate(
+                autoPlay: false,
+                controller: icons.controllerNavBar,
+                value: 0,
+                effects: const [
+                  MoveEffect(
+                    curve: Easing.emphasizedAccelerate,
+                    begin: Offset.zero,
+                    end: Offset(0, 100),
+                  ),
+                ],
+                child: child,
               ),
             ],
-            child: child,
           );
   }
 }

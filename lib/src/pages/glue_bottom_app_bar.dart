@@ -21,8 +21,9 @@ class GlueBottomAppBar extends StatelessWidget {
     final actions = glue.actions?.$1 ?? [];
 
     return Animate(
+      autoPlay: false,
       controller: controller,
-      target: glue.actions?.$1 == null ? 0 : 1,
+      value: 0,
       effects: [
         MoveEffect(
           duration: 220.ms,

@@ -11,35 +11,26 @@ import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.
 
 class SelectionGlueState {
   SelectionGlueState({
-    required this.hide,
-    Future<void> Function(bool backward)? playAnimation,
-  }) : _playAnimation = playAnimation;
+    required this.driveAnimation,
+  });
 
   (List<(Widget, void Function())> actions, void Function() reset)? actions;
   int count = 0;
   int countUpdateTimes = 0;
 
-  final void Function(bool) hide;
-  final Future<void> Function(bool backward)? _playAnimation;
+  final Future<void> Function(bool forward) driveAnimation;
 
   void _close(void Function(void Function()) setState) {
     if (actions == null) {
       return;
     }
 
-    if (_playAnimation != null) {
-      _playAnimation(true).then((value) {
-        actions = null;
-        count = 0;
-        setState(() {});
-      });
-    } else {}
-    try {
-      actions = null;
+    setState(() {
       count = 0;
+      actions = null;
+    });
 
-      setState(() {});
-    } catch (_) {}
+    driveAnimation(false);
   }
 
   SelectionGlue glue(
@@ -80,23 +71,14 @@ class SelectionGlueState {
         );
       }).toList();
 
-      if (_playAnimation != null) {
-        _playAnimation(false).then(
-          (value) => setState(() {
-            actions = (
-              a,
-              selection.reset,
-            );
-          }),
+      setState(() {
+        actions = (
+          a,
+          selection.reset,
         );
-      } else {
-        setState(() {
-          actions = (
-            a,
-            selection.reset,
-          );
-        });
-      }
+      });
+
+      driveAnimation(true);
     }
 
     return SelectionGlue(
@@ -117,7 +99,7 @@ class SelectionGlueState {
         return actions != null;
       },
       keyboardVisible: keyboardVisible,
-      hideNavBar: hide,
+      hideNavBar: (hide) => driveAnimation(!hide),
     );
   }
 }

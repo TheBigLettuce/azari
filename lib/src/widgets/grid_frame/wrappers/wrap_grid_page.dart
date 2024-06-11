@@ -47,8 +47,14 @@ class _WrapGridPageState extends State<WrapGridPage>
     super.dispose();
   }
 
-  final glueState = SelectionGlueState(
-    hide: (_) {},
+  late final glueState = SelectionGlueState(
+    driveAnimation: (forward) {
+      if (forward) {
+        return controller.forward();
+      } else {
+        return controller.reverse();
+      }
+    },
   );
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
     return widget.provided?.call(set) ??

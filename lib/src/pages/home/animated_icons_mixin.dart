@@ -17,11 +17,23 @@ mixin AnimatedIconsMixin on State<Home> {
   late final AnimationController favoritesIconController;
   late final AnimationController animeIconController;
 
-  void hide(bool hide) {
-    if (hide) {
-      controllerNavBar.animateTo(1);
+  Future<void> hide({required bool forward, required bool rail}) {
+    if (forward) {
+      return controllerNavBar.forward().then((_) {
+        final Future<void> f_ = selectionBarController.animateTo(1);
+
+        if (rail) {
+          return f_;
+        }
+      });
     } else {
-      controllerNavBar.animateBack(0);
+      return selectionBarController.animateBack(0).then((_) {
+        final Future<void> f_ = controllerNavBar.reverse();
+
+        if (rail) {
+          return f_;
+        }
+      });
     }
   }
 

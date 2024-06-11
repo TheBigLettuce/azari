@@ -474,6 +474,11 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: widget.selection.isEmpty,
