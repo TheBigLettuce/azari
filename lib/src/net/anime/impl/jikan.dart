@@ -5,15 +5,15 @@
 
 import "package:flutter/foundation.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
 import "package:jikan_api/jikan_api.dart" as api;
+import "package:logging/logging.dart";
 
 class Jikan implements AnimeAPI {
   const Jikan();
 
-  static const _log = LogTarget.anime;
+  static final _log = Logger("Jikan API");
 
   @override
   bool get charactersIsSync => false;
@@ -28,7 +28,7 @@ class Jikan implements AnimeAPI {
 
       return _fromJikanAnime(response);
     } catch (e, trace) {
-      _log.logDefaultImportant("Jikan API info".errorMessage(e), trace);
+      _log.warning(".info", e, trace);
 
       rethrow;
     }
@@ -78,7 +78,7 @@ class Jikan implements AnimeAPI {
 
       return response.map((e) => _fromJikanAnime(e)).toList();
     } catch (e, trace) {
-      _log.logDefaultImportant("Jikan API top".errorMessage(e), trace);
+      _log.warning(".top", e, trace);
       return const [];
     }
   }

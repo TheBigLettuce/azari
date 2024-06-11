@@ -13,6 +13,7 @@ import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/booru/strip_html.dart";
 import "package:gallery/src/net/cloudflare_exception.dart";
+import "package:logging/logging.dart";
 
 class Danbooru implements BooruAPI {
   const Danbooru(
@@ -20,7 +21,7 @@ class Danbooru implements BooruAPI {
     this.booru = Booru.danbooru,
   });
 
-  static const _log = LogTarget.booru;
+  static final _log = Logger("Danbooru API");
 
   final Dio client;
 
@@ -36,7 +37,7 @@ class Danbooru implements BooruAPI {
       Uri.https(booru.url, "/notes.json", {
         "search[post_id]": postId.toString(),
       }),
-      LogReq(LogReq.notes(booru, postId), _log),
+      LogReq(LogReq.notes(postId), _log),
     );
 
     return (resp.data!).map((e) => stripHtml(e["body"] as String));
@@ -54,7 +55,7 @@ class Danbooru implements BooruAPI {
         "search[order]": "count",
         "limit": "30",
       }),
-      LogReq(LogReq.completeTag(booru, tag), _log),
+      LogReq(LogReq.completeTag(tag), _log),
     );
 
     return resp.data!
@@ -71,7 +72,7 @@ class Danbooru implements BooruAPI {
   Future<Post> singlePost(int id) async {
     final resp = await client.getUriLog<dynamic>(
       Uri.https(booru.url, "/posts/$id.json"),
-      LogReq(LogReq.singlePost(booru, id), _log),
+      LogReq(LogReq.singlePost(id, tags: "", safeMode: SafeMode.none), _log),
     );
 
     if (resp.data == null) {
@@ -149,8 +150,8 @@ class Danbooru implements BooruAPI {
         Uri.https(booru.url, "/posts.json", query),
         LogReq(
           postid != null
-              ? LogReq.singlePost(booru, postid)
-              : LogReq.page(booru, page!),
+              ? LogReq.singlePost(postid, tags: tags, safeMode: safeMode)
+              : LogReq.page(page!, tags: tags, safeMode: safeMode),
           _log,
         ),
       );

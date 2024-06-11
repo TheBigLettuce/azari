@@ -15,10 +15,10 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 
 part "download_entry.dart";
@@ -50,7 +50,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
 
   final NotificationPlug notificationPlug = chooseNotificationPlug();
 
-  static const _log = LogTarget.downloader;
+  static final _log = Logger("Download Manager");
   static const int maximum = 6;
 
   late final StreamSubscription<void> _refresher;
@@ -300,7 +300,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     );
 
     try {
-      _log.logDefault("Started download: ${entry.data}".message);
+      _log.info("Started download: ${entry.data}");
 
       await _client.download(
         entry.data.url,
@@ -321,10 +321,11 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
 
       _complete(entry.key);
       progress.done();
-    } catch (e, stackTrace) {
-      _log.logDefaultImportant(
-        "writting downloaded file ${entry.data.name} to uri".errorMessage(e),
-        stackTrace,
+    } catch (e, trace) {
+      _log.warning(
+        "writting downloaded file ${entry.data.name} to uri",
+        e,
+        trace,
       );
 
       progress.done();

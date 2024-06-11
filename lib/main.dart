@@ -3,15 +3,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:developer";
 import "dart:ui" as ui;
 
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/restart_widget.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery.dart";
@@ -22,6 +23,7 @@ import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:gallery/welcome_pages.dart";
 import "package:local_auth/local_auth.dart";
+import "package:logging/logging.dart";
 import "package:package_info_plus/package_info_plus.dart";
 
 late final String azariVersion;
@@ -127,7 +129,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
 /// Picks a file and returns to the app requested.
 @pragma("vm:entry-point")
 Future<void> mainPickfile() async {
-  initLogger();
+  _initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
   await initServices();
@@ -193,7 +195,7 @@ Future<void> mainPickfile() async {
 }
 
 void main() async {
-  initLogger();
+  _initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -239,6 +241,26 @@ void main() async {
       ),
     ),
   );
+}
+
+void _initLogger() {
+  if (kReleaseMode) {
+    return;
+  }
+
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((r) {
+    log(
+      r.message,
+      time: r.time,
+      sequenceNumber: r.sequenceNumber,
+      level: r.level.value,
+      name: r.loggerName,
+      zone: r.zone,
+      stackTrace: r.stackTrace,
+      error: r.error,
+    );
+  });
 }
 
 void changeExceptionErrorColors() {

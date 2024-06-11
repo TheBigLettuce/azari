@@ -571,13 +571,8 @@ class _RedownloadTileState extends State<RedownloadTile> {
                 post.download(downloadManager, postTags);
 
                 return null;
-              }).onError((error, stackTrace) {
-                log(
-                  "loading post for download",
-                  level: Level.SEVERE.value,
-                  error: error,
-                  stackTrace: stackTrace,
-                );
+              }).onError((e, trace) {
+                Logger.root.warning("RedownloadTile", e, trace);
 
                 return null;
               }).whenComplete(() {
@@ -608,6 +603,8 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: RawChip(
         avatar: const Icon(Icons.wallpaper_rounded),
@@ -616,11 +613,8 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
             : () {
                 _status = PlatformApi.current()
                     .setWallpaper(widget.id)
-                    .onError((error, stackTrace) {
-                  LogTarget.unknown.logDefaultImportant(
-                    "setWallpaper".errorMessage(error),
-                    stackTrace,
-                  );
+                    .onError((e, trace) {
+                  Logger.root.warning("setWallpaper", e, trace);
                 }).whenComplete(() {
                   _status = null;
 
@@ -635,7 +629,7 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
                 width: 14,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Text(AppLocalizations.of(context)!.setAsWallpaper),
+            : Text(l10n.setAsWallpaper),
       ),
     );
   }

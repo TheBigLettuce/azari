@@ -12,6 +12,7 @@ import "package:gallery/src/net/booru/impl/conventers/gelbooru.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/booru/strip_html.dart";
+import "package:logging/logging.dart";
 import "package:xml/xml.dart";
 
 const Duration _defaultTimeout = Duration(seconds: 30);
@@ -23,7 +24,7 @@ class Gelbooru implements BooruAPI {
     this.booru = Booru.gelbooru,
   });
 
-  static const _log = LogTarget.booru;
+  static final _log = Logger("Gelbooru API");
 
   final Dio client;
   final PageSaver pageSaver;
@@ -43,7 +44,7 @@ class Gelbooru implements BooruAPI {
         "q": "index",
         "post_id": postId.toString(),
       }),
-      LogReq(LogReq.notes(booru, postId), _log),
+      LogReq(LogReq.notes(postId), _log),
       options: Options(
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.plain,
@@ -77,7 +78,7 @@ class Gelbooru implements BooruAPI {
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
-      LogReq(LogReq.completeTag(booru, t), _log),
+      LogReq(LogReq.completeTag(t), _log),
     );
 
     return GelbooruTagsRet.fromJson(resp.data!).posts;
@@ -135,7 +136,7 @@ class Gelbooru implements BooruAPI {
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
-      LogReq(LogReq.page(booru, p), _log),
+      LogReq(LogReq.page(p, tags: tags, safeMode: safeMode), _log),
     );
 
     return resp.data!["post"] == null
@@ -161,7 +162,7 @@ class Gelbooru implements BooruAPI {
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
-      LogReq(LogReq.singlePost(booru, id), _log),
+      LogReq(LogReq.singlePost(id, tags: "", safeMode: SafeMode.none), _log),
     );
 
     final ret = GelbooruPostRet.fromJson(resp.data!);

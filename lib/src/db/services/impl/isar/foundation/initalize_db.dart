@@ -185,9 +185,6 @@ Future<void> _removeTempContentsDownloads() async {
       e.deleteSync(recursive: true);
     }
   } catch (e, trace) {
-    LogTarget.unknown.logDefaultImportant(
-      "deleting temp directories".errorMessage(e),
-      trace,
-    );
+    Logger.root.severe("deleting temp download directory", e, trace);
   }
 }

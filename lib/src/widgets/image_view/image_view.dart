@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:developer";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -188,6 +187,8 @@ class ImageView extends StatefulWidget {
     });
   }
 
+  static final log = Logger("ImageView");
+
   @override
   State<ImageView> createState() => ImageViewState();
 }
@@ -198,7 +199,6 @@ class ImageViewState extends State<ImageView>
         ImageViewPaletteMixin,
         ImageViewLoadingBuilderMixin,
         TickerProviderStateMixin {
-  final mainFocus = FocusNode();
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
@@ -207,6 +207,7 @@ class ImageViewState extends State<ImageView>
   late final DraggableScrollableController bottomSheetController;
 
   final scrollController = ScrollController();
+  final mainFocus = FocusNode();
 
   late PageController controller =
       PageController(initialPage: widget.startingCell);
@@ -307,13 +308,8 @@ class ImageViewState extends State<ImageView>
             cellCount = value;
           });
         }
-      }).onError((error, stackTrace) {
-        log(
-          "loading next in the image view page",
-          level: Level.WARNING.value,
-          error: error,
-          stackTrace: stackTrace,
-        );
+      }).onError((e, trace) {
+        ImageView.log.warning("_loadNext", e, trace);
       }).then((value) {
         refreshing = false;
       });

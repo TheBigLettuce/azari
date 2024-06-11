@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:developer";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -50,12 +49,7 @@ class PostTags {
 
       return post.tags;
     } catch (e, trace) {
-      log(
-        "fetching post for tags",
-        level: Level.SEVERE.value,
-        error: e,
-        stackTrace: trace,
-      );
+      Logger.root.severe("loadFromDissassemble", e, trace);
       return [];
     } finally {
       client.close();

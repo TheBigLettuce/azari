@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:developer";
 
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -106,12 +105,7 @@ class _SinglePostState extends State<SinglePost> {
             .showSnackBar(SnackBar(content: Text(e.toString())));
       }
 
-      log(
-        "going to a post in single post",
-        level: Level.SEVERE.value,
-        error: e,
-        stackTrace: trace,
-      );
+      Logger.root.warning("SinglePost _launch", e, trace);
     }
 
     void onWhenComplete() {
@@ -180,12 +174,7 @@ class _SinglePostState extends State<SinglePost> {
 
       menuController.open();
     } catch (e, trace) {
-      log(
-        "clipboard button in single post",
-        level: Level.WARNING.value,
-        error: e,
-        stackTrace: trace,
-      );
+      Logger.root.warning("SinglePost _tryClipboard", e, trace);
     }
   }
 

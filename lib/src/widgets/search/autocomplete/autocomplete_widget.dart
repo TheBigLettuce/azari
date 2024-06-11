@@ -3,8 +3,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:developer";
-
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
@@ -176,12 +174,7 @@ class AutocompleteWidget extends StatelessWidget {
           return (await autocompleteTag(textEditingValue.text, complF))
               .map((e) => e.tag);
         } catch (e, trace) {
-          log(
-            "autocomplete in search, excluded tags",
-            level: Level.WARNING.value,
-            error: e,
-            stackTrace: trace,
-          );
+          Logger.root.warning("AutocompleteWidget", e, trace);
 
           return const [];
         }

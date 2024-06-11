@@ -17,7 +17,6 @@ import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
@@ -46,6 +45,7 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:logging/logging.dart";
 
 part "files_actions.dart";
 
@@ -94,8 +94,6 @@ class _GalleryFilesState extends State<GalleryFiles> {
   final miscSettings = MiscSettingsService.db().current;
 
   late final postTags = PostTags(localTags, widget.db.localTagDictionary);
-
-  static const _log = LogTarget.gallery;
 
   final plug = chooseGalleryPlug();
 
@@ -453,10 +451,8 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                 );
                               }
                             } catch (e, trace) {
-                              _log.logDefaultImportant(
-                                "getting random number".errorMessage(e),
-                                trace,
-                              );
+                              Logger.root
+                                  .warning("getting random number", e, trace);
 
                               return;
                             }

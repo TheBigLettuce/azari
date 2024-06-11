@@ -12,7 +12,6 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/pages/gallery/blacklisted_directories.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
@@ -30,6 +29,7 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:local_auth/local_auth.dart";
+import "package:logging/logging.dart";
 
 class GalleryDirectories extends StatefulWidget {
   const GalleryDirectories({
@@ -86,8 +86,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
   BlacklistedDirectoryService get blacklistedDirectories =>
       widget.db.blacklistedDirectories;
-
-  static const _log = LogTarget.gallery;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
@@ -394,10 +392,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       newDir: true,
                     );
                   }).onError((e, trace) {
-                    _log.logDefaultImportant(
-                      "new folder in android_directories".errorMessage(e),
-                      trace,
-                    );
+                    Logger.root
+                        .severe("new folder in android_directories", e, trace);
                   }).whenComplete(() {
                     if (context.mounted) {
                       Navigator.pop(context);

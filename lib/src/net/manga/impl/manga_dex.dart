@@ -12,13 +12,14 @@ import "package:gallery/src/net/manga/impl/conventers/manga_dex/entries/manga_de
 import "package:gallery/src/net/manga/impl/conventers/manga_dex/genres/manga_dex_genres.dart";
 import "package:gallery/src/net/manga/impl/conventers/manga_dex/images/manga_dex_images.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
+import "package:logging/logging.dart";
 
 const Duration _defaultTimeout = Duration(seconds: 30);
 
 class MangaDex implements MangaAPI {
   const MangaDex(this.client);
 
-  static const _log = LogTarget.manga;
+  static final _log = Logger("MangaDex API");
   final Dio client;
 
   @override
@@ -72,7 +73,7 @@ class MangaDex implements MangaAPI {
   Future<List<MangaGenre>> tags() async {
     final res = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(site.url, "/manga/tag"),
-      const LogReq("Manga tags", _log),
+      LogReq("Manga tags", _log),
       options: Options(
         responseType: ResponseType.json,
         sendTimeout: _defaultTimeout,
@@ -87,7 +88,7 @@ class MangaDex implements MangaAPI {
   Future<double> score(MangaEntry e) async {
     final res = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(site.url, "/statistics/manga/${e.id}"),
-      const LogReq("Manga score", _log),
+      LogReq("Manga score", _log),
       options: Options(
         responseType: ResponseType.json,
         sendTimeout: _defaultTimeout,
@@ -114,7 +115,7 @@ class MangaDex implements MangaAPI {
         "includes[0]": "cover_art",
         "includes[1]": "manga",
       }),
-      const LogReq("Manga single", _log),
+      LogReq("Manga single", _log),
       options: Options(
         responseType: ResponseType.json,
         sendTimeout: _defaultTimeout,
@@ -160,7 +161,7 @@ class MangaDex implements MangaAPI {
   Future<List<MangaImage>> imagesForChapter(MangaId id) async {
     final res = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(site.url, "/at-home/server/$id"),
-      const LogReq("Manga single", _log),
+      LogReq("Manga single", _log),
       options: Options(
         responseType: ResponseType.json,
         sendTimeout: _defaultTimeout,
