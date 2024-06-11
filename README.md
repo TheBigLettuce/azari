@@ -6,8 +6,6 @@ A *booru client, built with Flutter.
 
 The font used in the icon is [M+ fonts](https://mplusfonts.github.io/) designed by Coji Morishita. [SIL Open Font License](https://scripts.sil.org/OFL_web)
 
-Sources include [Zen Kurenaido font](https://github.com/googlefonts/zen-kurenaido) designed by Yoshimichi Ohira. [SIL Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)
-
 File `android/app/src/main/kotlin/lol/bruh19/azari/PerceptionHash.kt` is an adapted version of [goimagehash](https://github.com/corona10/goimagehash) of perception hash algorithm. Original license of goimagehash is BSD 2-Clause License, see `PerceptionHash.kt_ORIGINAL-LICENSE`.
 
 ## License
