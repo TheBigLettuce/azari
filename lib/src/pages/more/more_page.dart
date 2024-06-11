@@ -172,7 +172,10 @@ class MorePage extends StatelessWidget {
           searchTextController: null,
           filter: null,
           rootNavigatorPop: popScope,
-          child: Dashboard(db: db.localTags),
+          child: Dashboard(
+            db: db.localTags,
+            popScope: popScope,
+          ),
         ),
     };
   }

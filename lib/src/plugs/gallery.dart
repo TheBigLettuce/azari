@@ -160,7 +160,12 @@ mixin GalleryDirectory
 
     if (callback != null) {
       Navigator.pop(context);
-      callback(cell, null);
+      callback(
+        chosen: cell.relativeLoc,
+        volumeName: cell.volumeName,
+        newDir: false,
+        bucketId: cell.bucketId,
+      );
 
       return Future.value();
     } else {

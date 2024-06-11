@@ -7,7 +7,6 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
@@ -28,7 +27,6 @@ abstract class FileFilters {
   static (Iterable<GalleryFile>, dynamic) tag(
     Iterable<GalleryFile> cells,
     String searchText,
-    PostTags postTags,
   ) {
     if (searchText.isEmpty) {
       return (cells, null);
@@ -36,7 +34,15 @@ abstract class FileFilters {
 
     return (
       cells.where(
-        (element) => postTags.contains(element.name, searchText),
+        (element) {
+          for (final tag in searchText.split(" ")) {
+            if (!element.tagsFlat.contains(tag)) {
+              return false;
+            }
+          }
+
+          return true;
+        },
       ),
       null
     );
@@ -45,11 +51,18 @@ abstract class FileFilters {
   static (Iterable<GalleryFile>, dynamic) tagReversed(
     Iterable<GalleryFile> cells,
     String searchText,
-    PostTags postTags,
   ) {
     return (
       cells.where(
-        (element) => !postTags.contains(element.name, searchText),
+        (element) {
+          for (final tag in searchText.split(" ")) {
+            if (element.tagsFlat.contains(tag)) {
+              return false;
+            }
+          }
+
+          return true;
+        },
       ),
       null
     );
@@ -69,7 +82,6 @@ abstract class FileFilters {
 
   static (Iterable<GalleryFile>, dynamic) untagged(
     Iterable<GalleryFile> cells,
-    LocalTagsService localTags,
   ) {
     return (
       cells.where(
@@ -99,7 +111,6 @@ abstract class FileFilters {
 
   static (Iterable<GalleryFile>, dynamic) original(
     Iterable<GalleryFile> cells,
-    LocalTagsService localTags,
   ) {
     return (
       cells.where(

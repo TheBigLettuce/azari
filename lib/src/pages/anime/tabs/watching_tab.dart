@@ -348,31 +348,27 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   Widget build(BuildContext context) {
     return CellProvider(
       getCell: filter.forIdxUnsafe,
-      child: Builder(
-        builder: (context) {
-          return SliverGrid.count(
-            crossAxisCount: 3,
-            children: widget.watchingRight
-                ? filter.backingStorage.reversed.indexed
-                    .map(
-                      (e) => ImportantCard(
-                        cell: e.$2,
-                        idx: e.$1,
-                        onPressed: onPressed,
-                      ).animate(key: ValueKey(e)).fadeIn(),
-                    )
-                    .toList()
-                : filter.backingStorage.indexed
-                    .map(
-                      (e) => ImportantCard(
-                        cell: e.$2,
-                        idx: e.$1,
-                        onPressed: onPressed,
-                      ).animate(key: ValueKey(e)).fadeIn(),
-                    )
-                    .toList(),
-          );
-        },
+      child: SliverGrid.count(
+        crossAxisCount: 3,
+        children: widget.watchingRight
+            ? filter.backingStorage.reversed.indexed
+                .map(
+                  (e) => ImportantCard(
+                    cell: e.$2,
+                    idx: e.$1,
+                    onPressed: onPressed,
+                  ).animate(key: ValueKey(e)).fadeIn(),
+                )
+                .toList()
+            : filter.backingStorage.indexed
+                .map(
+                  (e) => ImportantCard(
+                    cell: e.$2,
+                    idx: e.$1,
+                    onPressed: onPressed,
+                  ).animate(key: ValueKey(e)).fadeIn(),
+                )
+                .toList(),
       ),
     );
   }

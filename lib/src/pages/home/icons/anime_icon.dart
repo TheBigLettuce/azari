@@ -8,16 +8,16 @@ part of "../../home.dart";
 class AnimeDestinationIcon extends StatelessWidget {
   const AnimeDestinationIcon({
     super.key,
-    required this.isSelected,
     required this.controller,
   });
 
-  final bool isSelected;
   final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.anime;
 
     return Animate(
       controller: controller,

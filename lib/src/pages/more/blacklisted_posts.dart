@@ -15,6 +15,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
@@ -74,25 +75,23 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
           child: GridFrame<HiddenBooruPostData>(
             key: state.gridKey,
             slivers: [
-              Builder(
-                builder: (context) => ListLayout<HiddenBooruPostData>(
-                  hideThumbnails: false,
-                  source: source.backingStorage,
-                  progress: source.progress,
-                  itemFactory: (context, index, cell) {
-                    final extras =
-                        GridExtrasNotifier.of<HiddenBooruPostData>(context);
+              ListLayout<HiddenBooruPostData>(
+                hideThumbnails: false,
+                source: source.backingStorage,
+                progress: source.progress,
+                itemFactory: (context, index, cell) {
+                  final extras =
+                      GridExtrasNotifier.of<HiddenBooruPostData>(context);
 
-                    return DefaultListTile(
-                      functionality: extras.functionality,
-                      selection: extras.selection,
-                      index: index,
-                      cell: cell,
-                      trailing: Text(cell.booru.string),
-                      hideThumbnails: HideBlacklistedImagesNotifier.of(context),
-                    );
-                  },
-                ),
+                  return DefaultListTile(
+                    functionality: extras.functionality,
+                    selection: extras.selection,
+                    index: index,
+                    cell: cell,
+                    trailing: Text(cell.booru.string),
+                    hideThumbnails: HideBlacklistedImagesNotifier.of(context),
+                  );
+                },
               ),
             ],
             functionality: GridFunctionality(

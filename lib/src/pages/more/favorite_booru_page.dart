@@ -25,6 +25,7 @@ import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -276,7 +277,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
             )
         };
       },
-      ListStorage(),
+      ListStorage(reverse: true),
       prefilter: () {
         MiscSettingsService.db()
             .current
@@ -289,10 +290,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
         FilteringMode.video,
         FilteringMode.same,
       },
-      allowedSortingModes: const {
-        SortingMode.none,
-        SortingMode.size,
-      },
+      allowedSortingModes: const {},
       initialFilteringMode: MiscSettingsService.db().current.favoritesPageMode,
       initialSortingMode: SortingMode.none,
     );

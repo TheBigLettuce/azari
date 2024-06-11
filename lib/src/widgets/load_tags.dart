@@ -5,6 +5,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
@@ -48,7 +49,12 @@ class LoadTags extends StatelessWidget {
                         final postTags = PostTags.fromContext(context);
 
                         postTags
-                            .loadFromDissassemble(filename, res)
+                            .loadFromDissassemble(
+                          filename,
+                          res,
+                          DatabaseConnectionNotifier.of(context)
+                              .localTagDictionary,
+                        )
                             .then((value) {
                           postTags.addTagsPost(filename, value, true);
                           notifier?.call();

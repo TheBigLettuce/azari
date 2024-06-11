@@ -36,7 +36,7 @@ abstract interface class FilesManagement {
     required String targetDir,
   });
 
-  void copyMove(
+  Future<void> copyMove(
     String chosen,
     String chosenVolumeName,
     List<GalleryFile> selected, {
@@ -130,13 +130,14 @@ class DummyFilesManagement implements FilesManagement {
       Future.value();
 
   @override
-  void copyMove(
+  Future<void> copyMove(
     String chosen,
     String chosenVolumeName,
     List<GalleryFile> selected, {
     required bool move,
     required bool newDir,
-  }) {}
+  }) =>
+      Future.value();
 }
 
 class DummyCachedThumbs implements CachedThumbs {

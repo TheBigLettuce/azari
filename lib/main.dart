@@ -165,25 +165,24 @@ Future<void> mainPickfile() async {
           theme: buildTheme(Brightness.light, accentColor),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Builder(
-            builder: (context) {
-              return Home(
-                callback: CallbackDescriptionNested(
-                  (chosen) {
-                    const AndroidApiFunctions().returnUri(chosen.originalUri);
-                  },
-                  preview: PreferredSize(
-                    preferredSize:
-                        Size.fromHeight(CopyMovePreview.size.toDouble()),
-                    child: CopyMovePreview(
+          home: Home(
+            callback: CallbackDescriptionNested(
+              (chosen) {
+                const AndroidApiFunctions().returnUri(chosen.originalUri);
+              },
+              preview: PreferredSize(
+                preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
+                child: Builder(
+                  builder: (context) {
+                    return CopyMovePreview(
                       files: null,
                       title: AppLocalizations.of(context)!.pickFileNotice,
                       icon: Icons.file_open_rounded,
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       ),

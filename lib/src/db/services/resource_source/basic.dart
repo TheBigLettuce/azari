@@ -202,7 +202,7 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
 }
 
 class ListStorage<V> extends SourceStorage<int, V> {
-  ListStorage({this.sortFnc});
+  ListStorage({this.sortFnc, this.reverse = false});
 
   final Iterable<V> Function(ListStorage<V> instance, SortingMode sort)?
       sortFnc;
@@ -210,6 +210,8 @@ class ListStorage<V> extends SourceStorage<int, V> {
   final StreamController<int> _events = StreamController.broadcast();
 
   final List<V> list = [];
+
+  final bool reverse;
 
   @override
   int get count => list.length;
@@ -225,7 +227,8 @@ class ListStorage<V> extends SourceStorage<int, V> {
       sortFnc == null ? this : sortFnc!(this, sort);
 
   @override
-  V? get(int idx) => idx >= count ? null : list[idx];
+  V? get(int idx) =>
+      idx >= count ? null : list[reverse ? list.length - 1 - idx : idx];
 
   @override
   void add(V e, [bool silent = false]) {

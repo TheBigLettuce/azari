@@ -71,12 +71,13 @@ class _SinglePostState extends State<SinglePost> {
 
   Future<void> _launch(
     DownloadManager downloadManager,
+    AppLocalizations l10n,
     PostTags postTags, [
     Booru? replaceBooru,
     int? replaceId,
-  ]) async {
+  ]) {
     if (inProcessLoading) {
-      return;
+      return Future.value();
     }
 
     inProcessLoading = true;
@@ -88,33 +89,22 @@ class _SinglePostState extends State<SinglePost> {
       booru = booruApi;
     }
 
-    try {
-      unawaited(arrowSpinningController?.repeat());
+    unawaited(arrowSpinningController?.repeat());
 
-      final Post value;
-
-      if (replaceId != null) {
-        value = await booru.singlePost(replaceId);
-      } else {
-        final n = int.tryParse(controller.text);
-        if (n == null) {
-          throw AppLocalizations.of(context)!.notANumber(controller.text);
-        }
-
-        value = await booru.singlePost(n);
-      }
-
+    Future<void> onThen(Post p) {
       return ImageView.launchWrapped(
         context,
         1,
-        (__) => value.content(),
-        download: (_) => value.download(downloadManager, postTags),
+        (__) => p.content(),
+        download: (_) => p.download(downloadManager, postTags),
       );
-    } catch (e, trace) {
-      try {
+    }
+
+    void onError(dynamic e, StackTrace trace) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.toString())));
-      } catch (_) {}
+      }
 
       log(
         "going to a post in single post",
@@ -124,11 +114,32 @@ class _SinglePostState extends State<SinglePost> {
       );
     }
 
-    arrowSpinningController
-      ?..stop()
-      ..reverse();
+    void onWhenComplete() {
+      arrowSpinningController
+        ?..stop()
+        ..reverse();
 
-    inProcessLoading = false;
+      inProcessLoading = false;
+    }
+
+    if (replaceId != null) {
+      return booru
+          .singlePost(replaceId)
+          .then(onThen)
+          .onError(onError)
+          .whenComplete(onWhenComplete);
+    } else {
+      final n = int.tryParse(controller.text);
+      if (n == null) {
+        throw l10n.notANumber(controller.text);
+      }
+
+      return booru
+          .singlePost(n)
+          .then(onThen)
+          .onError(onError)
+          .whenComplete(onWhenComplete);
+    }
   }
 
   Future<void> _tryClipboard() async {
@@ -212,6 +223,7 @@ class _SinglePostState extends State<SinglePost> {
 
           return _launch(
             downloadManager,
+            l10n,
             postTags,
             Booru.fromPrefix(f[0]),
             int.parse(f[1]),
@@ -252,7 +264,7 @@ class _SinglePostState extends State<SinglePost> {
               effects: const [RotateEffect()],
               autoPlay: false,
             ),
-            onPressed: () => _launch(downloadManager, postTags),
+            onPressed: () => _launch(downloadManager, l10n, postTags),
           ),
         ],
       ),

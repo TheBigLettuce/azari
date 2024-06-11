@@ -26,6 +26,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/label_switcher_widget.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";

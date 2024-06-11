@@ -170,6 +170,7 @@ class PostTags {
   Future<List<String>> loadFromDissassemble(
     String filename,
     DisassembleResult dissassembled,
+    LocalTagDictionaryService localTagDictionary,
   ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
     final api =
@@ -182,6 +183,7 @@ class PostTags {
       }
 
       _db.add(filename, post.tags);
+      localTagDictionary.add(post.tags);
 
       return post.tags;
     } catch (e, trace) {
@@ -248,13 +250,18 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> getOnlineAndSaveTags(
     String filename,
+    LocalTagDictionaryService localTagDictionary,
   ) async {
     final dissassembled = DisassembleResult.fromFilename(filename);
     if (dissassembled.hasError) {
       return const [];
     }
 
-    return loadFromDissassemble(filename, dissassembled.asValue());
+    return loadFromDissassemble(
+      filename,
+      dissassembled.asValue(),
+      localTagDictionary,
+    );
   }
 }
 

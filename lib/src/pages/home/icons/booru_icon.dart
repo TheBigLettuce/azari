@@ -8,16 +8,17 @@ part of "../../home.dart";
 class BooruDestinationIcon extends StatelessWidget {
   const BooruDestinationIcon({
     super.key,
-    required this.isSelected,
     required this.controller,
   });
 
-  final bool isSelected;
   final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.booru;
+
     final selectedBooruPage = BooruSubPage.of(context);
 
     return Animate(

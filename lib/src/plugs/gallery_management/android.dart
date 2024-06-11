@@ -127,14 +127,14 @@ class AndroidFilesManagement implements FilesManagement {
   }
 
   @override
-  void copyMove(
+  Future<void> copyMove(
     String chosen,
     String chosenVolumeName,
     List<GalleryFile> selected, {
     required bool move,
     required bool newDir,
   }) {
-    _channel.invokeMethod(
+    return _channel.invokeMethod(
       "copyMoveFiles",
       {
         "dest": chosen,

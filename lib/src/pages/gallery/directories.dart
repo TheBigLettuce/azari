@@ -27,6 +27,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
@@ -387,24 +388,25 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             trailingItems: [
               if (widget.callback != null)
                 IconButton(
-                  onPressed: () async {
-                    try {
-                      widget.callback!(
-                        null,
-                        await GalleryManagementApi.current()
-                            .chooseDirectory(l10n, temporary: true)
-                            .then((value) => value!.$2),
-                      );
-                      Navigator.pop(context);
-                    } catch (e, trace) {
-                      _log.logDefaultImportant(
-                        "new folder in android_directories".errorMessage(e),
-                        trace,
-                      );
-
+                  onPressed: () => GalleryManagementApi.current()
+                      .chooseDirectory(l10n, temporary: true)
+                      .then((value) {
+                    widget.callback!(
+                      chosen: value!.$2,
+                      volumeName: "",
+                      bucketId: "",
+                      newDir: true,
+                    );
+                  }).onError((e, trace) {
+                    _log.logDefaultImportant(
+                      "new folder in android_directories".errorMessage(e),
+                      trace,
+                    );
+                  }).whenComplete(() {
+                    if (context.mounted) {
                       Navigator.pop(context);
                     }
-                  },
+                  }),
                   icon: const Icon(Icons.create_new_folder_outlined),
                 )
               else
@@ -519,6 +521,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             filter: null,
             rootNavigatorPop: widget.procPop,
             child: BlacklistedPage(
+              popScope: widget.procPop ??
+                  (_) =>
+                      GallerySubPage.selectOf(context, GallerySubPage.gallery),
               generate: GlueProvider.generateOf(context),
               db: widget.db,
             ),
@@ -618,6 +623,7 @@ class DirectoriesDataNotifier extends InheritedWidget {
     required this.segmentFnc,
     required super.child,
   });
+
   final GalleryAPIDirectories api;
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;

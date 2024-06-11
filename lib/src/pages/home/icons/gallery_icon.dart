@@ -8,16 +8,16 @@ part of "../../home.dart";
 class GalleryDestinationIcon extends StatelessWidget {
   const GalleryDestinationIcon({
     super.key,
-    required this.isSelected,
     required this.controller,
   });
 
-  final bool isSelected;
   final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.gallery;
 
     final selectedGalleryPage = GallerySubPage.of(context);
 

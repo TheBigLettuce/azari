@@ -47,7 +47,7 @@ class IoFilesManagement implements FilesManagement {
   }
 
   @override
-  void copyMove(
+  Future<void> copyMove(
     String chosen,
     String chosenVolumeName,
     List<GalleryFile> selected, {
@@ -55,6 +55,8 @@ class IoFilesManagement implements FilesManagement {
     required bool newDir,
   }) {
     // TODO: implement copyMove
+
+    return Future.value();
   }
 }
 

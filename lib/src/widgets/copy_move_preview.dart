@@ -65,7 +65,10 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                               alignment: Alignment.topRight,
                               child: Padding(
                                 padding: const EdgeInsets.only(
-                                    right: 4, left: 4, bottom: 4),
+                                  right: 4,
+                                  left: 4,
+                                  bottom: 4,
+                                ),
                                 child: GridCell(
                                   cell: widget.files!.first,
                                   imageAlign: Alignment.topCenter,

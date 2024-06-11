@@ -9,7 +9,6 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -17,6 +16,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
@@ -26,10 +26,12 @@ class BlacklistedPage extends StatefulWidget {
     super.key,
     required this.db,
     required this.generate,
+    required this.popScope,
   });
 
   final DbConn db;
   final SelectionGlue Function([Set<GluePreferences> preferences]) generate;
+  final void Function(bool) popScope;
 
   @override
   State<BlacklistedPage> createState() => _BlacklistedPageState();
@@ -99,7 +101,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             search: PageNameSearchWidget(
               leading: IconButton(
                 onPressed: () {
-                  GallerySubPage.selectOf(context, GallerySubPage.gallery);
+                  widget.popScope(false);
                 },
                 icon: const Icon(Icons.arrow_back),
               ),

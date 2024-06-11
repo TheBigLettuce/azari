@@ -24,7 +24,7 @@ import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
 class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton(
-    this.f, {
+    this.child, {
     super.key,
     required this.extendBody,
     required this.noNavBar,
@@ -36,9 +36,8 @@ class HomeSkeleton extends StatefulWidget {
     required this.callback,
   });
 
-  final void Function(BuildContext, int) onDestinationSelected;
+  final void Function(BuildContext, CurrentRoute) onDestinationSelected;
 
-  final Widget Function(BuildContext) f;
   final bool extendBody;
   final AnimatedIconsMixin animatedIcons;
   final ChangePageMixin changePage;
@@ -50,13 +49,14 @@ class HomeSkeleton extends StatefulWidget {
   final bool showAnimeMangaPages;
   final bool noNavBar;
 
+  final Widget child;
+
   @override
   State<HomeSkeleton> createState() => _HomeSkeletonState();
 }
 
 class _HomeSkeletonState extends State<HomeSkeleton> {
   ChangePageMixin get changePage => widget.changePage;
-  int get currentRoute => changePage.currentRoute;
 
   bool showRail = false;
 
@@ -70,7 +70,6 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     final child = GestureDeadZones(
       right: true,
@@ -78,85 +77,8 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          AnimatedPadding(
-            duration: const Duration(milliseconds: 200),
-            curve: Easing.standard,
-            padding: EdgeInsets.only(
-              top: NetworkStatus.g.hasInternet ? 0 : 24,
-            ),
-            child: Builder(
-              builder: (buildContext) {
-                final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
-
-                final data = MediaQuery.of(buildContext);
-
-                return MediaQuery(
-                  data: data.copyWith(
-                    viewPadding: data.viewPadding +
-                        EdgeInsets.only(bottom: bottomPadding),
-                  ),
-                  child: Builder(builder: widget.f),
-                );
-              },
-            ),
-          ),
-          if (!NetworkStatus.g.hasInternet)
-            Animate(
-              autoPlay: true,
-              effects: [
-                MoveEffect(
-                  duration: 200.ms,
-                  curve: Easing.standard,
-                  begin: Offset(
-                    0,
-                    -(24 + MediaQuery.viewPaddingOf(context).top),
-                  ),
-                  end: Offset.zero,
-                ),
-              ],
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: AnimatedContainer(
-                  duration: 200.ms,
-                  curve: Easing.standard,
-                  color: ElevationOverlay.applySurfaceTint(
-                    colorScheme.surface,
-                    colorScheme.surfaceTint,
-                    3,
-                  ).withOpacity(0.8),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.viewPaddingOf(context).top,
-                    ),
-                    child: SizedBox(
-                      height: 24,
-                      width: MediaQuery.sizeOf(context).width,
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.signal_wifi_off_outlined,
-                              size: 14,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(right: 4),
-                            ),
-                            Text(
-                              AppLocalizations.of(context)!.noInternet,
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withOpacity(0.8),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          _SkeletonBody(child: widget.child),
+          if (!NetworkStatus.g.hasInternet) const _NoNetworkIndicator(),
         ],
       ),
     );
@@ -176,79 +98,29 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
           extendBody: widget.extendBody,
           extendBodyBehindAppBar: true,
           drawerEnableOpenDragGesture: false,
-          bottomNavigationBar: showRail
-              ? Builder(
-                  builder: (context) {
-                    SelectionCountNotifier.countOf(context);
-
-                    return GlueBottomAppBar(
-                      GlueStateProvider.of(context),
-                      controller: widget.animatedIcons.selectionBarController,
-                    );
-                  },
-                )
-              : Builder(builder: (context) {
-                  return _NavBar(
-                    noNavigationIcons: widget.callback != null,
-                    icons: widget.animatedIcons,
-                    child: Builder(
-                      builder: (context) => NavigationBar(
-                        labelBehavior:
-                            NavigationDestinationLabelBehavior.onlyShowSelected,
-                        backgroundColor: theme.colorScheme.surfaceContainer
-                            .withOpacity(0.95),
-                        selectedIndex: currentRoute,
-                        onDestinationSelected: (i) =>
-                            widget.onDestinationSelected(context, i),
-                        destinations: widget.callback != null
-                            ? const []
-                            : widget.animatedIcons.icons(
-                                context,
-                                currentRoute,
-                                widget.booru,
-                                widget.showAnimeMangaPages,
-                              ),
-                      ),
-                    ),
-                  );
-                }),
+          bottomNavigationBar: _BottomNavigationBar(
+            animatedIcons: widget.animatedIcons,
+            changePage: changePage,
+            onDestinationSelected: widget.onDestinationSelected,
+            callback: widget.callback,
+            booru: widget.booru,
+            showAnimeMangaPages: widget.showAnimeMangaPages,
+            showRail: showRail,
+          ),
           resizeToAvoidBottomInset: false,
           drawer: _Drawer(
-              changePage: widget.changePage,
-              db: DatabaseConnectionNotifier.of(context)),
+            changePage: widget.changePage,
+            db: DatabaseConnectionNotifier.of(context),
+            animatedIcons: widget.animatedIcons,
+          ),
           body: showRail && widget.callback == null
               ? Row(
                   children: [
-                    Animate(
-                      autoPlay: false,
-                      value: 0,
-                      effects: const [
-                        SlideEffect(
-                          curve: Easing.emphasizedAccelerate,
-                          end: Offset(-1, 0),
-                          begin: Offset.zero,
-                        ),
-                      ],
-                      controller: widget.animatedIcons.controllerNavBar,
-                      child: Builder(builder: (context) {
-                        return NavigationRail(
-                          // leading: IconButton(
-                          //   onPressed: () {
-                          //     Scaffold.of(context).openDrawer();
-                          //   },
-                          //   icon: const Icon(Icons.menu_rounded),
-                          // ),
-                          groupAlignment: -0.6,
-                          onDestinationSelected: (i) =>
-                              widget.onDestinationSelected(context, i),
-                          destinations: widget.animatedIcons.railIcons(
-                            currentRoute,
-                            widget.booru,
-                            widget.showAnimeMangaPages,
-                          ),
-                          selectedIndex: widget.changePage.currentRoute,
-                        );
-                      }),
+                    _NavigationRail(
+                      onDestinationSelected: widget.onDestinationSelected,
+                      animatedIcons: widget.animatedIcons,
+                      booru: widget.booru,
+                      showAnimeMangaPages: widget.showAnimeMangaPages,
                     ),
                     const VerticalDivider(width: 1),
                     Expanded(child: child),
@@ -258,6 +130,211 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
         ),
       ),
     );
+  }
+}
+
+class _SkeletonBody extends StatelessWidget {
+  const _SkeletonBody({
+    // super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+
+    final data = MediaQuery.of(context);
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      curve: Easing.standard,
+      padding: EdgeInsets.only(
+        top: NetworkStatus.g.hasInternet ? 0 : 24,
+      ),
+      child: MediaQuery(
+        data: data.copyWith(
+          viewPadding:
+              data.viewPadding + EdgeInsets.only(bottom: bottomPadding),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _NoNetworkIndicator extends StatelessWidget {
+  const _NoNetworkIndicator(
+      // {super.key}
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final l10n = AppLocalizations.of(context)!;
+
+    return Animate(
+      autoPlay: true,
+      effects: [
+        MoveEffect(
+          duration: 200.ms,
+          curve: Easing.standard,
+          begin: Offset(
+            0,
+            -(24 + MediaQuery.viewPaddingOf(context).top),
+          ),
+          end: Offset.zero,
+        ),
+      ],
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: AnimatedContainer(
+          duration: 200.ms,
+          curve: Easing.standard,
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.8),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.viewPaddingOf(context).top,
+            ),
+            child: SizedBox(
+              height: 24,
+              width: MediaQuery.sizeOf(context).width,
+              child: Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.signal_wifi_off_outlined,
+                      size: 14,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(right: 4),
+                    ),
+                    Text(
+                      l10n.noInternet,
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavigationRail extends StatelessWidget {
+  const _NavigationRail({
+    // super.key,
+    required this.onDestinationSelected,
+    required this.animatedIcons,
+    required this.booru,
+    required this.showAnimeMangaPages,
+  });
+
+  final void Function(BuildContext, CurrentRoute) onDestinationSelected;
+
+  final AnimatedIconsMixin animatedIcons;
+
+  final Booru booru;
+
+  final bool showAnimeMangaPages;
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      autoPlay: false,
+      value: 0,
+      effects: const [
+        SlideEffect(
+          curve: Easing.emphasizedAccelerate,
+          end: Offset(-1, 0),
+          begin: Offset.zero,
+        ),
+      ],
+      controller: animatedIcons.controllerNavBar,
+      child: NavigationRail(
+        groupAlignment: -0.6,
+        onDestinationSelected: (i) => onDestinationSelected(
+          context,
+          CurrentRoute.fromIndex(i),
+        ),
+        destinations: animatedIcons.railIcons(
+          booru,
+          showAnimeMangaPages,
+        ),
+        selectedIndex: CurrentRoute.of(context).index,
+      ),
+    );
+  }
+}
+
+class _BottomNavigationBar extends StatelessWidget {
+  const _BottomNavigationBar({
+    // super.key,
+    required this.animatedIcons,
+    required this.changePage,
+    required this.onDestinationSelected,
+    required this.callback,
+    required this.booru,
+    required this.showAnimeMangaPages,
+    required this.showRail,
+  });
+
+  final AnimatedIconsMixin animatedIcons;
+  final ChangePageMixin changePage;
+
+  final void Function(BuildContext, CurrentRoute) onDestinationSelected;
+
+  final CallbackDescriptionNested? callback;
+
+  final Booru booru;
+
+  final bool showAnimeMangaPages;
+  final bool showRail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (showRail) {
+      SelectionCountNotifier.countOf(context);
+
+      return GlueBottomAppBar(
+        GlueStateProvider.of(context),
+        controller: animatedIcons.selectionBarController,
+      );
+    } else {
+      final currentRoute = CurrentRoute.of(context);
+
+      return _NavBar(
+        noNavigationIcons: callback != null,
+        icons: animatedIcons,
+        child: NavigationBar(
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+          backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
+          selectedIndex: currentRoute.index,
+          onDestinationSelected: (i) =>
+              onDestinationSelected(context, CurrentRoute.fromIndex(i)),
+          destinations: callback != null
+              ? const []
+              : animatedIcons.icons(
+                  context,
+                  booru,
+                  showAnimeMangaPages,
+                ),
+        ),
+      );
+    }
   }
 }
 
@@ -363,10 +440,12 @@ class _Drawer extends StatefulWidget {
     // super.key,
     required this.db,
     required this.changePage,
+    required this.animatedIcons,
   });
 
   final DbConn db;
   final ChangePageMixin changePage;
+  final AnimatedIconsMixin animatedIcons;
 
   @override
   State<_Drawer> createState() => __DrawerState();
@@ -406,116 +485,118 @@ class __DrawerState extends State<_Drawer> {
     final l10n = AppLocalizations.of(context)!;
     final selectedBooruPage = BooruSubPage.of(context);
 
-    return Builder(
-      builder: (context) => NavigationDrawer(
-        onDestinationSelected: (value) {
-          final nav = widget.changePage.mainKey.currentState;
-          if (nav != null) {
-            while (nav.canPop()) {
-              nav.pop();
-            }
+    return NavigationDrawer(
+      onDestinationSelected: (value) {
+        final nav = widget.changePage.mainKey.currentState;
+        if (nav != null) {
+          while (nav.canPop()) {
+            nav.pop();
           }
+        }
 
-          BooruSubPage.selectOf(context, BooruSubPage.fromIdx(value));
-          Scaffold.of(context).closeDrawer();
-        },
-        selectedIndex: selectedBooruPage.index,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-            child: Text(
-              l10n.booruLabel,
-              style: theme.textTheme.titleSmall,
+        BooruSubPage.selectOf(context, BooruSubPage.fromIdx(value));
+        Scaffold.of(context).closeDrawer();
+        widget.changePage.animateIcons(
+          widget.animatedIcons,
+          SettingsService.db().current.showAnimeMangaPages,
+        );
+      },
+      selectedIndex: selectedBooruPage.index,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+          child: Text(
+            l10n.booruLabel,
+            style: theme.textTheme.titleSmall,
+          ),
+        ),
+        ...BooruSubPage.values.map(
+          (e) => NavigationDrawerDestination(
+            selectedIcon: Icon(e.selectedIcon),
+            icon: Icon(e.icon),
+            label: Text(
+              e == BooruSubPage.booru
+                  ? settings.selectedBooru.string
+                  : e.translatedString(l10n),
             ),
           ),
-          ...BooruSubPage.values.map(
-            (e) => NavigationDrawerDestination(
-              selectedIcon: Icon(e.selectedIcon),
-              icon: Icon(e.icon),
-              label: Text(
-                e == BooruSubPage.booru
-                    ? settings.selectedBooru.string
-                    : e.translatedString(l10n),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 28, right: 28, top: 16, bottom: 10),
+          child: Divider(),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 0, 16, 10),
+          child: Text(
+            l10n.latestBookmarks,
+            style: theme.textTheme.titleSmall,
+          ),
+        ),
+        if (bookmarks.isEmpty)
+          SizedBox(
+            height: 56,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16, right: 12),
+              child: Row(
+                children: [
+                  const Padding(padding: EdgeInsets.only(left: 28 - 16)),
+                  Text(
+                    l10n.noBookmarks,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color:
+                          theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(left: 28, right: 28, top: 16, bottom: 10),
-            child: Divider(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 16, 10),
-            child: Text(
-              l10n.latestBookmarks,
-              style: theme.textTheme.titleSmall,
-            ),
-          ),
-          if (bookmarks.isEmpty)
-            SizedBox(
+          )
+        else
+          ...bookmarks.map((e) {
+            return SizedBox(
               height: 56,
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 12),
-                child: Row(
-                  children: [
-                    const Padding(padding: EdgeInsets.only(left: 28 - 16)),
-                    Text(
-                      l10n.noBookmarks,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color:
-                            theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return BooruRestoredPage(
+                            booru: e.booru,
+                            tags: e.tags,
+                            name: e.name,
+                            wrapScaffold: true,
+                            saveSelectedPage: (_) {},
+                            db: widget.db,
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            ...bookmarks.map((e) {
-              return SizedBox(
-                height: 56,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 12),
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return BooruRestoredPage(
-                              booru: e.booru,
-                              tags: e.tags,
-                              name: e.name,
-                              wrapScaffold: true,
-                              saveSelectedPage: (_) {},
-                              db: widget.db,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    customBorder: const StadiumBorder(),
-                    child: Row(
-                      children: [
-                        const Padding(padding: EdgeInsets.only(left: 28 - 16)),
-                        Icon(
-                          Icons.bookmark_outline_rounded,
+                    );
+                  },
+                  customBorder: const StadiumBorder(),
+                  child: Row(
+                    children: [
+                      const Padding(padding: EdgeInsets.only(left: 28 - 16)),
+                      Icon(
+                        Icons.bookmark_outline_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const Padding(padding: EdgeInsets.only(right: 12)),
+                      Text(
+                        e.tags,
+                        style: theme.textTheme.labelLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        const Padding(padding: EdgeInsets.only(right: 12)),
-                        Text(
-                          e.tags,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }),
-        ],
-      ),
+              ),
+            );
+          }),
+      ],
     );
   }
 }

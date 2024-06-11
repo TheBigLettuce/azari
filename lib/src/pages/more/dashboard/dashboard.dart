@@ -6,14 +6,18 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key, required this.db});
+  const Dashboard({
+    super.key,
+    required this.db,
+    required this.popScope,
+  });
 
+  final void Function(bool) popScope;
   final LocalTagsService db;
 
   @override
@@ -46,7 +50,7 @@ class _DashboardState extends State<Dashboard> {
         title: Text(l10n.dashboardPage),
         leading: IconButton(
           onPressed: () {
-            MoreSubPage.selectOf(context, MoreSubPage.more);
+            widget.popScope(false);
           },
           icon: const Icon(Icons.arrow_back),
         ),

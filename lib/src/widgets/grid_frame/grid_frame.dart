@@ -22,6 +22,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/notifiers/focus.dart";
 import "package:gallery/src/widgets/notifiers/selection_count.dart";
 import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
@@ -32,7 +33,6 @@ part "configuration/grid_selection.dart";
 part "configuration/search_and_focus.dart";
 part "configuration/segments.dart";
 part "parts/app_bar.dart";
-part "parts/body_padding.dart";
 part "parts/bottom_widget.dart";
 part "parts/cell_provider.dart";
 part "wrappers/wrap_padding.dart";
@@ -42,94 +42,6 @@ typedef WatchFire<T> = StreamSubscription<T> Function(
   void Function(T), [
   bool fire,
 ]);
-
-class GridConfiguration extends StatefulWidget {
-  const GridConfiguration({
-    super.key,
-    required this.watch,
-    this.sliver = false,
-    required this.child,
-  });
-
-  final GridSettingsWatcher watch;
-  final bool sliver;
-  final Widget child;
-
-  static GridSettingsData of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
-
-    return widget!.config;
-  }
-
-  static GridSettingsWatcher watcherOf(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
-
-    return widget!.watcher;
-  }
-
-  @override
-  State<GridConfiguration> createState() => _GridConfigurationState();
-}
-
-class _GridConfigurationState extends State<GridConfiguration> {
-  late final StreamSubscription<GridSettingsData> _watcher;
-
-  GridSettingsData? config;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _watcher = widget.watch(
-      (d) {
-        config = d;
-
-        setState(() {});
-      },
-      true,
-    );
-  }
-
-  @override
-  void dispose() {
-    _watcher.cancel();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (config == null) {
-      return widget.sliver
-          ? const SliverPadding(padding: EdgeInsets.zero)
-          : const SizedBox.shrink();
-    }
-
-    return _GridConfigurationNotifier(
-      config: config!,
-      watcher: widget.watch,
-      child: widget.child,
-    );
-  }
-}
-
-class _GridConfigurationNotifier extends InheritedWidget {
-  const _GridConfigurationNotifier({
-    // super.key,
-    required this.config,
-    required this.watcher,
-    required super.child,
-  });
-
-  final GridSettingsData config;
-  final GridSettingsWatcher watcher;
-
-  @override
-  bool updateShouldNotify(_GridConfigurationNotifier oldWidget) =>
-      config != oldWidget.config;
-}
 
 /// The grid of images.
 class GridFrame<T extends CellBase> extends StatefulWidget {
@@ -274,124 +186,84 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
     super.dispose();
   }
 
-  void tryScrollUntil(
-    ScrollController controller,
-    int p,
-    GridSettingsData config,
-  ) {
-    if (controller.position.maxScrollExtent.isInfinite) {
-      return;
-    }
-
-    final picPerRow = config.columns;
-    // Get the full content height.
-    final contentSize = controller.position.viewportDimension +
-        controller.position.maxScrollExtent;
-    // Estimate the target scroll position.
-    double target;
-    if (config.layoutType == GridLayoutType.list) {
-      target = contentSize * p / source.count;
-    } else {
-      target = contentSize *
-          (p / picPerRow.number - 1) /
-          (source.count / picPerRow.number);
-    }
-
-    if (target < controller.position.minScrollExtent) {
-      widget.functionality.updateScrollPosition
-          ?.call(controller.position.minScrollExtent);
-      return;
-    } else if (target > controller.position.maxScrollExtent) {
-      if (!source.progress.canLoadMore) {
-        widget.functionality.updateScrollPosition
-            ?.call(controller.position.maxScrollExtent);
-        return;
-      }
-    }
-
-    widget.functionality.updateScrollPosition?.call(target);
-
-    controller.jumpTo(target);
-  }
-
-  double _bottomPadding(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final functionality = widget.functionality;
-    final selectionGlue = functionality.selectionGlue;
     final description = widget.description;
 
-    return (functionality.selectionGlue.keyboardVisible()
-            ? 0
-            : MediaQuery.viewPaddingOf(context).bottom +
-                (selectionGlue.isOpen()
-                    ? selectionGlue.barHeight()
-                    : selectionGlue.persistentBarHeight
-                        ? selectionGlue.barHeight()
-                        : 0)) +
-        (description.footer != null
-            ? description.footer!.preferredSize.height
-            : 0);
-  }
+    final gridSettingsWatcher = GridConfiguration.watcherOf(context);
 
-  double appBarBottomWidgetSize() => 4;
-
-  bool get hideAppBar => !widget.description.showAppBar;
-
-  static const double loadingIndicatorSize = 4;
-
-  List<Widget> bodySlivers(BuildContext context) {
-    final description = widget.description;
-    final functionality = widget.functionality;
-
-    Widget? appBar;
-    if (description.showAppBar) {
-      final bottomWidget = description.bottomWidget != null
-          ? description.bottomWidget!
-          : functionality.search is BarSearchWidget
-              ? null
-              : PreferredSize(
-                  preferredSize: Size.fromHeight(
-                    appBarBottomWidgetSize(),
-                  ),
-                  child: _BottomWidget(
-                    progress: source.progress,
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: SizedBox.shrink(),
-                    ),
-                  ),
-                );
-
-      appBar = _AppBar(
-        gridFunctionality: widget.functionality,
-        searchFocus: searchFocus,
-        bottomWidget: bottomWidget,
-        searchWidget: widget.functionality.search,
-        pageName: widget.description.pageName ??
-            widget.description.keybindsDescription,
-        description: widget.description,
-      );
-    }
-
-    return [
-      if (appBar != null) appBar,
-      ...widget.slivers,
-      _WrapPadding(
-        footer: description.footer,
-        selectionGlue: functionality.selectionGlue,
-        child: null,
+    return PlayAnimations(
+      key: _animationsKey,
+      playAnimationsOn:
+          widget.functionality.playAnimationOn + [gridSettingsWatcher],
+      child: FocusNotifier(
+        notifier: searchFocus,
+        child: _GridSelectionCountHolder(
+          key: _holderKey,
+          selection: selection,
+          functionality: widget.functionality,
+          description: widget.description,
+          child: CellProvider<T>(
+            getCell: source.forIdxUnsafe,
+            child: GridScrollNotifier(
+              scrollNotifier:
+                  _scrollingNotifier ?? GridScrollNotifier.notifierOf(context),
+              controller: controller ?? GridScrollNotifier.of(context),
+              child: GridExtrasNotifier(
+                data: GridExtrasData(
+                  // tryScrollUntil,
+                  selection,
+                  functionality,
+                  description,
+                  searchFocus,
+                ),
+                child: description.asSliver
+                    ? functionality.registerNotifiers != null
+                        ? functionality.registerNotifiers!(
+                            _SingleSliverChild<T>(slivers: widget.slivers),
+                          )
+                        : _SingleSliverChild<T>(slivers: widget.slivers)
+                    : functionality.registerNotifiers != null
+                        ? functionality.registerNotifiers!(
+                            _BodyChild<T>(
+                              child: _MainBody<T>(slivers: widget.slivers),
+                            ),
+                          )
+                        : _BodyChild<T>(
+                            child: _MainBody<T>(slivers: widget.slivers),
+                          ),
+              ),
+            ),
+          ),
+        ),
       ),
-    ];
+    );
   }
+}
 
-  Widget mainBody(BuildContext context) {
+class _MainBody<T extends CellBase> extends StatelessWidget {
+  const _MainBody({
+    super.key,
+    required this.slivers,
+  });
+
+  final List<Widget> slivers;
+
+  @override
+  Widget build(BuildContext context) {
     final m = MediaQuery.of(context);
+
+    final extras = GridExtrasNotifier.of<T>(context);
+
+    final controller = GridScrollNotifier.of(context);
 
     return MediaQuery(
       data: m.copyWith(
         padding: m.padding +
             EdgeInsets.only(
-              top: appBarBottomWidgetSize(),
-              bottom: hideAppBar ? loadingIndicatorSize : 0,
+              top: 4,
+              bottom: !extras.description.showAppBar ? 4 : 0,
             ),
       ),
       child: Scrollbar(
@@ -404,173 +276,105 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
             child: CustomScrollView(
               controller: controller,
               physics: const AlwaysScrollableScrollPhysics(),
-              slivers: bodySlivers(context),
+              slivers: extras.bodySlivers(context, slivers),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _SingleSliverChild<T extends CellBase> extends StatelessWidget {
+  const _SingleSliverChild({
+    super.key,
+    required this.slivers,
+  });
+
+  final List<Widget> slivers;
 
   @override
   Widget build(BuildContext context) {
-    final functionality = widget.functionality;
-    final description = widget.description;
+    final extras = GridExtrasNotifier.of<T>(context);
 
-    final gridSettingsWatcher = GridConfiguration.watcherOf(context);
+    return SliverMainAxisGroup(slivers: extras.bodySlivers(context, slivers));
+  }
+}
 
-    if (description.asSliver) {
-      return PlayAnimations(
-        key: _animationsKey,
-        playAnimationsOn:
-            widget.functionality.playAnimationOn + [gridSettingsWatcher],
-        child: FocusNotifier(
-          notifier: searchFocus,
-          child: _GridSelectionCountHolder(
-            calculatePadding: _bottomPadding,
-            key: _holderKey,
-            selection: selection,
-            child: CellProvider<T>(
-              getCell: source.forIdxUnsafe,
-              child: GridScrollNotifier(
-                scrollNotifier: _scrollingNotifier ??
-                    GridScrollNotifier.notifierOf(context),
-                controller: controller ?? GridScrollNotifier.of(context),
-                child: GridExtrasNotifier(
-                  data: GridExtrasData(
-                    tryScrollUntil,
-                    selection,
-                    functionality,
-                  ),
-                  child: Builder(
-                    builder: (context) {
-                      Widget child = SliverMainAxisGroup(
-                        slivers: bodySlivers(context),
-                      );
+class _BodyChild<T extends CellBase> extends StatelessWidget {
+  const _BodyChild({
+    super.key,
+    required this.child,
+  });
 
-                      final r = widget.functionality.registerNotifiers;
-                      if (r != null) {
-                        child = r(child);
-                      }
+  final Widget child;
 
-                      return child;
-                    },
-                  ),
+  @override
+  Widget build(BuildContext context) {
+    final extras = GridExtrasNotifier.of<T>(context);
+
+    final source = extras.functionality.source;
+    final description = extras.description;
+    final functionality = extras.functionality;
+
+    final viewPadding = MediaQuery.viewPaddingOf(context);
+    final bottomPadding = GridBottomPaddingProvider.of(context);
+
+    return Stack(
+      children: [
+        if (description.pullToRefresh)
+          RefreshIndicator(
+            onRefresh: () {
+              extras.selection.reset(true);
+
+              if (source is ChainedFilterResourceSource) {
+                return (source as ChainedFilterResourceSource)
+                    .refreshOriginal();
+              }
+
+              return source.clearRefresh();
+            },
+            child: child,
+          )
+        else
+          child,
+        if (description.footer != null)
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: viewPadding.bottom,
+              ),
+              child: description.footer,
+            ),
+          ),
+        if ((!description.showAppBar ||
+                functionality.search is BarSearchWidget) &&
+            functionality.selectionGlue.barHeight() != 0 &&
+            functionality.selectionGlue.persistentBarHeight)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: PreferredSize(
+                preferredSize: const Size.fromHeight(4),
+                child: _LinearProgressIndicator(
+                  progress: source.progress,
                 ),
               ),
             ),
           ),
-        ),
-      );
-    }
-
-    final fab = functionality.fab;
-
-    Widget child(BuildContext context) {
-      final Widget ret = _BodyWrapping(
-        children: [
-          if (widget.description.pullToRefresh)
-            RefreshIndicator(
-              onRefresh: () {
-                selection.reset(true);
-
-                if (source is ChainedFilterResourceSource) {
-                  return (source as ChainedFilterResourceSource)
-                      .refreshOriginal();
-                }
-
-                return source.clearRefresh();
-              },
-              child: mainBody(context),
-            )
-          else
-            mainBody(context),
-          if (description.footer != null)
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: Builder(
-                builder: (context) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.viewPaddingOf(context).bottom,
-                    ),
-                    child: description.footer,
-                  );
-                },
-              ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: 4 + 8,
+              bottom: bottomPadding + 4 + 8,
             ),
-          if ((hideAppBar || widget.functionality.search is BarSearchWidget) &&
-              widget.functionality.selectionGlue.barHeight() != 0 &&
-              widget.functionality.selectionGlue.persistentBarHeight)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Builder(
-                builder: (context) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: GridBottomPaddingProvider.of(context),
-                    ),
-                    child: PreferredSize(
-                      preferredSize:
-                          const Size.fromHeight(loadingIndicatorSize),
-                      child: _LinearProgressIndicator(
-                        progress: source.progress,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Builder(
-              builder: (context) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: 4 + 8,
-                    bottom: GridBottomPaddingProvider.of(context) + 4 + 8,
-                  ),
-                  child: fab.widget(context),
-                );
-              },
-            ),
-          ),
-        ],
-      );
-
-      return ret;
-    }
-
-    Widget c = Builder(builder: child);
-
-    if (functionality.registerNotifiers != null) {
-      c = functionality.registerNotifiers!(c);
-    }
-
-    return PlayAnimations(
-      key: _animationsKey,
-      playAnimationsOn:
-          widget.functionality.playAnimationOn + [gridSettingsWatcher],
-      child: FocusNotifier(
-        notifier: searchFocus,
-        child: _GridSelectionCountHolder(
-          key: _holderKey,
-          calculatePadding: _bottomPadding,
-          selection: selection,
-          child: CellProvider<T>(
-            getCell: source.forIdxUnsafe,
-            child: GridScrollNotifier(
-              scrollNotifier:
-                  _scrollingNotifier ?? GridScrollNotifier.notifierOf(context),
-              controller: controller ?? GridScrollNotifier.of(context),
-              child: GridExtrasNotifier(
-                data: GridExtrasData(tryScrollUntil, selection, functionality),
-                child: c,
-              ),
-            ),
+            child: functionality.fab.widget(context),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -610,7 +414,7 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
   Widget build(BuildContext context) {
     return !progress.inRefreshing
         ? const Padding(
-            padding: EdgeInsets.only(top: GridFrameState.loadingIndicatorSize),
+            padding: EdgeInsets.only(top: 4),
             child: SizedBox(),
           )
         : const LinearProgressIndicator();
@@ -621,11 +425,14 @@ class _GridSelectionCountHolder<T extends CellBase> extends StatefulWidget {
   const _GridSelectionCountHolder({
     required super.key,
     required this.selection,
-    required this.calculatePadding,
+    required this.functionality,
+    required this.description,
     required this.child,
   });
+
+  final GridFunctionality<T> functionality;
+  final GridDescription<T> description;
   final GridSelection<T> selection;
-  final double Function(BuildContext) calculatePadding;
 
   final Widget child;
 
@@ -649,6 +456,24 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
     }
   }
 
+  double _bottomPadding(BuildContext context) {
+    final functionality = widget.functionality;
+    final selectionGlue = widget.selection.glue;
+    final description = widget.description;
+
+    return (functionality.selectionGlue.keyboardVisible()
+            ? 0
+            : MediaQuery.viewPaddingOf(context).bottom +
+                (selectionGlue.isOpen()
+                    ? selectionGlue.barHeight()
+                    : selectionGlue.persistentBarHeight
+                        ? selectionGlue.barHeight()
+                        : 0)) +
+        (description.footer != null
+            ? description.footer!.preferredSize.height
+            : 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -656,7 +481,7 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
       onPopInvoked: _onPop,
       child: GridBottomPaddingProvider(
         fab: kFloatingActionButtonMargin * 2 + 24 + 8,
-        padding: widget.calculatePadding(context),
+        padding: _bottomPadding(context),
         child: SelectionCountNotifier(
           count: widget.selection.count,
           countUpdateTimes: _updateCount,
@@ -668,15 +493,57 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
 }
 
 class GridExtrasData<T extends CellBase> {
-  const GridExtrasData(this.scrollTo, this.selection, this.functionality);
+  const GridExtrasData(
+    this.selection,
+    this.functionality,
+    this.description,
+    this.searchFocus,
+  );
 
-  final void Function(
-    ScrollController controller,
-    int idx,
-    GridSettingsData config,
-  ) scrollTo;
   final GridSelection<T> selection;
   final GridFunctionality<T> functionality;
+  final GridDescription<T> description;
+
+  final FocusNode searchFocus;
+
+  List<Widget> bodySlivers(BuildContext context, List<Widget> slivers) {
+    Widget? appBar;
+    if (description.showAppBar) {
+      final bottomWidget = description.bottomWidget != null
+          ? description.bottomWidget!
+          : functionality.search is BarSearchWidget
+              ? null
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(4),
+                  child: _BottomWidget(
+                    progress: functionality.source.progress,
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: SizedBox.shrink(),
+                    ),
+                  ),
+                );
+
+      appBar = _AppBar(
+        gridFunctionality: functionality,
+        searchFocus: searchFocus,
+        bottomWidget: bottomWidget,
+        searchWidget: functionality.search,
+        pageName: description.pageName ?? description.keybindsDescription,
+        description: description,
+      );
+    }
+
+    return [
+      if (appBar != null) appBar,
+      ...slivers,
+      _WrapPadding(
+        footer: description.footer,
+        selectionGlue: functionality.selectionGlue,
+        child: null,
+      ),
+    ];
+  }
 }
 
 class GridExtrasNotifier<T extends CellBase> extends InheritedWidget {
@@ -724,6 +591,46 @@ class GridScrollNotifier extends InheritedWidget {
         context.dependOnInheritedWidgetOfExactType<GridScrollNotifier>();
 
     return widget!.scrollNotifier;
+  }
+
+  static void scrollToOf<T extends CellBase>(BuildContext context, int i) {
+    final controller = of(context);
+    final extra = GridExtrasNotifier.of<T>(context);
+    final config = GridConfiguration.of(context);
+
+    if (controller.position.maxScrollExtent.isInfinite) {
+      return;
+    }
+
+    final picPerRow = config.columns;
+    // Get the full content height.
+    final contentSize = controller.position.viewportDimension +
+        controller.position.maxScrollExtent;
+    // Estimate the target scroll position.
+    double target;
+    if (config.layoutType == GridLayoutType.list) {
+      target = contentSize * i / extra.functionality.source.count;
+    } else {
+      target = contentSize *
+          (i / picPerRow.number - 1) /
+          (extra.functionality.source.count / picPerRow.number);
+    }
+
+    if (target < controller.position.minScrollExtent) {
+      extra.functionality.updateScrollPosition
+          ?.call(controller.position.minScrollExtent);
+      return;
+    } else if (target > controller.position.maxScrollExtent) {
+      if (!extra.functionality.source.progress.canLoadMore) {
+        extra.functionality.updateScrollPosition
+            ?.call(controller.position.maxScrollExtent);
+        return;
+      }
+    }
+
+    extra.functionality.updateScrollPosition?.call(target);
+
+    controller.jumpTo(target);
   }
 
   @override

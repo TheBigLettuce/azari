@@ -37,7 +37,8 @@ data class FilesDest(
     val images: List<Uri>,
     val videos: List<Uri>,
     val move: Boolean,
-    val newDir: Boolean
+    val newDir: Boolean,
+    val callback: (String?) -> Unit,
 )
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
@@ -375,7 +376,10 @@ class MainActivity : FlutterFragmentActivity() {
                                 move = engineBindings.copyFiles!!.move
                             )
                         }
+
+                        engineBindings.copyFiles!!.callback(null);
                     } catch (e: java.lang.Exception) {
+                        engineBindings.copyFiles!!.callback(e.message);
                         Log.e("copy files", e.toString())
                     }
 
@@ -384,6 +388,7 @@ class MainActivity : FlutterFragmentActivity() {
                     engineBindings.copyFilesMux.unlock()
                 }
             } else {
+                engineBindings.copyFiles!!.callback(data.toString());
                 engineBindings.copyFiles = null
                 engineBindings.copyFilesMux.unlock()
                 Log.e("copy files", "failed")
@@ -393,7 +398,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         engineBindings.attach()
         engineBindings.connectivityManager.registerDefaultNetworkCallback(engineBindings.netStatus)
     }

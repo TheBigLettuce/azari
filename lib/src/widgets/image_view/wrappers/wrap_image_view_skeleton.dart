@@ -80,66 +80,11 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
     final stickers = widgets.tryAsStickerable(context, true);
     final b = widgets.tryAsAppBarButtonable(context);
 
-    final min = MediaQuery.sizeOf(context);
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final minSize =
-        (WrapImageViewSkeleton.minPixels(widgets, viewPadding)) / min.height;
-
     final infoWidget = widgets.tryAsInfoable(context);
-    Widget drawer(Widget infoWidget) => Drawer(
-          shape: const RoundedRectangleBorder(),
-          backgroundColor: colorScheme.surface.withOpacity(0.9),
-          child: CustomScrollView(
-            slivers: [
-              Builder(
-                builder: (context) {
-                  final currentCell = CurrentContentNotifier.of(context);
-
-                  return SliverAppBar(
-                    actions: !showDrawer
-                        ? const [SizedBox.shrink()]
-                        : [
-                            IconButton(
-                              onPressed: widget.prev,
-                              icon: const Icon(Icons.navigate_before),
-                            ),
-                            IconButton(
-                              onPressed: widget.next,
-                              icon: const Icon(Icons.navigate_next),
-                            ),
-                          ],
-                    scrolledUnderElevation: 0,
-                    automaticallyImplyLeading: false,
-                    title: GestureDetector(
-                      onLongPress: () {
-                        Clipboard.setData(
-                          ClipboardData(
-                            text: currentCell.widgets.alias(false),
-                          ),
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppLocalizations.of(context)!.copiedClipboard,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Text(currentCell.widgets.alias(false)),
-                    ),
-                  );
-                },
-              ),
-              infoWidget,
-              SliverPadding(
-                padding: EdgeInsets.only(bottom: viewPadding.bottom),
-              ),
-            ],
-          ),
-        );
 
     return Scaffold(
       key: widget.scaffoldKey,
@@ -147,45 +92,14 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
       extendBody: true,
       endDrawerEnableOpenDragGesture: false,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: showRail ||
-              (stickers.isEmpty && b.isEmpty && widgets is! Infoable)
-          ? null
-          : Builder(
-              builder: (context) {
-                return Animate(
-                  effects: const [
-                    SlideEffect(
-                      duration: Duration(milliseconds: 500),
-                      curve: Easing.emphasizedAccelerate,
-                      begin: Offset.zero,
-                      end: Offset(0, 1),
-                    ),
-                  ],
-                  autoPlay: false,
-                  target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(15),
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface.withOpacity(0.98),
-                      ),
-                      child: IgnorePointer(
-                        ignoring: !AppBarVisibilityNotifier.of(context),
-                        child: _SlidingBottomBar(
-                          minSize: minSize,
-                          widgets: widgets,
-                          bottomSheetController: widget.bottomSheetController,
-                          viewPadding: viewPadding,
-                          min: min,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+      bottomNavigationBar:
+          showRail || (stickers.isEmpty && b.isEmpty && widgets is! Infoable)
+              ? null
+              : _BottomNavigationBar(
+                  widgets: widgets,
+                  viewPadding: viewPadding,
+                  bottomSheetController: widget.bottomSheetController,
+                ),
       appBar: showRail
           ? null
           : PreferredSize(
@@ -197,7 +111,13 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
             ),
       endDrawer: showRail
           ? (!showDrawer && infoWidget != null)
-              ? drawer(infoWidget)
+              ? _Drawer(
+                  infoWidget: infoWidget,
+                  viewPadding: viewPadding,
+                  showDrawer: showDrawer,
+                  next: widget.next,
+                  prev: widget.prev,
+                )
               : null
           : null,
       body: !showRail
@@ -208,132 +128,18 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
               ),
               child: Stack(
                 children: [
-                  if (showDrawer)
-                    Builder(
-                      builder: (context) {
-                        return Stack(
-                          children: [
-                            widget.child,
-                            if (infoWidget != null)
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Animate(
-                                  effects: const [
-                                    SlideEffect(
-                                      duration: Duration(milliseconds: 500),
-                                      curve: Easing.emphasizedAccelerate,
-                                      begin: Offset.zero,
-                                      end: Offset(1, 0),
-                                    ),
-                                  ],
-                                  autoPlay: false,
-                                  target: AppBarVisibilityNotifier.of(context)
-                                      ? 0
-                                      : 1,
-                                  child: drawer(infoWidget),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    )
-                  else
-                    Stack(
-                      children: [
-                        widget.child,
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Builder(
-                            builder: (context) => Animate(
-                              effects: const [
-                                SlideEffect(
-                                  duration: Duration(milliseconds: 500),
-                                  curve: Easing.emphasizedAccelerate,
-                                  begin: Offset.zero,
-                                  end: Offset(1, 0),
-                                ),
-                              ],
-                              autoPlay: false,
-                              target:
-                                  AppBarVisibilityNotifier.of(context) ? 0 : 1,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8) +
-                                    EdgeInsets.only(
-                                      top: viewPadding.top,
-                                    ),
-                                child: IconButton.filledTonal(
-                                  onPressed: () {
-                                    widget.scaffoldKey.currentState
-                                        ?.openEndDrawer();
-                                  },
-                                  icon: const Icon(Icons.info_outlined),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  Builder(
-                    builder: (context) {
-                      final actions = widgets.tryAsActionable(context);
-
-                      return Animate(
-                        key: widgets.uniqueKey(),
-                        autoPlay: false,
-                        controller: widget.controller,
-                        effects: const [
-                          SlideEffect(
-                            duration: Duration(milliseconds: 500),
-                            curve: Easing.emphasizedAccelerate,
-                            begin: Offset.zero,
-                            end: Offset(-1, 0),
-                          ),
-                        ],
-                        child: SizedBox(
-                          height: double.infinity,
-                          width: 72,
-                          child: NavigationRail(
-                            backgroundColor:
-                                colorScheme.surface.withOpacity(0.9),
-                            leading: IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(Icons.arrow_back),
-                            ),
-                            groupAlignment: -0.8,
-                            trailing: ListBody(
-                              children: widgets.tryAsAppBarButtonable(context),
-                            ),
-                            destinations: [
-                              const NavigationRailDestination(
-                                icon: Icon(Icons.image),
-                                label: Text("Image"), // TODO: change
-                              ),
-                              if (actions.isEmpty)
-                                const NavigationRailDestination(
-                                  disabled: true,
-                                  icon: Icon(
-                                    Icons.image,
-                                    color: Colors.transparent,
-                                  ),
-                                  label: Text("Nothing"), // TODO: change
-                                )
-                              else
-                                ...actions.map(
-                                  (e) => NavigationRailDestination(
-                                    disabled: true,
-                                    icon: _AnimatedRailIcon(action: e),
-                                    label: const Text("Action"), // TODO: change
-                                  ),
-                                ),
-                            ],
-                            selectedIndex: 0,
-                          ),
-                        ),
-                      );
-                    },
+                  _InlineDrawer(
+                    scaffoldKey: widget.scaffoldKey,
+                    viewPadding: viewPadding,
+                    infoWidget: infoWidget,
+                    showDrawer: showDrawer,
+                    next: widget.next,
+                    prev: widget.prev,
+                    child: widget.child,
+                  ),
+                  _NavigationRail(
+                    controller: widget.controller,
+                    widgets: widgets,
                   ),
                   Padding(
                     padding: EdgeInsets.only(top: viewPadding.top),
@@ -345,6 +151,306 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _InlineDrawer extends StatelessWidget {
+  const _InlineDrawer({
+    // super.key,
+    required this.scaffoldKey,
+    required this.viewPadding,
+    required this.infoWidget,
+    required this.showDrawer,
+    required this.next,
+    required this.prev,
+    required this.child,
+  });
+
+  final GlobalKey<ScaffoldState> scaffoldKey;
+
+  final EdgeInsets viewPadding;
+
+  final Widget? infoWidget;
+  final bool showDrawer;
+
+  final void Function() next;
+  final void Function() prev;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (showDrawer) {
+      return Stack(
+        children: [
+          child,
+          if (infoWidget != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Animate(
+                effects: const [
+                  SlideEffect(
+                    duration: Duration(milliseconds: 500),
+                    curve: Easing.emphasizedAccelerate,
+                    begin: Offset.zero,
+                    end: Offset(1, 0),
+                  ),
+                ],
+                autoPlay: false,
+                target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+                child: _Drawer(
+                  infoWidget: infoWidget!,
+                  viewPadding: viewPadding,
+                  showDrawer: showDrawer,
+                  next: next,
+                  prev: prev,
+                ),
+              ),
+            ),
+        ],
+      );
+    } else {
+      return Stack(
+        children: [
+          child,
+          Align(
+            alignment: Alignment.topRight,
+            child: Animate(
+              effects: const [
+                SlideEffect(
+                  duration: Duration(milliseconds: 500),
+                  curve: Easing.emphasizedAccelerate,
+                  begin: Offset.zero,
+                  end: Offset(1, 0),
+                ),
+              ],
+              autoPlay: false,
+              target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+              child: Padding(
+                padding: const EdgeInsets.all(8) +
+                    EdgeInsets.only(
+                      top: viewPadding.top,
+                    ),
+                child: IconButton.filledTonal(
+                  onPressed: () {
+                    scaffoldKey.currentState?.openEndDrawer();
+                  },
+                  icon: const Icon(Icons.info_outlined),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+}
+
+class _BottomNavigationBar extends StatelessWidget {
+  const _BottomNavigationBar({
+    // super.key,
+    required this.widgets,
+    required this.viewPadding,
+    required this.bottomSheetController,
+  });
+
+  final ContentWidgets widgets;
+  final EdgeInsets viewPadding;
+
+  final DraggableScrollableController bottomSheetController;
+
+  @override
+  Widget build(BuildContext context) {
+    final min = MediaQuery.sizeOf(context);
+
+    final minSize =
+        (WrapImageViewSkeleton.minPixels(widgets, viewPadding)) / min.height;
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Animate(
+      effects: const [
+        SlideEffect(
+          duration: Duration(milliseconds: 500),
+          curve: Easing.emphasizedAccelerate,
+          begin: Offset.zero,
+          end: Offset(0, 1),
+        ),
+      ],
+      autoPlay: false,
+      target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(15),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withOpacity(0.98),
+          ),
+          child: IgnorePointer(
+            ignoring: !AppBarVisibilityNotifier.of(context),
+            child: _SlidingBottomBar(
+              minSize: minSize,
+              widgets: widgets,
+              bottomSheetController: bottomSheetController,
+              viewPadding: viewPadding,
+              min: min,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Drawer extends StatelessWidget {
+  const _Drawer({
+    // super.key,
+    required this.infoWidget,
+    required this.viewPadding,
+    required this.showDrawer,
+    required this.next,
+    required this.prev,
+  });
+
+  final EdgeInsets viewPadding;
+
+  final Widget infoWidget;
+  final bool showDrawer;
+
+  final void Function() next;
+  final void Function() prev;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Drawer(
+      shape: const RoundedRectangleBorder(),
+      backgroundColor: colorScheme.surface.withOpacity(0.9),
+      child: CustomScrollView(
+        slivers: [
+          Builder(
+            builder: (context) {
+              final currentCell = CurrentContentNotifier.of(context);
+
+              return SliverAppBar(
+                actions: !showDrawer
+                    ? const [SizedBox.shrink()]
+                    : [
+                        IconButton(
+                          onPressed: prev,
+                          icon: const Icon(Icons.navigate_before),
+                        ),
+                        IconButton(
+                          onPressed: next,
+                          icon: const Icon(Icons.navigate_next),
+                        ),
+                      ],
+                scrolledUnderElevation: 0,
+                automaticallyImplyLeading: false,
+                title: GestureDetector(
+                  onLongPress: () {
+                    Clipboard.setData(
+                      ClipboardData(
+                        text: currentCell.widgets.alias(false),
+                      ),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.copiedClipboard),
+                      ),
+                    );
+                  },
+                  child: Text(currentCell.widgets.alias(false)),
+                ),
+              );
+            },
+          ),
+          infoWidget,
+          SliverPadding(
+            padding: EdgeInsets.only(bottom: viewPadding.bottom),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavigationRail extends StatelessWidget {
+  const _NavigationRail({
+    // super.key,
+    required this.widgets,
+    required this.controller,
+  });
+
+  final ContentWidgets widgets;
+  final AnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = widgets.tryAsActionable(context);
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Animate(
+      key: widgets.uniqueKey(),
+      autoPlay: false,
+      controller: controller,
+      effects: const [
+        SlideEffect(
+          duration: Duration(milliseconds: 500),
+          curve: Easing.emphasizedAccelerate,
+          begin: Offset.zero,
+          end: Offset(-1, 0),
+        ),
+      ],
+      child: SizedBox(
+        height: double.infinity,
+        width: 72,
+        child: NavigationRail(
+          backgroundColor: colorScheme.surface.withOpacity(0.9),
+          leading: IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
+          groupAlignment: -0.8,
+          trailing: ListBody(
+            children: widgets.tryAsAppBarButtonable(context),
+          ),
+          destinations: [
+            const NavigationRailDestination(
+              icon: Icon(Icons.image),
+              label: Text(""), // TODO: think about it
+            ),
+            if (actions.isEmpty)
+              const NavigationRailDestination(
+                disabled: true,
+                icon: Icon(
+                  Icons.image,
+                  color: Colors.transparent,
+                ),
+                label: Text(""),
+              )
+            else
+              ...actions.map(
+                (e) => NavigationRailDestination(
+                  disabled: true,
+                  icon: _AnimatedRailIcon(action: e),
+                  label: const Text(""),
+                ),
+              ),
+          ],
+          selectedIndex: 0,
+        ),
+      ),
     );
   }
 }
@@ -369,7 +475,10 @@ class _BottomLoadIndicator extends PreferredSize {
 }
 
 class _AnimatedRailIcon extends StatefulWidget {
-  const _AnimatedRailIcon({super.key, required this.action});
+  const _AnimatedRailIcon({
+    // super.key,
+    required this.action,
+  });
 
   final ImageViewAction action;
 

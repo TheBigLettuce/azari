@@ -76,6 +76,7 @@ class BooruGridActions {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 20),
+              behavior: SnackBarBehavior.floating,
               content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
               action: SnackBarAction(
                 label: AppLocalizations.of(context)!.undoLabel,

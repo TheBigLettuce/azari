@@ -13,6 +13,7 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 
 class GridMasonryLayout<T extends CellBase> extends StatefulWidget {
   const GridMasonryLayout({

@@ -150,10 +150,6 @@ class ImageView extends StatefulWidget {
       void Function(List<ImageTag> l),
     )? watchTags,
   ) {
-    final extras = GridExtrasNotifier.of<T>(gridContext);
-    final scroll = GridScrollNotifier.of(gridContext);
-    final config = GridConfiguration.of(gridContext);
-
     functionality.selectionGlue.hideNavBar(true);
 
     final getCell = CellProvider.of<T>(gridContext);
@@ -167,7 +163,8 @@ class ImageView extends StatefulWidget {
             updates: functionality.source.backingStorage.watch,
             gridContext: gridContext,
             statistics: imageDesctipion.statistics,
-            scrollUntill: (i) => extras.scrollTo(scroll, i, config),
+            scrollUntill: (i) =>
+                GridScrollNotifier.scrollToOf<T>(gridContext, i),
             pageChange: imageDesctipion.pageChange,
             watchTags: watchTags,
             onExit: imageDesctipion.onExit,

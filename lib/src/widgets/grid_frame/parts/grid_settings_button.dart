@@ -145,6 +145,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final l10n = AppLocalizations.of(context)!;
+
     final newValues =
         textController.text.isNotEmpty ? _filter : widget.values.toList()
           ..sort((e1, e2) {
@@ -262,39 +264,33 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                       alignment: Alignment.centerRight,
                       child: FocusNotifier(
                         notifier: searchFocus,
-                        child: Builder(
-                          builder: (context) {
-                            return AutocompleteSearchBar(
-                              searchTextOverride:
-                                  AppLocalizations.of(context)!.filterHint,
-                              focusNode: searchFocus,
-                              addItems: const [],
-                              textController: textController,
-                              onChanged: () {
-                                if (textController.text.isEmpty) {
-                                  _filter.clear();
-                                } else {
-                                  final t = textController.text.toLowerCase();
+                        child: AutocompleteSearchBar(
+                          searchTextOverride: l10n.filterHint,
+                          focusNode: searchFocus,
+                          addItems: const [],
+                          textController: textController,
+                          onChanged: () {
+                            if (textController.text.isEmpty) {
+                              _filter.clear();
+                            } else {
+                              final t = textController.text.toLowerCase();
 
-                                  _filter.clear();
-                                  _filter.addAll(
-                                    widget.values.where(
-                                      (element) => element.label
-                                          .toLowerCase()
-                                          .contains(t),
-                                    ),
-                                  );
-                                }
+                              _filter.clear();
+                              _filter.addAll(
+                                widget.values.where(
+                                  (element) =>
+                                      element.label.toLowerCase().contains(t),
+                                ),
+                              );
+                            }
 
-                                setState(() {});
-                              },
-                              onSubmit: (s) {},
-                              swapSearchIcon: false,
-                              disable: false,
-                              darkenColors: true,
-                              maxWidth: 200,
-                            );
+                            setState(() {});
                           },
+                          onSubmit: (s) {},
+                          swapSearchIcon: false,
+                          disable: false,
+                          darkenColors: true,
+                          maxWidth: 200,
                         ),
                       ),
                     ),

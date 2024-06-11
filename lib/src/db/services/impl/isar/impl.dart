@@ -213,11 +213,24 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
       );
 
   @override
-  void addAll(Iterable<Post> l, [bool silent = false]) => db.writeTxnSync(
-        () => _collection
-            .putAllByIdBooruSync(l is List<PostIsar> ? l : PostIsar.copyTo(l)),
-        silent: silent,
-      );
+  void addAll(Iterable<Post> l, [bool silent = false]) {
+    final List<PostIsar> res;
+    if (!silent && l.isEmpty) {
+      final first = _collection.where().limit(1).findFirstSync();
+      if (first != null) {
+        res = [first];
+      } else {
+        res = [];
+      }
+    } else {
+      res = l is List<PostIsar> ? l : PostIsar.copyTo(l);
+    }
+
+    db.writeTxnSync(
+      () => _collection.putAllByIdBooruSync(res),
+      silent: silent,
+    );
+  }
 
   @override
   void clear([bool silent = false]) => db.writeTxnSync(

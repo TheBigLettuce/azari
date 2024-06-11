@@ -12,6 +12,7 @@ import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 
 class GridLayout<T extends CellBase> extends StatefulWidget {
   const GridLayout({

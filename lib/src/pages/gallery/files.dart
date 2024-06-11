@@ -8,6 +8,7 @@ import "dart:math" as math;
 
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
@@ -42,6 +43,7 @@ import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/make_tags.dart";
@@ -139,15 +141,15 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
           FilteringMode.favorite => FileFilters.favorite(cells, favoriteFiles),
-          FilteringMode.untagged => FileFilters.untagged(cells, localTags),
+          FilteringMode.untagged => FileFilters.untagged(cells),
           FilteringMode.tag =>
-            FileFilters.tag(cells, searchTextController.text, postTags),
+            FileFilters.tag(cells, searchTextController.text),
           FilteringMode.tagReversed =>
-            FileFilters.tagReversed(cells, searchTextController.text, postTags),
+            FileFilters.tagReversed(cells, searchTextController.text),
           FilteringMode.video => FileFilters.video(cells),
           FilteringMode.gif => FileFilters.gif(cells),
           FilteringMode.duplicate => FileFilters.duplicate(cells),
-          FilteringMode.original => FileFilters.original(cells, localTags),
+          FilteringMode.original => FileFilters.original(cells),
           FilteringMode.same => FileFilters.same(
               context,
               cells,
@@ -295,6 +297,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                   Builder(
                     builder: (context) {
                       return IconBarGridHeader(
+                        countWatcher: filter.backingStorage.watch,
                         icons: [
                           BarIcon(
                             icon: Icons.select_all_rounded,
@@ -356,31 +359,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                   source: filter.backingStorage,
                   progress: filter.progress,
                   gridSeed: state.gridSeed,
-                ),
-                GridFooter<StatisticsGalleryData>(
-                  storage: filter.backingStorage,
-                  name: widget.dirName,
-                  // statistics: (
-                  //   (value) => [
-                  //         StatisticsCard(
-                  //           subtitle: value.viewedFiles.toString(),
-                  //           title: l10n.cardFilesViewed,
-                  //         ),
-                  //         StatisticsCard(
-                  //           subtitle: value.filesSwiped.toString(),
-                  //           title: l10n.cardFilesSwiped,
-                  //         ),
-                  //         StatisticsCard(
-                  //           subtitle: value.moved.toString(),
-                  //           title: l10n.cardMoved,
-                  //         ),
-                  //         StatisticsCard(
-                  //           subtitle: value.copied.toString(),
-                  //           title: l10n.cardCopied,
-                  //         ),
-                  //       ],
-                  //   widget.db.statisticsGallery.watch,
-                  // ),
                 ),
               ],
               functionality: GridFunctionality(
@@ -496,18 +474,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                       ),
                   ],
                 ),
-                // OverrideGridSearchWidget(
-                //   SearchAndFocus(
-                //     FilteringSearchWidget(
-                //       hint: widget.dirName,
-                //       filter: filter,
-                //       textController: searchTextController,
-                //       localTagDictionary: widget.db.localTagDictionary,
-                //       focusNode: searchFocus,
-                //     ),
-                //     searchFocus,
-                //   ),
-                // ),
               ),
               description: GridDescription(
                 footer: widget.callback?.preview,
@@ -525,7 +491,12 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                                 widget.db.miscSettings,
                               ),
                             if (miscSettings.filesExtendedActions) ...[
-                              saveTagsAction(plug, postTags, localTags),
+                              saveTagsAction(
+                                plug,
+                                postTags,
+                                localTags,
+                                widget.db.localTagDictionary,
+                              ),
                               addTag(
                                 context,
                                 () => api.source.clearRefreshSorting(
@@ -603,9 +574,11 @@ class IconBarGridHeader extends StatelessWidget {
   const IconBarGridHeader({
     super.key,
     required this.icons,
+    this.countWatcher,
   });
 
   final List<BarIcon> icons;
+  final WatchFire<int>? countWatcher;
 
   @override
   Widget build(BuildContext context) {
@@ -614,16 +587,79 @@ class IconBarGridHeader extends StatelessWidget {
     return SliverPadding(
       padding: EdgeInsets.symmetric(
         horizontal: 8 + gestureInsets.right * 0.5,
-        vertical: 4,
+        vertical: 8,
       ),
       sliver: SliverToBoxAdapter(
         child: SizedBox(
           height: 56,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: icons,
+            mainAxisAlignment: countWatcher == null
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              if (countWatcher != null)
+                Expanded(child: _CountWatcher(countWatcher: countWatcher!)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: icons,
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CountWatcher extends StatefulWidget {
+  const _CountWatcher({
+    // super.key,
+    required this.countWatcher,
+  });
+
+  final WatchFire<int> countWatcher;
+
+  @override
+  State<_CountWatcher> createState() => __CountWatcherState();
+}
+
+class __CountWatcherState extends State<_CountWatcher> {
+  late final StreamSubscription<int> subsc;
+
+  int count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subsc = widget.countWatcher(
+      (i) {
+        setState(() {
+          count = i;
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    subsc.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Text(
+      "$count ${count == 1 ? l10n.elementSingular : l10n.elementPlural}",
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: theme.colorScheme.onSurface.withOpacity(0.4),
       ),
     );
   }

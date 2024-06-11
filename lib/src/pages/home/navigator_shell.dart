@@ -10,6 +10,7 @@ class _NavigatorShell extends StatefulWidget {
     required this.navigatorKey,
     required this.child,
   });
+
   final GlobalKey<NavigatorState> navigatorKey;
   final Widget child;
 

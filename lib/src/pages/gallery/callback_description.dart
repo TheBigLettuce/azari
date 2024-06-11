@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/widgets.dart";
-import "package:gallery/src/plugs/gallery.dart";
 
 class CallbackDescription {
   const CallbackDescription(
@@ -13,14 +12,28 @@ class CallbackDescription {
     required this.joinable,
     required this.suggestFor,
   });
-  final Future<void> Function(GalleryDirectory? chosen, String? newDir) c;
+  final Future<void> Function(
+    String chosen,
+    String volumeName,
+    String bucketId,
+    bool newDir,
+  ) c;
   final List<String> suggestFor;
 
   final PreferredSizeWidget preview;
 
   final bool joinable;
 
-  void call(GalleryDirectory? chosen, String? newDir) {
-    c(chosen, newDir);
-  }
+  void call({
+    required String chosen,
+    required String volumeName,
+    required String bucketId,
+    required bool newDir,
+  }) =>
+      c(
+        chosen,
+        volumeName,
+        bucketId,
+        newDir,
+      );
 }

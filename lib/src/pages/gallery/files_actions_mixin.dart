@@ -69,6 +69,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryPlug plug,
     PostTags postTags,
     LocalTagsService localTags,
+    LocalTagDictionaryService localTagDictionary,
   ) {
     return GridAction(
       Icons.tag_rounded,
@@ -79,6 +80,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           plug,
           postTags,
           localTags,
+          localTagDictionary,
           AppLocalizations.of(context)!,
         );
       },
@@ -245,14 +247,11 @@ mixin FilesActionsMixin on State<GalleryFiles> {
             providedApi: providedApi,
             db: DatabaseConnectionNotifier.of(context),
             callback: CallbackDescription(
-              (chosen, newDir) {
-                if (chosen == null && newDir == null) {
-                  throw "both are empty";
-                }
-
-                if (chosen != null && chosen.bucketId == widget.bucketId) {
+              (chosen, volumeName, bucketId, newDir) {
+                if (!newDir && bucketId == widget.bucketId) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
+                      behavior: SnackBarBehavior.floating,
                       content: Text(
                         move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
                       ),
@@ -261,12 +260,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
                   return Future.value();
                 }
 
-                if (chosen?.bucketId == "favorites") {
+                if (chosen == "favorites") {
                   favoriteOrUnfavorite(context, selected, favoriteFile);
-                } else if (chosen?.bucketId == "trash") {
+                } else if (chosen == "trash") {
                   if (!move) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
+                        behavior: SnackBarBehavior.floating,
                         content: Text(
                           l10n.cantCopyToTrash,
                         ),
@@ -277,13 +277,27 @@ mixin FilesActionsMixin on State<GalleryFiles> {
 
                   return _deleteDialog(context, selected);
                 } else {
-                  GalleryManagementApi.current().files.copyMove(
-                        newDir ?? chosen!.relativeLoc,
-                        chosen!.volumeName,
+                  GalleryManagementApi.current()
+                      .files
+                      .copyMove(
+                        chosen,
+                        volumeName,
                         selected,
                         move: move,
-                        newDir: newDir != null,
+                        newDir: newDir,
+                      )
+                      .catchError((dynamic e) {
+                    if (this.context.mounted) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          content: Text(
+                            e is PlatformException ? e.code : e.toString(),
+                          ),
+                        ),
                       );
+                    }
+                  });
 
                   if (move) {
                     StatisticsGalleryService.db()
@@ -363,6 +377,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     GalleryPlug plug,
     PostTags postTags,
     LocalTagsService localTags,
+    LocalTagDictionaryService localTagDictionary,
     AppLocalizations l10n,
   ) async {
     if (_isSavingTags) {
@@ -388,7 +403,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
       notifi.update(i, "$i/${selected.length}");
 
       if (localTags.get(elem.name).isEmpty) {
-        await postTags.getOnlineAndSaveTags(elem.name);
+        await postTags.getOnlineAndSaveTags(elem.name, localTagDictionary);
       }
     }
     notifi.done();

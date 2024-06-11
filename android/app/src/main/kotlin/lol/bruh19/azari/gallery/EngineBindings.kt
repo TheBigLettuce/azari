@@ -551,7 +551,14 @@ class EngineBindings(
                                     videos = videoUris,
                                     move = move,
                                     volumeName = volumeName,
-                                    newDir = newDir
+                                    newDir = newDir,
+                                    callback = {
+                                        if (it == null) {
+                                            result.success(null)
+                                        } else {
+                                            result.error(it, null, null)
+                                        }
+                                    }
                                 )
 
                                 context.startIntentSenderForResult(
@@ -562,8 +569,6 @@ class EngineBindings(
                                     0,
                                     0
                                 )
-
-                                result.success(null)
                             } catch (e: java.lang.Exception) {
                                 copyFilesMux.unlock()
                             }
