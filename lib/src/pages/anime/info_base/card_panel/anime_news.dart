@@ -6,7 +6,7 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:url_launcher/url_launcher.dart";
 

@@ -34,7 +34,7 @@ class _Dbs {
   final _currentBooruDbs = <Booru, Isar>{};
 
   Isar booru(Booru booru) =>
-      _currentBooruDbs.putIfAbsent(booru, () => _DbsOpen.primaryGrid(booru));
+      _currentBooruDbs.putIfAbsent(booru, () => _openPrimaryGrid(booru));
 
   final Isar main;
   final Isar anime;
@@ -59,34 +59,30 @@ class _Dbs {
   static _Dbs get g => _dbs;
 }
 
-abstract class _DbsOpen {
-  const _DbsOpen();
-
-  static Isar primaryGrid(Booru booru) {
-    final instance = Isar.getInstance(booru.string);
-    if (instance != null) {
-      return instance;
-    }
-
-    return Isar.openSync(
-      kPrimaryGridSchemas,
-      directory: _dbs.directory,
-      inspector: false,
-      name: booru.string,
-    );
+Isar _openPrimaryGrid(Booru booru) {
+  final instance = Isar.getInstance(booru.string);
+  if (instance != null) {
+    return instance;
   }
 
-  static Isar secondaryGridName(String name, bool create) {
-    if (!create &&
-        !File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
-      throw "$name doesn't exist on disk";
-    }
+  return Isar.openSync(
+    kPrimaryGridSchemas,
+    directory: _dbs.directory,
+    inspector: false,
+    name: booru.string,
+  );
+}
 
-    return Isar.openSync(
-      [PostIsarSchema, IsarGridBooruPagingSchema],
-      directory: _dbs.secondaryGridDbDir,
-      inspector: false,
-      name: name,
-    );
+Isar _openSecondaryGridName(String name, bool create) {
+  if (!create &&
+      !File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
+    throw "$name doesn't exist on disk";
   }
+
+  return Isar.openSync(
+    [PostIsarSchema, IsarGridBooruPagingSchema],
+    directory: _dbs.secondaryGridDbDir,
+    inspector: false,
+    name: name,
+  );
 }

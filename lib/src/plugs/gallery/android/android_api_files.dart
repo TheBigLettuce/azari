@@ -32,6 +32,9 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
     return false;
   }
+
+  @override
+  List<String> get bucketIds => directories;
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
@@ -82,6 +85,9 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
 
   @override
   final LocalTagsService localTags;
+
+  @override
+  List<String> get bucketIds => [_bucketId];
 }
 
 class _AndroidFileSourceJoined

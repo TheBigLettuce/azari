@@ -5,11 +5,11 @@
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/manga/next_chapter_button.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 
 @immutable
 class ReaderData {

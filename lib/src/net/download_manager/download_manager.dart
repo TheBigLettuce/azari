@@ -10,15 +10,15 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:path/path.dart" as path;
 
 part "download_entry.dart";

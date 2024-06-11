@@ -7,11 +7,11 @@ import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/widgets/grid_frame/parts/video/photo_gallery_page_video.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/image_view/video/photo_gallery_page_video.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/loading_error_widget.dart";
-import "package:gallery/src/widgets/notifiers/reload_image.dart";
 import "package:photo_view/photo_view.dart";
 import "package:photo_view/photo_view_gallery.dart";
 

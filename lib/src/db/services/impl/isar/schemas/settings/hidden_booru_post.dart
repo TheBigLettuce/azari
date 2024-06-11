@@ -6,7 +6,7 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/net/booru/booru.dart";
 import "package:isar/isar.dart";
 
 part "hidden_booru_post.g.dart";

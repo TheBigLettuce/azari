@@ -10,17 +10,17 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
-import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/glue_bottom_app_bar.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/notifiers/selection_count.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton(

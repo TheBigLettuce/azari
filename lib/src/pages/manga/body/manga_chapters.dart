@@ -8,7 +8,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/manga/body/chapter_tile.dart";
 import "package:gallery/src/pages/manga/launch_reader.dart";
 import "package:gallery/src/pages/more/settings/settings_label.dart";

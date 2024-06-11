@@ -6,7 +6,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class AnimeNameWidget extends StatelessWidget {

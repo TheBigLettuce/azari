@@ -6,9 +6,9 @@
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/net/booru/booru.dart";
 
-import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/net/booru/booru_api.dart";
 
 class TranslationNotes extends StatefulWidget {
   const TranslationNotes({

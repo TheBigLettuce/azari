@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/widgets.dart";
+import "package:gallery/src/plugs/gallery.dart";
 
 class CallbackDescription {
   const CallbackDescription(
@@ -36,4 +37,21 @@ class CallbackDescription {
         bucketId,
         newDir,
       );
+}
+
+class CallbackDescriptionNested {
+  const CallbackDescriptionNested(
+    this.c, {
+    this.returnBack = false,
+    required this.preview,
+  });
+
+  final void Function(GalleryFile chosen) c;
+  final bool returnBack;
+
+  final PreferredSizeWidget preview;
+
+  void call(GalleryFile chosen) {
+    c(chosen);
+  }
 }

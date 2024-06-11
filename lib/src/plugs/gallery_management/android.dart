@@ -7,7 +7,7 @@ import "dart:io";
 
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";

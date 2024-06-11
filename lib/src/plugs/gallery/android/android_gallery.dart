@@ -35,6 +35,56 @@ class AndroidGallery implements GalleryPlug {
   void notify(String? target) {
     _global!.notify(target);
   }
+
+  @override
+  GalleryDirectory makeGalleryDirectory({
+    required int thumbFileId,
+    required String bucketId,
+    required String name,
+    required String relativeLoc,
+    required String volumeName,
+    required int lastModified,
+    required String tag,
+  }) =>
+      AndroidGalleryDirectory(
+        bucketId: bucketId,
+        name: name,
+        tag: tag,
+        volumeName: volumeName,
+        relativeLoc: relativeLoc,
+        lastModified: lastModified,
+        thumbFileId: thumbFileId,
+      );
+
+  @override
+  GalleryFile makeGalleryFile({
+    required String tagsFlat,
+    required int id,
+    required String bucketId,
+    required String name,
+    required int lastModified,
+    required String originalUri,
+    required int height,
+    required int width,
+    required int size,
+    required bool isVideo,
+    required bool isGif,
+    required bool isDuplicate,
+  }) =>
+      AndroidGalleryFile(
+        id: id,
+        bucketId: bucketId,
+        name: name,
+        isVideo: isVideo,
+        isGif: isGif,
+        size: size,
+        height: height,
+        isDuplicate: isDuplicate,
+        width: width,
+        lastModified: lastModified,
+        originalUri: originalUri,
+        tagsFlat: tagsFlat,
+      );
 }
 
 void initalizeAndroidGallery(bool temporary) {

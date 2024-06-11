@@ -7,13 +7,11 @@ import "dart:io";
 
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:mime/mime.dart";
 import "package:path/path.dart" as path;
 
@@ -43,6 +41,56 @@ class LinuxGalleryPlug implements GalleryPlug {
   void notify(String? target) {
     // TODO: implement notify
   }
+
+  @override
+  GalleryDirectory makeGalleryDirectory({
+    required int thumbFileId,
+    required String bucketId,
+    required String name,
+    required String relativeLoc,
+    required String volumeName,
+    required int lastModified,
+    required String tag,
+  }) =>
+      LinuxGalleryDirectory(
+        bucketId: bucketId,
+        name: name,
+        tag: tag,
+        volumeName: volumeName,
+        relativeLoc: relativeLoc,
+        lastModified: lastModified,
+        thumbFileId: thumbFileId,
+      );
+
+  @override
+  GalleryFile makeGalleryFile({
+    required String tagsFlat,
+    required int id,
+    required String bucketId,
+    required String name,
+    required int lastModified,
+    required String originalUri,
+    required int height,
+    required int width,
+    required int size,
+    required bool isVideo,
+    required bool isGif,
+    required bool isDuplicate,
+  }) =>
+      LinuxGalleryFile(
+        tagsFlat: tagsFlat,
+        id: id,
+        bucketId: bucketId,
+        name: name,
+        isVideo: isVideo,
+        isGif: isGif,
+        size: size,
+        height: height,
+        isDuplicate: isDuplicate,
+        width: width,
+        lastModified: lastModified,
+        originalUri: originalUri,
+      );
 }
 
 class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
@@ -57,7 +105,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
   final AppLocalizations l10n;
 
   @override
-  late final TrashCell trashCell = TrashCell(l10n);
+  late final TrashCell trashCell = TrashCell(l10n, const LinuxGalleryPlug());
 
   @override
   GalleryAPIFiles? bindFiles;
@@ -210,6 +258,7 @@ class LinuxGalleryAPIFiles implements GalleryAPIFiles {
     required this.localTags,
   });
 
+  @override
   final List<String> bucketIds;
 
   @override

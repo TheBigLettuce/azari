@@ -21,195 +21,191 @@ class SameFilterAccumulator {
   int skipped;
 }
 
-abstract class FileFilters {
-  const FileFilters();
+(Iterable<GalleryFile>, dynamic) tag(
+  Iterable<GalleryFile> cells,
+  String searchText,
+) {
+  if (searchText.isEmpty) {
+    return (cells, null);
+  }
 
-  static (Iterable<GalleryFile>, dynamic) tag(
-    Iterable<GalleryFile> cells,
-    String searchText,
-  ) {
-    if (searchText.isEmpty) {
-      return (cells, null);
-    }
-
-    return (
-      cells.where(
-        (element) {
-          for (final tag in searchText.split(" ")) {
-            if (!element.tagsFlat.contains(tag)) {
-              return false;
-            }
+  return (
+    cells.where(
+      (element) {
+        for (final tag in searchText.split(" ")) {
+          if (!element.tagsFlat.contains(tag)) {
+            return false;
           }
+        }
 
-          return true;
-        },
-      ),
-      null
-    );
-  }
+        return true;
+      },
+    ),
+    null
+  );
+}
 
-  static (Iterable<GalleryFile>, dynamic) tagReversed(
-    Iterable<GalleryFile> cells,
-    String searchText,
-  ) {
-    return (
-      cells.where(
-        (element) {
-          for (final tag in searchText.split(" ")) {
-            if (element.tagsFlat.contains(tag)) {
-              return false;
-            }
+(Iterable<GalleryFile>, dynamic) tagReversed(
+  Iterable<GalleryFile> cells,
+  String searchText,
+) {
+  return (
+    cells.where(
+      (element) {
+        for (final tag in searchText.split(" ")) {
+          if (element.tagsFlat.contains(tag)) {
+            return false;
           }
+        }
 
-          return true;
-        },
-      ),
-      null
-    );
-  }
+        return true;
+      },
+    ),
+    null
+  );
+}
 
-  static (Iterable<GalleryFile>, dynamic) favorite(
-    Iterable<GalleryFile> cells,
-    FavoriteFileService favoriteFile,
-  ) {
-    return (
-      cells.where(
-        (element) => favoriteFile.cachedValues.containsKey(element.id),
-      ),
-      null
-    );
-  }
+(Iterable<GalleryFile>, dynamic) favorite(
+  Iterable<GalleryFile> cells,
+  FavoriteFileService favoriteFile,
+) {
+  return (
+    cells.where(
+      (element) => favoriteFile.cachedValues.containsKey(element.id),
+    ),
+    null
+  );
+}
 
-  static (Iterable<GalleryFile>, dynamic) untagged(
-    Iterable<GalleryFile> cells,
-  ) {
-    return (
-      cells.where(
-        (element) => element.tagsFlat.isEmpty,
-      ),
-      null
-    );
-  }
+(Iterable<GalleryFile>, dynamic) untagged(
+  Iterable<GalleryFile> cells,
+) {
+  return (
+    cells.where(
+      (element) => element.tagsFlat.isEmpty,
+    ),
+    null
+  );
+}
 
-  static (Iterable<GalleryFile>, dynamic) video(
-    Iterable<GalleryFile> cells,
-  ) {
-    return (cells.where((element) => element.isVideo), null);
-  }
+(Iterable<GalleryFile>, dynamic) video(
+  Iterable<GalleryFile> cells,
+) {
+  return (cells.where((element) => element.isVideo), null);
+}
 
-  static (Iterable<GalleryFile>, dynamic) gif(
-    Iterable<GalleryFile> cells,
-  ) {
-    return (cells.where((element) => element.isGif), null);
-  }
+(Iterable<GalleryFile>, dynamic) gif(
+  Iterable<GalleryFile> cells,
+) {
+  return (cells.where((element) => element.isGif), null);
+}
 
-  static (Iterable<GalleryFile>, dynamic) duplicate(
-    Iterable<GalleryFile> cells,
-  ) {
-    return (cells.where((element) => element.isDuplicate), null);
-  }
+(Iterable<GalleryFile>, dynamic) duplicate(
+  Iterable<GalleryFile> cells,
+) {
+  return (cells.where((element) => element.isDuplicate), null);
+}
 
-  static (Iterable<GalleryFile>, dynamic) original(
-    Iterable<GalleryFile> cells,
-  ) {
-    return (
-      cells.where(
-        (element) => element.tagsFlat.contains("original"),
-      ),
-      null
-    );
-  }
+(Iterable<GalleryFile>, dynamic) original(
+  Iterable<GalleryFile> cells,
+) {
+  return (
+    cells.where(
+      (element) => element.tagsFlat.contains("original"),
+    ),
+    null
+  );
+}
 
-  static (Iterable<GalleryFile>, dynamic) same(
-    BuildContext context,
-    Iterable<GalleryFile> cells,
-    dynamic data, {
-    required bool end,
-    required void Function() performSearch,
-    required ResourceSource<int, GalleryFile> source,
-  }) {
-    final accu =
-        (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
-
-    Iterable<(GalleryFile f, int? h)> getDifferenceHash(
-      Iterable<GalleryFile> cells,
-    ) sync* {
-      for (final cell in cells) {
-        yield (cell, ThumbnailService.db().get(cell.id)?.differenceHash);
-      }
-    }
-
-    for (final (cell, hash) in getDifferenceHash(cells)) {
-      if (hash == null) {
-        accu.skipped++;
-        continue;
-      } else if (hash == 0) {
-        continue;
-      }
-
-      final prev = accu.data[hash] ?? {};
-
-      accu.data[hash] = {...prev, cell.id: cell};
-    }
-
-    if (end) {
-      if (accu.skipped != 0) {
-        ScaffoldMessenger.of(context)
-          ..removeCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.resultsIncomplete),
-              duration: const Duration(seconds: 20),
-              action: SnackBarAction(
-                label: AppLocalizations.of(context)!.loadMoreLabel,
-                onPressed: () {
-                  _loadNextThumbnails(source, () {
-                    try {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(AppLocalizations.of(context)!.loaded),
-                        ),
-                      );
-                      performSearch();
-                    } catch (_) {}
-                  });
-                },
-              ),
-            ),
-          );
-      }
-
-      return (
-        () sync* {
-          for (final i in accu.data.values) {
-            if (i.length > 1) {
-              for (final v in i.values) {
-                yield v;
-              }
-            }
-          }
-        }(),
-        accu
-      );
-    }
-
-    return ([], accu);
-  }
-
-  static int hammingDistance(int first, int second) => bitCount(first ^ second);
-
-  static int bitCount(int nn) {
-    int n = nn;
-
-    n = n - ((n >> 1) & 0x5555555555555555);
-    n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
-    n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0f;
-    n = n + (n >> 8);
-    n = n + (n >> 16);
-    n = n + (n >> 32);
-    return n & 0x7f;
+Iterable<(GalleryFile f, int? h)> _getDifferenceHash(
+  Iterable<GalleryFile> cells,
+) sync* {
+  for (final cell in cells) {
+    yield (cell, ThumbnailService.db().get(cell.id)?.differenceHash);
   }
 }
+
+(Iterable<GalleryFile>, dynamic) same(
+  BuildContext context,
+  Iterable<GalleryFile> cells,
+  dynamic data, {
+  required bool end,
+  required void Function() performSearch,
+  required ResourceSource<int, GalleryFile> source,
+}) {
+  final accu =
+      (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
+
+  for (final (cell, hash) in _getDifferenceHash(cells)) {
+    if (hash == null) {
+      accu.skipped++;
+      continue;
+    } else if (hash == 0) {
+      continue;
+    }
+
+    final prev = accu.data[hash] ?? {};
+
+    accu.data[hash] = {...prev, cell.id: cell};
+  }
+
+  if (end) {
+    if (accu.skipped != 0) {
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.resultsIncomplete),
+            duration: const Duration(seconds: 20),
+            action: SnackBarAction(
+              label: AppLocalizations.of(context)!.loadMoreLabel,
+              onPressed: () {
+                _loadNextThumbnails(source, () {
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.loaded),
+                      ),
+                    );
+                    performSearch();
+                  } catch (_) {}
+                });
+              },
+            ),
+          ),
+        );
+    }
+
+    return (
+      () sync* {
+        for (final i in accu.data.values) {
+          if (i.length > 1) {
+            for (final v in i.values) {
+              yield v;
+            }
+          }
+        }
+      }(),
+      accu
+    );
+  }
+
+  return ([], accu);
+}
+
+// int _hammingDistance(int first, int second) => _bitCount(first ^ second);
+
+// int _bitCount(int nn) {
+//   int n = nn;
+
+//   n = n - ((n >> 1) & 0x5555555555555555);
+//   n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
+//   n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0f;
+//   n = n + (n >> 8);
+//   n = n + (n >> 16);
+//   n = n + (n >> 32);
+//   return n & 0x7f;
+// }
 
 Future<void> _loadNextThumbnails(
   ResourceSource<int, GalleryFile> source,

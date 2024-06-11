@@ -13,19 +13,20 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
-import "package:gallery/src/interfaces/anime/anime_entry.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
-import "package:gallery/src/net/anime/jikan.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_entry.dart";
+import "package:gallery/src/net/anime/impl/jikan.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/anime/tab_with_count.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
-import "package:gallery/src/pages/more/tab_with_count.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -35,7 +36,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
@@ -152,7 +152,7 @@ class _AnimePageState extends State<AnimePage>
     finishedKey.currentState?.doFilter(value);
   }
 
-  void _procHideTab(bool b) {
+  void _procHideTab(bool b, Object? _) {
     if (tabKey.currentState?.clearOrHide() ?? false) {
       setState(() {});
     }
@@ -188,7 +188,7 @@ class _AnimePageState extends State<AnimePage>
 
     return PopScope(
       canPop: false,
-      onPopInvoked:
+      onPopInvokedWithResult:
           tabKey.currentState?._showSearchField ?? false ? _procHideTab : null,
       child: SettingsSkeleton(
         l10n.animePage,

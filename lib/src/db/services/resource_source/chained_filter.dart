@@ -5,9 +5,9 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
 
 typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
   Iterable<V> e,

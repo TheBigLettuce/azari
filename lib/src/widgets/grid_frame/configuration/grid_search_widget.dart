@@ -9,8 +9,8 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
-import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
+import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 

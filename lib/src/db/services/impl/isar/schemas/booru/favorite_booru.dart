@@ -5,10 +5,9 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
-import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/net/booru/booru.dart";
+import "package:gallery/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
 part "favorite_booru.g.dart";

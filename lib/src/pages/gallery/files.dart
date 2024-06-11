@@ -10,30 +10,28 @@ import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/logging/logging.dart";
+import "package:gallery/src/net/booru/booru.dart";
+import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
-import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/gallery/files_filters.dart";
+import "package:gallery/src/pages/gallery/files_filters.dart" as filters;
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -46,12 +44,10 @@ import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:gallery/src/widgets/make_tags.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/notifiers/pause_video.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-part "files_actions_mixin.dart";
+part "files_actions.dart";
 
 bool _isSavingTags = false;
 
@@ -82,7 +78,7 @@ class GalleryFiles extends StatefulWidget {
   State<GalleryFiles> createState() => _GalleryFilesState();
 }
 
-class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
+class _GalleryFilesState extends State<GalleryFiles> {
   FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
   LocalTagsService get localTags => widget.db.localTags;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
@@ -140,17 +136,16 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       },
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
-          FilteringMode.favorite => FileFilters.favorite(cells, favoriteFiles),
-          FilteringMode.untagged => FileFilters.untagged(cells),
-          FilteringMode.tag =>
-            FileFilters.tag(cells, searchTextController.text),
+          FilteringMode.favorite => filters.favorite(cells, favoriteFiles),
+          FilteringMode.untagged => filters.untagged(cells),
+          FilteringMode.tag => filters.tag(cells, searchTextController.text),
           FilteringMode.tagReversed =>
-            FileFilters.tagReversed(cells, searchTextController.text),
-          FilteringMode.video => FileFilters.video(cells),
-          FilteringMode.gif => FileFilters.gif(cells),
-          FilteringMode.duplicate => FileFilters.duplicate(cells),
-          FilteringMode.original => FileFilters.original(cells),
-          FilteringMode.same => FileFilters.same(
+            filters.tagReversed(cells, searchTextController.text),
+          FilteringMode.video => filters.video(cells),
+          FilteringMode.gif => filters.gif(cells),
+          FilteringMode.duplicate => filters.duplicate(cells),
+          FilteringMode.original => filters.original(cells),
+          FilteringMode.same => filters.same(
               context,
               cells,
               data,
@@ -202,6 +197,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
               .listen((event) {
             filter.backingStorage.clear();
 
+            // ignore: use_build_context_synchronously
             Navigator.of(context).pop();
 
             _subscription?.cancel();
@@ -262,7 +258,9 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
           },
         ),
       ).then((value) {
-        PauseVideoNotifier.maybePauseOf(context, false);
+        if (context.mounted) {
+          PauseVideoNotifier.maybePauseOf(context, false);
+        }
       });
 
       return;
@@ -365,7 +363,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 settingsButton: GridSettingsButton.fromWatchable(gridSettings),
                 registerNotifiers: (child) {
                   return FilesDataNotifier(
-                    actions: this,
                     api: widget.api,
                     nestedCallback: widget.callback,
                     child: OnBooruTagPressed(
@@ -480,24 +477,25 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 overrideEmptyWidgetNotice:
                     api.type.isFavorites() ? l10n.someFilesShownNotice : null,
                 actions: widget.callback != null
-                    ? const []
+                    ? const <GridAction<GalleryFile>>[]
                     : api.type.isTrash()
-                        ? [
-                            restoreFromTrash(),
+                        ? <GridAction<GalleryFile>>[
+                            _restoreFromTrashAction(),
                           ]
-                        : [
+                        : <GridAction<GalleryFile>>[
                             if (api.type.isFavorites())
-                              setFavoritesThumbnailAction(
+                              _setFavoritesThumbnailAction(
                                 widget.db.miscSettings,
                               ),
                             if (miscSettings.filesExtendedActions) ...[
-                              saveTagsAction(
+                              _saveTagsAction(
+                                context,
                                 plug,
                                 postTags,
                                 localTags,
                                 widget.db.localTagDictionary,
                               ),
-                              addTag(
+                              _addTagAction(
                                 context,
                                 () => api.source.clearRefreshSorting(
                                   filter.sortingMode,
@@ -506,15 +504,19 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                                 localTags,
                               ),
                             ],
-                            addToFavoritesAction(null, favoriteFiles),
-                            deleteAction(),
-                            copyAction(
+                            _addToFavoritesAction(context, null, favoriteFiles),
+                            _deleteAction(context),
+                            _copyAction(
+                              context,
+                              widget.bucketId,
                               widget.tagManager,
                               favoriteFiles,
                               localTags,
                               api.parent,
                             ),
-                            moveAction(
+                            _moveAction(
+                              context,
+                              widget.bucketId,
                               widget.tagManager,
                               favoriteFiles,
                               localTags,
@@ -724,19 +726,16 @@ class FilesDataNotifier extends InheritedWidget {
   const FilesDataNotifier({
     super.key,
     required this.api,
-    required this.actions,
     required this.nestedCallback,
     required super.child,
   });
 
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? nestedCallback;
-  final FilesActionsMixin actions;
 
   static (
     GalleryAPIFiles,
     CallbackDescriptionNested?,
-    FilesActionsMixin,
   ) of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
@@ -744,15 +743,12 @@ class FilesDataNotifier extends InheritedWidget {
     return (
       widget!.api,
       widget.nestedCallback,
-      widget.actions,
     );
   }
 
   @override
   bool updateShouldNotify(FilesDataNotifier oldWidget) =>
-      api != oldWidget.api ||
-      nestedCallback != oldWidget.nestedCallback ||
-      actions != oldWidget.actions;
+      api != oldWidget.api || nestedCallback != oldWidget.nestedCallback;
 }
 
 class GridFooter<T> extends StatefulWidget {

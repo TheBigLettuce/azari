@@ -7,6 +7,36 @@ part of "android_api_directories.dart";
 
 _GalleryImpl? _global;
 
+class AndroidGalleryDirectory extends GalleryDirectoryBase
+    with GalleryDirectory {
+  const AndroidGalleryDirectory({
+    required super.bucketId,
+    required super.name,
+    required super.tag,
+    required super.volumeName,
+    required super.relativeLoc,
+    required super.lastModified,
+    required super.thumbFileId,
+  });
+}
+
+class AndroidGalleryFile extends FileBase with GalleryFile {
+  const AndroidGalleryFile({
+    required super.id,
+    required super.bucketId,
+    required super.name,
+    required super.isVideo,
+    required super.isGif,
+    required super.size,
+    required super.height,
+    required super.isDuplicate,
+    required super.width,
+    required super.lastModified,
+    required super.originalUri,
+    required super.tagsFlat,
+  });
+}
+
 /// Callbacks related to the gallery.
 class _GalleryImpl implements GalleryApi {
   factory _GalleryImpl(bool temporary) {
@@ -80,7 +110,7 @@ class _GalleryImpl implements GalleryApi {
 
           return !data.requireAuth && !data.blur;
         }).map(
-          (e) => GalleryFile.forPlatform(
+          (e) => AndroidGalleryFile(
             tagsFlat: api.localTags.get(e!.name).join(" "),
             id: e.id,
             bucketId: e.bucketId,
@@ -99,7 +129,7 @@ class _GalleryImpl implements GalleryApi {
     } else {
       api.source.backingStorage.addAll(
         f.map(
-          (e) => GalleryFile.forPlatform(
+          (e) => AndroidGalleryFile(
             tagsFlat: api.localTags.get(e!.name).join(" "),
             id: e.id,
             bucketId: e.bucketId,
@@ -147,7 +177,7 @@ class _GalleryImpl implements GalleryApi {
     api.source.backingStorage.addAll(
       d.values
           .map(
-            (e) => GalleryDirectory.forPlatform(
+            (e) => AndroidGalleryDirectory(
               bucketId: e!.bucketId,
               name: e.name,
               tag: api.directoryTag.get(e.bucketId) ?? "",

@@ -8,21 +8,17 @@ import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/widgets/focus_notifier.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:gallery/src/widgets/image_view/app_bar/app_bar.dart";
 import "package:gallery/src/widgets/image_view/bottom_bar.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
-import "package:gallery/src/widgets/notifiers/current_content.dart";
-import "package:gallery/src/widgets/notifiers/focus.dart";
-import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
-import "package:gallery/src/widgets/notifiers/loading_progress.dart";
 
 class WrapImageViewSkeleton extends StatefulWidget {
   const WrapImageViewSkeleton({

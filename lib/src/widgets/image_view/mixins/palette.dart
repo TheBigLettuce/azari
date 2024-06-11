@@ -6,7 +6,7 @@
 import "dart:developer";
 
 import "package:flutter/material.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
 import "package:palette_generator/palette_generator.dart";

@@ -4,9 +4,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
-import "package:gallery/src/widgets/notifiers/current_content.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 class ImageViewBottomAppBar extends StatelessWidget {
   const ImageViewBottomAppBar({super.key});

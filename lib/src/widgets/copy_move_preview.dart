@@ -4,8 +4,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
 class CopyMovePreview extends StatefulWidget {

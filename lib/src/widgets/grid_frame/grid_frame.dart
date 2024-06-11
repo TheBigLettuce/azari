@@ -15,17 +15,16 @@ import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/widgets/focus_notifier.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/notifiers/focus.dart";
-import "package:gallery/src/widgets/notifiers/selection_count.dart";
-import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
+import "package:gallery/src/widgets/search/autocomplete/autocomplete_tag.dart";
 
 part "configuration/grid_action.dart";
 part "configuration/grid_description.dart";
@@ -450,7 +449,7 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
     setState(() {});
   }
 
-  void _onPop(bool _) {
+  void _onPop(bool _, Object? __) {
     if (widget.selection.isNotEmpty) {
       widget.selection.reset();
     }
@@ -478,7 +477,7 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: widget.selection.isEmpty,
-      onPopInvoked: _onPop,
+      onPopInvokedWithResult: _onPop,
       child: GridBottomPaddingProvider(
         fab: kFloatingActionButtonMargin * 2 + 24 + 8,
         padding: _bottomPadding(context),
@@ -744,4 +743,35 @@ class SelectedGridPage extends InheritedWidget {
 
   @override
   bool updateShouldNotify(SelectedGridPage oldWidget) => page != oldWidget.page;
+}
+
+class SelectionCountNotifier extends InheritedWidget {
+  const SelectionCountNotifier({
+    super.key,
+    required this.count,
+    required this.countUpdateTimes,
+    required super.child,
+  });
+  final int count;
+  final int countUpdateTimes;
+
+  static int countOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+
+    return widget!.count;
+  }
+
+  static int maybeCountOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+
+    return widget?.count ?? 0;
+  }
+
+  @override
+  bool updateShouldNotify(SelectionCountNotifier oldWidget) {
+    return count != oldWidget.count ||
+        countUpdateTimes != oldWidget.countUpdateTimes;
+  }
 }

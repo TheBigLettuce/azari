@@ -10,19 +10,17 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/logging/logging.dart";
+import "package:gallery/src/net/booru/booru.dart";
+import "package:gallery/src/pages/gallery/blacklisted_directories.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
-import "package:gallery/src/pages/gallery/callback_description_nested.dart";
-import "package:gallery/src/pages/gallery/gallery_directories_actions.dart";
+import "package:gallery/src/pages/gallery/directories_actions.dart" as actions;
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/blacklisted_page.dart";
-import "package:gallery/src/pages/more/favorite_booru_actions.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
@@ -30,7 +28,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:local_auth/local_auth.dart";
 
@@ -226,7 +223,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       injectedSegments: [
         if (favoriteFiles.isNotEmpty())
           SyncCell(
-            GalleryDirectory.forPlatform(
+            galleryPlug.makeGalleryDirectory(
               bucketId: "favorites",
               name: widget.l10n.galleryDirectoriesFavorites,
               tag: "",
@@ -242,8 +239,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       ],
       onLabelPressed: widget.callback != null && !widget.callback!.joinable
           ? null
-          : (label, children) =>
-              SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
+          : (label, children) => actions.joinedDirectoriesFnc(
                 context,
                 label,
                 children,
@@ -424,9 +420,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null
-              ? [
+              ? <GridAction<GalleryDirectory>>[
                   if (widget.callback == null || widget.callback!.joinable)
-                    SystemGalleryDirectoriesActions.joinedDirectories(
+                    actions.joinedDirectories(
                       context,
                       api,
                       widget.nestedCallback,
@@ -439,8 +435,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       widget.l10n,
                     ),
                 ]
-              : [
-                  FavoritesActions.addToGroup(
+              : <GridAction<GalleryDirectory>>[
+                  actions.addToGroup(
                     context,
                     (selected) {
                       final t = selected.first.tag;
@@ -455,14 +451,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     (s, v, t) => _addToGroup(context, s, v, t, l10n),
                     true,
                   ),
-                  SystemGalleryDirectoriesActions.blacklist(
+                  actions.blacklist(
                     context,
                     _segmentCell,
                     directoryMetadata,
                     blacklistedDirectories,
                     widget.l10n,
                   ),
-                  SystemGalleryDirectoriesActions.joinedDirectories(
+                  actions.joinedDirectories(
                     context,
                     api,
                     widget.nestedCallback,
@@ -589,7 +585,7 @@ class _GridPopScopeState extends State<GridPopScope> {
                               .contains(FilteringMode.noFilter) &&
                           widget.filter!.filteringMode ==
                               FilteringMode.noFilter)),
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (glue.isOpen()) {
           glue.updateCount(0);
 

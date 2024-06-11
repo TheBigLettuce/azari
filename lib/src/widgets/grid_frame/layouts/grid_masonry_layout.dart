@@ -9,7 +9,7 @@ import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";

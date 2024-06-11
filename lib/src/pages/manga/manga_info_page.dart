@@ -6,7 +6,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";

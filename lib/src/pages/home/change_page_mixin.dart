@@ -284,7 +284,10 @@ mixin ChangePageMixin on State<Home> {
     if (widget.callback != null) {
       f?.then((value) {
         if (!value) {
-          Navigator.of(context);
+          if (context.mounted) {
+            // ignore: use_build_context_synchronously
+            Navigator.of(context);
+          }
         }
       });
     }

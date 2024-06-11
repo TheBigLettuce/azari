@@ -7,10 +7,10 @@ import "package:flutter/material.dart";
 import "package:gallery/main.dart";
 import "package:gallery/src/pages/glue_bottom_app_bar.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/notifiers/selection_count.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class WrapGridPage extends StatefulWidget {
   const WrapGridPage({

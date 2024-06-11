@@ -4,8 +4,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
-import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_entry.dart";
 
 class RefreshEntryIcon extends StatefulWidget {
   const RefreshEntryIcon(

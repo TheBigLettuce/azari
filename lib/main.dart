@@ -9,9 +9,10 @@ import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/restart_widget.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/logging/logging.dart";
+import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/network_status.dart";
@@ -19,7 +20,6 @@ import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
-import "package:gallery/src/widgets/restart_widget.dart";
 import "package:gallery/welcome_pages.dart";
 import "package:local_auth/local_auth.dart";
 import "package:package_info_plus/package_info_plus.dart";
@@ -174,9 +174,11 @@ Future<void> mainPickfile() async {
                 preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
                 child: Builder(
                   builder: (context) {
+                    final l10n = AppLocalizations.of(context)!;
+
                     return CopyMovePreview(
                       files: null,
-                      title: AppLocalizations.of(context)!.pickFileNotice,
+                      title: l10n.pickFileNotice,
                       icon: Icons.file_open_rounded,
                     );
                   },

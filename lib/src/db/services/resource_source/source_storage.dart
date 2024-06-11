@@ -5,7 +5,7 @@
 
 import "dart:async";
 
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 
 /// Generic way of dealing with persistent or not data.
 abstract class SourceStorage<K, V> extends ReadOnlyStorage<K, V> {

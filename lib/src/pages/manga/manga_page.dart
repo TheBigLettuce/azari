@@ -12,13 +12,14 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
-import "package:gallery/src/net/manga/manga_dex.dart";
+import "package:gallery/src/net/manga/impl/manga_dex.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/manga/launch_reader.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
@@ -29,7 +30,6 @@ import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/label_switcher_widget.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class MangaPage extends StatefulWidget {

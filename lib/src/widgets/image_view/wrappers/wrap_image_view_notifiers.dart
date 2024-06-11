@@ -6,21 +6,13 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/tags/post_tags.dart";
-import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/focus_notifier.dart";
+import "package:gallery/src/widgets/glue_provider.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
-import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
-import "package:gallery/src/widgets/notifiers/current_content.dart";
-import "package:gallery/src/widgets/notifiers/filter.dart";
-import "package:gallery/src/widgets/notifiers/filter_value.dart";
-import "package:gallery/src/widgets/notifiers/focus.dart";
-import "package:gallery/src/widgets/notifiers/glue_provider.dart";
-import "package:gallery/src/widgets/notifiers/loading_progress.dart";
-import "package:gallery/src/widgets/notifiers/pause_video.dart";
-import "package:gallery/src/widgets/notifiers/reload_image.dart";
-import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({
@@ -132,9 +124,9 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                 } catch (_) {}
               },
               notify: widget.onTagRefresh,
-              child: FilterValueNotifier(
+              child: TagFilterValueNotifier(
                 notifier: _searchData.searchController,
-                child: FilterNotifier(
+                child: TagFilterNotifier(
                   data: _searchData,
                   child: FocusNotifier(
                     notifier: _searchData.searchFocus,
@@ -362,7 +354,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     });
   }
 
-  void tryScroll(bool _) {
+  void tryScroll(bool _, Object? __) {
     if (!_isAppbarShown) {
       toggle();
       return;
@@ -399,7 +391,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
       canPop: _isAppbarShown &&
           (currentPixels.isNegative ||
               WrapImageViewSkeleton.minPixelsFor(context) == currentPixels),
-      onPopInvoked: tryScroll,
+      onPopInvokedWithResult: tryScroll,
       child: IgnorePointer(
         ignoring: ignorePointer,
         child: AppBarVisibilityNotifier(
@@ -409,4 +401,231 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
       ),
     );
   }
+}
+
+class ReloadImageNotifier extends InheritedWidget {
+  const ReloadImageNotifier({
+    super.key,
+    required this.reload,
+    required super.child,
+  });
+  final void Function([bool refreshPalette]) reload;
+
+  @override
+  bool updateShouldNotify(ReloadImageNotifier oldWidget) {
+    return reload != oldWidget.reload;
+  }
+
+  static void of(BuildContext context, [bool refreshPalette = false]) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ReloadImageNotifier>();
+
+    widget!.reload(refreshPalette);
+  }
+}
+
+class PauseVideoNotifier extends InheritedWidget {
+  const PauseVideoNotifier({
+    super.key,
+    required this.pause,
+    required this.setPause,
+    required super.child,
+  });
+  final void Function(bool) setPause;
+  final bool pause;
+
+  static bool of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+
+    return widget!.pause;
+  }
+
+  static void maybePauseOf(BuildContext context, bool pause) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+
+    widget?.setPause(pause);
+  }
+
+  @override
+  bool updateShouldNotify(PauseVideoNotifier oldWidget) =>
+      pause != oldWidget.pause;
+}
+
+class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
+  const ImageViewInfoTilesRefreshNotifier({
+    super.key,
+    required this.count,
+    required this.incr,
+    required super.child,
+  });
+
+  final void Function() incr;
+  final int count;
+
+  static void refreshOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<
+        ImageViewInfoTilesRefreshNotifier>();
+
+    widget?.incr();
+  }
+
+  static int of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<
+        ImageViewInfoTilesRefreshNotifier>();
+
+    return widget!.count;
+  }
+
+  @override
+  bool updateShouldNotify(ImageViewInfoTilesRefreshNotifier oldWidget) =>
+      count != oldWidget.count;
+}
+
+class LoadingProgressNotifier extends InheritedWidget {
+  const LoadingProgressNotifier({
+    super.key,
+    required this.progress,
+    required super.child,
+  });
+  final double? progress;
+
+  static double? of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
+
+    return widget!.progress;
+  }
+
+  @override
+  bool updateShouldNotify(LoadingProgressNotifier oldWidget) =>
+      progress != oldWidget.progress;
+}
+
+class TagFilterNotifier extends InheritedWidget {
+  const TagFilterNotifier({
+    super.key,
+    required this.data,
+    required super.child,
+  });
+  final FilterNotifierData data;
+
+  static FilterNotifierData? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagFilterNotifier>();
+
+    return widget?.data;
+  }
+
+  @override
+  bool updateShouldNotify(TagFilterNotifier oldWidget) =>
+      data != oldWidget.data;
+}
+
+class FilterNotifierData {
+  const FilterNotifierData(this.searchController, this.searchFocus);
+  final TextEditingController searchController;
+  final FocusNode searchFocus;
+
+  void dispose() {
+    searchController.dispose();
+    searchFocus.dispose();
+  }
+}
+
+class TagFilterValueNotifier extends InheritedNotifier<TextEditingController> {
+  const TagFilterValueNotifier({
+    super.key,
+    required super.notifier,
+    required super.child,
+  });
+
+  static String maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagFilterValueNotifier>();
+    return widget?.notifier?.value.text ?? "";
+  }
+}
+
+class CurrentContentNotifier extends InheritedWidget {
+  const CurrentContentNotifier({
+    super.key,
+    required this.content,
+    required super.child,
+  });
+
+  final Contentable content;
+
+  static Contentable of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
+
+    return widget!.content;
+  }
+
+  @override
+  bool updateShouldNotify(CurrentContentNotifier oldWidget) =>
+      content != oldWidget.content;
+}
+
+class AppBarVisibilityNotifier extends InheritedWidget {
+  const AppBarVisibilityNotifier({
+    super.key,
+    required this.isShown,
+    required super.child,
+  });
+  final bool isShown;
+
+  static bool of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
+
+    return widget!.isShown;
+  }
+
+  @override
+  bool updateShouldNotify(AppBarVisibilityNotifier oldWidget) =>
+      isShown != oldWidget.isShown;
+}
+
+class TagRefreshNotifier extends InheritedWidget {
+  const TagRefreshNotifier({
+    super.key,
+    required this.notify,
+    required this.isRefreshing,
+    required this.setIsRefreshing,
+    required super.child,
+  });
+
+  final bool isRefreshing;
+  final void Function() notify;
+  final void Function(bool) setIsRefreshing;
+
+  static void Function()? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+
+    return widget?.notify;
+  }
+
+  static bool? isRefreshingOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+
+    return widget?.isRefreshing;
+  }
+
+  static void Function(bool)? setIsRefreshingOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+
+    return widget?.setIsRefreshing;
+  }
+
+  @override
+  bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
+      oldWidget.notify != notify ||
+      oldWidget.isRefreshing != isRefreshing ||
+      oldWidget.setIsRefreshing != setIsRefreshing;
 }

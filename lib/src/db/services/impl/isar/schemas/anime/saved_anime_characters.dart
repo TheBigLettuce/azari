@@ -6,7 +6,7 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
 import "package:isar/isar.dart";
 
 part "saved_anime_characters.g.dart";

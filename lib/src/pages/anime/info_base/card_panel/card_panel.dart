@@ -5,8 +5,8 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
-import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/card_panel/anime_news.dart";
 import "package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart";

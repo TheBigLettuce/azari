@@ -1,16 +1,16 @@
 GIT_REV = $(shell git rev-parse --short HEAD)
 
 .PHONY: release android_install regenerate generate_dbus
-release:
-	flutter build apk --split-per-abi --no-tree-shake-icons
+release: 
+	flutter build apk --split-per-abi --split-debug-info=debug_info
 	git archive --format=tar.gz -o source.tar.gz HEAD
-	zip app_source_${GIT_REV} build/app/outputs/flutter-apk/app-arm64-v8a-release.apk source.tar.gz
+	zip app_source_${GIT_REV} build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/app-arm64-v8a-release.apk.sha1 source.tar.gz
 	rm source.tar.gz
 	adb push app_source_${GIT_REV}.zip /sdcard
 	rm app_source_${GIT_REV}.zip
 
 android_install:
-	flutter build apk --split-per-abi --no-tree-shake-icons
+	flutter build apk --split-per-abi --split-debug-info=debug_info
 	adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
 regenerate:

@@ -7,8 +7,6 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
-import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:gallery/src/plugs/gallery.dart";
 
 class DummyGallery implements GalleryPlug {
@@ -30,6 +28,37 @@ class DummyGallery implements GalleryPlug {
     required AppLocalizations l10n,
   }) {
     return _DummyDirectories();
+  }
+
+  @override
+  GalleryDirectory makeGalleryDirectory({
+    required int thumbFileId,
+    required String bucketId,
+    required String name,
+    required String relativeLoc,
+    required String volumeName,
+    required int lastModified,
+    required String tag,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  GalleryFile makeGalleryFile({
+    required String tagsFlat,
+    required int id,
+    required String bucketId,
+    required String name,
+    required int lastModified,
+    required String originalUri,
+    required int height,
+    required int width,
+    required int size,
+    required bool isVideo,
+    required bool isGif,
+    required bool isDuplicate,
+  }) {
+    throw UnimplementedError();
   }
 }
 

@@ -7,7 +7,7 @@ import "dart:math" as math;
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class SkeletonState {

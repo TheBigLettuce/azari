@@ -5,7 +5,7 @@
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/manga/launch_reader.dart";
 
 enum SkipDirection {

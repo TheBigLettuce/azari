@@ -6,7 +6,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/net/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
 import "package:gallery/src/pages/anime/search/search_anime.dart";

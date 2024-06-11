@@ -10,7 +10,6 @@ import "package:async/async.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
@@ -50,19 +49,20 @@ import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/anime/anime_api.dart";
-import "package:gallery/src/interfaces/anime/anime_entry.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/interfaces/booru/display_quality.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/logging/logging.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
+import "package:gallery/src/net/anime/anime_entry.dart";
+import "package:gallery/src/net/booru/booru.dart";
+import "package:gallery/src/net/booru/booru_api.dart";
+import "package:gallery/src/net/booru/display_quality.dart";
+import "package:gallery/src/net/booru/post.dart";
+import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
+import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
@@ -2489,7 +2489,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
     bool create,
   ) {
     final dbMain = _Dbs.g.booru(booru);
-    final dbSecondary = _DbsOpen.secondaryGridName(name, create);
+    final dbSecondary = _openSecondaryGridName(name, create);
 
     return IsarSecondaryGridService._(
       dbSecondary,

@@ -7,9 +7,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
-import "package:gallery/src/widgets/notifiers/current_content.dart";
-import "package:gallery/src/widgets/notifiers/loading_progress.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 class ImageViewAppBar extends StatelessWidget {
   const ImageViewAppBar({
