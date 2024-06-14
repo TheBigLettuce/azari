@@ -10,6 +10,8 @@ bool _initalized = false;
 Future<DownloadManager> initalizeIsarDb(
   bool temporary,
   ServicesImplTable db,
+  String appSupportDir,
+  String temporaryDir,
 ) async {
   if (_initalized) {
     return throw "already initalized";
@@ -17,7 +19,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   _initalized = true;
 
-  final directoryPath = (await getApplicationSupportDirectory()).path;
+  final directoryPath = appSupportDir;
 
   final d = Directory(path.joinAll([directoryPath, "temporary"]));
   d.createSync();
@@ -168,15 +170,14 @@ Future<DownloadManager> initalizeIsarDb(
     downloader.restoreFile(e);
   }
 
-  await _removeTempContentsDownloads();
+  await _removeTempContentsDownloads(temporaryDir);
 
   return downloader;
 }
 
-Future<void> _removeTempContentsDownloads() async {
+Future<void> _removeTempContentsDownloads(String dir) async {
   try {
-    final tempd = await getTemporaryDirectory();
-    final downld = Directory(path.join(tempd.path, "downloads"));
+    final downld = Directory(path.join(dir, "downloads"));
     if (!downld.existsSync()) {
       return;
     }

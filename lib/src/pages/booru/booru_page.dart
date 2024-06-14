@@ -511,7 +511,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
           onPress: widget.onPressed,
           leading: Padding(
             padding: const EdgeInsets.only(left: 8, right: 8),
-            child: IconButton.filled(
+            child: IconButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -541,7 +541,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
             redBackground: true,
             leading: Padding(
               padding: const EdgeInsets.only(left: 8, right: 8),
-              child: IconButton.filled(
+              child: IconButton(
                 onPressed: () {
                   Navigator.push(
                     context,

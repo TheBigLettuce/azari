@@ -20,9 +20,15 @@ import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
+import "package:path_provider/path_provider.dart";
 
 Future<DownloadManager> init(ServicesImplTable db) async {
-  return await initalizeIsarDb(false, db);
+  return await initalizeIsarDb(
+    false,
+    db,
+    (await getApplicationSupportDirectory()).path,
+    (await getTemporaryDirectory()).path,
+  );
 }
 
 ServicesImplTable getApi() => IoServicesImplTable();
@@ -33,7 +39,7 @@ class IoServicesImplTable
   IoServicesImplTable();
 
   @override
-  SettingsService get settings => const IsarSettingsService();
+  IsarSettingsService get settings => const IsarSettingsService();
   @override
   MiscSettingsService get miscSettings => const IsarMiscSettingsService();
   @override

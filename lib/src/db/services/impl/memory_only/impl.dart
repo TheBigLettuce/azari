@@ -416,6 +416,12 @@ class PlainSettingsPath extends SettingsPath {
 
   @override
   final String pathDisplay;
+
+  @override
+  SettingsPath copy({String? path, String? pathDisplay}) {
+    return PlainSettingsPath(
+        path ?? this.path, pathDisplay ?? this.pathDisplay);
+  }
 }
 
 class PlainSettingsData extends SettingsData {

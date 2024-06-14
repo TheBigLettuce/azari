@@ -9,6 +9,13 @@ part of "impl.dart";
 class IsarSettingsService implements SettingsService {
   const IsarSettingsService();
 
+  @visibleForTesting
+  void clearStorageTest_() {
+    _Dbs.g.main.writeTxnSync(() {
+      _Dbs.g.main.isarSettings.clearSync();
+    });
+  }
+
   @override
   void add(SettingsData data) => _Dbs.g.main.writeTxnSync(
         () => _Dbs.g.main.isarSettings.putSync(data as IsarSettings),

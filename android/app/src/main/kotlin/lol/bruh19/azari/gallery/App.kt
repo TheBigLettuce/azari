@@ -32,7 +32,7 @@ class App : Application() {
 
         engines = FlutterEngineGroup(this)
 
-        prewarmEngine(this, "main")
+//        prewarmEngine(this, "main")
 //        prewarmEngine(engines, this, "mainPickfile")
     }
 }

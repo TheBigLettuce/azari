@@ -74,7 +74,6 @@ import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
-import "package:path_provider/path_provider.dart";
 
 part "foundation/dbs.dart";
 part "foundation/initalize_db.dart";

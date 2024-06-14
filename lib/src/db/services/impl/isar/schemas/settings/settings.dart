@@ -29,6 +29,12 @@ class IsarSettingsPath implements SettingsPath {
   @override
   @ignore
   bool get isNotEmpty => path.isNotEmpty;
+
+  @override
+  SettingsPath copy({String? path, String? pathDisplay}) => IsarSettingsPath(
+        path: path ?? this.path,
+        pathDisplay: pathDisplay ?? this.pathDisplay,
+      );
 }
 
 @collection

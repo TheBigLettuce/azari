@@ -37,6 +37,11 @@ abstract class SettingsPath {
 
   bool get isEmpty => path.isEmpty;
   bool get isNotEmpty => path.isNotEmpty;
+
+  SettingsPath copy({
+    String? path,
+    String? pathDisplay,
+  });
 }
 
 abstract class SettingsData {

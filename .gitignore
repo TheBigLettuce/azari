@@ -59,3 +59,4 @@ app.*.map.json
 /.vscode/settings.json
 
 /debug_info
+libisar.so

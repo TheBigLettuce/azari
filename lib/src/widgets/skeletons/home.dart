@@ -437,10 +437,10 @@ class _NavBar extends StatelessWidget {
                 controller: icons.controllerNavBar,
                 value: 0,
                 effects: const [
-                  MoveEffect(
+                  SlideEffect(
                     curve: Easing.emphasizedAccelerate,
                     begin: Offset.zero,
-                    end: Offset(0, 100),
+                    end: Offset(0, 1),
                   ),
                 ],
                 child: child,
