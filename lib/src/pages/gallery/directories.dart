@@ -115,6 +115,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   bool isThumbsLoading = false;
 
   final searchTextController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -190,6 +191,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       api.close();
     }
 
+    searchFocus.dispose();
     state.dispose();
     lifecycleListener.dispose();
 
@@ -379,6 +381,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           search: BarSearchWidget.fromFilter(
             filter,
             textEditingController: searchTextController,
+            focus: searchFocus,
             trailingItems: [
               if (widget.callback != null)
                 IconButton(

@@ -80,6 +80,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
+  late final StreamSubscription<void> hiddenPostWatcher;
 
   late final SearchLaunchGridData search;
   final searchController = SearchController();
@@ -170,6 +171,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       setState(() {});
     });
 
+    hiddenPostWatcher = widget.db.hiddenBooruPost.watch((_) {
+      source.backingStorage.addAll([]);
+    });
+
     favoritesWatcher = favoritePosts.backingStorage.watch((event) {
       source.backingStorage.addAll([]);
     });
@@ -180,6 +185,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     searchController.dispose();
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
+    hiddenPostWatcher.cancel();
 
     if (widget.pagingRegistry == null) {
       widget.saveSelectedPage(null);

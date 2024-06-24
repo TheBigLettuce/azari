@@ -618,6 +618,11 @@ class IsarMiscSettingsService implements MiscSettingsService {
 
   Isar get db => _Dbs.g.main;
 
+  @visibleForTesting
+  void clearStorageTest_() {
+    collection.clearSync();
+  }
+
   IsarCollection<IsarMiscSettings> get collection => db.isarMiscSettings;
 
   @override

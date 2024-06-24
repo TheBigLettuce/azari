@@ -104,6 +104,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
   late final GridSkeletonState<GalleryFile> state = GridSkeletonState();
 
   final searchTextController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -221,6 +222,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
     _listener?.dispose();
     settingsWatcher.cancel();
 
+    searchFocus.dispose();
     searchTextController.dispose();
     filter.destroy();
 
@@ -384,6 +386,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                   filter,
                   hintText: widget.dirName,
                   textEditingController: searchTextController,
+                  focus: searchFocus,
                   complete: widget.db.localTagDictionary.complete,
                   trailingItems: [
                     if (widget.callback == null && api.type.isTrash())

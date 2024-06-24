@@ -56,6 +56,7 @@ class FavoritePostsPage extends StatelessWidget {
     Navigator.pop(context);
 
     state.searchTextController.text = t;
+    state.filter.filteringMode = FilteringMode.tag;
   }
 
   GridFrame<FavoritePostData> child(BuildContext context) {
@@ -84,6 +85,7 @@ class FavoritePostsPage extends StatelessWidget {
               controller: state.searchTextController,
               complete: api.completeTag,
               onChange: (str) => state.filter.clearRefresh(),
+              focusNode: state.searchFocus,
             ),
           ],
         ),
@@ -170,6 +172,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   late final StreamSubscription<SettingsData?> settingsWatcher;
 
   final searchTextController = TextEditingController();
+  final searchFocus = FocusNode();
 
   Iterable<FavoritePostData> _collector(
     Map<String, Set<(int, Booru)>>? data,
@@ -222,6 +225,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     settingsWatcher.cancel();
     filter.destroy();
 
+    searchFocus.dispose();
     searchTextController.dispose();
 
     state.dispose();

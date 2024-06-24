@@ -137,7 +137,7 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
   });
 
   final BarSearchWidget search;
-  final FocusNode? searchFocus;
+  final FocusNode searchFocus;
   final Widget Function(
     BuildContext,
     TextEditingController,
@@ -148,9 +148,8 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RawAutocomplete<String>(
-      textEditingController:
-          searchFocus == null ? null : search.textEditingController,
-      focusNode: search.textEditingController == null ? null : searchFocus,
+      textEditingController: search.textEditingController,
+      focusNode: searchFocus,
       optionsBuilder: (textEditingValue) async {
         if (search.complete == null) {
           return [];

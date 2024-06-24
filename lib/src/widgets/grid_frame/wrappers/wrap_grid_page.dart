@@ -97,6 +97,8 @@ class _WrapGridPageState extends State<WrapGridPage>
                 controller: controller,
               ),
               body: GestureDeadZones(
+                left: true,
+                right: true,
                 child: Builder(
                   builder: (buildContext) {
                     final bottomPadding =

@@ -78,6 +78,7 @@ class _BooruPageState extends State<BooruPage> {
 
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
+  late final StreamSubscription<void> hiddenPostWatcher;
 
   final searchController = SearchController();
   final menuController = MenuController();
@@ -185,6 +186,10 @@ class _BooruPageState extends State<BooruPage> {
       source.backingStorage.addAll([]);
     });
 
+    hiddenPostWatcher = widget.db.hiddenBooruPost.watch((_) {
+      source.backingStorage.addAll([]);
+    });
+
     if (pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         final e = gridBookmarks.get(pagingState.restoreSecondaryGrid!)!;
@@ -213,6 +218,7 @@ class _BooruPageState extends State<BooruPage> {
   void dispose() {
     searchController.dispose();
     favoritesWatcher.cancel();
+    hiddenPostWatcher.cancel();
 
     if (!isRestart) {
       pagingState.restoreSecondaryGrid = null;

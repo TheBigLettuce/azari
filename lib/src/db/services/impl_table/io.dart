@@ -41,7 +41,7 @@ class IoServicesImplTable
   @override
   IsarSettingsService get settings => const IsarSettingsService();
   @override
-  MiscSettingsService get miscSettings => const IsarMiscSettingsService();
+  IsarMiscSettingsService get miscSettings => const IsarMiscSettingsService();
   @override
   SavedAnimeEntriesService get savedAnimeEntries =>
       const IsarSavedAnimeEntriesService();
