@@ -670,6 +670,10 @@ class EngineBindings(
                     context.finish()
                 }
 
+                "closeActivity" -> {
+                    context.finish()
+                }
+
                 "accentColor" -> {
                     try {
                         val value = TypedValue()

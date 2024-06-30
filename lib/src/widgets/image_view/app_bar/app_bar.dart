@@ -50,9 +50,7 @@ class ImageViewAppBar extends StatelessWidget {
                 ),
                 scrolledUnderElevation: 0,
                 automaticallyImplyLeading: false,
-                leading: BackButton(
-                  onPressed: () => Navigator.pop(context),
-                ),
+                leading: const BackButton(),
                 title: GestureDetector(
                   onLongPress: () {
                     Clipboard.setData(

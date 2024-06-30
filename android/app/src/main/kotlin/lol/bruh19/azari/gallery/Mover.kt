@@ -227,11 +227,12 @@ internal class Mover(
 
         scope.launch {
             isLockedFilesMux.lock()
+
             loadMedia(
                 "favorites",
                 context,
                 inRefreshAtEnd = true,
-                type = LoadMediaType.Favorite,
+                type = LoadMediaType.Normal,
                 limit = 0,
                 showOnly = ids,
                 sortingMode = sortingMode,
@@ -554,8 +555,6 @@ internal class Mover(
             )
             if (type == LoadMediaType.Trashed) {
                 putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
-            } else if (type == LoadMediaType.Favorite) {
-                putInt(MediaStore.QUERY_ARG_MATCH_FAVORITE, MediaStore.MATCH_ONLY)
             }
 
             if (limit != 0L) {
@@ -810,7 +809,7 @@ internal class Mover(
 }
 
 enum class LoadMediaType {
-    Trashed, Favorite, Latest, Normal;
+    Trashed, Latest, Normal;
 }
 
 enum class FilesSortingMode {

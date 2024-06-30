@@ -154,7 +154,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     });
 
     favoritesWatcher = favoriteFiles.watch((_) {
-      api.source.clearRefresh();
+      setState(() {});
     });
 
     filter = ChainedFilterResourceSource(

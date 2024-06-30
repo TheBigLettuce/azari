@@ -131,6 +131,8 @@ class AndroidApiFunctions implements PlatformApi {
   @override
   Future<void> setTitle(String windowTitle) => Future.value();
 
+  Future<void> closeActivity() => _channel.invokeMethod("closeActivity");
+
   @override
   Future<void> hideRecents(bool hide) {
     _channel.invokeMethod("hideRecents", hide);

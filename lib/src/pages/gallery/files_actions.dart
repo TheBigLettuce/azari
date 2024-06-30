@@ -252,9 +252,9 @@ void moveOrCopyFnc(
                 return Future.value();
               }
 
-              if (chosen == "favorites") {
+              if (bucketId == "favorites") {
                 favoriteOrUnfavorite(context, selected, favoriteFile);
-              } else if (chosen == "trash") {
+              } else if (bucketId == "trash") {
                 if (!move) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

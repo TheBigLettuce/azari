@@ -179,12 +179,18 @@ Future<void> mainQuickView() async {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: WrapGridPage(
-            child: ImageView(
-              cellCount: files.length,
-              scrollUntill: (_) {},
-              startingCell: 0,
-              getCell: (i) => files[i].content(),
-              onNearEnd: null,
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                const AndroidApiFunctions().closeActivity();
+              },
+              child: ImageView(
+                cellCount: files.length,
+                scrollUntill: (_) {},
+                startingCell: 0,
+                getCell: (i) => files[i].content(),
+                onNearEnd: null,
+              ),
             ),
           ),
         ),
