@@ -148,7 +148,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
             return;
           }
 
-          final h = MediaQuery.sizeOf(context).height;
+          final h = controller!.position.viewportDimension;
 
           final height = h - h * 0.80;
 

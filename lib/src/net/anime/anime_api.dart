@@ -20,10 +20,10 @@ abstract class AnimeAPI {
     String title,
     int page,
     int? genreId,
-    AnimeSafeMode? mode,
-  );
+    AnimeSafeMode? mode, {
+    AnimeSortOrder sortOrder = AnimeSortOrder.normal,
+  });
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
-  Future<List<AnimeEntryData>> top(int page);
   Future<List<AnimeNewsEntry>> animeNews(AnimeEntryData entry, int page);
   Future<List<AnimeRecommendations>> recommendations(AnimeEntryData entry);
   Future<List<AnimePicture>> pictures(AnimeEntryData entry);
@@ -31,6 +31,11 @@ abstract class AnimeAPI {
   AnimeMetadata get site;
 
   bool get charactersIsSync;
+}
+
+enum AnimeSortOrder {
+  normal,
+  latest,
 }
 
 enum AnimeMetadata {

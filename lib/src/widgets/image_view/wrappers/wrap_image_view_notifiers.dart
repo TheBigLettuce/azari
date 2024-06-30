@@ -390,7 +390,8 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     return PopScope(
       canPop: _isAppbarShown &&
           (currentPixels.isNegative ||
-              WrapImageViewSkeleton.minPixelsFor(context) == currentPixels),
+              WrapImageViewSkeleton.minPixelsFor(context).floorToDouble() ==
+                  currentPixels.floorToDouble()),
       onPopInvokedWithResult: tryScroll,
       child: IgnorePointer(
         ignoring: ignorePointer,

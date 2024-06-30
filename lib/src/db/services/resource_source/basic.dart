@@ -8,12 +8,29 @@ import "dart:async";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class GenericListSource<V> implements ResourceSource<int, V> {
-  GenericListSource(this._clearRefresh, [this._next]);
+  GenericListSource(
+    this._clearRefresh, {
+    Future<List<V>> Function()? next,
+    WatchFire<int>? watchCount,
+  }) : _next = next {
+    if (watchCount != null) {
+      _subscription = watchCount((count) {
+        clearRefresh();
+      });
+    } else {
+      _subscription = null;
+    }
+  }
 
   final Future<List<V>> Function() _clearRefresh;
   final Future<List<V>> Function()? _next;
+
+  // final WatchFire<int>? watchCount;
+
+  late final StreamSubscription<int>? _subscription;
 
   @override
   final ListStorage<V> backingStorage = ListStorage();
@@ -76,6 +93,7 @@ class GenericListSource<V> implements ResourceSource<int, V> {
   void destroy() {
     backingStorage.destroy();
     progress.close();
+    _subscription?.cancel();
   }
 }
 

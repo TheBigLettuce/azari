@@ -22,7 +22,7 @@ class GlueProvider extends InheritedWidget {
     );
   }
 
-  static SelectionGlue Function([Set<GluePreferences>]) generateOf(
+  static GenerateGlueFnc generateOf(
     BuildContext context,
   ) {
     final widget = context.dependOnInheritedWidgetOfExactType<GlueProvider>();
@@ -39,3 +39,5 @@ enum GluePreferences {
   persistentBarHeight,
   zeroSize;
 }
+
+typedef GenerateGlueFnc = SelectionGlue Function([Set<GluePreferences>]);

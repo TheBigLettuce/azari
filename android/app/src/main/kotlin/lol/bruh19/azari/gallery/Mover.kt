@@ -26,7 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import okio.FileSystem
@@ -231,8 +230,9 @@ internal class Mover(
             loadMedia(
                 "favorites",
                 context,
-                time,
                 inRefreshAtEnd = true,
+                type = LoadMediaType.Favorite,
+                limit = 0,
                 showOnly = ids,
                 sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
@@ -257,11 +257,48 @@ internal class Mover(
         }
     }
 
+    fun refreshFilesDirectly(
+        dir: String = "",
+        type: LoadMediaType = LoadMediaType.Normal,
+        limit: Long, sortingMode: FilesSortingMode,
+        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
+    ) {
+        scope.launch {
+            loadMedia(
+                dir,
+                context,
+                inRefreshAtEnd = true,
+                type = type,
+                limit = limit,
+                sortingMode = sortingMode,
+                closure = closure,
+            )
+        }
+    }
+
+    fun filesDirectly(
+        ids: List<Long>,
+        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
+    ) {
+        scope.launch {
+            loadMedia(
+                "",
+                context,
+                inRefreshAtEnd = true,
+                type = LoadMediaType.Normal,
+                showOnly = ids,
+                limit = 0,
+                sortingMode = FilesSortingMode.None,
+                closure = closure,
+            )
+        }
+    }
+
     fun refreshFiles(
         dirId: String,
         inRefreshAtEnd: Boolean,
-        isTrashed: Boolean = false,
-        isFavorites: Boolean = false,
+        type: LoadMediaType,
+        limit: Long,
         sortingMode: FilesSortingMode,
     ) {
         val time = Calendar.getInstance().time.time
@@ -272,10 +309,9 @@ internal class Mover(
             loadMedia(
                 dirId,
                 context,
-                time,
                 inRefreshAtEnd = inRefreshAtEnd,
-                isTrashed = isTrashed,
-                isFavorites = isFavorites,
+                type = type,
+                limit = limit,
                 sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
                 sendMedia(dirId, time, content, empty, inRefresh)
@@ -287,10 +323,17 @@ internal class Mover(
 
     suspend fun refreshFilesMultiple(dirs: List<String>, sortingMode: FilesSortingMode) {
         if (dirs.count() == 1) {
-            refreshFiles(dirs.first(), inRefreshAtEnd = true, sortingMode = sortingMode)
+            refreshFiles(
+                dirs.first(),
+                inRefreshAtEnd = true,
+                type = LoadMediaType.Normal,
+                limit = 0,
+                sortingMode = sortingMode
+            )
 
             return
         }
+
         val time = Calendar.getInstance().time.time
 
         isLockedFilesMux.lock()
@@ -307,8 +350,9 @@ internal class Mover(
                 loadMedia(
                     d,
                     context,
-                    time,
                     inRefreshAtEnd = false,
+                    type = LoadMediaType.Normal,
+                    limit = 0,
                     sortingMode = sortingMode,
                 ) { content, empty, inRefresh ->
                     sendMedia(d, time, content, empty, inRefresh)
@@ -325,8 +369,9 @@ internal class Mover(
         loadMedia(
             last,
             context,
-            time,
             inRefreshAtEnd = true,
+            type = LoadMediaType.Normal,
+            limit = 0,
             sortingMode = sortingMode,
         ) { content, empty, inRefresh ->
             sendMedia(last, time, content, empty, inRefresh)
@@ -369,7 +414,7 @@ internal class Mover(
                 return@launch
             }
 
-            refreshMediastore(context, galleryApi)
+            refreshDirectories(context)
 
             isLockedDirMux.unlock()
         }
@@ -449,14 +494,14 @@ internal class Mover(
         return if (result == null) Pair(listOf(), listOf()) else result!!
     }
 
+
     private suspend fun loadMedia(
         dir: String,
         context: Context,
-        time: Long,
         inRefreshAtEnd: Boolean,
-        isTrashed: Boolean = false,
-        isFavorites: Boolean = false,
+        type: LoadMediaType,
         showOnly: List<Long>? = null,
+        limit: Long,
         sortingMode: FilesSortingMode,
         closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
@@ -474,7 +519,7 @@ internal class Mover(
         )
 
         var selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed || isFavorites || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (type != LoadMediaType.Normal || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
 
         if (showOnly != null) {
             if (showOnly.isEmpty()) {
@@ -498,7 +543,7 @@ internal class Mover(
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                if (isTrashed || isFavorites || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
+                if (type != LoadMediaType.Normal || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
                     dir,
                     "image/vnd.djvu"
                 )
@@ -507,10 +552,14 @@ internal class Mover(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
                 if (sortingMode == FilesSortingMode.None) "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC" else "${MediaStore.Files.FileColumns.SIZE} DESC"
             )
-            if (isTrashed) {
+            if (type == LoadMediaType.Trashed) {
                 putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
-            } else if (isFavorites) {
+            } else if (type == LoadMediaType.Favorite) {
                 putInt(MediaStore.QUERY_ARG_MATCH_FAVORITE, MediaStore.MATCH_ONLY)
+            }
+
+            if (limit != 0L) {
+                putLong(ContentResolver.QUERY_ARG_LIMIT, limit)
             }
         }
 
@@ -573,7 +622,8 @@ internal class Mover(
                         )
                     )
 
-                    if (list.count() == 40) {
+
+                    if (limit != 0L && list.count() == 40) {
                         closure(list.toList(), false, true)
                         list.clear()
                     }
@@ -581,10 +631,15 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
-                closure(list, false, !inRefreshAtEnd && list.isNotEmpty())
-                if (list.isNotEmpty()) {
-                    closure(listOf(), false, !inRefreshAtEnd)
+                if (limit == 0L) {
+                    closure(list, false, !inRefreshAtEnd && list.isNotEmpty())
+                    if (list.isNotEmpty()) {
+                        closure(listOf(), false, !inRefreshAtEnd)
+                    }
+                } else {
+                    closure(list, list.isEmpty(), !inRefreshAtEnd)
                 }
+
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)
             }
@@ -670,7 +725,7 @@ internal class Mover(
         return res
     }
 
-    private suspend fun refreshMediastore(context: Context, galleryApi: GalleryApi) {
+    private suspend fun refreshDirectories(context: Context) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
@@ -752,6 +807,10 @@ internal class Mover(
             channel.send(op)
         }
     }
+}
+
+enum class LoadMediaType {
+    Trashed, Favorite, Latest, Normal;
 }
 
 enum class FilesSortingMode {

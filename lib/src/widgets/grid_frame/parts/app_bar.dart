@@ -75,7 +75,10 @@ class _AppBar extends StatelessWidget {
                       onChanged: search.onChange,
                       focusNode: focusNode,
                       controller: textEditingController,
-                      onSubmitted: (_) => onFieldSubmitted(),
+                      onSubmitted: (_) {
+                        search.onSubmitted?.call(textEditingController.text);
+                        onFieldSubmitted();
+                      },
                       leading: search.leading ??
                           b ??
                           const Icon(Icons.search_rounded),
@@ -92,6 +95,7 @@ class _AppBar extends StatelessWidget {
                     ),
                   )
                 : SearchBar(
+                    onSubmitted: search.onSubmitted,
                     onChanged: search.onChange,
                     focusNode: searchFocus,
                     onTapOutside: (_) => searchFocus.unfocus(),

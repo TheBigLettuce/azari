@@ -50,6 +50,9 @@ class AnimeSearchEntry extends AnimeEntryData
   final List<AnimeRelation> staff;
 
   @override
+  CellStaticData description() => const CellStaticData();
+
+  @override
   void onPress(
     BuildContext context,
     GridFunctionality<AnimeEntryData> functionality,
@@ -219,9 +222,7 @@ abstract class AnimeEntryData
   final AnimeSafeMode explicit;
 
   @override
-  CellStaticData description() => const CellStaticData(
-        ignoreSwipeSelectGesture: true,
-      );
+  CellStaticData description() => const CellStaticData();
 
   @override
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
@@ -256,5 +257,21 @@ abstract class AnimeEntryData
       if (this is! WatchedAnimeEntryData && db.watchedAnime.watched(id, site))
         const Sticker(Icons.check, important: true),
     ];
+  }
+
+  void openInfoPage(BuildContext context) {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return AnimeInfoPage(
+            entry: this,
+            id: id,
+            db: DatabaseConnectionNotifier.of(context),
+            apiFactory: site.api,
+          );
+        },
+      ),
+    );
   }
 }

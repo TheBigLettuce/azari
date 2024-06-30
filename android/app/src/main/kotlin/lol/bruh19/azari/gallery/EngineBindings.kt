@@ -10,24 +10,23 @@ import android.app.Activity
 import android.app.WallpaperManager
 import android.content.ContentUris
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.Settings
+import android.system.Os
 import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.WindowManager
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import io.flutter.FlutterInjector
-import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
-import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +44,7 @@ class EngineBindings(
     val connectivityManager: ConnectivityManager
 ) {
     private val channel: MethodChannel
-    private val context: FlutterFragmentActivity
+    val context: FlutterFragmentActivity
     internal val mover: Mover
     private val galleryApi: GalleryApi
     val netStatus: Manager
@@ -73,6 +72,7 @@ class EngineBindings(
             engine.dartExecutor.makeBackgroundTaskQueue()
         )
         galleryApi = GalleryApi(engine.dartExecutor.binaryMessenger)
+        GalleryHostApi.setUp(engine.dartExecutor.binaryMessenger, GalleryHostApiImpl(this))
         netStatus = Manager(galleryApi, context)
         mover = Mover(context.lifecycleScope.coroutineContext, context, galleryApi)
     }
@@ -201,6 +201,16 @@ class EngineBindings(
                     }
                 }
 
+                "getQuickViewUris" -> {
+                    val data = context.intent.data
+//                    val extraArray = context.intent.clipData
+//                    val extraIndex = extraArray?.description?.extras?.getInt(Intent.EXTRA_INDEX)
+//
+//                    Log.i("getQuickViewUris", extraArray.toString() + " " + extraIndex.toString())
+
+                    result.success(listOf(data!!.toString()))
+                }
+
                 "manageMediaSupported" -> {
                     result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 }
@@ -291,7 +301,8 @@ class EngineBindings(
                         mover.refreshFiles(
                             "trash",
                             inRefreshAtEnd = true,
-                            isTrashed = true,
+                            type = LoadMediaType.Trashed,
+                            limit = 0,
                             sortingMode = FilesSortingMode.fromDartInt(call.arguments<Int>()!!)
                         )
                     }
@@ -614,6 +625,8 @@ class EngineBindings(
                         mover.refreshFiles(
                             call.argument<String>("bucketId")!!,
                             inRefreshAtEnd = true,
+                            type = LoadMediaType.Normal,
+                            limit = 0,
                             sortingMode = FilesSortingMode.fromDartInt(call.argument<Int>("sort")!!),
                         )
                     }
@@ -680,6 +693,76 @@ class EngineBindings(
     }
 
     fun detach() {
+        GalleryHostApi.setUp(engine.dartExecutor.binaryMessenger, null)
         channel.setMethodCallHandler(null)
+    }
+}
+
+internal class GalleryHostApiImpl(private val engineBindings: EngineBindings) : GalleryHostApi {
+    override fun getPicturesDirectly(
+        dir: String?,
+        limit: Long,
+        onlyLatest: Boolean,
+        callback: (Result<List<DirectoryFile>>) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            engineBindings.mover.refreshFilesDirectly(
+                dir = dir
+                    ?: "",
+                limit = limit,
+                type = if (onlyLatest) LoadMediaType.Latest else LoadMediaType.Normal,
+                sortingMode = FilesSortingMode.None,
+            ) { list, empty, inRefresh ->
+                callback(Result.success(list))
+            }
+        }
+    }
+
+    override fun getPicturesOnlyDirectly(
+        ids: List<Long>,
+        callback: (Result<List<DirectoryFile>>) -> Unit
+    ) {
+        engineBindings.mover.filesDirectly(ids) { list, empty, inRefresh ->
+            callback(Result.success(list))
+        }
+    }
+
+    override fun getUriPicturesDirectly(
+        uris: List<String>,
+        callback: (Result<List<UriFile>>) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val ret = mutableListOf<UriFile>()
+
+            for (uri in uris) {
+                val parsedUri = Uri.parse(uri)
+
+                engineBindings.context.contentResolver.openFile(parsedUri, "r", null)?.use {
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+
+                    val bitmap =
+                        BitmapFactory.decodeFileDescriptor(it.fileDescriptor, null, options)
+
+                    val stat = Os.fstat(it.fileDescriptor)
+
+                    ret.add(
+                        UriFile(
+                            uri = uri,
+                            lastModified = stat.st_mtim.tv_sec,
+                            size = stat.st_size,
+                            name = parsedUri.lastPathSegment!!.split("/").last(),
+                            height = options.outHeight.toLong(),
+                            width = options.outWidth.toLong(),
+                        )
+                    )
+
+                    bitmap?.recycle()
+                }
+            }
+
+            callback(Result.success(ret))
+        }
     }
 }

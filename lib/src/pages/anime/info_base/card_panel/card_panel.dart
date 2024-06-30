@@ -80,8 +80,8 @@ class CardPanel extends StatefulWidget {
         IconButton(
           onPressed: () {
             launchUrl(
-              Uri.parse(entry.trailerUrl),
-              mode: LaunchMode.externalNonBrowserApplication,
+              Uri.parse(entry.siteUrl),
+              mode: LaunchMode.inAppBrowserView,
             );
           },
           icon: const Icon(Icons.public),

@@ -123,6 +123,7 @@ class _HomeState extends State<Home>
                 pop,
               ),
               child: HomeSkeleton(
+                key: ValueKey(showAnimeMangaPages),
                 _CurrentPageWidget(
                   icons: this,
                   changePage: this,

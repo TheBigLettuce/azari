@@ -268,6 +268,8 @@ abstract class LocalTagsData {
 }
 
 abstract interface class LocalTagsService {
+  factory LocalTagsService.db() => _currentDb.localTags;
+
   int get count;
 
   List<String> get(String filename);

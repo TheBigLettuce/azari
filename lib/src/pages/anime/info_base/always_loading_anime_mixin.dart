@@ -15,9 +15,12 @@ class WrapFutureRestartable<T> extends StatefulWidget {
     required this.builder,
     required this.newStatus,
     this.bottomSheetVariant = false,
+    this.placeholder,
   });
+
   final Future<T> Function() newStatus;
   final Widget Function(BuildContext context, T value) builder;
+  final Widget? placeholder;
   final bool bottomSheetVariant;
 
   @override
@@ -54,19 +57,20 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
         future: f,
         builder: (context, snapshot) {
           if (!snapshot.hasData && !snapshot.hasError) {
-            return const SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(
-                  child: SizedBox(
-                    width: 40,
-                    child: LinearProgressIndicator(),
+            return widget.placeholder ??
+                const SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 40,
+                        child: LinearProgressIndicator(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
+                );
           } else if (snapshot.hasError) {
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -103,17 +107,18 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
       future: f,
       builder: (context, snapshot) {
         if (!snapshot.hasData && !snapshot.hasError) {
-          return AnnotatedRegion(
-            value: navBarStyleForTheme(theme, highTone: false),
-            child: const Scaffold(
-              body: Center(
-                child: SizedBox(
-                  width: 40,
-                  child: LinearProgressIndicator(),
+          return widget.placeholder ??
+              AnnotatedRegion(
+                value: navBarStyleForTheme(theme, highTone: false),
+                child: const Scaffold(
+                  body: Center(
+                    child: SizedBox(
+                      width: 40,
+                      child: LinearProgressIndicator(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
+              );
         } else if (snapshot.hasError) {
           return AnnotatedRegion(
             value: navBarStyleForTheme(theme),

@@ -47,8 +47,9 @@ class Jikan implements AnimeAPI {
     String title,
     int page,
     int? genreId,
-    AnimeSafeMode? mode,
-  ) async {
+    AnimeSafeMode? mode, {
+    AnimeSortOrder sortOrder = AnimeSortOrder.normal,
+  }) async {
     final response = await api.Jikan(debug: kDebugMode).searchAnime(
       query: title,
       page: page + 1,
@@ -58,8 +59,14 @@ class Jikan implements AnimeAPI {
         /// havent found a good way
         if (mode == AnimeSafeMode.ecchi) 9,
       ],
-      orderBy: "score",
-      sort: "desc",
+      orderBy: switch (sortOrder) {
+        AnimeSortOrder.normal => title.isEmpty ? "score" : "title",
+        AnimeSortOrder.latest => "start_date",
+      },
+      sort: switch (sortOrder) {
+        AnimeSortOrder.normal => title.isEmpty ? "desc" : "asc",
+        AnimeSortOrder.latest => "desc",
+      },
       rawQuery: mode == AnimeSafeMode.h
           ? "&rating=rx"
           : mode == AnimeSafeMode.safe
@@ -67,20 +74,7 @@ class Jikan implements AnimeAPI {
               : null,
     );
 
-    return response.map((e) => _fromJikanAnime(e)).toList();
-  }
-
-  @override
-  Future<List<AnimeEntryData>> top(int page) async {
-    try {
-      final response =
-          await api.Jikan(debug: kDebugMode).getTopAnime(page: page + 1);
-
-      return response.map((e) => _fromJikanAnime(e)).toList();
-    } catch (e, trace) {
-      _log.warning(".top", e, trace);
-      return const [];
-    }
+    return response.map(_fromJikanAnime).toList();
   }
 
   @override

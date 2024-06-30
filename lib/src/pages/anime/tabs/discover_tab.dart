@@ -16,15 +16,13 @@ class DiscoverExtra {
 class DiscoverTab extends StatefulWidget {
   const DiscoverTab({
     super.key,
-    required this.procPop,
     required this.api,
     required this.db,
-    required this.registry,
+    required this.entry,
   });
 
-  final void Function(bool) procPop;
   final AnimeAPI api;
-  final PagingStateRegistry registry;
+  final DiscoverPagingEntry entry;
 
   final DbConn db;
 
@@ -59,11 +57,11 @@ class DiscoverTab extends StatefulWidget {
   State<DiscoverTab> createState() => _DiscoverTabState();
 }
 
-class _DiscoverPagingEntry implements PagingEntry {
-  _DiscoverPagingEntry(this.api);
+class DiscoverPagingEntry implements PagingEntry {
+  DiscoverPagingEntry(this.api);
 
-  factory _DiscoverPagingEntry.prototype(AnimeAPI api) =>
-      _DiscoverPagingEntry(api);
+  factory DiscoverPagingEntry.prototype(AnimeAPI api) =>
+      DiscoverPagingEntry(api);
 
   final AnimeAPI api;
   late final source = GenericListSource<AnimeSearchEntry>(
@@ -77,7 +75,7 @@ class _DiscoverPagingEntry implements PagingEntry {
         mode,
       );
     },
-    () => api
+    next: () => api
         .search(
       searchText,
       page + 1,
@@ -123,24 +121,31 @@ class _DiscoverPagingEntry implements PagingEntry {
 class _DiscoverTabState extends State<DiscoverTab> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
   WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
-  WatchableGridSettingsData get gridSettings =>
-      widget.db.gridSettings.animeDiscovery;
+  // WatchableGridSettingsData get gridSettings =>
+  //     widget.db.gridSettings.animeDiscovery;
+
+  final gridSettings = GridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.zeroSeven,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.grid,
+  );
 
   final GridSkeletonState<AnimeSearchEntry> state =
       GridSkeletonState<AnimeSearchEntry>();
 
   GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
-  late final _DiscoverPagingEntry pagingState;
+  DiscoverPagingEntry get pagingState => widget.entry;
 
   @override
   void initState() {
     super.initState();
 
-    pagingState = widget.registry.getOrRegister(
-      "discover",
-      () => _DiscoverPagingEntry.prototype(widget.api),
-    );
+    // pagingState = widget.registry.getOrRegister(
+    //   "discover",
+    //   () => DiscoverPagingEntry.prototype(widget.api),
+    // );
   }
 
   @override
@@ -150,40 +155,45 @@ class _DiscoverTabState extends State<DiscoverTab> {
     super.dispose();
   }
 
-  void openSearchSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: SearchOptions<int, AnimeGenre>(
-            info: widget.api.site.name,
-            setCurrentGenre: (g) {
-              pagingState.genreId = g;
+  // void openSearchSheet() {
+  //   showModalBottomSheet<void>(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     useRootNavigator: true,
+  //     showDragHandle: true,
+  //     builder: (context) {
+  //       return SafeArea(
+  //         child: SearchOptions<int, AnimeGenre>(
+  //           info: widget.api.site.name,
+  //           setCurrentGenre: (g) {
+  //             pagingState.genreId = g;
 
-              source.clearRefresh();
-            },
-            initalGenreId: pagingState.genreId,
-            header: _SearchBar(
-              pagingState: pagingState,
-              gridKey: state.gridKey,
-            ),
-            genreFuture: () {
-              if (pagingState.future != null) {
-                return pagingState.future!;
-              }
+  //             source.clearRefresh();
+  //           },
+  //           initalGenreId: pagingState.genreId,
+  //           header: _SearchBar(
+  //             pagingState: pagingState,
+  //             gridKey: state.gridKey,
+  //           ),
+  //           genreFuture: () {
+  //             if (pagingState.future != null) {
+  //               return pagingState.future!;
+  //             }
 
-              pagingState.future = widget.api.genres(AnimeSafeMode.safe);
+  //             pagingState.future = widget.api.genres(AnimeSafeMode.safe);
 
-              return pagingState.future!;
-            },
-            idFromGenre: (genre) => (genre.id, genre.title),
-          ),
-        );
-      },
-    );
+  //             return pagingState.future!;
+  //           },
+  //           idFromGenre: (genre) => (genre.id, genre.title),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  void search(String string) {
+    pagingState.searchText = string;
+    source.clearRefresh();
   }
 
   @override
@@ -193,7 +203,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
       child: GridPopScope(
         searchTextController: null,
         filter: null,
-        rootNavigatorPop: widget.procPop,
         child: GridFrame<AnimeSearchEntry>(
           key: state.gridKey,
           slivers: [
@@ -210,9 +219,10 @@ class _DiscoverTabState extends State<DiscoverTab> {
             source: source,
           ),
           description: GridDescription(
+            animationsOnSourceWatch: false,
+            showAppBar: false,
             actions:
                 DiscoverTab.actions(savedAnimeEntries, watchedAnimeEntries),
-            showAppBar: false,
             keybindsDescription: AppLocalizations.of(context)!.discoverTab,
             gridSeed: state.gridSeed,
           ),
@@ -228,7 +238,7 @@ class _SearchBar extends StatefulWidget {
     required this.gridKey,
   });
 
-  final _DiscoverPagingEntry pagingState;
+  final DiscoverPagingEntry pagingState;
   final GlobalKey<GridFrameState> gridKey;
 
   @override
@@ -238,7 +248,7 @@ class _SearchBar extends StatefulWidget {
 class __SearchBarState extends State<_SearchBar> {
   late final TextEditingController controller;
 
-  _DiscoverPagingEntry get pagingState => widget.pagingState;
+  DiscoverPagingEntry get pagingState => widget.pagingState;
   GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
   @override

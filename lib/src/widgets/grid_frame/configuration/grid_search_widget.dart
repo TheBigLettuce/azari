@@ -45,6 +45,7 @@ class RawSearchWidget implements GridSearchWidget {
 
 class BarSearchWidget extends GridSearchWidget {
   const BarSearchWidget({
+    this.onSubmitted,
     this.textEditingController,
     required this.onChange,
     this.complete,
@@ -88,6 +89,7 @@ class BarSearchWidget extends GridSearchWidget {
   final bool enableCount;
   final Future<List<BooruTag>> Function(String string)? complete;
   final void Function(String? str)? onChange;
+  final void Function(String? str)? onSubmitted;
 }
 
 class ChainedFilterIcon extends StatelessWidget {

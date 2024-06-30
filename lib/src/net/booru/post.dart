@@ -63,20 +63,7 @@ abstract mixin class Post<T extends ContentableCell>
   static PostContentType makeType(Post p) {
     final url = _getUrl(p);
 
-    final t = mime.lookupMimeType(url);
-    if (t == null) {
-      return PostContentType.none;
-    }
-
-    final typeHalf = t.split("/");
-
-    if (typeHalf[0] == "image") {
-      return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
-    } else if (typeHalf[0] == "video") {
-      return PostContentType.video;
-    } else {
-      throw "";
-    }
+    return PostContentType.fromUrl(url);
   }
 
   String _makeName() =>
@@ -294,6 +281,23 @@ enum PostContentType {
   video,
   gif,
   image;
+
+  static PostContentType fromUrl(String url) {
+    final t = mime.lookupMimeType(url);
+    if (t == null) {
+      return PostContentType.none;
+    }
+
+    final typeHalf = t.split("/");
+
+    if (typeHalf[0] == "image") {
+      return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
+    } else if (typeHalf[0] == "video") {
+      return PostContentType.video;
+    } else {
+      throw "";
+    }
+  }
 }
 
 abstract class PostBase {

@@ -10,6 +10,7 @@ import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
@@ -51,6 +52,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
     required this.actions,
     required this.siteUri,
   });
+
   final I? initalGenreId;
   final String? initalText;
   final AnimeSafeMode explicit;
@@ -214,7 +216,8 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
       return widget.search(currentSearch, 0, currentGenre, mode);
     },
-    () => widget.search(currentSearch, _page + 1, currentGenre, mode).then((l) {
+    next: () =>
+        widget.search(currentSearch, _page + 1, currentGenre, mode).then((l) {
       _page += 1;
 
       return l;
@@ -298,123 +301,106 @@ class _SearchAnimePageState<T extends CellBase, I, G>
               child: GridPopScope(
                 searchTextController: null,
                 filter: null,
-                child: GridFrame<T>(
-                  key: state.gridKey,
-                  slivers: [
-                    CurrentGridSettingsLayout<T>(
-                      source: source.backingStorage,
-                      progress: source.progress,
-                      gridSeed: state.gridSeed,
-                      buildEmpty: (e) => EmptyWidgetWithButton(
-                        error: e,
-                        buttonText: l10n.openInBrowser,
-                        onPressed: () {
-                          launchUrl(
-                            widget.siteUri,
-                            mode: LaunchMode.inAppBrowserView,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                  functionality: GridFunctionality(
-                    selectionGlue: GlueProvider.generateOf(context)(),
-                    source: source,
-                    search: BarSearchWidget(
-                      onChange: (str) {},
-                      trailingItems: [
-                        SafetyButton(
-                          mode: mode,
-                          set: (m) {
-                            mode = m;
-
-                            if (source.backingStorage.isNotEmpty) {
-                              source.clearRefresh();
-                            }
-
-                            setState(() {});
-                          },
-                        ),
-                        IconButton(
+                child: Builder(
+                  builder: (context) => GridFrame<T>(
+                    key: state.gridKey,
+                    slivers: [
+                      CurrentGridSettingsLayout<T>(
+                        source: source.backingStorage,
+                        progress: source.progress,
+                        gridSeed: state.gridSeed,
+                        buildEmpty: (e) => EmptyWidgetWithButton(
+                          error: e,
+                          buttonText: l10n.openInBrowser,
                           onPressed: () {
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              useRootNavigator: true,
-                              showDragHandle: true,
-                              builder: (context) {
-                                return SafeArea(
-                                  child: SearchOptions<I, G>(
-                                    info: widget.info,
-                                    setCurrentGenre: (g) {
-                                      currentGenre = g;
-
-                                      source.clearRefresh();
-
-                                      setState(() {});
-                                    },
-                                    initalGenreId: currentGenre,
-                                    genreFuture: () {
-                                      if (_genreFuture != null) {
-                                        return _genreFuture!;
-                                      }
-
-                                      return widget
-                                          .genres(AnimeSafeMode.safe)
-                                          .then((value) {
-                                        genres = value;
-
-                                        _genreFuture = Future.value(value);
-
-                                        setState(() {});
-
-                                        return value;
-                                      });
-                                    },
-                                    idFromGenre: widget.idFromGenre,
-                                  ),
-                                );
-                              },
+                            launchUrl(
+                              widget.siteUri,
+                              mode: LaunchMode.inAppBrowserView,
                             );
                           },
-                          icon: Icon(
-                            Icons.filter_list_outlined,
-                            color: currentGenre != null
-                                ? theme.colorScheme.primary
-                                : null,
-                          ),
                         ),
-                      ],
+                      ),
+                    ],
+                    functionality: GridFunctionality(
+                      selectionGlue: GlueProvider.generateOf(context)(),
+                      source: source,
+                      search: BarSearchWidget(
+                        onChange: null,
+                        onSubmitted: (str) {
+                          currentSearch = str ?? "";
+                          source.clearRefresh();
+                        },
+                        trailingItems: [
+                          SafetyButton(
+                            mode: mode,
+                            set: (m) {
+                              mode = m;
+
+                              if (source.backingStorage.isNotEmpty) {
+                                source.clearRefresh();
+                              }
+
+                              setState(() {});
+                            },
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                isScrollControlled: true,
+                                useRootNavigator: true,
+                                showDragHandle: true,
+                                builder: (context) {
+                                  return SafeArea(
+                                    child: SearchOptions<I, G>(
+                                      info: widget.info,
+                                      setCurrentGenre: (g) {
+                                        currentGenre = g;
+
+                                        source.clearRefresh();
+
+                                        setState(() {});
+                                      },
+                                      initalGenreId: currentGenre,
+                                      genreFuture: () {
+                                        if (_genreFuture != null) {
+                                          return _genreFuture!;
+                                        }
+
+                                        return widget
+                                            .genres(AnimeSafeMode.safe)
+                                            .then((value) {
+                                          genres = value;
+
+                                          _genreFuture = Future.value(value);
+
+                                          setState(() {});
+
+                                          return value;
+                                        });
+                                      },
+                                      idFromGenre: widget.idFromGenre,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            icon: _FilteringIcon(
+                              progress: source.progress,
+                              color: currentGenre != null
+                                  ? theme.colorScheme.primary
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    // OverrideGridSearchWidget(
-                    //   SearchAndFocus(
-                    //     TextFormField(
-                    //       initialValue: currentSearch,
-                    //       decoration: InputDecoration(
-                    //         hintText:
-                    //             "${l10n.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
-                    //         border: InputBorder.none,
-                    //       ),
-                    //       focusNode: searchFocus,
-                    //       onFieldSubmitted: (value) {
-                    //         final grid = state.gridKey.currentState;
-                    //         if (grid == null || source.progress.inRefreshing) {
-                    //           return;
-                    //         }
-
-                    //         currentSearch = value;
-
-                    //         source.clearRefresh();
-                    //       },
-                    //     ),
-                    //     searchFocus,
-                    //   ),
-                    // ),
-                  ),
-                  description: GridDescription(
-                    actions: widget.actions,
-                    keybindsDescription: l10n.searchAnimePage,
-                    gridSeed: state.gridSeed,
+                    description: GridDescription(
+                      animationsOnSourceWatch: false,
+                      actions: widget.actions,
+                      keybindsDescription: l10n.searchAnimePage,
+                      gridSeed: state.gridSeed,
+                    ),
                   ),
                 ),
               ),
@@ -423,6 +409,57 @@ class _SearchAnimePageState<T extends CellBase, I, G>
         ),
       ),
     );
+  }
+}
+
+class _FilteringIcon extends StatefulWidget {
+  const _FilteringIcon({
+    super.key,
+    required this.color,
+    required this.progress,
+  });
+
+  final Color? color;
+  final RefreshingProgress progress;
+
+  @override
+  State<_FilteringIcon> createState() => __FilteringIconState();
+}
+
+class __FilteringIconState extends State<_FilteringIcon> {
+  late final StreamSubscription<bool> subscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = widget.progress.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.progress.inRefreshing
+        ? const Center(
+            child: SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+              ),
+            ),
+          )
+        : Icon(
+            Icons.filter_list_outlined,
+            color: widget.color,
+          );
   }
 }
 

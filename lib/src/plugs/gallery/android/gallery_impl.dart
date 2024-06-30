@@ -7,6 +7,27 @@ part of "android_api_directories.dart";
 
 _GalleryImpl? _global;
 
+extension DirectoryFileToAndroidFile on DirectoryFile {
+  static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
+
+  GalleryFile toAndroidFile(LocalTagsService localTags) {
+    return AndroidGalleryFile(
+      tagsFlat: localTags.get(name).join(" "),
+      id: id,
+      bucketId: bucketId,
+      name: name,
+      lastModified: lastModified,
+      originalUri: originalUri,
+      height: height,
+      width: width,
+      size: size,
+      isVideo: isVideo,
+      isGif: isGif,
+      isDuplicate: _regxp.hasMatch(name),
+    );
+  }
+}
+
 class AndroidGalleryDirectory extends GalleryDirectoryBase
     with GalleryDirectory {
   const AndroidGalleryDirectory({
@@ -57,7 +78,7 @@ class _GalleryImpl implements GalleryApi {
 
   _AndroidGallery? _currentApi;
 
-  static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
+  // static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
   @override
   bool updatePictures(
@@ -109,41 +130,11 @@ class _GalleryImpl implements GalleryApi {
           }
 
           return !data.requireAuth && !data.blur;
-        }).map(
-          (e) => AndroidGalleryFile(
-            tagsFlat: api.localTags.get(e!.name).join(" "),
-            id: e.id,
-            bucketId: e.bucketId,
-            name: e.name,
-            lastModified: e.lastModified,
-            originalUri: e.originalUri,
-            height: e.height,
-            width: e.width,
-            size: e.size,
-            isVideo: e.isVideo,
-            isGif: e.isGif,
-            isDuplicate: _regxp.hasMatch(e.name),
-          ),
-        ),
+        }).map((e) => e!.toAndroidFile(api.localTags)),
       );
     } else {
       api.source.backingStorage.addAll(
-        f.map(
-          (e) => AndroidGalleryFile(
-            tagsFlat: api.localTags.get(e!.name).join(" "),
-            id: e.id,
-            bucketId: e.bucketId,
-            name: e.name,
-            lastModified: e.lastModified,
-            originalUri: e.originalUri,
-            height: e.height,
-            width: e.width,
-            size: e.size,
-            isVideo: e.isVideo,
-            isGif: e.isGif,
-            isDuplicate: _regxp.hasMatch(e.name),
-          ),
-        ),
+        f.map((e) => e!.toAndroidFile(api.localTags)),
         true,
       );
     }

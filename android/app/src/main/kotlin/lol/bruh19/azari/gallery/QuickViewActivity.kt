@@ -1,8 +1,3 @@
-// Copyright (C) 2023 Bob
-// This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-// You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
 package lol.bruh19.azari.gallery
 
 import android.content.Context
@@ -12,10 +7,10 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 
-class PickFileActivity : FlutterFragmentActivity() {
+class QuickViewActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
         EngineBindings(
-            activity = this, "mainPickfile", getSystemService(
+            activity = this, "mainQuickView", getSystemService(
                 ConnectivityManager::class.java
             )
         )
@@ -25,25 +20,23 @@ class PickFileActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
 
         val app = this.applicationContext as App
-        prewarmEngine(app, "mainPickfile")
+        prewarmEngine(app, "mainQuickView")
 
         engineBindings.attach()
     }
 
     override fun getCachedEngineId(): String? {
-        return "mainPickfile"
+        return "mainQuickView"
     }
 
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
         engineBindings.engine.destroy()
-        FlutterEngineCache.getInstance().remove("mainPickfile")
+        FlutterEngineCache.getInstance().remove("mainQuickView")
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
         return engineBindings.engine
     }
 }
-
-

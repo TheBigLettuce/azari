@@ -138,6 +138,12 @@ class AndroidApiFunctions implements PlatformApi {
     return Future.value();
   }
 
+  Future<List<String>> getQuickViewUris() {
+    return _channel
+        .invokeListMethod<String>("getQuickViewUris")
+        .then((e) => e!);
+  }
+
   Future<bool> requestManageMedia() {
     return _channel
         .invokeMethod("requestManageMedia")

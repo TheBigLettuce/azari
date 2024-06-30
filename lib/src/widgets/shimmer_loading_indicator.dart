@@ -7,7 +7,14 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
 class ShimmerLoadingIndicator extends StatelessWidget {
-  const ShimmerLoadingIndicator({super.key});
+  const ShimmerLoadingIndicator({
+    super.key,
+    this.delay = const Duration(seconds: 1),
+    this.duration = const Duration(milliseconds: 500),
+  });
+
+  final Duration delay;
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +25,8 @@ class ShimmerLoadingIndicator extends StatelessWidget {
       effects: [
         ShimmerEffect(
           color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-          delay: const Duration(seconds: 2),
-          duration: const Duration(milliseconds: 500),
+          delay: delay,
+          duration: duration,
         ),
       ],
       child: Container(

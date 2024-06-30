@@ -37,7 +37,7 @@ class _WrapGridPageState extends State<WrapGridPage>
   void initState() {
     super.initState();
 
-    controller = AnimationController(vsync: this);
+    controller = AnimationController(vsync: this, duration: Durations.medium1);
   }
 
   @override
@@ -50,9 +50,9 @@ class _WrapGridPageState extends State<WrapGridPage>
   late final glueState = SelectionGlueState(
     driveAnimation: (forward) {
       if (forward) {
-        return controller.forward();
+        return controller.animateTo(1, curve: Easing.standard);
       } else {
-        return controller.reverse();
+        return controller.animateBack(0, curve: Easing.standard);
       }
     },
     hideNavBar: (hide) {},
@@ -90,6 +90,7 @@ class _WrapGridPageState extends State<WrapGridPage>
               highTone: false,
             ),
             child: Scaffold(
+              backgroundColor: theme.colorScheme.surface.withOpacity(0),
               extendBody: true,
               resizeToAvoidBottomInset: false,
               bottomNavigationBar: GlueBottomAppBar(

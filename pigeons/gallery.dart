@@ -69,6 +69,43 @@ class DirectoryFile {
   final bool isGif;
 }
 
+class UriFile {
+  const UriFile(
+    this.uri,
+    this.name,
+    this.size,
+    this.lastModified,
+    this.height,
+    this.width,
+  );
+
+  final String uri;
+  final String name;
+
+  final int lastModified;
+
+  final int height;
+  final int width;
+
+  final int size;
+}
+
+@HostApi()
+abstract class GalleryHostApi {
+  @async
+  List<DirectoryFile> getPicturesDirectly(
+    String? dir,
+    int limit,
+    bool onlyLatest,
+  );
+
+  @async
+  List<DirectoryFile> getPicturesOnlyDirectly(List<int> ids);
+
+  @async
+  List<UriFile> getUriPicturesDirectly(List<String> uris);
+}
+
 @FlutterApi()
 abstract class GalleryApi {
   bool updateDirectories(Map<String, Directory> d, bool inRefresh, bool empty);

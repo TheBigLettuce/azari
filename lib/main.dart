@@ -13,14 +13,20 @@ import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/restart_widget.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
+import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/copy_move_preview.dart";
 import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/welcome_pages.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
@@ -123,6 +129,118 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   }
 
   return baseTheme;
+}
+
+@pragma("vm:entry-point")
+Future<void> mainQuickView() async {
+  _initLogger();
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await initServices();
+  initalizeGalleryPlug(true);
+
+  if (PlatformApi.current().requiresPermissions) {
+    final auth = LocalAuthentication();
+
+    _canUseAuth = await auth.isDeviceSupported() &&
+        await auth.canCheckBiometrics &&
+        (await auth.getAvailableBiometrics()).isNotEmpty;
+  }
+
+  await initalizeNetworkStatus();
+
+  changeExceptionErrorColors();
+
+  final accentColor = await PlatformApi.current().accentColor();
+  azariVersion = (await PackageInfo.fromPlatform()).version;
+
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  final tagManager =
+      objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
+
+  final uris = await const AndroidApiFunctions().getQuickViewUris();
+
+  final files = (await GalleryHostApi().getUriPicturesDirectly(uris))
+      .map((e) => AndroidUriFile.fromUriFile(e!))
+      .toList();
+
+  runApp(
+    DatabaseConnectionNotifier.current(
+      TagManager.wrapAnchor(
+        tagManager,
+        MaterialApp(
+          title: "Azari",
+          themeAnimationCurve: Easing.standard,
+          themeAnimationDuration: const Duration(milliseconds: 300),
+          darkTheme: buildTheme(Brightness.dark, accentColor),
+          theme: buildTheme(Brightness.light, accentColor),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: WrapGridPage(
+            child: ImageView(
+              cellCount: files.length,
+              scrollUntill: (_) {},
+              startingCell: 0,
+              getCell: (i) => files[i].content(),
+              onNearEnd: null,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class AndroidUriFile implements ImageViewContentable, ContentWidgets {
+  const AndroidUriFile({
+    required this.uri,
+    required this.name,
+    required this.lastModified,
+    required this.height,
+    required this.width,
+    required this.size,
+  });
+
+  factory AndroidUriFile.fromUriFile(UriFile uriFile) => AndroidUriFile(
+        uri: uriFile.uri,
+        name: uriFile.name,
+        lastModified: uriFile.lastModified,
+        height: uriFile.height,
+        width: uriFile.width,
+        size: uriFile.size,
+      );
+
+  final int size;
+
+  final int width;
+  final int height;
+
+  final int lastModified;
+
+  final String name;
+  final String uri;
+
+  @override
+  Contentable content() {
+    final t = PostContentType.fromUrl(uri);
+
+    final imageSize = Size(width.toDouble(), height.toDouble());
+
+    return switch (t) {
+      PostContentType.none => EmptyContent(this),
+      PostContentType.video => AndroidVideo(this, uri: uri, size: imageSize),
+      PostContentType.gif => AndroidGif(this, uri: uri, size: imageSize),
+      PostContentType.image => AndroidImage(this, uri: uri, size: imageSize),
+    };
+  }
+
+  @override
+  String alias(bool long) => name;
+
+  @override
+  Key uniqueKey() => ValueKey(uri);
 }
 
 /// Entrypoint for the second Android's Activity.
