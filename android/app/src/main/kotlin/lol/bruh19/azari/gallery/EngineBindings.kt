@@ -210,10 +210,6 @@ class EngineBindings(
 
                 "getQuickViewUris" -> {
                     val data = context.intent.data
-//                    val extraArray = context.intent.clipData
-//                    val extraIndex = extraArray?.description?.extras?.getInt(Intent.EXTRA_INDEX)
-//
-//                    Log.i("getQuickViewUris", extraArray.toString() + " " + extraIndex.toString())
 
                     result.success(listOf(data!!.toString()))
                 }
@@ -894,10 +890,12 @@ internal class GalleryHostApiImpl(private val engineBindings: EngineBindings) : 
                         inJustDecodeBounds = true
                     }
 
-                    val bitmap =
-                        BitmapFactory.decodeFileDescriptor(it.fileDescriptor, null, options)
+                    BitmapFactory.decodeFileDescriptor(it.fileDescriptor, null, options)
 
                     val stat = Os.fstat(it.fileDescriptor)
+
+                    Log.i("getUriPictures", stat.toString())
+                    Log.i("getUriPictures", parsedUri.lastPathSegment!!.split("/").last())
 
                     ret.add(
                         UriFile(
@@ -909,8 +907,6 @@ internal class GalleryHostApiImpl(private val engineBindings: EngineBindings) : 
                             width = options.outWidth.toLong(),
                         )
                     )
-
-                    bitmap?.recycle()
                 }
             }
 

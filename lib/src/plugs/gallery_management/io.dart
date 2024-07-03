@@ -10,8 +10,6 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/plugs/gallery_management/android.dart";
 import "package:gallery/src/plugs/gallery_management/dummy_io.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
-import "package:path/path.dart" as path;
-import "package:path_provider/path_provider.dart";
 
 GalleryManagementApi getApi() => Platform.isAndroid
     ? const AndroidGalleryManagementApi()
@@ -23,20 +21,6 @@ void initApi() {}
 
 class LinuxGalleryManagementApi implements DummyIoGalleryManagementApi {
   const LinuxGalleryManagementApi();
-
-  @override
-  Future<String> ensureDownloadDirectoryExists(String site) async {
-    final downloadtd = Directory(
-      path.joinAll([(await getTemporaryDirectory()).path, "downloads"]),
-    );
-
-    final dirpath = path.joinAll([downloadtd.path, site]);
-    await downloadtd.create();
-
-    await Directory(dirpath).create();
-
-    return dirpath;
-  }
 
   @override
   Future<(String, String)?> chooseDirectory(

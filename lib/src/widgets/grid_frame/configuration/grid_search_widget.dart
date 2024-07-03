@@ -285,59 +285,60 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               l10n.filteringLabel,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              child: widget.complete != null
-                  ? SearchBarAutocompleteWrapper(
-                      search: BarSearchWidget(
-                        onChange: widget.onChange,
-                        complete: widget.complete,
-                        textEditingController: widget.controller,
-                      ),
-                      searchFocus: widget.focusNode,
-                      child: (
-                        context,
-                        controller,
-                        focus,
-                        onSubmitted,
-                      ) =>
-                          SearchBar(
-                        onSubmitted: (str) {
-                          onSubmitted();
-                          widget.onChange?.call(str);
-                        },
-                        focusNode: focus,
-                        controller: controller,
+            if (widget.onChange != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                child: widget.complete != null
+                    ? SearchBarAutocompleteWrapper(
+                        search: BarSearchWidget(
+                          onChange: widget.onChange,
+                          complete: widget.complete,
+                          textEditingController: widget.controller,
+                        ),
+                        searchFocus: widget.focusNode,
+                        child: (
+                          context,
+                          controller,
+                          focus,
+                          onSubmitted,
+                        ) =>
+                            SearchBar(
+                          onSubmitted: (str) {
+                            onSubmitted();
+                            widget.onChange?.call(str);
+                          },
+                          focusNode: focus,
+                          controller: controller,
+                          onChanged: widget.onChange,
+                          hintText: l10n.filterHint,
+                          leading: const Icon(Icons.search_rounded),
+                          trailing: [
+                            IconButton(
+                              onPressed: () {
+                                controller.text = "";
+                                widget.onChange?.call("");
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SearchBar(
+                        controller: widget.controller,
                         onChanged: widget.onChange,
                         hintText: l10n.filterHint,
                         leading: const Icon(Icons.search_rounded),
                         trailing: [
                           IconButton(
                             onPressed: () {
-                              controller.text = "";
+                              widget.controller.text = "";
                               widget.onChange?.call("");
                             },
                             icon: const Icon(Icons.close_rounded),
                           ),
                         ],
                       ),
-                    )
-                  : SearchBar(
-                      controller: widget.controller,
-                      onChanged: widget.onChange,
-                      hintText: l10n.filterHint,
-                      leading: const Icon(Icons.search_rounded),
-                      trailing: [
-                        IconButton(
-                          onPressed: () {
-                            widget.controller.text = "";
-                            widget.onChange?.call("");
-                          },
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
-                    ),
-            ),
+              ),
             SegmentedButtonGroup<FilteringMode>(
               variant: SegmentedButtonVariant.chip,
               select: _selectFilter,

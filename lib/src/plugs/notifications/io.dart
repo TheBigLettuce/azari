@@ -27,7 +27,6 @@ Future<void> init() async {
       linux: LinuxInitializationSettings(defaultActionName: "Default action"),
       android: AndroidInitializationSettings("@drawable/ic_notification"),
     ),
-    onDidReceiveNotificationResponse: (details) {},
   );
 
   await FlutterLocalNotificationsPlugin().cancelAll();
