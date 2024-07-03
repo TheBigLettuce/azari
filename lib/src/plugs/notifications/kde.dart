@@ -43,7 +43,13 @@ class KDENotifications implements NotificationPlug {
   final DBusClient _client = DBusClient.session();
 
   @override
-  Future<NotificationProgress> newProgress(String name, _, __, ___) async {
+  Future<NotificationProgress> newProgress(
+    String name,
+    _,
+    __,
+    ___, {
+    String? body,
+  }) async {
     try {
       final object = OrgKdeJobViewServer(
         _client,
@@ -55,6 +61,9 @@ class KDENotifications implements NotificationPlug {
       final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);
 
       await notif.callsetInfoMessage(name);
+      if (body != null) {
+        await notif.callsetDescriptionField(0, "", body);
+      }
 
       return Future.value(KDENotificationProgress(notif));
     } catch (_) {

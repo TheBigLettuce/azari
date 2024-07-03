@@ -8,6 +8,12 @@ part of "android_api_directories.dart";
 class AndroidGallery implements GalleryPlug {
   const AndroidGallery();
 
+  static final StreamController<void> _tapDownEvents =
+      StreamController.broadcast();
+
+  @override
+  Stream<void>? get galleryTapDownEvents => _tapDownEvents.stream;
+
   @override
   Future<int> get version =>
       const AndroidApiFunctions().currentMediastoreVersion();

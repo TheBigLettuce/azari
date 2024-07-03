@@ -9,7 +9,6 @@ import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart";
-import "package:path_provider/path_provider.dart";
 
 class IoFilesManagement implements FilesManagement {
   const IoFilesManagement();
@@ -43,7 +42,6 @@ class IoFilesManagement implements FilesManagement {
 
   @override
   Future<void> rename(String path, String newName, [bool notify = true]) {
-    // TODO: implement rename
     throw UnimplementedError();
   }
 
@@ -55,9 +53,17 @@ class IoFilesManagement implements FilesManagement {
     required bool move,
     required bool newDir,
   }) {
-    // TODO: implement copyMove
-
     return Future.value();
+  }
+
+  @override
+  Future<void> copyMoveInternal({
+    required String relativePath,
+    required String volume,
+    required String dirName,
+    required List<String> internalPaths,
+  }) {
+    throw UnimplementedError();
   }
 }
 
@@ -66,18 +72,4 @@ class DummyIoGalleryManagementApi extends DummyGalleryManagementApi {
 
   @override
   FilesManagement get files => const IoFilesManagement();
-
-  @override
-  Future<String> ensureDownloadDirectoryExists(String site) async {
-    final downloadtd = Directory(
-      joinAll([(await getTemporaryDirectory()).path, "downloads"]),
-    );
-
-    final dirpath = joinAll([downloadtd.path, site]);
-    await downloadtd.create();
-
-    await Directory(dirpath).create();
-
-    return dirpath;
-  }
 }

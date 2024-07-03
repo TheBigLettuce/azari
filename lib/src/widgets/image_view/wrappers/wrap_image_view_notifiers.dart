@@ -7,6 +7,7 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/post_tags.dart";
+import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/focus_notifier.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
@@ -17,7 +18,7 @@ import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({
     super.key,
-    required this.onTagRefresh,
+    // required this.onTagRefresh,
     required this.hardRefresh,
     required this.currentCell,
     required this.tags,
@@ -29,7 +30,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.child,
   });
 
-  final void Function() onTagRefresh;
+  // final void Function() onTagRefresh;
   final Contentable currentCell;
   final FocusNode mainFocus;
   final void Function([bool refreshPalette]) hardRefresh;
@@ -54,7 +55,7 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   bool _isPaused = false;
   double? _loadingProgress = 1;
 
-  bool _isTagsRefreshing = false;
+  // bool _isTagsRefreshing = false;
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
@@ -114,32 +115,21 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
           child: PauseVideoNotifier(
             setPause: _setPause,
             pause: _isPaused,
-            child: TagRefreshNotifier(
-              isRefreshing: _isTagsRefreshing,
-              setIsRefreshing: (b) {
-                _isTagsRefreshing = b;
-
-                try {
-                  setState(() {});
-                } catch (_) {}
-              },
-              notify: widget.onTagRefresh,
-              child: TagFilterValueNotifier(
-                notifier: _searchData.searchController,
-                child: TagFilterNotifier(
-                  data: _searchData,
-                  child: FocusNotifier(
-                    notifier: _searchData.searchFocus,
-                    child: CurrentContentNotifier(
-                      content: widget.currentCell,
-                      child: LoadingProgressNotifier(
-                        progress: _loadingProgress,
-                        child: _BottomSheetPopScope(
-                          key: _bottomSheetKey,
-                          controller: widget.bottomSheetController,
-                          animationController: widget.controller,
-                          child: widget.child,
-                        ),
+            child: TagFilterValueNotifier(
+              notifier: _searchData.searchController,
+              child: TagFilterNotifier(
+                data: _searchData,
+                child: FocusNotifier(
+                  notifier: _searchData.searchFocus,
+                  child: CurrentContentNotifier(
+                    content: widget.currentCell,
+                    child: LoadingProgressNotifier(
+                      progress: _loadingProgress,
+                      child: _BottomSheetPopScope(
+                        key: _bottomSheetKey,
+                        controller: widget.bottomSheetController,
+                        animationController: widget.controller,
+                        child: widget.child,
                       ),
                     ),
                   ),
@@ -306,6 +296,8 @@ class _BottomSheetPopScope extends StatefulWidget {
 }
 
 class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
+  late final StreamSubscription<void>? subscription;
+
   bool ignorePointer = false;
   double currentPixels = -1;
 
@@ -329,12 +321,16 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
   @override
   void initState() {
     super.initState();
+    subscription = chooseGalleryPlug().galleryTapDownEvents?.listen((_) {
+      toggle();
+    });
 
     widget.controller.addListener(listener);
   }
 
   @override
   void dispose() {
+    subscription?.cancel();
     widget.controller.removeListener(listener);
 
     super.dispose();
@@ -590,43 +586,43 @@ class AppBarVisibilityNotifier extends InheritedWidget {
       isShown != oldWidget.isShown;
 }
 
-class TagRefreshNotifier extends InheritedWidget {
-  const TagRefreshNotifier({
-    super.key,
-    required this.notify,
-    required this.isRefreshing,
-    required this.setIsRefreshing,
-    required super.child,
-  });
+// class TagRefreshNotifier extends InheritedWidget {
+//   const TagRefreshNotifier({
+//     super.key,
+//     required this.notify,
+//     required this.isRefreshing,
+//     required this.setIsRefreshing,
+//     required super.child,
+//   });
 
-  final bool isRefreshing;
-  final void Function() notify;
-  final void Function(bool) setIsRefreshing;
+//   final bool isRefreshing;
+//   final void Function() notify;
+//   final void Function(bool) setIsRefreshing;
 
-  static void Function()? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+//   static void Function()? maybeOf(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
 
-    return widget?.notify;
-  }
+//     return widget?.notify;
+//   }
 
-  static bool? isRefreshingOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+//   static bool? isRefreshingOf(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
 
-    return widget?.isRefreshing;
-  }
+//     return widget?.isRefreshing;
+//   }
 
-  static void Function(bool)? setIsRefreshingOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+//   static void Function(bool)? setIsRefreshingOf(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
 
-    return widget?.setIsRefreshing;
-  }
+//     return widget?.setIsRefreshing;
+//   }
 
-  @override
-  bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
-      oldWidget.notify != notify ||
-      oldWidget.isRefreshing != isRefreshing ||
-      oldWidget.setIsRefreshing != setIsRefreshing;
-}
+//   @override
+//   bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
+//       oldWidget.notify != notify ||
+//       oldWidget.isRefreshing != isRefreshing ||
+//       oldWidget.setIsRefreshing != setIsRefreshing;
+// }

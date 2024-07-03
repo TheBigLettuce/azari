@@ -14,6 +14,7 @@ class SegmentLabel extends StatelessWidget {
     required this.onPress,
     required this.sticky,
     required this.icons,
+    required this.count,
   });
 
   final String text;
@@ -21,6 +22,7 @@ class SegmentLabel extends StatelessWidget {
   final void Function()? onPress;
   final bool sticky;
   final List<Widget> icons;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -58,11 +60,22 @@ class SegmentLabel extends StatelessWidget {
                         color: theme.colorScheme.surfaceContainerHighest
                             .withOpacity(0.4),
                       ),
-                child: Text(
-                  text,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                child: Text.rich(
+                  TextSpan(
+                    text: text,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      overflow: TextOverflow.ellipsis,
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                    children: [
+                      TextSpan(
+                        text: " $count",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          overflow: TextOverflow.ellipsis,
+                          color: theme.colorScheme.onSurface.withOpacity(0.65),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

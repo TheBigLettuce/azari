@@ -8,7 +8,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/build_theme.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/display_quality.dart";

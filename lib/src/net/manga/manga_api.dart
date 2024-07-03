@@ -82,6 +82,7 @@ extension MangaImageExt on MangaImage {
           url: url,
           thumbUrl: url,
           site: data.mangaTitle,
+          thenMoveTo: null,
         ),
       ],
       SettingsService.db().current,

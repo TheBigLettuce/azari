@@ -7,6 +7,7 @@ package lol.bruh19.azari.gallery
 
 import android.app.Activity
 import android.app.NotificationManager
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -51,6 +52,205 @@ data class ThumbOp(
 )
 
 class MainActivity : FlutterFragmentActivity() {
+    companion object {
+        private fun copyFile(
+            context: Context,
+            contentResolver: ContentResolver,
+            e: Uri,
+            volumeName: String?,
+            newDir: Boolean,
+            newDirIsLocal: Boolean = false,
+            isImage: Boolean,
+            deleteAfter: Boolean,
+            dest: String
+        ) {
+            val mimeType = contentResolver.getType(e)!!
+
+            contentResolver.openInputStream(e)?.use { stream ->
+                contentResolver.query(
+                    e,
+                    if (!newDirIsLocal) {
+                        arrayOf(
+                            MediaStore.MediaColumns.DISPLAY_NAME,
+                        )
+                    } else {
+                        arrayOf(
+                            MediaStore.MediaColumns.DISPLAY_NAME,
+                            MediaStore.MediaColumns.DATE_MODIFIED
+                        )
+                    },
+                    null,
+                    null,
+                    null
+                )?.use {
+                    if (!it.moveToFirst()) {
+                        return@use
+                    }
+
+                    if (newDir) {
+                        if (newDirIsLocal) {
+                            val file = java.io.File(dest, it.getString(0))
+                            if (!file.createNewFile()) {
+                                throw Exception("file exists")
+                            }
+
+                            file.outputStream().use { out ->
+                                stream.transferTo(out)
+                                out.flush()
+                                out.fd.sync()
+                            }
+
+                            file.setLastModified(it.getLong(1))
+
+                            return
+                        }
+
+                        DocumentFile.fromTreeUri(context, Uri.parse(dest))
+                            ?.run {
+                                if (this.isFile || !this.canWrite()) {
+                                    return@use
+                                }
+
+                                val file = this.createFile(mimeType, it.getString(0)) ?: return@use
+                                contentResolver.openOutputStream(file.uri)?.use { out ->
+                                    stream.transferTo(out)
+                                    if (deleteAfter) {
+                                        contentResolver.delete(e, null)
+                                    }
+                                }
+
+                            }
+
+                        return
+                    }
+
+                    val details = ContentValues().apply {
+                        put(
+                            MediaStore.MediaColumns.DISPLAY_NAME,
+                            it.getString(0)
+                        )
+                        put(
+                            MediaStore.MediaColumns.RELATIVE_PATH,
+                            dest
+                        )
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+
+                    val resultUri =
+                        if (isImage) {
+                            contentResolver.insert(
+                                MediaStore.Images.Media.getContentUri(
+                                    volumeName!!
+                                ), details
+                            )
+                        } else {
+                            contentResolver.insert(
+                                MediaStore.Video.Media.getContentUri(
+                                    volumeName!!
+                                ), details
+                            )
+                        }
+
+                    if (resultUri == null) {
+                        return@use
+                    }
+
+                    contentResolver.openOutputStream(resultUri)?.use { out ->
+                        stream.transferTo(out)
+                    }
+
+                    details.clear()
+                    details.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    contentResolver.update(resultUri, details, null, null)
+                }
+            }
+        }
+
+        fun constructRelPath(uri: Uri, isImage: Boolean): String? {
+            val treePrimary = "/tree/primary:"
+            if (uri.path!!.startsWith(treePrimary)) {
+                val noTree = uri.path!!.substring(treePrimary.length)
+                return if (noTree.startsWith(
+                        if (isImage) {
+                            "Pictures"
+                        } else {
+                            "Movies"
+                        }
+                    )
+                ) {
+                    noTree
+                } else {
+                    null
+                }
+            } else {
+                return null
+            }
+        }
+
+        private fun copyOrMove(
+            context: FlutterFragmentActivity,
+            uris: List<Uri>,
+            volumeName: String?,
+            isImage: Boolean,
+            newDir: Boolean,
+            move: Boolean,
+            dest: String,
+        ) {
+            if (move) {
+                var dest = dest
+
+                if (newDir) {
+                    val newDest = constructRelPath(Uri.parse(dest), isImage)
+                    if (newDest != null) {
+                        dest = newDest
+                    } else {
+                        for (e in uris) {
+                            copyFile(
+                                context,
+                                context.contentResolver,
+                                e,
+                                newDir = true,
+                                isImage = isImage,
+                                volumeName = volumeName,
+                                deleteAfter = true,
+                                dest = dest
+                            )
+                        }
+                        return
+                    }
+                }
+
+                val values = ContentValues()
+                values.put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    dest
+                )
+
+                for (e in uris) {
+                    context.contentResolver.update(
+                        e,
+                        values,
+                        null,
+                        null
+                    )
+                }
+            } else {
+                for (e in uris) {
+                    copyFile(
+                        context,
+                        context.contentResolver,
+                        e,
+                        newDir = newDir,
+                        isImage = isImage,
+                        volumeName = volumeName,
+                        deleteAfter = false,
+                        dest = dest
+                    )
+                }
+            }
+        }
+    }
+
     private val engineBindings: EngineBindings by lazy {
         EngineBindings(
             activity = this,
@@ -59,194 +259,6 @@ class MainActivity : FlutterFragmentActivity() {
         )
     }
 
-    private fun copyFile(
-        e: Uri,
-        volumeName: String?,
-        newDir: Boolean,
-        newDirIsLocal: Boolean = false,
-        isImage: Boolean,
-        deleteAfter: Boolean,
-        dest: String
-    ) {
-        val mimeType = contentResolver.getType(e)!!
-
-        contentResolver.openInputStream(e)?.use { stream ->
-            contentResolver.query(
-                e,
-                if (!newDirIsLocal) {
-                    arrayOf(
-                        MediaStore.MediaColumns.DISPLAY_NAME,
-                    )
-                } else {
-                    arrayOf(
-                        MediaStore.MediaColumns.DISPLAY_NAME,
-                        MediaStore.MediaColumns.DATE_MODIFIED
-                    )
-                },
-                null,
-                null,
-                null
-            )?.use {
-                if (!it.moveToFirst()) {
-                    return@use
-                }
-
-                if (newDir) {
-                    if (newDirIsLocal) {
-                        val file = java.io.File(dest, it.getString(0))
-                        if (!file.createNewFile()) {
-                            throw Exception("file exists")
-                        }
-
-                        file.outputStream().use { out ->
-                            stream.transferTo(out)
-                            out.flush()
-                            out.fd.sync()
-                        }
-
-                        file.setLastModified(it.getLong(1))
-
-                        return
-                    }
-
-                    DocumentFile.fromTreeUri(this, Uri.parse(dest))
-                        ?.run {
-                            if (this.isFile || !this.canWrite()) {
-                                return@use
-                            }
-
-                            val file = this.createFile(mimeType, it.getString(0)) ?: return@use
-                            contentResolver.openOutputStream(file.uri)?.use { out ->
-                                stream.transferTo(out)
-                                if (deleteAfter) {
-                                    contentResolver.delete(e, null)
-                                }
-                            }
-
-                        }
-
-                    return
-                }
-
-                val details = ContentValues().apply {
-                    put(
-                        MediaStore.MediaColumns.DISPLAY_NAME,
-                        it.getString(0)
-                    )
-                    put(
-                        MediaStore.MediaColumns.RELATIVE_PATH,
-                        dest
-                    )
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
-
-                val resultUri =
-                    if (isImage) {
-                        contentResolver.insert(
-                            MediaStore.Images.Media.getContentUri(
-                                volumeName!!
-                            ), details
-                        )
-                    } else {
-                        contentResolver.insert(
-                            MediaStore.Video.Media.getContentUri(
-                                volumeName!!
-                            ), details
-                        )
-                    }
-
-                if (resultUri == null) {
-                    return@use
-                }
-
-                contentResolver.openOutputStream(resultUri)?.use { out ->
-                    stream.transferTo(out)
-                }
-
-                details.clear()
-                details.put(MediaStore.MediaColumns.IS_PENDING, 0)
-                contentResolver.update(resultUri, details, null, null)
-            }
-        }
-    }
-
-    private fun constructRelPath(uri: Uri, isImage: Boolean): String? {
-        val treePrimary = "/tree/primary:"
-        if (uri.path!!.startsWith(treePrimary)) {
-            val noTree = uri.path!!.substring(treePrimary.length)
-            return if (noTree.startsWith(
-                    if (isImage) {
-                        "Pictures"
-                    } else {
-                        "Movies"
-                    }
-                )
-            ) {
-                noTree
-            } else {
-                null
-            }
-        } else {
-            return null
-        }
-    }
-
-    private fun copyOrMove(
-        uris: List<Uri>,
-        volumeName: String?,
-        isImage: Boolean,
-        newDir: Boolean,
-        move: Boolean
-    ) {
-        if (move) {
-            var dest = engineBindings.copyFiles!!.dest
-
-            if (newDir) {
-                val newDest = constructRelPath(Uri.parse(dest), isImage)
-                if (newDest != null) {
-                    dest = newDest
-                } else {
-                    for (e in uris) {
-                        copyFile(
-                            e,
-                            newDir = true,
-                            isImage = isImage,
-                            volumeName = volumeName,
-                            deleteAfter = true,
-                            dest = dest
-                        )
-                    }
-                    return
-                }
-            }
-
-            val values = ContentValues()
-            values.put(
-                MediaStore.MediaColumns.RELATIVE_PATH,
-                dest
-            )
-
-            for (e in uris) {
-                contentResolver.update(
-                    e,
-                    values,
-                    null,
-                    null
-                )
-            }
-        } else {
-            for (e in uris) {
-                copyFile(
-                    e,
-                    newDir = newDir,
-                    isImage = isImage,
-                    volumeName = volumeName,
-                    deleteAfter = false,
-                    dest = engineBindings.copyFiles!!.dest
-                )
-            }
-        }
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -303,6 +315,8 @@ class MainActivity : FlutterFragmentActivity() {
 
                         for (e in engineBindings.moveInternal!!.uris) {
                             copyFile(
+                                this@MainActivity,
+                                contentResolver,
                                 e,
                                 null,
                                 newDir = true,
@@ -361,21 +375,25 @@ class MainActivity : FlutterFragmentActivity() {
                     try {
                         if (engineBindings.copyFiles!!.images.isNotEmpty()) {
                             copyOrMove(
+                                this@MainActivity,
                                 engineBindings.copyFiles!!.images,
                                 isImage = true,
                                 newDir = engineBindings.copyFiles!!.newDir,
                                 volumeName = engineBindings.copyFiles!!.volumeName,
-                                move = engineBindings.copyFiles!!.move
+                                move = engineBindings.copyFiles!!.move,
+                                dest = engineBindings.copyFiles!!.dest,
                             )
                         }
 
                         if (engineBindings.copyFiles!!.videos.isNotEmpty()) {
                             copyOrMove(
+                                this@MainActivity,
                                 engineBindings.copyFiles!!.videos,
                                 isImage = false,
                                 newDir = engineBindings.copyFiles!!.newDir,
                                 volumeName = engineBindings.copyFiles!!.volumeName,
-                                move = engineBindings.copyFiles!!.move
+                                move = engineBindings.copyFiles!!.move,
+                                dest = engineBindings.copyFiles!!.dest,
                             )
                         }
 

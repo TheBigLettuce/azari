@@ -8,6 +8,7 @@ import "dart:async";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
@@ -183,12 +184,19 @@ class _TagsListWidgetState extends State<TagsListWidget>
   }
 }
 
+extension LoadTagsGlobalNotifier on GlobalProgressTab {
+  ValueNotifier<Future<void>?> loadTags() {
+    return get("LoadTags", () => ValueNotifier<Future<void>?>(null));
+  }
+}
+
 class LoadTags extends StatelessWidget {
   const LoadTags({
     super.key,
     required this.res,
     required this.filename,
   });
+
   final DisassembleResult res;
   final String filename;
 
@@ -196,6 +204,8 @@ class LoadTags extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+
+    final notifier = GlobalProgressTab.maybeOf(context)?.loadTags();
 
     return SliverPadding(
       padding: const EdgeInsets.all(4),
@@ -208,49 +218,59 @@ class LoadTags extends StatelessWidget {
               ),
               child: Text(l10n.loadTags),
             ),
-            FilledButton(
-              onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
-                  ? null
-                  : () {
-                      try {
-                        final setIsRefreshing =
-                            TagRefreshNotifier.setIsRefreshingOf(context);
-                        setIsRefreshing?.call(true);
+            if (notifier != null)
+              ListenableBuilder(
+                listenable: notifier,
+                builder: (context, _) {
+                  return FilledButton(
+                    onPressed: notifier.value != null
+                        ? null
+                        : () {
+                            final postTags = PostTags.fromContext(context);
+                            final db = DatabaseConnectionNotifier.of(context);
 
-                        final notifier = TagRefreshNotifier.maybeOf(context);
+                            notifier.value = Future(() async {
+                              final tags = await postTags.loadFromDissassemble(
+                                filename,
+                                res,
+                                db.localTagDictionary,
+                              );
 
-                        final postTags = PostTags.fromContext(context);
+                              postTags.addTagsPost(filename, tags, true);
 
-                        postTags
-                            .loadFromDissassemble(
-                          filename,
-                          res,
-                          DatabaseConnectionNotifier.of(context)
-                              .localTagDictionary,
-                        )
-                            .then((value) {
-                          postTags.addTagsPost(filename, value, true);
-                          notifier?.call();
-                          chooseGalleryPlug().notify(null);
-                        }).whenComplete(() => setIsRefreshing?.call(false));
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.notValidFilename(e.toString())),
-                          ),
-                        );
-                      }
-                    },
-              child: TagRefreshNotifier.isRefreshingOf(context) ?? false
-                  ? SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        color: theme.colorScheme.onPrimary,
-                      ),
-                    )
-                  : Text("From ${res.booru.string}"),
-            ),
+                              chooseGalleryPlug().notify(null);
+                            }).onError((e, _) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.notValidFilename(e.toString()),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return null;
+                            }).whenComplete(() => notifier.value = null);
+                          },
+                    child: notifier.value != null
+                        ? SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                        : Text("From ${res.booru.string}"),
+                  );
+                },
+              )
+            else
+              FilledButton(
+                onPressed: null,
+                child: Text("From ${res.booru.string}"), // TODO: change
+              ),
           ],
         ),
       ),

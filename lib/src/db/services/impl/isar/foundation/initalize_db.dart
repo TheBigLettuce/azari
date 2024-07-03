@@ -157,20 +157,32 @@ Future<DownloadManager> initalizeIsarDb(
     _dbs._favoriteFilesCachedValues[e.id] = null;
   }
 
-  final downloader = DownloadManager(db.downloads);
+  final DownloadManager downloader;
 
-  db.downloads.markInProgressAsFailed();
+  if (temporary) {
+    final tempDownloaderPath =
+        Directory(path.join(temporaryDir, "temporaryDownloads"))
+          ..createSync()
+          ..deleteSync(recursive: true)
+          ..createSync();
 
-  for (final e in _IsarCollectionReverseIterable(
-    _IsarCollectionIterator(
-      _Dbs.g.main.isarDownloadFiles,
-      reversed: false,
-    ),
-  )) {
-    downloader.restoreFile(e);
+    downloader = MemoryOnlyDownloadManager(tempDownloaderPath.path);
+  } else {
+    downloader = PersistentDownloadManager(db.downloads, temporaryDir);
+
+    db.downloads.markInProgressAsFailed();
+
+    for (final e in _IsarCollectionReverseIterable(
+      _IsarCollectionIterator(
+        _Dbs.g.main.isarDownloadFiles,
+        reversed: false,
+      ),
+    )) {
+      downloader.restoreFile(e);
+    }
+
+    await _removeTempContentsDownloads(temporaryDir);
   }
-
-  await _removeTempContentsDownloads(temporaryDir);
 
   return downloader;
 }

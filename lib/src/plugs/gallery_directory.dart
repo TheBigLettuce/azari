@@ -65,7 +65,7 @@ mixin GalleryDirectory
 
         final apiFiles = switch (cell.bucketId) {
           "trash" => api.files(
-              d.bucketId,
+              d,
               d.name,
               GalleryFilesPageType.trash,
               db.directoryTags,
@@ -74,7 +74,7 @@ mixin GalleryDirectory
               db.localTags,
             ),
           "favorites" => api.files(
-              d.bucketId,
+              d,
               d.name,
               GalleryFilesPageType.favorites,
               db.directoryTags,
@@ -83,7 +83,7 @@ mixin GalleryDirectory
               db.localTags,
             ),
           String() => api.files(
-              d.bucketId,
+              d,
               d.name,
               GalleryFilesPageType.normal,
               db.directoryTags,
@@ -102,6 +102,7 @@ mixin GalleryDirectory
               "favorites" => GalleryFiles(
                   generateGlue: glue,
                   api: apiFiles,
+                  directory: this,
                   secure: requireAuth,
                   callback: nestedCallback,
                   dirName: l10n.galleryDirectoriesFavorites,
@@ -111,6 +112,7 @@ mixin GalleryDirectory
                 ),
               "trash" => GalleryFiles(
                   api: apiFiles,
+                  directory: this,
                   generateGlue: glue,
                   secure: requireAuth,
                   callback: nestedCallback,
@@ -122,6 +124,7 @@ mixin GalleryDirectory
               String() => GalleryFiles(
                   generateGlue: glue,
                   api: apiFiles,
+                  directory: this,
                   secure: requireAuth,
                   dirName: d.name,
                   callback: nestedCallback,
@@ -140,7 +143,7 @@ mixin GalleryDirectory
               ?.requireAuth ??
           false;
 
-      if (canAuthBiometric && requireAuth) {
+      if (AppInfo().canAuthBiometric && requireAuth) {
         return LocalAuthentication()
             .authenticate(
               localizedReason: l10n.openDirectory,

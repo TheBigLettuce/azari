@@ -17,8 +17,6 @@ abstract interface class GalleryManagementApi {
   CachedThumbs get thumbs;
   FilesManagement get files;
 
-  Future<String> ensureDownloadDirectoryExists(String site);
-
   Future<(String formattedPath, String path)?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
@@ -34,6 +32,13 @@ abstract interface class FilesManagement {
     required String source,
     required String rootDir,
     required String targetDir,
+  });
+
+  Future<void> copyMoveInternal({
+    required String relativePath,
+    required String volume,
+    required String dirName,
+    required List<String> internalPaths,
   });
 
   Future<void> copyMove(
@@ -87,9 +92,6 @@ class DummyGalleryManagementApi implements GalleryManagementApi {
     bool temporary = false,
   }) =>
       Future.value();
-
-  @override
-  Future<String> ensureDownloadDirectoryExists(String site) => Future.value("");
 }
 
 class DummyGalleryTrash implements GalleryTrash {
@@ -136,6 +138,15 @@ class DummyFilesManagement implements FilesManagement {
     List<GalleryFile> selected, {
     required bool move,
     required bool newDir,
+  }) =>
+      Future.value();
+
+  @override
+  Future<void> copyMoveInternal({
+    required String relativePath,
+    required String volume,
+    required String dirName,
+    required List<String> internalPaths,
   }) =>
       Future.value();
 }

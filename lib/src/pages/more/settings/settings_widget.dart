@@ -5,7 +5,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/restart_widget.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/pages/more/settings/settings_list.dart";

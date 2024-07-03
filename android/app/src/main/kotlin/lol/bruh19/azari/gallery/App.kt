@@ -45,7 +45,7 @@ fun prewarmEngine(app: App, entrypoint: String) {
     val engine = app.engines.createAndRunEngine(app, dartEntrypoint)
     engine.platformViewsController.registry.registerViewFactory(
         "imageview",
-        NativeViewFactory()
+        NativeViewFactory(GalleryApi(engine.dartExecutor.binaryMessenger))
     )
     FlutterEngineCache.getInstance().put(entrypoint, engine)
 }

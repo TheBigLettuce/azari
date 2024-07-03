@@ -22,6 +22,12 @@ class DummyNotifications implements NotificationPlug {
   const DummyNotifications();
 
   @override
-  Future<NotificationProgress> newProgress(_, __, ___, ____) =>
+  Future<NotificationProgress> newProgress(
+    _,
+    __,
+    ___,
+    ____, {
+    String? body,
+  }) =>
       Future.value(const DummyProgress());
 }

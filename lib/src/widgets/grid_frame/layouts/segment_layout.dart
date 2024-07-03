@@ -10,7 +10,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/app_info.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
@@ -518,6 +518,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
     }
 
     return SegmentCard(
+      count: items.length,
       selection: widget.selection,
       columns: GridColumn.three,
       gridFunctionality: widget.gridFunctionality,
@@ -616,6 +617,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       aspectRatio: config.aspectRatio.value,
       segmentLabel: val.header,
       modifiers: val.modifiers,
+      count: val.list.length,
       sliver: switch (config.layoutType) {
         //  GridLayoutType.gridMasonry => SliverMasonryGrid(
         //     gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
@@ -760,6 +762,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     required this.segments,
     required this.segmentLabel,
     required this.modifiers,
+    required this.count,
     required this.sliver,
   });
 
@@ -770,6 +773,8 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
   final Segments<T> segments;
   final _SegSticky segmentLabel;
   final Set<SegmentModifier> modifiers;
+
+  final int count;
 
   final Widget sliver;
 
@@ -785,7 +790,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     final isUnsegmented = segmentLabel.seg == segments.unsegmentedLabel;
 
     Future<void> sticky() async {
-      if (toAuth && canAuthBiometric) {
+      if (toAuth && AppInfo().canAuthBiometric) {
         final success = await LocalAuthentication().authenticate(
           localizedReason: l10n.unstickyStickyDirectory,
         );
@@ -811,7 +816,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     }
 
     Future<void> blur() async {
-      if (toAuth && canAuthBiometric) {
+      if (toAuth && AppInfo().canAuthBiometric) {
         final success = await LocalAuthentication().authenticate(
           localizedReason: l10n.unblurDirectory,
         );
@@ -873,6 +878,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
               sliver: SliverToBoxAdapter(
                 child: SegmentLabel(
                   segmentLabel.seg,
+                  count: count,
                   icons: segments.caps.ignoreButtons ||
                           isUnsegmented ||
                           isSpecial ||
@@ -884,7 +890,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                             onPressed: blur,
                             icon: const Icon(Icons.blur_on_rounded),
                           ),
-                          if (canAuthBiometric)
+                          if (AppInfo().canAuthBiometric)
                             IconButton.filled(
                               isSelected: toAuth,
                               onPressed: auth,

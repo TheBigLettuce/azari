@@ -23,12 +23,10 @@ extension ResourceSourceExt<K, V> on ResourceSource<K, V> {
 /// [ChainedFilterResourceSource] uses [clearRefreshSorting] and [nextSorting] when available.
 abstract interface class SortingResourceSource<K, V>
     extends ResourceSource<K, V> {
-  Future<int> clearRefreshSorting(
-    SortingMode sortingMode, [
-    bool silent = false,
-  ]);
+  SortingMode get sortingMode;
+  set sortingMode(SortingMode s);
 
-  Future<int> nextSorting(SortingMode sortingMode, [bool silent = false]);
+  Future<int> clearRefreshSilent();
 }
 
 /// Helper class to make internal filtering of values simpler.

@@ -11,8 +11,8 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
-import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 class ImageViewAppBar extends StatelessWidget {
   const ImageViewAppBar({
@@ -89,7 +89,9 @@ class ImageViewAppBar extends StatelessWidget {
 }
 
 class _BottomRibbon extends StatelessWidget {
-  const _BottomRibbon({super.key});
+  const _BottomRibbon(
+      // {super.key}
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +191,8 @@ class _PinnedTagsRow extends StatelessWidget {
           (e) => DecoratedBox(
             decoration: ShapeDecoration(
               shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10))),
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
               color: theme.colorScheme.surfaceContainerHigh,
             ),
             child: Padding(
@@ -241,10 +244,12 @@ class _PinnedTagsRow extends StatelessWidget {
       children: tagsReady.isEmpty || tagsReady.length == 1
           ? tagsReady
           : [
-              ...tagsReady.take(tagsReady.length - 1).map((e) => Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: e,
-                  )),
+              ...tagsReady.take(tagsReady.length - 1).map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: e,
+                    ),
+                  ),
               tagsReady.last,
             ],
     );

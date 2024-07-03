@@ -7,8 +7,8 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
-import "package:gallery/restart_widget.dart";
+import "package:gallery/init_main/app_info.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
@@ -158,7 +158,7 @@ class MorePage extends StatelessWidget {
                   ),
                   const Padding(padding: EdgeInsets.only(top: 12)),
                   Text(
-                    azariVersion,
+                    AppInfo().version,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.05),
                     ),

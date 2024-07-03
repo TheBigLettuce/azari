@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:io";
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
@@ -20,14 +21,82 @@ import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
+import "package:path/path.dart";
 
 part "download_entry.dart";
 part "download_handle.dart";
 part "download_status.dart";
 
-class DownloadManager extends MapStorage<String, _DownloadEntry>
-    implements ResourceSource<String, _DownloadEntry> {
-  DownloadManager(this._db) : super((e) => e.data.url) {
+abstract class DownloadManager
+    implements
+        MapStorage<String, _DownloadEntry>,
+        ResourceSource<String, _DownloadEntry> {
+  factory DownloadManager.of(BuildContext context) =>
+      DatabaseConnectionNotifier.downloadManagerOf(context);
+
+  Dio get client;
+  String get downloadDir;
+
+  void restoreFile(DownloadFileData f);
+
+  void addLocalTags(
+    Iterable<DownloadEntryTags> downloads,
+    SettingsData settings,
+    PostTags postTags,
+  );
+
+  void restartAll(Iterable<DownloadHandle> d, SettingsData settings);
+  void putAll(Iterable<DownloadEntry> downloads, SettingsData settings);
+}
+
+class MemoryOnlyDownloadManager extends MapStorage<String, _DownloadEntry>
+    with DefaultDownloadManagerImpl
+    implements DownloadManager {
+  MemoryOnlyDownloadManager(this.downloadDir) : super((e) => e.data.url);
+
+  @override
+  final client = Dio();
+
+  @override
+  final String downloadDir;
+
+  @override
+  final ClosableRefreshProgress progress =
+      ClosableRefreshProgress(canLoadMore: false);
+
+  @override
+  SourceStorage<String, _DownloadEntry> get backingStorage => this;
+
+  @override
+  Future<int> clearRefresh() => Future.value(count);
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  Future<int> next() => Future.value(count);
+
+  @override
+  void restoreFile(DownloadFileData f) {}
+
+  @override
+  void destroy() {
+    super.destroy();
+    progress.close();
+
+    client.close();
+  }
+}
+
+abstract class DownloadManagerHasPersistence {
+  DownloadFileService get db;
+}
+
+class PersistentDownloadManager extends MapStorage<String, _DownloadEntry>
+    with DefaultDownloadManagerImpl
+    implements DownloadManager, DownloadManagerHasPersistence {
+  PersistentDownloadManager(this.db, this.downloadDir)
+      : super((e) => e.data.url) {
     _refresher = Stream<void>.periodic(1.seconds).listen((event) {
       if (_inWork != 0) {
         StatisticsGeneralService.db()
@@ -38,23 +107,33 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     });
   }
 
-  factory DownloadManager.of(BuildContext context) =>
-      DatabaseConnectionNotifier.downloadManagerOf(context);
+  @override
+  final client = Dio();
 
-  int _notificationId = 0;
+  @override
+  final String downloadDir;
 
-  int _inWork = 0;
-  final _client = Dio();
-
-  final DownloadFileService _db;
-
-  final NotificationPlug notificationPlug = chooseNotificationPlug();
-
-  static final _log = Logger("Download Manager");
-  static const int maximum = 6;
+  @override
+  final DownloadFileService db;
 
   late final StreamSubscription<void> _refresher;
 
+  @override
+  SourceStorage<String, _DownloadEntry> get backingStorage => this;
+
+  @override
+  Future<int> clearRefresh() => Future.value(count);
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  Future<int> next() => Future.value(count);
+
+  @override
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+
+  @override
   void restoreFile(DownloadFileData f) {
     map_[f.url] = _DownloadEntry(
       data: DownloadEntry._(
@@ -63,6 +142,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
         thumbUrl: f.thumbUrl,
         site: f.site,
         status: f.status,
+        thenMoveTo: null,
       ),
       token: CancelToken(),
     );
@@ -82,12 +162,26 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     progress.close();
     _refresher.cancel();
 
-    _client.close();
+    client.close();
   }
+}
+
+mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
+    implements DownloadManager {
+  static final _log = Logger("Download Manager");
+  static const int maximum = 6;
+
+  int _notificationId = 0;
+
+  int _inWork = 0;
+
+  final NotificationPlug notificationPlug = chooseNotificationPlug();
 
   @override
   void clear([bool silent = false]) {
-    _db.clear();
+    if (this is DownloadManagerHasPersistence) {
+      (this as DownloadManagerHasPersistence).db.clear();
+    }
     super.clear(silent);
   }
 
@@ -95,7 +189,9 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   List<_DownloadEntry> removeAll(Iterable<String> idx, [bool silent = false]) {
     final idx_ = idx.toList();
 
-    _db.deleteAll(idx_);
+    if (this is DownloadManagerHasPersistence) {
+      (this as DownloadManagerHasPersistence).db.deleteAll(idx_);
+    }
 
     final removed = <_DownloadEntry>[];
 
@@ -115,6 +211,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     return removed;
   }
 
+  @override
   void addLocalTags(
     Iterable<DownloadEntryTags> downloads,
     SettingsData settings,
@@ -127,6 +224,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     putAll(downloads, settings);
   }
 
+  @override
   void restartAll(Iterable<DownloadHandle> d, SettingsData settings) {
     if (settings.path.isEmpty) {
       return;
@@ -159,6 +257,7 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     addAll([]);
   }
 
+  @override
   void putAll(Iterable<DownloadEntry> downloads, SettingsData settings) {
     if (settings.path.isEmpty) {
       return;
@@ -191,7 +290,9 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
       }
     }
 
-    _db.saveAll(toSaveDb);
+    if (this is DownloadManagerHasPersistence) {
+      (this as DownloadManagerHasPersistence).db.saveAll(toSaveDb);
+    }
     addAll([]);
   }
 
@@ -225,7 +326,11 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
       map_[e.key] = e;
     }
 
-    _db.saveAll(entries.map((e) => e.data._toDb()).toList());
+    if (this is DownloadManagerHasPersistence) {
+      (this as DownloadManagerHasPersistence)
+          .db
+          .saveAll(entries.map((e) => e.data._toDb()).toList());
+    }
 
     for (final e in entries) {
       _download(e.key);
@@ -252,7 +357,9 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
     if (e != null) {
       e.cancel();
       e.watcher?.close();
-      _db.deleteAll([url]);
+      if (this is DownloadManagerHasPersistence) {
+        (this as DownloadManagerHasPersistence).db.deleteAll([url]);
+      }
     }
   }
 
@@ -268,7 +375,9 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
 
     _inWork -= 1;
 
-    _db.saveAll([newEntry._toDb()]);
+    if (this is DownloadManagerHasPersistence) {
+      (this as DownloadManagerHasPersistence).db.saveAll([newEntry._toDb()]);
+    }
 
     map_[entry.key] = _DownloadEntry(
       data: newEntry,
@@ -282,8 +391,8 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   Future<void> _download(String url) async {
     final entry = map_[url]!;
 
-    final dir = await GalleryManagementApi.current()
-        .ensureDownloadDirectoryExists(entry.data.site);
+    final dir =
+        await _ensureDownloadDirExists(dir: downloadDir, site: entry.data.site);
     final filePath = path.joinAll([dir, entry.data.name]);
 
     if (await GalleryManagementApi.current().files.exists(filePath)) {
@@ -297,12 +406,13 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
       _notificationId += 1,
       entry.data.site,
       "Downloader",
+      body: entry.data.site,
     );
 
     try {
       _log.info("Started download: ${entry.data}");
 
-      await _client.download(
+      await client.download(
         entry.data.url,
         filePath,
         cancelToken: entry.token,
@@ -341,25 +451,33 @@ class DownloadManager extends MapStorage<String, _DownloadEntry>
   }) async {
     final settings = SettingsService.db().current;
 
-    await GalleryManagementApi.current().files.moveSingle(
-          source: filePath,
-          rootDir: settings.path.path,
-          targetDir: entry.data.site,
-        );
+    if (entry.data.thenMoveTo != null) {
+      await GalleryManagementApi.current().files.copyMoveInternal(
+        relativePath: entry.data.thenMoveTo!.path,
+        volume: entry.data.thenMoveTo!.volume,
+        dirName: entry.data.thenMoveTo!.dirName,
+        internalPaths: [filePath],
+      );
+    } else {
+      await GalleryManagementApi.current().files.moveSingle(
+            source: filePath,
+            rootDir: settings.path.path,
+            targetDir: entry.data.site,
+          );
+    }
   }
 
-  @override
-  SourceStorage<String, _DownloadEntry> get backingStorage => this;
+  Future<String> _ensureDownloadDirExists({
+    required String dir,
+    required String site,
+  }) async {
+    final downloadtd = Directory(joinAll([dir, "downloads"]));
 
-  @override
-  Future<int> clearRefresh() => Future.value(count);
+    final dirpath = joinAll([downloadtd.path, site]);
+    await downloadtd.create();
 
-  @override
-  bool get hasNext => false;
+    await Directory(dirpath).create();
 
-  @override
-  Future<int> next() => Future.value(count);
-
-  @override
-  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+    return dirpath;
+  }
 }

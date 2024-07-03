@@ -181,18 +181,18 @@ class _AnimePageState extends State<AnimePage> {
     finishedKey.currentState?.doFilter(value);
   }
 
+  void _procPop(bool pop, dynamic __) {
+    if (overlayEntry.mounted) {
+      overlayKey.currentState?.hide();
+    } else {
+      widget.procPop(pop);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-
-    void _procPop(bool pop, dynamic __) {
-      if (overlayEntry.mounted) {
-        overlayKey.currentState?.hide();
-      } else {
-        widget.procPop(pop);
-      }
-    }
 
     return PopScope(
       canPop: false,
@@ -235,7 +235,7 @@ class _AnimePageState extends State<AnimePage> {
             ),
           ),
           centerTitle: true,
-          title: const Text("Anime"), // TODO: change
+          title: Text(l10n.animePage),
           actions: [
             IconButton(
               icon: const Icon(Icons.keyboard_arrow_down_rounded),
@@ -248,12 +248,12 @@ class _AnimePageState extends State<AnimePage> {
         body: ListView(
           children: [
             FadingPanel(
-              label: "Newest",
+              label: "Newest", // TODO: change
               source: source,
               childSize: _NewAnime.size,
               child: _NewAnime(source: source),
             ),
-            Placeholder()
+            const Placeholder(),
           ],
         ),
       ),
@@ -268,6 +268,8 @@ class FadingPanel extends StatefulWidget {
     this.trailing,
     required this.source,
     required this.childSize,
+    this.enableHide = true,
+    this.horizontalPadding = const EdgeInsets.symmetric(horizontal: 18),
     required this.child,
   });
 
@@ -276,6 +278,10 @@ class FadingPanel extends StatefulWidget {
 
   final ResourceSource<dynamic, dynamic> source;
   final Size childSize;
+
+  final bool enableHide;
+
+  final EdgeInsets horizontalPadding;
 
   final Widget child;
 
@@ -328,8 +334,8 @@ class _FadingPanelState extends State<FadingPanel>
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.only(bottom: 12, top: 18, left: 18, right: 18),
+            padding: const EdgeInsets.only(bottom: 12, top: 18) +
+                widget.horizontalPadding,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               mainAxisSize: MainAxisSize.min,
@@ -353,33 +359,40 @@ class _FadingPanelState extends State<FadingPanel>
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.label,
-                          style: textStyle,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: AnimatedBuilder(
-                            animation: controller.view,
-                            builder: (context, _) {
-                              return Transform.rotate(
-                                angle: tween.transform(
-                                  Easing.standard.transform(controller.value),
+                    child: !widget.enableHide
+                        ? Text(
+                            widget.label,
+                            style: textStyle,
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.label,
+                                style: textStyle,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16),
+                                child: AnimatedBuilder(
+                                  animation: controller.view,
+                                  builder: (context, _) {
+                                    return Transform.rotate(
+                                      angle: tween.transform(
+                                        Easing.standard
+                                            .transform(controller.value),
+                                      ),
+                                      child: Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 24,
+                                        color:
+                                            textStyle?.color?.withOpacity(0.9),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                child: Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 24,
-                                  color: textStyle?.color?.withOpacity(0.9),
-                                ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
                 if (widget.trailing != null) widget.trailing!,
@@ -455,7 +468,7 @@ class _ShimmerPlaceholdersHorizontalState
 
 class _NewAnime extends StatelessWidget {
   const _NewAnime({
-    super.key,
+    // super.key,
     required this.source,
   });
 
@@ -584,7 +597,7 @@ class _FadingControllerState extends State<FadingController>
 
 class _RefresingIcon extends StatefulWidget {
   const _RefresingIcon({
-    super.key,
+    // super.key,
     required this.progress,
     required this.controller,
   });
@@ -780,7 +793,7 @@ class __MoreOverlayState extends State<_MoreOverlay>
 
 class _MoreOverlayBody extends StatelessWidget {
   const _MoreOverlayBody({
-    super.key,
+    // super.key,
     required this.entry,
     required this.controller,
     required this.source,
@@ -842,7 +855,9 @@ class _MoreOverlayBody extends StatelessWidget {
                       return GestureDetector(
                         onTap: () {
                           _hideOverlayAnimate(controller, entry).then((e) {
-                            cell.openInfoPage(context);
+                            if (context.mounted) {
+                              cell.openInfoPage(context);
+                            }
                           });
                         },
                         child: GridCell(cell: cell, hideTitle: false),
@@ -859,7 +874,7 @@ class _MoreOverlayBody extends StatelessWidget {
 
 class _ColorDecoration extends StatefulWidget {
   const _ColorDecoration({
-    super.key,
+    // super.key,
     required this.controller,
     required this.theme,
     required this.child,

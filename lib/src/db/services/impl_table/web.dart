@@ -9,7 +9,7 @@ import "package:gallery/src/db/services/impl/memory_only/impl.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 
-Future<DownloadManager> init(ServicesImplTable db) =>
+Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
     Future.value((db as MemoryOnlyServicesImplTable).init());
 
 ServicesImplTable getApi() => MemoryOnlyServicesImplTable();

@@ -414,7 +414,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
 class _FilteringIcon extends StatefulWidget {
   const _FilteringIcon({
-    super.key,
+    // super.key,
     required this.color,
     required this.progress,
   });

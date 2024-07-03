@@ -18,7 +18,7 @@ class NetworkStatus {
   static NetworkStatus get g => _status;
 }
 
-Future<void> initalizeNetworkStatus() async {
+Future<void> initNetworkStatus() async {
   _status = NetworkStatus(await register());
 
   return;

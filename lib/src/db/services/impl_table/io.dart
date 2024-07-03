@@ -22,9 +22,9 @@ import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
 import "package:path_provider/path_provider.dart";
 
-Future<DownloadManager> init(ServicesImplTable db) async {
+Future<DownloadManager> init(ServicesImplTable db, bool temporary) async {
   return await initalizeIsarDb(
-    false,
+    temporary,
     db,
     (await getApplicationSupportDirectory()).path,
     (await getTemporaryDirectory()).path,

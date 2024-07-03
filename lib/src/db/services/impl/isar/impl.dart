@@ -9,7 +9,7 @@ import "dart:io";
 import "package:async/async.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/app_info.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
@@ -121,7 +121,7 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   Post? get currentlyLast =>
-      backingStorage._collection.where().sortById().findFirstSync();
+      backingStorage._collection.where().sortById().limit(1).findFirstSync();
 
   @override
   bool get hasNext => true;
@@ -1021,6 +1021,7 @@ class IsarDownloadFileService implements DownloadFileService {
     return collection
         .where()
         .statusEqualTo(DownloadStatus.onHold)
+        .limit(1)
         .findFirstSync();
   }
 
@@ -1247,7 +1248,7 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
 
   @override
   Future<bool> canAuth(String id, String reason) async {
-    if (!canAuthBiometric) {
+    if (!AppInfo().canAuthBiometric) {
       return true;
     }
 
@@ -1458,6 +1459,7 @@ class IsarFavoriteFileService implements FavoriteFileService {
   int get thumbnail => _Dbs.g.blacklisted.isarFavoriteFiles
       .where()
       .sortByTimeDesc()
+      .limit(1)
       .findFirstSync()!
       .id;
 
@@ -1745,6 +1747,7 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
         .filter()
         .siteMangaIdEqualTo(siteMangaId)
         .sortByLastUpdatedDesc()
+        .limit(1)
         .findFirstSync();
   }
 
@@ -2264,6 +2267,15 @@ class IsarDirectoryTagService implements DirectoryTagService {
       _Dbs.g.localTags.directoryTags.getByBuckedIdSync(bucketId)?.tag;
 
   @override
+  bool searchByTag(String tag) =>
+      _Dbs.g.localTags.directoryTags
+          .filter()
+          .tagStartsWith(tag)
+          .limit(1)
+          .findFirstSync() !=
+      null;
+
+  @override
   void add(Iterable<String> bucketIds, String tag) {
     _Dbs.g.localTags.writeTxnSync(
       () => _Dbs.g.localTags.directoryTags
@@ -2461,6 +2473,13 @@ class IsarGridStateBooruService implements GridBookmarkService {
   @override
   GridBookmark? get(String name) =>
       _Dbs.g.main.isarBookmarks.getByNameSync(name);
+
+  @override
+  GridBookmark? getFirstByTags(String tags) => _Dbs.g.main.isarBookmarks
+      .where()
+      .tagsEqualTo(tags)
+      .limit(1)
+      .findFirstSync();
 
   @override
   void delete(String name) {

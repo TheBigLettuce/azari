@@ -558,9 +558,10 @@ internal class Mover(
             }
 
             if (limit != 0L) {
-                putLong(ContentResolver.QUERY_ARG_LIMIT, limit)
+                putInt(ContentResolver.QUERY_ARG_LIMIT, limit.toInt())
             }
         }
+
 
         context.contentResolver.query(
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
@@ -622,7 +623,7 @@ internal class Mover(
                     )
 
 
-                    if (limit != 0L && list.count() == 40) {
+                    if (limit == 0L && list.count() == 40) {
                         closure(list.toList(), false, true)
                         list.clear()
                     }

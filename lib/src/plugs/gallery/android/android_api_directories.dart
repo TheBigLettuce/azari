@@ -5,18 +5,21 @@
 
 import "dart:async";
 
+import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/gallery_management/android.dart";
 import "package:gallery/src/plugs/network_status.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 
 part "android_api_files.dart";
 part "android_gallery.dart";
@@ -57,7 +60,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    String bucketId,
+    GalleryDirectory directory,
     String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
@@ -69,9 +72,13 @@ class _AndroidGallery implements GalleryAPIDirectories {
       throw "already hosting files";
     }
 
+    final sourceTags = MapFilesSourceTags();
+
     return bindFiles = _AndroidGalleryFiles(
-      source: _AndroidFileSourceJoined([bucketId], type, favoriteFile),
-      bucketId: bucketId,
+      source:
+          _AndroidFileSourceJoined([directory], type, favoriteFile, sourceTags),
+      sourceTags: sourceTags,
+      directories: [directory],
       target: name,
       type: type,
       parent: this,
@@ -84,7 +91,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles joinedFiles(
-    List<String> bucketIds,
+    List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
@@ -94,13 +101,17 @@ class _AndroidGallery implements GalleryAPIDirectories {
       throw "already hosting files";
     }
 
+    final sourceTags = MapFilesSourceTags();
+
     return bindFiles = _JoinedDirectories(
       source: _AndroidFileSourceJoined(
-        bucketIds,
+        directories,
         GalleryFilesPageType.normal,
         favoriteFile,
+        sourceTags,
       ),
-      directories: bucketIds,
+      sourceTags: sourceTags,
+      directories: directories,
       parent: this,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,

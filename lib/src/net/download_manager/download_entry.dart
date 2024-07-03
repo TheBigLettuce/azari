@@ -13,6 +13,7 @@ class DownloadEntryTags extends DownloadEntry {
     required super.thumbUrl,
     required super.site,
     super.status,
+    required super.thenMoveTo,
   }) : super.d();
 
   final List<String> tags;
@@ -25,6 +26,7 @@ class DownloadEntry {
     required this.thumbUrl,
     required this.site,
     required this.status,
+    required this.thenMoveTo,
   });
 
   const DownloadEntry.d({
@@ -32,6 +34,7 @@ class DownloadEntry {
     required this.url,
     required this.thumbUrl,
     required this.site,
+    required this.thenMoveTo,
     this.status = DownloadStatus.inProgress,
   });
 
@@ -39,6 +42,7 @@ class DownloadEntry {
   final String url;
   final String thumbUrl;
   final String site;
+  final PathVolume? thenMoveTo;
 
   final DownloadStatus status;
 
@@ -48,6 +52,7 @@ class DownloadEntry {
         thumbUrl: thumbUrl,
         site: site,
         status: newStatus,
+        thenMoveTo: thenMoveTo,
       );
 
   DownloadFileData _toDb() => objFactory.makeDownloadFileData(
@@ -58,4 +63,16 @@ class DownloadEntry {
         site: site,
         date: DateTime.now(),
       );
+}
+
+class PathVolume {
+  const PathVolume(
+    this.path,
+    this.volume,
+    this.dirName,
+  );
+
+  final String path;
+  final String volume;
+  final String dirName;
 }

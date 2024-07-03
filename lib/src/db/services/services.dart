@@ -68,8 +68,8 @@ part "thumbnail.dart";
 part "video_settings.dart";
 part "watched_anime_entry.dart";
 
-Future<void> initServices() async {
-  _downloadManager ??= await init(_currentDb);
+Future<void> initServices(bool temporary) async {
+  _downloadManager ??= await init(_currentDb, temporary);
 
   return Future.value();
 }
@@ -295,6 +295,7 @@ enum TagType {
 
 abstract interface class DirectoryTagService {
   String? get(String bucketId);
+  bool searchByTag(String tag);
   void add(Iterable<String> bucketIds, String tag);
   void delete(Iterable<String> buckedIds);
 }
@@ -398,6 +399,7 @@ abstract class GridBookmark implements CellBase {
     required this.time,
   });
 
+  @Index()
   final String tags;
 
   @enumerated
@@ -475,6 +477,7 @@ abstract interface class GridBookmarkService {
   List<GridBookmark> get all;
 
   GridBookmark? get(String name);
+  GridBookmark? getFirstByTags(String tags);
 
   List<GridBookmark> firstNumber(int n);
 

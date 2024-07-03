@@ -5,11 +5,11 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/pages/more/settings/global_progress.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
@@ -67,6 +67,7 @@ String kbMbSize(BuildContext context, int bytes) {
 }
 
 Future<void> loadNetworkThumb(
+  BuildContext context,
   String filename,
   int id,
   String groupNotifString,
@@ -74,50 +75,48 @@ Future<void> loadNetworkThumb(
   ThumbnailService thumbnails,
   PinnedThumbnailService pinnedThumbnails, [
   bool addToPinned = true,
-]) async {
-  if (GlobalProgress.isThumbLoadingLocked()) {
-    return;
+]) {
+  final notifier = GlobalProgressTab.maybeOf(context)
+      ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
+  if (notifier == null ||
+      notifier.value != null ||
+      pinnedThumbnails.get(id) != null) {
+    return Future.value();
   }
 
-  GlobalProgress.lockThumbLoading();
+  return notifier.value = Future(() async {
+    final plug = chooseNotificationPlug();
 
-  if (pinnedThumbnails.get(id) != null) {
-    GlobalProgress.unlockThumbLoading();
-    return;
-  }
-  final plug = chooseNotificationPlug();
+    final notif = await plug.newProgress(
+      "",
+      savingThumbNotifId,
+      groupNotifString,
+      notifChannelName,
+    );
 
-  final notif = await plug.newProgress(
-    "",
-    savingThumbNotifId,
-    groupNotifString,
-    notifChannelName,
-  );
+    notif.update(0, filename);
 
-  notif.update(0, filename);
+    final res = DisassembleResult.fromFilename(filename).maybeValue();
+    if (res != null) {
+      final client = BooruAPI.defaultClientForBooru(res.booru);
+      final api = BooruAPI.fromEnum(res.booru, client, PageSaver.noPersist());
 
-  final res = DisassembleResult.fromFilename(filename).maybeValue();
-  if (res != null) {
-    final client = BooruAPI.defaultClientForBooru(res.booru);
-    final api = BooruAPI.fromEnum(res.booru, client, PageSaver.noPersist());
+      try {
+        final post = await api.singlePost(res.id);
 
-    try {
-      final post = await api.singlePost(res.id);
+        final t = await GalleryManagementApi.current()
+            .thumbs
+            .saveFromNetwork(post.previewUrl, id);
 
-      final t = await GalleryManagementApi.current()
-          .thumbs
-          .saveFromNetwork(post.previewUrl, id);
+        thumbnails.delete(id);
+        pinnedThumbnails.add(id, t.path, t.differenceHash);
+      } catch (e, trace) {
+        Logger.root.warning("loadNetworkThumb", e, trace);
+      }
 
-      thumbnails.delete(id);
-      pinnedThumbnails.add(id, t.path, t.differenceHash);
-    } catch (e, trace) {
-      Logger.root.warning("loadNetworkThumb", e, trace);
+      client.close(force: true);
     }
 
-    client.close(force: true);
-  }
-
-  notif.done();
-
-  GlobalProgress.unlockThumbLoading();
+    notif.done();
+  }).whenComplete(() => notifier.value = null);
 }

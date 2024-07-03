@@ -8,11 +8,10 @@ import "dart:io";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
+import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
-import "package:path/path.dart";
-import "package:path_provider/path_provider.dart";
 
 class AndroidGalleryManagementApi implements GalleryManagementApi {
   const AndroidGalleryManagementApi();
@@ -27,20 +26,6 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
 
   @override
   FilesManagement get files => const AndroidFilesManagement();
-
-  @override
-  Future<String> ensureDownloadDirectoryExists(String site) async {
-    final downloadtd = Directory(
-      joinAll([(await getTemporaryDirectory()).path, "downloads"]),
-    );
-
-    final dirpath = joinAll([downloadtd.path, site]);
-    await downloadtd.create();
-
-    await Directory(dirpath).create();
-
-    return dirpath;
-  }
 
   void refreshFiles(String bucketId, SortingMode sortingMode) {
     _channel.invokeMethod("refreshFiles", {
@@ -167,6 +152,37 @@ class AndroidFilesManagement implements FilesManagement {
     );
 
     return Future.value();
+  }
+
+  @override
+  Future<void> copyMoveInternal({
+    required String relativePath,
+    required String volume,
+    required String dirName,
+    required List<String> internalPaths,
+  }) {
+    final List<String> images = [];
+    final List<String> videos = [];
+
+    for (final e in internalPaths) {
+      final type = PostContentType.fromUrl(e);
+      if (type == PostContentType.gif || type == PostContentType.image) {
+        images.add(e);
+      } else if (type == PostContentType.video) {
+        videos.add(e);
+      }
+    }
+
+    return _channel.invokeMethod(
+      "copyMoveInternal",
+      {
+        "dirName": dirName,
+        "relativePath": relativePath,
+        "images": images,
+        "videos": videos,
+        "volume": volume,
+      },
+    );
   }
 }
 

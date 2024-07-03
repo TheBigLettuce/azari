@@ -43,6 +43,9 @@ class LinuxGalleryPlug implements GalleryPlug {
   }
 
   @override
+  Stream<void>? get galleryTapDownEvents => null;
+
+  @override
   GalleryDirectory makeGalleryDirectory({
     required int thumbFileId,
     required String bucketId,
@@ -112,7 +115,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    String bucketId,
+    GalleryDirectory directory,
     String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
@@ -125,7 +128,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
     }
 
     return bindFiles = LinuxGalleryAPIFiles(
-      bucketIds: [bucketId],
+      directories: [directory],
       parent: this,
       type: type,
       directoryMetadata: directoryMetadata,
@@ -137,7 +140,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles joinedFiles(
-    List<String> bucketIds,
+    List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
@@ -148,7 +151,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
     }
 
     return bindFiles = LinuxGalleryAPIFiles(
-      bucketIds: bucketIds,
+      directories: directories,
       parent: this,
       type: GalleryFilesPageType.normal,
       directoryMetadata: directoryMetadata,
@@ -249,7 +252,7 @@ class LinuxGalleryDirectory extends GalleryDirectoryBase with GalleryDirectory {
 
 class LinuxGalleryAPIFiles implements GalleryAPIFiles {
   LinuxGalleryAPIFiles({
-    required this.bucketIds,
+    required this.directories,
     required this.parent,
     required this.type,
     required this.directoryMetadata,
@@ -259,7 +262,7 @@ class LinuxGalleryAPIFiles implements GalleryAPIFiles {
   });
 
   @override
-  final List<String> bucketIds;
+  final List<GalleryDirectory> directories;
 
   @override
   final GalleryFilesPageType type;
@@ -281,21 +284,25 @@ class LinuxGalleryAPIFiles implements GalleryAPIFiles {
 
   @override
   late final SortingResourceSource<int, GalleryFile> source =
-      _LinuxFilesSource(bucketIds, localTags);
+      _LinuxFilesSource(directories, localTags);
+
+  @override
+  MapFilesSourceTags sourceTags = MapFilesSourceTags();
 
   @override
   void close() {
     parent.bindFiles = null;
     source.destroy();
+    sourceTags.dispose();
   }
 }
 
 class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
-  _LinuxFilesSource(this.bucketIds, this.localTags);
+  _LinuxFilesSource(this.directories, this.localTags);
 
   final LocalTagsService localTags;
 
-  final List<String> bucketIds;
+  final List<GalleryDirectory> directories;
 
   @override
   bool get hasNext => false;
@@ -311,8 +318,8 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
     progress.inRefreshing = true;
 
     try {
-      for (final dirPath in bucketIds) {
-        final dir = Directory(dirPath);
+      for (final dirPath in directories) {
+        final dir = Directory(dirPath.bucketId);
         final exist = await dir.exists();
         if (!exist) {
           continue;
@@ -331,7 +338,7 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
             LinuxGalleryFile(
               tagsFlat: localTags.get(name).join(" "),
               id: 0,
-              bucketId: dirPath,
+              bucketId: dirPath.bucketId,
               name: name,
               isVideo: false,
               isGif: path.extension(name) == ".gif",
@@ -358,18 +365,13 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
   }
 
   @override
-  Future<int> clearRefreshSorting(
-    SortingMode sortingMode, [
-    bool silent = false,
-  ]) =>
-      clearRefresh();
+  SortingMode get sortingMode => SortingMode.none;
+
+  @override
+  set sortingMode(SortingMode s) {}
 
   @override
   Future<int> next() => Future.value(count);
-
-  @override
-  Future<int> nextSorting(SortingMode sortingMode, [bool silent = false]) =>
-      Future.value(count);
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -379,6 +381,9 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
     progress.close();
     backingStorage.destroy();
   }
+
+  @override
+  Future<int> clearRefreshSilent() => clearRefresh();
 }
 
 class LinuxGalleryFile extends FileBase with GalleryFile {

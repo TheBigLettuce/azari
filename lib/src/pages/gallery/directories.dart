@@ -7,23 +7,33 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/app_info.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/chained_filter.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
+import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
+import "package:gallery/src/net/booru/booru_api.dart";
+import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/gallery/blacklisted_directories.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/directories_actions.dart" as actions;
+import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
+import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
@@ -154,6 +164,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     });
 
     favoritesWatcher = favoriteFiles.watch((_) {
+      api.source.backingStorage.addAll([]);
       setState(() {});
     });
 
@@ -161,7 +172,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       api.source,
       ListStorage(),
       filter: (cells, mode, sorting, end, [data]) => (
-        cells.where((e) => e.name.contains(searchTextController.text)),
+        cells.where(
+          (e) =>
+              e.name.contains(searchTextController.text) ||
+              e.tag.contains(searchTextController.text),
+        ),
         null
       ),
       allowedFilteringModes: const {},
@@ -275,7 +290,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       }
     }
 
-    if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
+    if (noAuth.isEmpty &&
+        requireAuth.isNotEmpty &&
+        AppInfo().canAuthBiometric) {
       final success = await LocalAuthentication()
           .authenticate(localizedReason: l10n.changeGroupReason);
       if (!success) {
@@ -344,6 +361,36 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   // ignore: use_setters_to_change_properties
   void _add(GridSettingsData d) => gridSettings.current = d;
 
+  Future<List<BooruTag>> _completeDirectoryNameTag(String str) {
+    final m = <String, void>{};
+
+    return Future.value(
+      api.source.backingStorage
+          .map(
+            (e) {
+              if (e.tag.isNotEmpty &&
+                  e.tag.contains(str) &&
+                  !m.containsKey(e.tag)) {
+                m[e.tag] = null;
+                return e.tag;
+              }
+
+              if (e.name.startsWith(str) && !m.containsKey(e.name)) {
+                m[e.name] = null;
+
+                return e.name;
+              } else {
+                return null;
+              }
+            },
+          )
+          .where((e) => e != null)
+          .take(15)
+          .map((e) => BooruTag(e!, -1))
+          .toList(),
+    );
+  }
+
   Widget child(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
@@ -355,6 +402,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       child: GridFrame<GalleryDirectory>(
         key: state.gridKey,
         slivers: [
+          if (widget.nestedCallback != null)
+            SliverToBoxAdapter(
+              child: _LatestImagesWidget(
+                db: widget.db,
+                parent: api,
+                callback: widget.nestedCallback!,
+              ),
+            ),
           SegmentLayout(
             segments: _makeSegments(context),
             gridSeed: 1,
@@ -381,6 +436,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           search: BarSearchWidget.fromFilter(
             filter,
             textEditingController: searchTextController,
+            complete: _completeDirectoryNameTag,
             focus: searchFocus,
             trailingItems: [
               if (widget.callback != null)
@@ -449,6 +505,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     },
                     (s, v, t) => _addToGroup(context, s, v, t, l10n),
                     true,
+                    completeDirectoryNameTag: _completeDirectoryNameTag,
                   ),
                   actions.blacklist(
                     context,
@@ -525,6 +582,252 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           ),
         ),
     };
+  }
+}
+
+class _LatestImagesWidget extends StatefulWidget {
+  const _LatestImagesWidget({
+    // super.key,
+    required this.db,
+    required this.parent,
+    required this.callback,
+  });
+
+  final DbConn db;
+  final GalleryAPIDirectories parent;
+  final CallbackDescriptionNested callback;
+
+  @override
+  State<_LatestImagesWidget> createState() => __LatestImagesWidgetState();
+}
+
+class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
+  late final StreamSubscription<void> _directoryCapsChanged;
+
+  late final filesApi = GalleryAPIFiles.fake(
+    widget.db,
+    clearRefresh: () {
+      final c = <String, DirectoryMetadataData>{};
+
+      return GalleryHostApi().getPicturesDirectly(null, 20, true).then((l) {
+        final ll = _fromDirectoryFileFiltered(l, c);
+
+        if (ll.length < 10) {
+          return GalleryHostApi()
+              .getPicturesDirectly(null, 20, true)
+              .then((e) => ll + _fromDirectoryFileFiltered(l, c));
+        }
+
+        return ll;
+      });
+    },
+    parent: widget.parent,
+  );
+
+  late final gridSelection = GridSelection<GalleryFile>(
+    const [],
+    SelectionGlue.empty(context),
+    noAppBar: true,
+    source: filesApi.source.backingStorage,
+  );
+
+  final focus = FocusNode();
+
+  late final GridFunctionality<GalleryFile> functionality = GridFunctionality(
+    registerNotifiers: (child) => GridExtrasNotifier(
+      data: GridExtrasData(
+        gridSelection,
+        functionality,
+        const GridDescription<GalleryFile>(
+          actions: [],
+          gridSeed: 0,
+          keybindsDescription: "",
+        ),
+        focus,
+      ),
+      child: FilesDataNotifier(
+        api: filesApi,
+        nestedCallback: widget.callback,
+        child: child,
+      ),
+    ),
+    source: filesApi.source,
+    selectionGlue: SelectionGlue.empty(context),
+  );
+
+  final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
+  final controller = ScrollController();
+
+  List<GalleryFile> _fromDirectoryFileFiltered(
+    List<DirectoryFile?> l,
+    Map<String, DirectoryMetadataData> c,
+  ) {
+    return l
+        .where(
+          (e) => GalleryFilesPageType.filterAuthBlur(
+            c,
+            e,
+            widget.db.directoryTags,
+            widget.db.directoryMetadata,
+          ),
+        )
+        .map((e) => e!.toAndroidFile(widget.db.localTags.get(e.name)))
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _directoryCapsChanged = widget.db.directoryMetadata.watch((_) {
+      filesApi.source.clearRefresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _directoryCapsChanged.cancel();
+    focus.dispose();
+    filesApi.close();
+    scrollNotifier.dispose();
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return GridExtrasNotifier(
+      data: GridExtrasData(
+        gridSelection,
+        functionality,
+        const GridDescription<GalleryFile>(
+          actions: [],
+          gridSeed: 0,
+          keybindsDescription: "",
+        ),
+        focus,
+      ),
+      child: GridScrollNotifier(
+        scrollNotifier: scrollNotifier,
+        controller: controller,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: theme.colorScheme.surfaceContainerLow.withOpacity(0.8),
+            ),
+            child: FadingPanel(
+              label: "Latest", // TODO: change
+              source: filesApi.source,
+              enableHide: false,
+              horizontalPadding: _LatestList.listPadding,
+              childSize: _LatestList.size,
+              child: _LatestList(
+                source: filesApi.source,
+                functionality: functionality,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LatestList extends StatefulWidget {
+  const _LatestList({
+    // super.key,
+    required this.source,
+    required this.functionality,
+  });
+
+  final ResourceSource<int, GalleryFile> source;
+  final GridFunctionality<GalleryFile> functionality;
+
+  static const size = Size(140 / 1.5, 140 + 16);
+  static const listPadding = EdgeInsets.symmetric(horizontal: 12);
+
+  @override
+  State<_LatestList> createState() => __LatestListState();
+}
+
+class __LatestListState extends State<_LatestList> {
+  ResourceSource<int, GalleryFile> get source => widget.source;
+
+  late final StreamSubscription<void> subscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = source.backingStorage.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CellProvider<GalleryFile>(
+      getCell: source.forIdxUnsafe,
+      child: SizedBox(
+        width: double.infinity,
+        height: _LatestList.size.height,
+        child: WrapFutureRestartable<int>(
+          bottomSheetVariant: true,
+          placeholder: const ShimmerPlaceholdersHorizontal(
+            childSize: _LatestList.size,
+            padding: _LatestList.listPadding,
+          ),
+          newStatus: () {
+            if (source.backingStorage.isNotEmpty) {
+              return Future.value(source.backingStorage.count);
+            }
+
+            return source.clearRefresh();
+          },
+          builder: (context, _) {
+            return ListView.builder(
+              padding: _LatestList.listPadding,
+              scrollDirection: Axis.horizontal,
+              itemCount: source.backingStorage.count,
+              itemBuilder: (context, i) {
+                final cell = source.backingStorage[i];
+
+                return InkWell(
+                  onTap: () {
+                    cell.onPress(context, widget.functionality, cell, i);
+                  },
+                  borderRadius: BorderRadius.circular(15),
+                  child: SizedBox(
+                    width: _LatestList.size.width,
+                    child: GridCell(
+                      cell: cell,
+                      hideTitle: false,
+                      imageAlign: Alignment.topCenter,
+                      overrideDescription: const CellStaticData(
+                        ignoreSwipeSelectGesture: true,
+                        alignTitleToTopLeft: true,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

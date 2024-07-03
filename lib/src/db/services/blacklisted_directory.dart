@@ -39,7 +39,15 @@ abstract class BlacklistedDirectoryData
     final db = DatabaseConnectionNotifier.of(context);
 
     final filesApi = api.files(
-      bucketId,
+      PlainGalleryDirectory(
+        bucketId: bucketId,
+        name: name,
+        tag: "",
+        volumeName: "",
+        relativeLoc: "",
+        lastModified: 0,
+        thumbFileId: 0,
+      ),
       name,
       GalleryFilesPageType.normal,
       db.directoryTags,
@@ -57,6 +65,7 @@ abstract class BlacklistedDirectoryData
           return GalleryFiles(
             api: filesApi,
             dirName: name,
+            directory: null,
             bucketId: bucketId,
             secure: true,
             generateGlue: glue,

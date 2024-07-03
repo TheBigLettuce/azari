@@ -50,6 +50,8 @@ class BooruRestoredPage extends StatefulWidget {
     required this.tags,
     this.wrapScaffold = false,
     required this.saveSelectedPage,
+    this.thenMoveTo,
+    this.trySearchBookmarkByTags = false,
   });
 
   final String? name;
@@ -60,6 +62,9 @@ class BooruRestoredPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final bool wrapScaffold;
+
+  final PathVolume? thenMoveTo;
+  final bool trySearchBookmarkByTags;
 
   final DbConn db;
 
@@ -89,22 +94,27 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   final _textKey = GlobalKey<__AppBarTextState>();
 
-  RestoredBooruPageState makePageEntry(String name) {
+  RestoredBooruPageState makePageEntry(
+    String name,
+    bool addToBookmarks,
+    SafeMode? safeMode,
+    String tags,
+  ) {
     final secondary = widget.db.secondaryGrid(
       widget.booru,
       name,
-      widget.overrideSafeMode,
-      widget.name == null,
+      safeMode,
+      !addToBookmarks,
     );
 
     return RestoredBooruPageState(
       widget.booru,
-      widget.tags,
+      tags,
       secondary.tagManager,
       secondary,
       hiddenBooruPost,
       gridBookmarks,
-      widget.name != null,
+      addToBookmarks,
     );
   }
 
@@ -112,16 +122,36 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   void initState() {
     super.initState();
 
-    final name =
-        widget.name ?? DateTime.now().microsecondsSinceEpoch.toString();
+    final tagsTrimmed = widget.tags.trim();
+
+    final bookmarkByName = widget.trySearchBookmarkByTags
+        ? gridBookmarks.getFirstByTags(tagsTrimmed)
+        : null;
+
+    final String name;
+    if (bookmarkByName == null) {
+      name = widget.name ?? DateTime.now().microsecondsSinceEpoch.toString();
+    } else {
+      name = bookmarkByName.name;
+    }
 
     widget.saveSelectedPage(name);
 
-    pagingState =
-        widget.pagingRegistry?.getOrRegister(name, () => makePageEntry(name)) ??
-            makePageEntry(name);
+    pagingState = widget.pagingRegistry?.getOrRegister(
+          name,
+          () => makePageEntry(
+              name,
+              bookmarkByName != null || widget.name != null,
+              bookmarkByName != null ? null : widget.overrideSafeMode,
+              tagsTrimmed),
+        ) ??
+        makePageEntry(
+            name,
+            bookmarkByName != null || widget.name != null,
+            bookmarkByName != null ? null : widget.overrideSafeMode,
+            tagsTrimmed);
 
-    pagingState.tagManager.latest.add(widget.tags);
+    pagingState.tagManager.latest.add(tagsTrimmed);
 
     if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
       gridBookmarks.add(
@@ -129,7 +159,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           booru: widget.booru,
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
-          tags: widget.tags,
+          tags: tagsTrimmed,
           thumbnails: const [],
         ),
       );
@@ -236,9 +266,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     super.dispose();
   }
 
-  void _download(int i) => source
-      .forIdx(i)
-      ?.download(DownloadManager.of(context), PostTags.fromContext(context));
+  void _download(int i) => source.forIdx(i)?.download(
+        DownloadManager.of(context),
+        PostTags.fromContext(context),
+        widget.thenMoveTo,
+      );
 
   void _onTagPressed(
     BuildContext context,
@@ -360,7 +392,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   ),
                   description: GridDescription(
                     actions: [
-                      actions.download(context, api.booru),
+                      actions.download(context, api.booru, widget.thenMoveTo),
                       actions.favorites(
                         context,
                         favoritePosts,

@@ -7,7 +7,7 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/build_theme.dart";
 import "package:gallery/src/db/services/services.dart";
 
 /// RestartWidget is needed for changing the boorus in the settings.

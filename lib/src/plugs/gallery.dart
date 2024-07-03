@@ -7,10 +7,12 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
-import "package:gallery/restart_widget.dart";
+import "package:gallery/init_main/app_info.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/gallery_thumbnail_provider.dart";
 import "package:gallery/src/db/services/post_tags.dart";
+import "package:gallery/src/db/services/resource_source/basic.dart";
+import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
@@ -20,6 +22,7 @@ import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/gallery/dummy_.dart"
     if (dart.library.io) "package:gallery/src/plugs/gallery/io.dart"
     if (dart.library.html) "package:gallery/src/plugs/gallery/web.dart";
@@ -49,7 +52,7 @@ part "gallery_file.dart";
 
 GalleryPlug chooseGalleryPlug() => getApi();
 
-void initalizeGalleryPlug(bool temporary) => initApi(temporary);
+void initGalleryPlug(bool temporary) => initApi(temporary);
 
 abstract interface class GalleryPlug with GalleryObjFactoryMixin {
   GalleryAPIDirectories galleryApi(
@@ -61,6 +64,8 @@ abstract interface class GalleryPlug with GalleryObjFactoryMixin {
   void notify(String? target);
   bool get temporary;
   Future<int> get version;
+
+  Stream<void>? get galleryTapDownEvents;
 }
 
 abstract class GalleryAPIDirectories {
@@ -70,7 +75,7 @@ abstract class GalleryAPIDirectories {
   GalleryAPIFiles? get bindFiles;
 
   GalleryAPIFiles files(
-    String bucketId,
+    GalleryDirectory directory,
     String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
@@ -80,7 +85,7 @@ abstract class GalleryAPIDirectories {
   );
 
   GalleryAPIFiles joinedFiles(
-    List<String> bucketIds,
+    List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,
@@ -90,21 +95,197 @@ abstract class GalleryAPIDirectories {
   void close();
 }
 
+class PlainGalleryDirectory extends GalleryDirectoryBase with GalleryDirectory {
+  const PlainGalleryDirectory({
+    required super.bucketId,
+    required super.name,
+    required super.tag,
+    required super.volumeName,
+    required super.relativeLoc,
+    required super.lastModified,
+    required super.thumbFileId,
+  });
+}
+
+class _FakeGalleryAPIFiles implements GalleryAPIFiles {
+  _FakeGalleryAPIFiles(
+    Future<List<GalleryFile>> Function() clearRefresh,
+    this.directoryMetadata,
+    this.directoryTag,
+    this.favoriteFile,
+    this.localTags,
+    this.parent,
+  ) : source = _GenericListSource(clearRefresh);
+
+  @override
+  List<GalleryDirectory> get directories => const [
+        PlainGalleryDirectory(
+          bucketId: "latest",
+          name: "latest",
+          tag: "",
+          volumeName: "",
+          relativeLoc: "",
+          lastModified: 0,
+          thumbFileId: 0,
+        ),
+      ];
+
+  @override
+  final DirectoryMetadataService directoryMetadata;
+
+  @override
+  final DirectoryTagService directoryTag;
+
+  @override
+  final FavoriteFileService favoriteFile;
+
+  @override
+  final LocalTagsService localTags;
+
+  @override
+  final GalleryAPIDirectories parent;
+
+  @override
+  final SortingResourceSource<int, GalleryFile> source;
+
+  @override
+  GalleryFilesPageType get type => GalleryFilesPageType.normal;
+
+  @override
+  void close() {
+    source.destroy();
+  }
+
+  @override
+  FilesSourceTags get sourceTags => const _FakeSourceTags();
+}
+
+class _FakeSourceTags implements FilesSourceTags {
+  const _FakeSourceTags();
+
+  @override
+  List<String> get current => const [];
+
+  @override
+  StreamSubscription<List<String>> watch(void Function(List<String> p1) f) =>
+      const Stream<List<String>>.empty().listen(f);
+}
+
+class _GenericListSource extends GenericListSource<GalleryFile>
+    implements SortingResourceSource<int, GalleryFile> {
+  _GenericListSource(
+    super.clearRefresh, {
+    super.next,
+    super.watchCount,
+  });
+
+  @override
+  Future<int> clearRefreshSilent() => clearRefresh();
+
+  @override
+  SortingMode get sortingMode => SortingMode.none;
+
+  @override
+  set sortingMode(SortingMode s) {}
+}
+
 abstract class GalleryAPIFiles {
+  factory GalleryAPIFiles.fake(
+    DbConn db, {
+    required Future<List<GalleryFile>> Function() clearRefresh,
+    required GalleryAPIDirectories parent,
+  }) {
+    return _FakeGalleryAPIFiles(
+      clearRefresh,
+      db.directoryMetadata,
+      db.directoryTags,
+      db.favoriteFiles,
+      db.localTags,
+      parent,
+    );
+  }
+
   DirectoryTagService get directoryTag;
   DirectoryMetadataService get directoryMetadata;
   FavoriteFileService get favoriteFile;
   LocalTagsService get localTags;
 
   SortingResourceSource<int, GalleryFile> get source;
+  FilesSourceTags get sourceTags;
 
   GalleryFilesPageType get type;
 
   GalleryAPIDirectories get parent;
 
-  List<String> get bucketIds;
+  List<GalleryDirectory> get directories;
 
   void close();
+}
+
+abstract class FilesSourceTags {
+  List<String> get current;
+  StreamSubscription<List<String>> watch(void Function(List<String>) f);
+}
+
+class MapFilesSourceTags implements FilesSourceTags {
+  MapFilesSourceTags();
+
+  final Map<String, int> _map = {};
+  List<String>? _sorted;
+  final _events = StreamController<List<String>>.broadcast();
+
+  void addAll(List<String> tags) {
+    for (final tag in tags) {
+      final v = _map.putIfAbsent(tag, () => 0);
+      _map[tag] = v + 1;
+    }
+  }
+
+  void notify() {
+    _events.add(_sortMap());
+  }
+
+  void clear() {
+    _sorted = null;
+    _map.clear();
+  }
+
+  void dispose() {
+    _events.close();
+  }
+
+  @override
+  List<String> get current => _sortMap();
+
+  List<String> _sortMap() {
+    if (_sorted != null) {
+      return _sorted!;
+    }
+
+    if (_map.length <= 15) {
+      final l = _map.entries.toList()
+        ..sort((e1, e2) {
+          return e2.value.compareTo(e1.value);
+        });
+
+      return l.map((e) => e.key).toList();
+    }
+
+    final entries = _map.entries
+        .where(
+          (e) => e.value != (1 + (_map.length * 0.02)),
+        )
+        .take(1000)
+        .toList();
+
+    entries.sort((e1, e2) => e2.value.compareTo(e1.value));
+
+    return _sorted = entries.take(15).map((e) => e.key).toList();
+  }
+
+  @override
+  StreamSubscription<List<String>> watch(void Function(List<String> p1) f) =>
+      _events.stream.listen(f);
 }
 
 enum GalleryFilesPageType {
@@ -114,6 +295,32 @@ enum GalleryFilesPageType {
 
   bool isFavorites() => this == favorites;
   bool isTrash() => this == trash;
+
+  static bool filterAuthBlur(
+    Map<String, DirectoryMetadataData> m,
+    DirectoryFile? dir,
+    DirectoryTagService directoryTag,
+    DirectoryMetadataService directoryMetadata,
+  ) {
+    final segment = GalleryDirectories.segmentCell(
+      dir!.bucketName,
+      dir.bucketId,
+      directoryTag,
+    );
+
+    DirectoryMetadataData? data = m[segment];
+    if (data == null) {
+      final d = directoryMetadata.get(segment);
+      if (d == null) {
+        return true;
+      }
+
+      data = d;
+      m[segment] = d;
+    }
+
+    return !data.requireAuth && !data.blur;
+  }
 }
 
 mixin GalleryObjFactoryMixin {

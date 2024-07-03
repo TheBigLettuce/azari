@@ -14,11 +14,14 @@ class AndroidProgress implements NotificationProgress {
     required this.id,
     required this.name,
     required this.channelName,
+    required this.body,
   });
+
   final String group;
   final int id;
   final String name;
   final String channelName;
+  final String? body;
 
   int total = 0;
   int _step = 0;
@@ -27,8 +30,8 @@ class AndroidProgress implements NotificationProgress {
   void _showNotification(int progress, String name) {
     FlutterLocalNotificationsPlugin().show(
       id,
-      group,
       name,
+      body,
       NotificationDetails(
         android: AndroidNotificationDetails(
           channelName.toLowerCase(),
@@ -87,14 +90,16 @@ class AndroidNotifications implements NotificationPlug {
     String name,
     int id,
     String group,
-    String channelName,
-  ) =>
+    String channelName, {
+    String? body,
+  }) =>
       Future.value(
         AndroidProgress(
           group: group,
           id: id,
           name: name,
           channelName: channelName,
+          body: body,
         ),
       );
 }

@@ -9,6 +9,7 @@ import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:meta/meta.dart";
 
 class GenericListSource<V> implements ResourceSource<int, V> {
   GenericListSource(
@@ -185,6 +186,7 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
     _events.add(count);
   }
 
+  @mustCallSuper
   @override
   void destroy() {
     _events.close();

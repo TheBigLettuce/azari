@@ -10,9 +10,9 @@ _GalleryImpl? _global;
 extension DirectoryFileToAndroidFile on DirectoryFile {
   static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
-  GalleryFile toAndroidFile(LocalTagsService localTags) {
+  GalleryFile toAndroidFile(List<String> tags) {
     return AndroidGalleryFile(
-      tagsFlat: localTags.get(name).join(" "),
+      tagsFlat: tags.join(" "),
       id: id,
       bucketId: bucketId,
       name: name,
@@ -101,6 +101,7 @@ class _GalleryImpl implements GalleryApi {
     if (f.isEmpty && !inRefresh) {
       api.source.progress.inRefreshing = false;
       api.source.backingStorage.addAll([]);
+      api.sourceTags.notify();
 
       return false;
     } else if (f.isEmpty) {
@@ -111,30 +112,34 @@ class _GalleryImpl implements GalleryApi {
       final c = <String, DirectoryMetadataData>{};
 
       api.source.backingStorage.addAll(
-        f.where((dir) {
-          final segment = GalleryDirectories.segmentCell(
-            dir!.bucketName,
-            dir.bucketId,
+        f
+            .where(
+          (dir) => GalleryFilesPageType.filterAuthBlur(
+            c,
+            dir,
             api.directoryTag,
-          );
+            api.directoryMetadata,
+          ),
+        )
+            .map((e) {
+          final tags = api.localTags.get(e!.name);
+          final f = e.toAndroidFile(tags);
 
-          DirectoryMetadataData? data = c[segment];
-          if (data == null) {
-            final d = api.directoryMetadata.get(segment);
-            if (d == null) {
-              return true;
-            }
+          api.sourceTags.addAll(tags);
 
-            data = d;
-            c[segment] = d;
-          }
-
-          return !data.requireAuth && !data.blur;
-        }).map((e) => e!.toAndroidFile(api.localTags)),
+          return f;
+        }),
       );
     } else {
       api.source.backingStorage.addAll(
-        f.map((e) => e!.toAndroidFile(api.localTags)),
+        f.map((e) {
+          final tags = api.localTags.get(e!.name);
+          final f = e.toAndroidFile(tags);
+
+          api.sourceTags.addAll(tags);
+
+          return f;
+        }),
         true,
       );
     }
@@ -199,5 +204,10 @@ class _GalleryImpl implements GalleryApi {
       NetworkStatus.g.hasInternet = hasInternet;
       NetworkStatus.g.notify?.call();
     }
+  }
+
+  @override
+  void galleryTapDownEvent() {
+    AndroidGallery._tapDownEvents.add(null);
   }
 }

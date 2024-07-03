@@ -60,6 +60,9 @@ class DummyGallery implements GalleryPlug {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Stream<void>? get galleryTapDownEvents => null;
 }
 
 class _DummyDirectories implements GalleryAPIDirectories {
@@ -81,7 +84,7 @@ class _DummyDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles files(
-    String bucketId,
+    GalleryDirectory directory,
     String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
@@ -94,7 +97,7 @@ class _DummyDirectories implements GalleryAPIDirectories {
 
   @override
   GalleryAPIFiles joinedFiles(
-    List<String> bucketIds,
+    List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoriteFileService favoriteFile,

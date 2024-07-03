@@ -8,7 +8,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/build_theme.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -328,20 +328,23 @@ class _BottomNavigationBar extends StatelessWidget {
       return _NavBar(
         noNavigationIcons: callback != null,
         icons: animatedIcons,
-        child: NavigationBar(
-          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-          backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
-          selectedIndex: currentRoute.index,
-          onDestinationSelected: (i) =>
-              onDestinationSelected(context, CurrentRoute.fromIndex(i)),
-          destinations: callback != null
-              ? const []
-              : animatedIcons.icons(
-                  context,
-                  booru,
-                  showAnimeMangaPages,
-                ),
-        ),
+        child: callback != null
+            ? const SizedBox.shrink()
+            : NavigationBar(
+                labelBehavior:
+                    NavigationDestinationLabelBehavior.onlyShowSelected,
+                backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
+                selectedIndex: currentRoute.index,
+                onDestinationSelected: (i) =>
+                    onDestinationSelected(context, CurrentRoute.fromIndex(i)),
+                destinations: callback != null
+                    ? const []
+                    : animatedIcons.icons(
+                        context,
+                        booru,
+                        showAnimeMangaPages,
+                      ),
+              ),
       );
     }
   }

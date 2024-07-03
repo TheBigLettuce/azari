@@ -599,6 +599,11 @@ class GridScrollNotifier extends InheritedWidget {
 
   static void scrollToOf<T extends CellBase>(BuildContext context, int i) {
     final controller = of(context);
+
+    if (!controller.hasClients) {
+      return;
+    }
+
     final extra = GridExtrasNotifier.of<T>(context);
     final config = GridConfiguration.of(context);
 

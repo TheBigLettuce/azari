@@ -122,7 +122,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     _sorting = s;
 
     if (_original is SortingResourceSource<K, V>) {
-      _original.clearRefreshSorting(sortingMode);
+      _original.sortingMode = sortingMode;
     } else {
       clearRefresh();
     }

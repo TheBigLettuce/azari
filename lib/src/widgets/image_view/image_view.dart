@@ -8,6 +8,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
@@ -22,6 +23,7 @@ import "package:gallery/src/widgets/image_view/mixins/palette.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
+import "package:gallery/src/widgets/tags_list_widget.dart";
 import "package:logging/logging.dart";
 import "package:wakelock_plus/wakelock_plus.dart";
 
@@ -221,6 +223,8 @@ class ImageViewState extends State<ImageView>
 
   int _incr = 0;
 
+  GlobalProgressTab? globalProgressTab;
+
   @override
   void initState() {
     super.initState();
@@ -265,6 +269,16 @@ class ImageViewState extends State<ImageView>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (globalProgressTab != null) {
+      globalProgressTab = GlobalProgressTab.maybeOf(context);
+      globalProgressTab?.loadTags().addListener(_onTagRefresh);
+    }
+  }
+
+  @override
   void dispose() {
     animationController.dispose();
     bottomSheetController.dispose();
@@ -279,6 +293,8 @@ class ImageViewState extends State<ImageView>
 
     scrollController.dispose();
     mainFocus.dispose();
+
+    globalProgressTab?.loadTags().removeListener(_onTagRefresh);
 
     super.dispose();
   }
@@ -338,9 +354,7 @@ class ImageViewState extends State<ImageView>
   }
 
   void _onTagRefresh() {
-    try {
-      setState(() {});
-    } catch (_) {}
+    setState(() {});
   }
 
   void _onPageChanged(int index) {
@@ -413,7 +427,6 @@ class ImageViewState extends State<ImageView>
         controller: animationController,
         gridContext: widget.gridContext,
         key: wrapNotifiersKey,
-        onTagRefresh: _onTagRefresh,
         currentCell: drawCell(currentPage),
         child: WrapImageViewTheme(
           key: wrapThemeKey,

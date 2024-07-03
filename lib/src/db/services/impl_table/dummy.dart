@@ -11,7 +11,7 @@ import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
 
-Future<DownloadManager> init(ServicesImplTable db) =>
+Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
     throw UnimplementedError();
 
 ServicesImplTable getApi() => DummyServicesImplTable();

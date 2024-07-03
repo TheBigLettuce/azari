@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:flutter/foundation.dart";
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
@@ -139,35 +141,25 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
       PhotoViewGalleryPageOptions.customChild(
         gestureDetectorBehavior: HitTestBehavior.translucent,
         disableGestures: true,
-        filterQuality: FilterQuality.high,
         child: KeyedSubtree(
           key: key,
           child: Center(
             child: SizedBox(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
-              child: AspectRatio(
-                aspectRatio: MediaQuery.of(context).size.aspectRatio,
-                child: InteractiveViewer(
-                  trackpadScrollCausesScale: true,
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: size.aspectRatio == 0
-                          ? MediaQuery.of(context).size.aspectRatio
-                          : size.aspectRatio,
-                      child: AndroidView(
-                        viewType: "imageview",
-                        hitTestBehavior:
-                            PlatformViewHitTestBehavior.transparent,
-                        creationParams: {
-                          "uri": uri,
-                          if (isGif) "gif": "",
-                        },
-                        creationParamsCodec: const StandardMessageCodec(),
-                      ),
-                    ),
+              child: AndroidView(
+                viewType: "imageview",
+                hitTestBehavior: PlatformViewHitTestBehavior.translucent,
+                gestureRecognizers: {
+                  Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer(),
                   ),
-                ),
+                },
+                creationParams: {
+                  "uri": uri,
+                  if (isGif) "gif": "",
+                },
+                creationParamsCodec: const StandardMessageCodec(),
               ),
             ),
           ),

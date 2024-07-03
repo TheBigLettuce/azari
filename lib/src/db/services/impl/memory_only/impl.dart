@@ -39,7 +39,7 @@ class MemoryOnlyServicesImplTable
 
   @override
   final DownloadFileService downloads = MemoryDownloadFileService();
-  late final DownloadManager _downloadManager = DownloadManager(downloads);
+  late final DownloadManager _downloadManager = MemoryOnlyDownloadManager("");
 
   @override
   final SettingsService settings = MemorySettingsService();
@@ -1742,6 +1742,12 @@ class MemoryDirectoryTagService implements DirectoryTagService {
 
   @override
   String? get(String bucketId) => _val[bucketId];
+
+  @override
+  bool searchByTag(String tag) {
+    // TODO: implement searchByTag
+    throw UnimplementedError();
+  }
 }
 
 class PlainBlacklistedDirectoryData extends BlacklistedDirectoryData {
@@ -1983,6 +1989,12 @@ class MemoryGridStateBooruService implements GridBookmarkService {
   @override
   List<GridBookmark> firstNumber(int n) {
     // TODO: implement firstNumber
+    throw UnimplementedError();
+  }
+
+  @override
+  GridBookmark? getFirstByTags(String tags) {
+    // TODO: implement getFirstByTags
     throw UnimplementedError();
   }
 }

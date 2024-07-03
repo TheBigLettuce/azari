@@ -8,7 +8,10 @@ package lol.bruh19.azari.gallery
 import android.R
 import android.app.Activity
 import android.app.WallpaperManager
+import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
@@ -22,6 +25,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.WindowManager
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -33,6 +37,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import lol.bruh19.azari.gallery.MainActivity.Companion.constructRelPath
+import okio.use
+import java.io.File
 
 data class RenameOp(val uri: Uri, val newName: String, val notify: Boolean)
 
@@ -513,6 +520,51 @@ class EngineBindings(
                     }
                 }
 
+                "copyMoveInternal" -> {
+                    val relativePath = call.argument<String>("relativePath")!!
+                    val volume = call.argument<String>("volume")!!
+                    val dirName = call.argument<String>("dirName")!!
+                    val images = call.argument<List<String>>("images")!!
+                    val videos = call.argument<List<String>>("videos")!!
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            for (e in videos) {
+                                copyFileInternal(
+                                    contentResolver = context.contentResolver,
+                                    internalFile = e,
+                                    volumeName = volume,
+                                    deleteAfter = true,
+                                    dest = relativePath,
+                                    isImage = false,
+                                )
+                            }
+
+                            for (e in images) {
+                                copyFileInternal(
+                                    contentResolver = context.contentResolver,
+                                    internalFile = e,
+                                    volumeName = volume,
+                                    deleteAfter = true,
+                                    dest = relativePath,
+                                    isImage = true,
+                                )
+                            }
+
+                            context.runOnUiThread {
+                                galleryApi.notify(dirName) {
+
+                                }
+                            }
+                            result.success(null)
+                        } catch (e: Exception) {
+                            Log.i("copyMoveInternal", e.toString())
+                            result.error(e.toString(), null, null)
+                        }
+
+                    }
+                }
+
                 "copyMoveFiles" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         copyFilesMux.lock()
@@ -702,6 +754,103 @@ class EngineBindings(
     }
 }
 
+private fun copyFileInternal(
+    contentResolver: ContentResolver,
+    internalFile: String,
+    volumeName: String?,
+    dest: String,
+    deleteAfter: Boolean,
+    isImage: Boolean,
+) {
+    val file = File(internalFile)
+
+    file.inputStream().use { stream ->
+//            if (!it.moveToFirst()) {
+//                return@use
+//            }
+
+//            if (newDir) {
+//                if (newDirIsLocal) {
+//                    val file = java.io.File(dest, it.getString(0))
+//                    if (!file.createNewFile()) {
+//                        throw Exception("file exists")
+//                    }
+//
+//                    file.outputStream().use { out ->
+//                        stream.transferTo(out)
+//                        out.flush()
+//                        out.fd.sync()
+//                    }
+//
+//                    file.setLastModified(it.getLong(1))
+//
+//                    return
+//                }
+
+//                DocumentFile.fromTreeUri(context, Uri.parse(dest))
+//                    ?.run {
+//                        if (this.isFile || !this.canWrite()) {
+//                            return@use
+//                        }
+//
+//                        val file = this.createFile(mimeType, it.getString(0)) ?: return@use
+//                        contentResolver.openOutputStream(file.uri)?.use { out ->
+//                            stream.transferTo(out)
+//                            if (deleteAfter) {
+//                                contentResolver.delete(e, null)
+//                            }
+//                        }
+//
+//                    }
+//
+//                return
+//            }
+
+        val details = ContentValues().apply {
+            put(
+                MediaStore.MediaColumns.DISPLAY_NAME,
+                file.name,
+            )
+            put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                dest
+            )
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+
+        val resultUri =
+            if (isImage) {
+                contentResolver.insert(
+                    MediaStore.Images.Media.getContentUri(
+                        volumeName!!
+                    ), details
+                )
+            } else {
+                contentResolver.insert(
+                    MediaStore.Video.Media.getContentUri(
+                        volumeName!!
+                    ), details
+                )
+            }
+
+        if (resultUri == null) {
+            return@use
+        }
+
+        contentResolver.openOutputStream(resultUri)?.use { out ->
+            stream.transferTo(out)
+        }
+
+        details.clear()
+        details.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        contentResolver.update(resultUri, details, null, null)
+    }
+
+    if (deleteAfter) {
+        file.delete()
+    }
+}
+
 internal class GalleryHostApiImpl(private val engineBindings: EngineBindings) : GalleryHostApi {
     override fun getPicturesDirectly(
         dir: String?,
@@ -709,16 +858,15 @@ internal class GalleryHostApiImpl(private val engineBindings: EngineBindings) : 
         onlyLatest: Boolean,
         callback: (Result<List<DirectoryFile>>) -> Unit
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            engineBindings.mover.refreshFilesDirectly(
-                dir = dir
-                    ?: "",
-                limit = limit,
-                type = if (onlyLatest) LoadMediaType.Latest else LoadMediaType.Normal,
-                sortingMode = FilesSortingMode.None,
-            ) { list, empty, inRefresh ->
-                callback(Result.success(list))
-            }
+
+        engineBindings.mover.refreshFilesDirectly(
+            dir = dir
+                ?: "",
+            limit = limit,
+            type = if (onlyLatest) LoadMediaType.Latest else LoadMediaType.Normal,
+            sortingMode = FilesSortingMode.None,
+        ) { list, empty, inRefresh ->
+            callback(Result.success(list))
         }
     }
 

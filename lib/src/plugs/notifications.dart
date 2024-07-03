@@ -19,8 +19,9 @@ abstract class NotificationPlug {
     String name,
     int id,
     String group,
-    String channelName,
-  );
+    String channelName, {
+    String? body,
+  });
 }
 
 NotificationPlug chooseNotificationPlug() => getApi();

@@ -115,7 +115,9 @@ mixin GalleryFile
                   (selected) {
                     moveOrCopyFnc(
                       context,
-                      api.bucketIds.length == 1 ? api.bucketIds.first : "",
+                      api.directories.length == 1
+                          ? api.directories.first.bucketId
+                          : "",
                       [this],
                       false,
                       tagManager,
@@ -130,7 +132,9 @@ mixin GalleryFile
                   (selected) {
                     moveOrCopyFnc(
                       context,
-                      api.bucketIds.length == 1 ? api.bucketIds.first : "",
+                      api.directories.length == 1
+                          ? api.directories.first.bucketId
+                          : "",
                       [this],
                       true,
                       tagManager,
@@ -446,12 +450,15 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 children: [
                   IconButton.filledTonal(
                     onPressed: () {
-                      final notifier = TagRefreshNotifier.maybeOf(context);
+                      final notifier =
+                          GlobalProgressTab.maybeOf(context)?.loadTags();
                       final db =
                           DatabaseConnectionNotifier.of(context).localTags;
 
                       db.delete(filename);
-                      notifier?.call();
+
+                      notifier?.value = Future(() {})
+                          .whenComplete(() => notifier.value = null);
                     },
                     icon: const Icon(Icons.delete_rounded),
                     visualDensity: VisualDensity.compact,

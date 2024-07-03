@@ -7,25 +7,23 @@ part of "android_api_directories.dart";
 
 class _JoinedDirectories extends _AndroidGalleryFiles {
   _JoinedDirectories({
-    required this.directories,
+    required super.directories,
     required super.parent,
     required super.source,
     required super.directoryMetadata,
     required super.directoryTag,
     required super.favoriteFile,
     required super.localTags,
+    required super.sourceTags,
   }) : super(
-          bucketId: "",
           type: GalleryFilesPageType.normal,
           target: "joinedDir",
         );
 
-  final List<String> directories;
-
   @override
   bool isBucketId(String dirId) {
     for (final d in directories) {
-      if (d == dirId) {
+      if (d.bucketId == dirId) {
         return true;
       }
     }
@@ -33,12 +31,14 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     return false;
   }
 
-  @override
-  List<String> get bucketIds => directories;
+  // @override
+  // List<String> get bucketIds => directories;
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
   _AndroidGalleryFiles({
+    required this.directories,
+    required this.sourceTags,
     required this.localTags,
     required this.favoriteFile,
     required this.directoryMetadata,
@@ -47,9 +47,8 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
     required this.type,
     required this.parent,
     required this.target,
-    required String bucketId,
-  })  : startTime = DateTime.now().millisecondsSinceEpoch,
-        _bucketId = bucketId;
+    // required String bucketId,
+  }) : startTime = DateTime.now().millisecondsSinceEpoch;
 
   @override
   final GalleryFilesPageType type;
@@ -57,13 +56,13 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   @override
   final _AndroidGallery parent;
 
-  final String _bucketId;
+  // final String _bucketId;
   final int startTime;
   final String target;
 
   bool isThumbsLoading = false;
 
-  bool isBucketId(String bucketId) => _bucketId == bucketId;
+  bool isBucketId(String bucketId) => directories.first.bucketId == bucketId;
 
   @override
   final _AndroidFileSourceJoined source;
@@ -72,6 +71,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   void close() {
     parent.bindFiles = null;
     source.destroy();
+    sourceTags.dispose();
   }
 
   @override
@@ -87,24 +87,45 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   final LocalTagsService localTags;
 
   @override
-  List<String> get bucketIds => [_bucketId];
+  final MapFilesSourceTags sourceTags;
+
+  @override
+  final List<GalleryDirectory> directories;
 }
 
 class _AndroidFileSourceJoined
     implements SortingResourceSource<int, GalleryFile> {
-  _AndroidFileSourceJoined(this.bucketIds, this.type, this.favoriteFile) {
+  _AndroidFileSourceJoined(
+    this.directories,
+    this.type,
+    this.favoriteFile,
+    this.sourceTags,
+  ) {
     _favoritesWatcher = favoriteFile.watch((_) {
       backingStorage.addAll([]);
     });
   }
 
-  final List<String> bucketIds;
+  final List<GalleryDirectory> directories;
   final GalleryFilesPageType type;
   final FavoriteFileService favoriteFile;
   late final StreamSubscription<int>? _favoritesWatcher;
+  final MapFilesSourceTags sourceTags;
 
   @override
   bool get hasNext => false;
+
+  SortingMode _sortingMode = SortingMode.none;
+
+  @override
+  SortingMode get sortingMode => _sortingMode;
+
+  @override
+  set sortingMode(SortingMode s) {
+    _sortingMode = s;
+
+    clearRefresh();
+  }
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -113,26 +134,13 @@ class _AndroidFileSourceJoined
   final ListStorage<GalleryFile> backingStorage = ListStorage();
 
   @override
-  Future<int> clearRefreshSorting(
-    SortingMode sortingMode, [
-    bool silent = false,
-  ]) =>
-      clearRefresh(sortingMode, silent);
-
-  @override
-  Future<int> nextSorting(SortingMode sortingMode, [bool silent = false]) =>
-      next();
-
-  @override
-  Future<int> clearRefresh([
-    SortingMode sortingMode = SortingMode.none,
-    bool silent = false,
-  ]) async {
+  Future<int> clearRefresh([bool silent = false]) async {
     if (progress.inRefreshing) {
       return Future.value(count);
     }
 
     backingStorage.list.clear();
+    sourceTags.clear();
 
     progress.inRefreshing = true;
     if (type.isTrash()) {
@@ -152,17 +160,22 @@ class _AndroidFileSourceJoined
             .refreshFavorites(f, sortingMode);
       }
     } else {
-      if (bucketIds.length == 1) {
+      if (directories.length == 1) {
         const AndroidGalleryManagementApi()
-            .refreshFiles(bucketIds.first, sortingMode);
+            .refreshFiles(directories.first.bucketId, sortingMode);
       } else {
-        const AndroidGalleryManagementApi()
-            .refreshFilesMultiple(bucketIds, sortingMode);
+        const AndroidGalleryManagementApi().refreshFilesMultiple(
+          directories.map((e) => e.bucketId).toList(),
+          sortingMode,
+        );
       }
     }
 
     return Future.value(backingStorage.count);
   }
+
+  @override
+  Future<int> clearRefreshSilent() => clearRefresh(true);
 
   @override
   Future<int> next() => Future.value(count);
@@ -173,4 +186,54 @@ class _AndroidFileSourceJoined
     backingStorage.destroy();
     progress.close();
   }
+}
+
+class AndroidUriFile implements ImageViewContentable, ContentWidgets {
+  const AndroidUriFile({
+    required this.uri,
+    required this.name,
+    required this.lastModified,
+    required this.height,
+    required this.width,
+    required this.size,
+  });
+
+  factory AndroidUriFile.fromUriFile(UriFile uriFile) => AndroidUriFile(
+        uri: uriFile.uri,
+        name: uriFile.name,
+        lastModified: uriFile.lastModified,
+        height: uriFile.height,
+        width: uriFile.width,
+        size: uriFile.size,
+      );
+
+  final int size;
+
+  final int width;
+  final int height;
+
+  final int lastModified;
+
+  final String name;
+  final String uri;
+
+  @override
+  Contentable content() {
+    final t = PostContentType.fromUrl(uri);
+
+    final imageSize = Size(width.toDouble(), height.toDouble());
+
+    return switch (t) {
+      PostContentType.none => EmptyContent(this),
+      PostContentType.video => AndroidVideo(this, uri: uri, size: imageSize),
+      PostContentType.gif => AndroidGif(this, uri: uri, size: imageSize),
+      PostContentType.image => AndroidImage(this, uri: uri, size: imageSize),
+    };
+  }
+
+  @override
+  String alias(bool long) => name;
+
+  @override
+  Key uniqueKey() => ValueKey(uri);
 }

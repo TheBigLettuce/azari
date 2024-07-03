@@ -367,6 +367,12 @@ void favoriteOrUnfavorite(
   }
 }
 
+extension SaveTagsGlobalNotifier on GlobalProgressTab {
+  ValueNotifier<Future<void>?> saveTags() {
+    return get("saveTags", () => ValueNotifier(null));
+  }
+}
+
 Future<void> _saveTags(
   BuildContext context,
   List<GalleryFile> selected,
@@ -376,33 +382,45 @@ Future<void> _saveTags(
   LocalTagDictionaryService localTagDictionary,
   AppLocalizations l10n,
 ) async {
-  if (_isSavingTags) {
+  final notifier = GlobalProgressTab.maybeOf(context)?.saveTags();
+  if (notifier == null) {
+    return;
+  } else if (notifier.value != null) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.tagSavingInProgress),
       ),
     );
+
     return;
   }
-  _isSavingTags = true;
 
   final notifi = await chooseNotificationPlug().newProgress(
-    "${l10n.savingTagsSaving}"
-        " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
-    savingTagsNotifId,
     "Saving tags",
+    savingTagsNotifId,
+    "Saving tags", // TODO: change
     l10n.savingTags,
+    body: "${l10n.savingTagsSaving}"
+        " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
   );
-  notifi.setTotal(selected.length);
 
-  for (final (i, elem) in selected.indexed) {
-    notifi.update(i, "$i/${selected.length}");
+  return notifier.value = Future(() async {
+    notifi.setTotal(selected.length);
 
-    if (localTags.get(elem.name).isEmpty) {
-      await postTags.getOnlineAndSaveTags(elem.name, localTagDictionary);
+    for (final (i, elem) in selected.indexed) {
+      notifi.update(i, "$i/${selected.length}");
+
+      if (localTags.get(elem.name).isEmpty) {
+        await postTags.getOnlineAndSaveTags(elem.name, localTagDictionary);
+      }
     }
-  }
-  notifi.done();
-  plug.notify(null);
-  _isSavingTags = false;
+  }).onError((e, trace) {
+    Logger.root.warning("Saving tags failed", e, trace);
+    return null;
+  }).whenComplete(() {
+    notifi.done();
+    plug.notify(null);
+
+    return notifier.value = null;
+  });
 }

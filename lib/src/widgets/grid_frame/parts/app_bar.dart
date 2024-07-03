@@ -141,7 +141,7 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
   });
 
   final BarSearchWidget search;
-  final FocusNode searchFocus;
+  final FocusNode? searchFocus;
   final Widget Function(
     BuildContext,
     TextEditingController,
@@ -217,36 +217,40 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
 
         return Align(
           alignment: Alignment.topLeft,
-          child: Material(
-            color: theme.colorScheme.surface,
-            surfaceTintColor: theme.colorScheme.surfaceTint,
-            clipBehavior: Clip.antiAlias,
-            borderRadius: BorderRadius.circular(25),
-            elevation: 4,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
-              child: ListView.builder(
-                itemCount: tiles.length,
-                itemBuilder: (context, index) {
-                  return Builder(
-                    builder: (context) {
-                      final highlight =
-                          AutocompleteHighlightedOption.of(context) == index;
-                      if (highlight) {
-                        // highlightChanged(options.elementAt(index));
-                        WidgetsBinding.instance
-                            .scheduleFrameCallback((timeStamp) {
-                          Scrollable.ensureVisible(context);
-                        });
-                      }
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Material(
+              color: theme.colorScheme.surface,
+              surfaceTintColor: theme.colorScheme.surfaceTint,
+              clipBehavior: Clip.antiAlias,
+              borderRadius: BorderRadius.circular(25),
+              elevation: 4,
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(maxHeight: 200, maxWidth: 200),
+                child: ListView.builder(
+                  itemCount: tiles.length,
+                  itemBuilder: (context, index) {
+                    return Builder(
+                      builder: (context) {
+                        final highlight =
+                            AutocompleteHighlightedOption.of(context) == index;
+                        if (highlight) {
+                          // highlightChanged(options.elementAt(index));
+                          WidgetsBinding.instance
+                              .scheduleFrameCallback((timeStamp) {
+                            Scrollable.ensureVisible(context);
+                          });
+                        }
 
-                      return Container(
-                        color: highlight ? theme.focusColor : null,
-                        child: tiles[index],
-                      );
-                    },
-                  );
-                },
+                        return Container(
+                          color: highlight ? theme.focusColor : null,
+                          child: tiles[index],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ),

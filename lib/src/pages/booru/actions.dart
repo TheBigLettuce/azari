@@ -8,6 +8,7 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/post.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 GridAction<Post> hide(
@@ -50,10 +51,11 @@ GridAction<Post> hide(
 GridAction<T> download<T extends Post>(
   BuildContext context,
   Booru booru,
+  PathVolume? thenMoveTo,
 ) {
   return GridAction(
     Icons.download,
-    (selected) => selected.downloadAll(context),
+    (selected) => selected.downloadAll(context, thenMoveTo),
     true,
     animate: true,
   );

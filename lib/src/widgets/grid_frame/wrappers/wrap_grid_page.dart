@@ -4,7 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/build_theme.dart";
 import "package:gallery/src/pages/glue_bottom_app_bar.dart";
 import "package:gallery/src/widgets/gesture_dead_zones.dart";
 import "package:gallery/src/widgets/glue_provider.dart";

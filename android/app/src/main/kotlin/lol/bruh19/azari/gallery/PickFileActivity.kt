@@ -5,6 +5,7 @@
 
 package lol.bruh19.azari.gallery
 
+import android.app.NotificationManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -39,6 +40,8 @@ class PickFileActivity : FlutterFragmentActivity() {
         engineBindings.detach()
         engineBindings.engine.destroy()
         FlutterEngineCache.getInstance().remove("mainPickfile")
+
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {

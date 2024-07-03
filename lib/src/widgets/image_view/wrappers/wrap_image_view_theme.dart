@@ -5,7 +5,7 @@
 
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/build_theme.dart";
 import "package:palette_generator/palette_generator.dart";
 
 class WrapImageViewTheme extends StatefulWidget {

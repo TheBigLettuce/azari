@@ -120,6 +120,7 @@ abstract class GalleryApi {
   void notifyNetworkStatus(bool hasInternet);
 
   void notify(String? target);
+  void galleryTapDownEvent();
 }
 
 class CopyOp {

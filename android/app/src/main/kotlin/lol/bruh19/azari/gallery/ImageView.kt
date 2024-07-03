@@ -11,6 +11,8 @@ import android.util.Log
 import android.view.View
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.davemorrissey.labs.subscaleview.ImageSource
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
@@ -18,9 +20,10 @@ import io.flutter.plugin.platform.PlatformViewFactory
 internal class ImageView(
     context: Context,
     id: Int,
+    galleryApi: GalleryApi,
     params: Map<String, String>,
 ) : PlatformView {
-    private var imageView: android.widget.ImageView
+    private var imageView: View
 
     override fun getView(): View {
         return imageView
@@ -32,31 +35,38 @@ internal class ImageView(
 
     init {
         val isGif = params.containsKey("gif")
-        imageView = android.widget.ImageView(context)
+
         if (isGif) {
+            imageView = android.widget.ImageView(context)
+
             try {
                 Glide.with(context).asGif()
                     .load(Uri.parse(params["uri"])).diskCacheStrategy(
                         DiskCacheStrategy.NONE
-                    ).into(imageView)
+                    ).into(imageView as android.widget.ImageView)
             } catch (e: Exception) {
                 Log.e("loading image", e.toString())
             }
         } else {
-            try {
-                Glide.with(context).load(Uri.parse(params["uri"])).diskCacheStrategy(
-                    DiskCacheStrategy.NONE
-                )
-                    .into(imageView)
-            } catch (e: java.lang.Exception) {
-                Log.e("loading image", e.toString())
-            }
+            imageView = SubsamplingScaleImageView(context)
+            imageView.setOnClickListener { galleryApi.galleryTapDownEvent { } }
+            (imageView as SubsamplingScaleImageView).setImage(ImageSource.uri(Uri.parse(params["uri"])))
+//            try {
+//                Glide.with(context).load(Uri.parse(params["uri"])).diskCacheStrategy(
+//                    DiskCacheStrategy.NONE
+//                )
+//                    .into(imageView)
+//            } catch (e: java.lang.Exception) {
+//                Log.e("loading image", e.toString())
+//            }
         }
     }
 }
 
-class NativeViewFactory : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+
+class NativeViewFactory(private val galleryApi: GalleryApi) :
+    PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-        return ImageView(context, viewId, args as Map<String, String>)
+        return ImageView(context, viewId, galleryApi, args as Map<String, String>)
     }
 }

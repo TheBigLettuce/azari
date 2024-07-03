@@ -5,13 +5,15 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/main.dart";
+import "package:gallery/init_main/app_info.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:local_auth/local_auth.dart";
@@ -43,7 +45,7 @@ GridAction<GalleryDirectory> blacklist(
       }
 
       if (noAuth.isNotEmpty) {
-        if (requireAuth.isNotEmpty && !canAuthBiometric) {
+        if (requireAuth.isNotEmpty && !AppInfo().canAuthBiometric) {
           blacklistedDirectory.backingStorage.addAll(noAuth + requireAuth);
           return;
         }
@@ -52,7 +54,7 @@ GridAction<GalleryDirectory> blacklist(
       }
 
       if (requireAuth.isNotEmpty) {
-        if (canAuthBiometric) {
+        if (AppInfo().canAuthBiometric) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(l10n.directoriesAuthMessage),
@@ -148,7 +150,7 @@ Future<void> joinedDirectoriesFnc(
     StatisticsGalleryService.db().current.add(joined: 1).save();
 
     final joined = api.joinedFiles(
-      dirs.map((e) => e.bucketId).toList(),
+      dirs,
       directoryTags,
       directoryMetadata,
       favoriteFile,
@@ -164,6 +166,7 @@ Future<void> joinedDirectoriesFnc(
             generateGlue: generate,
             api: joined,
             callback: callback,
+            directory: null,
             dirName: label,
             bucketId: "joinedDir",
             db: DatabaseConnectionNotifier.of(context),
@@ -174,7 +177,7 @@ Future<void> joinedDirectoriesFnc(
     );
   }
 
-  if (requireAuth && canAuthBiometric) {
+  if (requireAuth && AppInfo().canAuthBiometric) {
     return LocalAuthentication()
         .authenticate(localizedReason: l10n.joinDirectoriesReason)
         .then(onSuccess);
@@ -188,8 +191,9 @@ GridAction<T> addToGroup<T extends CellBase>(
   String? Function(List<T>) initalValue,
   Future<void Function(BuildContext)?> Function(List<T>, String, bool)
       onSubmitted,
-  bool showPinButton,
-) {
+  bool showPinButton, {
+  Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag,
+}) {
   return GridAction(
     Icons.group_work_outlined,
     (selected) {
@@ -206,6 +210,7 @@ GridAction<T> addToGroup<T extends CellBase>(
               onSubmitted: onSubmitted,
               selected: selected,
               showPinButton: showPinButton,
+              completeDirectoryNameTag: completeDirectoryNameTag,
             );
           },
         ),
@@ -222,12 +227,14 @@ class _GroupDialogWidget<T> extends StatefulWidget {
     required this.onSubmitted,
     required this.selected,
     required this.showPinButton,
+    required this.completeDirectoryNameTag,
   });
 
   final List<T> selected;
   final String? Function(List<T>) initalValue;
   final Future<void Function(BuildContext)?> Function(List<T>, String, bool)
       onSubmitted;
+  final Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag;
   final bool showPinButton;
 
   @override
@@ -236,6 +243,17 @@ class _GroupDialogWidget<T> extends StatefulWidget {
 
 class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
   bool toPin = false;
+
+  final focus = FocusNode();
+  final controller = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,18 +264,31 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
-            autofocus: true,
-            initialValue: widget.initalValue(widget.selected),
-            onFieldSubmitted: (value) {
-              widget.onSubmitted(widget.selected, value, toPin).then((e) {
-                if (context.mounted) {
-                  e?.call(context);
+          SearchBarAutocompleteWrapper(
+            search: BarSearchWidget(
+              textEditingController: controller,
+              onChange: null,
+              complete: widget.completeDirectoryNameTag,
+            ),
+            child: (context, controller, focus, onSubmitted) {
+              return TextFormField(
+                autofocus: true,
+                focusNode: focus,
+                controller: controller,
+                // initialValue: widget.initalValue(widget.selected),
+                onFieldSubmitted: (value) {
+                  onSubmitted();
+                  widget.onSubmitted(widget.selected, value, toPin).then((e) {
+                    if (context.mounted) {
+                      e?.call(context);
 
-                  Navigator.pop(context);
-                }
-              });
+                      Navigator.pop(context);
+                    }
+                  });
+                },
+              );
             },
+            searchFocus: focus,
           ),
           if (widget.showPinButton)
             SwitchListTile(

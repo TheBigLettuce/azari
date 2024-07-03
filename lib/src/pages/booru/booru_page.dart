@@ -351,7 +351,7 @@ class _BooruPageState extends State<BooruPage> {
                 ),
                 description: GridDescription(
                   actions: [
-                    actions.download(context, pagingState.api.booru),
+                    actions.download(context, pagingState.api.booru, null),
                     actions.favorites(
                       context,
                       favoritePosts,

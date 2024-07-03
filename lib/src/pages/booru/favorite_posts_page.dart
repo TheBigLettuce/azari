@@ -314,7 +314,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
 
   List<GridAction<FavoritePostData>> gridActions() {
     return [
-      booru_actions.download(context, state.settings.selectedBooru),
+      booru_actions.download(context, state.settings.selectedBooru, null),
       booru_actions.favorites(
         context,
         favoritePosts,
