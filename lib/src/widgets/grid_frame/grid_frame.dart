@@ -337,6 +337,11 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
           )
         else
           child,
+        if (extras.functionality.updatesAvailable != null)
+          _UpdatesAvailableWidget(
+            updatesAvailable: extras.functionality.updatesAvailable!,
+            progress: source.progress,
+          ),
         if (description.footer != null)
           Align(
             alignment: Alignment.bottomLeft,
@@ -417,6 +422,224 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
             child: SizedBox(),
           )
         : const LinearProgressIndicator();
+  }
+}
+
+class _UpdatesAvailableWidget extends StatefulWidget {
+  const _UpdatesAvailableWidget({
+    super.key,
+    required this.updatesAvailable,
+    required this.progress,
+  });
+
+  final UpdatesAvailable updatesAvailable;
+  final RefreshingProgress progress;
+
+  @override
+  State<_UpdatesAvailableWidget> createState() =>
+      __UpdatesAvailableWidgetState();
+}
+
+class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
+    with TickerProviderStateMixin {
+  late final StreamSubscription<UpdatesAvailableStatus> updatesSubsc;
+  late final StreamSubscription<void> refreshSubsc;
+  late final AnimationController controller;
+  ScrollController? scrollController;
+
+  late UpdatesAvailableStatus status;
+
+  bool atEdge = false;
+  EdgeInsets viewPadding = EdgeInsets.zero;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(vsync: this);
+
+    final currentlyRefreshing = widget.progress.inRefreshing
+        ? false
+        : widget.updatesAvailable.tryRefreshIfNeeded();
+
+    status = UpdatesAvailableStatus(false, currentlyRefreshing);
+
+    updatesSubsc = widget.updatesAvailable.watch((status_) {
+      setState(() {
+        status = status_;
+      });
+
+      if (_showCard(status) && controller.value != 1) {
+        controller.forward();
+      }
+    });
+
+    refreshSubsc = widget.progress.watch((refresh) {
+      if (refresh && _showCard(status)) {
+        _dismiss();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    scrollController?.removeListener(_scrollListener);
+    updatesSubsc.cancel();
+    controller.dispose();
+    refreshSubsc.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newScroll = GridScrollNotifier.of(context);
+    if (newScroll != scrollController) {
+      if (scrollController != null) {
+        scrollController?.removeListener(_scrollListener);
+      }
+      scrollController = newScroll;
+      scrollController?.addListener(_scrollListener);
+    }
+
+    viewPadding = MediaQuery.viewPaddingOf(context);
+  }
+
+  void _scrollListener() {
+    final offsetIsAfterAppBar = scrollController!.offset > 80 + viewPadding.top;
+    if (offsetIsAfterAppBar != atEdge) {
+      setState(() {
+        atEdge = offsetIsAfterAppBar;
+      });
+    }
+  }
+
+  void _dismiss() {
+    controller.reverse().then((_) {
+      setState(() {
+        status = const UpdatesAvailableStatus(false, false);
+      });
+    });
+  }
+
+  bool _showCard(UpdatesAvailableStatus c) => c.hasUpdates || c.inRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final notifier = GridScrollNotifier.notifierOf(context);
+    final theme = Theme.of(context);
+
+    const circularProgress = SizedBox.square(
+      dimension: 12,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+      ),
+    );
+
+    final dismissCard = Tooltip(
+      message: "Dismiss", // TODO: change
+      child: ActionChip(
+        avatar:
+            status.inRefresh ? null : const Icon(Icons.new_releases_outlined),
+        labelStyle: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+        visualDensity: VisualDensity.compact,
+        onPressed: status.inRefresh ? null : _dismiss,
+        label: status.inRefresh
+            ? circularProgress
+            : const Text("Has new posts"), // TODO: change
+      ),
+    );
+
+    final dismissIcon = Tooltip(
+      message: "Dismiss", // TODO: change
+      child: ActionChip(
+        labelPadding: EdgeInsets.zero,
+        onPressed: status.inRefresh ? null : _dismiss,
+        visualDensity: VisualDensity.comfortable,
+        label: status.inRefresh
+            ? circularProgress
+            : Icon(
+                Icons.new_releases_outlined,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+      ),
+    );
+
+    return !_showCard(status)
+        ? const SizedBox.shrink()
+        : Animate(
+            value: 1,
+            controller: controller,
+            effects: const [
+              FadeEffect(
+                duration: Durations.medium1,
+                curve: Easing.standard,
+                begin: 0,
+                end: 1,
+              ),
+            ],
+            child: Align(
+              alignment: Alignment.topRight,
+              child: ListenableBuilder(
+                listenable: notifier,
+                builder: (context, child) {
+                  final scrollingDown = !notifier.value;
+
+                  return Animate(
+                    effects: [
+                      const FadeEffect(
+                        duration: Durations.medium1,
+                        curve: Easing.standard,
+                        begin: 1,
+                        end: 0,
+                      ),
+                      SwapEffect(
+                        builder: (context, _) {
+                          return Animate(
+                            effects: const [
+                              FadeEffect(
+                                duration: Durations.medium1,
+                                curve: Easing.standard,
+                                begin: 00,
+                                end: 1,
+                              ),
+                            ],
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: 8,
+                                top: kToolbarHeight +
+                                    8 +
+                                    MediaQuery.viewPaddingOf(context).top,
+                              ),
+                              child: dismissCard,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    target: scrollingDown
+                        ? !atEdge
+                            ? 1
+                            : 0
+                        : 1,
+                    child: child!,
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8) +
+                      EdgeInsets.only(
+                        top: MediaQuery.viewPaddingOf(context).top,
+                      ),
+                  child: dismissIcon,
+                ),
+              ),
+            ),
+          );
   }
 }
 

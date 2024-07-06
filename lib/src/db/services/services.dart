@@ -119,6 +119,8 @@ abstract interface class ServicesImplTable
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
 
+  TagManager get tagManager;
+
   MainGridService mainGrid(Booru booru);
   SecondaryGridService secondaryGrid(
     Booru booru,
@@ -129,8 +131,6 @@ abstract interface class ServicesImplTable
 }
 
 mixin ServicesObjFactoryExt {
-  TagManager makeTagManager(Booru booru);
-
   LocalTagsData makeLocalTagsData(
     String filename,
     List<String> tags,
@@ -364,31 +364,15 @@ mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
 
 abstract interface class TagManager implements ServiceMarker {
   factory TagManager.of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_TagManagerAnchor>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<DatabaseConnectionNotifier>();
 
-    return widget!.tagManager;
+    return widget!.db.tagManager;
   }
-
-  static Widget wrapAnchor(TagManager tagManager, Widget child) =>
-      _TagManagerAnchor(tagManager: tagManager, child: child);
 
   BooruTagging get excluded;
   BooruTagging get latest;
   BooruTagging get pinned;
-}
-
-class _TagManagerAnchor extends InheritedWidget {
-  const _TagManagerAnchor({
-    required this.tagManager,
-    required super.child,
-  });
-
-  final TagManager tagManager;
-
-  @override
-  bool updateShouldNotify(_TagManagerAnchor oldWidget) =>
-      tagManager != oldWidget.tagManager;
 }
 
 abstract class GridBookmark implements CellBase {
@@ -503,14 +487,26 @@ abstract interface class MainGridService {
   GridState get currentState;
   set currentState(GridState state);
 
-  TagManager get tagManager;
-
   GridPostSource makeSource(
     BooruAPI api,
     BooruTagging excluded,
     PagingEntry entry,
     HiddenBooruPostService hiddenBooruPosts,
   );
+}
+
+class UpdatesAvailableStatus {
+  const UpdatesAvailableStatus(this.hasUpdates, this.inRefresh);
+
+  final bool hasUpdates;
+  final bool inRefresh;
+}
+
+abstract interface class UpdatesAvailable {
+  bool tryRefreshIfNeeded();
+
+  StreamSubscription<UpdatesAvailableStatus> watch(
+      void Function(UpdatesAvailableStatus) f);
 }
 
 abstract interface class SecondaryGridService {
@@ -526,8 +522,6 @@ abstract interface class SecondaryGridService {
     void Function(GridState s) f, [
     bool fire = false,
   ]);
-
-  TagManager get tagManager;
 
   GridPostSource makeSource(
     BooruAPI api,

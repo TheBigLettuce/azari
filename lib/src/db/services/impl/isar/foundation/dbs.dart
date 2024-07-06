@@ -6,9 +6,9 @@
 part of "../impl.dart";
 
 const kPrimaryGridSchemas = [
+  IsarUpdatesAvailableSchema,
   IsarGridTimeSchema,
   IsarGridStateSchema,
-  IsarTagSchema,
   PostIsarSchema,
   IsarGridBooruPagingSchema,
 ];

@@ -106,7 +106,7 @@ class _BooruPageState extends State<BooruPage> {
         final mainGrid = widget.db.mainGrid(state.settings.selectedBooru);
 
         return _MainGridPagingState.prototype(
-          mainGrid.tagManager,
+          widget.db.tagManager,
           hiddenBooruPost,
           mainGrid,
           state.settings.selectedBooru,
@@ -301,6 +301,7 @@ class _BooruPageState extends State<BooruPage> {
                   GridFooter<void>(storage: source.backingStorage),
                 ],
                 functionality: GridFunctionality(
+                  updatesAvailable: source.updatesAvailable,
                   settingsButton: GridSettingsButton.fromWatchable(
                     gridSettings,
                     SafeModeButton(settingsWatcher: state.settings.s.watch),

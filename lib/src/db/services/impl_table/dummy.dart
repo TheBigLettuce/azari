@@ -82,6 +82,8 @@ class DummyServicesImplTable
   @override
   MainGridService mainGrid(Booru booru) => throw UnimplementedError();
   @override
+  TagManager get tagManager => throw UnimplementedError();
+  @override
   SecondaryGridService secondaryGrid(
     Booru booru,
     String name,
@@ -89,9 +91,6 @@ class DummyServicesImplTable
     bool create = false,
   ]) =>
       throw UnimplementedError();
-
-  @override
-  TagManager makeTagManager(Booru booru) => throw UnimplementedError();
 
   @override
   LocalTagsData makeLocalTagsData(

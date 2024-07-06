@@ -36,6 +36,13 @@ class Gelbooru implements BooruAPI {
   bool get wouldBecomeStale => true;
 
   @override
+  Future<int> get totalPosts async {
+    final res = await _commonPosts("", 0, null, SafeMode.none, limit: 1);
+
+    return res.$1.firstOrNull?.id ?? 0;
+  }
+
+  @override
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog<String>(
       Uri.https(booru.url, "/index.php", {
@@ -104,15 +111,18 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> _commonPosts(
     String tags,
     int p,
-    BooruTagging excludedTags,
-    SafeMode safeMode,
-  ) async {
-    final excluded = excludedTags.get(-1).map((e) => "-${e.tag} ").toList();
+    BooruTagging? excludedTags,
+    SafeMode safeMode, {
+    int? limit,
+  }) async {
+    final excluded = excludedTags?.get(-1).map((e) => "-${e.tag} ").toList();
 
-    final String excludedTagsString = switch (excluded.isNotEmpty) {
-      true => excluded.reduce((value, element) => value + element),
-      false => "",
-    };
+    final String excludedTagsString = excluded == null
+        ? ""
+        : switch (excluded.isNotEmpty) {
+            true => excluded.reduce((value, element) => value + element),
+            false => "",
+          };
 
     final String safeMode_ = switch (safeMode) {
       SafeMode.none => "",
@@ -127,7 +137,7 @@ class Gelbooru implements BooruAPI {
       "pid": p.toString(),
       "json": "1",
       "tags": "$safeMode_ $excludedTagsString $tags",
-      "limit": numberOfElementsPerRefresh().toString(),
+      "limit": limit?.toString() ?? numberOfElementsPerRefresh().toString(),
     };
 
     final resp = await client.getUriLog<Map<String, dynamic>>(

@@ -112,6 +112,9 @@ class IoServicesImplTable
   GridSettingsService get gridSettings => const IsarGridSettinsService();
 
   @override
+  final TagManager tagManager = IsarTagManager();
+
+  @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
   @override
   SecondaryGridService secondaryGrid(
@@ -152,9 +155,6 @@ mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
     required PostRating rating,
   }) =>
       IsarGridBookmarkThumbnail(url: url, rating: rating);
-
-  @override
-  TagManager makeTagManager(Booru booru) => IsarTagManager(booru);
 
   @override
   LocalTagsData makeLocalTagsData(

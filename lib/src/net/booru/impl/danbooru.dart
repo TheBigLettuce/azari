@@ -32,6 +32,19 @@ class Danbooru implements BooruAPI {
   bool get wouldBecomeStale => false;
 
   @override
+  Future<int> get totalPosts async {
+    final resp = await _commonPosts(
+      "",
+      null,
+      safeMode: SafeMode.none,
+      page: 0,
+      limit: 1,
+    );
+
+    return resp.$1.firstOrNull?.id ?? 0;
+  }
+
+  @override
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog<List<Map<String, dynamic>>>(
       Uri.https(booru.url, "/notes.json", {
@@ -112,10 +125,11 @@ class Danbooru implements BooruAPI {
 
   Future<(List<Post>, int?)> _commonPosts(
     String tags,
-    BooruTagging excludedTags, {
+    BooruTagging? excludedTags, {
     int? postid,
     int? page,
     required SafeMode safeMode,
+    int? limit,
   }) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
@@ -130,7 +144,7 @@ class Danbooru implements BooruAPI {
         };
 
     final query = <String, dynamic>{
-      "limit": numberOfElementsPerRefresh().toString(),
+      "limit": limit?.toString() ?? numberOfElementsPerRefresh().toString(),
       "format": "json",
 
       /// anonymous api calls to danbooru are limited by two tags per search req
@@ -156,7 +170,9 @@ class Danbooru implements BooruAPI {
         ),
       );
 
-      return _skipExcluded(fromList(resp.data!), excludedTags);
+      return excludedTags == null
+          ? (fromList(resp.data!), null)
+          : _skipExcluded(fromList(resp.data!), excludedTags!);
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {

@@ -61,6 +61,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   final localTags = Isar.openSync(
     [
+      IsarTagSchema,
       IsarLocalTagsSchema,
       IsarLocalTagDictionarySchema,
       DirectoryTagSchema,

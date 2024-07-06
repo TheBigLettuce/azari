@@ -110,7 +110,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     return RestoredBooruPageState(
       widget.booru,
       tags,
-      secondary.tagManager,
+      widget.db.tagManager,
       secondary,
       hiddenBooruPost,
       gridBookmarks,

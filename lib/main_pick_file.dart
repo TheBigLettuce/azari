@@ -13,39 +13,33 @@ Future<void> mainPickfile() async {
 
   final accentColor = await PlatformApi.current().accentColor();
 
-  final tagManager =
-      objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
-
   runApp(
     DatabaseConnectionNotifier.current(
-      TagManager.wrapAnchor(
-        tagManager,
-        MaterialApp(
-          title: "Azari",
-          themeAnimationCurve: Easing.standard,
-          themeAnimationDuration: const Duration(milliseconds: 300),
-          darkTheme: buildTheme(Brightness.dark, accentColor),
-          theme: buildTheme(Brightness.light, accentColor),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Home(
-            callback: CallbackDescriptionNested(
-              (chosen) {
-                const AndroidApiFunctions().returnUri(chosen.originalUri);
-              },
-              preview: PreferredSize(
-                preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
-                child: Builder(
-                  builder: (context) {
-                    final l10n = AppLocalizations.of(context)!;
+      MaterialApp(
+        title: "Azari",
+        themeAnimationCurve: Easing.standard,
+        themeAnimationDuration: const Duration(milliseconds: 300),
+        darkTheme: buildTheme(Brightness.dark, accentColor),
+        theme: buildTheme(Brightness.light, accentColor),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Home(
+          callback: CallbackDescriptionNested(
+            (chosen) {
+              const AndroidApiFunctions().returnUri(chosen.originalUri);
+            },
+            preview: PreferredSize(
+              preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
+              child: Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
 
-                    return CopyMovePreview(
-                      files: null,
-                      title: l10n.pickFileNotice,
-                      icon: Icons.file_open_rounded,
-                    );
-                  },
-                ),
+                  return CopyMovePreview(
+                    files: null,
+                    title: l10n.pickFileNotice,
+                    icon: Icons.file_open_rounded,
+                  );
+                },
               ),
             ),
           ),

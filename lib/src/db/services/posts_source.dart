@@ -31,6 +31,8 @@ abstract interface class PostsSourceService<K, V>
 abstract class GridPostSource extends PostsSourceService<int, Post> {
   Post? get currentlyLast;
 
+  UpdatesAvailable get updatesAvailable;
+
   static (int, Booru) postTransformKey(Post p) => (p.id, p.booru);
 }
 

@@ -114,10 +114,10 @@ class MemoryOnlyServicesImplTable
   @override
   final GridSettingsService gridSettings = MemoryGridSettingsService();
 
-  final Map<Booru, MainGridService> _gridServices = {};
-
   @override
-  TagManager makeTagManager(Booru booru) => mainGrid(booru).tagManager;
+  final TagManager tagManager = MemoryTagManager();
+
+  final Map<Booru, MainGridService> _gridServices = {};
 
   @override
   MainGridService mainGrid(Booru booru) =>
@@ -2277,6 +2277,10 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
   }
 
   @override
+  // TODO: implement updatesAvailable
+  UpdatesAvailable get updatesAvailable => throw UnimplementedError();
+
+  @override
   // TODO: implement safeMode
   SafeMode get safeMode => throw UnimplementedError();
 
@@ -2317,9 +2321,6 @@ class MemoryMainGridService implements MainGridService {
         excluded,
         [(p) => !hiddenBooruPosts.isHidden(p.id, p.booru)],
       );
-
-  @override
-  late final TagManager tagManager = MemoryTagManager();
 }
 
 class MemoryStatisticsGeneralData extends StatisticsGeneralData {

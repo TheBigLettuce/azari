@@ -21,6 +21,9 @@ import "package:gallery/src/net/booru/safe_mode.dart";
 abstract class BooruAPI {
   const BooruAPI();
 
+  /// Total posts on the booru.
+  Future<int> get totalPosts;
+
   /// Some booru do not support pulling posts down a certain post number.
   /// This makes the data stale after a time, requiring more refreshes.
   /// This flag exists to optimize paging-based implementations, for example,

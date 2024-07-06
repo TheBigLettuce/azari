@@ -38,7 +38,6 @@ class _RestartWidgetState extends State<RestartWidget> {
   static const int _maxSteps = 10;
 
   late final AppLifecycleListener listener;
-  late TagManager tagManager;
   late final StreamSubscription<void> timeTicker;
   final StreamController<Duration> timeListener = StreamController.broadcast();
   Duration currentDuration = Duration.zero;
@@ -48,9 +47,6 @@ class _RestartWidgetState extends State<RestartWidget> {
   @override
   void initState() {
     super.initState();
-
-    tagManager =
-        objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
 
     StatisticsDailyData sts = StatisticsDailyService.db().current;
 
@@ -125,9 +121,6 @@ class _RestartWidgetState extends State<RestartWidget> {
   }
 
   void restartApp() {
-    tagManager =
-        objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
-
     setState(() {
       key = UniqueKey();
     });
@@ -142,23 +135,19 @@ class _RestartWidgetState extends State<RestartWidget> {
 
     return progressTab.wrapWidget(
       DatabaseConnectionNotifier.current(
-        TagManager.wrapAnchor(
-          tagManager,
-          TimeSpentNotifier(
-            timeNow,
-            ticker: timeListener.stream,
-            current: _c,
-            child: KeyedSubtree(
-              key: key,
-              child: ColoredBox(
-                color:
-                    MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                        ? d.colorScheme.surface
-                        : l.colorScheme.surface,
-                child: widget
-                    .child(d, l, SettingsService.db().current)
-                    .animate(effects: [const FadeEffect()]),
-              ),
+        TimeSpentNotifier(
+          timeNow,
+          ticker: timeListener.stream,
+          current: _c,
+          child: KeyedSubtree(
+            key: key,
+            child: ColoredBox(
+              color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                  ? d.colorScheme.surface
+                  : l.colorScheme.surface,
+              child: widget
+                  .child(d, l, SettingsService.db().current)
+                  .animate(effects: [const FadeEffect()]),
             ),
           ),
         ),

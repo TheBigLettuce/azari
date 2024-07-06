@@ -104,6 +104,7 @@ class _DanbooruPost with Post<Post>, DefaultPostPressable<Post> {
   Booru get booru => Booru.danbooru;
 
   @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   PostContentType get type => Post.makeType(this);
 }
 

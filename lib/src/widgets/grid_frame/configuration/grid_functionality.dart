@@ -7,6 +7,7 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
@@ -23,6 +24,7 @@ class GridFunctionality<T extends CellBase> {
     this.registerNotifiers,
     this.updateScrollPosition,
     this.download,
+    this.updatesAvailable,
     this.settingsButton,
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
@@ -52,6 +54,7 @@ class GridFunctionality<T extends CellBase> {
   final SelectionGlue selectionGlue;
   final GridBackButtonBehaviour backButton;
   final GridSearchWidget search;
+  final UpdatesAvailable? updatesAvailable;
 }
 
 sealed class GridRefreshType {

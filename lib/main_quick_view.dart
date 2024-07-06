@@ -13,9 +13,6 @@ Future<void> mainQuickView() async {
 
   final accentColor = await PlatformApi.current().accentColor();
 
-  final tagManager =
-      objFactory.makeTagManager(SettingsService.db().current.selectedBooru);
-
   final uris = await const AndroidApiFunctions().getQuickViewUris();
 
   final files = (await GalleryHostApi().getUriPicturesDirectly(uris))
@@ -24,29 +21,26 @@ Future<void> mainQuickView() async {
 
   runApp(
     DatabaseConnectionNotifier.current(
-      TagManager.wrapAnchor(
-        tagManager,
-        MaterialApp(
-          title: "Azari",
-          themeAnimationCurve: Easing.standard,
-          themeAnimationDuration: const Duration(milliseconds: 300),
-          darkTheme: buildTheme(Brightness.dark, accentColor),
-          theme: buildTheme(Brightness.light, accentColor),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: WrapGridPage(
-            child: PopScope(
-              canPop: false,
-              onPopInvokedWithResult: (didPop, result) {
-                const AndroidApiFunctions().closeActivity();
-              },
-              child: ImageView(
-                cellCount: files.length,
-                scrollUntill: (_) {},
-                startingCell: 0,
-                getCell: (i) => files[i].content(),
-                onNearEnd: null,
-              ),
+      MaterialApp(
+        title: "Azari",
+        themeAnimationCurve: Easing.standard,
+        themeAnimationDuration: const Duration(milliseconds: 300),
+        darkTheme: buildTheme(Brightness.dark, accentColor),
+        theme: buildTheme(Brightness.light, accentColor),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WrapGridPage(
+          child: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              const AndroidApiFunctions().closeActivity();
+            },
+            child: ImageView(
+              cellCount: files.length,
+              scrollUntill: (_) {},
+              startingCell: 0,
+              getCell: (i) => files[i].content(),
+              onNearEnd: null,
             ),
           ),
         ),

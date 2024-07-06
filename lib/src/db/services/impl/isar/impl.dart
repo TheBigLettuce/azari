@@ -31,6 +31,7 @@ import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.da
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_time.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/updates_available.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/chapters_settings.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
@@ -91,7 +92,8 @@ class IsarCurrentBooruSource extends GridPostSource
     required this.entry,
     required this.tags,
     required this.filters,
-  }) : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false);
+  })  : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
+        updatesAvailable = IsarUpdatesAvailableImpl(db, api);
 
   @override
   final BooruAPI api;
@@ -110,6 +112,9 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   final List<FilterFnc<Post>> filters;
+
+  @override
+  final IsarUpdatesAvailableImpl updatesAvailable;
 
   @override
   List<Post<ContentableCell>> get lastFive => backingStorage._collection
@@ -131,9 +136,88 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   void destroy() {
+    updatesAvailable.dispose();
     backingStorage.destroy();
     progress.close();
   }
+}
+
+class IsarUpdatesAvailableImpl implements UpdatesAvailable {
+  IsarUpdatesAvailableImpl(this.db, this.api) {
+    _timeTicker =
+        Stream<void>.periodic(const Duration(minutes: 15)).listen((_) {
+      tryRefreshIfNeeded(true);
+    });
+
+    if (_isAfterNow(_current.time)) {
+      tryRefreshIfNeeded();
+    }
+  }
+
+  final Isar db;
+  final BooruAPI api;
+
+  final _events = StreamController<UpdatesAvailableStatus>.broadcast();
+  late final StreamSubscription<void> _timeTicker;
+
+  Future<void>? _future;
+
+  void dispose() {
+    _events.close();
+    _future?.ignore();
+    _timeTicker.cancel();
+  }
+
+  IsarUpdatesAvailable get _current =>
+      db.isarUpdatesAvailables.getSync(0) ??
+      IsarUpdatesAvailable(-1, DateTime.now());
+
+  bool _isAfterNow(DateTime time) =>
+      DateTime.now().isAfter(time.add(const Duration(minutes: 5)));
+
+  @override
+  bool tryRefreshIfNeeded([bool force = false]) {
+    if (_future != null) {
+      return true;
+    }
+
+    final u = _current;
+
+    if (force || u.postCount == -1 || _isAfterNow(u.time)) {
+      _events.add(const UpdatesAvailableStatus(false, true));
+
+      _future = api.totalPosts.then((count) {
+        if (db.isOpen) {
+          db.writeTxnSync(() {
+            db.isarUpdatesAvailables
+                .putSync(IsarUpdatesAvailable(count, DateTime.now()));
+          });
+        }
+
+        print("result: newc ${count} old ${u.postCount}");
+
+        return null;
+      }).onError((e, trace) {
+        Logger.root.warning("tryRefreshIfNeeded", e, trace);
+        return null;
+      }).whenComplete(() {
+        if (!_events.isClosed) {
+          _events.add(
+              UpdatesAvailableStatus(_current.postCount > u.postCount, false));
+        }
+        _future = null;
+      });
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  StreamSubscription<UpdatesAvailableStatus> watch(
+          void Function(UpdatesAvailableStatus) f) =>
+      _events.stream.listen(f);
 }
 
 class _IsarCollectionIterator<T> implements Iterator<T> {
@@ -2293,66 +2377,39 @@ class IsarDirectoryTagService implements DirectoryTagService {
 }
 
 class IsarTagManager implements TagManager {
-  IsarTagManager(Booru booru)
-      : excluded = IsarBooruTagging(
-          mode: TagType.excluded,
-          currentBooru: _dbs.booru(booru),
-        ),
-        latest = IsarBooruTagging(
-          mode: TagType.normal,
-          currentBooru: _dbs.booru(booru),
-        ),
-        pinned = IsarBooruTagging(
-          mode: TagType.pinned,
-          currentBooru: _dbs.booru(booru),
-        );
-
-  IsarTagManager._db(Isar mainGrid)
-      : excluded = IsarBooruTagging(
-          mode: TagType.excluded,
-          currentBooru: mainGrid,
-        ),
-        latest = IsarBooruTagging(
-          mode: TagType.normal,
-          currentBooru: mainGrid,
-        ),
-        pinned = IsarBooruTagging(
-          mode: TagType.pinned,
-          currentBooru: mainGrid,
-        );
+  const IsarTagManager();
 
   @override
-  final IsarBooruTagging excluded;
+  IsarBooruTagging get excluded =>
+      const IsarBooruTagging(mode: TagType.excluded);
   @override
-  final IsarBooruTagging latest;
+  IsarBooruTagging get latest => const IsarBooruTagging(mode: TagType.normal);
   @override
-  final IsarBooruTagging pinned;
+  IsarBooruTagging get pinned => const IsarBooruTagging(mode: TagType.pinned);
 }
 
 class IsarBooruTagging implements BooruTagging {
   const IsarBooruTagging({
     required this.mode,
-    required this.currentBooru,
   });
 
   final TagType mode;
-  final Isar currentBooru;
+  Isar get tagDb => _Dbs.g.localTags;
 
   @override
-  bool exists(String tag) =>
-      currentBooru.isarTags.getByTagTypeSync(tag, mode) != null;
+  bool exists(String tag) => tagDb.isarTags.getByTagTypeSync(tag, mode) != null;
 
   @override
   List<TagData> get(int i) {
     if (i.isNegative) {
-      return currentBooru.isarTags
+      return tagDb.isarTags
           .filter()
           .typeEqualTo(mode)
           .sortByTimeDesc()
           .findAllSync();
     }
 
-    return currentBooru.isarTags
+    return tagDb.isarTags
         .filter()
         .typeEqualTo(mode)
         .sortByTimeDesc()
@@ -2362,8 +2419,8 @@ class IsarBooruTagging implements BooruTagging {
 
   @override
   void add(String t) {
-    currentBooru.writeTxnSync(
-      () => currentBooru.isarTags.putByTagTypeSync(
+    tagDb.writeTxnSync(
+      () => tagDb.isarTags.putByTagTypeSync(
         IsarTag(time: DateTime.now(), tag: t, type: mode),
       ),
     );
@@ -2371,21 +2428,21 @@ class IsarBooruTagging implements BooruTagging {
 
   @override
   void delete(String t) {
-    currentBooru.writeTxnSync(
-      () => currentBooru.isarTags.deleteByTagTypeSync(t, mode),
+    tagDb.writeTxnSync(
+      () => tagDb.isarTags.deleteByTagTypeSync(t, mode),
     );
   }
 
   @override
   void clear() {
-    currentBooru.writeTxnSync(
-      () => currentBooru.isarTags.filter().typeEqualTo(mode).deleteAllSync(),
+    tagDb.writeTxnSync(
+      () => tagDb.isarTags.filter().typeEqualTo(mode).deleteAllSync(),
     );
   }
 
   @override
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
-    return currentBooru.isarTags.watchLazy(fireImmediately: fire).listen(f);
+    return tagDb.isarTags.watchLazy(fireImmediately: fire).listen(f);
   }
 
   @override
@@ -2394,12 +2451,12 @@ class IsarBooruTagging implements BooruTagging {
     void Function(List<ImageTag> l) f, {
     bool fire = false,
   }) {
-    return currentBooru.isarTags.watchLazy().map<List<ImageTag>>((event) {
+    return tagDb.isarTags.watchLazy().map<List<ImageTag>>((event) {
       return tags
           .map(
             (e) => ImageTag(
               e,
-              currentBooru.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
             ),
           )
           .toList();
@@ -2418,7 +2475,7 @@ class IsarBooruTagging implements BooruTagging {
           .where()
           .filenameEqualTo(filename)
           .watchLazy(),
-      currentBooru.isarTags.watchLazy(),
+      tagDb.isarTags.watchLazy(),
     ]).map<List<ImageTag>>((event) {
       final t =
           _Dbs.g.localTags.isarLocalTags.getByFilenameSync(filename)?.tags;
@@ -2430,7 +2487,7 @@ class IsarBooruTagging implements BooruTagging {
           .map(
             (e) => ImageTag(
               e,
-              currentBooru.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
             ),
           )
           .toList();
@@ -2501,7 +2558,6 @@ class IsarGridStateBooruService implements GridBookmarkService {
 class IsarSecondaryGridService implements SecondaryGridService {
   const IsarSecondaryGridService._(
     this._secondaryGrid,
-    this.tagManager,
     this._mainGrid,
     this.name,
   );
@@ -2516,7 +2572,6 @@ class IsarSecondaryGridService implements SecondaryGridService {
 
     return IsarSecondaryGridService._(
       dbSecondary,
-      IsarTagManager._db(dbMain),
       dbMain,
       name,
     );
@@ -2527,8 +2582,6 @@ class IsarSecondaryGridService implements SecondaryGridService {
 
   final Isar _secondaryGrid;
   final Isar _mainGrid;
-  @override
-  final IsarTagManager tagManager;
 
   @override
   int get page => _secondaryGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;
@@ -2607,13 +2660,14 @@ class IsarSecondaryGridService implements SecondaryGridService {
 }
 
 class IsarMainGridService implements MainGridService {
-  const IsarMainGridService._(this._mainGrid, this.tagManager);
+  const IsarMainGridService._(this._mainGrid);
 
   factory IsarMainGridService.booru(Booru booru) {
     final db = _Dbs.g.booru(booru);
 
-    return IsarMainGridService._(db, IsarTagManager._db(db));
+    return IsarMainGridService._(db);
   }
+
   @override
   DateTime get time =>
       _mainGrid.isarGridTimes.getSync(0)?.time ??
@@ -2624,8 +2678,6 @@ class IsarMainGridService implements MainGridService {
       .writeTxnSync(() => _mainGrid.isarGridTimes.putSync(IsarGridTime(d)));
 
   final Isar _mainGrid;
-  @override
-  final IsarTagManager tagManager;
 
   @override
   int get page => _mainGrid.isarGridBooruPagings.getSync(0)?.page ?? 0;

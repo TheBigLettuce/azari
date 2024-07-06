@@ -604,6 +604,7 @@ class __TagsRibbonState extends State<_TagsRibbon> {
       setState(() {
         _pinnedList =
             widget.tagManager.pinned.get(-1).map((e) => (e.tag, true)).toList();
+        _list = _sortPinned(widget.tags.current);
       });
     });
   }
@@ -681,6 +682,13 @@ class __TagsRibbonState extends State<_TagsRibbon> {
                                 ? const EdgeInsets.only(right: 6)
                                 : EdgeInsets.zero,
                             child: GestureDetector(
+                              onDoubleTap: () {
+                                if (widget.tagManager.pinned.exists(tag)) {
+                                  widget.tagManager.pinned.delete(tag);
+                                } else {
+                                  widget.tagManager.pinned.add(tag);
+                                }
+                              },
                               onLongPress: () {
                                 final settings = SettingsService.db().current;
 

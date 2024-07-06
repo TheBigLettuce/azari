@@ -81,6 +81,10 @@ class _HomeState extends State<Home>
 
     maybeBeforeYouContinueDialog(context, settings);
 
+    if (isRestart) {
+      restartOver();
+    }
+
     NetworkStatus.g.notify = () {
       try {
         setState(() {});
