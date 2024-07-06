@@ -385,8 +385,12 @@ mixin DefaultPostPressable<T extends Post> implements Pressable<T> {
 }
 
 extension MultiplePostDownloadExt on List<Post> {
-  void downloadAll(BuildContext context, [PathVolume? thenMoveTo]) {
-    DownloadManager.of(context).addLocalTags(
+  void downloadAll(
+    DownloadManager downloadManager,
+    PostTags postTags, [
+    PathVolume? thenMoveTo,
+  ]) {
+    downloadManager.addLocalTags(
       map(
         (e) => DownloadEntryTags.d(
           tags: e.tags,
@@ -403,7 +407,7 @@ extension MultiplePostDownloadExt on List<Post> {
         ),
       ),
       SettingsService.db().current,
-      PostTags.fromContext(context),
+      postTags,
     );
   }
 }

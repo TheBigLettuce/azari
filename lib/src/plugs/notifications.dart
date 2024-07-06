@@ -30,3 +30,4 @@ Future<void> initNotifications() => init();
 
 const savingTagsNotifId = -10;
 const savingThumbNotifId = -11;
+const redownloadFilesNotifId = -12;

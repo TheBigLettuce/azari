@@ -5,48 +5,69 @@
 
 package lol.bruh19.azari.gallery
 
-import android.app.NotificationManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
+import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.generated.GalleryApi
+import lol.bruh19.azari.gallery.generated.GalleryHostApi
+import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
+import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class PickFileActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
+        val app = this.applicationContext as App
+
+        val engine = makeEngine(app, "mainPickfile")
+
         EngineBindings(
-            activity = this, "mainPickfile", getSystemService(
-                ConnectivityManager::class.java
-            )
+            engine, GalleryApi(engine.dartExecutor.binaryMessenger),
         )
+    }
+
+    private val intents: ActivityResultIntents by lazy {
+        ActivityResultIntents(
+            this,
+            { engineBindings },
+            { mediaLoaderAndMover },
+        )
+    }
+
+    private val mediaLoaderAndMover: MediaLoaderAndMover by lazy {
+        (this.applicationContext as App).mediaLoaderAndMover
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val app = this.applicationContext as App
-        prewarmEngine(app, "mainPickfile")
+        GalleryHostApi.setUp(
+            engineBindings.engine.dartExecutor.binaryMessenger,
+            GalleryHostApiImpl(this, mediaLoaderAndMover),
+        )
 
-        engineBindings.attach()
+        engineBindings.attach(
+            this, mediaLoaderAndMover,
+            getSystemService(
+                ConnectivityManager::class.java
+            ),
+            intents,
+        )
     }
 
-    override fun getCachedEngineId(): String? {
-        return "mainPickfile"
-    }
+    override fun getCachedEngineId(): String = "mainPickfile"
+    override fun provideFlutterEngine(context: Context): FlutterEngine = engineBindings.engine
 
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
         engineBindings.engine.destroy()
         FlutterEngineCache.getInstance().remove("mainPickfile")
+        intents.unregisterAll()
+        GalleryHostApi.setUp(engineBindings.engine.dartExecutor.binaryMessenger, null)
 
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
-    }
-
-    override fun provideFlutterEngine(context: Context): FlutterEngine? {
-        return engineBindings.engine
+//        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
     }
 }
-
-

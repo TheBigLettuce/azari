@@ -5,6 +5,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/post.dart";
@@ -55,7 +56,11 @@ GridAction<T> download<T extends Post>(
 ) {
   return GridAction(
     Icons.download,
-    (selected) => selected.downloadAll(context, thenMoveTo),
+    (selected) => selected.downloadAll(
+      DownloadManager.of(context),
+      PostTags.fromContext(context),
+      thenMoveTo,
+    ),
     true,
     animate: true,
   );

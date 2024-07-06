@@ -10,7 +10,7 @@ import "package:pigeon/pigeon.dart";
     dartOut: "lib/src/plugs/gallery/android/api.g.dart",
     dartTestOut: "test/test_api.g.dart",
     kotlinOut:
-        "android/app/src/main/kotlin/lol/bruh19/azari/gallery/Gallery.kt",
+        "android/app/src/main/kotlin/lol/bruh19/azari/gallery/generated/Gallery.kt",
     kotlinOptions: KotlinOptions(
       package: "lol.bruh19.azari.gallery",
     ),

@@ -512,6 +512,13 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                 widget.db.miscSettings,
                               ),
                             if (miscSettings.filesExtendedActions) ...[
+                              GridAction(
+                                Icons.download_rounded,
+                                (selected) {
+                                  redownloadFiles(context, selected);
+                                },
+                                true,
+                              ),
                               _saveTagsAction(
                                 context,
                                 plug,

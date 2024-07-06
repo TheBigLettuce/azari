@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/init_main/app_info.dart";
@@ -15,6 +16,7 @@ import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
@@ -28,6 +30,7 @@ import "package:gallery/src/plugs/gallery/dummy_.dart"
     if (dart.library.html) "package:gallery/src/plugs/gallery/web.dart";
 import "package:gallery/src/plugs/gallery_file_functions.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/glue_provider.dart";

@@ -10,7 +10,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package lol.bruh19.azari.gallery
+package lol.bruh19.azari.gallery.perceptionhash
 
 import android.graphics.Bitmap
 

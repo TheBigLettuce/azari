@@ -537,8 +537,7 @@ class _RedownloadTileState extends State<RedownloadTile> {
     super.didChangeDependencies();
 
     if (notifier == null) {
-      notifier = GlobalProgressTab.maybeOf(context)
-          ?.get<Future<void>?>("redownloadTile", () => ValueNotifier(null));
+      notifier = GlobalProgressTab.maybeOf(context)?.redownloadFiles();
 
       notifier?.addListener(listener);
     }
@@ -557,7 +556,6 @@ class _RedownloadTileState extends State<RedownloadTile> {
 
   @override
   Widget build(BuildContext context) {
-    final res = widget.res;
     final l10n = AppLocalizations.of(context)!;
 
     return RawChip(
@@ -565,32 +563,94 @@ class _RedownloadTileState extends State<RedownloadTile> {
       onPressed: notifier == null || notifier?.value != null
           ? null
           : () {
-              final dio = BooruAPI.defaultClientForBooru(res!.booru);
-              final api =
-                  BooruAPI.fromEnum(res.booru, dio, PageSaver.noPersist());
-
-              final downloadManager = DownloadManager.of(context);
-              final postTags = PostTags.fromContext(context);
-
-              notifier?.value = api.singlePost(res.id).then((post) {
-                GalleryManagementApi.current().files.deleteAll([widget.file]);
-
-                post.download(downloadManager, postTags);
-
-                return null;
-              }).onError((e, trace) {
-                Logger.root.warning("RedownloadTile", e, trace);
-
-                return null;
-              }).whenComplete(() {
-                dio.close(force: true);
-                notifier?.value = null;
-              });
+              redownloadFiles(context, [widget.file]);
             },
       avatar: const Icon(Icons.download_outlined),
       label: Text(l10n.redownloadLabel),
     );
   }
+}
+
+extension RedownloadFilesGlobalNotifier on GlobalProgressTab {
+  ValueNotifier<Future<void>?> redownloadFiles() {
+    return get("redownloadFiles", () => ValueNotifier(null));
+  }
+}
+
+Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
+  final notifier = GlobalProgressTab.maybeOf(context)?.redownloadFiles();
+  if (notifier == null) {
+    return Future.value();
+  } else if (notifier.value != null) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      const SnackBar(
+        content: Text("Redownloading is already in progress"), // TODO: change
+      ),
+    );
+
+    return Future.value();
+  }
+
+  final downloadManager = DownloadManager.of(context);
+  final postTags = PostTags.fromContext(context);
+
+  final clients = <Booru, Dio>{};
+  final apis = <Booru, BooruAPI>{};
+
+  final notif = chooseNotificationPlug().newProgress(
+    "Fetching download urls", // TODO: change
+    redownloadFilesNotifId,
+    "redownload files",
+    "Redownloading files",
+    body: "Redownloading ${files.length} files",
+  );
+
+  return notifier.value = Future(() async {
+    final progress = await notif;
+    progress.setTotal(files.length);
+
+    final posts = <Post>[];
+    final actualFiles = <GalleryFile>[];
+
+    for (final (index, file) in files.indexed) {
+      progress.update(index, "$index / ${files.length}");
+
+      final res = DisassembleResult.fromFilename(file.name).maybeValue();
+      if (res == null) {
+        continue;
+      }
+
+      final dio = clients.putIfAbsent(
+        res.booru,
+        () => BooruAPI.defaultClientForBooru(res.booru),
+      );
+      final api = apis.putIfAbsent(
+        res.booru,
+        () => BooruAPI.fromEnum(res.booru, dio, PageSaver.noPersist()),
+      );
+
+      try {
+        posts.add(await api.singlePost(res.id));
+        actualFiles.add(file);
+      } catch (e, trace) {
+        Logger.root.warning("RedownloadTile", e, trace);
+      }
+    }
+
+    GalleryManagementApi.current().files.deleteAll(actualFiles);
+
+    posts.downloadAll(downloadManager, postTags);
+  }).whenComplete(() {
+    for (final client in clients.values) {
+      client.close();
+    }
+
+    notif.then((v) {
+      v.done();
+    });
+
+    notifier.value = null;
+  });
 }
 
 class SetWallpaperTile extends StatefulWidget {

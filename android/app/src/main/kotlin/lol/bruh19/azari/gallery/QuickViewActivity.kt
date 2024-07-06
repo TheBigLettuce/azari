@@ -11,37 +11,60 @@ import android.os.Bundle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
+import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.generated.GalleryApi
+import lol.bruh19.azari.gallery.generated.GalleryHostApi
+import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
+import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class QuickViewActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
+        val app = this.applicationContext as App
+
+        val engine = makeEngine(app, "mainQuickView")
+
         EngineBindings(
-            activity = this, "mainQuickView", getSystemService(
-                ConnectivityManager::class.java
-            )
+            engine, GalleryApi(engine.dartExecutor.binaryMessenger),
         )
+    }
+
+    private val mediaLoaderAndMover: MediaLoaderAndMover by lazy {
+        (this.applicationContext as App).mediaLoaderAndMover
+    }
+
+    private val intents by lazy {
+        ActivityResultIntents(
+            this,
+            { engineBindings },
+            { mediaLoaderAndMover })
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val app = this.applicationContext as App
-        prewarmEngine(app, "mainQuickView")
+        GalleryHostApi.setUp(
+            engineBindings.engine.dartExecutor.binaryMessenger,
+            GalleryHostApiImpl(this, mediaLoaderAndMover)
+        )
 
-        engineBindings.attach()
+        engineBindings.attach(
+            this, mediaLoaderAndMover,
+            getSystemService(
+                ConnectivityManager::class.java
+            ),
+            intents,
+        )
     }
 
-    override fun getCachedEngineId(): String? {
-        return "mainQuickView"
-    }
+    override fun getCachedEngineId(): String = "mainQuickView"
+    override fun provideFlutterEngine(context: Context): FlutterEngine = engineBindings.engine
 
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
         engineBindings.engine.destroy()
         FlutterEngineCache.getInstance().remove("mainQuickView")
-    }
-
-    override fun provideFlutterEngine(context: Context): FlutterEngine? {
-        return engineBindings.engine
+        intents.unregisterAll()
+        GalleryHostApi.setUp(engineBindings.engine.dartExecutor.binaryMessenger, null)
     }
 }

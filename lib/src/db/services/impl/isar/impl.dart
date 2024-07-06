@@ -2476,8 +2476,8 @@ class IsarGridStateBooruService implements GridBookmarkService {
 
   @override
   GridBookmark? getFirstByTags(String tags) => _Dbs.g.main.isarBookmarks
-      .where()
-      .tagsEqualTo(tags)
+      .filter()
+      .tagsStartsWith(tags)
       .limit(1)
       .findFirstSync();
 

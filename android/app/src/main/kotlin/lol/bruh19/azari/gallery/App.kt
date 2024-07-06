@@ -9,14 +9,28 @@ import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.os.StrictMode
 import io.flutter.FlutterInjector
+import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.StandardMethodCodec
+import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.generated.GalleryApi
+import lol.bruh19.azari.gallery.generated.GalleryHostApi
+import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
+import lol.bruh19.azari.gallery.impls.NativeViewFactory
+import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class App : Application() {
-    lateinit var engines: FlutterEngineGroup
+    internal lateinit var engines: FlutterEngineGroup
+    val mediaLoaderAndMover = MediaLoaderAndMover(this)
+    val engineBindings: EngineBindings by lazy {
+        val engine = makeEngine(this, "main")
+        GalleryHostApi.setUp(
+            engine.dartExecutor.binaryMessenger,
+            GalleryHostApiImpl(this, mediaLoaderAndMover)
+        )
+        EngineBindings(engine, GalleryApi(engine.dartExecutor.binaryMessenger))
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -31,13 +45,11 @@ class App : Application() {
         }
 
         engines = FlutterEngineGroup(this)
-
-//        prewarmEngine(this, "main")
-//        prewarmEngine(engines, this, "mainPickfile")
+        mediaLoaderAndMover.initMover(engineBindings::notifyGallery)
     }
 }
 
-fun prewarmEngine(app: App, entrypoint: String) {
+fun makeEngine(app: App, entrypoint: String): FlutterEngine {
     val dartEntrypoint =
         DartExecutor.DartEntrypoint(
             FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
@@ -48,4 +60,6 @@ fun prewarmEngine(app: App, entrypoint: String) {
         NativeViewFactory(GalleryApi(engine.dartExecutor.binaryMessenger))
     )
     FlutterEngineCache.getInstance().put(entrypoint, engine)
+
+    return engine
 }

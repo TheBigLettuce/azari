@@ -3,9 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
-package lol.bruh19.azari.gallery
+package lol.bruh19.azari.gallery.mover
 
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -25,9 +23,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import lol.bruh19.azari.gallery.generated.Directory
+import lol.bruh19.azari.gallery.generated.DirectoryFile
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
@@ -36,45 +38,46 @@ import okio.use
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.util.Calendar
-import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
 
-data class NetworkThumbOp(val url: String, val id: Long)
-
-internal class Mover(
-    private val uiContext: CoroutineContext,
-    private val context: Context,
-    private val galleryApi: GalleryApi
-) {
-    private val channel = Channel<MoveOp>()
+class MediaLoaderAndMover(private val context: Context) {
     private val cap = if (Runtime.getRuntime().availableProcessors() == 1) {
         1
     } else {
         Runtime.getRuntime().availableProcessors() - 1
     }
+
+    private val moveChannel = Channel<MoveOp>()
     private val thumbnailsChannel = Channel<ThumbOp>(capacity = cap)
-    private val scope = CoroutineScope(Dispatchers.IO)
+
+    internal val scope = CoroutineScope(Dispatchers.IO)
+    internal val uiScope = CoroutineScope(Dispatchers.Main)
 
     private val isLockedDirMux = Mutex()
     private val isLockedFilesMux = Mutex()
     val trashDeleteMux = Mutex()
     private val locker = CacheLocker(context)
 
-    init {
+    private var initDone = false
+
+    fun initMover(notifyGallery: (CoroutineScope, String) -> Unit) {
+        if (initDone) {
+            return
+        }
+
         scope.launch {
             val inProgress = mutableListOf<Job>()
+
             for (op in thumbnailsChannel) {
                 try {
-                    val newScope = CoroutineScope(Dispatchers.IO)
-
                     if (inProgress.count() == cap) {
                         inProgress.first().join()
                         inProgress.removeFirst()
                     }
 
-                    inProgress.add(newScope.launch {
+                    inProgress.add(launch {
                         var res: Pair<String, Long>
                         try {
                             res = when (op.thumb) {
@@ -112,11 +115,23 @@ internal class Mover(
                     Log.e("thumbnails", e.toString())
                 }
             }
+
+            for (job in inProgress) {
+                job.cancelAndJoin()
+            }
+            inProgress.clear()
         }
 
         scope.launch {
-            for (op in channel) {
-                launch {
+            val inProgress = mutableListOf<Job>()
+
+            for (op in moveChannel) {
+                if (inProgress.count() == cap) {
+                    inProgress.first().join()
+                    inProgress.removeFirst()
+                }
+
+                inProgress.add(launch {
                     try {
                         val ext = Path(op.source).extension
 
@@ -143,38 +158,48 @@ internal class Mover(
 
                         val docFd = context.contentResolver.openFile(docDest.uri, "w", null)
                             ?: throw Exception("could not get an output stream")
-                        val fileSrc = FileSystem.SYSTEM.openReadOnly(op.source.toPath())
+                        docFd.use { fd ->
+                            FileSystem.SYSTEM.openReadOnly(op.source.toPath()).use { fileSrc ->
+                                FileOutputStream(fd.fileDescriptor).use { docStream ->
+                                    docStream.sink().buffer().use { buffer ->
+                                        fileSrc.source().use { src ->
+                                            buffer.writeAll(src)
+                                        }
 
-                        val docStream = FileOutputStream(docFd.fileDescriptor)
+                                        buffer.flush()
+                                    }
 
-                        val buffer = docStream.sink().buffer()
-                        val src = fileSrc.source()
-                        buffer.writeAll(src)
-                        buffer.flush()
-                        docStream.flush()
-
-                        docStream.fd.sync()
-
-                        src.close()
-                        buffer.close()
-                        fileSrc.close()
-                        docStream.close()
-                        docFd.close()
-                    } catch (e: Exception) {
-                        Log.e("downloader", e.toString())
-                    }
-
-                    CoroutineScope(uiContext).launch {
-                        galleryApi.notify(op.dir) {
-
+                                    docStream.flush()
+                                    docStream.fd.sync()
+                                }
+                            }
                         }
+                    } catch (e: Exception) {
+                        Log.e("Mover move coro", e.toString())
                     }
+
+                    notifyGallery(uiScope, op.dir)
 
                     Path(op.source).deleteIfExists()
-                }
+                })
             }
+
+            for (job in inProgress) {
+                job.cancelAndJoin()
+            }
+            inProgress.clear()
         }
+
+        initDone = true
     }
+
+    fun dispose() {
+        moveChannel.close()
+        thumbnailsChannel.close()
+        scope.cancel()
+        uiScope.cancel()
+    }
+
 
     fun deleteCachedThumbs(thumbs: List<Long>, fromPinned: Boolean) {
         scope.launch {
@@ -198,31 +223,12 @@ internal class Mover(
         }
     }
 
-    private fun perceptionHash(thumb: Bitmap): Long {
-        val grayscale = rgb2Gray(thumb)
-        val flattens = DCT2DFast64(grayscale)
-
-        val median = medianOfPixelsFast64(flattens)
-
-        var hash: Long = 0
-
-        for (i in flattens.indices) {
-            if (flattens[i] > median) {
-                hash = hash or 1 shl (64 - i - 1)
-            }
-        }
-
-        return hash
-    }
-
-    fun notifyGallery() {
-        CoroutineScope(uiContext).launch {
-            galleryApi.notify(null) {
-            }
-        }
-    }
-
-    fun refreshFavorites(ids: List<Long>, sortingMode: FilesSortingMode, closure: () -> Unit) {
+    fun refreshFavorites(
+        ids: List<Long>,
+        sortingMode: FilesSortingMode,
+        sendMedia: SendMedia,
+        closure: () -> Unit
+    ) {
         val time = Calendar.getInstance().time.time
 
         scope.launch {
@@ -237,7 +243,7 @@ internal class Mover(
                 showOnly = ids,
                 sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
-                sendMedia("favorites", time, content, empty, inRefresh)
+                sendMedia(scope, uiScope, "favorites", time, content, empty, inRefresh)
             }
 
             closure()
@@ -301,6 +307,7 @@ internal class Mover(
         type: LoadMediaType,
         limit: Long,
         sortingMode: FilesSortingMode,
+        sendMedia: SendMedia,
     ) {
         val time = Calendar.getInstance().time.time
 
@@ -315,21 +322,25 @@ internal class Mover(
                 limit = limit,
                 sortingMode = sortingMode,
             ) { content, empty, inRefresh ->
-                sendMedia(dirId, time, content, empty, inRefresh)
+                sendMedia(scope, uiScope, dirId, time, content, empty, inRefresh)
             }
 
             isLockedFilesMux.unlock()
         }
     }
 
-    suspend fun refreshFilesMultiple(dirs: List<String>, sortingMode: FilesSortingMode) {
+    suspend fun refreshFilesMultiple(
+        dirs: List<String>, sortingMode: FilesSortingMode,
+        sendMedia: SendMedia,
+    ) {
         if (dirs.count() == 1) {
             refreshFiles(
                 dirs.first(),
                 inRefreshAtEnd = true,
                 type = LoadMediaType.Normal,
                 limit = 0,
-                sortingMode = sortingMode
+                sortingMode = sortingMode,
+                sendMedia = sendMedia,
             )
 
             return
@@ -347,7 +358,7 @@ internal class Mover(
                 jobs.removeFirst()
             }
 
-            jobs.add(CoroutineScope(Dispatchers.IO).launch {
+            jobs.add(scope.launch {
                 loadMedia(
                     d,
                     context,
@@ -356,7 +367,7 @@ internal class Mover(
                     limit = 0,
                     sortingMode = sortingMode,
                 ) { content, empty, inRefresh ->
-                    sendMedia(d, time, content, empty, inRefresh)
+                    sendMedia(scope, uiScope, d, time, content, empty, inRefresh)
                 }
             })
         }
@@ -375,37 +386,19 @@ internal class Mover(
             limit = 0,
             sortingMode = sortingMode,
         ) { content, empty, inRefresh ->
-            sendMedia(last, time, content, empty, inRefresh)
+            sendMedia(scope, uiScope, last, time, content, empty, inRefresh)
         }
 
         isLockedFilesMux.unlock()
     }
 
-    private suspend fun sendMedia(
-        dir: String,
-        time: Long,
-        content: List<DirectoryFile>,
-        empty: Boolean,
-        inRefresh: Boolean
-    ) {
-        CoroutineScope(uiContext).launch {
-            galleryApi.updatePictures(
-                content,
-                dir,
-                time,
-                inRefreshArg = inRefresh,
-                emptyArg = empty
-            ) {}
-        }.join()
-    }
-
     fun thumbCacheSize(res: MethodChannel.Result, fromPinned: Boolean) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             res.success(locker.count(fromPinned))
         }
     }
 
-    fun refreshGallery() {
+    fun refreshGallery(sendDirectories: SendDirectories) {
         if (isLockedDirMux.isLocked) {
             return
         }
@@ -415,7 +408,7 @@ internal class Mover(
                 return@launch
             }
 
-            refreshDirectories(context)
+            refreshDirectories(context, sendDirectories)
 
             isLockedDirMux.unlock()
         }
@@ -699,33 +692,7 @@ internal class Mover(
         return Pair(path, hash)
     }
 
-    private suspend fun sendDirResult(
-        dirs: Map<String, Directory>, inRefresh: Boolean,
-        empty: Boolean,
-    ): Boolean {
-        val ch = Channel<Boolean>(capacity = 1)
-
-        scope.launch {
-            CoroutineScope(uiContext).launch {
-                galleryApi.updateDirectories(
-                    dirs,
-                    inRefreshArg = inRefresh,
-                    emptyArg = empty
-                ) {
-                    scope.launch {
-                        ch.send(it.getOrNull()!!)
-                    }
-                }
-            }
-        }
-
-        val res = ch.receive();
-        ch.close()
-
-        return res
-    }
-
-    private suspend fun refreshDirectories(context: Context) {
+    private suspend fun refreshDirectories(context: Context, sendCallback: SendDirectories) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
@@ -756,7 +723,7 @@ internal class Mover(
             val resMap = mutableMapOf<String, Directory>()
 
             if (!cursor.moveToFirst()) {
-                sendDirResult(mapOf(), inRefresh = false, empty = true)
+                sendCallback(scope, uiScope, mapOf(), false, true)
                 return@use
             }
 
@@ -783,7 +750,7 @@ internal class Mover(
                         val copy = resMap.toMap()
                         resMap.clear()
 
-                        val toContinue = sendDirResult(copy, inRefresh = true, empty = false)
+                        val toContinue = sendCallback(scope, uiScope, copy, true, false)
                         if (!toContinue) {
                             return@use
                         }
@@ -792,9 +759,9 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
-                sendDirResult(resMap, inRefresh = resMap.isNotEmpty(), empty = false)
+                sendCallback(scope, uiScope, resMap, resMap.isNotEmpty(), false)
                 if (resMap.isNotEmpty()) {
-                    sendDirResult(mapOf(), inRefresh = false, empty = false)
+                    sendCallback(scope, uiScope, mapOf(), false, false)
                 }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
@@ -804,23 +771,25 @@ internal class Mover(
 
     fun add(op: MoveOp) {
         scope.launch {
-            channel.send(op)
+            moveChannel.send(op)
         }
     }
-}
 
-enum class LoadMediaType {
-    Trashed, Latest, Normal;
-}
+    companion object Enums {
+        enum class LoadMediaType {
+            Trashed, Latest, Normal;
+        }
 
-enum class FilesSortingMode {
-    None, Size;
+        enum class FilesSortingMode {
+            None, Size;
 
-    companion object {
-        fun fromDartInt(int: Int): FilesSortingMode {
-            return when (int) {
-                1 -> Size
-                else -> None
+            companion object {
+                fun fromDartInt(int: Int): FilesSortingMode {
+                    return when (int) {
+                        1 -> Size
+                        else -> None
+                    }
+                }
             }
         }
     }
