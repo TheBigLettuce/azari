@@ -7,6 +7,7 @@ import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/impl/conventers/gelbooru.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:json_annotation/json_annotation.dart";
+import "package:logging/logging.dart";
 
 part "danbooru.g.dart";
 
@@ -18,7 +19,8 @@ List<Post> fromList(List<dynamic> l) {
       final post = _DanbooruPost.fromJson(e as Map<String, dynamic>);
 
       ret.add(post);
-    } catch (_) {
+    } catch (e, trace) {
+      Logger.root.warning("fromList", e, trace);
       continue;
     }
   }
@@ -84,7 +86,7 @@ class _DanbooruPost with Post<Post>, DefaultPostPressable<Post> {
 
   @override
   @StringTagsConverter()
-  @JsonKey(name: "tags_string")
+  @JsonKey(name: "tag_string")
   final List<String> tags;
 
   @override

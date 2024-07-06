@@ -49,7 +49,7 @@ class Danbooru implements BooruAPI {
       return const [];
     }
 
-    final resp = await client.getUriLog<List<Map<String, dynamic>>>(
+    final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/tags.json", {
         "search[name_matches]": "$tag*",
         "search[order]": "count",
@@ -61,7 +61,7 @@ class Danbooru implements BooruAPI {
     return resp.data!
         .map(
           (e) => BooruTag(
-            e["name"] as String,
+            (e as Map<String, dynamic>)["name"] as String,
             e["post_count"] as int,
           ),
         )
