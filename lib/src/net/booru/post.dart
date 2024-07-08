@@ -13,7 +13,6 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/post_tags.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/display_quality.dart";
 import "package:gallery/src/net/booru/post_functions.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
@@ -24,7 +23,6 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:isar/isar.dart";
 import "package:mime/mime.dart" as mime;
 import "package:path/path.dart" as path_util;
 import "package:transparent_image/transparent_image.dart";
@@ -32,7 +30,7 @@ import "package:url_launcher/url_launcher.dart";
 
 final _transparent = MemoryImage(kTransparentImage);
 
-abstract mixin class Post<T extends ContentableCell>
+abstract class PostImpl
     implements
         PostBase,
         ContentableCell,
@@ -42,29 +40,8 @@ abstract mixin class Post<T extends ContentableCell>
         ImageViewActionable,
         Infoable,
         Stickerable,
-        Downloadable,
-        Pressable<T> {
-  static String _getUrl(Post p) {
-    var url = switch (SettingsService.db().current.quality) {
-      DisplayQuality.original => p.fileUrl,
-      DisplayQuality.sample => p.sampleUrl
-    };
-    if (url.isEmpty) {
-      url = p.sampleUrl.isNotEmpty
-          ? p.sampleUrl
-          : p.fileUrl.isEmpty
-              ? p.previewUrl
-              : p.fileUrl;
-    }
-
-    return url;
-  }
-
-  static PostContentType makeType(Post p) {
-    final url = _getUrl(p);
-
-    return PostContentType.fromUrl(url);
-  }
+        Downloadable {
+  const PostImpl();
 
   String _makeName() =>
       DisassembleResult.makeFilename(booru, fileDownloadUrl(), md5, id);
@@ -151,7 +128,7 @@ abstract mixin class Post<T extends ContentableCell>
           ),
         ],
       ),
-      if (this is! FavoritePostData)
+      if (this is! FavoritePost)
         ImageViewAction(
           Icons.hide_image_rounded,
           (_) {
@@ -159,10 +136,10 @@ abstract mixin class Post<T extends ContentableCell>
               hidden.removeAll([(id, booru)]);
             } else {
               hidden.addAll([
-                objFactory.makeHiddenBooruPostData(
-                  previewUrl,
-                  id,
-                  booru,
+                HiddenBooruPostData(
+                  thumbUrl: previewUrl,
+                  postId: id,
+                  booru: booru,
                 ),
               ]);
             }
@@ -195,7 +172,7 @@ abstract mixin class Post<T extends ContentableCell>
 
   @override
   Contentable content() {
-    final url = _getUrl(this);
+    final url = Post.getUrl(this);
 
     return switch (type) {
       PostContentType.none => EmptyContent(this),
@@ -243,7 +220,7 @@ abstract mixin class Post<T extends ContentableCell>
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (this is! FavoritePostData && db.favoritePosts.isFavorite(id, booru))
+      if (this is! FavoritePost && db.favoritePosts.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),
       ...defaultStickersPost(
         type,
@@ -301,58 +278,34 @@ enum PostContentType {
 }
 
 abstract class PostBase {
-  const PostBase({
-    required this.id,
-    required this.height,
-    required this.md5,
-    required this.tags,
-    required this.width,
-    required this.fileUrl,
-    required this.booru,
-    required this.previewUrl,
-    required this.sampleUrl,
-    required this.sourceUrl,
-    required this.rating,
-    required this.score,
-    required this.createdAt,
-    required this.type,
-  });
+  const PostBase();
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
-  final int id;
+  int get id;
 
-  final String md5;
+  String get md5;
 
-  @Index(caseSensitive: false, type: IndexType.hashElements)
-  final List<String> tags;
+  List<String> get tags;
 
-  final int width;
-  final int height;
+  int get width;
+  int get height;
 
-  @Index()
-  final String fileUrl;
-  final String previewUrl;
-  final String sampleUrl;
-  final String sourceUrl;
-
-  @Index()
-  @enumerated
-  final PostRating rating;
-  final int score;
-  final DateTime createdAt;
-  @enumerated
-  final Booru booru;
-
-  @enumerated
-  final PostContentType type;
+  String get fileUrl;
+  String get previewUrl;
+  String get sampleUrl;
+  String get sourceUrl;
+  PostRating get rating;
+  int get score;
+  DateTime get createdAt;
+  Booru get booru;
+  PostContentType get type;
 }
 
-mixin DefaultPostPressable<T extends Post> implements Pressable<T> {
+mixin DefaultPostPressable<T extends PostImpl> implements Pressable<T> {
   @override
   void onPress(
     BuildContext context,
     GridFunctionality<T> functionality,
-    PostBase cell,
+    T cell,
     int idx,
   ) {
     final tagManager = TagManager.of(context);
@@ -373,7 +326,13 @@ mixin DefaultPostPressable<T extends Post> implements Pressable<T> {
   List<ImageTag> _imageViewTags(Contentable c, TagManager tagManager) =>
       (c.widgets as PostBase)
           .tags
-          .map((e) => ImageTag(e, tagManager.pinned.exists(e)))
+          .map(
+            (e) => ImageTag(
+              e,
+              favorite: tagManager.pinned.exists(e),
+              excluded: tagManager.excluded.exists(e),
+            ),
+          )
           .toList();
 
   StreamSubscription<List<ImageTag>> _watchTags(
@@ -384,7 +343,7 @@ mixin DefaultPostPressable<T extends Post> implements Pressable<T> {
       tagManager.pinned.watchImage((c.widgets as PostBase).tags, f);
 }
 
-extension MultiplePostDownloadExt on List<Post> {
+extension MultiplePostDownloadExt on List<PostImpl> {
   void downloadAll(
     DownloadManager downloadManager,
     PostTags postTags, [
@@ -412,7 +371,7 @@ extension MultiplePostDownloadExt on List<Post> {
   }
 }
 
-extension PostDownloadExt on Post {
+extension PostDownloadExt on PostImpl {
   void download(
     DownloadManager downloadManager,
     PostTags postTags, [

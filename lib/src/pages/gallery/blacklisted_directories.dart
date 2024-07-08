@@ -47,7 +47,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
       filter;
   final searchTextController = TextEditingController();
 
-  final gridConfiguration = GridSettingsData.noPersist(
+  final gridConfiguration = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,

@@ -21,19 +21,22 @@ abstract interface class HiddenBooruPostService implements ServiceMarker {
   Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]);
 }
 
+@immutable
 abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
-  const HiddenBooruPostData(
-    this.booru,
-    this.postId,
-    this.thumbUrl,
-  );
+  const factory HiddenBooruPostData({
+    required Booru booru,
+    required int postId,
+    required String thumbUrl,
+  }) = $HiddenBooruPostData;
 
-  final String thumbUrl;
+  String get thumbUrl;
+  int get postId;
+  Booru get booru;
+}
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
-  final int postId;
-  @enumerated
-  final Booru booru;
+@immutable
+abstract class HiddenBooruPostDataImpl implements HiddenBooruPostData {
+  const HiddenBooruPostDataImpl();
 
   @override
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);

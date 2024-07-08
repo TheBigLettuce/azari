@@ -64,7 +64,7 @@ class AndroidGallery implements GalleryPlug {
 
   @override
   GalleryFile makeGalleryFile({
-    required String tagsFlat,
+    required Map<String, void> tags,
     required int id,
     required String bucketId,
     required String name,
@@ -89,7 +89,7 @@ class AndroidGallery implements GalleryPlug {
         width: width,
         lastModified: lastModified,
         originalUri: originalUri,
-        tagsFlat: tagsFlat,
+        tags: tags,
       );
 }
 

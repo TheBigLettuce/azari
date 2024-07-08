@@ -5,14 +5,33 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:isar/isar.dart";
 
 part "blacklisted_directory.g.dart";
 
 @collection
-class IsarBlacklistedDirectory extends BlacklistedDirectoryData {
-  IsarBlacklistedDirectory(super.bucketId, super.name);
+class IsarBlacklistedDirectory extends BlacklistedDirectoryDataImpl
+    implements $BlacklistedDirectoryData {
+  const IsarBlacklistedDirectory({
+    required this.isarId,
+    required this.bucketId,
+    required this.name,
+  });
 
-  Id? isarId;
+  const IsarBlacklistedDirectory.noId({
+    required this.bucketId,
+    required this.name,
+  }) : isarId = null;
+
+  final Id? isarId;
+
+  @override
+  @Index(unique: true, replace: true)
+  final String bucketId;
+
+  @override
+  @Index()
+  final String name;
 }

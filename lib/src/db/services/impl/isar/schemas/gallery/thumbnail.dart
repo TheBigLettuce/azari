@@ -10,10 +10,24 @@ part "thumbnail.g.dart";
 
 @collection
 class IsarThumbnail extends ThumbnailData {
-  const IsarThumbnail(
-    super.id,
-    super.updatedAt,
-    super.path,
-    super.differenceHash,
-  );
+  const IsarThumbnail({
+    required this.differenceHash,
+    required this.id,
+    required this.path,
+    required this.updatedAt,
+  });
+
+  @override
+  @Index()
+  final int differenceHash;
+
+  @override
+  final Id id;
+
+  @override
+  @Index()
+  final String path;
+
+  @override
+  final DateTime updatedAt;
 }

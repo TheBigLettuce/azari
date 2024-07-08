@@ -35,11 +35,11 @@ GridAction<GalleryDirectory> blacklist(
         final m = directoryMetadata.get(segment(e));
         if (m != null && m.requireAuth) {
           requireAuth.add(
-            objFactory.makeBlacklistedDirectoryData(e.bucketId, e.name),
+            BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
           );
         } else {
           noAuth.add(
-            objFactory.makeBlacklistedDirectoryData(e.bucketId, e.name),
+            BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
           );
         }
       }

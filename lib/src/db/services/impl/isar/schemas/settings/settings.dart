@@ -17,18 +17,11 @@ class IsarSettingsPath implements SettingsPath {
     this.path = "",
     this.pathDisplay = "",
   });
+
   @override
   final String path;
   @override
   final String pathDisplay;
-
-  @override
-  @ignore
-  bool get isEmpty => path.isEmpty;
-
-  @override
-  @ignore
-  bool get isNotEmpty => path.isNotEmpty;
 
   @override
   SettingsPath copy({String? path, String? pathDisplay}) => IsarSettingsPath(
@@ -41,18 +34,39 @@ class IsarSettingsPath implements SettingsPath {
 class IsarSettings extends SettingsData {
   const IsarSettings({
     required this.path,
-    required super.selectedBooru,
-    required super.quality,
-    required super.safeMode,
-    required super.showWelcomePage,
-    required super.showAnimeMangaPages,
-    required super.extraSafeFilters,
+    required this.selectedBooru,
+    required this.quality,
+    required this.safeMode,
+    required this.showWelcomePage,
+    required this.showAnimeMangaPages,
+    required this.extraSafeFilters,
   });
 
   Id get id => 0;
 
   @override
   final IsarSettingsPath path;
+
+  @override
+  final bool extraSafeFilters;
+
+  @override
+  @enumerated
+  final DisplayQuality quality;
+
+  @override
+  @enumerated
+  final SafeMode safeMode;
+
+  @override
+  @enumerated
+  final Booru selectedBooru;
+
+  @override
+  final bool showAnimeMangaPages;
+
+  @override
+  final bool showWelcomePage;
 
   @override
   IsarSettings copy({

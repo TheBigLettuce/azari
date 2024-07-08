@@ -8,7 +8,6 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/impl/danbooru.dart";
 import "package:gallery/src/net/booru/impl/gelbooru.dart";
-import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 
 /// The interface to interact with the various booru APIs.
@@ -22,7 +21,7 @@ abstract class BooruAPI {
   const BooruAPI();
 
   /// Total posts on the booru.
-  Future<int> get totalPosts;
+  Future<int> totalPosts(String tags, SafeMode safeMode);
 
   /// Some booru do not support pulling posts down a certain post number.
   /// This makes the data stale after a time, requiring more refreshes.
@@ -43,8 +42,9 @@ abstract class BooruAPI {
     int p,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  );
+    SafeMode safeMode, [
+    int? limit,
+  ]);
 
   /// Get the post's notes.
   /// Usually used for translations.
@@ -55,11 +55,15 @@ abstract class BooruAPI {
     int postId,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  );
+    SafeMode safeMode, [
+    int? limit,
+  ]);
 
-  /// Tag completition, this shouldn't present more than 10 at a time.
-  Future<List<BooruTag>> completeTag(String tag);
+  Future<List<BooruTag>> searchTag(
+    String tag, [
+    BooruTagSorting sorting = BooruTagSorting.count,
+    int limit = 30,
+  ]);
 
   /// Additional tag filters.
   static Map<String, void> get additionalSafetyTags => const {
@@ -99,6 +103,11 @@ abstract class BooruAPI {
       Booru.gelbooru => Gelbooru(client, pageSaver),
     };
   }
+}
+
+enum BooruTagSorting {
+  similarity,
+  count;
 }
 
 class BooruTag {

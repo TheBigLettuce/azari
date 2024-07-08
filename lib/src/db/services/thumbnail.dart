@@ -17,18 +17,12 @@ abstract interface class ThumbnailService {
   void addAll(List<ThumbId> l);
 }
 
+@immutable
 abstract class ThumbnailData {
-  const ThumbnailData(
-    this.id,
-    this.updatedAt,
-    this.path,
-    this.differenceHash,
-  );
+  const ThumbnailData();
 
-  final Id id;
-  @Index()
-  final String path;
-  @Index()
-  final int differenceHash;
-  final DateTime updatedAt;
+  int get id;
+  String get path;
+  int get differenceHash;
+  DateTime get updatedAt;
 }

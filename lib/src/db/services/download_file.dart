@@ -23,45 +23,48 @@ abstract interface class DownloadFileService implements ServiceMarker {
   void clear();
 }
 
+@immutable
 abstract class DownloadFileData implements CellBase, Thumbnailable {
-  const DownloadFileData({
-    required this.status,
-    required this.name,
-    required this.url,
-    required this.thumbUrl,
-    required this.site,
-    required this.date,
-  });
+  const factory DownloadFileData({
+    required DownloadStatus status,
+    required String name,
+    required String url,
+    required String thumbUrl,
+    required String site,
+    required DateTime date,
+  }) = $DownloadFileData;
 
-  const DownloadFileData.d({
-    required this.name,
-    required this.url,
-    required this.thumbUrl,
-    required this.site,
-    required this.date,
-  }) : status = DownloadStatus.inProgress;
+  factory DownloadFileData.d({
+    required String name,
+    required String url,
+    required String thumbUrl,
+    required String site,
+    required DateTime date,
+  }) =>
+      DownloadFileData(
+        status: DownloadStatus.inProgress,
+        name: name,
+        url: url,
+        thumbUrl: thumbUrl,
+        site: site,
+        date: date,
+      );
 
-  @Index(unique: true, replace: true)
-  final String url;
-  @Index(unique: true, replace: true)
-  final String name;
-
-  final String thumbUrl;
-
-  final DateTime date;
-
-  final String site;
-
-  @override
-  CellStaticData description() => const CellStaticData();
-
-  @Index()
-  @enumerated
-  final DownloadStatus status;
+  String get url;
+  String get name;
+  String get thumbUrl;
+  DateTime get date;
+  String get site;
+  DownloadStatus get status;
 
   DownloadFileData toInProgress();
   DownloadFileData toFailed();
   DownloadFileData toOnHold();
+}
+
+@immutable
+abstract class DownloadFileDataImpl implements DownloadFileData {
+  const DownloadFileDataImpl();
 
   @override
   String toString() => "Download${status.name}: $name, url: $url";
@@ -74,4 +77,7 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
 
   @override
   String alias(bool isList) => name;
+
+  @override
+  CellStaticData description() => const CellStaticData();
 }

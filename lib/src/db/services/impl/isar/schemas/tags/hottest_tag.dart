@@ -3,54 +3,58 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
-part "directory_metadata.g.dart";
+part "hottest_tag.g.dart";
 
 @collection
-class IsarDirectoryMetadata implements DirectoryMetadata {
-  IsarDirectoryMetadata({
+class IsarHottestTag implements $HottestTag {
+  const IsarHottestTag({
+    required this.tag,
+    required this.thumbUrls,
+    required this.count,
     required this.isarId,
-    required this.categoryName,
-    required this.time,
-    required this.blur,
-    required this.sticky,
-    required this.requireAuth,
   });
+
+  const IsarHottestTag.noId({
+    required this.tag,
+    required List<ThumbUrlRating> thumbUrls,
+    required this.count,
+  })  : isarId = null,
+        thumbUrls = thumbUrls as List<IsarThumbUrlRating>;
 
   final Id? isarId;
 
   @override
-  final bool blur;
+  final int count;
 
   @override
   @Index(unique: true, replace: true)
-  final String categoryName;
+  final String tag;
 
   @override
-  final bool requireAuth;
+  final List<IsarThumbUrlRating> thumbUrls;
+}
+
+@embedded
+class IsarThumbUrlRating implements $ThumbUrlRating {
+  const IsarThumbUrlRating({
+    this.url = "",
+    this.rating = PostRating.general,
+  });
+
+  const IsarThumbUrlRating.required({
+    required this.rating,
+    required this.url,
+  });
 
   @override
-  final bool sticky;
+  @enumerated
+  final PostRating rating;
 
   @override
-  @Index()
-  final DateTime time;
-
-  @override
-  IsarDirectoryMetadata copyBools({
-    bool? blur,
-    bool? sticky,
-    bool? requireAuth,
-  }) {
-    return IsarDirectoryMetadata(
-      isarId: isarId,
-      categoryName: categoryName,
-      time: time,
-      blur: blur ?? this.blur,
-      sticky: sticky ?? this.sticky,
-      requireAuth: requireAuth ?? this.requireAuth,
-    );
-  }
+  final String url;
 }

@@ -7,6 +7,7 @@ part of "services.dart";
 
 extension SettingsDataExt on SettingsData {
   void save() => SettingsService.db().add(this);
+  SettingsService get s => _currentDb.settings;
 }
 
 abstract interface class SettingsService implements ServiceMarker {
@@ -29,14 +30,17 @@ abstract interface class SettingsService implements ServiceMarker {
   );
 }
 
+extension SettingsPathEmptyExt on SettingsPath {
+  bool get isEmpty => path.isEmpty;
+  bool get isNotEmpty => path.isNotEmpty;
+}
+
+@immutable
 abstract class SettingsPath {
   const SettingsPath();
 
   String get path;
   String get pathDisplay;
-
-  bool get isEmpty => path.isEmpty;
-  bool get isNotEmpty => path.isNotEmpty;
 
   SettingsPath copy({
     String? path,
@@ -44,30 +48,17 @@ abstract class SettingsPath {
   });
 }
 
+@immutable
 abstract class SettingsData {
-  const SettingsData({
-    required this.extraSafeFilters,
-    required this.showAnimeMangaPages,
-    required this.selectedBooru,
-    required this.quality,
-    required this.safeMode,
-    required this.showWelcomePage,
-  });
+  const SettingsData();
 
   SettingsPath get path;
-  @enumerated
-  final Booru selectedBooru;
-  @enumerated
-  final DisplayQuality quality;
-  @enumerated
-  final SafeMode safeMode;
-
-  final bool showWelcomePage;
-  final bool showAnimeMangaPages;
-  final bool extraSafeFilters;
-
-  @ignore
-  SettingsService get s => _currentDb.settings;
+  Booru get selectedBooru;
+  DisplayQuality get quality;
+  SafeMode get safeMode;
+  bool get showWelcomePage;
+  bool get showAnimeMangaPages;
+  bool get extraSafeFilters;
 
   SettingsData copy({
     bool? extraSafeFilters,

@@ -3,6 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
 import "package:isar/isar.dart";
@@ -10,13 +11,36 @@ import "package:isar/isar.dart";
 part "compact_manga_data.g.dart";
 
 @collection
-class IsarCompactMangaData extends CompactMangaDataBase with CompactMangaData {
-  IsarCompactMangaData({
-    required super.mangaId,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
+class IsarCompactMangaData extends CompactMangaDataImpl
+    implements $CompactMangaData {
+  const IsarCompactMangaData({
+    required this.mangaId,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.isarId,
   });
 
-  Id? isarId;
+  const IsarCompactMangaData.noId({
+    required this.mangaId,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+  }) : isarId = null;
+
+  final Id? isarId;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("site")])
+  final String mangaId;
+
+  @override
+  @enumerated
+  final MangaMeta site;
+
+  @override
+  final String thumbUrl;
+
+  @override
+  final String title;
 }

@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/init_main/app_info.dart";
 import "package:gallery/init_main/restart_widget.dart";
@@ -41,132 +42,142 @@ class MorePage extends StatelessWidget {
     final emoji = timeNow.hour > 20 || timeNow.hour <= 6 ? "🌙" : "☀️";
 
     return switch (MoreSubPage.of(context)) {
-      MoreSubPage.more => Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                bottom: 12,
-                top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton.filled(
-                        icon: const Icon(Icons.download_outlined),
-                        onPressed: () {
-                          final g = GlueProvider.generateOf(context);
+      MoreSubPage.more => AnnotatedRegion(
+          value: SystemUiOverlayStyle(
+            statusBarIconBrightness: theme.brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
+            statusBarColor: theme.colorScheme.surface.withOpacity(0),
+          ),
+          child: Stack(
+            children: [
+              // Center(child: _ChangingGradient(theme: theme)),
+              Padding(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  bottom: 12,
+                  top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton.filled(
+                          icon: const Icon(Icons.download_outlined),
+                          onPressed: () {
+                            final g = GlueProvider.generateOf(context);
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (context) {
-                                return Downloads(
-                                  generateGlue: g,
-                                  downloadManager: DownloadManager.of(context),
-                                  db: db,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      const Padding(padding: EdgeInsets.only(left: 8)),
-                      IconButton.filled(
-                        icon: const Icon(Icons.settings_outlined),
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).push(
-                            MaterialPageRoute<void>(
-                              builder: (context) {
-                                return const SettingsWidget();
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 80)),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      "${l10n.date(timeNow)} $emoji",
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.9),
-                      ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (context) {
+                                  return Downloads(
+                                    generateGlue: g,
+                                    downloadManager:
+                                        DownloadManager.of(context),
+                                    db: db,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        const Padding(padding: EdgeInsets.only(left: 8)),
+                        IconButton.filled(
+                          icon: const Icon(Icons.settings_outlined),
+                          onPressed: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute<void>(
+                                builder: (context) {
+                                  return const SettingsWidget();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 40)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: TimeSpentWidget(
-                            stream: stream,
-                            initalDuration: time,
-                          ),
+                    const Padding(padding: EdgeInsets.only(top: 80)),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        "${l10n.date(timeNow)} $emoji",
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.9),
                         ),
                       ),
-                      Expanded(
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                StatisticsDailyService.db()
-                                    .current
-                                    .swipedBoth
-                                    .toString(),
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  color: color,
-                                ),
-                              ),
-                              Text(
-                                l10n.cardPicturesSeenToday,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: color.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
+                    ),
+                    const Padding(padding: EdgeInsets.only(top: 40)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Expanded(
+                          child: Center(
+                            child: TimeSpentWidget(
+                              stream: stream,
+                              initalDuration: time,
+                            ),
                           ),
                         ),
+                        Expanded(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  StatisticsDailyService.db()
+                                      .current
+                                      .swipedBoth
+                                      .toString(),
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: color,
+                                  ),
+                                ),
+                                Text(
+                                  l10n.cardPicturesSeenToday,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: color.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.rotate(
+                      angle: 0.4363323,
+                      child: Icon(
+                        const IconData(0x963F),
+                        size: 78,
+                        color: theme.colorScheme.onSurface.withOpacity(0.1),
+                        applyTextScaling: true,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.rotate(
-                    angle: 0.4363323,
-                    child: Icon(
-                      const IconData(0x963F),
-                      size: 78,
-                      color: theme.colorScheme.onSurface.withOpacity(0.1),
-                      applyTextScaling: true,
                     ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 12)),
-                  Text(
-                    AppInfo().version,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.05),
+                    const Padding(padding: EdgeInsets.only(top: 12)),
+                    Text(
+                      AppInfo().version,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.05),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       MoreSubPage.dashboard => GridPopScope(
           searchTextController: null,
@@ -180,6 +191,112 @@ class MorePage extends StatelessWidget {
     };
   }
 }
+
+// class _ChangingGradient extends StatefulWidget {
+//   const _ChangingGradient({super.key, required this.theme});
+
+//   final ThemeData theme;
+
+//   @override
+//   State<_ChangingGradient> createState() => __ChangingGradientState();
+// }
+
+// class __ChangingGradientState extends State<_ChangingGradient>
+//     with SingleTickerProviderStateMixin {
+//   late final AnimationController controller;
+//   final random = math.Random();
+
+//   ThemeData get theme => widget.theme;
+
+//   @override
+//   void initState() {
+//     super.initState();
+
+//     controller = AnimationController(
+//       vsync: this,
+//       duration: Duration(seconds: 6, milliseconds: 50),
+//       reverseDuration: Duration(seconds: 12, milliseconds: 100),
+//     );
+//     controller.loop(
+//       // max: 0.6,
+//       // min: 0.1,
+//       reverse: true,
+//       period: Duration(seconds: 6, milliseconds: 50),
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     controller.dispose();
+
+//     super.dispose();
+//   }
+
+//   late final gradientFrom = LinearGradient(
+//     // tileMode: TileMode.mirror,
+//     begin: Alignment.topCenter, // Alignment.bottomRight,
+//     end: Alignment.bottomCenter, // Alignment.topLeft,
+//     // stops: [0.1, 0.2, 0.4, 0.6, 0.8],
+//     colors: [
+//       theme.colorScheme.secondary
+//           .withOpacity(0.055 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.secondary
+//           .withOpacity(0.085 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.secondary
+//           .withOpacity(0.04 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.secondary
+//           .withOpacity(0.035 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.secondary
+//           .withOpacity(0.015 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//     ],
+//   );
+
+//   late final gradientTo = LinearGradient(
+//     // tileMode: TileMode.mirror,
+//     begin: Alignment.topCenter,
+//     end: Alignment.bottomCenter,
+//     // stops: [0.1, 0.2, 0.4, 0.6, 0.8],
+//     colors: [
+//       theme.colorScheme.primary
+//           .withOpacity(0.015 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.primary
+//           .withOpacity(0.035 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.primary
+//           .withOpacity(0.04 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.primary
+//           .withOpacity(0.055 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//       theme.colorScheme.primary
+//           .withOpacity(0.085 * (theme.brightness == Brightness.dark ? 1 : 2)),
+//     ],
+//   );
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
+
+//     return ListenableBuilder(
+//       listenable: controller.view,
+//       builder: (context, widget) {
+//         final transforemedValue =
+//             controller.drive(CurveTween(curve: Easing.standard)).value;
+
+//         return DecoratedBox(
+//           decoration: BoxDecoration(
+//             gradient:
+//                 Gradient.lerp(gradientFrom, gradientTo, transforemedValue),
+//           ),
+//           child: widget,
+//         );
+//       },
+//       child: Builder(
+//         builder: (context) => SizedBox(
+//           height: double.infinity,
+//           width: double.infinity,
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class TimeSpentWidget extends StatefulWidget {
   const TimeSpentWidget({
@@ -217,7 +334,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
     super.dispose();
   }
 
-  String timeStr() {
+  String timeStr(AppLocalizations l10n) {
     var microseconds = duration.inMicroseconds;
     var sign = "";
     final negative = microseconds < 0;
@@ -241,7 +358,9 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
 
     final secondsPadding = seconds < 10 ? "0" : "";
 
-    return "${hours != 0 ? "$sign$hours h " : ""}${minutes != 0 ? "$minutesPadding$minutes m " : ""}$secondsPadding$seconds s";
+    return "${hours != 0 ? "$sign${l10n.hoursShort(hours)} " : ""}"
+        "${minutes != 0 ? "$minutesPadding${l10n.minutesShort(minutes)} " : ""}"
+        "$secondsPadding${l10n.secondsShort(seconds)}";
   }
 
   @override
@@ -256,7 +375,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          timeStr(),
+          timeStr(l10n),
           style: theme.textTheme.titleLarge?.copyWith(
             color: color,
           ),

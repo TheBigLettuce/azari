@@ -21,12 +21,20 @@ abstract interface class PinnedMangaService implements ServiceMarker {
   StreamSubscription<void> watch(void Function(void) f);
 }
 
-mixin PinnedManga
-    implements
-        CompactMangaDataBase,
-        CellBase,
-        Thumbnailable,
-        Pressable<PinnedManga> {
+@immutable
+abstract class PinnedManga
+    implements MangaData, CellBase, Thumbnailable, Pressable<PinnedManga> {
+  const factory PinnedManga({
+    required String mangaId,
+    required MangaMeta site,
+    required String title,
+    required String thumbUrl,
+  }) = $PinnedManga;
+}
+
+abstract class PinnedMangaImpl implements PinnedManga {
+  const PinnedMangaImpl();
+
   @override
   CellStaticData description() => const CellStaticData(
         alignTitleToTopLeft: true,

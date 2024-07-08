@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:isar/isar.dart";
@@ -13,13 +14,14 @@ part "saved_anime_characters.g.dart";
 
 @collection
 class IsarSavedAnimeCharacters {
-  IsarSavedAnimeCharacters({
+  const IsarSavedAnimeCharacters({
     required this.characters,
     required this.id,
     required this.site,
+    required this.isarId,
   });
 
-  Id? isarId;
+  final Id? isarId;
 
   @Index(replace: true, unique: true, composite: [CompositeIndex("site")])
   final int id;
@@ -29,10 +31,26 @@ class IsarSavedAnimeCharacters {
 }
 
 @embedded
-final class IsarAnimeCharacter extends AnimeCharacter {
+final class IsarAnimeCharacter extends AnimeCharacterImpl
+    implements $AnimeCharacter {
   const IsarAnimeCharacter({
-    super.imageUrl = "",
-    super.name = "",
-    super.role = "",
+    this.imageUrl = "",
+    this.name = "",
+    this.role = "",
   });
+
+  const IsarAnimeCharacter.required({
+    required this.imageUrl,
+    required this.name,
+    required this.role,
+  });
+
+  @override
+  final String imageUrl;
+
+  @override
+  final String name;
+
+  @override
+  final String role;
 }

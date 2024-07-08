@@ -30,6 +30,13 @@ abstract interface class WatchableGridSettingsData {
 
 abstract class CancellableWatchableGridSettingsData
     implements WatchableGridSettingsData {
+  factory CancellableWatchableGridSettingsData.noPersist({
+    required bool hideName,
+    required GridAspectRatio aspectRatio,
+    required GridColumn columns,
+    required GridLayoutType layoutType,
+  }) = _InpersistentSettingsWatcher;
+
   void cancel();
 }
 
@@ -49,37 +56,14 @@ enum GridLayoutType {
       };
 }
 
+@immutable
 abstract class GridSettingsData {
-  const GridSettingsData({
-    required this.aspectRatio,
-    required this.columns,
-    required this.layoutType,
-    required this.hideName,
-  });
+  const GridSettingsData();
 
-  static CancellableWatchableGridSettingsData noPersist({
-    required bool hideName,
-    required GridAspectRatio aspectRatio,
-    required GridColumn columns,
-    required GridLayoutType layoutType,
-  }) =>
-      _InpersistentSettingsWatcher(
-        _UnsavableSettingsData(
-          aspectRatio: aspectRatio,
-          columns: columns,
-          layoutType: layoutType,
-          hideName: hideName,
-        ),
-      );
-
-  final bool hideName;
-  @enumerated
-  final GridAspectRatio aspectRatio;
-  @enumerated
-  final GridColumn columns;
-
-  @enumerated
-  final GridLayoutType layoutType;
+  bool get hideName;
+  GridAspectRatio get aspectRatio;
+  GridColumn get columns;
+  GridLayoutType get layoutType;
 
   GridSettingsData copy({
     bool? hideName,
@@ -89,13 +73,25 @@ abstract class GridSettingsData {
   });
 }
 
-class _UnsavableSettingsData extends GridSettingsData {
+class _UnsavableSettingsData implements GridSettingsData {
   const _UnsavableSettingsData({
-    required super.aspectRatio,
-    required super.columns,
-    required super.layoutType,
-    required super.hideName,
+    required this.aspectRatio,
+    required this.columns,
+    required this.layoutType,
+    required this.hideName,
   });
+
+  @override
+  final GridAspectRatio aspectRatio;
+
+  @override
+  final GridColumn columns;
+
+  @override
+  final bool hideName;
+
+  @override
+  final GridLayoutType layoutType;
 
   @override
   GridSettingsData copy({
@@ -114,7 +110,17 @@ class _UnsavableSettingsData extends GridSettingsData {
 
 class _InpersistentSettingsWatcher
     implements CancellableWatchableGridSettingsData {
-  _InpersistentSettingsWatcher(this._current);
+  _InpersistentSettingsWatcher({
+    required bool hideName,
+    required GridAspectRatio aspectRatio,
+    required GridColumn columns,
+    required GridLayoutType layoutType,
+  }) : _current = _UnsavableSettingsData(
+          aspectRatio: aspectRatio,
+          columns: columns,
+          layoutType: layoutType,
+          hideName: hideName,
+        );
 
   final _events = StreamController<GridSettingsData>.broadcast();
 

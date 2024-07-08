@@ -9,9 +9,13 @@ part "local_tag_dictionary.g.dart";
 
 @collection
 class IsarLocalTagDictionary {
-  IsarLocalTagDictionary(this.tag, this.frequency);
+  const IsarLocalTagDictionary(
+    this.tag,
+    this.frequency, {
+    required this.isarId,
+  });
 
-  Id? isarId;
+  final Id? isarId;
 
   @Index(unique: true, replace: true)
   final String tag;

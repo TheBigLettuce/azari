@@ -9,7 +9,6 @@ import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/net/booru/impl/conventers/danbooru.dart";
-import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/booru/strip_html.dart";
 import "package:gallery/src/net/cloudflare_exception.dart";
@@ -32,7 +31,7 @@ class Danbooru implements BooruAPI {
   bool get wouldBecomeStale => false;
 
   @override
-  Future<int> get totalPosts async {
+  Future<int> totalPosts(String tags, SafeMode safeMode) async {
     final resp = await _commonPosts(
       "",
       null,
@@ -57,7 +56,11 @@ class Danbooru implements BooruAPI {
   }
 
   @override
-  Future<List<BooruTag>> completeTag(String tag) async {
+  Future<List<BooruTag>> searchTag(
+    String tag, [
+    BooruTagSorting sorting = BooruTagSorting.count,
+    int limit = 30,
+  ]) async {
     if (tag.isEmpty) {
       return const [];
     }
@@ -65,8 +68,8 @@ class Danbooru implements BooruAPI {
     final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/tags.json", {
         "search[name_matches]": "$tag*",
-        "search[order]": "count",
-        "limit": "30",
+        "search[order]": sorting == BooruTagSorting.count ? "count" : "name",
+        "limit": limit.toString(),
       }),
       LogReq(LogReq.completeTag(tag), _log),
     );
@@ -100,13 +103,15 @@ class Danbooru implements BooruAPI {
     int i,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  ) =>
+    SafeMode safeMode, [
+    int? limit,
+  ]) =>
       _commonPosts(
         tags,
         excludedTags,
         page: i,
         safeMode: safeMode,
+        limit: limit,
       );
 
   @override
@@ -114,13 +119,15 @@ class Danbooru implements BooruAPI {
     int postId,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  ) =>
+    SafeMode safeMode, [
+    int? limit,
+  ]) =>
       _commonPosts(
         tags,
         excludedTags,
         postid: postId,
         safeMode: safeMode,
+        limit: limit,
       );
 
   Future<(List<Post>, int?)> _commonPosts(
@@ -172,7 +179,7 @@ class Danbooru implements BooruAPI {
 
       return excludedTags == null
           ? (fromList(resp.data!), null)
-          : _skipExcluded(fromList(resp.data!), excludedTags!);
+          : _skipExcluded(fromList(resp.data!), excludedTags);
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {

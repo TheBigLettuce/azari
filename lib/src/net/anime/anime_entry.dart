@@ -13,44 +13,72 @@ import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:isar/isar.dart";
 
-class AnimeSearchEntry extends AnimeEntryData
-    implements Pressable<AnimeSearchEntry> {
+class AnimeSearchEntry extends AnimeEntryDataImpl
+    implements AnimeEntryData, Pressable<AnimeSearchEntry> {
   const AnimeSearchEntry({
     required this.genres,
     required this.relations,
     required this.staff,
-    required super.site,
-    required super.type,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.trailerUrl,
-    required super.episodes,
-    required super.background,
-    required super.explicit,
+    required this.site,
+    required this.type,
+    required this.thumbUrl,
+    required this.title,
+    required this.titleJapanese,
+    required this.titleEnglish,
+    required this.score,
+    required this.synopsis,
+    required this.year,
+    required this.id,
+    required this.siteUrl,
+    required this.isAiring,
+    required this.titleSynonyms,
+    required this.trailerUrl,
+    required this.episodes,
+    required this.background,
+    required this.explicit,
   });
 
   @override
+  final String background;
+  @override
+  final int episodes;
+  @override
+  final AnimeSafeMode explicit;
+  @override
+  final int id;
+  @override
+  final bool isAiring;
+  @override
+  final double score;
+  @override
+  final AnimeMetadata site;
+  @override
+  final String siteUrl;
+  @override
+  final String synopsis;
+  @override
+  final String thumbUrl;
+  @override
+  final String title;
+  @override
+  final String titleEnglish;
+  @override
+  final String titleJapanese;
+  @override
+  final List<String> titleSynonyms;
+  @override
+  final String trailerUrl;
+  @override
+  final String type;
+  @override
+  final int year;
+  @override
   final List<AnimeGenre> genres;
-
   @override
   final List<AnimeRelation> relations;
-
   @override
   final List<AnimeRelation> staff;
-
-  @override
-  CellStaticData description() => const CellStaticData();
 
   @override
   void onPress(
@@ -75,93 +103,7 @@ class AnimeSearchEntry extends AnimeEntryData
   }
 }
 
-abstract class AnimeGenre {
-  const AnimeGenre({
-    required this.id,
-    required this.title,
-    required this.unpressable,
-    required this.explicit,
-  });
-
-  final String title;
-  final int id;
-  final bool unpressable;
-  final bool explicit;
-}
-
-abstract class AnimeRelation {
-  const AnimeRelation({
-    required this.id,
-    required this.thumbUrl,
-    required this.title,
-    required this.type,
-  });
-
-  final int id;
-  final String thumbUrl;
-  final String title;
-  final String type;
-
-  bool get idIsValid => id != 0 && type != "manga";
-
-  @override
-  String toString() => title;
-}
-
-abstract class SavedAnimeEntryData extends AnimeEntryData {
-  const SavedAnimeEntryData({
-    required this.inBacklog,
-    required super.site,
-    required super.type,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.trailerUrl,
-    required super.episodes,
-    required super.background,
-    required super.explicit,
-  });
-
-  final bool inBacklog;
-
-  SavedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]);
-
-  SavedAnimeEntryData copy({
-    bool? inBacklog,
-    AnimeMetadata? site,
-    int? episodes,
-    String? trailerUrl,
-    String? siteUrl,
-    String? title,
-    String? titleJapanese,
-    String? titleEnglish,
-    String? background,
-    int? id,
-    List<AnimeGenre>? genres,
-    List<String>? titleSynonyms,
-    List<AnimeRelation>? relations,
-    bool? isAiring,
-    int? year,
-    double? score,
-    String? thumbUrl,
-    String? synopsis,
-    String? type,
-    AnimeSafeMode? explicit,
-    List<AnimeRelation>? staff,
-  });
-}
-
+@immutable
 abstract class AnimeEntryData
     implements
         AnimeCell,
@@ -169,57 +111,41 @@ abstract class AnimeEntryData
         Thumbnailable,
         Downloadable,
         Stickerable {
-  const AnimeEntryData({
-    required this.site,
-    required this.type,
-    required this.thumbUrl,
-    required this.title,
-    required this.titleJapanese,
-    required this.titleEnglish,
-    required this.score,
-    required this.synopsis,
-    required this.year,
-    required this.id,
-    required this.siteUrl,
-    required this.isAiring,
-    required this.titleSynonyms,
-    required this.trailerUrl,
-    required this.episodes,
-    required this.background,
-    required this.explicit,
-  });
+  const AnimeEntryData();
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
-  @enumerated
-  final AnimeMetadata site;
+  int get id;
 
-  final int id;
+  String get thumbUrl;
+  String get siteUrl;
+  String get trailerUrl;
+  String get title;
+  String get titleJapanese;
+  String get titleEnglish;
+  String get synopsis;
+  String get background;
+  String get type;
 
-  @Index(unique: true, replace: true)
-  final String thumbUrl;
-  final String siteUrl;
-  final String trailerUrl;
-  final String title;
-  final String titleJapanese;
-  final String titleEnglish;
-  final String synopsis;
-  final String background;
-  final String type;
-
-  final List<String> titleSynonyms;
+  List<String> get titleSynonyms;
   List<AnimeGenre> get genres;
 
   List<AnimeRelation> get relations;
   List<AnimeRelation> get staff;
 
-  final double score;
+  double get score;
 
-  final int year;
-  final int episodes;
+  int get year;
+  int get episodes;
 
-  final bool isAiring;
-  @enumerated
-  final AnimeSafeMode explicit;
+  bool get isAiring;
+  AnimeSafeMode get explicit;
+  AnimeMetadata get site;
+
+  void openInfoPage(BuildContext context);
+}
+
+@immutable
+abstract class AnimeEntryDataImpl implements AnimeEntryData {
+  const AnimeEntryDataImpl();
 
   @override
   CellStaticData description() => const CellStaticData();
@@ -259,6 +185,7 @@ abstract class AnimeEntryData
     ];
   }
 
+  @override
   void openInfoPage(BuildContext context) {
     Navigator.push<void>(
       context,

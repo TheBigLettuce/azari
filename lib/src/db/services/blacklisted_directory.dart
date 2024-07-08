@@ -10,14 +10,22 @@ abstract interface class BlacklistedDirectoryService
   List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
 }
 
+@immutable
 abstract class BlacklistedDirectoryData
     implements CellBase, Pressable<BlacklistedDirectoryData> {
-  const BlacklistedDirectoryData(this.bucketId, this.name);
+  const factory BlacklistedDirectoryData({
+    required String bucketId,
+    required String name,
+  }) = $BlacklistedDirectoryData;
 
-  @Index(unique: true, replace: true)
-  final String bucketId;
-  @Index()
-  final String name;
+  String get bucketId;
+  String get name;
+}
+
+@immutable
+abstract class BlacklistedDirectoryDataImpl
+    implements BlacklistedDirectoryData {
+  const BlacklistedDirectoryDataImpl();
 
   @override
   Key uniqueKey() => ValueKey(bucketId);

@@ -134,7 +134,6 @@ class _HomeState extends State<Home>
                   callback: widget.callback,
                   showAnimeMangaPages: showAnimeMangaPages,
                 ),
-                extendBody: true,
                 noNavBar: widget.callback != null,
                 animatedIcons: this,
                 showAnimeMangaPages: showAnimeMangaPages,

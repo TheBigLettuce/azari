@@ -607,7 +607,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   late final filesApi = GalleryAPIFiles.fake(
     widget.db,
     clearRefresh: () {
-      final c = <String, DirectoryMetadataData>{};
+      final c = <String, DirectoryMetadata>{};
 
       return GalleryHostApi().getPicturesDirectly(null, 20, true).then((l) {
         final ll = _fromDirectoryFileFiltered(l, c);
@@ -660,7 +660,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
 
   List<GalleryFile> _fromDirectoryFileFiltered(
     List<DirectoryFile?> l,
-    Map<String, DirectoryMetadataData> c,
+    Map<String, DirectoryMetadata> c,
   ) {
     return l
         .where(
@@ -671,7 +671,15 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
             widget.db.directoryMetadata,
           ),
         )
-        .map((e) => e!.toAndroidFile(widget.db.localTags.get(e.name)))
+        .map(
+          (e) => e!.toAndroidFile(
+            widget.db.localTags.get(e.name).fold({}, (map, e) {
+              map[e] = null;
+
+              return map;
+            }),
+          ),
+        )
         .toList();
   }
 

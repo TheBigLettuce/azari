@@ -85,7 +85,7 @@ class Jikan implements AnimeAPI {
     final map = <int, AnimeGenre>{};
 
     for (final e in response) {
-      map[e.malId] = objFactory.makeAnimeGenre(
+      map[e.malId] = AnimeGenre(
         title: e.name,
         id: e.malId,
         unpressable: false,
@@ -148,13 +148,13 @@ class Jikan implements AnimeAPI {
   }
 }
 
-AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) => objFactory
-    .makeAnimeCharacter(imageUrl: e.imageUrl, name: e.name, role: e.role);
+AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
+    AnimeCharacter(imageUrl: e.imageUrl, name: e.name, role: e.role);
 
 List<AnimeRelation> _fromMeta(api.BuiltList<api.Meta> l) {
   return l
       .map(
-        (e) => objFactory.makeAnimeRelation(
+        (e) => AnimeRelation(
           thumbUrl: e.url,
           title: e.name,
           type: e.type,
@@ -188,7 +188,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     siteUrl: e.url,
     staff: e.producers
         .map(
-          (e) => objFactory.makeAnimeRelation(
+          (e) => AnimeRelation(
             title: e.name,
             type: e.type,
             id: e.malId,
@@ -202,7 +202,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     titleSynonyms: e.titleSynonyms.toList(),
     genres: e.genres
             .map(
-              (e) => objFactory.makeAnimeGenre(
+              (e) => AnimeGenre(
                 title: e.name,
                 id: e.malId,
                 unpressable: false,
@@ -212,7 +212,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
             .toList() +
         e.explicitGenres
             .map(
-              (e) => objFactory.makeAnimeGenre(
+              (e) => AnimeGenre(
                 title: e.name,
                 id: e.malId,
                 unpressable: false,
@@ -222,7 +222,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
             .toList() +
         e.demographics
             .map(
-              (e) => objFactory.makeAnimeGenre(
+              (e) => AnimeGenre(
                 title: e.name,
                 id: e.malId,
                 unpressable: false,
@@ -232,7 +232,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
             .toList() +
         e.themes
             .map(
-              (e) => objFactory.makeAnimeGenre(
+              (e) => AnimeGenre(
                 title: e.name,
                 id: e.malId,
                 unpressable: false,
@@ -242,7 +242,7 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
             .toList() +
         e.studios
             .map(
-              (e) => objFactory.makeAnimeGenre(
+              (e) => AnimeGenre(
                 title: e.name,
                 unpressable: true,
                 explicit: false,

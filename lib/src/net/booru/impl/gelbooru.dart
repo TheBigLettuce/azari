@@ -9,7 +9,6 @@ import "package:gallery/src/logging/logging.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/net/booru/impl/conventers/gelbooru.dart";
-import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/booru/strip_html.dart";
 import "package:logging/logging.dart";
@@ -36,8 +35,8 @@ class Gelbooru implements BooruAPI {
   bool get wouldBecomeStale => true;
 
   @override
-  Future<int> get totalPosts async {
-    final res = await _commonPosts("", 0, null, SafeMode.none, limit: 1);
+  Future<int> totalPosts(String tags, SafeMode safeMode) async {
+    final res = await _commonPosts(tags, 0, null, safeMode, limit: 1);
 
     return res.$1.firstOrNull?.id ?? 0;
   }
@@ -66,20 +65,24 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<BooruTag>> completeTag(String t) async {
-    if (t.isEmpty) {
-      return const [];
-    }
+  Future<List<BooruTag>> searchTag(
+    String t, [
+    BooruTagSorting sorting = BooruTagSorting.count,
+    int limit = 30,
+  ]) async {
+    // if (t.isEmpty) {
+    //   return const [];
+    // }
 
     final resp = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(booru.url, "/index.php", {
         "page": "dapi",
         "s": "tag",
         "q": "index",
-        "limit": "30",
+        "limit": limit.toString(),
         "json": "1",
         "name_pattern": "$t%",
-        "orderby": "count",
+        "orderby": sorting == BooruTagSorting.count ? "count" : "name",
       }),
       options: Options(
         receiveTimeout: _defaultTimeout,
@@ -96,8 +99,9 @@ class Gelbooru implements BooruAPI {
     int p,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  ) {
+    SafeMode safeMode, [
+    int? limit,
+  ]) {
     pageSaver.page = p;
 
     return _commonPosts(
@@ -105,6 +109,7 @@ class Gelbooru implements BooruAPI {
       p,
       excludedTags,
       safeMode,
+      limit: limit,
     );
   }
 
@@ -185,13 +190,15 @@ class Gelbooru implements BooruAPI {
     int _,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode,
-  ) {
+    SafeMode safeMode, [
+    int? limit,
+  ]) {
     final f = _commonPosts(
       tags,
       pageSaver.page + 1,
       excludedTags,
       safeMode,
+      limit: limit,
     );
 
     return f.then((value) {

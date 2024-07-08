@@ -67,7 +67,7 @@ class LinuxGalleryPlug implements GalleryPlug {
 
   @override
   GalleryFile makeGalleryFile({
-    required String tagsFlat,
+    required Map<String, void> tags,
     required int id,
     required String bucketId,
     required String name,
@@ -81,7 +81,7 @@ class LinuxGalleryPlug implements GalleryPlug {
     required bool isDuplicate,
   }) =>
       LinuxGalleryFile(
-        tagsFlat: tagsFlat,
+        tags: tags,
         id: id,
         bucketId: bucketId,
         name: name,
@@ -336,7 +336,11 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
 
           backingStorage.add(
             LinuxGalleryFile(
-              tagsFlat: localTags.get(name).join(" "),
+              tags: localTags.get(name).fold({}, (map, e) {
+                map[e] = null;
+
+                return map;
+              }),
               id: 0,
               bucketId: dirPath.bucketId,
               name: name,
@@ -388,7 +392,7 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
 
 class LinuxGalleryFile extends FileBase with GalleryFile {
   const LinuxGalleryFile({
-    required super.tagsFlat,
+    required super.tags,
     required super.id,
     required super.bucketId,
     required super.name,

@@ -222,7 +222,7 @@ void moveOrCopyFnc(
   PauseVideoNotifier.maybePauseOf(topContext, true);
 
   final List<String> searchPrefix = [];
-  for (final tag in selected.first.tagsFlat.split(" ")) {
+  for (final tag in selected.first.tags.keys) {
     if (tagManager.pinned.exists(tag)) {
       searchPrefix.add(tag);
     }

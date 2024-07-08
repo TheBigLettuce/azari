@@ -24,10 +24,9 @@ List<Sticker> defaultStickersFile(
   return [
     if (file.isVideo) Sticker(FilteringMode.video.icon),
     if (file.isGif) Sticker(FilteringMode.gif.icon),
-    if (file.tagsFlat.contains("original"))
-      Sticker(FilteringMode.original.icon),
+    if (file.tags.containsKey("original")) Sticker(FilteringMode.original.icon),
     if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
-    if (file.tagsFlat.contains("translated"))
+    if (file.tags.containsKey("translated"))
       const Sticker(Icons.translate_outlined),
   ];
 }

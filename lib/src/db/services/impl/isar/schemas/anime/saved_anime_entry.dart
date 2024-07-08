@@ -5,6 +5,8 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
 import "package:isar/isar.dart";
@@ -12,12 +14,19 @@ import "package:isar/isar.dart";
 part "saved_anime_entry.g.dart";
 
 @embedded
-class IsarAnimeGenre implements AnimeGenre {
+class IsarAnimeGenre implements $AnimeGenre {
   const IsarAnimeGenre({
     this.id = 0,
     this.title = "",
     this.unpressable = false,
     this.explicit = false,
+  });
+
+  const IsarAnimeGenre.required({
+    required this.id,
+    required this.title,
+    required this.unpressable,
+    required this.explicit,
   });
 
   @override
@@ -31,12 +40,19 @@ class IsarAnimeGenre implements AnimeGenre {
 }
 
 @embedded
-class IsarAnimeRelation implements AnimeRelation {
+class IsarAnimeRelation implements $AnimeRelation {
   const IsarAnimeRelation({
     this.thumbUrl = "",
     this.title = "",
     this.type = "",
     this.id = 0,
+  });
+
+  const IsarAnimeRelation.required({
+    required this.thumbUrl,
+    required this.title,
+    required this.type,
+    required this.id,
   });
 
   @override
@@ -47,42 +63,64 @@ class IsarAnimeRelation implements AnimeRelation {
   final String type;
   @override
   final int id;
-
-  @override
-  @ignore
-  bool get idIsValid => id != 0 && type != "manga";
-
-  @override
-  String toString() => title;
 }
 
 @collection
-class IsarSavedAnimeEntry extends SavedAnimeEntryData {
-  IsarSavedAnimeEntry({
-    required this.genres,
-    required super.id,
-    required super.inBacklog,
-    required super.type,
-    required super.explicit,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
+class IsarSavedAnimeEntry extends AnimeEntryDataImpl
+    implements $SavedAnimeEntryData {
+  const IsarSavedAnimeEntry({
+    required this.isarId,
+    required this.inBacklog,
     required this.relations,
-    required super.synopsis,
-    required super.year,
+    required this.explicit,
+    required this.type,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.titleJapanese,
+    required this.titleEnglish,
+    required this.score,
+    required this.synopsis,
+    required this.year,
+    required this.id,
+    required this.siteUrl,
+    required this.isAiring,
+    required this.titleSynonyms,
+    required this.background,
+    required this.trailerUrl,
+    required this.episodes,
+    required this.genres,
     required this.staff,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.background,
-    required super.trailerUrl,
-    required super.episodes,
   });
 
-  Id? isarId;
+  const IsarSavedAnimeEntry.noId({
+    required this.inBacklog,
+    required List<AnimeRelation> relations,
+    required this.explicit,
+    required this.type,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.titleJapanese,
+    required this.titleEnglish,
+    required this.score,
+    required this.synopsis,
+    required this.year,
+    required this.id,
+    required this.siteUrl,
+    required this.isAiring,
+    required this.titleSynonyms,
+    required this.background,
+    required this.trailerUrl,
+    required this.episodes,
+    required List<AnimeGenre> genres,
+    required List<AnimeRelation> staff,
+  })  : isarId = null,
+        staff = staff as List<IsarAnimeRelation>,
+        genres = genres as List<IsarAnimeGenre>,
+        relations = relations as List<IsarAnimeRelation>;
+
+  final Id? isarId;
 
   @override
   final List<IsarAnimeGenre> genres;
@@ -94,11 +132,70 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData {
   final List<IsarAnimeRelation> staff;
 
   @override
+  final bool inBacklog;
+
+  @override
+  final String background;
+
+  @override
+  final int episodes;
+
+  @override
+  @enumerated
+  final AnimeSafeMode explicit;
+
+  @override
+  final int id;
+
+  @override
+  final bool isAiring;
+
+  @override
+  final double score;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
+  @enumerated
+  final AnimeMetadata site;
+
+  @override
+  final String siteUrl;
+
+  @override
+  final String synopsis;
+
+  @override
+  @Index(unique: true, replace: true)
+  final String thumbUrl;
+
+  @override
+  final String title;
+
+  @override
+  final String titleEnglish;
+
+  @override
+  final String titleJapanese;
+
+  @override
+  final List<String> titleSynonyms;
+
+  @override
+  final String trailerUrl;
+
+  @override
+  final String type;
+
+  @override
+  final int year;
+
+  @override
   IsarSavedAnimeEntry copySuper(
     AnimeEntryData e, [
     bool ignoreRelations = false,
   ]) {
     return IsarSavedAnimeEntry(
+      isarId: isarId,
       id: e.id,
       type: e.type,
       inBacklog: inBacklog,
@@ -149,6 +246,7 @@ class IsarSavedAnimeEntry extends SavedAnimeEntryData {
     List<AnimeRelation>? staff,
   }) {
     return IsarSavedAnimeEntry(
+      isarId: isarId,
       id: id ?? this.id,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,

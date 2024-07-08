@@ -55,7 +55,7 @@ class DownloadEntry {
         thenMoveTo: thenMoveTo,
       );
 
-  DownloadFileData _toDb() => objFactory.makeDownloadFileData(
+  DownloadFileData _toDb() => DownloadFileData(
         status: status,
         name: name,
         url: url,

@@ -6,15 +6,21 @@
 import "package:gallery/src/db/services/impl/isar/impl.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/hottest_tag.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
+import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
@@ -33,9 +39,7 @@ Future<DownloadManager> init(ServicesImplTable db, bool temporary) async {
 
 ServicesImplTable getApi() => IoServicesImplTable();
 
-class IoServicesImplTable
-    with IoServicesImplTableObjInstExt
-    implements ServicesImplTable {
+class IoServicesImplTable implements ServicesImplTable {
   IoServicesImplTable();
 
   @override
@@ -112,7 +116,7 @@ class IoServicesImplTable
   GridSettingsService get gridSettings => const IsarGridSettinsService();
 
   @override
-  final TagManager tagManager = IsarTagManager();
+  final TagManager tagManager = const IsarTagManager();
 
   @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
@@ -132,135 +136,218 @@ class IoServicesImplTable
   }
 }
 
-mixin IoServicesImplTableObjInstExt implements ServicesObjFactoryExt {
-  @override
-  GridBookmark makeGridBookmark({
+abstract class $HottestTag extends HottestTag {
+  const factory $HottestTag({
+    required String tag,
+    required List<ThumbUrlRating> thumbUrls,
+    required int count,
+  }) = IsarHottestTag.noId;
+}
+
+abstract class $ThumbUrlRating extends ThumbUrlRating {
+  const factory $ThumbUrlRating({
+    required String url,
+    required PostRating rating,
+  }) = IsarThumbUrlRating.required;
+}
+
+abstract class $GridState extends GridState {
+  const factory $GridState({
+    required String name,
+    required double offset,
+    required String tags,
+    required SafeMode safeMode,
+  }) = IsarGridState.noId;
+}
+
+abstract class $GridBookmarkThumbnail extends GridBookmarkThumbnail {
+  const factory $GridBookmarkThumbnail({
+    required String url,
+    required PostRating rating,
+  }) = IsarGridBookmarkThumbnail.required;
+}
+
+abstract class $GridBookmark extends GridBookmark {
+  const factory $GridBookmark({
     required String tags,
     required Booru booru,
     required String name,
     required DateTime time,
     required List<GridBookmarkThumbnail> thumbnails,
-  }) =>
-      IsarBookmark(
-        thumbnails: thumbnails.cast(),
-        booru: booru,
-        tags: tags,
-        name: name,
-        time: time,
-      );
+  }) = IsarBookmark.noId;
+}
 
-  @override
-  GridBookmarkThumbnail makeGridBookmarkThumbnail({
-    required String url,
-    required PostRating rating,
-  }) =>
-      IsarGridBookmarkThumbnail(url: url, rating: rating);
+abstract class $LocalTagsData extends LocalTagsData {
+  const factory $LocalTagsData({
+    required String filename,
+    required List<String> tags,
+  }) = IsarLocalTags.noId;
+}
 
-  @override
-  LocalTagsData makeLocalTagsData(
-    String filename,
-    List<String> tags,
-  ) =>
-      IsarLocalTags(filename, tags);
+abstract class $TagData extends TagData {
+  const factory $TagData({
+    required String tag,
+    required TagType type,
+    required DateTime time,
+  }) = IsarTag.noId;
+}
 
-  @override
-  CompactMangaData makeCompactMangaData({
-    required String mangaId,
-    required MangaMeta site,
+abstract class $AnimeGenre extends AnimeGenre {
+  const factory $AnimeGenre({
+    required int id,
     required String title,
-    required String thumbUrl,
-  }) =>
-      IsarCompactMangaData(
-        mangaId: mangaId,
-        site: site,
-        thumbUrl: thumbUrl,
-        title: title,
-      );
+    required bool unpressable,
+    required bool explicit,
+  }) = IsarAnimeGenre.required;
+}
 
-  @override
-  DownloadFileData makeDownloadFileData({
+abstract class $AnimeRelation extends AnimeRelation {
+  const factory $AnimeRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  }) = IsarAnimeRelation.required;
+}
+
+abstract class $AnimeCharacter extends AnimeCharacter {
+  const factory $AnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
+  }) = IsarAnimeCharacter;
+}
+
+abstract class $HiddenBooruPostData extends HiddenBooruPostData {
+  const factory $HiddenBooruPostData({
+    required Booru booru,
+    required int postId,
+    required String thumbUrl,
+  }) = IsarHiddenBooruPost.noId;
+}
+
+abstract class $DownloadFileData extends DownloadFileData {
+  const factory $DownloadFileData({
     required DownloadStatus status,
     required String name,
     required String url,
     required String thumbUrl,
     required String site,
     required DateTime date,
-  }) =>
-      IsarDownloadFile(
-        status: status,
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-      );
+  }) = IsarDownloadFile.noId;
+}
 
-  @override
-  HiddenBooruPostData makeHiddenBooruPostData(
-    String thumbUrl,
-    int postId,
-    Booru booru,
-  ) =>
-      IsarHiddenBooruPost(booru, postId, thumbUrl);
+abstract class $BlacklistedDirectoryData extends BlacklistedDirectoryData {
+  const factory $BlacklistedDirectoryData({
+    required String bucketId,
+    required String name,
+  }) = IsarBlacklistedDirectory.noId;
+}
 
-  @override
-  PinnedManga makePinnedManga({
+abstract class $CompactMangaData extends CompactMangaData {
+  const factory $CompactMangaData({
     required String mangaId,
     required MangaMeta site,
+    required String title,
     required String thumbUrl,
+  }) = IsarCompactMangaData.noId;
+}
+
+abstract class $PinnedManga extends PinnedManga {
+  const factory $PinnedManga({
+    required String mangaId,
+    required MangaMeta site,
     required String title,
-  }) =>
-      IsarPinnedManga(
-        mangaId: mangaId,
-        site: site,
-        thumbUrl: thumbUrl,
-        title: title,
-      );
-
-  @override
-  BlacklistedDirectoryData makeBlacklistedDirectoryData(
-    String bucketId,
-    String name,
-  ) =>
-      IsarBlacklistedDirectory(bucketId, name);
-
-  @override
-  AnimeGenre makeAnimeGenre({
-    required String title,
-    required int id,
-    required bool unpressable,
-    required bool explicit,
-  }) =>
-      IsarAnimeGenre(
-        title: title,
-        id: id,
-        unpressable: unpressable,
-        explicit: explicit,
-      );
-
-  @override
-  AnimeRelation makeAnimeRelation({
-    required int id,
     required String thumbUrl,
-    required String title,
+  }) = IsarPinnedManga.noId;
+}
+
+abstract class $WatchedAnimeEntryData extends WatchedAnimeEntryData {
+  const factory $WatchedAnimeEntryData({
+    required DateTime date,
+    required AnimeMetadata site,
     required String type,
-  }) =>
-      IsarAnimeRelation(
-        thumbUrl: thumbUrl,
-        title: title,
-        type: type,
-        id: id,
-      );
+    required String thumbUrl,
+    required String title,
+    required String titleJapanese,
+    required String titleEnglish,
+    required double score,
+    required String synopsis,
+    required int year,
+    required int id,
+    required String siteUrl,
+    required bool isAiring,
+    required List<String> titleSynonyms,
+    required String trailerUrl,
+    required int episodes,
+    required String background,
+    required AnimeSafeMode explicit,
+    required List<AnimeRelation> relations,
+    required List<AnimeRelation> staff,
+    required List<AnimeGenre> genres,
+  }) = IsarWatchedAnimeEntry.noId;
+}
 
-  @override
-  AnimeCharacter makeAnimeCharacter({
-    required String imageUrl,
-    required String name,
-    required String role,
-  }) =>
-      IsarAnimeCharacter(
-        imageUrl: imageUrl,
-        name: name,
-        role: role,
-      );
+abstract class $SavedAnimeEntryData extends SavedAnimeEntryData {
+  const factory $SavedAnimeEntryData({
+    required bool inBacklog,
+    required AnimeMetadata site,
+    required String type,
+    required String thumbUrl,
+    required String title,
+    required String titleJapanese,
+    required String titleEnglish,
+    required double score,
+    required String synopsis,
+    required int year,
+    required int id,
+    required String siteUrl,
+    required bool isAiring,
+    required List<String> titleSynonyms,
+    required String trailerUrl,
+    required int episodes,
+    required String background,
+    required AnimeSafeMode explicit,
+    required List<AnimeRelation> relations,
+    required List<AnimeRelation> staff,
+    required List<AnimeGenre> genres,
+  }) = IsarSavedAnimeEntry.noId;
+}
+
+abstract class $Post extends Post {
+  const factory $Post({
+    required int id,
+    required String md5,
+    required List<String> tags,
+    required int width,
+    required int height,
+    required String fileUrl,
+    required String previewUrl,
+    required String sampleUrl,
+    required String sourceUrl,
+    required PostRating rating,
+    required int score,
+    required DateTime createdAt,
+    required Booru booru,
+    required PostContentType type,
+  }) = PostIsar.noId;
+}
+
+abstract class $FavoritePost extends FavoritePost {
+  const factory $FavoritePost({
+    required int id,
+    required String md5,
+    required List<String> tags,
+    required int width,
+    required int height,
+    required String fileUrl,
+    required String previewUrl,
+    required String sampleUrl,
+    required String sourceUrl,
+    required PostRating rating,
+    required int score,
+    required DateTime createdAt,
+    required Booru booru,
+    required PostContentType type,
+  }) = IsarFavoritePost.noId;
 }

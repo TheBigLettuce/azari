@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:isar/isar.dart";
@@ -12,18 +13,50 @@ import "package:isar/isar.dart";
 part "download_file.g.dart";
 
 @collection
-class IsarDownloadFile extends DownloadFileData {
-  IsarDownloadFile({
-    required super.status,
-    required super.name,
-    required super.url,
-    required super.thumbUrl,
-    required super.site,
-    required super.date,
-    this.isarId,
+class IsarDownloadFile extends DownloadFileDataImpl
+    implements $DownloadFileData {
+  const IsarDownloadFile({
+    required this.status,
+    required this.name,
+    required this.url,
+    required this.thumbUrl,
+    required this.site,
+    required this.date,
+    required this.isarId,
   });
 
-  Id? isarId;
+  const IsarDownloadFile.noId({
+    required this.status,
+    required this.name,
+    required this.url,
+    required this.thumbUrl,
+    required this.site,
+    required this.date,
+  }) : isarId = null;
+
+  final Id? isarId;
+
+  @override
+  final DateTime date;
+
+  @override
+  @Index(unique: true, replace: true)
+  final String name;
+
+  @override
+  final String site;
+
+  @override
+  @Index()
+  @enumerated
+  final DownloadStatus status;
+
+  @override
+  final String thumbUrl;
+
+  @override
+  @Index(unique: true, replace: true)
+  final String url;
 
   @override
   IsarDownloadFile toInProgress() => IsarDownloadFile(

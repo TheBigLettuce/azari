@@ -13,7 +13,7 @@ import "package:gallery/init_main/app_info.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
@@ -69,7 +69,6 @@ import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
@@ -82,6 +81,30 @@ part "settings.dart";
 
 final _futures = <(int, AnimeMetadata), Future<void>>{};
 
+abstract class IsarGridSettingsData implements GridSettingsData {
+  const IsarGridSettingsData({
+    required this.aspectRatio,
+    required this.columns,
+    required this.hideName,
+    required this.layoutType,
+  });
+
+  @override
+  @enumerated
+  final GridAspectRatio aspectRatio;
+
+  @override
+  @enumerated
+  final GridColumn columns;
+
+  @override
+  final bool hideName;
+
+  @override
+  @enumerated
+  final GridLayoutType layoutType;
+}
+
 class IsarCurrentBooruSource extends GridPostSource
     with GridPostSourceRefreshNext {
   IsarCurrentBooruSource({
@@ -93,7 +116,8 @@ class IsarCurrentBooruSource extends GridPostSource
     required this.tags,
     required this.filters,
   })  : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
-        updatesAvailable = IsarUpdatesAvailableImpl(db, api);
+        updatesAvailable =
+            IsarUpdatesAvailableImpl(db, api, safeMode_, () => tags);
 
   @override
   final BooruAPI api;
@@ -117,7 +141,7 @@ class IsarCurrentBooruSource extends GridPostSource
   final IsarUpdatesAvailableImpl updatesAvailable;
 
   @override
-  List<Post<ContentableCell>> get lastFive => backingStorage._collection
+  List<Post> get lastFive => backingStorage._collection
       .where()
       .ratingEqualTo(PostRating.general)
       .sortById()
@@ -143,19 +167,21 @@ class IsarCurrentBooruSource extends GridPostSource
 }
 
 class IsarUpdatesAvailableImpl implements UpdatesAvailable {
-  IsarUpdatesAvailableImpl(this.db, this.api) {
+  IsarUpdatesAvailableImpl(this.db, this.api, this.safeMode_, this.tags_) {
     _timeTicker =
         Stream<void>.periodic(const Duration(minutes: 15)).listen((_) {
       tryRefreshIfNeeded(true);
     });
 
-    if (_isAfterNow(_current.time)) {
-      tryRefreshIfNeeded();
-    }
+    // if (_isAfterNow(_current.time)) {
+    //   tryRefreshIfNeeded();
+    // }
   }
 
   final Isar db;
   final BooruAPI api;
+  final SafeMode Function() safeMode_;
+  final String Function() tags_;
 
   final _events = StreamController<UpdatesAvailableStatus>.broadcast();
   late final StreamSubscription<void> _timeTicker;
@@ -170,7 +196,7 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
 
   IsarUpdatesAvailable get _current =>
       db.isarUpdatesAvailables.getSync(0) ??
-      IsarUpdatesAvailable(-1, DateTime.now());
+      IsarUpdatesAvailable(postCount: -1, time: DateTime.now());
 
   bool _isAfterNow(DateTime time) =>
       DateTime.now().isAfter(time.add(const Duration(minutes: 5)));
@@ -186,15 +212,14 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
     if (force || u.postCount == -1 || _isAfterNow(u.time)) {
       _events.add(const UpdatesAvailableStatus(false, true));
 
-      _future = api.totalPosts.then((count) {
+      _future = api.totalPosts(tags_(), safeMode_()).then((count) {
         if (db.isOpen) {
           db.writeTxnSync(() {
-            db.isarUpdatesAvailables
-                .putSync(IsarUpdatesAvailable(count, DateTime.now()));
+            db.isarUpdatesAvailables.putSync(
+              IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
+            );
           });
         }
-
-        print("result: newc ${count} old ${u.postCount}");
 
         return null;
       }).onError((e, trace) {
@@ -203,7 +228,8 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
       }).whenComplete(() {
         if (!_events.isClosed) {
           _events.add(
-              UpdatesAvailableStatus(_current.postCount > u.postCount, false));
+            UpdatesAvailableStatus(_current.postCount > u.postCount, false),
+          );
         }
         _future = null;
       });
@@ -215,8 +241,18 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
   }
 
   @override
+  void setCount(int count) {
+    db.writeTxnSync(() {
+      db.isarUpdatesAvailables.putSync(
+        IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
+      );
+    });
+  }
+
+  @override
   StreamSubscription<UpdatesAvailableStatus> watch(
-          void Function(UpdatesAvailableStatus) f) =>
+    void Function(UpdatesAvailableStatus) f,
+  ) =>
       _events.stream.listen(f);
 }
 
@@ -352,7 +388,7 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
       _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
 
   @override
-  Iterable<Post<ContentableCell>> trySorted(SortingMode sort) => this;
+  Iterable<Post> trySorted(SortingMode sort) => this;
 }
 
 class IsarSourceStorage<K, V, CollectionType extends V>
@@ -457,6 +493,7 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
               characters: value.cast(),
               id: entry.id,
               site: entry.site,
+              isarId: null,
             ),
           ),
         );
@@ -475,7 +512,12 @@ class IsarSavedAnimeCharatersService implements SavedAnimeCharactersService {
     var e = collection.getByIdSiteSync(id, site)?.isarId;
     e ??= db.writeTxnSync(
       () => collection.putByIdSiteSync(
-        IsarSavedAnimeCharacters(characters: const [], id: id, site: site),
+        IsarSavedAnimeCharacters(
+          characters: const [],
+          id: id,
+          site: site,
+          isarId: null,
+        ),
       ),
     );
 
@@ -507,6 +549,7 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
               (e) => IsarLocalTagDictionary(
                 e,
                 (collection.getByTagSync(e)?.frequency ?? 0) + 1,
+                isarId: null,
               ),
             )
             .toList(),
@@ -616,6 +659,7 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
             )
             .map(
               (e) => IsarSavedAnimeEntry(
+                isarId: null,
                 id: e.id,
                 explicit: e.explicit,
                 type: e.type,
@@ -802,24 +846,24 @@ class IsarFavoritePostService implements FavoritePostSourceService {
 
   Isar get db => _Dbs.g.main;
 
-  IsarCollection<IsarFavoriteBooru> get collection => db.isarFavoriteBoorus;
+  IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
 
   @override
   bool isFavorite(int id, Booru booru) =>
       backingStorage.map_.containsKey((id, booru));
 
   @override
-  List<Post> addRemove(List<Post> posts) {
-    final toAdd = <IsarFavoriteBooru>[];
+  List<PostBase> addRemove(List<PostBase> posts) {
+    final toAdd = <IsarFavoritePost>[];
     final toRemoveInts = <int>[];
     final toRemoveBoorus = <Booru>[];
 
     for (final post in posts) {
       if (!backingStorage.map_.containsKey((post.id, post.booru))) {
         toAdd.add(
-          post is IsarFavoriteBooru
+          post is IsarFavoritePost
               ? post
-              : IsarFavoriteBooru(
+              : IsarFavoritePost(
                   height: post.height,
                   id: post.id,
                   md5: post.md5,
@@ -833,8 +877,8 @@ class IsarFavoritePostService implements FavoritePostSourceService {
                   rating: post.rating,
                   score: post.score,
                   createdAt: post.createdAt,
-                  group: null,
                   type: post.type,
+                  isarId: null,
                 ),
         );
       } else {
@@ -863,12 +907,12 @@ class IsarFavoritePostService implements FavoritePostSourceService {
       }
     });
 
-    return deleteCopy?.where((e) => e != null).cast<Post>().toList() ??
+    return deleteCopy?.where((e) => e != null).cast<PostBase>().toList() ??
         const <Post>[];
   }
 
   @override
-  final MapStorage<(int, Booru), FavoritePostData> backingStorage =
+  final MapStorage<(int, Booru), FavoritePost> backingStorage =
       MapStorage((v) => (v.id, v.booru));
 
   @override
@@ -1008,6 +1052,7 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
                 genres: entry.genres.cast(),
                 trailerUrl: entry.trailerUrl,
                 episodes: entry.episodes,
+                isarId: null,
               ),
             )
             .toList(),
@@ -1306,16 +1351,17 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
       _DirectoryMetadataCap(specialLabel, this);
 
   @override
-  DirectoryMetadataData? get(String id) =>
+  DirectoryMetadata? get(String id) =>
       _Dbs.g.blacklisted.isarDirectoryMetadatas.getByCategoryNameSync(id);
 
   @override
-  DirectoryMetadataData getOrCreate(String id) {
+  DirectoryMetadata getOrCreate(String id) {
     var d = get(id);
     if (d == null) {
       d = IsarDirectoryMetadata(
-        id,
-        DateTime.now(),
+        isarId: null,
+        categoryName: id,
+        time: DateTime.now(),
         blur: false,
         sticky: false,
         requireAuth: false,
@@ -1348,7 +1394,7 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
   }
 
   @override
-  void add(DirectoryMetadataData data) {
+  void add(DirectoryMetadata data) {
     _Dbs.g.blacklisted.writeTxnSync(
       () {
         _Dbs.g.blacklisted.isarDirectoryMetadatas
@@ -1372,11 +1418,12 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
       () {
         _Dbs.g.blacklisted.isarDirectoryMetadatas.putByCategoryNameSync(
           IsarDirectoryMetadata(
-            id,
-            DateTime.now(),
+            categoryName: id,
+            time: DateTime.now(),
             blur: blur,
             requireAuth: auth,
             sticky: sticky,
+            isarId: null,
           ),
         );
       },
@@ -1452,11 +1499,12 @@ class _DirectoryMetadataCap implements SegmentCapability {
           (element) =>
               element.$2 ??
               IsarDirectoryMetadata(
-                segments[element.$1],
-                DateTime.now(),
+                categoryName: segments[element.$1],
+                time: DateTime.now(),
                 blur: false,
                 sticky: false,
                 requireAuth: false,
+                isarId: null,
               ),
         );
     final toUpdate = <IsarDirectoryMetadata>[];
@@ -1499,11 +1547,12 @@ class _DirectoryMetadataCap implements SegmentCapability {
           (e) =>
               e.$2 ??
               IsarDirectoryMetadata(
-                segments[e.$1],
-                DateTime.now(),
+                categoryName: segments[e.$1],
+                time: DateTime.now(),
                 blur: false,
                 sticky: false,
                 requireAuth: false,
+                isarId: null,
               ),
         );
     final toUpdate = <IsarDirectoryMetadata>[];
@@ -1571,7 +1620,9 @@ class IsarFavoriteFileService implements FavoriteFileService {
     _Dbs.g.blacklisted.writeTxnSync(
       () {
         _Dbs.g.blacklisted.isarFavoriteFiles.putAllSync(
-          ids.map((e) => IsarFavoriteFile(e, DateTime.now())).toList(),
+          ids
+              .map((e) => IsarFavoriteFile(id: e, time: DateTime.now()))
+              .toList(),
         );
 
         for (final e in ids) {
@@ -1627,8 +1678,13 @@ class IsarPinnedThumbnailService implements PinnedThumbnailService {
   @override
   void add(int id, String path, int differenceHash) {
     _Dbs.g.thumbnail!.writeTxnSync(
-      () => _Dbs.g.thumbnail!.isarPinnedThumbnails
-          .putSync(IsarPinnedThumbnail(id, differenceHash, path)),
+      () => _Dbs.g.thumbnail!.isarPinnedThumbnails.putSync(
+        IsarPinnedThumbnail(
+          id: id,
+          differenceHash: differenceHash,
+          path: path,
+        ),
+      ),
     );
   }
 }
@@ -1677,8 +1733,12 @@ class IsarThumbnailService implements ThumbnailService {
       _Dbs.g.thumbnail!.isarThumbnails.putAllSync(
         l
             .map(
-              (e) =>
-                  IsarThumbnail(e.id, DateTime.now(), e.path, e.differenceHash),
+              (e) => IsarThumbnail(
+                id: e.id,
+                updatedAt: DateTime.now(),
+                path: e.path,
+                differenceHash: e.differenceHash,
+              ),
             )
             .toList(),
       );
@@ -1765,6 +1825,7 @@ class IsarPinnedMangaService implements PinnedMangaService {
                 site: e.site,
                 thumbUrl: e.thumbUrl,
                 title: e.title,
+                isarId: null,
               ),
             )
             .toList(),
@@ -1879,6 +1940,7 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
           chapterNumber: chapterNumber,
           chapterProgress: e.chapterProgress,
           lastUpdated: DateTime.now(),
+          isarId: null,
         ),
       ),
     );
@@ -1901,6 +1963,7 @@ class IsarReadMangaChapterService implements ReadMangaChaptersService {
           chapterName: chapterName,
           chapterProgress: progress,
           lastUpdated: DateTime.now(),
+          isarId: null,
         ),
       ),
     );
@@ -2006,6 +2069,7 @@ class IsarSavedMangaChaptersService implements SavedMangaChaptersService {
               (chapters as List<IsarMangaChapter>),
           mangaId: mangaId,
           site: site,
+          isarId: null,
         ),
       ),
     );
@@ -2254,8 +2318,9 @@ class IsarLocalTagsService implements LocalTagsService {
   void add(String filename, List<String> tags) {
     _Dbs.g.localTags.writeTxnSync(
       () {
-        _Dbs.g.localTags.isarLocalTags
-            .putByFilenameSync(IsarLocalTags(filename, tags));
+        _Dbs.g.localTags.isarLocalTags.putByFilenameSync(
+          IsarLocalTags(filename: filename, tags: tags, isarId: null),
+        );
       },
     );
   }
@@ -2278,7 +2343,13 @@ class IsarLocalTagsService implements LocalTagsService {
     final newTags = _Dbs.g.localTags.isarLocalTags
         .getAllByFilenameSync(filenames)
         .where((element) => element != null && !element.tags.contains(tag))
-        .map((e) => IsarLocalTags(e!.filename, _addAndSort(e.tags, tag)))
+        .map(
+          (e) => IsarLocalTags(
+            filename: e!.filename,
+            tags: _addAndSort(e.tags, tag),
+            isarId: null,
+          ),
+        )
         .toList();
 
     if (newTags.isEmpty) {
@@ -2313,7 +2384,13 @@ class IsarLocalTagsService implements LocalTagsService {
         continue;
       }
 
-      newTags.add(IsarLocalTags(e.filename, e.tags.toList()..removeAt(idx)));
+      newTags.add(
+        IsarLocalTags(
+          filename: e.filename,
+          tags: e.tags.toList()..removeAt(idx),
+          isarId: null,
+        ),
+      );
     }
 
     return _Dbs.g.localTags.writeTxnSync(
@@ -2362,8 +2439,11 @@ class IsarDirectoryTagService implements DirectoryTagService {
   @override
   void add(Iterable<String> bucketIds, String tag) {
     _Dbs.g.localTags.writeTxnSync(
-      () => _Dbs.g.localTags.directoryTags
-          .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()),
+      () => _Dbs.g.localTags.directoryTags.putAllSync(
+        bucketIds
+            .map((e) => DirectoryTag(buckedId: e, tag: tag, isarId: null))
+            .toList(),
+      ),
     );
   }
 
@@ -2421,7 +2501,7 @@ class IsarBooruTagging implements BooruTagging {
   void add(String t) {
     tagDb.writeTxnSync(
       () => tagDb.isarTags.putByTagTypeSync(
-        IsarTag(time: DateTime.now(), tag: t, type: mode),
+        IsarTag(time: DateTime.now(), tag: t, type: mode, isarId: null),
       ),
     );
   }
@@ -2456,7 +2536,10 @@ class IsarBooruTagging implements BooruTagging {
           .map(
             (e) => ImageTag(
               e,
-              tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              favorite:
+                  tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              excluded:
+                  tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null,
             ),
           )
           .toList();
@@ -2487,7 +2570,10 @@ class IsarBooruTagging implements BooruTagging {
           .map(
             (e) => ImageTag(
               e,
-              tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              favorite:
+                  tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
+              excluded:
+                  tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null,
             ),
           )
           .toList();
@@ -2603,6 +2689,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
         name: _secondaryGrid.name,
         safeMode: SafeMode.normal,
         offset: 0,
+        isarId: null,
       );
 
       _mainGrid.writeTxnSync(
@@ -2698,6 +2785,7 @@ class IsarMainGridService implements MainGridService {
         name: _mainGrid.name,
         safeMode: SafeMode.normal,
         offset: 0,
+        isarId: null,
       );
 
       _mainGrid.writeTxnSync(

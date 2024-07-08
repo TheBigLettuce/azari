@@ -5,7 +5,6 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/impl/memory_only/impl.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
@@ -43,12 +42,18 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
       hiddenBooruPost.cachedValues.entries
-          .map((e) => PlainHiddenBooruPostData(e.key.$2, e.key.$1, e.value))
+          .map(
+            (e) => HiddenBooruPostData(
+              booru: e.key.$2,
+              postId: e.key.$1,
+              thumbUrl: e.value,
+            ),
+          )
           .toList(),
     ),
   );
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,

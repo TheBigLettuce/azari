@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
@@ -14,32 +15,61 @@ import "package:isar/isar.dart";
 part "watched_anime_entry.g.dart";
 
 @collection
-class IsarWatchedAnimeEntry extends WatchedAnimeEntryData {
-  IsarWatchedAnimeEntry({
-    required super.date,
+class IsarWatchedAnimeEntry extends AnimeEntryDataImpl
+    implements $WatchedAnimeEntryData {
+  const IsarWatchedAnimeEntry({
+    required this.isarId,
+    required this.date,
     required this.relations,
-    required super.explicit,
-    required super.type,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.background,
-    required super.trailerUrl,
-    required super.episodes,
+    required this.explicit,
+    required this.type,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.titleJapanese,
+    required this.titleEnglish,
+    required this.score,
+    required this.synopsis,
+    required this.year,
+    required this.id,
+    required this.siteUrl,
+    required this.isAiring,
+    required this.titleSynonyms,
+    required this.background,
+    required this.trailerUrl,
+    required this.episodes,
     required this.genres,
     required this.staff,
   });
 
-  Id? isarId;
+  const IsarWatchedAnimeEntry.noId({
+    required this.date,
+    required List<AnimeRelation> relations,
+    required this.explicit,
+    required this.type,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.titleJapanese,
+    required this.titleEnglish,
+    required this.score,
+    required this.synopsis,
+    required this.year,
+    required this.id,
+    required this.siteUrl,
+    required this.isAiring,
+    required this.titleSynonyms,
+    required this.background,
+    required this.trailerUrl,
+    required this.episodes,
+    required List<AnimeGenre> genres,
+    required List<AnimeRelation> staff,
+  })  : isarId = null,
+        staff = staff as List<IsarAnimeRelation>,
+        genres = genres as List<IsarAnimeGenre>,
+        relations = relations as List<IsarAnimeRelation>;
+
+  final Id? isarId;
 
   @override
   final List<IsarAnimeGenre> genres;
@@ -51,11 +81,70 @@ class IsarWatchedAnimeEntry extends WatchedAnimeEntryData {
   final List<IsarAnimeRelation> staff;
 
   @override
+  final String background;
+
+  @override
+  final DateTime date;
+
+  @override
+  final int episodes;
+
+  @override
+  @enumerated
+  final AnimeSafeMode explicit;
+
+  @override
+  final int id;
+
+  @override
+  final bool isAiring;
+
+  @override
+  final double score;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
+  @enumerated
+  final AnimeMetadata site;
+
+  @override
+  final String siteUrl;
+
+  @override
+  final String synopsis;
+
+  @override
+  @Index(unique: true, replace: true)
+  final String thumbUrl;
+
+  @override
+  final String title;
+
+  @override
+  final String titleEnglish;
+
+  @override
+  final String titleJapanese;
+
+  @override
+  final List<String> titleSynonyms;
+
+  @override
+  final String trailerUrl;
+
+  @override
+  final String type;
+
+  @override
+  final int year;
+
+  @override
   WatchedAnimeEntryData copySuper(
     AnimeEntryData e, [
     bool ignoreRelations = false,
   ]) {
     return IsarWatchedAnimeEntry(
+      isarId: isarId,
       date: date,
       staff: e.staff as List<IsarAnimeRelation>,
       type: e.type,
@@ -107,6 +196,7 @@ class IsarWatchedAnimeEntry extends WatchedAnimeEntryData {
     List<AnimeRelation>? staff,
   }) {
     return IsarWatchedAnimeEntry(
+      isarId: isarId,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,
       date: date ?? this.date,

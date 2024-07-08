@@ -71,7 +71,7 @@ class PostTags {
   void addAllUnsafe(Iterable<(String, List<String>)> tags) {
     tags.map((e) => _freq.add(e.$2));
     _db.addAll(
-      tags.map((e) => objFactory.makeLocalTagsData(e.$1, e.$2)).toList(),
+      tags.map((e) => LocalTagsData(filename: e.$1, tags: e.$2)).toList(),
     );
   }
 

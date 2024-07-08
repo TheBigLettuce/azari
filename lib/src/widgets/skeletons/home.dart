@@ -26,7 +26,6 @@ class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton(
     this.child, {
     super.key,
-    required this.extendBody,
     required this.noNavBar,
     required this.animatedIcons,
     required this.showAnimeMangaPages,
@@ -38,7 +37,6 @@ class HomeSkeleton extends StatefulWidget {
 
   final void Function(BuildContext, CurrentRoute) onDestinationSelected;
 
-  final bool extendBody;
   final AnimatedIconsMixin animatedIcons;
   final ChangePageMixin changePage;
 
@@ -103,7 +101,7 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
           highTone: !widget.noNavBar,
         ),
         child: Scaffold(
-          extendBody: widget.extendBody,
+          extendBody: true,
           extendBodyBehindAppBar: true,
           drawerEnableOpenDragGesture: false,
           bottomNavigationBar: _BottomNavigationBar(
@@ -474,15 +472,15 @@ class __DrawerState extends State<_Drawer> {
   late List<GridBookmark> bookmarks = gridBookmarks.firstNumber(5);
   late final StreamSubscription<void> subscr;
 
+  final key = GlobalKey<__AnimatedTagColumnState>();
+
   @override
   void initState() {
     super.initState();
 
     subscr = gridBookmarks.watch(
       (_) {
-        setState(() {
-          bookmarks = gridBookmarks.firstNumber(5);
-        });
+        key.currentState?.diffAndAnimate(gridBookmarks.firstNumber(5));
       },
       true,
     );
@@ -570,51 +568,206 @@ class __DrawerState extends State<_Drawer> {
             ),
           )
         else
-          ...bookmarks.map((e) {
+          _AnimatedTagColumn(
+            key: key,
+            initalBookmarks: bookmarks,
+            db: widget.db,
+          ),
+      ],
+    );
+  }
+}
+
+class _AnimatedTagColumn extends StatefulWidget {
+  const _AnimatedTagColumn({
+    super.key,
+    required this.initalBookmarks,
+    required this.db,
+  });
+
+  final List<GridBookmark> initalBookmarks;
+  final DbConn db;
+
+  @override
+  State<_AnimatedTagColumn> createState() => __AnimatedTagColumnState();
+}
+
+class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
+  late final List<GridBookmark> bookmarks;
+  final listKey = GlobalKey<AnimatedListState>();
+
+  void diffAndAnimate(List<GridBookmark> toNew) {
+    if (toNew.isEmpty) {
+      final prevList = bookmarks.toList();
+      bookmarks.clear();
+
+      for (final (i, e) in prevList.indexed) {
+        listKey.currentState
+            ?.removeItem(i, (context, animation) => _Tile(e: e, db: widget.db));
+      }
+
+      return;
+    }
+
+    final newMap = toNew.fold(<String, GridBookmark>{}, (map, e) {
+      map[e.name] = e;
+
+      return map;
+    });
+
+    final bookmarkMap = bookmarks.fold(<String, GridBookmark>{}, (map, e) {
+      map[e.name] = e;
+
+      return map;
+    });
+
+    final alive = <(int, GridBookmark)>[];
+    final removed = <(int, GridBookmark)>[];
+    final newBookmarks =
+        toNew.indexed.where((e) => !bookmarkMap.containsKey(e.$2.name));
+
+    for (final (idx, bookmark) in bookmarks.indexed) {
+      if (newMap.containsKey(bookmark.name)) {
+        alive.add((idx, bookmark));
+      } else {
+        removed.add((idx, bookmark));
+      }
+    }
+
+    bookmarks.clear();
+    bookmarks.addAll(toNew);
+
+    for (final e in removed) {
+      listKey.currentState?.removeItem(
+        e.$1,
+        (context, animation) => AnimatedBuilder(
+          animation: animation,
+          builder: (context, widget) {
             return SizedBox(
-              height: 56,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 12),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push<void>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return BooruRestoredPage(
-                            booru: e.booru,
-                            tags: e.tags,
-                            name: e.name,
-                            wrapScaffold: true,
-                            saveSelectedPage: (_) {},
-                            db: widget.db,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  customBorder: const StadiumBorder(),
-                  child: Row(
-                    children: [
-                      const Padding(padding: EdgeInsets.only(left: 28 - 16)),
-                      Icon(
-                        Icons.bookmark_outline_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const Padding(padding: EdgeInsets.only(right: 12)),
-                      Text(
-                        e.tags,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              height: sizeTween
+                  .transform(Easing.standard.transform(animation.value)),
+              child: SlideTransition(
+                position: animation
+                    .drive(CurveTween(curve: Easing.standardAccelerate))
+                    .drive(slideTween),
+                child: widget,
               ),
             );
-          }),
-      ],
+          },
+          child: _Tile(e: e.$2, db: widget.db),
+        ),
+        duration: Durations.short3,
+      );
+    }
+
+    for (final (i, _) in newBookmarks) {
+      listKey.currentState?.insertAllItems(i, 1, duration: Durations.medium1);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    bookmarks = widget.initalBookmarks.toList();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  static final sizeTween = Tween<double>(begin: 0, end: 56);
+  static final slideTween =
+      Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedList(
+      key: listKey,
+      shrinkWrap: true,
+      initialItemCount: bookmarks.length,
+      itemBuilder: (context, idx, animation) {
+        final e = bookmarks[idx];
+
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, widget) {
+            return SizedBox(
+              height: animation
+                  .drive(CurveTween(curve: Easing.standard))
+                  .drive(sizeTween)
+                  .value,
+              child: SlideTransition(
+                position: animation
+                    .drive(CurveTween(curve: Easing.emphasizedDecelerate))
+                    .drive(slideTween),
+                child: widget,
+              ),
+            );
+          },
+          child: _Tile(e: e, db: widget.db),
+        );
+      },
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({
+    super.key,
+    required this.e,
+    required this.db,
+  });
+
+  final GridBookmark e;
+  final DbConn db;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 12),
+        child: InkWell(
+          onTap: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return BooruRestoredPage(
+                    booru: e.booru,
+                    tags: e.tags,
+                    name: e.name,
+                    wrapScaffold: true,
+                    saveSelectedPage: (_) {},
+                    db: db,
+                  );
+                },
+              ),
+            );
+          },
+          customBorder: const StadiumBorder(),
+          child: Row(
+            children: [
+              const Padding(padding: EdgeInsets.only(left: 28 - 16)),
+              Icon(
+                Icons.bookmark_outline_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const Padding(padding: EdgeInsets.only(right: 12)),
+              Text(
+                e.tags,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

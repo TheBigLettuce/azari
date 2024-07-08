@@ -76,7 +76,7 @@ class _MangaPageState extends State<MangaPage> {
 
   bool inInner = false;
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.zeroSeven,
     columns: GridColumn.three,
@@ -418,7 +418,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget>
 
   late final state = GridSkeletonState<PinnedManga>();
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     columns: GridColumn.three,
     aspectRatio: GridAspectRatio.one,
     layoutType: GridLayoutType.grid,

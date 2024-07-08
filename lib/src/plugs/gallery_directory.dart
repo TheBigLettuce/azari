@@ -168,19 +168,19 @@ class GalleryDirectoryBase {
   });
 
   final int thumbFileId;
-  @Index(unique: true)
+  // @Index(unique: true)
   final String bucketId;
 
-  @Index()
+  // @Index()
   final String name;
 
   final String relativeLoc;
   final String volumeName;
 
-  @Index()
+  // @Index()
   final int lastModified;
 
-  @Index()
+  // @Index()
   final String tag;
 }
 

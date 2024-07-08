@@ -621,6 +621,24 @@
             }
         }
     },
+    "minutesShort": "{number} m",
+    "@minutesShort": {
+        "description": "Dashboard, minutes time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "secondsShort": "{number} s",
+    "@secondsShort": {
+        "description": "Dashboard, seconds time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
     "cardTimeSpent": "Tile spent",
     "@cardTimeSpent": {
         "description": "Dashboard, time spent on booru card"

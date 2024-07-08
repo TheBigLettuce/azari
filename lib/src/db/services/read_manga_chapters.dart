@@ -50,24 +50,14 @@ abstract interface class ReadMangaChaptersService implements ServiceMarker {
   });
 }
 
+@immutable
 abstract class ReadMangaChapterData {
-  const ReadMangaChapterData({
-    required this.siteMangaId,
-    required this.chapterId,
-    required this.chapterProgress,
-    required this.lastUpdated,
-    required this.chapterName,
-    required this.chapterNumber,
-  });
+  const ReadMangaChapterData();
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("chapterId")])
-  final String siteMangaId;
-  final String chapterId;
-  final String chapterName;
-  final String chapterNumber;
-
-  final int chapterProgress;
-
-  @Index()
-  final DateTime lastUpdated;
+  String get siteMangaId;
+  String get chapterId;
+  String get chapterName;
+  String get chapterNumber;
+  int get chapterProgress;
+  DateTime get lastUpdated;
 }

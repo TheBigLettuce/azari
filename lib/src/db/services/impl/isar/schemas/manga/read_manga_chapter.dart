@@ -11,15 +11,36 @@ import "package:isar/isar.dart";
 part "read_manga_chapter.g.dart";
 
 @collection
-class IsarReadMangaChapter extends ReadMangaChapterData {
-  IsarReadMangaChapter({
-    required super.siteMangaId,
-    required super.chapterId,
-    required super.chapterProgress,
-    required super.lastUpdated,
-    required super.chapterName,
-    required super.chapterNumber,
+class IsarReadMangaChapter implements ReadMangaChapterData {
+  const IsarReadMangaChapter({
+    required this.isarId,
+    required this.siteMangaId,
+    required this.chapterId,
+    required this.chapterProgress,
+    required this.lastUpdated,
+    required this.chapterName,
+    required this.chapterNumber,
   });
 
-  Id? isarId;
+  final Id? isarId;
+
+  @override
+  final String chapterId;
+
+  @override
+  final String chapterName;
+
+  @override
+  final String chapterNumber;
+
+  @override
+  final int chapterProgress;
+
+  @override
+  @Index()
+  final DateTime lastUpdated;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("chapterId")])
+  final String siteMangaId;
 }

@@ -10,9 +10,9 @@ _GalleryImpl? _global;
 extension DirectoryFileToAndroidFile on DirectoryFile {
   static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
-  GalleryFile toAndroidFile(List<String> tags) {
+  GalleryFile toAndroidFile(Map<String, void> tags) {
     return AndroidGalleryFile(
-      tagsFlat: tags.join(" "),
+      tags: tags,
       id: id,
       bucketId: bucketId,
       name: name,
@@ -54,7 +54,7 @@ class AndroidGalleryFile extends FileBase with GalleryFile {
     required super.width,
     required super.lastModified,
     required super.originalUri,
-    required super.tagsFlat,
+    required super.tags,
   });
 }
 
@@ -109,7 +109,7 @@ class _GalleryImpl implements GalleryApi {
     }
 
     if (api.type.isFavorites()) {
-      final c = <String, DirectoryMetadataData>{};
+      final c = <String, DirectoryMetadata>{};
 
       api.source.backingStorage.addAll(
         f
@@ -123,7 +123,13 @@ class _GalleryImpl implements GalleryApi {
         )
             .map((e) {
           final tags = api.localTags.get(e!.name);
-          final f = e.toAndroidFile(tags);
+          final f = e.toAndroidFile(
+            tags.fold({}, (map, e) {
+              map[e] = null;
+
+              return map;
+            }),
+          );
 
           api.sourceTags.addAll(tags);
 
@@ -134,7 +140,13 @@ class _GalleryImpl implements GalleryApi {
       api.source.backingStorage.addAll(
         f.map((e) {
           final tags = api.localTags.get(e!.name);
-          final f = e.toAndroidFile(tags);
+          final f = e.toAndroidFile(
+            tags.fold({}, (map, e) {
+              map[e] = null;
+
+              return map;
+            }),
+          );
 
           api.sourceTags.addAll(tags);
 

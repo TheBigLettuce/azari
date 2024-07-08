@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
 import "package:isar/isar.dart";
@@ -12,13 +13,35 @@ import "package:isar/isar.dart";
 part "pinned_manga.g.dart";
 
 @collection
-class IsarPinnedManga extends CompactMangaDataBase with PinnedManga {
-  IsarPinnedManga({
-    required super.mangaId,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
+class IsarPinnedManga extends PinnedMangaImpl implements $PinnedManga {
+  const IsarPinnedManga({
+    required this.mangaId,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+    required this.isarId,
   });
 
-  Id? isarId;
+  const IsarPinnedManga.noId({
+    required this.mangaId,
+    required this.site,
+    required this.thumbUrl,
+    required this.title,
+  }) : isarId = null;
+
+  final Id? isarId;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("site")])
+  final String mangaId;
+
+  @override
+  @enumerated
+  final MangaMeta site;
+
+  @override
+  final String thumbUrl;
+
+  @override
+  final String title;
 }

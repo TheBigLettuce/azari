@@ -9,7 +9,10 @@ part "updates_available.g.dart";
 
 @collection
 class IsarUpdatesAvailable {
-  const IsarUpdatesAvailable(this.postCount, this.time);
+  const IsarUpdatesAvailable({
+    required this.postCount,
+    required this.time,
+  });
 
   Id get id => 0;
 

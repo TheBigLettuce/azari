@@ -33,7 +33,7 @@ class SameFilterAccumulator {
     cells.where(
       (element) {
         for (final tag in searchText.split(" ")) {
-          if (!element.tagsFlat.contains(tag)) {
+          if (!element.tags.containsKey(tag)) {
             return false;
           }
         }
@@ -53,7 +53,7 @@ class SameFilterAccumulator {
     cells.where(
       (element) {
         for (final tag in searchText.split(" ")) {
-          if (element.tagsFlat.contains(tag)) {
+          if (element.tags.containsKey(tag)) {
             return false;
           }
         }
@@ -82,7 +82,7 @@ class SameFilterAccumulator {
 ) {
   return (
     cells.where(
-      (element) => element.tagsFlat.isEmpty,
+      (element) => element.tags.isEmpty,
     ),
     null
   );
@@ -111,7 +111,7 @@ class SameFilterAccumulator {
 ) {
   return (
     cells.where(
-      (element) => element.tagsFlat.contains("original"),
+      (element) => element.tags.containsKey("original"),
     ),
     null
   );

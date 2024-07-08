@@ -9,9 +9,13 @@ part "directory_tags.g.dart";
 
 @collection
 class DirectoryTag {
-  DirectoryTag(this.buckedId, this.tag);
+  const DirectoryTag({
+    required this.isarId,
+    required this.buckedId,
+    required this.tag,
+  });
 
-  Id? isarId;
+  final Id? isarId;
 
   @Index(unique: true, replace: true)
   final String buckedId;

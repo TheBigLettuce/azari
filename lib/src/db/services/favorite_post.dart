@@ -7,9 +7,9 @@ part of "services.dart";
 
 abstract interface class FavoritePostSourceService
     implements
-        ResourceSource<(int id, Booru booru), FavoritePostData>,
+        ResourceSource<(int id, Booru booru), FavoritePost>,
         ServiceMarker {
-  List<Post> addRemove(List<Post> posts);
+  List<PostBase> addRemove(List<PostBase> posts);
 
   bool isFavorite(int id, Booru booru);
 
@@ -22,28 +22,25 @@ abstract interface class FavoritePostSourceService
   ]);
 }
 
-abstract class FavoritePostData extends PostBase
-    with Post<FavoritePostData>, DefaultPostPressable<FavoritePostData> {
-  FavoritePostData({
-    required this.group,
-    required super.id,
-    required super.height,
-    required super.md5,
-    required super.tags,
-    required super.width,
-    required super.fileUrl,
-    required super.booru,
-    required super.previewUrl,
-    required super.sampleUrl,
-    required super.sourceUrl,
-    required super.rating,
-    required super.score,
-    required super.createdAt,
-    required super.type,
-  });
-
-  @Index()
-  String? group;
+@immutable
+abstract class FavoritePost
+    implements PostBase, PostImpl, Pressable<FavoritePost> {
+  const factory FavoritePost({
+    required int id,
+    required String md5,
+    required List<String> tags,
+    required int width,
+    required int height,
+    required String fileUrl,
+    required String previewUrl,
+    required String sampleUrl,
+    required String sourceUrl,
+    required PostRating rating,
+    required int score,
+    required DateTime createdAt,
+    required Booru booru,
+    required PostContentType type,
+  }) = $FavoritePost;
 
   @override
   CellStaticData description() => const CellStaticData();

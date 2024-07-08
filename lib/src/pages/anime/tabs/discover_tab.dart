@@ -124,7 +124,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
   // WatchableGridSettingsData get gridSettings =>
   //     widget.db.gridSettings.animeDiscovery;
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.zeroSeven,
     columns: GridColumn.three,

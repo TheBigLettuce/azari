@@ -58,7 +58,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   final state = GridSkeletonState<GridBookmark>();
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,

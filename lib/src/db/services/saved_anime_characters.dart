@@ -18,22 +18,28 @@ abstract interface class SavedAnimeCharactersService implements ServiceMarker {
   ]);
 }
 
-abstract base class AnimeCharacter
+@immutable
+abstract class AnimeCharacter
     implements
         AnimeCell,
         ContentWidgets,
         Infoable,
         Downloadable,
         Thumbnailable {
-  const AnimeCharacter({
-    required this.imageUrl,
-    required this.name,
-    required this.role,
-  });
+  const factory AnimeCharacter({
+    required String imageUrl,
+    required String name,
+    required String role,
+  }) = $AnimeCharacter;
 
-  final String imageUrl;
-  final String name;
-  final String role;
+  String get imageUrl;
+  String get name;
+  String get role;
+}
+
+@immutable
+abstract class AnimeCharacterImpl implements AnimeCharacter {
+  const AnimeCharacterImpl();
 
   @override
   CellStaticData description() => const CellStaticData(

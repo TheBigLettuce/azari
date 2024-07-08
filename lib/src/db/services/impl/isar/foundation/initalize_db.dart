@@ -74,7 +74,7 @@ Future<DownloadManager> initalizeIsarDb(
   final main = Isar.openSync(
     [
       IsarSettingsSchema,
-      IsarFavoriteBooruSchema,
+      IsarFavoritePostSchema,
       IsarLocalTagDictionarySchema,
       IsarBookmarkSchema,
       IsarDownloadFileSchema,
@@ -138,7 +138,7 @@ Future<DownloadManager> initalizeIsarDb(
   );
 
   for (final e in _IsarCollectionReverseIterable(
-    _IsarCollectionIterator(_Dbs.g.main.isarFavoriteBoorus, reversed: false),
+    _IsarCollectionIterator(_Dbs.g.main.isarFavoritePosts, reversed: false),
   )) {
     db.favoritePosts.backingStorage.add(e, true);
   }

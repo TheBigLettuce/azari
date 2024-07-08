@@ -12,15 +12,35 @@ part "misc_settings.g.dart";
 @collection
 class IsarMiscSettings extends MiscSettingsData {
   const IsarMiscSettings({
-    required super.filesExtendedActions,
-    required super.animeAlwaysLoadFromNet,
-    required super.favoritesThumbId,
-    required super.themeType,
-    required super.favoritesPageMode,
-    required super.animeWatchingOrderReversed,
+    required this.filesExtendedActions,
+    required this.animeAlwaysLoadFromNet,
+    required this.favoritesThumbId,
+    required this.themeType,
+    required this.favoritesPageMode,
+    required this.animeWatchingOrderReversed,
   });
 
   Id get id => 0;
+
+  @override
+  final bool animeAlwaysLoadFromNet;
+
+  @override
+  final bool animeWatchingOrderReversed;
+
+  @override
+  @enumerated
+  final FilteringMode favoritesPageMode;
+
+  @override
+  final int favoritesThumbId;
+
+  @override
+  final bool filesExtendedActions;
+
+  @override
+  @enumerated
+  final ThemeType themeType;
 
   @override
   MiscSettingsData copy({

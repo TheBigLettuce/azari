@@ -5,19 +5,19 @@
 
 part of "services.dart";
 
-extension DirectoryMetadataDataExt on DirectoryMetadataData {
+extension DirectoryMetadataDataExt on DirectoryMetadata {
   void save() => _currentDb.directoryMetadata.add(this);
 }
 
 abstract interface class DirectoryMetadataService implements ServiceMarker {
   SegmentCapability caps(String specialLabel);
 
-  DirectoryMetadataData? get(String id);
-  DirectoryMetadataData getOrCreate(String id);
+  DirectoryMetadata? get(String id);
+  DirectoryMetadata getOrCreate(String id);
 
   Future<bool> canAuth(String id, String reason);
 
-  void add(DirectoryMetadataData data);
+  void add(DirectoryMetadata data);
 
   void put(
     String id, {
@@ -29,25 +29,18 @@ abstract interface class DirectoryMetadataService implements ServiceMarker {
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
 }
 
-abstract class DirectoryMetadataData {
-  const DirectoryMetadataData(
-    this.categoryName,
-    this.time, {
-    required this.blur,
-    required this.sticky,
-    required this.requireAuth,
-  });
+@immutable
+abstract class DirectoryMetadata {
+  const DirectoryMetadata();
 
-  @Index(unique: true, replace: true)
-  final String categoryName;
-  @Index()
-  final DateTime time;
+  String get categoryName;
+  DateTime get time;
 
-  final bool blur;
-  final bool requireAuth;
-  final bool sticky;
+  bool get blur;
+  bool get requireAuth;
+  bool get sticky;
 
-  DirectoryMetadataData copyBools({
+  DirectoryMetadata copyBools({
     bool? blur,
     bool? sticky,
     bool? requireAuth,

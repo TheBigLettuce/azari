@@ -48,7 +48,7 @@ class _DownloadsState extends State<Downloads> {
 
   final searchTextController = TextEditingController();
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,

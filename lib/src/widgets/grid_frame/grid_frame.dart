@@ -508,7 +508,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
   }
 
   void _scrollListener() {
-    final offsetIsAfterAppBar = scrollController!.offset > 80 + viewPadding.top;
+    final offsetIsAfterAppBar = scrollController!.offset > 80;
     if (offsetIsAfterAppBar != atEdge) {
       setState(() {
         atEdge = offsetIsAfterAppBar;
@@ -570,20 +570,20 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
       ),
     );
 
-    return !_showCard(status)
-        ? const SizedBox.shrink()
-        : Animate(
-            value: 1,
-            controller: controller,
-            effects: const [
-              FadeEffect(
-                duration: Durations.medium1,
-                curve: Easing.standard,
-                begin: 0,
-                end: 1,
-              ),
-            ],
-            child: Align(
+    return Animate(
+      value: 1,
+      controller: controller,
+      effects: const [
+        FadeEffect(
+          duration: Durations.medium1,
+          curve: Easing.standard,
+          begin: 0,
+          end: 1,
+        ),
+      ],
+      child: !_showCard(status)
+          ? const SizedBox.shrink()
+          : Align(
               alignment: Alignment.topRight,
               child: ListenableBuilder(
                 listenable: notifier,
@@ -639,7 +639,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
                 ),
               ),
             ),
-          );
+    );
   }
 }
 

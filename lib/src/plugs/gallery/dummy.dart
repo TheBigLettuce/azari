@@ -45,7 +45,7 @@ class DummyGallery implements GalleryPlug {
 
   @override
   GalleryFile makeGalleryFile({
-    required String tagsFlat,
+    required Map<String, void> tags,
     required int id,
     required String bucketId,
     required String name,

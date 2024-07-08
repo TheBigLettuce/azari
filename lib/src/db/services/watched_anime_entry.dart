@@ -57,28 +57,31 @@ abstract interface class WatchedAnimeEntryService implements ServiceMarker {
 }
 
 abstract class WatchedAnimeEntryData extends AnimeEntryData {
-  const WatchedAnimeEntryData({
-    required super.site,
-    required super.type,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.trailerUrl,
-    required super.episodes,
-    required super.background,
-    required super.explicit,
-    required this.date,
-  });
+  const factory WatchedAnimeEntryData({
+    required DateTime date,
+    required AnimeMetadata site,
+    required String type,
+    required String thumbUrl,
+    required String title,
+    required String titleJapanese,
+    required String titleEnglish,
+    required double score,
+    required String synopsis,
+    required int year,
+    required int id,
+    required String siteUrl,
+    required bool isAiring,
+    required List<String> titleSynonyms,
+    required String trailerUrl,
+    required int episodes,
+    required String background,
+    required AnimeSafeMode explicit,
+    required List<AnimeRelation> relations,
+    required List<AnimeRelation> staff,
+    required List<AnimeGenre> genres,
+  }) = $WatchedAnimeEntryData;
 
-  final DateTime date;
+  DateTime get date;
 
   WatchedAnimeEntryData copySuper(
     AnimeEntryData e, [

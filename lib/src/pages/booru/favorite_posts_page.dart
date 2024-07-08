@@ -59,13 +59,13 @@ class FavoritePostsPage extends StatelessWidget {
     state.filter.filteringMode = FilteringMode.tag;
   }
 
-  GridFrame<FavoritePostData> child(BuildContext context) {
+  GridFrame<FavoritePost> child(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return GridFrame<FavoritePostData>(
+    return GridFrame<FavoritePost>(
       key: state.state.gridKey,
       slivers: [
-        CurrentGridSettingsLayout<FavoritePostData>(
+        CurrentGridSettingsLayout<FavoritePost>(
           source: state.filter.backingStorage,
           progress: state.filter.progress,
           gridSeed: state.state.gridSeed,
@@ -83,7 +83,7 @@ class FavoritePostsPage extends StatelessWidget {
             ChainedFilterIcon(
               filter: state.filter,
               controller: state.searchTextController,
-              complete: api.completeTag,
+              complete: api.searchTag,
               onChange: (str) => state.filter.clearRefresh(),
               focusNode: state.searchFocus,
             ),
@@ -174,7 +174,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
 
-  Iterable<FavoritePostData> _collector(
+  Iterable<FavoritePost> _collector(
     Map<String, Set<(int, Booru)>>? data,
   ) sync* {
     for (final ids in data!.values) {
@@ -217,9 +217,9 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     return (const [], data);
   }
 
-  late final state = GridSkeletonState<FavoritePostData>();
+  late final state = GridSkeletonState<FavoritePost>();
 
-  late final ChainedFilterResourceSource<(int, Booru), FavoritePostData> filter;
+  late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
 
   void disposeFavoriteBooruState() {
     settingsWatcher.cancel();
@@ -312,7 +312,7 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
       .forIdxUnsafe(i)
       .download(DownloadManager.of(context), PostTags.fromContext(context));
 
-  List<GridAction<FavoritePostData>> gridActions() {
+  List<GridAction<FavoritePost>> gridActions() {
     return [
       booru_actions.download(context, state.settings.selectedBooru, null),
       booru_actions.favorites(

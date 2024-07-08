@@ -72,24 +72,17 @@ abstract interface class SavedMangaChaptersService implements ServiceMarker {
   );
 }
 
+@immutable
 abstract class SavedMangaChaptersData {
-  const SavedMangaChaptersData({
-    required this.mangaId,
-    required this.site,
-    required this.page,
-  });
+  const SavedMangaChaptersData();
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("site")])
-  final String mangaId;
-
-  @enumerated
-  final MangaMeta site;
-
+  String get mangaId;
+  MangaMeta get site;
   List<MangaChapter> get chapters;
-
-  final int page;
+  int get page;
 }
 
+@immutable
 class MangaChapter {
   const MangaChapter({
     required this.chapter,

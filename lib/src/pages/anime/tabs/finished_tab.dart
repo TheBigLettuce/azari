@@ -27,7 +27,7 @@ class __FinishedTabState extends State<_FinishedTab> {
   WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
 
   late final StreamSubscription<void> watcher;
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
     layoutType: GridLayoutType.gridQuilted,

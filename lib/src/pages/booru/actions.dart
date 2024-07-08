@@ -33,10 +33,10 @@ GridAction<Post> hide(
           toDelete.add((cell.id, booru));
         } else {
           toAdd.add(
-            objFactory.makeHiddenBooruPostData(
-              cell.previewUrl,
-              cell.id,
-              booru,
+            HiddenBooruPostData(
+              thumbUrl: cell.previewUrl,
+              postId: cell.id,
+              booru: booru,
             ),
           );
         }

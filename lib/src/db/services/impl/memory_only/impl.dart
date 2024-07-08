@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:async/async.dart";
+import "package:gallery/src/db/services/impl_table/web.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/resource_source/basic.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
@@ -27,14 +28,11 @@ import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 final _futures = <(int, AnimeMetadata), Future<void>>{};
 
-class MemoryOnlyServicesImplTable
-    with MemoryOnlyServicesImplTableObjInstExt
-    implements ServicesImplTable {
+class MemoryOnlyServicesImplTable implements ServicesImplTable {
   Future<DownloadManager> init() => Future.value(_downloadManager);
 
   @override
@@ -132,129 +130,6 @@ class MemoryOnlyServicesImplTable
       throw UnimplementedError();
 }
 
-mixin MemoryOnlyServicesImplTableObjInstExt implements ServicesObjFactoryExt {
-  @override
-  GridBookmark makeGridBookmark({
-    required String tags,
-    required Booru booru,
-    required String name,
-    required DateTime time,
-    required List<GridBookmarkThumbnail> thumbnails,
-  }) =>
-      PlainGridBookmark(
-        tags: tags,
-        booru: booru,
-        name: name,
-        time: time,
-        thumbnails: thumbnails.cast(),
-      );
-
-  @override
-  GridBookmarkThumbnail makeGridBookmarkThumbnail({
-    required String url,
-    required PostRating rating,
-  }) =>
-      PlainGridBookmarkThumbnail(url: url, rating: rating);
-
-  @override
-  LocalTagsData makeLocalTagsData(
-    String filename,
-    List<String> tags,
-  ) =>
-      PlainLocalTagsData(filename, tags);
-
-  @override
-  CompactMangaData makeCompactMangaData({
-    required String mangaId,
-    required MangaMeta site,
-    required String title,
-    required String thumbUrl,
-  }) =>
-      PlainCompactMangaData(
-        mangaId: mangaId,
-        site: site,
-        thumbUrl: thumbUrl,
-        title: title,
-      );
-
-  @override
-  DownloadFileData makeDownloadFileData({
-    required DownloadStatus status,
-    required String name,
-    required String url,
-    required String thumbUrl,
-    required String site,
-    required DateTime date,
-  }) =>
-      PlainDownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.inProgress,
-      );
-
-  @override
-  HiddenBooruPostData makeHiddenBooruPostData(
-    String thumbUrl,
-    int postId,
-    Booru booru,
-  ) =>
-      PlainHiddenBooruPostData(booru, postId, thumbUrl);
-
-  @override
-  PinnedManga makePinnedManga({
-    required String mangaId,
-    required MangaMeta site,
-    required String thumbUrl,
-    required String title,
-  }) =>
-      PlainPinnedManga(
-        mangaId: mangaId,
-        site: site,
-        thumbUrl: thumbUrl,
-        title: title,
-      );
-
-  @override
-  BlacklistedDirectoryData makeBlacklistedDirectoryData(
-    String bucketId,
-    String name,
-  ) =>
-      PlainBlacklistedDirectoryData(bucketId, name);
-
-  @override
-  AnimeGenre makeAnimeGenre({
-    required String title,
-    required int id,
-    required bool unpressable,
-    required bool explicit,
-  }) =>
-      throw UnimplementedError();
-
-  @override
-  AnimeRelation makeAnimeRelation({
-    required int id,
-    required String thumbUrl,
-    required String title,
-    required String type,
-  }) {
-    // TODO: implement makeAnieRelation
-    throw UnimplementedError();
-  }
-
-  @override
-  AnimeCharacter makeAnimeCharacter({
-    required String imageUrl,
-    required String name,
-    required String role,
-  }) {
-    // TODO: implement makeAnimeCharacter
-    throw UnimplementedError();
-  }
-}
-
 class MemoryDownloadFileService implements DownloadFileService {
   @override
   void clear() {
@@ -301,14 +176,14 @@ class MemoryDownloadFileService implements DownloadFileService {
 class MemoryBooruTagging implements BooruTagging {
   MemoryBooruTagging(this.type);
 
-  final _val = <String, void>{};
+  final _val = <String, DateTime>{};
   final _events = StreamController<void>.broadcast();
 
   final TagType type;
 
   @override
   void add(String tag) {
-    _val[tag] = null;
+    _val[tag] = DateTime.now();
     _events.add(null);
   }
 
@@ -329,10 +204,12 @@ class MemoryBooruTagging implements BooruTagging {
 
   @override
   List<TagData> get(int limit) => limit.isNegative
-      ? _val.keys.map((e) => PlainTagData(tag: e, type: type)).toList()
-      : _val.keys
+      ? _val.entries
+          .map((e) => $TagData(tag: e.key, type: type, time: e.value))
+          .toList()
+      : _val.entries
           .take(limit)
-          .map((e) => PlainTagData(tag: e, type: type))
+          .map((e) => $TagData(tag: e.key, type: type, time: e.value))
           .toList();
 
   @override
@@ -354,7 +231,8 @@ class MemoryBooruTagging implements BooruTagging {
                 .map(
                   (e) => ImageTag(
                     e,
-                    type == TagType.pinned && _val.containsKey(e),
+                    favorite: type == TagType.pinned && _val.containsKey(e),
+                    excluded: type == TagType.excluded && _val.containsKey(e),
                   ),
                 )
                 .toList(),
@@ -378,85 +256,12 @@ class MemoryBooruTagging implements BooruTagging {
             .map(
               (e) => ImageTag(
                 e,
-                type == TagType.pinned && _val.containsKey(e),
+                favorite: type == TagType.pinned && _val.containsKey(e),
+                excluded: type == TagType.excluded && _val.containsKey(e),
               ),
             )
             .toList();
       }).listen(f);
-}
-
-class PlainTagData extends TagData {
-  const PlainTagData({required super.tag, required super.type});
-
-  @override
-  TagData copy({String? tag, TagType? type}) => PlainTagData(
-        tag: tag ?? this.tag,
-        type: type ?? this.type,
-      );
-}
-
-class MemoryTagManager implements TagManager {
-  MemoryTagManager();
-
-  @override
-  final BooruTagging excluded = MemoryBooruTagging(TagType.excluded);
-
-  @override
-  final BooruTagging latest = MemoryBooruTagging(TagType.normal);
-
-  @override
-  final BooruTagging pinned = MemoryBooruTagging(TagType.pinned);
-}
-
-class PlainSettingsPath extends SettingsPath {
-  const PlainSettingsPath(this.path, this.pathDisplay);
-
-  @override
-  final String path;
-
-  @override
-  final String pathDisplay;
-
-  @override
-  SettingsPath copy({String? path, String? pathDisplay}) {
-    return PlainSettingsPath(
-        path ?? this.path, pathDisplay ?? this.pathDisplay);
-  }
-}
-
-class PlainSettingsData extends SettingsData {
-  const PlainSettingsData({
-    required this.path,
-    required super.selectedBooru,
-    required super.quality,
-    required super.safeMode,
-    required super.showWelcomePage,
-    required super.showAnimeMangaPages,
-    required super.extraSafeFilters,
-  });
-
-  @override
-  final SettingsPath path;
-
-  @override
-  SettingsData copy({
-    bool? extraSafeFilters,
-    bool? showAnimeMangaPages,
-    SettingsPath? path,
-    Booru? selectedBooru,
-    DisplayQuality? quality,
-    SafeMode? safeMode,
-    bool? showWelcomePage,
-  }) =>
-      PlainSettingsData(
-        showAnimeMangaPages: showAnimeMangaPages ?? this.showAnimeMangaPages,
-        selectedBooru: selectedBooru ?? this.selectedBooru,
-        quality: quality ?? this.quality,
-        safeMode: safeMode ?? this.safeMode,
-        showWelcomePage: showWelcomePage ?? this.showWelcomePage,
-        path: this.path,
-        extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
-      );
 }
 
 class MemorySettingsService implements SettingsService {
@@ -481,10 +286,10 @@ class MemorySettingsService implements SettingsService {
   @override
   SettingsData get current =>
       _current ??
-      const PlainSettingsData(
+      const $SettingsData(
         extraSafeFilters: true,
         showAnimeMangaPages: false,
-        path: PlainSettingsPath("_", "*not supported on web*"),
+        path: $SettingsPath("_", "*not supported on web*"),
         selectedBooru: Booru.danbooru,
         quality: DisplayQuality.sample,
         safeMode: SafeMode.relaxed,
@@ -499,37 +304,6 @@ class MemorySettingsService implements SettingsService {
       _events.stream.listen(f);
 }
 
-class MemoryMiscSettingsData extends MiscSettingsData {
-  const MemoryMiscSettingsData({
-    required super.filesExtendedActions,
-    required super.animeAlwaysLoadFromNet,
-    required super.favoritesThumbId,
-    required super.themeType,
-    required super.favoritesPageMode,
-    required super.animeWatchingOrderReversed,
-  });
-
-  @override
-  MiscSettingsData copy({
-    bool? filesExtendedActions,
-    int? favoritesThumbId,
-    ThemeType? themeType,
-    bool? animeAlwaysLoadFromNet,
-    bool? animeWatchingOrderReversed,
-    FilteringMode? favoritesPageMode,
-  }) =>
-      MemoryMiscSettingsData(
-        filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
-        animeAlwaysLoadFromNet:
-            animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
-        favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId,
-        themeType: themeType ?? this.themeType,
-        favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
-        animeWatchingOrderReversed:
-            animeWatchingOrderReversed ?? this.animeWatchingOrderReversed,
-      );
-}
-
 class MemoryMiscSettingsService implements MiscSettingsService {
   final StreamController<MiscSettingsData> _events =
       StreamController.broadcast();
@@ -541,7 +315,7 @@ class MemoryMiscSettingsService implements MiscSettingsService {
   }
 
   @override
-  MiscSettingsData current = const MemoryMiscSettingsData(
+  MiscSettingsData current = const $MiscSettingsData(
     filesExtendedActions: false,
     animeAlwaysLoadFromNet: true,
     favoritesThumbId: -1,
@@ -556,186 +330,6 @@ class MemoryMiscSettingsService implements MiscSettingsService {
     bool fire = false,
   ]) =>
       _events.stream.listen(f);
-}
-
-class PlainLocalTagsData extends LocalTagsData {
-  const PlainLocalTagsData(super.filename, super.tags);
-}
-
-class PlainCompactMangaData extends CompactMangaDataBase with CompactMangaData {
-  const PlainCompactMangaData({
-    required super.mangaId,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
-  });
-}
-
-class PlainHiddenBooruPostData extends HiddenBooruPostData {
-  const PlainHiddenBooruPostData(super.booru, super.postId, super.thumbUrl);
-}
-
-class PlainPinnedManga extends CompactMangaDataBase with PinnedManga {
-  const PlainPinnedManga({
-    required super.mangaId,
-    required super.site,
-    required super.thumbUrl,
-    required super.title,
-  });
-}
-
-class PlainDownloadFileData extends DownloadFileData {
-  const PlainDownloadFileData({
-    required super.name,
-    required super.url,
-    required super.thumbUrl,
-    required super.site,
-    required super.date,
-    required super.status,
-  });
-
-  @override
-  DownloadFileData toFailed() => PlainDownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.failed,
-      );
-
-  @override
-  DownloadFileData toInProgress() => PlainDownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.inProgress,
-      );
-
-  @override
-  DownloadFileData toOnHold() => PlainDownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.onHold,
-      );
-}
-
-class PlainWatchedAnimeEntryData extends WatchedAnimeEntryData {
-  const PlainWatchedAnimeEntryData({
-    required this.genres,
-    required this.relations,
-    required this.staff,
-    required super.site,
-    required super.type,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.trailerUrl,
-    required super.episodes,
-    required super.background,
-    required super.explicit,
-    required super.date,
-  });
-
-  @override
-  final List<AnimeGenre> genres;
-
-  @override
-  final List<AnimeRelation> relations;
-
-  @override
-  final List<AnimeRelation> staff;
-
-  @override
-  WatchedAnimeEntryData copy({
-    bool? inBacklog,
-    AnimeMetadata? site,
-    int? episodes,
-    String? trailerUrl,
-    String? siteUrl,
-    String? title,
-    String? titleJapanese,
-    String? titleEnglish,
-    String? background,
-    int? id,
-    List<AnimeGenre>? genres,
-    List<String>? titleSynonyms,
-    List<AnimeRelation>? relations,
-    bool? isAiring,
-    int? year,
-    double? score,
-    String? thumbUrl,
-    String? synopsis,
-    DateTime? date,
-    String? type,
-    AnimeSafeMode? explicit,
-    List<AnimeRelation>? staff,
-  }) =>
-      PlainWatchedAnimeEntryData(
-        genres: genres ?? this.genres,
-        relations: relations ?? this.relations,
-        staff: staff ?? this.staff,
-        site: site ?? this.site,
-        type: type ?? this.type,
-        thumbUrl: thumbUrl ?? this.thumbUrl,
-        title: title ?? this.title,
-        titleJapanese: titleJapanese ?? this.titleJapanese,
-        titleEnglish: titleEnglish ?? this.titleEnglish,
-        score: score ?? this.score,
-        synopsis: synopsis ?? this.synopsis,
-        year: year ?? this.year,
-        id: id ?? this.id,
-        siteUrl: siteUrl ?? this.siteUrl,
-        isAiring: isAiring ?? this.isAiring,
-        titleSynonyms: titleSynonyms ?? this.titleSynonyms,
-        trailerUrl: trailerUrl ?? this.trailerUrl,
-        episodes: episodes ?? this.episodes,
-        background: background ?? this.background,
-        explicit: explicit ?? this.explicit,
-        date: date ?? this.date,
-      );
-
-  @override
-  WatchedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]) =>
-      PlainWatchedAnimeEntryData(
-        genres: e.genres,
-        relations: ignoreRelations ? relations : e.relations,
-        staff: e.staff,
-        site: e.site,
-        type: e.type,
-        thumbUrl: e.thumbUrl,
-        title: e.title,
-        titleJapanese: e.titleJapanese,
-        titleEnglish: e.titleEnglish,
-        score: e.score,
-        synopsis: e.synopsis,
-        year: e.year,
-        id: e.id,
-        siteUrl: e.siteUrl,
-        isAiring: e.isAiring,
-        titleSynonyms: e.titleSynonyms,
-        trailerUrl: e.trailerUrl,
-        episodes: e.episodes,
-        background: e.background,
-        explicit: e.explicit,
-        date: date,
-      );
 }
 
 class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
@@ -801,7 +395,7 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
     s.deleteAll(entries.toIds);
 
     for (final e in entries) {
-      _val[(e.id, e.site)] = PlainWatchedAnimeEntryData(
+      _val[(e.id, e.site)] = $WatchedAnimeEntryData(
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -852,7 +446,7 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
     if (n != null) {
       _val[(e.id, e.site)] = n.copySuper(e);
     } else {
-      _val[(e.id, e.site)] = PlainWatchedAnimeEntryData(
+      _val[(e.id, e.site)] = $WatchedAnimeEntryData(
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -954,118 +548,6 @@ class MemorySavedAnimeCharactersService implements SavedAnimeCharactersService {
       ).listen(f);
 }
 
-class PlainSavedAnimeEntryData extends SavedAnimeEntryData {
-  const PlainSavedAnimeEntryData({
-    required this.genres,
-    required this.relations,
-    required this.staff,
-    required super.inBacklog,
-    required super.site,
-    required super.type,
-    required super.thumbUrl,
-    required super.title,
-    required super.titleJapanese,
-    required super.titleEnglish,
-    required super.score,
-    required super.synopsis,
-    required super.year,
-    required super.id,
-    required super.siteUrl,
-    required super.isAiring,
-    required super.titleSynonyms,
-    required super.trailerUrl,
-    required super.episodes,
-    required super.background,
-    required super.explicit,
-  });
-
-  @override
-  final List<AnimeGenre> genres;
-
-  @override
-  final List<AnimeRelation> relations;
-
-  @override
-  final List<AnimeRelation> staff;
-
-  @override
-  SavedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]) =>
-      PlainSavedAnimeEntryData(
-        genres: e.genres,
-        relations: ignoreRelations ? relations : e.relations,
-        staff: e.staff,
-        inBacklog: inBacklog,
-        site: e.site,
-        type: e.type,
-        thumbUrl: e.thumbUrl,
-        title: e.title,
-        titleJapanese: e.titleJapanese,
-        titleEnglish: e.titleEnglish,
-        score: e.score,
-        synopsis: e.synopsis,
-        year: e.year,
-        id: e.id,
-        siteUrl: e.siteUrl,
-        isAiring: e.isAiring,
-        titleSynonyms: e.titleSynonyms,
-        trailerUrl: e.trailerUrl,
-        episodes: e.episodes,
-        background: e.background,
-        explicit: e.explicit,
-      );
-
-  @override
-  SavedAnimeEntryData copy({
-    bool? inBacklog,
-    AnimeMetadata? site,
-    int? episodes,
-    String? trailerUrl,
-    String? siteUrl,
-    String? title,
-    String? titleJapanese,
-    String? titleEnglish,
-    String? background,
-    int? id,
-    List<AnimeGenre>? genres,
-    List<String>? titleSynonyms,
-    List<AnimeRelation>? relations,
-    bool? isAiring,
-    int? year,
-    double? score,
-    String? thumbUrl,
-    String? synopsis,
-    String? type,
-    AnimeSafeMode? explicit,
-    List<AnimeRelation>? staff,
-  }) =>
-      PlainSavedAnimeEntryData(
-        genres: genres ?? this.genres,
-        relations: relations ?? this.relations,
-        staff: staff ?? this.staff,
-        inBacklog: inBacklog ?? this.inBacklog,
-        site: site ?? this.site,
-        type: type ?? this.type,
-        thumbUrl: thumbUrl ?? this.thumbUrl,
-        title: title ?? this.title,
-        titleJapanese: titleJapanese ?? this.titleJapanese,
-        titleEnglish: titleEnglish ?? this.titleEnglish,
-        score: score ?? this.score,
-        synopsis: synopsis ?? this.synopsis,
-        year: year ?? this.year,
-        id: id ?? this.id,
-        siteUrl: siteUrl ?? this.siteUrl,
-        isAiring: isAiring ?? this.isAiring,
-        titleSynonyms: titleSynonyms ?? this.titleSynonyms,
-        trailerUrl: trailerUrl ?? this.trailerUrl,
-        episodes: episodes ?? this.episodes,
-        background: background ?? this.background,
-        explicit: explicit ?? this.explicit,
-      );
-}
-
 class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
   final _val = <(int, AnimeMetadata), SavedAnimeEntryData>{};
   final _eventsVoid = StreamController<void>.broadcast();
@@ -1089,7 +571,7 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
   ) {
     final n = entries.where((e) => !watchedAnime.watched(e.id, e.site));
     for (final e in n) {
-      _val[(e.id, e.site)] = PlainSavedAnimeEntryData(
+      _val[(e.id, e.site)] = $SavedAnimeEntryData(
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -1173,7 +655,7 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
   void update(AnimeEntryData e) {
     final n = _val[(e.id, e.site)];
     _val[(e.id, e.site)] = n?.copySuper(e) ??
-        PlainSavedAnimeEntryData(
+        $SavedAnimeEntryData(
           genres: e.genres,
           relations: e.relations,
           staff: e.staff,
@@ -1233,23 +715,18 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
       _eventsVoid.stream.map((e) => count).listen(f);
 }
 
-class PlainThumbnailData extends ThumbnailData {
-  const PlainThumbnailData(
-    super.id,
-    super.updatedAt,
-    super.path,
-    super.differenceHash,
-  );
-}
-
 class MemoryThumbnailService implements ThumbnailService {
   final _val = <int, ThumbnailData>{};
 
   @override
   void addAll(List<ThumbId> l) {
     for (final e in l) {
-      _val[e.id] =
-          PlainThumbnailData(e.id, DateTime.now(), e.path, e.differenceHash);
+      _val[e.id] = $ThumbnailData(
+        id: e.id,
+        updatedAt: DateTime.now(),
+        path: e.path,
+        differenceHash: e.differenceHash,
+      );
     }
   }
 
@@ -1267,16 +744,16 @@ class MemoryThumbnailService implements ThumbnailService {
   ThumbnailData? get(int id) => _val[id];
 }
 
-class PlainPinnedThumbnailData extends PinnedThumbnailData {
-  const PlainPinnedThumbnailData(super.id, super.differenceHash, super.path);
-}
-
 class MemoryPinnedThumbnailService implements PinnedThumbnailService {
-  final _val = <int, PlainPinnedThumbnailData>{};
+  final _val = <int, $PinnedThumbnailData>{};
 
   @override
   void add(int id, String path, int differenceHash) {
-    _val[id] = PlainPinnedThumbnailData(id, differenceHash, path);
+    _val[id] = $PinnedThumbnailData(
+      id: id,
+      differenceHash: differenceHash,
+      path: path,
+    );
   }
 
   @override
@@ -1291,20 +768,11 @@ class MemoryPinnedThumbnailService implements PinnedThumbnailService {
   PinnedThumbnailData? get(int id) => _val[id];
 }
 
-class PlainChaptersSettingsData extends ChaptersSettingsData {
-  const PlainChaptersSettingsData({required super.hideRead});
-
-  @override
-  ChaptersSettingsData copy({bool? hideRead}) =>
-      PlainChaptersSettingsData(hideRead: hideRead ?? this.hideRead);
-}
-
 class MemoryChaptersSettingsService implements ChaptersSettingsService {
   final _events = StreamController<ChaptersSettingsData>.broadcast();
 
   @override
-  ChaptersSettingsData current =
-      const PlainChaptersSettingsData(hideRead: false);
+  ChaptersSettingsData current = const $ChaptersSettingsData(hideRead: false);
 
   @override
   void add(ChaptersSettingsData data) {
@@ -1373,7 +841,7 @@ class MemoryReadMangaChaptersService implements ReadMangaChaptersService {
     required String chapterName,
     required String chapterNumber,
   }) {
-    _val[(siteMangaId, chapterId)] = PlainReadMangaChapterData(
+    _val[(siteMangaId, chapterId)] = $ReadMangaChapterData(
       siteMangaId: siteMangaId,
       chapterId: chapterId,
       chapterProgress: progress,
@@ -1394,7 +862,7 @@ class MemoryReadMangaChaptersService implements ReadMangaChaptersService {
     required String chapterNumber,
   }) {
     final n = _val[(siteMangaId, chapterId)];
-    _val[(siteMangaId, chapterId)] = PlainReadMangaChapterData(
+    _val[(siteMangaId, chapterId)] = $ReadMangaChapterData(
       siteMangaId: siteMangaId,
       chapterId: chapterId,
       chapterProgress: n?.chapterProgress ?? 0,
@@ -1431,17 +899,6 @@ class MemoryReadMangaChaptersService implements ReadMangaChaptersService {
   @override
   StreamSubscription<int> watchReading(void Function(int p1) f) =>
       _eventsVoid.stream.map((_) => countDistinct).listen(f);
-}
-
-class PlainReadMangaChapterData extends ReadMangaChapterData {
-  const PlainReadMangaChapterData({
-    required super.siteMangaId,
-    required super.chapterId,
-    required super.chapterProgress,
-    required super.lastUpdated,
-    required super.chapterName,
-    required super.chapterNumber,
-  });
 }
 
 class MemorySavedMangaChaptersService implements SavedMangaChaptersService {
@@ -1510,7 +967,7 @@ class MemoryPinnedMangaService implements PinnedMangaService {
     for (final e in l) {
       _val[(e.id.toString(), e.site)] = e is PinnedManga
           ? e as PinnedManga
-          : PlainPinnedManga(
+          : $PinnedManga(
               mangaId: e.id.toString(),
               site: e.site,
               thumbUrl: e.thumbUrl,
@@ -1566,35 +1023,11 @@ class MemoryPinnedMangaService implements PinnedMangaService {
       _events.stream.listen(f);
 }
 
-class PlainDirectoryMetadataData extends DirectoryMetadataData {
-  const PlainDirectoryMetadataData(
-    super.categoryName,
-    super.time, {
-    required super.blur,
-    required super.sticky,
-    required super.requireAuth,
-  });
-
-  @override
-  DirectoryMetadataData copyBools({
-    bool? blur,
-    bool? sticky,
-    bool? requireAuth,
-  }) =>
-      PlainDirectoryMetadataData(
-        categoryName,
-        DateTime.now(),
-        blur: blur ?? this.blur,
-        sticky: sticky ?? this.sticky,
-        requireAuth: requireAuth ?? this.requireAuth,
-      );
-}
-
 class MemoryDirectoryMetadataService implements DirectoryMetadataService {
-  final _val = <String, DirectoryMetadataData>{};
+  final _val = <String, DirectoryMetadata>{};
 
   @override
-  void add(DirectoryMetadataData data) {
+  void add(DirectoryMetadata data) {
     _val[data.categoryName] = data;
   }
 
@@ -1605,14 +1038,14 @@ class MemoryDirectoryMetadataService implements DirectoryMetadataService {
   SegmentCapability caps(String specialLabel) => SegmentCapability.empty();
 
   @override
-  DirectoryMetadataData? get(String id) => _val[id];
+  DirectoryMetadata? get(String id) => _val[id];
 
   @override
-  DirectoryMetadataData getOrCreate(String id) => _val.putIfAbsent(
+  DirectoryMetadata getOrCreate(String id) => _val.putIfAbsent(
         id,
-        () => PlainDirectoryMetadataData(
-          id,
-          DateTime.now(),
+        () => $DirectoryMetadataData(
+          categoryName: id,
+          time: DateTime.now(),
           blur: false,
           sticky: false,
           requireAuth: false,
@@ -1626,9 +1059,9 @@ class MemoryDirectoryMetadataService implements DirectoryMetadataService {
     required bool auth,
     required bool sticky,
   }) =>
-      _val[id] = PlainDirectoryMetadataData(
-        id,
-        DateTime.now(),
+      _val[id] = $DirectoryMetadataData(
+        categoryName: id,
+        time: DateTime.now(),
         blur: blur,
         sticky: sticky,
         requireAuth: auth,
@@ -1750,17 +1183,14 @@ class MemoryDirectoryTagService implements DirectoryTagService {
   }
 }
 
-class PlainBlacklistedDirectoryData extends BlacklistedDirectoryData {
-  const PlainBlacklistedDirectoryData(super.bucketId, super.name);
-}
-
 class MemoryBlacklistedDirectoryService implements BlacklistedDirectoryService {
-  final _val = <String, PlainBlacklistedDirectoryData>{};
+  final _val = <String, $BlacklistedDirectoryData>{};
   final _events = StreamController<void>.broadcast();
 
   void addAll(List<GalleryDirectory> directories) {
     for (final e in directories) {
-      _val[e.bucketId] = PlainBlacklistedDirectoryData(e.bucketId, e.name);
+      _val[e.bucketId] =
+          $BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name);
     }
     _events.add(null);
   }
@@ -1840,16 +1270,9 @@ class MemoryLocalTagDictionaryService implements LocalTagDictionaryService {
 
   @override
   Future<List<BooruTag>> complete(String string) async {
-    return _val.entries
-        .take(15)
-        .map((e) => PlainBooruTag(e.key, e.value))
-        .toList()
+    return _val.entries.take(15).map((e) => $BooruTag(e.key, e.value)).toList()
       ..sort((e1, e2) => e2.count.compareTo(e2.count));
   }
-}
-
-class PlainBooruTag extends BooruTag {
-  const PlainBooruTag(super.tag, super.count);
 }
 
 class MemoryLocalTagsService implements LocalTagsService {
@@ -1918,9 +1341,9 @@ class MemoryLocalTagsService implements LocalTagsService {
           handleData: (data, sink) {
             if (data == filename) {
               sink.add(
-                PlainLocalTagsData(
-                  filename,
-                  cachedValues[filename]?.split(" ") ?? const [],
+                $LocalTagsData(
+                  filename: filename,
+                  tags: cachedValues[filename]?.split(" ") ?? const [],
                 ),
               );
             }
@@ -1999,62 +1422,6 @@ class MemoryGridStateBooruService implements GridBookmarkService {
   }
 }
 
-class PlainGridBookmarkThumbnail extends GridBookmarkThumbnail {
-  const PlainGridBookmarkThumbnail({
-    required super.url,
-    required super.rating,
-  });
-}
-
-class PlainGridBookmark extends GridBookmark {
-  const PlainGridBookmark({
-    required super.name,
-    required super.time,
-    required super.tags,
-    required super.booru,
-    required this.thumbnails,
-  });
-
-  @override
-  final List<PlainGridBookmarkThumbnail> thumbnails;
-
-  @override
-  GridBookmark copy({
-    String? tags,
-    String? name,
-    Booru? booru,
-    DateTime? time,
-    List<GridBookmarkThumbnail>? thumbnails,
-  }) =>
-      PlainGridBookmark(
-        thumbnails: thumbnails?.cast() ?? this.thumbnails,
-        tags: tags ?? this.tags,
-        booru: booru ?? this.booru,
-        name: name ?? this.name,
-        time: time ?? this.time,
-      );
-}
-
-class PlainFavoritePostData extends FavoritePostData {
-  PlainFavoritePostData({
-    required super.group,
-    required super.id,
-    required super.height,
-    required super.md5,
-    required super.tags,
-    required super.width,
-    required super.fileUrl,
-    required super.booru,
-    required super.previewUrl,
-    required super.sampleUrl,
-    required super.sourceUrl,
-    required super.rating,
-    required super.score,
-    required super.createdAt,
-    required super.type,
-  });
-}
-
 class MemoryFavoritePostService implements FavoritePostSourceService {
   final _eventsCount = StreamController<int>.broadcast();
 
@@ -2063,17 +1430,16 @@ class MemoryFavoritePostService implements FavoritePostSourceService {
       backingStorage.map_.containsKey((id, booru));
 
   @override
-  List<Post> addRemove(List<Post> posts) {
-    final deleted = <Post>[];
+  List<PostBase> addRemove(List<PostBase> posts) {
+    final deleted = <PostBase>[];
 
     for (final e in posts) {
       final p = backingStorage.get((e.id, e.booru));
       if (p == null) {
         backingStorage.add(
-          e is FavoritePostData
+          e is FavoritePost
               ? e
-              : PlainFavoritePostData(
-                  group: null,
+              : $FavoritePost(
                   id: e.id,
                   height: e.height,
                   md5: e.md5,
@@ -2105,7 +1471,7 @@ class MemoryFavoritePostService implements FavoritePostSourceService {
   }
 
   @override
-  final MapStorage<(int, Booru), FavoritePostData> backingStorage =
+  final MapStorage<(int, Booru), FavoritePost> backingStorage =
       MapStorage((v) => (v.id, v.booru));
 
   @override
@@ -2174,7 +1540,8 @@ class MemoryHiddenBooruPostService implements HiddenBooruPostService {
 
 class MemoryGridSettingsService implements GridSettingsService {
   @override
-  final WatchableGridSettingsData animeDiscovery = GridSettingsData.noPersist(
+  final WatchableGridSettingsData animeDiscovery =
+      CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -2182,7 +1549,8 @@ class MemoryGridSettingsService implements GridSettingsService {
   );
 
   @override
-  final WatchableGridSettingsData booru = GridSettingsData.noPersist(
+  final WatchableGridSettingsData booru =
+      CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -2190,7 +1558,8 @@ class MemoryGridSettingsService implements GridSettingsService {
   );
 
   @override
-  final WatchableGridSettingsData directories = GridSettingsData.noPersist(
+  final WatchableGridSettingsData directories =
+      CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -2198,7 +1567,8 @@ class MemoryGridSettingsService implements GridSettingsService {
   );
 
   @override
-  final WatchableGridSettingsData favoritePosts = GridSettingsData.noPersist(
+  final WatchableGridSettingsData favoritePosts =
+      CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.five,
@@ -2206,35 +1576,13 @@ class MemoryGridSettingsService implements GridSettingsService {
   );
 
   @override
-  final WatchableGridSettingsData files = GridSettingsData.noPersist(
+  final WatchableGridSettingsData files =
+      CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
     layoutType: GridLayoutType.grid,
   );
-}
-
-class PlainGridState extends GridState {
-  const PlainGridState({
-    required super.name,
-    required super.offset,
-    required super.tags,
-    required super.safeMode,
-  });
-
-  @override
-  GridState copy({
-    String? name,
-    String? tags,
-    double? offset,
-    SafeMode? safeMode,
-  }) =>
-      PlainGridState(
-        tags: tags ?? this.tags,
-        safeMode: safeMode ?? this.safeMode,
-        offset: offset ?? this.offset,
-        name: name ?? this.name,
-      );
 }
 
 class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
@@ -2286,7 +1634,7 @@ class MemoryPostSource extends GridPostSource with GridPostSourceRefreshNext {
 
   @override
   // TODO: implement lastFive
-  List<Post<ContentableCell>> get lastFive => throw UnimplementedError();
+  List<Post> get lastFive => throw UnimplementedError();
 }
 
 class MemoryMainGridService implements MainGridService {
@@ -2295,7 +1643,7 @@ class MemoryMainGridService implements MainGridService {
   final Booru booru;
 
   @override
-  late GridState currentState = PlainGridState(
+  late GridState currentState = $GridState(
     name: booru.string,
     offset: 0,
     tags: "",
@@ -2424,29 +1772,6 @@ class MemoryStatisticsGalleryService implements StatisticsGalleryService {
   }
 }
 
-class PlainStatisticsBooruData extends StatisticsBooruData {
-  const PlainStatisticsBooruData({
-    required super.booruSwitches,
-    required super.downloaded,
-    required super.swiped,
-    required super.viewed,
-  });
-
-  @override
-  StatisticsBooruData add({
-    int? viewed,
-    int? downloaded,
-    int? swiped,
-    int? booruSwitches,
-  }) =>
-      PlainStatisticsBooruData(
-        booruSwitches: booruSwitches ?? this.booruSwitches,
-        downloaded: downloaded ?? this.downloaded,
-        swiped: swiped ?? this.swiped,
-        viewed: viewed ?? this.viewed,
-      );
-}
-
 class MemoryStatisticsBooruService implements StatisticsBooruService {
   @override
   void add(StatisticsBooruData data) {
@@ -2454,7 +1779,7 @@ class MemoryStatisticsBooruService implements StatisticsBooruService {
   }
 
   @override
-  StatisticsBooruData current = const PlainStatisticsBooruData(
+  StatisticsBooruData current = const $StatisticsBooruData(
     booruSwitches: 0,
     downloaded: 0,
     swiped: 0,
@@ -2471,37 +1796,9 @@ class MemoryStatisticsBooruService implements StatisticsBooruService {
   }
 }
 
-class PlainStatisticsDailyData extends StatisticsDailyData {
-  const PlainStatisticsDailyData({
-    required super.swipedBoth,
-    required super.durationMillis,
-    required super.date,
-  });
-
-  @override
-  StatisticsDailyData add({required int swipedBoth}) =>
-      PlainStatisticsDailyData(
-        swipedBoth: this.swipedBoth + swipedBoth,
-        durationMillis: durationMillis,
-        date: date,
-      );
-
-  @override
-  StatisticsDailyData copy({
-    int? durationMillis,
-    int? swipedBoth,
-    DateTime? date,
-  }) =>
-      PlainStatisticsDailyData(
-        swipedBoth: swipedBoth ?? this.swipedBoth,
-        durationMillis: durationMillis ?? this.durationMillis,
-        date: date ?? this.date,
-      );
-}
-
 class MemoryStatisticsDailyService implements StatisticsDailyService {
   @override
-  StatisticsDailyData current = PlainStatisticsDailyData(
+  StatisticsDailyData current = $StatisticsDailyData(
     date: DateTime.now(),
     swipedBoth: 0,
     durationMillis: 0,

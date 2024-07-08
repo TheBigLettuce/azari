@@ -7,6 +7,7 @@ import "dart:async";
 
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/init_main/app_info.dart";
 import "package:gallery/init_main/restart_widget.dart";
@@ -22,8 +23,10 @@ import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
 import "package:gallery/src/plugs/gallery/dummy_.dart"
     if (dart.library.io) "package:gallery/src/plugs/gallery/io.dart"
@@ -32,7 +35,6 @@ import "package:gallery/src/plugs/gallery_file_functions.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
 import "package:gallery/src/plugs/notifications.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
-import "package:gallery/src/widgets/empty_widget.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -41,11 +43,8 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/label_switcher_widget.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
-import "package:gallery/src/widgets/search/search_text_field.dart";
 import "package:gallery/src/widgets/tags_list_widget.dart";
-import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -300,7 +299,7 @@ enum GalleryFilesPageType {
   bool isTrash() => this == trash;
 
   static bool filterAuthBlur(
-    Map<String, DirectoryMetadataData> m,
+    Map<String, DirectoryMetadata> m,
     DirectoryFile? dir,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
@@ -311,7 +310,7 @@ enum GalleryFilesPageType {
       directoryTag,
     );
 
-    DirectoryMetadataData? data = m[segment];
+    DirectoryMetadata? data = m[segment];
     if (data == null) {
       final d = directoryMetadata.get(segment);
       if (d == null) {
@@ -338,7 +337,7 @@ mixin GalleryObjFactoryMixin {
   });
 
   GalleryFile makeGalleryFile({
-    required String tagsFlat,
+    required Map<String, void> tags,
     required int id,
     required String bucketId,
     required String name,

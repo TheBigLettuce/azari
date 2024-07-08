@@ -457,5 +457,21 @@
         }
     },
     "latestBookmarks": "Недавние закладки",
-    "noBookmarks": "Нет закладок"
+    "noBookmarks": "Нет закладок",
+    "minutesShort": "{number} м.",
+    "@minutesShort": {
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "secondsShort": "{number} с.",
+    "@secondsShort": {
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    }
 }

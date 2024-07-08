@@ -227,7 +227,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
   late final state = GridSkeletonState<T>();
   late AnimeSafeMode mode = widget.explicit;
 
-  final gridSettings = GridSettingsData.noPersist(
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     aspectRatio: GridAspectRatio.zeroSeven,
     columns: GridColumn.three,
     layoutType: GridLayoutType.grid,

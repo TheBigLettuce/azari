@@ -140,22 +140,24 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     pagingState = widget.pagingRegistry?.getOrRegister(
           name,
           () => makePageEntry(
-              name,
-              bookmarkByName != null || widget.name != null,
-              bookmarkByName != null ? null : widget.overrideSafeMode,
-              tagsTrimmed),
-        ) ??
-        makePageEntry(
             name,
             bookmarkByName != null || widget.name != null,
             bookmarkByName != null ? null : widget.overrideSafeMode,
-            tagsTrimmed);
+            tagsTrimmed,
+          ),
+        ) ??
+        makePageEntry(
+          name,
+          bookmarkByName != null || widget.name != null,
+          bookmarkByName != null ? null : widget.overrideSafeMode,
+          tagsTrimmed,
+        );
 
     pagingState.tagManager.latest.add(tagsTrimmed);
 
     if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
       gridBookmarks.add(
-        objFactory.makeGridBookmark(
+        GridBookmark(
           booru: widget.booru,
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
@@ -166,7 +168,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     }
 
     search = SearchLaunchGridData(
-      completeTag: api.completeTag,
+      completeTag: api.searchTag,
       header: Padding(
         padding: const EdgeInsets.only(top: 8, left: 8),
         child: TagSuggestions(
@@ -227,7 +229,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             .copy(
               thumbnails: source.lastFive
                   .map(
-                    (e) => objFactory.makeGridBookmarkThumbnail(
+                    (e) => GridBookmarkThumbnail(
                       url: e.previewUrl,
                       rating: e.rating,
                     ),
@@ -248,7 +250,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
               .copy(
                 thumbnails: source.lastFive
                     .map(
-                      (e) => objFactory.makeGridBookmarkThumbnail(
+                      (e) => GridBookmarkThumbnail(
                         url: e.previewUrl,
                         rating: e.rating,
                       ),
@@ -343,6 +345,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   ],
                   initalScrollPosition: pagingState.offset,
                   functionality: GridFunctionality(
+                    updatesAvailable: source.updatesAvailable,
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
                       SafeModeButton(secondaryGrid: pagingState.secondaryGrid),
@@ -459,7 +462,7 @@ class RestoredBooruPageState implements PagingEntry {
   @override
   Future<void> dispose([bool closeGrid = true]) {
     client.close();
-    // source.destroy();
+    source.destroy();
     state.dispose();
 
     if (closeGrid) {

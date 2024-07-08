@@ -9,8 +9,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/gallery_thumbnail_provider.dart";
-import "package:gallery/src/db/services/impl_table/dummy.dart"
-    if (dart.library.io) "package:gallery/src/db/services/impl_table/io.dart"
+import "package:gallery/src/db/services/impl_table/io.dart"
     if (dart.library.html) "package:gallery/src/db/services/impl_table/web.dart";
 import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
@@ -41,7 +40,6 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:isar/isar.dart";
 
 part "blacklisted_directory.dart";
 part "chapters_settings.dart";
@@ -85,11 +83,7 @@ int numberOfElementsPerRefresh() {
 
 DownloadManager? _downloadManager;
 
-ServicesObjFactoryExt get objFactory => _currentDb;
-
-abstract interface class ServicesImplTable
-    with ServicesObjFactoryExt
-    implements ServiceMarker {
+abstract interface class ServicesImplTable implements ServiceMarker {
   SettingsService get settings;
   MiscSettingsService get miscSettings;
   SavedAnimeEntriesService get savedAnimeEntries;
@@ -128,80 +122,6 @@ abstract interface class ServicesImplTable
     SafeMode? safeMode, [
     bool create = false,
   ]);
-}
-
-mixin ServicesObjFactoryExt {
-  LocalTagsData makeLocalTagsData(
-    String filename,
-    List<String> tags,
-  );
-
-  CompactMangaData makeCompactMangaData({
-    required String mangaId,
-    required MangaMeta site,
-    required String title,
-    required String thumbUrl,
-  });
-
-  DownloadFileData makeDownloadFileData({
-    required DownloadStatus status,
-    required String name,
-    required String url,
-    required String thumbUrl,
-    required String site,
-    required DateTime date,
-  });
-
-  HiddenBooruPostData makeHiddenBooruPostData(
-    String thumbUrl,
-    int postId,
-    Booru booru,
-  );
-
-  PinnedManga makePinnedManga({
-    required String mangaId,
-    required MangaMeta site,
-    required String thumbUrl,
-    required String title,
-  });
-
-  GridBookmark makeGridBookmark({
-    required String tags,
-    required Booru booru,
-    required String name,
-    required DateTime time,
-    required List<GridBookmarkThumbnail> thumbnails,
-  });
-
-  GridBookmarkThumbnail makeGridBookmarkThumbnail({
-    required String url,
-    required PostRating rating,
-  });
-
-  BlacklistedDirectoryData makeBlacklistedDirectoryData(
-    String bucketId,
-    String name,
-  );
-
-  AnimeGenre makeAnimeGenre({
-    required String title,
-    required int id,
-    required bool unpressable,
-    required bool explicit,
-  });
-
-  AnimeRelation makeAnimeRelation({
-    required int id,
-    required String thumbUrl,
-    required String title,
-    required String type,
-  });
-
-  AnimeCharacter makeAnimeCharacter({
-    required String imageUrl,
-    required String name,
-    required String role,
-  });
 }
 
 final ServicesImplTable _currentDb = getApi();
@@ -258,13 +178,13 @@ abstract interface class LocalTagDictionaryService {
 }
 
 abstract class LocalTagsData {
-  const LocalTagsData(this.filename, this.tags);
+  const factory LocalTagsData({
+    required String filename,
+    required List<String> tags,
+  }) = $LocalTagsData;
 
-  @Index(unique: true, replace: true)
-  final String filename;
-
-  @Index(caseSensitive: false, type: IndexType.hashElements)
-  final List<String> tags;
+  String get filename;
+  List<String> get tags;
 }
 
 abstract interface class LocalTagsService {
@@ -301,16 +221,15 @@ abstract interface class DirectoryTagService {
 }
 
 abstract class TagData {
-  const TagData({
-    required this.tag,
-    required this.type,
-  });
+  const factory TagData({
+    required String tag,
+    required TagType type,
+    required DateTime time,
+  }) = $TagData;
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("type")])
-  final String tag;
-
-  @enumerated
-  final TagType type;
+  String get tag;
+  TagType get type;
+  DateTime get time;
 
   TagData copy({String? tag, TagType? type});
 }
@@ -375,25 +294,20 @@ abstract interface class TagManager implements ServiceMarker {
   BooruTagging get pinned;
 }
 
+@immutable
 abstract class GridBookmark implements CellBase {
-  const GridBookmark({
-    required this.tags,
-    required this.booru,
-    required this.name,
-    required this.time,
-  });
+  const factory GridBookmark({
+    required String tags,
+    required Booru booru,
+    required String name,
+    required DateTime time,
+    required List<GridBookmarkThumbnail> thumbnails,
+  }) = $GridBookmark;
 
-  @Index()
-  final String tags;
-
-  @enumerated
-  final Booru booru;
-
-  @Index(unique: true, replace: true)
-  final String name;
-  @Index()
-  final DateTime time;
-
+  String get tags;
+  Booru get booru;
+  String get name;
+  DateTime get time;
   List<GridBookmarkThumbnail> get thumbnails;
 
   GridBookmark copy({
@@ -403,6 +317,11 @@ abstract class GridBookmark implements CellBase {
     DateTime? time,
     List<GridBookmarkThumbnail>? thumbnails,
   });
+}
+
+@immutable
+abstract class GridBookmarkImpl implements CellBase, GridBookmark {
+  const GridBookmarkImpl();
 
   @override
   String alias(bool long) => tags;
@@ -417,14 +336,15 @@ abstract class GridBookmark implements CellBase {
   String toString() => "GridBookmarkBase: $name $time";
 }
 
+@immutable
 abstract class GridBookmarkThumbnail {
-  const GridBookmarkThumbnail({
-    required this.url,
-    required this.rating,
-  });
+  const factory GridBookmarkThumbnail({
+    required String url,
+    required PostRating rating,
+  }) = $GridBookmarkThumbnail;
 
-  final String url;
-  final PostRating rating;
+  String get url;
+  PostRating get rating;
 }
 
 extension GridStateBooruExt on GridBookmark {
@@ -432,20 +352,17 @@ extension GridStateBooruExt on GridBookmark {
 }
 
 abstract class GridState {
-  const GridState({
-    required this.name,
-    required this.offset,
-    required this.tags,
-    required this.safeMode,
-  });
+  const factory GridState({
+    required String name,
+    required double offset,
+    required String tags,
+    required SafeMode safeMode,
+  }) = $GridState;
 
-  @Index(unique: true, replace: true)
-  final String name;
-
-  final double offset;
-  final String tags;
-  @enumerated
-  final SafeMode safeMode;
+  String get name;
+  double get offset;
+  String get tags;
+  SafeMode get safeMode;
 
   GridState copy({
     String? name,
@@ -505,8 +422,11 @@ class UpdatesAvailableStatus {
 abstract interface class UpdatesAvailable {
   bool tryRefreshIfNeeded();
 
+  void setCount(int count);
+
   StreamSubscription<UpdatesAvailableStatus> watch(
-      void Function(UpdatesAvailableStatus) f);
+    void Function(UpdatesAvailableStatus) f,
+  );
 }
 
 abstract interface class SecondaryGridService {
@@ -567,5 +487,171 @@ class BufferedStorage<T> {
     _offset += _buffer.length;
 
     return true;
+  }
+}
+
+@immutable
+abstract class HottestTag {
+  const factory HottestTag({
+    required String tag,
+    required List<ThumbUrlRating> thumbUrls,
+    required int count,
+  }) = $HottestTag;
+
+  String get tag;
+  List<ThumbUrlRating> get thumbUrls;
+  int get count;
+}
+
+@immutable
+abstract class ThumbUrlRating {
+  const factory ThumbUrlRating({
+    required String url,
+    required PostRating rating,
+  }) = $ThumbUrlRating;
+
+  String get url;
+  PostRating get rating;
+}
+
+abstract interface class HottestTagsService {
+  List<HottestTag> all(Booru booru);
+
+  void replace(List<HottestTag> tags, Booru booru);
+
+  StreamSubscription<void> watch(Booru booru, void Function(void) f);
+}
+
+@immutable
+abstract class AnimeGenre {
+  const factory AnimeGenre({
+    required int id,
+    required String title,
+    required bool unpressable,
+    required bool explicit,
+  }) = $AnimeGenre;
+
+  String get title;
+  int get id;
+  bool get unpressable;
+  bool get explicit;
+}
+
+@immutable
+abstract class AnimeRelation {
+  const factory AnimeRelation({
+    required int id,
+    required String thumbUrl,
+    required String title,
+    required String type,
+  }) = $AnimeRelation;
+
+  int get id;
+  String get thumbUrl;
+  String get title;
+  String get type;
+
+  static bool idIsValid(AnimeRelation e) => e.id != 0 && e.type != "manga";
+
+  @override
+  String toString() => title;
+}
+
+abstract class SavedAnimeEntryData extends AnimeEntryData {
+  const factory SavedAnimeEntryData({
+    required bool inBacklog,
+    required AnimeMetadata site,
+    required String type,
+    required String thumbUrl,
+    required String title,
+    required String titleJapanese,
+    required String titleEnglish,
+    required double score,
+    required String synopsis,
+    required int year,
+    required int id,
+    required String siteUrl,
+    required bool isAiring,
+    required List<String> titleSynonyms,
+    required String trailerUrl,
+    required int episodes,
+    required String background,
+    required AnimeSafeMode explicit,
+    required List<AnimeRelation> relations,
+    required List<AnimeRelation> staff,
+    required List<AnimeGenre> genres,
+  }) = $SavedAnimeEntryData;
+
+  bool get inBacklog;
+
+  SavedAnimeEntryData copySuper(
+    AnimeEntryData e, [
+    bool ignoreRelations = false,
+  ]);
+
+  SavedAnimeEntryData copy({
+    bool? inBacklog,
+    AnimeMetadata? site,
+    int? episodes,
+    String? trailerUrl,
+    String? siteUrl,
+    String? title,
+    String? titleJapanese,
+    String? titleEnglish,
+    String? background,
+    int? id,
+    List<AnimeGenre>? genres,
+    List<String>? titleSynonyms,
+    List<AnimeRelation>? relations,
+    bool? isAiring,
+    int? year,
+    double? score,
+    String? thumbUrl,
+    String? synopsis,
+    String? type,
+    AnimeSafeMode? explicit,
+    List<AnimeRelation>? staff,
+  });
+}
+
+@immutable
+abstract class Post implements PostBase, PostImpl, Pressable<Post> {
+  const factory Post({
+    required int id,
+    required String md5,
+    required List<String> tags,
+    required int width,
+    required int height,
+    required String fileUrl,
+    required String previewUrl,
+    required String sampleUrl,
+    required String sourceUrl,
+    required PostRating rating,
+    required int score,
+    required DateTime createdAt,
+    required Booru booru,
+    required PostContentType type,
+  }) = $Post;
+
+  static String getUrl(PostBase p) {
+    var url = switch (SettingsService.db().current.quality) {
+      DisplayQuality.original => p.fileUrl,
+      DisplayQuality.sample => p.sampleUrl
+    };
+    if (url.isEmpty) {
+      url = p.sampleUrl.isNotEmpty
+          ? p.sampleUrl
+          : p.fileUrl.isEmpty
+              ? p.previewUrl
+              : p.fileUrl;
+    }
+
+    return url;
+  }
+
+  static PostContentType makeType(PostBase p) {
+    final url = getUrl(p);
+
+    return PostContentType.fromUrl(url);
   }
 }

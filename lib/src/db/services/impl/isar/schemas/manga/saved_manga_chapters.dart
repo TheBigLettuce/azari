@@ -11,17 +11,29 @@ part "saved_manga_chapters.g.dart";
 
 @collection
 class IsarSavedMangaChapters extends SavedMangaChaptersData {
-  IsarSavedMangaChapters({
+  const IsarSavedMangaChapters({
+    required this.isarId,
     required this.chapters,
-    required super.mangaId,
-    required super.site,
-    required super.page,
+    required this.mangaId,
+    required this.site,
+    required this.page,
   });
 
-  Id? isarId;
+  final Id? isarId;
 
   @override
   final List<IsarMangaChapter> chapters;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("site")])
+  final String mangaId;
+
+  @override
+  final int page;
+
+  @override
+  @enumerated
+  final MangaMeta site;
 }
 
 @embedded

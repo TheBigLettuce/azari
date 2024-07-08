@@ -9,6 +9,21 @@ import "package:isar/isar.dart";
 part "pinned_thumbnail.g.dart";
 
 @collection
-class IsarPinnedThumbnail extends PinnedThumbnailData {
-  const IsarPinnedThumbnail(super.id, super.differenceHash, super.path);
+class IsarPinnedThumbnail implements PinnedThumbnailData {
+  const IsarPinnedThumbnail({
+    required this.differenceHash,
+    required this.id,
+    required this.path,
+  });
+
+  @override
+  @Index()
+  final int differenceHash;
+
+  @override
+  final Id id;
+
+  @override
+  @Index()
+  final String path;
 }

@@ -11,30 +11,29 @@ abstract interface class CompactMangaDataService {
   CompactMangaData? get(String mangaId, MangaMeta site);
 }
 
-class CompactMangaDataBase {
-  const CompactMangaDataBase({
-    required this.mangaId,
-    required this.site,
-    required this.thumbUrl,
-    required this.title,
-  });
+abstract class MangaData {
+  const MangaData();
 
-  @Index(unique: true, replace: true, composite: [CompositeIndex("site")])
-  final String mangaId;
-
-  @enumerated
-  final MangaMeta site;
-
-  final String title;
-  final String thumbUrl;
+  String get mangaId;
+  MangaMeta get site;
+  String get title;
+  String get thumbUrl;
 }
 
-mixin CompactMangaData
-    implements
-        CompactMangaDataBase,
-        CellBase,
-        Thumbnailable,
-        Pressable<CompactMangaData> {
+@immutable
+abstract class CompactMangaData
+    implements MangaData, CellBase, Thumbnailable, Pressable<CompactMangaData> {
+  const factory CompactMangaData({
+    required String mangaId,
+    required MangaMeta site,
+    required String title,
+    required String thumbUrl,
+  }) = $CompactMangaData;
+}
+
+abstract class CompactMangaDataImpl implements CompactMangaData {
+  const CompactMangaDataImpl();
+
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -51,7 +50,7 @@ mixin CompactMangaData
   void onPress(
     BuildContext context,
     GridFunctionality<CompactMangaData> functionality,
-    CompactMangaDataBase cell,
+    CompactMangaData cell,
     int idx,
   ) {
     final (client, setInner) = MangaPageDataNotifier.of(context);

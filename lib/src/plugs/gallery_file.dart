@@ -237,7 +237,13 @@ mixin GalleryFile
     }
 
     return postTags
-        .map((e) => ImageTag(e, tagManager.pinned.exists(e)))
+        .map(
+          (e) => ImageTag(
+            e,
+            favorite: tagManager.pinned.exists(e),
+            excluded: tagManager.excluded.exists(e),
+          ),
+        )
         .toList();
   }
 
@@ -253,7 +259,7 @@ mixin GalleryFile
 
 class FileBase {
   const FileBase({
-    required this.tagsFlat,
+    required this.tags,
     required this.id,
     required this.bucketId,
     required this.name,
@@ -267,25 +273,25 @@ class FileBase {
     required this.originalUri,
   });
 
-  @Index(unique: true)
+  // @Index(unique: true)
   final int id;
   final String bucketId;
-  @Index()
+  // @Index()
   final String name;
-  @Index()
+  // @Index()
   final int lastModified;
   final String originalUri;
 
   final int height;
   final int width;
 
-  @Index()
+  // @Index()
   final int size;
 
   final bool isVideo;
   final bool isGif;
 
-  final String tagsFlat;
+  final Map<String, void> tags;
   final bool isDuplicate;
 }
 
@@ -299,7 +305,7 @@ class GalleryFileInfo extends StatefulWidget {
 }
 
 class _GalleryFileInfoState extends State<GalleryFileInfo> {
-  int currentPage = 0;
+  // int currentPage = 0;
 
   GalleryFile get file => widget.file;
 
@@ -326,13 +332,13 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     );
   }
 
-  int currentPageF() => currentPage;
+  // int currentPageF() => currentPage;
 
-  void setPage(int i) {
-    setState(() {
-      currentPage = i;
-    });
-  }
+  // void setPage(int i) {
+  //   setState(() {
+  //     currentPage = i;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -340,175 +346,264 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     final res = ImageTagsNotifier.resOf(context);
 
     final l10n = AppLocalizations.of(context)!;
+    final tagManager = TagManager.of(context);
+    final settings = SettingsService.db().current;
 
     return SliverMainAxisGroup(
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 16),
-          sliver: LabelSwitcherWidget(
-            pages: [
-              PageLabel(l10n.infoHeadline),
-              PageLabel(
-                l10n.tagsInfoPage,
-                count: ImageTagsNotifier.of(context).length,
-              ),
-            ],
-            currentPage: currentPageF,
-            switchPage: setPage,
-            sliver: true,
-            noHorizontalPadding: true,
-          ),
-        ),
-        if (currentPage == 0)
-          SliverList.list(
-            children: [
-              MenuWrapper(
-                title: filename,
-                child: addInfoTile(
-                  title: l10n.nameTitle,
-                  subtitle: filename,
-                  trailing: plug.temporary
-                      ? null
-                      : IconButton(
-                          onPressed: () {
-                            Navigator.push<void>(
-                              context,
-                              DialogRoute(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(l10n.enterNewNameTitle),
-                                    content: TextFormField(
-                                      autofocus: true,
-                                      initialValue: filename,
-                                      autovalidateMode: AutovalidateMode.always,
-                                      decoration: const InputDecoration(
-                                        errorMaxLines: 2,
-                                      ),
-                                      validator: (value) {
-                                        if (value == null) {
-                                          return l10n.valueIsNull;
-                                        }
-
-                                        final res =
-                                            DisassembleResult.fromFilename(
-                                          value,
-                                        );
-                                        if (res.hasError) {
-                                          return res.asError(l10n);
-                                        }
-
-                                        return null;
-                                      },
-                                      onFieldSubmitted: (value) {
-                                        GalleryManagementApi.current()
-                                            .files
-                                            .rename(file.originalUri, value);
-
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit),
-                        ),
+        TagsRibbon(
+          emptyWidget: res == null
+              ? const SliverPadding(padding: EdgeInsets.zero)
+              : LoadTags(
+                  filename: filename,
+                  res: res,
                 ),
-              ),
-              addInfoTile(
-                title: l10n.dateModified,
-                subtitle: l10n.date(
-                  DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
-                ),
-              ),
-              addInfoTile(
-                title: l10n.widthInfoPage,
-                subtitle: l10n.pixels(file.width),
-              ),
-              addInfoTile(
-                title: l10n.heightInfoPage,
-                subtitle: l10n.pixels(file.height),
-              ),
-              addInfoTile(
-                title: l10n.sizeInfoPage,
-                subtitle: kbMbSize(context, file.size),
-              ),
-              if (res != null)
-                RedownloadTile(key: file.uniqueKey(), file: file, res: res),
-              if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
-            ],
-          )
-        else if (res != null) ...[
-          SliverPadding(
-            padding: const EdgeInsets.only(left: 16, right: 16),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      final notifier =
-                          GlobalProgressTab.maybeOf(context)?.loadTags();
-                      final db =
-                          DatabaseConnectionNotifier.of(context).localTags;
+          selectTag: (str) {
+            HapticFeedback.mediumImpact();
 
-                      db.delete(filename);
+            Navigator.pop(context);
 
-                      notifier?.value = Future(() {})
-                          .whenComplete(() => notifier.value = null);
-                    },
-                    icon: const Icon(Icons.delete_rounded),
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 18,
-                  ),
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      final db =
-                          DatabaseConnectionNotifier.of(context).localTags;
-
-                      openAddTagDialog(
-                        context,
-                        (v, delete) {
-                          if (delete) {
-                            db.removeSingle([filename], v);
-                          } else {
-                            db.addMultiple([filename], v);
-                          }
-                        },
-                        l10n,
+            radioDialog<SafeMode>(
+              context,
+              SafeMode.values.map(
+                (e) => (e, e.translatedString(l10n)),
+              ),
+              settings.safeMode,
+              (s) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) {
+                      return BooruRestoredPage(
+                        booru: settings.selectedBooru,
+                        tags: str,
+                        saveSelectedPage: (e) {},
+                        overrideSafeMode: s ?? settings.safeMode,
+                        db: DatabaseConnectionNotifier.of(context),
                       );
                     },
-                    icon: const Icon(Icons.add_rounded),
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 18,
                   ),
-                ],
+                );
+              },
+              title: l10n.chooseSafeMode,
+              allowSingle: true,
+            );
+            _launchGrid(context, str);
+          },
+          tagManager: TagManager.of(context),
+          showPin: false,
+          items: (tag) => [
+            PopupMenuItem(
+              onTap: () {
+                if (tagManager.excluded.exists(tag)) {
+                  tagManager.excluded.delete(tag);
+                } else {
+                  tagManager.excluded.add(tag);
+                }
+              },
+              child: Text(
+                tagManager.excluded.exists(tag)
+                    ? l10n.removeFromExcluded
+                    : l10n.addToExcluded,
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: SearchTextField(
-              filename,
-              key: ValueKey(filename),
+            launchGridSafeModeItem(
+              context,
+              tag,
+              _launchGrid,
+              l10n,
             ),
-          ),
-          TagsListWidget(
-            key: ValueKey(filename),
-            filename,
-            res: res,
-            launchGrid: _launchGrid,
-            addRemoveTag: true,
-            db: TagManager.of(context),
-          ),
-        ] else
-          const SliverToBoxAdapter(
-            child: EmptyWidget(
-              gridSeed: 2,
+            // if (widget.addRemoveTag)
+            //   PopupMenuItem(
+            //     onTap: () {
+            //       DatabaseConnectionNotifier.of(context)
+            //           .localTags
+            //           .removeSingle([widget.filename], tag);
+            //     },
+            //     child: Text(l10n.delete),
+            //   ),
+            PopupMenuItem(
+              onTap: () {
+                if (tagManager.pinned.exists(tag)) {
+                  tagManager.pinned.delete(tag);
+                } else {
+                  tagManager.pinned.add(tag);
+                }
+
+                ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+              },
+              child: Text(
+                tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+              ),
             ),
-          ),
+          ],
+        ),
+        // SliverPadding(
+        //   padding: const EdgeInsets.only(left: 16),
+        //   sliver: LabelSwitcherWidget(
+        //     pages: [
+        //       PageLabel(l10n.infoHeadline),
+        //       PageLabel(
+        //         l10n.tagsInfoPage,
+        //         count: ImageTagsNotifier.of(context).length,
+        //       ),
+        //     ],
+        //     currentPage: currentPageF,
+        //     switchPage: setPage,
+        //     sliver: true,
+        //     noHorizontalPadding: true,
+        //   ),
+        // ),
+        // if (currentPage == 0)
+        SliverList.list(
+          children: [
+            MenuWrapper(
+              title: filename,
+              child: addInfoTile(
+                title: l10n.nameTitle,
+                subtitle: filename,
+                trailing: plug.temporary
+                    ? null
+                    : IconButton(
+                        onPressed: () {
+                          Navigator.push<void>(
+                            context,
+                            DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(l10n.enterNewNameTitle),
+                                  content: TextFormField(
+                                    autofocus: true,
+                                    initialValue: filename,
+                                    autovalidateMode: AutovalidateMode.always,
+                                    decoration: const InputDecoration(
+                                      errorMaxLines: 2,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return l10n.valueIsNull;
+                                      }
+
+                                      final res =
+                                          DisassembleResult.fromFilename(
+                                        value,
+                                      );
+                                      if (res.hasError) {
+                                        return res.asError(l10n);
+                                      }
+
+                                      return null;
+                                    },
+                                    onFieldSubmitted: (value) {
+                                      GalleryManagementApi.current()
+                                          .files
+                                          .rename(file.originalUri, value);
+
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit),
+                      ),
+              ),
+            ),
+            addInfoTile(
+              title: l10n.dateModified,
+              subtitle: l10n.date(
+                DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
+              ),
+            ),
+            addInfoTile(
+              title: l10n.widthInfoPage,
+              subtitle: l10n.pixels(file.width),
+            ),
+            addInfoTile(
+              title: l10n.heightInfoPage,
+              subtitle: l10n.pixels(file.height),
+            ),
+            addInfoTile(
+              title: l10n.sizeInfoPage,
+              subtitle: kbMbSize(context, file.size),
+            ),
+            if (res != null)
+              RedownloadTile(key: file.uniqueKey(), file: file, res: res),
+            if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
+          ],
+        ),
+        //   else if (res != null) ...[
+        //     SliverPadding(
+        //       padding: const EdgeInsets.only(left: 16, right: 16),
+        //       sliver: SliverToBoxAdapter(
+        //         child: Row(
+        //           mainAxisSize: MainAxisSize.min,
+        //           mainAxisAlignment: MainAxisAlignment.end,
+        //           children: [
+        //             IconButton.filledTonal(
+        //               onPressed: () {
+        //                 final notifier =
+        //                     GlobalProgressTab.maybeOf(context)?.loadTags();
+        //                 final db =
+        //                     DatabaseConnectionNotifier.of(context).localTags;
+
+        //                 db.delete(filename);
+
+        //                 notifier?.value = Future(() {})
+        //                     .whenComplete(() => notifier.value = null);
+        //               },
+        //               icon: const Icon(Icons.delete_rounded),
+        //               visualDensity: VisualDensity.compact,
+        //               iconSize: 18,
+        //             ),
+        //             IconButton.filledTonal(
+        //               onPressed: () {
+        //                 final db =
+        //                     DatabaseConnectionNotifier.of(context).localTags;
+
+        //                 openAddTagDialog(
+        //                   context,
+        //                   (v, delete) {
+        //                     if (delete) {
+        //                       db.removeSingle([filename], v);
+        //                     } else {
+        //                       db.addMultiple([filename], v);
+        //                     }
+        //                   },
+        //                   l10n,
+        //                 );
+        //               },
+        //               icon: const Icon(Icons.add_rounded),
+        //               visualDensity: VisualDensity.compact,
+        //               iconSize: 18,
+        //             ),
+        //           ],
+        //         ),
+        //       ),
+        //     ),
+        //     SliverToBoxAdapter(
+        //       child: SearchTextField(
+        //         filename,
+        //         key: ValueKey(filename),
+        //       ),
+        //     ),
+        // TagsListWidget(
+        //   key: ValueKey(filename),
+        //   filename,
+        //   res: res,
+        //   launchGrid: _launchGrid,
+        //   addRemoveTag: true,
+        //   db: TagManager.of(context),
+        // ),
+        //   ] else
+        //     const SliverToBoxAdapter(
+        //       child: EmptyWidget(
+        //         gridSeed: 2,
+        //       ),
+        //     ),
       ],
     );
   }

@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:gallery/src/db/services/impl_table/io.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:isar/isar.dart";
@@ -12,12 +13,31 @@ import "package:isar/isar.dart";
 part "hidden_booru_post.g.dart";
 
 @collection
-class IsarHiddenBooruPost extends HiddenBooruPostData {
-  IsarHiddenBooruPost(
-    super.booru,
-    super.postId,
-    super.thumbUrl,
-  );
+class IsarHiddenBooruPost extends HiddenBooruPostDataImpl
+    implements $HiddenBooruPostData {
+  const IsarHiddenBooruPost({
+    required this.isarId,
+    required this.booru,
+    required this.postId,
+    required this.thumbUrl,
+  });
 
-  Id? isarId;
+  const IsarHiddenBooruPost.noId({
+    required this.booru,
+    required this.postId,
+    required this.thumbUrl,
+  }) : isarId = null;
+
+  final Id? isarId;
+
+  @override
+  @enumerated
+  final Booru booru;
+
+  @override
+  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
+  final int postId;
+
+  @override
+  final String thumbUrl;
 }

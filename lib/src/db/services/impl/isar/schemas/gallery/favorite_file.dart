@@ -9,7 +9,10 @@ part "favorite_file.g.dart";
 
 @collection
 class IsarFavoriteFile {
-  const IsarFavoriteFile(this.id, this.time);
+  const IsarFavoriteFile({
+    required this.id,
+    required this.time,
+  });
 
   final Id id;
   @Index()

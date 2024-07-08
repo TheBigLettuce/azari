@@ -47,6 +47,7 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:logging/logging.dart";
 
@@ -268,10 +269,11 @@ class _GalleryFilesState extends State<GalleryFiles> {
       return;
     }
 
-    Navigator.pop(context);
-
     searchTextController.text = tag;
     filter.filteringMode = FilteringMode.tag;
+    if (filter.backingStorage.isNotEmpty) {
+      Navigator.pop(context);
+    }
   }
 
   FilteringMode? beforeButtons;
@@ -298,23 +300,64 @@ class _GalleryFilesState extends State<GalleryFiles> {
             builder: (context) => GridFrame<GalleryFile>(
               key: state.gridKey,
               slivers: [
-                _TagsRibbon(
-                  thenMoveTo: (widget.directory == null
-                          ? api.directories.length == 1
-                          : true)
-                      ? () {
-                          final dir = widget.directory ?? api.directories.first;
+                _TagsNotifier(
+                  tagSource: api.sourceTags,
+                  tagManager: TagManager.of(context),
+                  child: TagsRibbon(
+                    onLongPress: (String tag) {
+                      final settings = SettingsService.db().current;
 
-                          return PathVolume(
-                            dir.relativeLoc,
-                            dir.volumeName,
-                            widget.dirName,
+                      HapticFeedback.mediumImpact();
+                      final generateGlue = GlueProvider.generateOf(context);
+
+                      radioDialog<SafeMode>(
+                        context,
+                        SafeMode.values.map(
+                          (e) => (e, e.translatedString(l10n)),
+                        ),
+                        settings.safeMode,
+                        (s) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (context) {
+                                return BooruRestoredPage(
+                                  generateGlue: generateGlue,
+                                  booru: settings.selectedBooru,
+                                  thenMoveTo: ((widget.directory == null
+                                              ? api.directories.length == 1
+                                              : true)
+                                          ? () {
+                                              final dir = widget.directory ??
+                                                  api.directories.first;
+
+                                              return PathVolume(
+                                                dir.relativeLoc,
+                                                dir.volumeName,
+                                                widget.dirName,
+                                              );
+                                            }
+                                          : null)
+                                      ?.call(),
+                                  tags: tag,
+                                  trySearchBookmarkByTags: true,
+                                  saveSelectedPage: (e) {},
+                                  overrideSafeMode: s ?? settings.safeMode,
+                                  db: DatabaseConnectionNotifier.of(
+                                    context,
+                                  ),
+                                );
+                              },
+                            ),
                           );
-                        }
-                      : null,
-                  tags: api.sourceTags,
-                  selectTag: _filterTag,
-                  tagManager: widget.tagManager,
+                        },
+                        title: l10n.chooseSafeMode,
+                        allowSingle: true,
+                      );
+                    },
+                    selectTag: _filterTag,
+                    tagManager: widget.tagManager,
+                  ),
                 ),
                 if (!api.type.isFavorites())
                   Builder(
@@ -562,31 +605,122 @@ class _GalleryFilesState extends State<GalleryFiles> {
   }
 }
 
-class _TagsRibbon extends StatefulWidget {
-  const _TagsRibbon({
-    // super.key,
-    required this.tags,
-    required this.selectTag,
+class _TagsNotifier extends StatefulWidget {
+  const _TagsNotifier({
+    super.key,
     required this.tagManager,
-    required this.thenMoveTo,
+    required this.tagSource,
+    required this.child,
   });
 
-  final FilesSourceTags tags;
-  final void Function(String tag) selectTag;
+  final FilesSourceTags tagSource;
   final TagManager tagManager;
-  final PathVolume Function()? thenMoveTo;
+
+  final Widget child;
 
   @override
-  State<_TagsRibbon> createState() => __TagsRibbonState();
+  State<_TagsNotifier> createState() => __TagsNotifierState();
 }
 
-class __TagsRibbonState extends State<_TagsRibbon> {
+class __TagsNotifierState extends State<_TagsNotifier> {
+  late List<ImageTag> _list = widget.tagSource.current
+      .map(
+        (e) => ImageTag(
+          e,
+          favorite: widget.tagManager.pinned.exists(e),
+          excluded: widget.tagManager.excluded.exists(e),
+        ),
+      )
+      .toList();
   late final StreamSubscription<List<String>> subscription;
-  late final StreamSubscription<void> pinnedSubscription;
+  late final StreamSubscription<void> subscr;
 
-  late List<(String, bool)> _list = _sortPinned(widget.tags.current);
-  late List<(String, bool)> _pinnedList =
-      widget.tagManager.pinned.get(-1).map((e) => (e.tag, true)).toList();
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = widget.tagSource.watch((list) {
+      _refresh();
+    });
+
+    subscr = widget.tagManager.pinned.watch((_) {
+      _refresh();
+    });
+  }
+
+  void _refresh() {
+    setState(() {
+      _list = widget.tagSource.current
+          .map(
+            (e) => ImageTag(
+              e,
+              favorite: widget.tagManager.pinned.exists(e),
+              excluded: widget.tagManager.excluded.exists(e),
+            ),
+          )
+          .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ImageTagsNotifier(
+      tags: _list,
+      res: null,
+      child: widget.child,
+    );
+  }
+}
+
+class TagsRibbon extends StatefulWidget {
+  const TagsRibbon({
+    super.key,
+    required this.selectTag,
+    required this.tagManager,
+    this.onLongPress,
+    this.items,
+    this.showPin = true,
+    this.emptyWidget = const SliverPadding(padding: EdgeInsets.zero),
+  });
+
+  final void Function(String tag)? onLongPress;
+  final void Function(String tag) selectTag;
+  final TagManager tagManager;
+  final List<PopupMenuItem<void>> Function(String tag)? items;
+  final bool showPin;
+
+  final Widget emptyWidget;
+
+  @override
+  State<TagsRibbon> createState() => _TagsRibbonState();
+}
+
+class _TagsRibbonState extends State<TagsRibbon> {
+  late final StreamSubscription<void>? pinnedSubscription;
+
+  final scrollController = ScrollController();
+
+  late List<ImageTag> _list;
+  late List<ImageTag>? _pinnedList = !widget.showPin
+      ? null
+      : widget.tagManager.pinned
+          .get(-1)
+          .map(
+            (e) => ImageTag(
+              e.tag,
+              favorite: true,
+              excluded: false,
+            ),
+          )
+          .toList();
 
   bool showOnlyPinned = false;
 
@@ -594,57 +728,65 @@ class __TagsRibbonState extends State<_TagsRibbon> {
   void initState() {
     super.initState();
 
-    subscription = widget.tags.watch((l) {
-      setState(() {
-        _list = _sortPinned(l);
-      });
-    });
-
-    pinnedSubscription = widget.tagManager.pinned.watch((_) {
-      setState(() {
-        _pinnedList =
-            widget.tagManager.pinned.get(-1).map((e) => (e.tag, true)).toList();
-        _list = _sortPinned(widget.tags.current);
-      });
-    });
+    pinnedSubscription = !widget.showPin
+        ? null
+        : widget.tagManager.pinned.watch((_) {
+            setState(() {
+              _pinnedList = widget.tagManager.pinned
+                  .get(-1)
+                  .map(
+                    (e) => ImageTag(
+                      e.tag,
+                      favorite: true,
+                      excluded: false,
+                    ),
+                  )
+                  .toList();
+            });
+          });
   }
 
-  List<(String, bool)> _sortPinned(List<String> tag) {
-    final pinned = <String>[];
-    final notPinned = <String>[];
+  List<ImageTag> _sortPinned(List<ImageTag> tag) {
+    final pinned = <ImageTag>[];
+    final notPinned = <ImageTag>[];
 
     for (final e in tag) {
-      if (widget.tagManager.pinned.exists(e)) {
+      if (e.favorite) {
         pinned.add(e);
       } else {
         notPinned.add(e);
       }
     }
 
-    return pinned
-        .map((e) => (e, true))
-        .followedBy(notPinned.map((e) => (e, false)))
-        .toList();
+    return pinned.followedBy(notPinned).toList();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _list = _sortPinned(ImageTagsNotifier.of(context));
   }
 
   @override
   void dispose() {
-    pinnedSubscription.cancel();
-    subscription.cancel();
+    pinnedSubscription?.cancel();
+    scrollController.dispose();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final gestureRight = MediaQuery.systemGestureInsetsOf(context).right;
 
-    final fromList = showOnlyPinned || _list.isEmpty ? _pinnedList : _list;
+    final fromList = showOnlyPinned || _list.isEmpty && _pinnedList != null
+        ? _pinnedList!
+        : _list;
 
-    return _list.isEmpty && _pinnedList.isEmpty
-        ? const SliverPadding(padding: EdgeInsets.zero)
+    return _list.isEmpty && (_pinnedList == null || _pinnedList!.isEmpty)
+        ? widget.emptyWidget
         : SliverPadding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             sliver: SliverToBoxAdapter(
@@ -669,109 +811,100 @@ class __TagsRibbonState extends State<_TagsRibbon> {
                       )
                     else
                       ListView.builder(
+                        controller: scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 8) +
-                            EdgeInsets.only(right: 40 + gestureRight * 0.5),
+                            (widget.showPin
+                                ? EdgeInsets.only(
+                                    right: 40 + gestureRight * 0.5,
+                                  )
+                                : EdgeInsets.zero),
                         shrinkWrap: true,
                         scrollDirection: Axis.horizontal,
                         itemCount: fromList.length,
                         itemBuilder: (context, i) {
-                          final (tag, pinned) = fromList[i];
+                          final elem = fromList[i];
+
+                          final child = GestureDetector(
+                            onDoubleTap: () {
+                              if (widget.tagManager.pinned.exists(elem.tag)) {
+                                widget.tagManager.pinned.delete(elem.tag);
+                              } else {
+                                widget.tagManager.pinned.add(elem.tag);
+                              }
+
+                              scrollController.animateTo(
+                                0,
+                                duration: Durations.medium1,
+                                curve: Easing.standard,
+                              );
+                            },
+                            onLongPress: widget.onLongPress == null
+                                ? null
+                                : () {
+                                    widget.onLongPress!(elem.tag);
+                                  },
+                            child: ActionChip(
+                              labelStyle: elem.excluded
+                                  ? TextStyle(
+                                      color: theme.disabledColor,
+                                      decoration: TextDecoration.lineThrough,
+                                    )
+                                  : null,
+                              avatar: elem.favorite
+                                  ? const Icon(Icons.push_pin_rounded)
+                                  : null,
+                              onPressed: () => widget.selectTag(elem.tag),
+                              label: Text(elem.tag),
+                            ),
+                          );
 
                           return Padding(
                             padding: i != fromList.length - 1
                                 ? const EdgeInsets.only(right: 6)
                                 : EdgeInsets.zero,
-                            child: GestureDetector(
-                              onDoubleTap: () {
-                                if (widget.tagManager.pinned.exists(tag)) {
-                                  widget.tagManager.pinned.delete(tag);
-                                } else {
-                                  widget.tagManager.pinned.add(tag);
-                                }
-                              },
-                              onLongPress: () {
-                                final settings = SettingsService.db().current;
-
-                                HapticFeedback.mediumImpact();
-                                final generateGlue =
-                                    GlueProvider.generateOf(context);
-
-                                radioDialog<SafeMode>(
-                                  context,
-                                  SafeMode.values.map(
-                                    (e) => (e, e.translatedString(l10n)),
+                            child: widget.items == null
+                                ? child
+                                : MenuWrapper(
+                                    title: elem.tag,
+                                    items: widget.items!(elem.tag),
+                                    child: child,
                                   ),
-                                  settings.safeMode,
-                                  (s) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute<void>(
-                                        builder: (context) {
-                                          return BooruRestoredPage(
-                                            generateGlue: generateGlue,
-                                            booru: settings.selectedBooru,
-                                            thenMoveTo:
-                                                widget.thenMoveTo?.call(),
-                                            tags: tag,
-                                            trySearchBookmarkByTags: true,
-                                            saveSelectedPage: (e) {},
-                                            overrideSafeMode:
-                                                s ?? settings.safeMode,
-                                            db: DatabaseConnectionNotifier.of(
-                                              context,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                  title: l10n.chooseSafeMode,
-                                  allowSingle: true,
-                                );
-                              },
-                              child: ActionChip(
-                                avatar: pinned
-                                    ? const Icon(Icons.push_pin_rounded)
-                                    : null,
-                                onPressed: () => widget.selectTag(tag),
-                                label: Text(tag),
-                              ),
-                            ),
                           );
                         },
                       ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerRight,
-                            end: Alignment.centerLeft,
-                            colors: [
-                              theme.colorScheme.surface,
-                              theme.colorScheme.surface.withOpacity(0.8),
-                              theme.colorScheme.surface.withOpacity(0.65),
-                              theme.colorScheme.surface.withOpacity(0.5),
-                              theme.colorScheme.surface.withOpacity(0.35),
-                            ],
+                    if (widget.showPin)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerRight,
+                              end: Alignment.centerLeft,
+                              colors: [
+                                theme.colorScheme.surface,
+                                theme.colorScheme.surface.withOpacity(0.8),
+                                theme.colorScheme.surface.withOpacity(0.65),
+                                theme.colorScheme.surface.withOpacity(0.5),
+                                theme.colorScheme.surface.withOpacity(0.35),
+                              ],
+                            ),
                           ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.only(right: gestureRight * 0.5),
-                          child: IconButton(
-                            onPressed: _list.isEmpty
-                                ? null
-                                : () {
-                                    setState(() {
-                                      showOnlyPinned = !showOnlyPinned;
-                                    });
-                                  },
-                            icon: const Icon(Icons.push_pin_rounded),
-                            isSelected: showOnlyPinned,
+                          child: Padding(
+                            padding: EdgeInsets.only(right: gestureRight * 0.5),
+                            child: IconButton(
+                              onPressed: _list.isEmpty
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        showOnlyPinned = !showOnlyPinned;
+                                      });
+                                    },
+                              icon: const Icon(Icons.push_pin_rounded),
+                              isSelected: showOnlyPinned,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

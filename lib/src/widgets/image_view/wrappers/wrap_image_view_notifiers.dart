@@ -105,7 +105,7 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     return OriginalGridContext(
       generate: GlueProvider.generateOf(widget.gridContext ?? context),
       gridContext: widget.gridContext ?? context,
-      child: _TagWatchers(
+      child: ImageViewTagWatcher(
         key: ValueKey(widget.currentCell),
         tags: widget.tags,
         watchTags: widget.watchTags,
@@ -143,8 +143,8 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   }
 }
 
-class _TagWatchers extends StatefulWidget {
-  const _TagWatchers({
+class ImageViewTagWatcher extends StatefulWidget {
+  const ImageViewTagWatcher({
     super.key,
     required this.tags,
     required this.watchTags,
@@ -163,10 +163,10 @@ class _TagWatchers extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_TagWatchers> createState() => __TagWatchersState();
+  State<ImageViewTagWatcher> createState() => _ImageViewTagWatcherState();
 }
 
-class __TagWatchersState extends State<_TagWatchers> {
+class _ImageViewTagWatcherState extends State<ImageViewTagWatcher> {
   late final StreamSubscription<List<ImageTag>>? tagWatcher;
   late final DisassembleResult? res;
 
@@ -273,10 +273,15 @@ class ImageTagsNotifier extends InheritedWidget {
 }
 
 class ImageTag {
-  const ImageTag(this.tag, this.favorite);
+  const ImageTag(
+    this.tag, {
+    required this.favorite,
+    required this.excluded,
+  });
 
   final String tag;
   final bool favorite;
+  final bool excluded;
 }
 
 class _BottomSheetPopScope extends StatefulWidget {

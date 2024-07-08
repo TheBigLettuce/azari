@@ -16,13 +16,11 @@ abstract interface class PinnedThumbnailService {
   bool delete(int id);
 }
 
+@immutable
 abstract class PinnedThumbnailData {
-  const PinnedThumbnailData(this.id, this.differenceHash, this.path);
+  const PinnedThumbnailData();
 
-  final Id id;
-
-  @Index()
-  final String path;
-  @Index()
-  final int differenceHash;
+  int get id;
+  String get path;
+  int get differenceHash;
 }

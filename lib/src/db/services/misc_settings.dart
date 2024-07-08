@@ -7,6 +7,7 @@ part of "services.dart";
 
 extension MiscSettingsDataExt on MiscSettingsData {
   void save() => _currentDb.miscSettings.add(this);
+  MiscSettingsService get s => _currentDb.miscSettings;
 }
 
 abstract interface class MiscSettingsService implements ServiceMarker {
@@ -34,30 +35,16 @@ enum ThemeType {
       };
 }
 
+@immutable
 abstract class MiscSettingsData {
-  const MiscSettingsData({
-    required this.filesExtendedActions,
-    required this.animeAlwaysLoadFromNet,
-    required this.favoritesThumbId,
-    required this.themeType,
-    required this.favoritesPageMode,
-    required this.animeWatchingOrderReversed,
-  });
+  const MiscSettingsData();
 
-  final bool filesExtendedActions;
-  final bool animeAlwaysLoadFromNet;
-  final int favoritesThumbId;
-
-  final bool animeWatchingOrderReversed;
-
-  @enumerated
-  final ThemeType themeType;
-
-  @enumerated
-  final FilteringMode favoritesPageMode;
-
-  @ignore
-  MiscSettingsService get s => _currentDb.miscSettings;
+  bool get filesExtendedActions;
+  bool get animeAlwaysLoadFromNet;
+  int get favoritesThumbId;
+  bool get animeWatchingOrderReversed;
+  ThemeType get themeType;
+  FilteringMode get favoritesPageMode;
 
   MiscSettingsData copy({
     bool? filesExtendedActions,

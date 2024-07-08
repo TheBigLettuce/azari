@@ -31,7 +31,7 @@ class AnimeRelations extends StatelessWidget {
                   title: e.title,
                   child: TextButton(
                     onPressed: () {
-                      if (e.idIsValid) {
+                      if (AnimeRelation.idIsValid(e)) {
                         Navigator.push(
                           context,
                           MaterialPageRoute<void>(

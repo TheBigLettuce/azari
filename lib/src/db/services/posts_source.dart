@@ -9,7 +9,6 @@ import "package:gallery/src/db/services/resource_source/source_storage.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/home.dart";
 
@@ -68,6 +67,9 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       final settings = SettingsService.db().current;
 
       final list = await api.page(0, tags, excluded, safeMode);
+      if (list.$1.isNotEmpty) {
+        updatesAvailable.setCount(list.$1.first.id);
+      }
       entry.setOffset(0);
       currentSkipped = list.$2;
       backingStorage.addAll(

@@ -80,7 +80,11 @@ Isar _openSecondaryGridName(String name, bool create) {
   }
 
   return Isar.openSync(
-    [PostIsarSchema, IsarGridBooruPagingSchema],
+    const [
+      PostIsarSchema,
+      IsarGridBooruPagingSchema,
+      IsarUpdatesAvailableSchema,
+    ],
     directory: _dbs.secondaryGridDbDir,
     inspector: false,
     name: name,
