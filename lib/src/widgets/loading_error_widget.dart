@@ -13,6 +13,7 @@ class LoadingErrorWidget extends StatefulWidget {
     required this.refresh,
     this.short = true,
   });
+
   final String error;
   final bool short;
   final void Function() refresh;

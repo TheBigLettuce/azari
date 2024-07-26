@@ -39,14 +39,15 @@ enum AnimeSortOrder {
 }
 
 enum AnimeMetadata {
-  jikan("Jikan/MAL");
+  jikan("Jikan/MAL", "api.jikan.moe");
 
-  const AnimeMetadata(this.name);
+  const AnimeMetadata(this.name, this.apiUrl);
 
   final String name;
+  final String apiUrl;
 
   AnimeAPI api(Dio client) => switch (this) {
-        AnimeMetadata.jikan => const Jikan(),
+        AnimeMetadata.jikan => Jikan(client),
       };
 
   String browserUrl() => switch (this) {

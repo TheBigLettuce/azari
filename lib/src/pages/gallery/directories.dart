@@ -164,7 +164,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     });
 
     favoritesWatcher = favoriteFiles.watch((_) {
-      api.source.backingStorage.addAll([]);
+      api.source.clearRefresh();
       setState(() {});
     });
 
@@ -706,6 +706,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return GridExtrasNotifier(
       data: GridExtrasData(
@@ -729,7 +730,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
               color: theme.colorScheme.surfaceContainerLow.withOpacity(0.8),
             ),
             child: FadingPanel(
-              label: "Latest", // TODO: change
+              label: l10n.lastAdded,
               source: filesApi.source,
               enableHide: false,
               horizontalPadding: _LatestList.listPadding,

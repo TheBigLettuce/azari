@@ -83,6 +83,7 @@ class _GalleryImpl implements GalleryApi {
   @override
   bool updatePictures(
     List<DirectoryFile?> f,
+    List<int?> notFound,
     String bucketId,
     int startTime,
     bool inRefresh,
@@ -91,7 +92,13 @@ class _GalleryImpl implements GalleryApi {
     final api = _currentApi?.bindFiles;
     if (api == null || api.startTime > startTime || !api.isBucketId(bucketId)) {
       return false;
-    } else if (empty) {
+    }
+
+    if (notFound.isNotEmpty && api.type.isFavorites()) {
+      api.favoriteFile.deleteAll(notFound.cast());
+    }
+
+    if (empty) {
       api.source.progress.inRefreshing = false;
       api.source.backingStorage.clear();
 
@@ -111,31 +118,31 @@ class _GalleryImpl implements GalleryApi {
     if (api.type.isFavorites()) {
       final c = <String, DirectoryMetadata>{};
 
-      api.source.backingStorage.addAll(
-        f
-            .where(
-          (dir) => GalleryFilesPageType.filterAuthBlur(
-            c,
-            dir,
-            api.directoryTag,
-            api.directoryMetadata,
-          ),
-        )
-            .map((e) {
-          final tags = api.localTags.get(e!.name);
-          final f = e.toAndroidFile(
-            tags.fold({}, (map, e) {
-              map[e] = null;
+      final files = f
+          .where(
+        (dir) => GalleryFilesPageType.filterAuthBlur(
+          c,
+          dir,
+          api.directoryTag,
+          api.directoryMetadata,
+        ),
+      )
+          .map((e) {
+        final tags = api.localTags.get(e!.name);
+        final f = e.toAndroidFile(
+          tags.fold({}, (map, e) {
+            map[e] = null;
 
-              return map;
-            }),
-          );
+            return map;
+          }),
+        );
 
-          api.sourceTags.addAll(tags);
+        api.sourceTags.addAll(tags);
 
-          return f;
-        }),
-      );
+        return f;
+      }).toList();
+
+      api.source.backingStorage.addAll(files);
     } else {
       api.source.backingStorage.addAll(
         f.map((e) {

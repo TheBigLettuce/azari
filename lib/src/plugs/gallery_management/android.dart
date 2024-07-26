@@ -5,7 +5,6 @@
 
 import "dart:io";
 
-import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/net/booru/post.dart";
@@ -15,8 +14,6 @@ import "package:gallery/src/plugs/platform_functions.dart";
 
 class AndroidGalleryManagementApi implements GalleryManagementApi {
   const AndroidGalleryManagementApi();
-
-  static const _channel = MethodChannel("lol.bruh19.azari.gallery");
 
   @override
   GalleryTrash get trash => const AndroidGalleryTrash();
@@ -28,28 +25,28 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
   FilesManagement get files => const AndroidFilesManagement();
 
   void refreshFiles(String bucketId, SortingMode sortingMode) {
-    _channel.invokeMethod("refreshFiles", {
+    AndroidApiFunctions.appContext.invokeMethod("refreshFiles", {
       "bucketId": bucketId,
       "sort": sortingMode.sortingIdAndroid,
     });
   }
 
   void refreshFilesMultiple(List<String> ids, SortingMode sortingMode) {
-    _channel.invokeMethod("refreshFilesMultiple", {
+    AndroidApiFunctions.appContext.invokeMethod("refreshFilesMultiple", {
       "ids": ids,
       "sort": sortingMode.sortingIdAndroid,
     });
   }
 
   Future<void> refreshFavorites(List<int> ids, SortingMode sortingMode) {
-    return _channel.invokeMethod("refreshFavorites", {
+    return AndroidApiFunctions.appContext.invokeMethod("refreshFavorites", {
       "ids": ids,
       "sort": sortingMode.sortingIdAndroid,
     });
   }
 
   Future<String> pickFileAndCopy(String outputDir) {
-    return _channel
+    return AndroidApiFunctions.activityContext
         .invokeMethod("pickFileAndCopy", outputDir)
         .then((value) => value as String);
   }
@@ -59,7 +56,9 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
     AppLocalizations _, {
     bool temporary = false,
   }) async {
-    return _channel.invokeMethod("chooseDirectory", temporary).then(
+    return AndroidApiFunctions.activityContext
+        .invokeMethod("chooseDirectory", temporary)
+        .then(
           (value) => (
             (value as Map)["pathDisplay"] as String,
             value["path"] as String,
@@ -67,19 +66,17 @@ class AndroidGalleryManagementApi implements GalleryManagementApi {
         );
   }
 
-  void refreshGallery() {
-    _channel.invokeMethod("refreshGallery");
-  }
+  void refreshGallery() =>
+      AndroidApiFunctions.appContext.invokeMethod("refreshGallery");
 
   void refreshTrashed(SortingMode sortingMode) {
-    _channel.invokeMethod("refreshTrashed", sortingMode.sortingIdAndroid);
+    AndroidApiFunctions.appContext
+        .invokeMethod("refreshTrashed", sortingMode.sortingIdAndroid);
   }
 }
 
 class AndroidFilesManagement implements FilesManagement {
   const AndroidFilesManagement();
-
-  static const _channel = MethodChannel("lol.bruh19.azari.gallery");
 
   @override
   Future<void> moveSingle({
@@ -87,7 +84,7 @@ class AndroidFilesManagement implements FilesManagement {
     required String rootDir,
     required String targetDir,
   }) {
-    return _channel.invokeMethod(
+    return AndroidApiFunctions.appContext.invokeMethod(
       "move",
       {"source": source, "rootUri": rootDir, "dir": targetDir},
     );
@@ -95,7 +92,7 @@ class AndroidFilesManagement implements FilesManagement {
 
   @override
   void deleteAll(List<GalleryFile> selected) {
-    _channel.invokeMethod(
+    AndroidApiFunctions.activityContext.invokeMethod(
       "deleteFiles",
       selected.map((e) => e.originalUri).toList(),
     );
@@ -105,7 +102,7 @@ class AndroidFilesManagement implements FilesManagement {
   Future<bool> exists(String filePath) => File(filePath).exists();
 
   void refreshFiles(String bucketId, SortingMode sortingMode) {
-    _channel.invokeMethod("refreshFiles", {
+    AndroidApiFunctions.appContext.invokeMethod("refreshFiles", {
       "bucketId": bucketId,
       "sort": sortingMode.sortingIdAndroid,
     });
@@ -119,7 +116,7 @@ class AndroidFilesManagement implements FilesManagement {
     required bool move,
     required bool newDir,
   }) {
-    return _channel.invokeMethod(
+    return AndroidApiFunctions.activityContext.invokeMethod(
       "copyMoveFiles",
       {
         "dest": chosen,
@@ -146,7 +143,7 @@ class AndroidFilesManagement implements FilesManagement {
 
     // TODO: make awaitable in platform
 
-    _channel.invokeMethod(
+    AndroidApiFunctions.activityContext.invokeMethod(
       "rename",
       {"uri": uri, "newName": newName, "notify": notify},
     );
@@ -173,7 +170,7 @@ class AndroidFilesManagement implements FilesManagement {
       }
     }
 
-    return _channel.invokeMethod(
+    return AndroidApiFunctions.activityContext.invokeMethod(
       "copyMoveInternal",
       {
         "dirName": dirName,
@@ -189,18 +186,18 @@ class AndroidFilesManagement implements FilesManagement {
 class AndroidCachedThumbs implements CachedThumbs {
   const AndroidCachedThumbs();
 
-  static const _channel = MethodChannel("lol.bruh19.azari.gallery");
-
   @override
   Future<int> size([bool fromPinned = false]) {
-    return _channel
+    return AndroidApiFunctions.appContext
         .invokeMethod("thumbCacheSize", fromPinned)
         .then((value) => value as int);
   }
 
   @override
   Future<ThumbId> get(int id) {
-    return _channel.invokeMethod("getCachedThumb", id).then(
+    return AndroidApiFunctions.appContext
+        .invokeMethod("getCachedThumb", id)
+        .then(
       (value) {
         return ThumbId(
           id: id,
@@ -212,13 +209,12 @@ class AndroidCachedThumbs implements CachedThumbs {
   }
 
   @override
-  void clear([bool fromPinned = false]) {
-    _channel.invokeMethod("clearCachedThumbs", fromPinned);
-  }
+  void clear([bool fromPinned = false]) => AndroidApiFunctions.appContext
+      .invokeMethod("clearCachedThumbs", fromPinned);
 
   @override
   void removeAll(List<int> id, [bool fromPinned = false]) {
-    _channel.invokeMethod(
+    AndroidApiFunctions.appContext.invokeMethod(
       "deleteCachedThumbs",
       {"ids": id, "fromPinned": fromPinned},
     );
@@ -226,7 +222,7 @@ class AndroidCachedThumbs implements CachedThumbs {
 
   @override
   Future<ThumbId> saveFromNetwork(String url, int id) {
-    return _channel
+    return AndroidApiFunctions.appContext
         .invokeMethod("saveThumbNetwork", {"url": url, "id": id}).then(
       (value) => ThumbId(
         id: id,
@@ -240,25 +236,19 @@ class AndroidCachedThumbs implements CachedThumbs {
 class AndroidGalleryTrash implements GalleryTrash {
   const AndroidGalleryTrash();
 
-  static const _channel = MethodChannel("lol.bruh19.azari.gallery");
+  @override
+  Future<int?> get thumbId =>
+      AndroidApiFunctions.appContext.invokeMethod("trashThumbId");
 
   @override
-  Future<int?> get thumbId {
-    return _channel.invokeMethod("trashThumbId");
-  }
+  void addAll(List<String> uris) =>
+      AndroidApiFunctions.activityContext.invokeMethod("addToTrash", uris);
 
   @override
-  void addAll(List<String> uris) {
-    _channel.invokeMethod("addToTrash", uris);
-  }
+  void removeAll(List<String> uris) =>
+      AndroidApiFunctions.activityContext.invokeMethod("removeFromTrash", uris);
 
   @override
-  void removeAll(List<String> uris) {
-    _channel.invokeMethod("removeFromTrash", uris);
-  }
-
-  @override
-  void empty() {
-    _channel.invokeMethod("emptyTrash");
-  }
+  void empty() =>
+      AndroidApiFunctions.activityContext.invokeMethod("emptyTrash");
 }

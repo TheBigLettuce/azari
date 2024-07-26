@@ -44,50 +44,26 @@ class WrapGridActionButton extends StatefulWidget {
 
 class _WrapGridActionButtonState extends State<WrapGridActionButton>
     with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-
   StreamSubscription<(IconData?, Color?, bool?)>? _subscr;
 
   late (IconData, Color?, bool) data = (widget.icon, widget.color, widget.play);
 
   late final AnimationController controller;
 
-  ColorTween? colorTween;
-
   @override
   void initState() {
+    super.initState();
+
     controller = AnimationController(vsync: this, duration: Durations.medium2);
 
     _subscr = widget.watch?.call(
       (d) {
-        if (data.$2 != d.$2) {
-          final theme = Theme.of(context);
-          final iconColor =
-              theme.iconTheme.color ?? theme.colorScheme.onSurface;
-
-          if (d.$2 != null) {
-            colorTween = ColorTween(begin: data.$2 ?? iconColor, end: d.$2);
-
-            controller
-              ..reset()
-              ..animateTo(1, curve: Easing.standard);
-          } else if (d.$2 == null && data.$2 != null) {
-            colorTween = ColorTween(begin: data.$2, end: d.$2 ?? iconColor);
-
-            controller
-              ..reset()
-              ..animateTo(1, curve: Easing.standard);
-          }
-        }
-
         data = (d.$1 ?? data.$1, d.$2, d.$3 ?? data.$3);
 
         setState(() {});
       },
       true,
     );
-
-    super.initState();
   }
 
   @override
@@ -100,8 +76,8 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
 
   void onPressed() {
     if (widget.animate && data.$3) {
-      _controller?.reset();
-      _controller?.animateTo(1).then((value) => _controller?.animateBack(0));
+      controller.reset();
+      controller.animateTo(1).then((value) => controller.animateBack(0));
     }
     HapticFeedback.selectionClick();
     widget.onPressed!();
@@ -111,15 +87,16 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final icon = AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) => Icon(
-        data.$1,
-        color: colorTween?.transform(controller.value) ??
-            data.$2 ??
-            theme.colorScheme.onSurface,
-      ),
-    );
+    final icon = TweenAnimationBuilder(
+        tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
+        duration: Durations.medium1,
+        curve: Easing.linear,
+        builder: (context, color, _) {
+          return Icon(
+            data.$1,
+            color: color,
+          );
+        });
 
     if (widget.iconOnly) {
       return GestureDetector(
@@ -132,9 +109,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
         child: widget.animate
             ? Animate(
                 effects: widget.animation,
-                onInit: (controller) {
-                  _controller = controller;
-                },
+                controller: controller,
                 autoPlay: false,
                 child: icon,
               )
@@ -152,7 +127,9 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
                 HapticFeedback.lightImpact();
               },
         child: IconButton(
-          style: const ButtonStyle(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(
+                theme.colorScheme.surfaceContainerLow.withOpacity(0.9)),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
@@ -168,9 +145,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
           icon: widget.animate
               ? Animate(
                   effects: widget.animation,
-                  onInit: (controller) {
-                    _controller = controller;
-                  },
+                  controller: controller,
                   autoPlay: false,
                   child: icon,
                 )

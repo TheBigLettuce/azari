@@ -607,7 +607,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
 
 class _TagsNotifier extends StatefulWidget {
   const _TagsNotifier({
-    super.key,
+    // super.key,
     required this.tagManager,
     required this.tagSource,
     required this.child,
@@ -779,6 +779,7 @@ class _TagsRibbonState extends State<TagsRibbon> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final gestureRight = MediaQuery.systemGestureInsetsOf(context).right;
 
     final fromList = showOnlyPinned || _list.isEmpty && _pinnedList != null
@@ -801,7 +802,7 @@ class _TagsRibbonState extends State<TagsRibbon> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
-                            "No tags", // TODO: change
+                            l10n.noBooruTags,
                             style: theme.textTheme.labelLarge?.copyWith(
                               color:
                                   theme.colorScheme.onSurface.withOpacity(0.5),

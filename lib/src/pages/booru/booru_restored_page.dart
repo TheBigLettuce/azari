@@ -162,7 +162,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
           tags: tagsTrimmed,
-          thumbnails: const [],
         ),
       );
     }

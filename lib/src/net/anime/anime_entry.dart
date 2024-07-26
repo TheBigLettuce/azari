@@ -17,6 +17,9 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 class AnimeSearchEntry extends AnimeEntryDataImpl
     implements AnimeEntryData, Pressable<AnimeSearchEntry> {
   const AnimeSearchEntry({
+    required this.imageUrl,
+    required this.airedFrom,
+    required this.airedTo,
     required this.genres,
     required this.relations,
     required this.staff,
@@ -28,7 +31,6 @@ class AnimeSearchEntry extends AnimeEntryDataImpl
     required this.titleEnglish,
     required this.score,
     required this.synopsis,
-    required this.year,
     required this.id,
     required this.siteUrl,
     required this.isAiring,
@@ -72,13 +74,17 @@ class AnimeSearchEntry extends AnimeEntryDataImpl
   @override
   final String type;
   @override
-  final int year;
-  @override
   final List<AnimeGenre> genres;
   @override
   final List<AnimeRelation> relations;
   @override
   final List<AnimeRelation> staff;
+  @override
+  final DateTime? airedFrom;
+  @override
+  final DateTime? airedTo;
+  @override
+  final String imageUrl;
 
   @override
   void onPress(
@@ -116,6 +122,7 @@ abstract class AnimeEntryData
   int get id;
 
   String get thumbUrl;
+  String get imageUrl;
   String get siteUrl;
   String get trailerUrl;
   String get title;
@@ -133,7 +140,9 @@ abstract class AnimeEntryData
 
   double get score;
 
-  int get year;
+  DateTime? get airedFrom;
+  DateTime? get airedTo;
+
   int get episodes;
 
   bool get isAiring;
@@ -148,7 +157,7 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
   const AnimeEntryDataImpl();
 
   @override
-  CellStaticData description() => const CellStaticData();
+  CellStaticData description() => const CellStaticData(titleLines: 2);
 
   @override
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
@@ -159,7 +168,7 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
   @override
   Contentable openImage() => NetImage(
         this,
-        CachedNetworkImageProvider(thumbUrl),
+        CachedNetworkImageProvider(imageUrl),
       );
 
   @override

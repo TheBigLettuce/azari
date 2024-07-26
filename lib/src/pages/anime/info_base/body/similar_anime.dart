@@ -19,6 +19,7 @@ class SimilarAnime extends StatefulWidget {
     required this.entry,
     required this.api,
   });
+
   final AnimeEntryData entry;
   final AnimeAPI api;
 
@@ -31,10 +32,16 @@ class _SimilarAnimeState extends State<SimilarAnime> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return FutureBuilder(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
+          if (snapshot.data!.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -98,7 +105,7 @@ class _SimilarAnimeState extends State<SimilarAnime> {
 
                       setState(() {});
                     },
-                    child: Text(AppLocalizations.of(context)!.animeLoadSimilar),
+                    child: Text(l10n.animeLoadSimilar),
                   ),
                 );
         }

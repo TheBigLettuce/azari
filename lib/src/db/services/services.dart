@@ -301,7 +301,6 @@ abstract class GridBookmark implements CellBase {
     required Booru booru,
     required String name,
     required DateTime time,
-    required List<GridBookmarkThumbnail> thumbnails,
   }) = $GridBookmark;
 
   String get tags;
@@ -494,7 +493,6 @@ class BufferedStorage<T> {
 abstract class HottestTag {
   const factory HottestTag({
     required String tag,
-    required List<ThumbUrlRating> thumbUrls,
     required int count,
   }) = $HottestTag;
 
@@ -557,18 +555,21 @@ abstract class AnimeRelation {
   String toString() => title;
 }
 
-abstract class SavedAnimeEntryData extends AnimeEntryData {
+abstract class SavedAnimeEntryData extends AnimeEntryData
+    implements Pressable<SavedAnimeEntryData> {
   const factory SavedAnimeEntryData({
+    required DateTime? airedFrom,
+    required DateTime? airedTo,
     required bool inBacklog,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
+    required String imageUrl,
     required String title,
     required String titleJapanese,
     required String titleEnglish,
     required double score,
     required String synopsis,
-    required int year,
     required int id,
     required String siteUrl,
     required bool isAiring,
@@ -577,9 +578,6 @@ abstract class SavedAnimeEntryData extends AnimeEntryData {
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-    required List<AnimeRelation> relations,
-    required List<AnimeRelation> staff,
-    required List<AnimeGenre> genres,
   }) = $SavedAnimeEntryData;
 
   bool get inBacklog;
@@ -595,6 +593,7 @@ abstract class SavedAnimeEntryData extends AnimeEntryData {
     int? episodes,
     String? trailerUrl,
     String? siteUrl,
+    String? imageUrl,
     String? title,
     String? titleJapanese,
     String? titleEnglish,
@@ -604,14 +603,28 @@ abstract class SavedAnimeEntryData extends AnimeEntryData {
     List<String>? titleSynonyms,
     List<AnimeRelation>? relations,
     bool? isAiring,
-    int? year,
     double? score,
     String? thumbUrl,
     String? synopsis,
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
   });
+}
+
+mixin DefaultSavedAnimeEntryPressable
+    implements Pressable<SavedAnimeEntryData>, SavedAnimeEntryData {
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<SavedAnimeEntryData> functionality,
+    SavedAnimeEntryData cell,
+    int idx,
+  ) {
+    openInfoPage(context);
+  }
 }
 
 @immutable

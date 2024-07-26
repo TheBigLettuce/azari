@@ -26,10 +26,14 @@ class AnimeInfoBody extends StatelessWidget {
     required this.entry,
     required this.viewPadding,
     required this.api,
+    this.buttons,
   });
+
   final AnimeEntryData entry;
   final AnimeAPI api;
   final EdgeInsets viewPadding;
+
+  final Widget? buttons;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +61,7 @@ class AnimeInfoBody extends StatelessWidget {
               },
             ),
             const Padding(padding: EdgeInsets.only(top: 8)),
+            if (buttons != null) buttons!,
             SynopsisBackground(
               search: (s) {
                 SearchAnimePage.launchAnimeApi(
@@ -102,7 +107,7 @@ class AnimeStaff extends StatelessWidget {
         : Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              entry.staff.join(", "),
+              entry.staff.map((e) => e.title).join(", "),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.4),
               ),

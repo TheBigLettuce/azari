@@ -136,7 +136,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
             for (final e in alias.split("_")) {
               if (cell
                   .alias(false)
-                  .startsWith(e.length <= 4 ? e : e.substring(0, 4))) {
+                  .startsWith(e.length <= 6 ? e : e.substring(0, 6))) {
                 suggestionCells.add(
                   (
                     SyncCell(cell),
@@ -145,11 +145,12 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
                         .contains(SegmentModifier.blur)
                   ),
                 );
+                break;
               }
             }
           } else {
             if (cell.alias(false).startsWith(
-                  alias.length <= 4 ? alias : alias.substring(0, 4),
+                  alias.length <= 6 ? alias : alias.substring(0, 6),
                 )) {
               suggestionCells.add(
                 (

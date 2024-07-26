@@ -9,42 +9,54 @@ import android.app.NotificationManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
-import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import io.flutter.embedding.engine.FlutterEngineCache
+import lol.bruh19.azari.gallery.enginebindings.ActivityContextChannel
+import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
 import lol.bruh19.azari.gallery.impls.NetworkCallbackImpl
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class MainActivity : FlutterFragmentActivity() {
-    private val intents = ActivityResultIntents(this, { engineBindings }, { mediaLoaderAndMover })
+    private val intents =
+        ActivityResultIntents(this, { activityContextChannel }, { mediaLoaderAndMover })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
-    private val engineBindings: EngineBindings by lazy { (applicationContext as App).engineBindings }
+    private val appContextChannel: AppContextChannel by lazy { (applicationContext as App).appContextChannel }
     private val mediaLoaderAndMover: MediaLoaderAndMover by lazy { (applicationContext as App).mediaLoaderAndMover }
+
+    private val activityContextChannel: ActivityContextChannel by lazy {
+        val engine = FlutterEngineCache.getInstance()["main"]!!
+
+        ActivityContextChannel(engine.dartExecutor, GalleryApi(engine.dartExecutor.binaryMessenger))
+    }
 
     private val netStatus by lazy {
         NetworkCallbackImpl(
-            GalleryApi(engineBindings.engine.dartExecutor.binaryMessenger),
+            GalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger),
             this
         )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+
         super.onCreate(savedInstanceState)
 
-        engineBindings.attach(this, mediaLoaderAndMover, connectivityManager, intents)
         connectivityManager.registerDefaultNetworkCallback(netStatus)
+        activityContextChannel.attach(this, intents, mediaLoaderAndMover)
     }
 
     override fun getCachedEngineId(): String = "main"
-    override fun provideFlutterEngine(context: Context): FlutterEngine = engineBindings.engine
+    override fun provideFlutterEngine(context: Context): FlutterEngine = appContextChannel.engine
 
     override fun onDestroy() {
         super.onDestroy()
 
-        engineBindings.detach()
         connectivityManager.unregisterNetworkCallback(netStatus)
         intents.unregisterAll()
+        activityContextChannel.detach()
 
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
     }

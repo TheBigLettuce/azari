@@ -3,11 +3,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/image_view/video/video_controls.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/loading_error_widget.dart";
 import "package:video_player/video_player.dart";
@@ -31,12 +33,15 @@ class PhotoGalleryPageVideo extends StatefulWidget
   State<PhotoGalleryPageVideo> createState() => _PhotoGalleryPageVideoState();
 }
 
-class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
-    with VideoSettingsDbScope<PhotoGalleryPageVideo> {
+class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
+  StreamSubscription<VideoControlsEvent>? eventsSubscr;
+
   late VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
   Object? error;
+
+  late VideoControlsController playerControls;
 
   @override
   void initState() {
@@ -45,6 +50,64 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
     newController();
 
     _initController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    playerControls = VideoControlsNotifier.of(context);
+    eventsSubscr ??= playerControls.events.listen((event) {
+      switch (event) {
+        case VolumeButton():
+          double newVolume;
+
+          if (controller.value.volume > 0) {
+            newVolume = 0;
+          } else {
+            newVolume = 1;
+          }
+
+          controller.setVolume(newVolume);
+
+          widget.db.current.copy(volume: newVolume).save();
+        case FullscreenButton():
+          final orientation = MediaQuery.orientationOf(context);
+          if (orientation == Orientation.landscape) {
+            SystemChrome.setPreferredOrientations([
+              DeviceOrientation.portraitDown,
+              DeviceOrientation.portraitUp,
+            ]);
+          } else {
+            AppBarVisibilityNotifier.toggleOf(context);
+
+            SystemChrome.setPreferredOrientations([
+              DeviceOrientation.landscapeLeft,
+              DeviceOrientation.landscapeRight,
+            ]);
+          }
+        case PlayButton():
+          if (controller.value.isBuffering) {
+            return;
+          }
+
+          if (controller.value.isPlaying) {
+            controller.pause();
+          } else {
+            controller.play();
+          }
+        case LoopingButton():
+          final newLooping = !controller.value.isLooping;
+
+          controller.setLooping(newLooping);
+          widget.db.current.copy(looping: newLooping).save();
+        case AddDuration():
+          controller.seekTo(
+            controller.value.position +
+                Duration(seconds: event.durationSeconds.toInt()),
+          );
+      }
+    });
   }
 
   void newController() {
@@ -64,7 +127,9 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
   Future<void> _initController() {
     return controller.initialize().then((value) {
       if (!disposed) {
-        final videoSettings = current;
+        controller.addListener(_listener);
+
+        final videoSettings = widget.db.current;
 
         controller.setVolume(videoSettings.volume);
 
@@ -83,6 +148,8 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
           );
         });
 
+        playerControls.setDuration(controller.value.duration);
+
         chewieController!.play().onError((e, stackTrace) {
           if (!disposed) {
             setState(() {
@@ -100,8 +167,45 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
     });
   }
 
+  Duration? prevProgress;
+  PlayState? prevPlayState;
+
+  void _listener() {
+    final value = controller.value;
+
+    final newPlayState = value.isBuffering
+        ? PlayState.buffering
+        : value.isPlaying
+            ? PlayState.isPlaying
+            : PlayState.stopped;
+
+    final newProgress = value.position;
+
+    if (prevProgress != newProgress) {
+      prevProgress = newProgress;
+
+      playerControls.setProgress(newProgress);
+    }
+
+    if (prevPlayState != newPlayState) {
+      prevPlayState = newPlayState;
+
+      playerControls.setPlayState(newPlayState);
+    }
+  }
+
   @override
   void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]).then((_) {
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    });
+
+    playerControls.clear();
+
+    eventsSubscr?.cancel();
     disposed = true;
     controller.pause();
     controller.dispose();
@@ -147,19 +251,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo>
                         }
                       }
                     },
-                    child: Stack(
-                      children: [
-                        Chewie(controller: chewieController!),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: VideoControls(
-                            controller: controller,
-                            db: widget.db,
-                            setState: setState,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: Chewie(controller: chewieController!),
                   );
   }
 }

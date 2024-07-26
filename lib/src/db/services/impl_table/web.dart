@@ -24,8 +24,12 @@ Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
 ServicesImplTable getApi() => MemoryOnlyServicesImplTable();
 
 class $SavedAnimeEntryData extends AnimeEntryDataImpl
+    with DefaultSavedAnimeEntryPressable
     implements SavedAnimeEntryData {
   const $SavedAnimeEntryData({
+    required this.imageUrl,
+    required this.airedFrom,
+    required this.airedTo,
     required this.inBacklog,
     required this.relations,
     required this.explicit,
@@ -37,7 +41,6 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
     required this.titleEnglish,
     required this.score,
     required this.synopsis,
-    required this.year,
     required this.id,
     required this.siteUrl,
     required this.isAiring,
@@ -101,9 +104,6 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
   final String type;
 
   @override
-  final int year;
-
-  @override
   final List<AnimeGenre> genres;
 
   @override
@@ -113,11 +113,21 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
   final List<AnimeRelation> staff;
 
   @override
+  final DateTime? airedFrom;
+
+  @override
+  final DateTime? airedTo;
+
+  @override
+  final String imageUrl;
+
+  @override
   SavedAnimeEntryData copySuper(
     AnimeEntryData e, [
     bool ignoreRelations = false,
   ]) =>
       $SavedAnimeEntryData(
+        imageUrl: e.imageUrl,
         genres: e.genres,
         relations: ignoreRelations ? relations : e.relations,
         staff: e.staff,
@@ -130,7 +140,6 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
         titleEnglish: e.titleEnglish,
         score: e.score,
         synopsis: e.synopsis,
-        year: e.year,
         id: e.id,
         siteUrl: e.siteUrl,
         isAiring: e.isAiring,
@@ -139,6 +148,8 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
         episodes: e.episodes,
         background: e.background,
         explicit: e.explicit,
+        airedFrom: e.airedFrom,
+        airedTo: e.airedTo,
       );
 
   @override
@@ -148,6 +159,7 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
     int? episodes,
     String? trailerUrl,
     String? siteUrl,
+    String? imageUrl,
     String? title,
     String? titleJapanese,
     String? titleEnglish,
@@ -164,8 +176,13 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
   }) =>
       $SavedAnimeEntryData(
+        imageUrl: imageUrl ?? this.imageUrl,
+        airedFrom: airedFrom ?? this.airedFrom,
+        airedTo: airedTo ?? this.airedTo,
         genres: genres ?? this.genres,
         relations: relations ?? this.relations,
         staff: staff ?? this.staff,
@@ -178,7 +195,6 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
         titleEnglish: titleEnglish ?? this.titleEnglish,
         score: score ?? this.score,
         synopsis: synopsis ?? this.synopsis,
-        year: year ?? this.year,
         id: id ?? this.id,
         siteUrl: siteUrl ?? this.siteUrl,
         isAiring: isAiring ?? this.isAiring,
@@ -515,8 +531,12 @@ class $DownloadFileData extends DownloadFileDataImpl
 }
 
 class $WatchedAnimeEntryData extends AnimeEntryDataImpl
+    with DefaultWatchedAnimeEntryPressable
     implements WatchedAnimeEntryData {
   const $WatchedAnimeEntryData({
+    required this.imageUrl,
+    required this.airedFrom,
+    required this.airedTo,
     required this.date,
     required this.relations,
     required this.explicit,
@@ -528,7 +548,6 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
     required this.titleEnglish,
     required this.score,
     required this.synopsis,
-    required this.year,
     required this.id,
     required this.siteUrl,
     required this.isAiring,
@@ -592,9 +611,6 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
   final String type;
 
   @override
-  final int year;
-
-  @override
   final List<AnimeGenre> genres;
 
   @override
@@ -604,11 +620,21 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
   final List<AnimeRelation> staff;
 
   @override
+  final DateTime? airedFrom;
+
+  @override
+  final DateTime? airedTo;
+
+  @override
+  final String imageUrl;
+
+  @override
   WatchedAnimeEntryData copy({
     bool? inBacklog,
     AnimeMetadata? site,
     int? episodes,
     String? trailerUrl,
+    String? imageUrl,
     String? siteUrl,
     String? title,
     String? titleJapanese,
@@ -627,8 +653,11 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
   }) =>
       $WatchedAnimeEntryData(
+        imageUrl: imageUrl ?? this.imageUrl,
         genres: genres ?? this.genres,
         relations: relations ?? this.relations,
         staff: staff ?? this.staff,
@@ -640,7 +669,6 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
         titleEnglish: titleEnglish ?? this.titleEnglish,
         score: score ?? this.score,
         synopsis: synopsis ?? this.synopsis,
-        year: year ?? this.year,
         id: id ?? this.id,
         siteUrl: siteUrl ?? this.siteUrl,
         isAiring: isAiring ?? this.isAiring,
@@ -650,6 +678,8 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
         background: background ?? this.background,
         explicit: explicit ?? this.explicit,
         date: date ?? this.date,
+        airedFrom: airedFrom ?? this.airedFrom,
+        airedTo: airedTo ?? this.airedTo,
       );
 
   @override
@@ -658,6 +688,7 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
     bool ignoreRelations = false,
   ]) =>
       $WatchedAnimeEntryData(
+        imageUrl: e.imageUrl,
         genres: e.genres,
         relations: ignoreRelations ? relations : e.relations,
         staff: e.staff,
@@ -669,7 +700,6 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
         titleEnglish: e.titleEnglish,
         score: e.score,
         synopsis: e.synopsis,
-        year: e.year,
         id: e.id,
         siteUrl: e.siteUrl,
         isAiring: e.isAiring,
@@ -679,6 +709,8 @@ class $WatchedAnimeEntryData extends AnimeEntryDataImpl
         background: e.background,
         explicit: e.explicit,
         date: date,
+        airedFrom: e.airedFrom,
+        airedTo: e.airedTo,
       );
 }
 

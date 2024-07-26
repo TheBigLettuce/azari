@@ -13,6 +13,7 @@ import "package:gallery/src/widgets/focus_notifier.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 
 class WrapImageViewNotifiers extends StatefulWidget {
@@ -28,6 +29,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.bottomSheetController,
     required this.gridContext,
     required this.child,
+    required this.videoControls,
   });
 
   // final void Function() onTagRefresh;
@@ -43,6 +45,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
     void Function(List<ImageTag> l),
   )? watchTags;
 
+  final VideoControlsController videoControls;
   final Widget child;
 
   @override
@@ -54,8 +57,6 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
 
   bool _isPaused = false;
   double? _loadingProgress = 1;
-
-  // bool _isTagsRefreshing = false;
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
@@ -113,23 +114,26 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
         child: ReloadImageNotifier(
           reload: widget.hardRefresh,
           child: PauseVideoNotifier(
-            setPause: _setPause,
             pause: _isPaused,
-            child: TagFilterValueNotifier(
-              notifier: _searchData.searchController,
-              child: TagFilterNotifier(
-                data: _searchData,
-                child: FocusNotifier(
-                  notifier: _searchData.searchFocus,
-                  child: CurrentContentNotifier(
-                    content: widget.currentCell,
-                    child: LoadingProgressNotifier(
-                      progress: _loadingProgress,
-                      child: _BottomSheetPopScope(
-                        key: _bottomSheetKey,
-                        controller: widget.bottomSheetController,
-                        animationController: widget.controller,
-                        child: widget.child,
+            setPause: _setPause,
+            child: VideoControlsNotifier(
+              controller: widget.videoControls,
+              child: TagFilterValueNotifier(
+                notifier: _searchData.searchController,
+                child: TagFilterNotifier(
+                  data: _searchData,
+                  child: FocusNotifier(
+                    notifier: _searchData.searchFocus,
+                    child: CurrentContentNotifier(
+                      content: widget.currentCell,
+                      child: LoadingProgressNotifier(
+                        progress: _loadingProgress,
+                        child: _BottomSheetPopScope(
+                          key: _bottomSheetKey,
+                          controller: widget.bottomSheetController,
+                          animationController: widget.controller,
+                          child: widget.child,
+                        ),
                       ),
                     ),
                   ),
@@ -383,6 +387,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
   Widget build(BuildContext context) {
     if (!widget.controller.isAttached) {
       return AppBarVisibilityNotifier(
+        toggle: toggle,
         isShown: _isAppbarShown,
         child: widget.child,
       );
@@ -390,13 +395,12 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
 
     return PopScope(
       canPop: _isAppbarShown &&
-          (currentPixels.isNegative ||
-              WrapImageViewSkeleton.minPixelsFor(context).floorToDouble() ==
-                  currentPixels.floorToDouble()),
+          (currentPixels.isNegative || 0 == currentPixels.floorToDouble()),
       onPopInvokedWithResult: tryScroll,
       child: IgnorePointer(
         ignoring: ignorePointer,
         child: AppBarVisibilityNotifier(
+          toggle: toggle,
           isShown: _isAppbarShown,
           child: widget.child,
         ),
@@ -575,9 +579,19 @@ class AppBarVisibilityNotifier extends InheritedWidget {
   const AppBarVisibilityNotifier({
     super.key,
     required this.isShown,
+    required this.toggle,
     required super.child,
   });
+
   final bool isShown;
+  final void Function() toggle;
+
+  static void toggleOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
+
+    widget!.toggle();
+  }
 
   static bool of(BuildContext context) {
     final widget =
@@ -588,46 +602,26 @@ class AppBarVisibilityNotifier extends InheritedWidget {
 
   @override
   bool updateShouldNotify(AppBarVisibilityNotifier oldWidget) =>
-      isShown != oldWidget.isShown;
+      isShown != oldWidget.isShown || toggle != oldWidget.toggle;
 }
 
-// class TagRefreshNotifier extends InheritedWidget {
-//   const TagRefreshNotifier({
-//     super.key,
-//     required this.notify,
-//     required this.isRefreshing,
-//     required this.setIsRefreshing,
-//     required super.child,
-//   });
+class VideoControlsNotifier extends InheritedWidget {
+  const VideoControlsNotifier({
+    super.key,
+    required this.controller,
+    required super.child,
+  });
 
-//   final bool isRefreshing;
-//   final void Function() notify;
-//   final void Function(bool) setIsRefreshing;
+  final VideoControlsController controller;
 
-//   static void Function()? maybeOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+  static VideoControlsController of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<VideoControlsNotifier>();
 
-//     return widget?.notify;
-//   }
+    return widget!.controller;
+  }
 
-//   static bool? isRefreshingOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
-
-//     return widget?.isRefreshing;
-//   }
-
-//   static void Function(bool)? setIsRefreshingOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
-
-//     return widget?.setIsRefreshing;
-//   }
-
-//   @override
-//   bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
-//       oldWidget.notify != notify ||
-//       oldWidget.isRefreshing != isRefreshing ||
-//       oldWidget.setIsRefreshing != setIsRefreshing;
-// }
+  @override
+  bool updateShouldNotify(VideoControlsNotifier oldWidget) =>
+      controller != oldWidget.controller;
+}

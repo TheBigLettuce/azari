@@ -3,13 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:math";
-
 import "package:dio/dio.dart";
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-class EmptyWidget extends StatelessWidget {
+class EmptyWidget extends StatefulWidget {
   const EmptyWidget({
     super.key,
     this.error,
@@ -43,9 +42,91 @@ class EmptyWidget extends StatelessWidget {
   }
 
   @override
+  State<EmptyWidget> createState() => _EmptyWidgetState();
+}
+
+class _EmptyWidgetState extends State<EmptyWidget> {
+  late final TapGestureRecognizer gestureRecognizer;
+
+  String? get error => widget.error;
+
+  @override
+  void initState() {
+    super.initState();
+
+    gestureRecognizer = TapGestureRecognizer()
+      ..onTap = () {
+        Navigator.of(context).push<void>(
+          DialogRoute(
+            context: context,
+            builder: (context) {
+              final theme = Theme.of(context);
+
+              return AlertDialog(
+                content: Text(
+                  error.toString(),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontFeatures: const [
+                      FontFeature.slashedZero(),
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      };
+  }
+
+  @override
+  void dispose() {
+    gestureRecognizer.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+
+    final emptySpan = TextSpan(
+      text: error != null ? "(ﾟヘﾟ)？" "\n" : l10n.emptyWidgetNotice,
+      style: TextStyle(
+        fontSize: error == null ? 24 : 14 * 2,
+        color: error == null
+            ? colorScheme.secondary.withOpacity(0.8)
+            : colorScheme.error,
+      ),
+    );
+
+    final bodySpan = TextSpan(
+      text:
+          "${widget.overrideEmpty ?? (error == null ? l10n.emptyValue : "${l10n.error} ")}${error == null ? '\n' : ''}",
+      children: error == null
+          ? null
+          : [
+              TextSpan(
+                text: l10n.more.toLowerCase(),
+                style: TextStyle(
+                  fontSize: 24,
+                  decorationColor: colorScheme.error,
+                  decoration: TextDecoration.underline,
+                  // decorationStyle: TextDecorationStyle.wavy,
+                ),
+                recognizer: gestureRecognizer,
+              ),
+            ],
+      style: TextStyle(
+        overflow: TextOverflow.ellipsis,
+        color: error == null
+            ? colorScheme.secondary.withOpacity(0.5)
+            : colorScheme.error.withOpacity(0.6),
+        // fontStyle: error != null ? null : FontStyle.italic,
+        fontSize: 14 * 2,
+      ),
+    );
 
     return Center(
       child: Padding(
@@ -53,55 +134,15 @@ class EmptyWidget extends StatelessWidget {
         child: Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: error != null
-                    ? "(ﾟヘﾟ)？" "\n"
-                    : "${chooseKaomoji(gridSeed)}\n",
-                style: TextStyle(
-                  fontSize: 14 * 2,
-                  color: error == null ? null : colorScheme.error,
-                ),
-              ),
-              TextSpan(
-                text: overrideEmpty ??
-                    (error == null
-                        ? "${l10n.emptyValue}..."
-                        : "${l10n.error} — $error"),
-                style: TextStyle(
-                  overflow: TextOverflow.ellipsis,
-                  color:
-                      error == null ? null : colorScheme.error.withOpacity(0.6),
-                  fontStyle: error != null ? null : FontStyle.italic,
-                  fontSize: error != null ? 14 * 2 : null,
-                ),
-              ),
+              if (error == null) bodySpan else emptySpan,
+              if (error == null) emptySpan else bodySpan,
             ],
           ),
           maxLines: error != null ? 4 : 2,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            overflow: TextOverflow.ellipsis,
-            color: colorScheme.secondary.withOpacity(0.5),
-          ),
+          style: const TextStyle(overflow: TextOverflow.ellipsis),
         ),
       ),
     );
   }
 }
-
-String chooseKaomoji(int seed) => emojis[Random(seed).nextInt(emojis.length)];
-
-const List<String> emojis = [
-  "щ(゜ロ゜щ)",
-  "(´⊙o⊙`；)",
-  "(´⊙ω⊙`)！",
-  "(´･艸･｀)",
-  "Σ(・Д・)!?",
-  "(ﾟヘﾟ)？",
-  "ʅฺ(・ω・。)ʃฺ？？",
-  "｢(ﾟﾍﾟ)",
-  r"┻━┻ ︵ ¯\ (ツ)/¯ ︵ ┻━┻",
-  "┐(‘～`；)┌",
-  "╰(　´◔　ω　◔ `)╯",
-  "ㄟ( θ﹏θ)厂",
-];

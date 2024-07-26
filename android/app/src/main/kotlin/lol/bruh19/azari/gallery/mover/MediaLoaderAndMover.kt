@@ -21,7 +21,6 @@ import com.bumptech.glide.Glide
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
@@ -242,8 +241,8 @@ class MediaLoaderAndMover(private val context: Context) {
                 limit = 0,
                 showOnly = ids,
                 sortingMode = sortingMode,
-            ) { content, empty, inRefresh ->
-                sendMedia(scope, uiScope, "favorites", time, content, empty, inRefresh)
+            ) { content, notFound, empty, inRefresh ->
+                sendMedia(scope, uiScope, "favorites", time, content, notFound, empty, inRefresh)
             }
 
             closure()
@@ -268,7 +267,7 @@ class MediaLoaderAndMover(private val context: Context) {
         dir: String = "",
         type: LoadMediaType = LoadMediaType.Normal,
         limit: Long, sortingMode: FilesSortingMode,
-        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
         scope.launch {
             loadMedia(
@@ -285,7 +284,7 @@ class MediaLoaderAndMover(private val context: Context) {
 
     fun filesDirectly(
         ids: List<Long>,
-        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
         scope.launch {
             loadMedia(
@@ -321,8 +320,8 @@ class MediaLoaderAndMover(private val context: Context) {
                 type = type,
                 limit = limit,
                 sortingMode = sortingMode,
-            ) { content, empty, inRefresh ->
-                sendMedia(scope, uiScope, dirId, time, content, empty, inRefresh)
+            ) { content, notFound, empty, inRefresh ->
+                sendMedia(scope, uiScope, dirId, time, content, notFound, empty, inRefresh)
             }
 
             isLockedFilesMux.unlock()
@@ -366,8 +365,8 @@ class MediaLoaderAndMover(private val context: Context) {
                     type = LoadMediaType.Normal,
                     limit = 0,
                     sortingMode = sortingMode,
-                ) { content, empty, inRefresh ->
-                    sendMedia(scope, uiScope, d, time, content, empty, inRefresh)
+                ) { content, notFound, empty, inRefresh ->
+                    sendMedia(scope, uiScope, d, time, content, notFound, empty, inRefresh)
                 }
             })
         }
@@ -385,8 +384,8 @@ class MediaLoaderAndMover(private val context: Context) {
             type = LoadMediaType.Normal,
             limit = 0,
             sortingMode = sortingMode,
-        ) { content, empty, inRefresh ->
-            sendMedia(scope, uiScope, last, time, content, empty, inRefresh)
+        ) { content, notFound, empty, inRefresh ->
+            sendMedia(scope, uiScope, last, time, content, notFound, empty, inRefresh)
         }
 
         isLockedFilesMux.unlock()
@@ -497,7 +496,7 @@ class MediaLoaderAndMover(private val context: Context) {
         showOnly: List<Long>? = null,
         limit: Long,
         sortingMode: FilesSortingMode,
-        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -517,7 +516,7 @@ class MediaLoaderAndMover(private val context: Context) {
 
         if (showOnly != null) {
             if (showOnly.isEmpty()) {
-                closure(listOf(), true, false)
+                closure(listOf(), listOf(), true, false)
                 return
             }
 
@@ -578,11 +577,18 @@ class MediaLoaderAndMover(private val context: Context) {
             val media_mime = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
 
             if (!cursor.moveToFirst()) {
-                closure(listOf(), true, false)
+                closure(listOf(), showOnly ?: listOf(), true, false)
                 return@use
             }
 
             try {
+                val showOnlyMap =
+                    showOnly?.fold<Long, MutableMap<Long, Boolean>>(mutableMapOf()) { map, e ->
+                        map[e] = false;
+
+                        return@fold map;
+                    }
+
                 val list = mutableListOf<DirectoryFile>()
 
                 do {
@@ -599,9 +605,11 @@ class MediaLoaderAndMover(private val context: Context) {
                             )
                         }
 
+                    val id = cursor.getLong(id)
+
                     list.add(
                         DirectoryFile(
-                            id = cursor.getLong(id),
+                            id = id,
                             bucketId = cursor.getString(bucket_id),
                             name = cursor.getString(b_display_name),
                             originalUri = uri.toString(),
@@ -615,9 +623,14 @@ class MediaLoaderAndMover(private val context: Context) {
                         )
                     )
 
+                    showOnlyMap?.put(id, true)
 
                     if (limit == 0L && list.count() == 40) {
-                        closure(list.toList(), false, true)
+                        closure(
+                            list.toList(),
+                            listOf(),
+                            false, true
+                        )
                         list.clear()
                     }
                 } while (
@@ -625,18 +638,38 @@ class MediaLoaderAndMover(private val context: Context) {
                 )
 
                 if (limit == 0L) {
-                    closure(list, false, !inRefreshAtEnd && list.isNotEmpty())
+                    closure(
+                        list,
+                        if (list.isEmpty()) listNotContainsId(showOnlyMap) else listOf(),
+                        false,
+                        !inRefreshAtEnd && list.isNotEmpty()
+                    )
                     if (list.isNotEmpty()) {
-                        closure(listOf(), false, !inRefreshAtEnd)
+                        closure(
+                            listOf(),
+                            listNotContainsId(showOnlyMap),
+                            false, !inRefreshAtEnd
+                        )
                     }
                 } else {
-                    closure(list, list.isEmpty(), !inRefreshAtEnd)
+                    closure(
+                        list,
+                        listNotContainsId(showOnlyMap),
+                        list.isEmpty(), !inRefreshAtEnd
+                    )
                 }
-
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)
             }
         }
+    }
+
+    private fun listNotContainsId(map: Map<Long, Boolean>?): List<Long> {
+        if (map == null) {
+            return listOf()
+        }
+
+        return map.entries.dropWhile { it.value }.map { it.key }
     }
 
     private fun diffHashFromThumb(scaled: Bitmap): Long {

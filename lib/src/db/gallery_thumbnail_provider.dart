@@ -22,10 +22,16 @@ ListTile addInfoTile({
   Widget? trailing,
 }) =>
     ListTile(
-      title: Text(title),
+      title: Center(
+        child: Text(title),
+      ),
       trailing: trailing,
       onTap: onPressed,
-      subtitle: subtitle != null ? Text(subtitle) : null,
+      subtitle: subtitle != null
+          ? Center(
+              child: Text(subtitle),
+            )
+          : null,
     );
 
 class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {

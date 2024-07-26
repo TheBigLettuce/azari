@@ -427,7 +427,7 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
 
 class _UpdatesAvailableWidget extends StatefulWidget {
   const _UpdatesAvailableWidget({
-    super.key,
+    // super.key,
     required this.updatesAvailable,
     required this.progress,
   });
@@ -530,6 +530,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
   Widget build(BuildContext context) {
     final notifier = GridScrollNotifier.notifierOf(context);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     const circularProgress = SizedBox.square(
       dimension: 12,
@@ -539,7 +540,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
     );
 
     final dismissCard = Tooltip(
-      message: "Dismiss", // TODO: change
+      message: l10n.dismiss,
       child: ActionChip(
         avatar:
             status.inRefresh ? null : const Icon(Icons.new_releases_outlined),
@@ -548,14 +549,12 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
         ),
         visualDensity: VisualDensity.compact,
         onPressed: status.inRefresh ? null : _dismiss,
-        label: status.inRefresh
-            ? circularProgress
-            : const Text("Has new posts"), // TODO: change
+        label: status.inRefresh ? circularProgress : Text(l10n.hasNewPosts),
       ),
     );
 
     final dismissIcon = Tooltip(
-      message: "Dismiss", // TODO: change
+      message: l10n.dismiss,
       child: ActionChip(
         labelPadding: EdgeInsets.zero,
         onPressed: status.inRefresh ? null : _dismiss,

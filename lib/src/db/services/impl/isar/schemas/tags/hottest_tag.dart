@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:gallery/src/db/services/impl_table/io.dart";
-import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
@@ -19,12 +18,11 @@ class IsarHottestTag implements $HottestTag {
     required this.isarId,
   });
 
-  const IsarHottestTag.noId({
+  const IsarHottestTag.noIdList({
     required this.tag,
-    required List<ThumbUrlRating> thumbUrls,
     required this.count,
   })  : isarId = null,
-        thumbUrls = thumbUrls as List<IsarThumbUrlRating>;
+        thumbUrls = const [];
 
   final Id? isarId;
 

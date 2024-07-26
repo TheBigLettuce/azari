@@ -262,14 +262,14 @@ class LoadTags extends StatelessWidget {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           )
-                        : Text("From ${res.booru.string}"),
+                        : Text(l10n.fromBooru(res.booru.string)),
                   );
                 },
               )
             else
               FilledButton(
                 onPressed: null,
-                child: Text("From ${res.booru.string}"), // TODO: change
+                child: Text(l10n.fromBooru(res.booru.string)),
               ),
           ],
         ),

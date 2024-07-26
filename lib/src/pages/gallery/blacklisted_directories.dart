@@ -95,6 +95,25 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               hideThumbnails: false,
               source: filter.backingStorage,
               progress: filter.progress,
+              itemFactory: (context, idx, cell) {
+                final extras =
+                    GridExtrasNotifier.of<BlacklistedDirectoryData>(context);
+
+                return DefaultListTile(
+                  functionality: extras.functionality,
+                  selection: extras.selection,
+                  index: idx,
+                  cell: cell,
+                  hideThumbnails: false,
+                  dismiss: TileDismiss(
+                    () {
+                      blacklistedDirectory.backingStorage
+                          .removeAll([cell.bucketId]);
+                    },
+                    Icons.restore_page_rounded,
+                  ),
+                );
+              },
             ),
           ],
           functionality: GridFunctionality(
@@ -118,7 +137,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
           description: GridDescription(
             actions: [
               GridAction(
-                Icons.restore_page,
+                Icons.restore_page_rounded,
                 (selected) {
                   blacklistedDirectory.backingStorage.removeAll(
                     selected.map((e) => e.bucketId).toList(),

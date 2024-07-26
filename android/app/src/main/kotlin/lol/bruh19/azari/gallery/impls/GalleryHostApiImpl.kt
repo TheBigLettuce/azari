@@ -30,7 +30,7 @@ internal class GalleryHostApiImpl(
             limit = limit,
             type = if (onlyLatest) MediaLoaderAndMover.Enums.LoadMediaType.Latest else MediaLoaderAndMover.Enums.LoadMediaType.Normal,
             sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.None,
-        ) { list, empty, inRefresh ->
+        ) { list, notFound, empty, inRefresh ->
             callback(Result.success(list))
         }
     }
@@ -39,7 +39,7 @@ internal class GalleryHostApiImpl(
         ids: List<Long>,
         callback: (Result<List<DirectoryFile>>) -> Unit
     ) {
-        mediaLoaderAndMover.filesDirectly(ids) { list, empty, inRefresh ->
+        mediaLoaderAndMover.filesDirectly(ids) { list, notFound, empty, inRefresh ->
             callback(Result.success(list))
         }
     }

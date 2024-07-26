@@ -24,13 +24,26 @@ class CardPanel extends StatefulWidget {
 
   static List<Widget> defaultInfo(BuildContext context, AnimeEntryData entry) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return [
       UnsizedCard(
         subtitle: Text(l10n.cardYear),
         tooltip: l10n.cardYear,
         title: Text(
-          entry.year == 0 ? l10n.cardUnknownValue : entry.year.toString(),
+          entry.airedFrom != null && entry.airedTo != null
+              ? "${l10n.dateSimple(entry.airedFrom!)} —\n${l10n.dateSimple(entry.airedTo!)}"
+              : entry.airedFrom != null
+                  ? "${l10n.dateSimple(entry.airedFrom!)} "
+                  : entry.airedTo != null
+                      ? "? —\n${l10n.dateSimple(entry.airedTo!)}"
+                      : l10n.cardUnknownValue,
+          style: TextStyle(
+            fontSize: entry.airedTo != null ||
+                    (entry.airedFrom != null && entry.airedTo != null)
+                ? theme.textTheme.labelSmall?.fontSize
+                : null,
+          ),
         ),
         transparentBackground: true,
       ),

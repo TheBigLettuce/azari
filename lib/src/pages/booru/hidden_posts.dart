@@ -71,6 +71,8 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return _HideBlacklistedImagesHolder(
       key: _hideKey,
       child: GridConfiguration(
@@ -95,6 +97,14 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
                     cell: cell,
                     trailing: Text(cell.booru.string),
                     hideThumbnails: HideHiddenImagesThumbsNotifier.of(context),
+                    dismiss: TileDismiss(
+                      () {
+                        hiddenBooruPost.removeAll([(cell.postId, cell.booru)]);
+
+                        source.clearRefresh();
+                      },
+                      Icons.image_rounded,
+                    ),
                   );
                 },
               ),

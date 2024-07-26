@@ -139,9 +139,8 @@ class IoServicesImplTable implements ServicesImplTable {
 abstract class $HottestTag extends HottestTag {
   const factory $HottestTag({
     required String tag,
-    required List<ThumbUrlRating> thumbUrls,
     required int count,
-  }) = IsarHottestTag.noId;
+  }) = IsarHottestTag.noIdList;
 }
 
 abstract class $ThumbUrlRating extends ThumbUrlRating {
@@ -173,8 +172,7 @@ abstract class $GridBookmark extends GridBookmark {
     required Booru booru,
     required String name,
     required DateTime time,
-    required List<GridBookmarkThumbnail> thumbnails,
-  }) = IsarBookmark.noId;
+  }) = IsarBookmark.noIdList;
 }
 
 abstract class $LocalTagsData extends LocalTagsData {
@@ -265,15 +263,17 @@ abstract class $PinnedManga extends PinnedManga {
 abstract class $WatchedAnimeEntryData extends WatchedAnimeEntryData {
   const factory $WatchedAnimeEntryData({
     required DateTime date,
+    required DateTime? airedFrom,
+    required DateTime? airedTo,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
+    required String imageUrl,
     required String title,
     required String titleJapanese,
     required String titleEnglish,
     required double score,
     required String synopsis,
-    required int year,
     required int id,
     required String siteUrl,
     required bool isAiring,
@@ -282,24 +282,23 @@ abstract class $WatchedAnimeEntryData extends WatchedAnimeEntryData {
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-    required List<AnimeRelation> relations,
-    required List<AnimeRelation> staff,
-    required List<AnimeGenre> genres,
-  }) = IsarWatchedAnimeEntry.noId;
+  }) = IsarWatchedAnimeEntry.noIdList;
 }
 
 abstract class $SavedAnimeEntryData extends SavedAnimeEntryData {
   const factory $SavedAnimeEntryData({
+    required DateTime? airedFrom,
+    required DateTime? airedTo,
     required bool inBacklog,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
+    required String imageUrl,
     required String title,
     required String titleJapanese,
     required String titleEnglish,
     required double score,
     required String synopsis,
-    required int year,
     required int id,
     required String siteUrl,
     required bool isAiring,
@@ -308,10 +307,7 @@ abstract class $SavedAnimeEntryData extends SavedAnimeEntryData {
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-    required List<AnimeRelation> relations,
-    required List<AnimeRelation> staff,
-    required List<AnimeGenre> genres,
-  }) = IsarSavedAnimeEntry.noId;
+  }) = IsarSavedAnimeEntry.noIdList;
 }
 
 abstract class $Post extends Post {

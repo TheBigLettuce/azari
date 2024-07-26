@@ -11,19 +11,20 @@ import android.os.Bundle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
-import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.enginebindings.ActivityContextChannel
+import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
 import lol.bruh19.azari.gallery.generated.GalleryHostApi
 import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class QuickViewActivity : FlutterFragmentActivity() {
-    private val engineBindings: EngineBindings by lazy {
+    private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = makeEngine(app, "mainQuickView")
+        val engine = getOrMakeEngine(app, "mainQuickView")
 
-        EngineBindings(
+        AppContextChannel(
             engine, GalleryApi(engine.dartExecutor.binaryMessenger),
         )
     }
@@ -32,10 +33,16 @@ class QuickViewActivity : FlutterFragmentActivity() {
         (this.applicationContext as App).mediaLoaderAndMover
     }
 
+    private val activityContextChannel: ActivityContextChannel by lazy {
+        val engine = FlutterEngineCache.getInstance()["mainQuickView"]!!
+
+        ActivityContextChannel(engine.dartExecutor, GalleryApi(engine.dartExecutor.binaryMessenger))
+    }
+
     private val intents by lazy {
         ActivityResultIntents(
             this,
-            { engineBindings },
+            { activityContextChannel },
             { mediaLoaderAndMover })
     }
 
@@ -43,28 +50,30 @@ class QuickViewActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
 
         GalleryHostApi.setUp(
-            engineBindings.engine.dartExecutor.binaryMessenger,
+            appContextChannel.engine.dartExecutor.binaryMessenger,
             GalleryHostApiImpl(this, mediaLoaderAndMover)
         )
 
-        engineBindings.attach(
+        appContextChannel.attach(
             this, mediaLoaderAndMover,
             getSystemService(
                 ConnectivityManager::class.java
             ),
-            intents,
         )
+
+        activityContextChannel.attach(this, intents, mediaLoaderAndMover)
     }
 
     override fun getCachedEngineId(): String = "mainQuickView"
-    override fun provideFlutterEngine(context: Context): FlutterEngine = engineBindings.engine
+    override fun provideFlutterEngine(context: Context): FlutterEngine = appContextChannel.engine
 
     override fun onDestroy() {
         super.onDestroy()
-        engineBindings.detach()
-        engineBindings.engine.destroy()
+        appContextChannel.detach()
+        appContextChannel.engine.destroy()
         FlutterEngineCache.getInstance().remove("mainQuickView")
         intents.unregisterAll()
-        GalleryHostApi.setUp(engineBindings.engine.dartExecutor.binaryMessenger, null)
+        GalleryHostApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        activityContextChannel.detach()
     }
 }

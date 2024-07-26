@@ -100,6 +100,13 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
   }
 }
 
+class TileDismiss {
+  const TileDismiss(this.onDismissed, this.icon);
+
+  final void Function() onDismissed;
+  final IconData icon;
+}
+
 class DefaultListTile<T extends CellBase> extends StatelessWidget {
   const DefaultListTile({
     super.key,
@@ -111,6 +118,7 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
     this.selectionIndex,
     this.subtitle,
     this.trailing,
+    this.dismiss,
   });
 
   final GridFunctionality<T> functionality;
@@ -121,6 +129,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final bool hideThumbnails;
+
+  final TileDismiss? dismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -141,9 +151,8 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
           SelectionCountNotifier.countOf(context);
           final isSelected = selection.isSelected(selectionIndex ?? index);
 
-          return DecoratedBox(
-            decoration: ShapeDecoration(
-              shape: const StadiumBorder(),
+          final child = DecoratedBox(
+            decoration: BoxDecoration(
               color: isSelected
                   ? null
                   : index.isOdd
@@ -151,29 +160,66 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
                       : theme.colorScheme.surfaceContainerHighest
                           .withOpacity(0.1),
             ),
-            child: ListTile(
-              textColor: isSelected ? theme.colorScheme.inversePrimary : null,
-              leading: !hideThumbnails && thumbnail != null
-                  ? CircleAvatar(
-                      backgroundColor: theme.colorScheme.surface.withOpacity(0),
-                      backgroundImage: thumbnail,
-                    )
-                  : null,
-              subtitle: subtitle == null ? null : Text(subtitle!),
-              trailing: trailing,
-              title: Text(
-                cell.alias(true),
-                softWrap: false,
-                style: TextStyle(
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary.withOpacity(0.8)
-                      : index.isOdd
-                          ? theme.colorScheme.onSurface.withOpacity(0.8)
-                          : theme.colorScheme.onSurface.withOpacity(0.9),
+            child: DecoratedBox(
+              decoration: const ShapeDecoration(shape: StadiumBorder()),
+              child: ListTile(
+                textColor: isSelected ? theme.colorScheme.inversePrimary : null,
+                leading: !hideThumbnails && thumbnail != null
+                    ? CircleAvatar(
+                        backgroundColor:
+                            theme.colorScheme.surface.withOpacity(0),
+                        backgroundImage: thumbnail,
+                      )
+                    : null,
+                subtitle: subtitle == null ? null : Text(subtitle!),
+                trailing: trailing,
+                title: Text(
+                  cell.alias(true),
+                  softWrap: false,
+                  style: TextStyle(
+                    color: isSelected
+                        ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                        : index.isOdd
+                            ? theme.colorScheme.onSurface.withOpacity(0.8)
+                            : theme.colorScheme.onSurface.withOpacity(0.9),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
+          );
+
+          return ClipPath(
+            clipper: const ShapeBorderClipper(shape: StadiumBorder()),
+            child: dismiss != null
+                ? Dismissible(
+                    key: cell.uniqueKey(),
+                    direction: DismissDirection.endToStart,
+                    background: SizedBox.expand(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Icon(
+                              dismiss!.icon,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    onDismissed: (direction) {
+                      dismiss!.onDismissed();
+                    },
+                    dismissThresholds: const {DismissDirection.horizontal: 0.5},
+                    child: child,
+                  )
+                : child,
           );
         },
       ),

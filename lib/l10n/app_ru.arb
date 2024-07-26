@@ -473,5 +473,27 @@
                 "type": "int"
             }
         }
+    },
+    "emptyWidgetNotice": "Но почему?.. 🤔",
+    "lastAdded": "Свежее",
+    "dismiss": "Убрать",
+    "hasNewPosts": "Есть новые посты",
+    "fromBooru": "Из {booru}",
+    "@fromBooru": {
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
+    },
+    "redownloadInProgress": "Уже загружаются заново",
+    "redownloadFetchingUrls": "Загрузка адресов файлов",
+    "redownloadRedowloadingFiles": "Загружаются {length} файлов",
+    "@redownloadRedowloadingFiles": {
+        "placeholders": {
+            "length": {
+                "type": "int"
+            }
+        }
     }
 }

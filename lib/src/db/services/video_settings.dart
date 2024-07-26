@@ -13,6 +13,10 @@ abstract interface class VideoSettingsService implements ServiceMarker {
   VideoSettingsData get current;
 
   void add(VideoSettingsData data);
+
+  StreamSubscription<VideoSettingsData> watch(
+    void Function(VideoSettingsData) f,
+  );
 }
 
 abstract class VideoSettingsData {
@@ -25,13 +29,4 @@ abstract class VideoSettingsData {
   final double volume;
 
   VideoSettingsData copy({bool? looping, double? volume});
-}
-
-mixin VideoSettingsDbScope<W extends DbConnHandle<VideoSettingsService>>
-    implements DbScope<VideoSettingsService, W>, VideoSettingsService {
-  @override
-  VideoSettingsData get current => widget.db.current;
-
-  @override
-  void add(VideoSettingsData data) => widget.db.add(data);
 }

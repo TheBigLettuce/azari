@@ -113,8 +113,11 @@ class LinuxApiFunctions implements PlatformApi {
 class AndroidApiFunctions implements PlatformApi {
   const AndroidApiFunctions();
 
-  static const MethodChannel _channel =
-      MethodChannel("lol.bruh19.azari.gallery");
+  static const appContext =
+      MethodChannel("lol.bruh19.azari.gallery.app_context");
+
+  static const activityContext =
+      MethodChannel("lol.bruh19.azari.gallery.activity_context");
 
   @override
   bool get requiresPermissions => true;
@@ -131,88 +134,89 @@ class AndroidApiFunctions implements PlatformApi {
   @override
   Future<void> setTitle(String windowTitle) => Future.value();
 
-  Future<void> closeActivity() => _channel.invokeMethod("closeActivity");
+  Future<void> closeActivity() => activityContext.invokeMethod("closeActivity");
 
   @override
   Future<void> hideRecents(bool hide) {
-    _channel.invokeMethod("hideRecents", hide);
+    activityContext.invokeMethod("hideRecents", hide);
 
     return Future.value();
   }
 
   Future<List<String>> getQuickViewUris() {
-    return _channel
+    return activityContext
         .invokeListMethod<String>("getQuickViewUris")
         .then((e) => e!);
   }
 
   Future<bool> requestManageMedia() {
-    return _channel
+    return activityContext
         .invokeMethod("requestManageMedia")
         .then((value) => value as bool);
   }
 
   @override
   Future<Color> accentColor() async {
-    final int c = (await _channel.invokeMethod("accentColor")) as int;
+    final int c = (await appContext.invokeMethod("accentColor")) as int;
     return Color(c);
   }
 
   void returnUri(String originalUri) {
-    _channel.invokeMethod("returnUri", originalUri);
+    activityContext.invokeMethod("returnUri", originalUri);
   }
 
   Future<bool> manageMediaSupported() {
-    return _channel
+    return appContext
         .invokeMethod("manageMediaSupported")
         .then((value) => value as bool);
   }
 
   Future<bool> manageMediaStatus() {
-    return _channel
+    return appContext
         .invokeMethod("manageMediaStatus")
         .then((value) => value as bool);
   }
 
   @override
   Future<void> shareMedia(String originalUri, {bool url = false}) {
-    _channel.invokeMethod("shareMedia", {"uri": originalUri, "isUrl": url});
+    activityContext
+        .invokeMethod("shareMedia", {"uri": originalUri, "isUrl": url});
 
     return Future.value();
   }
 
   Future<bool> moveInternal(String internalAppDir, List<String> uris) {
-    return _channel.invokeMethod(
+    return activityContext.invokeMethod(
       "moveInternal",
       {"dir": internalAppDir, "uris": uris},
     ).then((value) => (value as bool?) ?? false);
   }
 
-  Future<bool> moveFromInternal(
-    String fromInternalFile,
-    String toDir,
-    String volume,
-  ) {
-    return _channel.invokeMethod(
-      "moveFromInternal",
-      {"from": fromInternalFile, "to": toDir, "volume": volume},
-    ).then((value) => (value as bool?) ?? false);
-  }
+  // Future<bool> moveFromInternal(
+  //   String fromInternalFile,
+  //   String toDir,
+  //   String volume,
+  // ) {
+  //   return _channel.invokeMethod(
+  //     "moveFromInternal",
+  //     {"from": fromInternalFile, "to": toDir, "volume": volume},
+  //   ).then((value) => (value as bool?) ?? false);
+  // }
 
   Future<int> currentMediastoreVersion() {
-    return _channel
+    return appContext
         .invokeMethod("currentMediastoreVersion")
         .then((value) => value as int);
   }
 
   Future<bool> currentNetworkStatus() {
-    return _channel
+    return appContext
         .invokeMethod("currentNetworkStatus")
         .then((value) => value as bool);
   }
 
   @override
   Future<void> setWallpaper(int id) {
-    return _channel.invokeMethod("setWallpaper", id);
+    return activityContext.invokeMethod("setWallpaper", id);
   }
 }

@@ -100,6 +100,33 @@ abstract interface class Pressable<T extends CellBase> {
   );
 }
 
+class ExitOnPressRoute extends InheritedWidget {
+  const ExitOnPressRoute({
+    super.key,
+    required this.exit,
+    required super.child,
+  });
+
+  final void Function() exit;
+
+  static void maybeExitOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
+
+    widget?.exit();
+  }
+
+  static void exitOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
+
+    widget!.exit();
+  }
+
+  @override
+  bool updateShouldNotify(ExitOnPressRoute oldWidget) => exit != oldWidget.exit;
+}
+
 /// Marker class to make [CellBase] implementations thumbnailable.
 abstract interface class Thumbnailable {
   ImageProvider thumbnail();

@@ -20,6 +20,7 @@ import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/booru_api.dart";
 import "package:gallery/src/net/booru/post.dart";
+import "package:gallery/src/net/booru/post_functions.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";

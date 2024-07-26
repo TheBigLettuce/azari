@@ -78,7 +78,7 @@ class _ImageViewBottomAppBarState extends State<ImageViewBottomAppBar>
                 end: 1,
               ),
             ],
-            child: _SlidingBottomBar(
+            child: ImageViewSlidingInfoDrawer(
               widgets: widgets,
               bottomSheetController: widget.bottomSheetController,
               viewPadding: widget.viewPadding,
@@ -112,7 +112,7 @@ class _ImageViewBottomAppBarState extends State<ImageViewBottomAppBar>
                 ),
               ),
               if (widget.addInfoFab)
-                _Fab(
+                ImageViewFab(
                   visibilityController: controller,
                   widgets: widgets,
                   viewPadding: widget.viewPadding,
@@ -126,9 +126,9 @@ class _ImageViewBottomAppBarState extends State<ImageViewBottomAppBar>
   }
 }
 
-class _Fab extends StatefulWidget {
-  const _Fab({
-    super.key,
+class ImageViewFab extends StatefulWidget {
+  const ImageViewFab({
+    // super.key,
     required this.widgets,
     required this.bottomSheetController,
     required this.viewPadding,
@@ -141,10 +141,11 @@ class _Fab extends StatefulWidget {
   final AnimationController visibilityController;
 
   @override
-  State<_Fab> createState() => __FabState();
+  State<ImageViewFab> createState() => _ImageViewFabState();
 }
 
-class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
+class _ImageViewFabState extends State<ImageViewFab>
+    with SingleTickerProviderStateMixin {
   DraggableScrollableController get bottomSheetController =>
       widget.bottomSheetController;
 
@@ -152,7 +153,7 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
 
   bool iconClosedMenu = true;
 
-  double minSize = 0;
+  // double minSize = 0;
 
   @override
   void initState() {
@@ -170,19 +171,19 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
 
-    final min = MediaQuery.sizeOf(context);
+  //   final min = MediaQuery.sizeOf(context);
 
-    minSize =
-        (WrapImageViewSkeleton.minPixels(widget.widgets, widget.viewPadding)) /
-            min.height;
-  }
+  //   minSize =
+  //       (WrapImageViewSkeleton.minPixels(widget.widgets, widget.viewPadding)) /
+  //           min.height;
+  // }
 
   void listener() {
-    final newIcon = !(widget.bottomSheetController.size > minSize);
+    final newIcon = !(widget.bottomSheetController.size > 0);
 
     if (newIcon != iconClosedMenu) {
       iconClosedMenu = newIcon;
@@ -199,10 +200,14 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return FloatingActionButton(
-      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+      backgroundColor: theme.colorScheme.surfaceContainerHigh.withOpacity(0.9),
+      foregroundColor: theme.colorScheme.onSurfaceVariant.withOpacity(0.95),
       onPressed: () {
-        if (widget.bottomSheetController.size > minSize) {
+        if (widget.bottomSheetController.size > 0) {
           widget.bottomSheetController.animateTo(
             0,
             duration: Durations.medium2,
@@ -224,8 +229,78 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
   }
 }
 
-class _SlidingBottomBar extends StatefulWidget {
-  const _SlidingBottomBar({
+class _IgnoringPointer extends StatefulWidget {
+  const _IgnoringPointer(
+      {super.key,
+      required this.widgets,
+      required this.bottomSheetController,
+      required this.viewPadding,
+      required this.child});
+
+  final ContentWidgets widgets;
+  final DraggableScrollableController bottomSheetController;
+  final EdgeInsets viewPadding;
+
+  final Widget child;
+
+  @override
+  State<_IgnoringPointer> createState() => __IgnoringPointerState();
+}
+
+class __IgnoringPointerState extends State<_IgnoringPointer> {
+  DraggableScrollableController get bottomSheetController =>
+      widget.bottomSheetController;
+
+  // double minSize = 0;
+
+  bool ignorePointer = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    bottomSheetController.addListener(listener);
+  }
+
+  @override
+  void dispose() {
+    bottomSheetController.removeListener(listener);
+
+    super.dispose();
+  }
+
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+
+  //   final min = MediaQuery.sizeOf(context);
+
+  //   minSize =
+  //       (WrapImageViewSkeleton.minPixels(widget.widgets, widget.viewPadding)) /
+  //           min.height;
+  // }
+
+  void listener() {
+    final newIgnorePointer = widget.bottomSheetController.size <= 0;
+
+    if (newIgnorePointer != ignorePointer) {
+      ignorePointer = newIgnorePointer;
+
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverIgnorePointer(
+      ignoring: ignorePointer,
+      sliver: widget.child,
+    );
+  }
+}
+
+class ImageViewSlidingInfoDrawer extends StatefulWidget {
+  const ImageViewSlidingInfoDrawer({
     // super.key,
     required this.widgets,
     required this.bottomSheetController,
@@ -238,10 +313,12 @@ class _SlidingBottomBar extends StatefulWidget {
   final EdgeInsets viewPadding;
 
   @override
-  State<_SlidingBottomBar> createState() => __SlidingBottomBarState();
+  State<ImageViewSlidingInfoDrawer> createState() =>
+      _ImageViewSlidingInfoDrawerState();
 }
 
-class __SlidingBottomBarState extends State<_SlidingBottomBar> {
+class _ImageViewSlidingInfoDrawerState
+    extends State<ImageViewSlidingInfoDrawer> {
   ContentWidgets get widgets => widget.widgets;
   DraggableScrollableController get bottomSheetController =>
       widget.bottomSheetController;
@@ -250,9 +327,9 @@ class __SlidingBottomBarState extends State<_SlidingBottomBar> {
   Widget build(BuildContext context) {
     final min = MediaQuery.sizeOf(context);
 
-    final minSize =
-        (WrapImageViewSkeleton.minPixels(widgets, widget.viewPadding)) /
-            min.height;
+    // final minSize =
+    //     (WrapImageViewSkeleton.minPixels(widgets, widget.viewPadding)) /
+    //         min.height;
 
     return DraggableScrollableSheet(
       controller: bottomSheetController,
@@ -261,8 +338,8 @@ class __SlidingBottomBarState extends State<_SlidingBottomBar> {
       shouldCloseOnMinExtent: false,
       maxChildSize:
           1 - ((kToolbarHeight + widget.viewPadding.top + 8) / min.height),
-      minChildSize: minSize,
-      initialChildSize: minSize,
+      minChildSize: 0,
+      initialChildSize: 0,
       builder: (context, scrollController) {
         return GestureDeadZones(
           left: true,
@@ -278,7 +355,12 @@ class __SlidingBottomBarState extends State<_SlidingBottomBar> {
                     context,
                   );
 
-                  return widgets.tryAsInfoable(context)!;
+                  return _IgnoringPointer(
+                    bottomSheetController: bottomSheetController,
+                    viewPadding: widget.viewPadding,
+                    widgets: widget.widgets,
+                    child: widgets.tryAsInfoable(context)!,
+                  );
                 },
               ),
               SliverPadding(

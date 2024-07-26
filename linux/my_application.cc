@@ -156,7 +156,6 @@ static void my_application_activate(GApplication *application) {
   gtk_window_set_icon_from_file(window, newString,
                                 NULL); // AppDir image
 
-  // free(dir);
   free(newString);
 
   g_signal_connect(G_OBJECT(window), "window-state-event",

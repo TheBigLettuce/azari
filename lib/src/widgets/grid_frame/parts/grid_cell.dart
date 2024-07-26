@@ -91,6 +91,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
               child: Text(
                 alias,
                 softWrap: false,
+                textAlign: TextAlign.left,
                 overflow: TextOverflow.ellipsis,
                 maxLines: description.titleLines,
                 style: TextStyle(

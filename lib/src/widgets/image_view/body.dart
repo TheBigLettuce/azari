@@ -3,9 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:flutter/material.dart";
-import "package:gallery/src/widgets/gesture_dead_zones.dart";
-import "package:photo_view/photo_view_gallery.dart";
+part of "image_view.dart";
 
 class ImageViewBody extends StatelessWidget {
   const ImageViewBody({
@@ -19,6 +17,7 @@ class ImageViewBody extends StatelessWidget {
     required this.onTap,
     required this.onPressedLeft,
     required this.onPressedRight,
+    required this.videoControls,
   });
 
   final void Function(int idx) onPageChanged;
@@ -32,6 +31,8 @@ class ImageViewBody extends StatelessWidget {
   final void Function()? onPressedRight;
   final void Function()? onPressedLeft;
 
+  final _VideoControlsControllerImpl videoControls;
+
   @override
   Widget build(BuildContext context) {
     return GestureDeadZones(
@@ -39,19 +40,23 @@ class ImageViewBody extends StatelessWidget {
       right: true,
       onPressedRight: onPressedRight,
       onPressedLeft: onPressedLeft,
-      child: GestureDetector(
-        onLongPress: onLongPress,
-        onTap: onTap,
-        child: PhotoViewGallery.builder(
-          loadingBuilder: loadingBuilder,
-          enableRotation: true,
-          backgroundDecoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+      child: VideoControls(
+        db: DatabaseConnectionNotifier.of(context).videoSettings,
+        videoControls: videoControls,
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          onTap: onTap,
+          child: PhotoViewGallery.builder(
+            loadingBuilder: loadingBuilder,
+            enableRotation: true,
+            backgroundDecoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+            ),
+            onPageChanged: onPageChanged,
+            pageController: pageController,
+            itemCount: itemCount,
+            builder: builder,
           ),
-          onPageChanged: onPageChanged,
-          pageController: pageController,
-          itemCount: itemCount,
-          builder: builder,
         ),
       ),
     );

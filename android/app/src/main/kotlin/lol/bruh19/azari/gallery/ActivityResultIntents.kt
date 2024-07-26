@@ -18,7 +18,8 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import io.flutter.embedding.android.FlutterFragmentActivity
 import kotlinx.coroutines.launch
-import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.enginebindings.ActivityContextChannel
+import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.enginebindings.copyFile
 import lol.bruh19.azari.gallery.enginebindings.copyOrMove
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
@@ -27,23 +28,23 @@ import okio.Path.Companion.toPath
 
 class ActivityResultIntents(
     context: FlutterFragmentActivity,
-    private val getEngineBindings: () -> EngineBindings,
+    private val getActivityContextChannel: () -> ActivityContextChannel,
     private val getMediaLoaderAndMover: () -> MediaLoaderAndMover,
 ) {
     val pickFileAndOpen = context.registerForActivityResult(ActionOpenDocument()) { data ->
-        val engineBindings = getEngineBindings()
+        val activityContextChannel = getActivityContextChannel()
 
-        onOpenDocument(data, engineBindings)
+        onOpenDocument(data, activityContextChannel)
     }
 
     val chooseDirectory = context.registerForActivityResult(ActionOpenDocumentTree()) { data ->
-        val engineBindings = getEngineBindings()
+        val activityContextChannel = getActivityContextChannel()
 
-        onOpenDocument(data, engineBindings)
+        onOpenDocument(data, activityContextChannel)
     }
 
     val manageMedia = context.registerForActivityResult(ManageMedia()) { data ->
-        val engineBindings = getEngineBindings()
+        val engineBindings = getActivityContextChannel()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
@@ -56,12 +57,12 @@ class ActivityResultIntents(
 
     val writeRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
-            val engineBindings = getEngineBindings()
+            val activityContextChannel = getActivityContextChannel()
             val mover = getMediaLoaderAndMover()
 
             if (data.resultCode == Activity.RESULT_OK) {
-                val rename = engineBindings.rename!!
-                engineBindings.rename = null
+                val rename = activityContextChannel.rename!!
+                activityContextChannel.rename = null
 
                 mover.scope.launch {
                     try {
@@ -79,25 +80,25 @@ class ActivityResultIntents(
                         )
 
                         if (rename.notify) {
-                            engineBindings.notifyGallery(mover.uiScope, null)
+                            activityContextChannel.notifyGallery(mover.uiScope, null)
                         }
                     } catch (e: Exception) {
                         Log.e("rename_", e.toString())
                     }
 
-                    engineBindings.renameMux.unlock()
+                    activityContextChannel.renameMux.unlock()
                 }
             }
         }
 
     val writeRequestCopyMove =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
-            val engineBindings = getEngineBindings()
+            val activityContextChannel = getActivityContextChannel()
             val mover = getMediaLoaderAndMover()
 
             if (data.resultCode == Activity.RESULT_OK) {
-                val copyFiles = engineBindings.copyFiles!!
-                engineBindings.copyFiles = null
+                val copyFiles = activityContextChannel.copyFiles!!
+                activityContextChannel.copyFiles = null
 
                 mover.scope.launch {
                     try {
@@ -131,25 +132,25 @@ class ActivityResultIntents(
                         Log.e("copy files", e.toString())
                     }
 
-                    engineBindings.notifyGallery(mover.uiScope, null)
-                    engineBindings.copyFilesMux.unlock()
+                    activityContextChannel.notifyGallery(mover.uiScope, null)
+                    activityContextChannel.copyFilesMux.unlock()
                 }
             } else {
-                engineBindings.copyFiles!!.callback(data.toString());
-                engineBindings.copyFiles = null
-                engineBindings.copyFilesMux.unlock()
+                activityContextChannel.copyFiles!!.callback(data.toString());
+                activityContextChannel.copyFiles = null
+                activityContextChannel.copyFilesMux.unlock()
                 Log.e("copy files", "failed")
             }
         }
 
     val writeRequestInternal =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
-            val engineBindings = getEngineBindings()
+            val activityContextChannel = getActivityContextChannel()
             val mover = getMediaLoaderAndMover()
 
             if (data.resultCode == Activity.RESULT_OK) {
-                val moveInternal = engineBindings.moveInternal!!
-                engineBindings.moveInternal = null
+                val moveInternal = activityContextChannel.moveInternal!!
+                activityContextChannel.moveInternal = null
 
                 mover.scope.launch {
                     try {
@@ -175,31 +176,31 @@ class ActivityResultIntents(
                         Log.e("moveInternal_", e.toString())
                     }
 
-                    engineBindings.moveInternalMux.unlock()
+                    activityContextChannel.moveInternalMux.unlock()
                 }
             } else {
-                engineBindings.moveInternal = null
-                engineBindings.moveInternalMux.unlock()
+                activityContextChannel.moveInternal = null
+                activityContextChannel.moveInternalMux.unlock()
             }
         }
 
     val trashRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
-            val engineBindings = getEngineBindings()
+            val activityContextChannel = getActivityContextChannel()
             val mover = getMediaLoaderAndMover()
 
             if (data.resultCode == Activity.RESULT_OK) {
-                engineBindings.notifyGallery(mover.uiScope, null)
+                activityContextChannel.notifyGallery(mover.uiScope, null)
             }
         }
 
     val deleteRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
-            val engineBindings = getEngineBindings()
+            val activityContextChannel = getActivityContextChannel()
             val mover = getMediaLoaderAndMover()
 
             if (data.resultCode == Activity.RESULT_OK) {
-                engineBindings.notifyGallery(mover.uiScope, null)
+                activityContextChannel.notifyGallery(mover.uiScope, null)
             }
         }
 
@@ -214,9 +215,9 @@ class ActivityResultIntents(
         chooseDirectory.unregister()
     }
 
-    private fun onOpenDocument(data: Uri?, engineBindings: EngineBindings) {
+    private fun onOpenDocument(data: Uri?, activityContextChannel: ActivityContextChannel) {
         try {
-            engineBindings.callback?.invoke(data.run {
+            activityContextChannel.callback?.invoke(data.run {
                 if (this == null) {
                     null
                 } else {
@@ -230,9 +231,9 @@ class ActivityResultIntents(
             Log.e("pick directory", e.toString())
         }
 
-        engineBindings.callback = null
-        if (engineBindings.callbackMux.isLocked) {
-            engineBindings.callbackMux.unlock()
+        activityContextChannel.callback = null
+        if (activityContextChannel.callbackMux.isLocked) {
+            activityContextChannel.callbackMux.unlock()
         }
     }
 }

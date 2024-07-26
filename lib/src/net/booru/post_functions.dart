@@ -12,9 +12,7 @@ import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/gallery/files.dart";
-import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
@@ -149,139 +147,294 @@ class _PostInfoState extends State<PostInfo> {
 
     return SliverMainAxisGroup(
       slivers: [
-        TagsRibbon(
-          selectTag: (str) {
-            HapticFeedback.mediumImpact();
+        SliverPadding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          sliver: TagsRibbon(
+            selectTag: (str) {
+              HapticFeedback.mediumImpact();
 
-            Navigator.pop(context);
+              // radioDialog<SafeMode>(
+              //   context,
+              //   SafeMode.values.map(
+              //     (e) => (e, e.translatedString(l10n)),
+              //   ),
+              //   settings.safeMode,
+              //   (s) {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute<void>(
+              //         builder: (context) {
+              //           return BooruRestoredPage(
+              //             booru: settings.selectedBooru,
+              //             tags: str,
+              //             saveSelectedPage: (e) {},
+              //             overrideSafeMode: s ?? settings.safeMode,
+              //             db: DatabaseConnectionNotifier.of(context),
+              //           );
+              //         },
+              //       ),
+              //     );
+              //   },
+              //   title: l10n.chooseSafeMode,
+              //   allowSingle: true,
+              // );
+              _launchGrid(context, str);
+            },
+            tagManager: TagManager.of(context),
+            showPin: false,
+            items: (tag) => [
+              PopupMenuItem(
+                onTap: () {
+                  if (tagManager.excluded.exists(tag)) {
+                    tagManager.excluded.delete(tag);
+                  } else {
+                    tagManager.excluded.add(tag);
+                  }
+                },
+                child: Text(
+                  tagManager.excluded.exists(tag)
+                      ? l10n.removeFromExcluded
+                      : l10n.addToExcluded,
+                ),
+              ),
+              launchGridSafeModeItem(
+                context,
+                tag,
+                _launchGrid,
+                l10n,
+              ),
+              // if (widget.addRemoveTag)
+              //   PopupMenuItem(
+              //     onTap: () {
+              //       DatabaseConnectionNotifier.of(context)
+              //           .localTags
+              //           .removeSingle([widget.filename], tag);
+              //     },
+              //     child: Text(l10n.delete),
+              //   ),
+              PopupMenuItem(
+                onTap: () {
+                  if (tagManager.pinned.exists(tag)) {
+                    tagManager.pinned.delete(tag);
+                  } else {
+                    tagManager.pinned.add(tag);
+                  }
 
-            radioDialog<SafeMode>(
-              context,
-              SafeMode.values.map(
-                (e) => (e, e.translatedString(l10n)),
+                  ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+                },
+                child: Text(
+                  tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+                ),
               ),
-              settings.safeMode,
-              (s) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) {
-                      return BooruRestoredPage(
-                        booru: settings.selectedBooru,
-                        tags: str,
-                        saveSelectedPage: (e) {},
-                        overrideSafeMode: s ?? settings.safeMode,
-                        db: DatabaseConnectionNotifier.of(context),
-                      );
-                    },
-                  ),
-                );
-              },
-              title: l10n.chooseSafeMode,
-              allowSingle: true,
-            );
-            _launchGrid(context, str);
-          },
-          tagManager: TagManager.of(context),
-          showPin: false,
-          items: (tag) => [
-            PopupMenuItem(
-              onTap: () {
-                if (tagManager.excluded.exists(tag)) {
-                  tagManager.excluded.delete(tag);
-                } else {
-                  tagManager.excluded.add(tag);
-                }
-              },
-              child: Text(
-                tagManager.excluded.exists(tag)
-                    ? l10n.removeFromExcluded
-                    : l10n.addToExcluded,
-              ),
-            ),
-            launchGridSafeModeItem(
-              context,
-              tag,
-              _launchGrid,
-              l10n,
-            ),
-            // if (widget.addRemoveTag)
-            //   PopupMenuItem(
-            //     onTap: () {
-            //       DatabaseConnectionNotifier.of(context)
-            //           .localTags
-            //           .removeSingle([widget.filename], tag);
-            //     },
-            //     child: Text(l10n.delete),
-            //   ),
-            PopupMenuItem(
-              onTap: () {
-                if (tagManager.pinned.exists(tag)) {
-                  tagManager.pinned.delete(tag);
-                } else {
-                  tagManager.pinned.add(tag);
-                }
-
-                ImageViewInfoTilesRefreshNotifier.refreshOf(context);
-              },
-              child: Text(
-                tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         SliverList.list(
           children: [
-            MenuWrapper(
-              title: post.fileDownloadUrl(),
-              child: ListTile(
-                title: Text(l10n.urlInfoPage),
-                subtitle: Text(post.fileDownloadUrl()),
-                onTap: () => launchUrl(
-                  Uri.parse(post.fileDownloadUrl()),
-                  mode: LaunchMode.externalApplication,
-                ),
+            // MenuWrapper(
+            //   title: post.fileDownloadUrl(),
+            //   child: ListTile(
+            //     title: Text(l10n.urlInfoPage),
+            //     subtitle: Text(post.fileDownloadUrl()),
+            // onTap: () => launchUrl(
+            //   Uri.parse(post.fileDownloadUrl()),
+            //   mode: LaunchMode.externalApplication,
+            // ),
+            //   ),
+            // ),
+            // ListTile(
+            //   title: Text(l10n.widthInfoPage),
+            //   subtitle: Text(l10n.pixels(post.width)),
+            // ),
+            DimensionsRow(
+              l10n: l10n,
+              width: post.width,
+              height: post.height,
+              createdAt: post.createdAt,
+            ),
+            // ListTile(
+            //   title: Text(l10n.heightInfoPage),
+            //   subtitle: Text(l10n.pixels(post.height)),
+            // ),
+            // ListTile(
+            //   title: Text(l10n.createdAtInfoPage),
+            //   subtitle: Text(l10n.date(post.createdAt)),
+            // ),
+
+            // MenuWrapper(
+            //   title: post.sourceUrl,
+            //   child: ListTile(
+            //     title: Text(l10n.sourceFileInfoPage),
+            //     subtitle: Text(post.sourceUrl),
+            // onTap: post.sourceUrl.isNotEmpty &&
+            //         Uri.tryParse(post.sourceUrl) != null
+            //     ? () => launchUrl(
+            //           Uri.parse(post.sourceUrl),
+            //           mode: LaunchMode.externalApplication,
+            //         )
+            //     : null,
+            //   ),
+            // ),
+            ListTile(
+              title: Center(
+                child: Text(l10n.ratingInfoPage),
+              ),
+              subtitle: Center(
+                child: Text(post.rating.translatedName(l10n)),
               ),
             ),
             ListTile(
-              title: Text(l10n.widthInfoPage),
-              subtitle: Text(l10n.pixels(post.width)),
-            ),
-            ListTile(
-              title: Text(l10n.heightInfoPage),
-              subtitle: Text(l10n.pixels(post.height)),
-            ),
-            ListTile(
-              title: Text(l10n.createdAtInfoPage),
-              subtitle: Text(l10n.date(post.createdAt)),
-            ),
-            MenuWrapper(
-              title: post.sourceUrl,
-              child: ListTile(
-                title: Text(l10n.sourceFileInfoPage),
-                subtitle: Text(post.sourceUrl),
-                onTap: post.sourceUrl.isNotEmpty &&
-                        Uri.tryParse(post.sourceUrl) != null
-                    ? () => launchUrl(
-                          Uri.parse(post.sourceUrl),
-                          mode: LaunchMode.externalApplication,
-                        )
-                    : null,
+              title: Center(
+                child: Text(l10n.scoreInfoPage),
+              ),
+              subtitle: Center(
+                child: Text(post.score.toString()),
               ),
             ),
-            ListTile(
-              title: Text(l10n.ratingInfoPage),
-              subtitle: Text(post.rating.translatedName(l10n)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Wrap(
+                runSpacing: 4,
+                alignment: WrapAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse(post.fileDownloadUrl()),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    label: Text("Link"),
+                    icon: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: post.sourceUrl.isNotEmpty &&
+                            Uri.tryParse(post.sourceUrl) != null
+                        ? () => launchUrl(
+                              Uri.parse(post.sourceUrl),
+                              mode: LaunchMode.externalApplication,
+                            )
+                        : null,
+                    label: Text("Source"),
+                    icon: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                    ),
+                  ),
+                  if (post.tags.contains("translated"))
+                    TranslationNotes.button(context, post.id, post.booru),
+                ],
+              ),
             ),
-            ListTile(
-              title: Text(l10n.scoreInfoPage),
-              subtitle: Text(post.score.toString()),
-            ),
-            if (post.tags.contains("translated"))
-              TranslationNotes.tile(context, post.id, post.booru),
           ],
         ),
       ],
+    );
+  }
+}
+
+class DimensionsRow extends StatelessWidget {
+  const DimensionsRow({
+    super.key,
+    required this.l10n,
+    required this.width,
+    required this.height,
+    required this.createdAt,
+  });
+
+  final AppLocalizations l10n;
+
+  final int width;
+  final int height;
+
+  final DateTime createdAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: SizedBox(
+        width: double.infinity,
+        height: 60,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _ColoredRectangle(
+              primaryColor: true,
+              title: l10n.createdAtInfoPage,
+              subtitle: l10n.date(createdAt),
+            ),
+            _ColoredRectangle(
+              primaryColor: false,
+              subtitle: l10n.pixels(width),
+              title: l10n.widthInfoPage,
+            ),
+            _ColoredRectangle(
+              primaryColor: false,
+              subtitle: l10n.pixels(height),
+              title: l10n.heightInfoPage,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColoredRectangle extends StatelessWidget {
+  const _ColoredRectangle({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.primaryColor,
+  });
+
+  final String title;
+  final String subtitle;
+
+  final bool primaryColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: primaryColor
+                ? theme.colorScheme.primaryContainer
+                : theme.colorScheme.secondaryContainer,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Text(
+                  subtitle,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: primaryColor
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: primaryColor
+                        ? theme.colorScheme.onPrimaryContainer.withOpacity(0.8)
+                        : theme.colorScheme.onSecondaryContainer
+                            .withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

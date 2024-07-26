@@ -29,6 +29,7 @@ class CardShell extends StatefulWidget {
     required this.viewPadding,
     required this.info,
   }) : _sliver = true;
+
   final List<Widget> info;
   final EdgeInsets viewPadding;
 

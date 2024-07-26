@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -28,7 +29,9 @@ import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.da
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
@@ -72,10 +75,14 @@ class _AnimePageState extends State<AnimePage> {
     watchCount: savedAnimeEntries.watchCount,
   );
 
+  late final sourceWatching = GenericListSource<SavedAnimeEntryData>(
+    () => Future.value(savedAnimeEntries.currentlyWatchingAll),
+    watchCount: savedAnimeEntries.watchCount,
+  );
+
   late final ChainedFilterResourceSource<int, SavedAnimeEntryData>
       filterBacklog;
 
-  // final watchingKey = GlobalKey<__WatchingTabState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
   final discoverKey = GlobalKey<_DiscoverTabState>();
   final overlayKey = GlobalKey<__MoreOverlayState>();
@@ -117,7 +124,8 @@ class _AnimePageState extends State<AnimePage> {
     }),
   );
 
-  final api = const Jikan();
+  final client = Dio();
+  late final api = Jikan(client);
 
   late final entry = DiscoverPagingEntry(api);
 
@@ -147,10 +155,13 @@ class _AnimePageState extends State<AnimePage> {
     });
 
     sourceBacklog.clearRefresh();
+    sourceWatching.clearRefresh();
   }
 
   @override
   void dispose() {
+    sourceWatching.destroy();
+    client.close();
     entry.dispose();
     searchController.dispose();
     source.destroy();
@@ -191,8 +202,8 @@ class _AnimePageState extends State<AnimePage> {
 
   @override
   Widget build(BuildContext context) {
-    // final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -245,16 +256,117 @@ class _AnimePageState extends State<AnimePage> {
             ),
           ],
         ),
-        body: ListView(
-          children: [
-            FadingPanel(
-              label: "Newest", // TODO: change
-              source: source,
-              childSize: _NewAnime.size,
-              child: _NewAnime(source: source),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: FadingPanel(
+                label: "Newest", // TODO: change
+                source: source,
+                childSize: _NewAnime.size,
+                child: _NewAnime(source: source),
+              ),
             ),
-            const Placeholder(),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  "Watching",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(
+                top: 14,
+                bottom: 18,
+                right: 18,
+                left: 18,
+              ),
+              sliver: _WatchingGrid(
+                source: sourceWatching,
+                glue: GlueProvider.generateOf(context)(),
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WatchingGrid extends StatefulWidget {
+  const _WatchingGrid({
+    super.key,
+    required this.source,
+    required this.glue,
+  });
+
+  final GenericListSource<SavedAnimeEntryData> source;
+  final SelectionGlue glue;
+
+  @override
+  State<_WatchingGrid> createState() => __WatchingGridState();
+}
+
+class __WatchingGridState extends State<_WatchingGrid> {
+  late final StreamSubscription<int> subsc;
+  final focusNode = FocusNode();
+  late final selection = GridSelection<SavedAnimeEntryData>(
+    const [],
+    widget.glue,
+    noAppBar: true,
+    source: widget.source.backingStorage,
+  );
+
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+    hideName: false,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.four,
+    layoutType: GridLayoutType.grid,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+
+    subsc = widget.source.backingStorage.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subsc.cancel();
+    focusNode.dispose();
+    gridSettings.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GridConfiguration(
+      sliver: true,
+      watch: gridSettings.watch,
+      child: GridExtrasNotifier<SavedAnimeEntryData>(
+        data: GridExtrasData(
+          selection,
+          GridFunctionality(source: widget.source, selectionGlue: widget.glue),
+          const GridDescription(
+            actions: [],
+            gridSeed: 0,
+            keybindsDescription: "",
+          ),
+          focusNode,
+        ),
+        child: CellProvider(
+          getCell: widget.source.forIdxUnsafe,
+          child: GridLayout(
+            progress: widget.source.progress,
+            source: widget.source.backingStorage,
+          ),
         ),
       ),
     );
@@ -806,6 +918,7 @@ class _MoreOverlayBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -817,7 +930,7 @@ class _MoreOverlayBody extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Backlog",
+                  l10n.backlogLabel,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.9),
                   ),
@@ -833,7 +946,7 @@ class _MoreOverlayBody extends StatelessWidget {
             child: source.isEmpty
                 ? Center(
                     child: Text(
-                      "No elements",
+                      "No elements", // TODO: change
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),

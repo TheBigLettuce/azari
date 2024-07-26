@@ -5,18 +5,21 @@
 
 import "dart:async";
 
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/gesture_dead_zones.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/image_view/body.dart";
 import "package:gallery/src/widgets/image_view/mixins/loading_builder.dart";
 import "package:gallery/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:gallery/src/widgets/image_view/mixins/palette.dart";
@@ -25,7 +28,11 @@ import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
 import "package:gallery/src/widgets/tags_list_widget.dart";
 import "package:logging/logging.dart";
+import "package:photo_view/photo_view_gallery.dart";
 import "package:wakelock_plus/wakelock_plus.dart";
+
+part "video_controls.dart";
+part "body.dart";
 
 class ImageViewStatistics {
   const ImageViewStatistics({required this.swiped, required this.viewed});
@@ -204,12 +211,17 @@ class ImageViewState extends State<ImageView>
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
+  final _k = GlobalKey();
 
   late final AnimationController animationController;
+  late final AnimationController slideAnimationLeft;
+  late final AnimationController slideAnimationRight;
   late final DraggableScrollableController bottomSheetController;
 
   final scrollController = ScrollController();
   final mainFocus = FocusNode();
+
+  final videoControls = _VideoControlsControllerImpl();
 
   late PageController controller =
       PageController(initialPage: widget.startingCell);
@@ -231,6 +243,8 @@ class ImageViewState extends State<ImageView>
 
     animationController = AnimationController(vsync: this);
     bottomSheetController = DraggableScrollableController();
+    slideAnimationLeft = AnimationController(vsync: this);
+    slideAnimationRight = AnimationController(vsync: this);
 
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
@@ -281,8 +295,12 @@ class ImageViewState extends State<ImageView>
   @override
   void dispose() {
     animationController.dispose();
+    slideAnimationLeft.dispose();
+    slideAnimationRight.dispose();
     bottomSheetController.dispose();
     _updates?.cancel();
+
+    videoControls.dispose();
 
     PlatformApi.current().setFullscreen(false);
 
@@ -399,7 +417,13 @@ class ImageViewState extends State<ImageView>
     if (currentPage + 1 != cellCount && cellCount != 1) {
       controller.nextPage(duration: 200.ms, curve: Easing.standard);
     } else {
-      widget.onRightSwitchPageEnd?.call();
+      if (widget.onRightSwitchPageEnd != null) {
+        widget.onRightSwitchPageEnd?.call();
+      } else {
+        slideAnimationRight
+            .reverse()
+            .then((e) => slideAnimationRight.forward());
+      }
     }
   }
 
@@ -407,11 +431,13 @@ class ImageViewState extends State<ImageView>
     if (currentPage != 0 && cellCount != 1) {
       controller.previousPage(duration: 200.ms, curve: Easing.standard);
     } else {
-      widget.onLeftSwitchPageEnd?.call();
+      if (widget.onLeftSwitchPageEnd != null) {
+        widget.onLeftSwitchPageEnd?.call();
+      } else {
+        slideAnimationLeft.reverse().then((e) => slideAnimationLeft.forward());
+      }
     }
   }
-
-  final _k = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -428,6 +454,7 @@ class ImageViewState extends State<ImageView>
         gridContext: widget.gridContext,
         key: wrapNotifiersKey,
         currentCell: drawCell(currentPage),
+        videoControls: videoControls,
         child: WrapImageViewTheme(
           key: wrapThemeKey,
           currentPalette: currentPalette,
@@ -438,33 +465,180 @@ class ImageViewState extends State<ImageView>
             controller: animationController,
             next: _onPressedRight,
             prev: _onPressedLeft,
-            child: ImageViewBody(
-              key: _k,
-              onPressedLeft: drawCell(currentPage, true) is NetVideo ||
-                      drawCell(currentPage, true) is AndroidVideo
-                  ? null
-                  : _onPressedLeft,
-              onPressedRight: _onPressedRight,
-              onPageChanged: _onPageChanged,
-              onLongPress: _onLongPress,
-              pageController: controller,
-              loadingBuilder: widget.ignoreLoadingBuilder
-                  ? null
-                  : (context, event, idx) => loadingBuilder(
-                        context,
-                        event,
-                        idx,
-                        currentPage,
-                        wrapNotifiersKey,
-                        drawCell,
-                      ),
-              itemCount: cellCount,
-              onTap: _onTap,
-              builder: galleryBuilder,
+            child: Animate(
+              controller: slideAnimationLeft,
+              autoPlay: false,
+              value: 1,
+              effects: const [
+                SlideEffect(
+                  delay: Durations.short1,
+                  duration: Durations.medium1,
+                  curve: Easing.emphasizedAccelerate,
+                  begin: Offset(0.1, 0),
+                  end: Offset.zero,
+                )
+              ],
+              child: Animate(
+                controller: slideAnimationRight,
+                autoPlay: false,
+                value: 1,
+                effects: const [
+                  SlideEffect(
+                    delay: Durations.short1,
+                    duration: Durations.medium1,
+                    curve: Easing.emphasizedAccelerate,
+                    begin: Offset(-0.1, 0),
+                    end: Offset.zero,
+                  ),
+                ],
+                child: ImageViewBody(
+                  videoControls: videoControls,
+                  key: _k,
+                  onPressedLeft: _onPressedLeft,
+                  onPressedRight: _onPressedRight,
+                  onPageChanged: _onPageChanged,
+                  onLongPress: _onLongPress,
+                  pageController: controller,
+                  loadingBuilder: widget.ignoreLoadingBuilder
+                      ? null
+                      : (context, event, idx) => loadingBuilder(
+                            context,
+                            event,
+                            idx,
+                            currentPage,
+                            wrapNotifiersKey,
+                            drawCell,
+                          ),
+                  itemCount: cellCount,
+                  onTap: _onTap,
+                  builder: galleryBuilder,
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+}
+
+sealed class VideoControlsEvent {
+  const VideoControlsEvent();
+}
+
+class VolumeButton implements VideoControlsEvent {
+  const VolumeButton();
+}
+
+class FullscreenButton implements VideoControlsEvent {
+  const FullscreenButton();
+}
+
+class PlayButton implements VideoControlsEvent {
+  const PlayButton();
+}
+
+class LoopingButton implements VideoControlsEvent {
+  const LoopingButton();
+}
+
+class AddDuration implements VideoControlsEvent {
+  const AddDuration(this.durationSeconds);
+
+  final double durationSeconds;
+}
+
+abstract class VideoControlsController {
+  void setDuration(Duration d);
+  void setProgress(Duration p);
+  void setPlayState(PlayState p);
+
+  void clear();
+
+  Stream<VideoControlsEvent> get events;
+}
+
+@immutable
+sealed class PlayerUpdate {
+  const PlayerUpdate();
+}
+
+class DurationUpdate extends PlayerUpdate {
+  const DurationUpdate(this.duration);
+
+  final Duration duration;
+}
+
+class ProgressUpdate extends PlayerUpdate {
+  const ProgressUpdate(this.progress);
+
+  final Duration progress;
+}
+
+class PlayStateUpdate extends PlayerUpdate {
+  const PlayStateUpdate(this.playState);
+
+  final PlayState playState;
+}
+
+class ClearUpdate extends PlayerUpdate {
+  const ClearUpdate();
+}
+
+enum PlayState {
+  isPlaying,
+  buffering,
+  stopped;
+}
+
+class _VideoControlsControllerImpl implements VideoControlsController {
+  _VideoControlsControllerImpl();
+
+  final _events = StreamController<VideoControlsEvent>.broadcast();
+  final _playerEvents = StreamController<PlayerUpdate>.broadcast();
+
+  Duration? duration;
+  Duration? progress;
+  PlayState? playState;
+
+  @override
+  Stream<VideoControlsEvent> get events => _events.stream;
+
+  void dispose() {
+    _events.close();
+    _playerEvents.close();
+  }
+
+  @override
+  void clear() {
+    duration = null;
+    progress = null;
+    playState = null;
+
+    _playerEvents.add(const ClearUpdate());
+  }
+
+  @override
+  void setDuration(Duration d) {
+    if (d != duration) {
+      duration = d;
+      _playerEvents.add(DurationUpdate(d));
+    }
+  }
+
+  @override
+  void setPlayState(PlayState p) {
+    if (p != playState) {
+      playState = p;
+      _playerEvents.add(PlayStateUpdate(p));
+    }
+  }
+
+  @override
+  void setProgress(Duration p) {
+    if (p != progress) {
+      progress = p;
+      _playerEvents.add(ProgressUpdate(p));
+    }
   }
 }

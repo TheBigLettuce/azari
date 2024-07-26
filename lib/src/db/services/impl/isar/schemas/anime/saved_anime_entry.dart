@@ -67,8 +67,12 @@ class IsarAnimeRelation implements $AnimeRelation {
 
 @collection
 class IsarSavedAnimeEntry extends AnimeEntryDataImpl
+    with DefaultSavedAnimeEntryPressable
     implements $SavedAnimeEntryData {
   const IsarSavedAnimeEntry({
+    required this.imageUrl,
+    required this.airedFrom,
+    required this.airedTo,
     required this.isarId,
     required this.inBacklog,
     required this.relations,
@@ -81,7 +85,6 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.titleEnglish,
     required this.score,
     required this.synopsis,
-    required this.year,
     required this.id,
     required this.siteUrl,
     required this.isAiring,
@@ -93,9 +96,11 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.staff,
   });
 
-  const IsarSavedAnimeEntry.noId({
+  const IsarSavedAnimeEntry.noIdList({
+    required this.imageUrl,
+    required this.airedFrom,
+    required this.airedTo,
     required this.inBacklog,
-    required List<AnimeRelation> relations,
     required this.explicit,
     required this.type,
     required this.site,
@@ -105,7 +110,6 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.titleEnglish,
     required this.score,
     required this.synopsis,
-    required this.year,
     required this.id,
     required this.siteUrl,
     required this.isAiring,
@@ -113,12 +117,10 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.background,
     required this.trailerUrl,
     required this.episodes,
-    required List<AnimeGenre> genres,
-    required List<AnimeRelation> staff,
   })  : isarId = null,
-        staff = staff as List<IsarAnimeRelation>,
-        genres = genres as List<IsarAnimeGenre>,
-        relations = relations as List<IsarAnimeRelation>;
+        staff = const [],
+        genres = const [],
+        relations = const [];
 
   final Id? isarId;
 
@@ -187,7 +189,13 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
   final String type;
 
   @override
-  final int year;
+  final DateTime? airedFrom;
+
+  @override
+  final DateTime? airedTo;
+
+  @override
+  final String imageUrl;
 
   @override
   IsarSavedAnimeEntry copySuper(
@@ -196,6 +204,7 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
   ]) {
     return IsarSavedAnimeEntry(
       isarId: isarId,
+      imageUrl: e.imageUrl,
       id: e.id,
       type: e.type,
       inBacklog: inBacklog,
@@ -203,21 +212,29 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
       explicit: e.explicit,
       thumbUrl: e.thumbUrl,
       title: e.title,
-      staff: e.staff as List<IsarAnimeRelation>,
+      relations: ignoreRelations
+          ? relations
+          : (e.relations is List<IsarAnimeRelation>
+              ? e.relations as List<IsarAnimeRelation>
+              : e.relations.cast()),
+      staff: (e.staff is List<IsarAnimeRelation>
+          ? e.staff as List<IsarAnimeRelation>
+          : e.staff.cast()),
+      genres: (e.genres is List<IsarAnimeGenre>
+          ? e.genres as List<IsarAnimeGenre>
+          : e.genres.cast()),
       titleJapanese: e.titleJapanese,
       titleEnglish: e.titleEnglish,
       score: e.score,
-      relations:
-          ignoreRelations ? relations : e.relations as List<IsarAnimeRelation>,
       synopsis: e.synopsis,
-      year: e.year,
       siteUrl: e.siteUrl,
       isAiring: e.isAiring,
       titleSynonyms: e.titleSynonyms,
-      genres: e.genres as List<IsarAnimeGenre>,
       background: e.background,
       trailerUrl: e.trailerUrl,
       episodes: e.episodes,
+      airedFrom: e.airedFrom,
+      airedTo: e.airedTo,
     );
   }
 
@@ -228,6 +245,7 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     int? episodes,
     String? trailerUrl,
     String? siteUrl,
+    String? imageUrl,
     String? title,
     String? titleJapanese,
     String? titleEnglish,
@@ -237,37 +255,45 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     List<String>? titleSynonyms,
     List<AnimeRelation>? relations,
     bool? isAiring,
-    int? year,
     double? score,
     String? thumbUrl,
     String? synopsis,
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
   }) {
     return IsarSavedAnimeEntry(
       isarId: isarId,
+      imageUrl: imageUrl ?? this.imageUrl,
       id: id ?? this.id,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,
-      relations: relations as List<IsarAnimeRelation>? ?? this.relations,
+      relations: (relations is List<IsarAnimeRelation>
+              ? relations
+              : relations?.cast()) ??
+          this.relations,
+      staff: (staff is List<IsarAnimeRelation> ? staff : staff?.cast()) ??
+          this.staff,
+      genres: (genres is List<IsarAnimeGenre> ? genres : genres?.cast()) ??
+          this.genres,
       background: background ?? this.background,
       inBacklog: inBacklog ?? this.inBacklog,
       site: site ?? this.site,
-      staff: staff as List<IsarAnimeRelation>? ?? this.staff,
       thumbUrl: thumbUrl ?? this.thumbUrl,
       title: title ?? this.title,
       titleJapanese: titleJapanese ?? this.titleJapanese,
       titleEnglish: titleEnglish ?? this.titleEnglish,
       score: score ?? this.score,
       synopsis: synopsis ?? this.synopsis,
-      year: year ?? this.year,
       siteUrl: siteUrl ?? this.siteUrl,
       isAiring: isAiring ?? this.isAiring,
       titleSynonyms: titleSynonyms ?? this.titleSynonyms,
-      genres: genres as List<IsarAnimeGenre>? ?? this.genres,
       trailerUrl: trailerUrl ?? this.trailerUrl,
       episodes: episodes ?? this.episodes,
+      airedFrom: airedFrom ?? this.airedFrom,
+      airedTo: airedTo ?? this.airedTo,
     );
   }
 }

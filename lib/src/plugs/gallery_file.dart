@@ -25,24 +25,19 @@ mixin GalleryFile
   String alias(bool isList) => name;
 
   @override
-  List<Widget> appBarButtons(BuildContext context) {
+  List<NavigationAction> appBarButtons(BuildContext context) {
     final res = DisassembleResult.fromFilename(name).maybeValue();
 
     return [
       if (res != null)
-        IconButton(
-          onPressed: () {
-            launchUrl(
-              res.booru.browserLink(res.id),
-              mode: LaunchMode.externalApplication,
-            );
-          },
-          icon: const Icon(Icons.public),
-        ),
-      IconButton(
-        onPressed: () => PlatformApi.current().shareMedia(originalUri),
-        icon: const Icon(Icons.share),
-      ),
+        NavigationAction(Icons.public, () {
+          launchUrl(
+            res.booru.browserLink(res.id),
+            mode: LaunchMode.externalApplication,
+          );
+        }),
+      NavigationAction(
+          Icons.share, () => PlatformApi.current().shareMedia(originalUri)),
     ];
   }
 
@@ -351,92 +346,95 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
 
     return SliverMainAxisGroup(
       slivers: [
-        TagsRibbon(
-          emptyWidget: res == null
-              ? const SliverPadding(padding: EdgeInsets.zero)
-              : LoadTags(
-                  filename: filename,
-                  res: res,
-                ),
-          selectTag: (str) {
-            HapticFeedback.mediumImpact();
-
-            Navigator.pop(context);
-
-            radioDialog<SafeMode>(
-              context,
-              SafeMode.values.map(
-                (e) => (e, e.translatedString(l10n)),
-              ),
-              settings.safeMode,
-              (s) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) {
-                      return BooruRestoredPage(
-                        booru: settings.selectedBooru,
-                        tags: str,
-                        saveSelectedPage: (e) {},
-                        overrideSafeMode: s ?? settings.safeMode,
-                        db: DatabaseConnectionNotifier.of(context),
-                      );
-                    },
+        SliverPadding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          sliver: TagsRibbon(
+            emptyWidget: res == null
+                ? const SliverPadding(padding: EdgeInsets.zero)
+                : LoadTags(
+                    filename: filename,
+                    res: res,
                   ),
-                );
-              },
-              title: l10n.chooseSafeMode,
-              allowSingle: true,
-            );
-            _launchGrid(context, str);
-          },
-          tagManager: TagManager.of(context),
-          showPin: false,
-          items: (tag) => [
-            PopupMenuItem(
-              onTap: () {
-                if (tagManager.excluded.exists(tag)) {
-                  tagManager.excluded.delete(tag);
-                } else {
-                  tagManager.excluded.add(tag);
-                }
-              },
-              child: Text(
-                tagManager.excluded.exists(tag)
-                    ? l10n.removeFromExcluded
-                    : l10n.addToExcluded,
-              ),
-            ),
-            launchGridSafeModeItem(
-              context,
-              tag,
-              _launchGrid,
-              l10n,
-            ),
-            // if (widget.addRemoveTag)
-            //   PopupMenuItem(
-            //     onTap: () {
-            //       DatabaseConnectionNotifier.of(context)
-            //           .localTags
-            //           .removeSingle([widget.filename], tag);
-            //     },
-            //     child: Text(l10n.delete),
-            //   ),
-            PopupMenuItem(
-              onTap: () {
-                if (tagManager.pinned.exists(tag)) {
-                  tagManager.pinned.delete(tag);
-                } else {
-                  tagManager.pinned.add(tag);
-                }
+            selectTag: (str) {
+              HapticFeedback.mediumImpact();
 
-                ImageViewInfoTilesRefreshNotifier.refreshOf(context);
-              },
-              child: Text(
-                tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+              Navigator.pop(context);
+
+              radioDialog<SafeMode>(
+                context,
+                SafeMode.values.map(
+                  (e) => (e, e.translatedString(l10n)),
+                ),
+                settings.safeMode,
+                (s) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) {
+                        return BooruRestoredPage(
+                          booru: settings.selectedBooru,
+                          tags: str,
+                          saveSelectedPage: (e) {},
+                          overrideSafeMode: s ?? settings.safeMode,
+                          db: DatabaseConnectionNotifier.of(context),
+                        );
+                      },
+                    ),
+                  );
+                },
+                title: l10n.chooseSafeMode,
+                allowSingle: true,
+              );
+              _launchGrid(context, str);
+            },
+            tagManager: TagManager.of(context),
+            showPin: false,
+            items: (tag) => [
+              PopupMenuItem(
+                onTap: () {
+                  if (tagManager.excluded.exists(tag)) {
+                    tagManager.excluded.delete(tag);
+                  } else {
+                    tagManager.excluded.add(tag);
+                  }
+                },
+                child: Text(
+                  tagManager.excluded.exists(tag)
+                      ? l10n.removeFromExcluded
+                      : l10n.addToExcluded,
+                ),
               ),
-            ),
-          ],
+              launchGridSafeModeItem(
+                context,
+                tag,
+                _launchGrid,
+                l10n,
+              ),
+              // if (widget.addRemoveTag)
+              //   PopupMenuItem(
+              //     onTap: () {
+              //       DatabaseConnectionNotifier.of(context)
+              //           .localTags
+              //           .removeSingle([widget.filename], tag);
+              //     },
+              //     child: Text(l10n.delete),
+              //   ),
+              PopupMenuItem(
+                onTap: () {
+                  if (tagManager.pinned.exists(tag)) {
+                    tagManager.pinned.delete(tag);
+                  } else {
+                    tagManager.pinned.add(tag);
+                  }
+
+                  ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+                },
+                child: Text(
+                  tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+                ),
+              ),
+            ],
+          ),
         ),
         // SliverPadding(
         //   padding: const EdgeInsets.only(left: 16),
@@ -460,79 +458,110 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
             MenuWrapper(
               title: filename,
               child: addInfoTile(
-                title: l10n.nameTitle,
-                subtitle: filename,
-                trailing: plug.temporary
+                title: filename,
+                subtitle: null,
+                onPressed: plug.temporary
                     ? null
-                    : IconButton(
-                        onPressed: () {
-                          Navigator.push<void>(
-                            context,
-                            DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(l10n.enterNewNameTitle),
-                                  content: TextFormField(
-                                    autofocus: true,
-                                    initialValue: filename,
-                                    autovalidateMode: AutovalidateMode.always,
-                                    decoration: const InputDecoration(
-                                      errorMaxLines: 2,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null) {
-                                        return l10n.valueIsNull;
-                                      }
-
-                                      final res =
-                                          DisassembleResult.fromFilename(
-                                        value,
-                                      );
-                                      if (res.hasError) {
-                                        return res.asError(l10n);
-                                      }
-
-                                      return null;
-                                    },
-                                    onFieldSubmitted: (value) {
-                                      GalleryManagementApi.current()
-                                          .files
-                                          .rename(file.originalUri, value);
-
-                                      Navigator.pop(context);
-                                    },
+                    : () {
+                        Navigator.push<void>(
+                          context,
+                          DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(l10n.enterNewNameTitle),
+                                content: TextFormField(
+                                  autofocus: true,
+                                  initialValue: filename,
+                                  autovalidateMode: AutovalidateMode.always,
+                                  decoration: const InputDecoration(
+                                    errorMaxLines: 2,
                                   ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.edit),
-                      ),
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return l10n.valueIsNull;
+                                    }
+
+                                    final res = DisassembleResult.fromFilename(
+                                      value,
+                                    );
+                                    if (res.hasError) {
+                                      return res.asError(l10n);
+                                    }
+
+                                    return null;
+                                  },
+                                  onFieldSubmitted: (value) {
+                                    GalleryManagementApi.current()
+                                        .files
+                                        .rename(file.originalUri, value);
+
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
               ),
             ),
-            addInfoTile(
-              title: l10n.dateModified,
-              subtitle: l10n.date(
-                DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
-              ),
+            DimensionsRow(
+              l10n: l10n,
+              width: file.width,
+              height: file.height,
+              createdAt:
+                  DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
             ),
-            addInfoTile(
-              title: l10n.widthInfoPage,
-              subtitle: l10n.pixels(file.width),
-            ),
-            addInfoTile(
-              title: l10n.heightInfoPage,
-              subtitle: l10n.pixels(file.height),
-            ),
+            // addInfoTile(
+            //   title: l10n.dateModified,
+            //   subtitle: l10n.date(
+            // DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
+            //   ),
+            // ),
+            // addInfoTile(
+            //   title: l10n.widthInfoPage,
+            //   subtitle: l10n.pixels(file.width),
+            // ),
+            // addInfoTile(
+            //   title: l10n.heightInfoPage,
+            //   subtitle: l10n.pixels(file.height),
+            // ),
             addInfoTile(
               title: l10n.sizeInfoPage,
               subtitle: kbMbSize(context, file.size),
             ),
-            if (res != null)
-              RedownloadTile(key: file.uniqueKey(), file: file, res: res),
-            if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Wrap(
+                runSpacing: 4,
+                alignment: WrapAlignment.center,
+                children: [
+                  if (res != null)
+                    RedownloadButton(
+                        key: file.uniqueKey(), file: file, res: res),
+                  if (!file.isVideo && !file.isGif)
+                    SetWallpaperButton(id: file.id),
+
+                  // TextButton.icon(
+                  //   onPressed: post.sourceUrl.isNotEmpty &&
+                  //           Uri.tryParse(post.sourceUrl) != null
+                  //       ? () => launchUrl(
+                  //             Uri.parse(post.sourceUrl),
+                  //             mode: LaunchMode.externalApplication,
+                  //           )
+                  //       : null,
+                  //   label: Text("Source"),
+                  //   icon: Icon(
+                  //     Icons.open_in_new_rounded,
+                  //     size: 18,
+                  //   ),
+                  // ),
+                  // if (post.tags.contains("translated"))
+                  //   TranslationNotes.button(context, post.id, post.booru),
+                ],
+              ),
+            ),
           ],
         ),
         //   else if (res != null) ...[
@@ -609,17 +638,17 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
   }
 }
 
-class RedownloadTile extends StatefulWidget {
-  const RedownloadTile({super.key, required this.file, required this.res});
+class RedownloadButton extends StatefulWidget {
+  const RedownloadButton({super.key, required this.file, required this.res});
 
   final GalleryFile file;
   final DisassembleResult? res;
 
   @override
-  State<RedownloadTile> createState() => _RedownloadTileState();
+  State<RedownloadButton> createState() => _RedownloadButtonState();
 }
 
-class _RedownloadTileState extends State<RedownloadTile> {
+class _RedownloadButtonState extends State<RedownloadButton> {
   ValueNotifier<Future<void>?>? notifier;
 
   @override
@@ -653,15 +682,17 @@ class _RedownloadTileState extends State<RedownloadTile> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return RawChip(
-      isEnabled: notifier != null && notifier?.value == null,
+    return TextButton.icon(
       onPressed: notifier == null || notifier?.value != null
           ? null
           : () {
               redownloadFiles(context, [widget.file]);
             },
-      avatar: const Icon(Icons.download_outlined),
       label: Text(l10n.redownloadLabel),
+      icon: Icon(
+        Icons.download_outlined,
+        size: 18,
+      ),
     );
   }
 }
@@ -673,13 +704,15 @@ extension RedownloadFilesGlobalNotifier on GlobalProgressTab {
 }
 
 Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
+  final l10n = AppLocalizations.of(context)!;
+
   final notifier = GlobalProgressTab.maybeOf(context)?.redownloadFiles();
   if (notifier == null) {
     return Future.value();
   } else if (notifier.value != null) {
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      const SnackBar(
-        content: Text("Redownloading is already in progress"), // TODO: change
+      SnackBar(
+        content: Text(l10n.redownloadInProgress),
       ),
     );
 
@@ -693,11 +726,11 @@ Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
   final apis = <Booru, BooruAPI>{};
 
   final notif = chooseNotificationPlug().newProgress(
-    "Fetching download urls", // TODO: change
+    l10n.redownloadFetchingUrls,
     redownloadFilesNotifId,
     "redownload files",
     "Redownloading files",
-    body: "Redownloading ${files.length} files",
+    body: l10n.redownloadRedowloadingFiles(files.length),
   );
 
   return notifier.value = Future(() async {
@@ -748,8 +781,8 @@ Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
   });
 }
 
-class SetWallpaperTile extends StatefulWidget {
-  const SetWallpaperTile({
+class SetWallpaperButton extends StatefulWidget {
+  const SetWallpaperButton({
     super.key,
     required this.id,
   });
@@ -757,41 +790,42 @@ class SetWallpaperTile extends StatefulWidget {
   final int id;
 
   @override
-  State<SetWallpaperTile> createState() => _SetWallpaperTileState();
+  State<SetWallpaperButton> createState() => _SetWallpaperButtonState();
 }
 
-class _SetWallpaperTileState extends State<SetWallpaperTile> {
+class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void>? _status;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Center(
-      child: RawChip(
-        avatar: const Icon(Icons.wallpaper_rounded),
-        onPressed: _status != null
-            ? null
-            : () {
-                _status = PlatformApi.current()
-                    .setWallpaper(widget.id)
-                    .onError((e, trace) {
-                  Logger.root.warning("setWallpaper", e, trace);
-                }).whenComplete(() {
-                  _status = null;
-
-                  setState(() {});
-                });
+    return TextButton.icon(
+      onPressed: _status != null
+          ? null
+          : () {
+              _status = PlatformApi.current()
+                  .setWallpaper(widget.id)
+                  .onError((e, trace) {
+                Logger.root.warning("setWallpaper", e, trace);
+              }).whenComplete(() {
+                _status = null;
 
                 setState(() {});
-              },
-        label: _status != null
-            ? const SizedBox(
-                height: 14,
-                width: 14,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Text(l10n.setAsWallpaper),
+              });
+
+              setState(() {});
+            },
+      label: _status != null
+          ? const SizedBox(
+              height: 14,
+              width: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(l10n.setAsWallpaper),
+      icon: Icon(
+        Icons.wallpaper_rounded,
+        size: 18,
       ),
     );
   }

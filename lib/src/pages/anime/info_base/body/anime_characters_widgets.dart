@@ -70,6 +70,10 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget>
 
   @override
   Widget build(BuildContext context) {
+    if (list.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

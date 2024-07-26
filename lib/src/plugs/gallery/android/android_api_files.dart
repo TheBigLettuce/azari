@@ -30,9 +30,6 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
     return false;
   }
-
-  // @override
-  // List<String> get bucketIds => directories;
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
@@ -47,7 +44,6 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
     required this.type,
     required this.parent,
     required this.target,
-    // required String bucketId,
   }) : startTime = DateTime.now().millisecondsSinceEpoch;
 
   @override
@@ -56,7 +52,6 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   @override
   final _AndroidGallery parent;
 
-  // final String _bucketId;
   final int startTime;
   final String target;
 

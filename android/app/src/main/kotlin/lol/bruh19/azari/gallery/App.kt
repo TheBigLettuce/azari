@@ -7,13 +7,14 @@ package lol.bruh19.azari.gallery
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
+import android.net.ConnectivityManager
 import android.os.StrictMode
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.dart.DartExecutor
-import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
 import lol.bruh19.azari.gallery.generated.GalleryHostApi
 import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
@@ -23,13 +24,13 @@ import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 class App : Application() {
     internal lateinit var engines: FlutterEngineGroup
     val mediaLoaderAndMover = MediaLoaderAndMover(this)
-    val engineBindings: EngineBindings by lazy {
-        val engine = makeEngine(this, "main")
+    val appContextChannel: AppContextChannel by lazy {
+        val engine = getOrMakeEngine(this, "main")
         GalleryHostApi.setUp(
             engine.dartExecutor.binaryMessenger,
             GalleryHostApiImpl(this, mediaLoaderAndMover)
         )
-        EngineBindings(engine, GalleryApi(engine.dartExecutor.binaryMessenger))
+        AppContextChannel(engine, GalleryApi(engine.dartExecutor.binaryMessenger))
     }
 
     override fun onCreate() {
@@ -45,11 +46,21 @@ class App : Application() {
         }
 
         engines = FlutterEngineGroup(this)
-        mediaLoaderAndMover.initMover(engineBindings::notifyGallery)
+        mediaLoaderAndMover.initMover(appContextChannel::notifyGallery)
+        appContextChannel.attach(
+            this,
+            mediaLoaderAndMover,
+            getSystemService(ConnectivityManager::class.java)
+        )
     }
 }
 
-fun makeEngine(app: App, entrypoint: String): FlutterEngine {
+fun getOrMakeEngine(app: App, entrypoint: String): FlutterEngine {
+    val flutterCache = FlutterEngineCache.getInstance()
+    if (flutterCache.contains(entrypoint)) {
+        return flutterCache[entrypoint]!!
+    }
+
     val dartEntrypoint =
         DartExecutor.DartEntrypoint(
             FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
@@ -59,7 +70,7 @@ fun makeEngine(app: App, entrypoint: String): FlutterEngine {
         "imageview",
         NativeViewFactory(GalleryApi(engine.dartExecutor.binaryMessenger))
     )
-    FlutterEngineCache.getInstance().put(entrypoint, engine)
+    flutterCache.put(entrypoint, engine)
 
     return engine
 }

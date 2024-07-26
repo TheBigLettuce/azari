@@ -396,6 +396,7 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
 
     for (final e in entries) {
       _val[(e.id, e.site)] = $WatchedAnimeEntryData(
+        imageUrl: e.imageUrl,
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -407,7 +408,6 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
         titleEnglish: e.titleEnglish,
         score: e.score,
         synopsis: e.synopsis,
-        year: e.year,
         id: e.id,
         siteUrl: e.siteUrl,
         isAiring: e.isAiring,
@@ -417,6 +417,8 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
         background: e.background,
         explicit: e.explicit,
         date: DateTime.now(),
+        airedFrom: e.airedTo,
+        airedTo: e.airedFrom,
       );
     }
 
@@ -447,6 +449,7 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
       _val[(e.id, e.site)] = n.copySuper(e);
     } else {
       _val[(e.id, e.site)] = $WatchedAnimeEntryData(
+        imageUrl: e.imageUrl,
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -458,7 +461,6 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
         titleEnglish: e.titleEnglish,
         score: e.score,
         synopsis: e.synopsis,
-        year: e.year,
         id: e.id,
         siteUrl: e.siteUrl,
         isAiring: e.isAiring,
@@ -468,6 +470,8 @@ class MemoryWatchedAnimeEntryService implements WatchedAnimeEntryService {
         background: e.background,
         explicit: e.explicit,
         date: DateTime.now(),
+        airedFrom: e.airedFrom,
+        airedTo: e.airedTo,
       );
     }
     _events.add((e.id, e.site));
@@ -572,6 +576,7 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
     final n = entries.where((e) => !watchedAnime.watched(e.id, e.site));
     for (final e in n) {
       _val[(e.id, e.site)] = $SavedAnimeEntryData(
+        imageUrl: e.imageUrl,
         genres: e.genres,
         relations: e.relations,
         staff: e.staff,
@@ -584,7 +589,6 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
         titleEnglish: e.titleEnglish,
         score: e.score,
         synopsis: e.synopsis,
-        year: e.year,
         id: e.id,
         siteUrl: e.siteUrl,
         isAiring: e.isAiring,
@@ -593,6 +597,8 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
         episodes: e.episodes,
         background: e.background,
         explicit: e.explicit,
+        airedFrom: e.airedFrom,
+        airedTo: e.airedTo,
       );
     }
 
@@ -656,6 +662,7 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
     final n = _val[(e.id, e.site)];
     _val[(e.id, e.site)] = n?.copySuper(e) ??
         $SavedAnimeEntryData(
+          imageUrl: e.imageUrl,
           genres: e.genres,
           relations: e.relations,
           staff: e.staff,
@@ -668,7 +675,6 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
           titleEnglish: e.titleEnglish,
           score: e.score,
           synopsis: e.synopsis,
-          year: e.year,
           id: e.id,
           siteUrl: e.siteUrl,
           isAiring: e.isAiring,
@@ -677,6 +683,8 @@ class MemorySavedAnimeEntriesService implements SavedAnimeEntriesService {
           episodes: e.episodes,
           background: e.background,
           explicit: e.explicit,
+          airedFrom: e.airedFrom,
+          airedTo: e.airedTo,
         );
     _events.add((e.id, e.site));
 
@@ -1152,6 +1160,12 @@ class MemoryFavoriteFileService implements FavoriteFileService {
   @override
   Stream<bool> streamSingle(int id, [bool fire = false]) {
     // TODO: implement streamSingle
+    throw UnimplementedError();
+  }
+
+  @override
+  List<int> getAllIds(List<int> ids) {
+    // TODO: implement getAllIds
     throw UnimplementedError();
   }
 }

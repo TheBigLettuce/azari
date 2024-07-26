@@ -16,6 +16,7 @@ import "package:gallery/src/net/booru/booru.dart";
 import "package:gallery/src/net/booru/post_functions.dart";
 import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -53,23 +54,38 @@ abstract class PostImpl
   Widget info(BuildContext context) => PostInfo(post: this);
 
   @override
-  List<Widget> appBarButtons(BuildContext context) {
+  List<NavigationAction> appBarButtons(BuildContext context) {
     return [
-      OpenInBrowserButton(
-        Uri.base,
-        overrideOnPressed: () {
+      NavigationAction(
+        Icons.public,
+        () {
           launchUrl(
             booru.browserLink(id),
             mode: LaunchMode.externalApplication,
           );
         },
       ),
-      ShareButton(
-        fileUrl,
-        onLongPress: () {
-          showQr(context, booru.prefix, id);
+      NavigationAction(
+        Icons.share,
+        () {
+          PlatformApi.current().shareMedia(fileUrl, url: true);
         },
       ),
+      // OpenInBrowserButton(
+      //   Uri.base,
+      //   overrideOnPressed: () {
+      //     launchUrl(
+      //       booru.browserLink(id),
+      //       mode: LaunchMode.externalApplication,
+      //     );
+      //   },
+      // ),
+      // ShareButton(
+      //   fileUrl,
+      //   onLongPress: () {
+      //     showQr(context, booru.prefix, id);
+      //   },
+      // ),
     ];
   }
 

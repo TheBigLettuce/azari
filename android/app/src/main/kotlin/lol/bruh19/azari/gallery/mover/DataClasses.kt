@@ -16,6 +16,7 @@ typealias SendMedia = suspend (
     dir: String,
     time: Long,
     content: List<DirectoryFile>,
+    notFound: List<Long>,
     empty: Boolean,
     inRefresh: Boolean
 ) -> Unit

@@ -34,7 +34,7 @@ class GestureDeadZones extends StatelessWidget {
     return Stack(
       children: [
         child,
-        if (left || onPressedLeft != null)
+        if (onPressedLeft != null)
           Align(
             alignment: Alignment.bottomLeft,
             child: Padding(
@@ -42,27 +42,35 @@ class GestureDeadZones extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
-                  if (left)
-                    AbsorbPointer(
-                      child: SizedBox(
-                        width: systemInsets.left,
-                        child: Container(),
-                      ),
+                  AbsorbPointer(
+                    child: SizedBox(
+                      width: 86,
+                      child: Container(),
                     ),
-                  if (onPressedLeft != null)
-                    SizedBox(
-                      width: MediaQuery.sizeOf(context).width * 0.18,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: onPressedLeft,
-                        child: const SizedBox.expand(),
-                      ),
+                  ),
+                  SizedBox(
+                    width: 86,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: onPressedLeft,
+                      child: const SizedBox.expand(),
                     ),
+                  ),
                 ],
               ),
             ),
+          )
+        else
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: AbsorbPointer(
+              child: SizedBox(
+                height: systemInsets.left,
+                child: Container(),
+              ),
+            ),
           ),
-        if (right || onPressedRight != null)
+        if (onPressedRight != null)
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
@@ -70,23 +78,31 @@ class GestureDeadZones extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.centerRight,
                 children: [
-                  if (right)
-                    AbsorbPointer(
-                      child: SizedBox(
-                        width: systemInsets.right,
-                        child: Container(),
-                      ),
+                  AbsorbPointer(
+                    child: SizedBox(
+                      width: 86,
+                      child: Container(),
                     ),
-                  if (onPressedRight != null)
-                    SizedBox(
-                      width: MediaQuery.sizeOf(context).width * 0.18,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: onPressedRight,
-                        child: const SizedBox.expand(),
-                      ),
+                  ),
+                  SizedBox(
+                    width: 86,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: onPressedRight,
+                      child: const SizedBox.expand(),
                     ),
+                  ),
                 ],
+              ),
+            ),
+          )
+        else
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: AbsorbPointer(
+              child: SizedBox(
+                height: systemInsets.right,
+                child: Container(),
               ),
             ),
           ),

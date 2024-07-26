@@ -5,33 +5,45 @@
 
 package lol.bruh19.azari.gallery
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
-import lol.bruh19.azari.gallery.enginebindings.EngineBindings
+import lol.bruh19.azari.gallery.enginebindings.ActivityContextChannel
+import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
 import lol.bruh19.azari.gallery.generated.GalleryHostApi
 import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class PickFileActivity : FlutterFragmentActivity() {
-    private val engineBindings: EngineBindings by lazy {
+    private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = makeEngine(app, "mainPickfile")
+        val engine = getOrMakeEngine(app, "mainPickfile")
 
-        EngineBindings(
+        AppContextChannel(
             engine, GalleryApi(engine.dartExecutor.binaryMessenger),
         )
+    }
+
+    private val activityContextChannel: ActivityContextChannel by lazy {
+        val engine = FlutterEngineCache.getInstance()["mainPickfile"]!!
+
+        ActivityContextChannel(engine.dartExecutor, GalleryApi(engine.dartExecutor.binaryMessenger))
     }
 
     private val intents: ActivityResultIntents by lazy {
         ActivityResultIntents(
             this,
-            { engineBindings },
+            { activityContextChannel },
             { mediaLoaderAndMover },
         )
     }
@@ -44,29 +56,41 @@ class PickFileActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
 
         GalleryHostApi.setUp(
-            engineBindings.engine.dartExecutor.binaryMessenger,
+            appContextChannel.engine.dartExecutor.binaryMessenger,
             GalleryHostApiImpl(this, mediaLoaderAndMover),
         )
 
-        engineBindings.attach(
+
+        appContextChannel.attach(
             this, mediaLoaderAndMover,
             getSystemService(
                 ConnectivityManager::class.java
             ),
-            intents,
         )
+
+        activityContextChannel.attach(this, intents, mediaLoaderAndMover)
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Toast.makeText(this, "No permissions", Toast.LENGTH_SHORT).show()
+            finish()
+        }
     }
 
     override fun getCachedEngineId(): String = "mainPickfile"
-    override fun provideFlutterEngine(context: Context): FlutterEngine = engineBindings.engine
+    override fun provideFlutterEngine(context: Context): FlutterEngine = appContextChannel.engine
 
     override fun onDestroy() {
         super.onDestroy()
-        engineBindings.detach()
-        engineBindings.engine.destroy()
+        appContextChannel.detach()
+        appContextChannel.engine.destroy()
         FlutterEngineCache.getInstance().remove("mainPickfile")
         intents.unregisterAll()
-        GalleryHostApi.setUp(engineBindings.engine.dartExecutor.binaryMessenger, null)
+        GalleryHostApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        activityContextChannel.detach()
 
 //        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
     }

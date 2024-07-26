@@ -1448,5 +1448,47 @@
     "noBookmarks": "No bookmarks",
     "@noBookmarks": {
         "description": "Showed when no latest bookmarks in the booru drawer"
+    },
+    "emptyWidgetNotice": "But why?.. 🤔",
+    "@emptyWidgetNotice": {
+        "description": "Showed in empty widget as title"
+    },
+    "lastAdded": "Recents",
+    "@lastAdded": {
+        "description": "Label of the image suggestions in gallery"
+    },
+    "dismiss": "Dismiss",
+    "@dismiss": {
+        "description": "Dismiss the new posts button"
+    },
+    "hasNewPosts": "Has new posts",
+    "@hasNewPosts": {
+        "description": "Showed when there are new posts either on the main grid or restored one"
+    },
+    "fromBooru": "From {booru}",
+    "@fromBooru": {
+        "description": "Label of the load tags from booru button",
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
+    },
+    "redownloadInProgress": "Redownloading is already in progress",
+    "@redownloadInProgress": {
+        "description": "Showed when redownloading of files is in progress"
+    },
+    "redownloadFetchingUrls": "Fetching download urls",
+    "@redownloadFetchingUrls": {
+        "description": "Name in the redownloading notification"
+    },
+    "redownloadRedowloadingFiles": "Redownloading {length} files",
+    "@redownloadRedowloadingFiles": {
+        "description": "Body in the redownloading notification",
+        "placeholders": {
+            "length": {
+                "type": "int"
+            }
+        }
     }
 }

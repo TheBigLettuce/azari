@@ -18,6 +18,7 @@ abstract interface class FavoriteFileService {
   bool isFavorite(int id);
 
   List<int> getAll({required int offset, required int limit});
+  List<int> getAllIds(List<int> ids);
 
   void addAll(List<int> ids);
 

@@ -56,18 +56,21 @@ abstract interface class WatchedAnimeEntryService implements ServiceMarker {
   ]);
 }
 
-abstract class WatchedAnimeEntryData extends AnimeEntryData {
+abstract class WatchedAnimeEntryData extends AnimeEntryData
+    implements Pressable<WatchedAnimeEntryData> {
   const factory WatchedAnimeEntryData({
     required DateTime date,
+    required DateTime? airedFrom,
+    required DateTime? airedTo,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
+    required String imageUrl,
     required String title,
     required String titleJapanese,
     required String titleEnglish,
     required double score,
     required String synopsis,
-    required int year,
     required int id,
     required String siteUrl,
     required bool isAiring,
@@ -76,9 +79,6 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-    required List<AnimeRelation> relations,
-    required List<AnimeRelation> staff,
-    required List<AnimeGenre> genres,
   }) = $WatchedAnimeEntryData;
 
   DateTime get date;
@@ -94,6 +94,7 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     int? episodes,
     String? trailerUrl,
     String? siteUrl,
+    String? imageUrl,
     String? title,
     String? titleJapanese,
     String? titleEnglish,
@@ -103,7 +104,6 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     List<String>? titleSynonyms,
     List<AnimeRelation>? relations,
     bool? isAiring,
-    int? year,
     double? score,
     String? thumbUrl,
     String? synopsis,
@@ -111,5 +111,20 @@ abstract class WatchedAnimeEntryData extends AnimeEntryData {
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
   });
+}
+
+mixin DefaultWatchedAnimeEntryPressable
+    implements Pressable<WatchedAnimeEntryData>, WatchedAnimeEntryData {
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<WatchedAnimeEntryData> functionality,
+    WatchedAnimeEntryData cell,
+    int idx,
+  ) {
+    openInfoPage(context);
+  }
 }

@@ -12,7 +12,7 @@ import "package:pigeon/pigeon.dart";
     kotlinOut:
         "android/app/src/main/kotlin/lol/bruh19/azari/gallery/generated/Gallery.kt",
     kotlinOptions: KotlinOptions(
-      package: "lol.bruh19.azari.gallery",
+      package: "lol.bruh19.azari.gallery.generated",
     ),
     copyrightHeader: "pigeons/copyright.txt",
   ),
@@ -111,6 +111,7 @@ abstract class GalleryApi {
   bool updateDirectories(Map<String, Directory> d, bool inRefresh, bool empty);
   bool updatePictures(
     List<DirectoryFile?> f,
+    List<int> notFound,
     String bucketId,
     int startTime,
     bool inRefresh,

@@ -120,7 +120,7 @@ class MangaImage
       );
 
   @override
-  List<Widget> appBarButtons(BuildContext context) {
+  List<NavigationAction> appBarButtons(BuildContext context) {
     final data = MangaReaderNotifier.maybeOf(context);
 
     if (data == null) {
@@ -130,28 +130,29 @@ class MangaImage
     final db = DatabaseConnectionNotifier.of(context);
 
     return [
-      SkipChapterButton(
-        mangaTitle: data.mangaTitle,
-        key: data.prevChaterKey,
-        mangaId: data.mangaId.toString(),
-        startingChapterId: data.chapterId,
-        api: data.api,
-        reloadChapters: data.reloadChapters,
-        onNextPage: data.onNextPage,
-        direction: SkipDirection.left,
-        db: db,
-      ),
-      SkipChapterButton(
-        mangaTitle: data.mangaTitle,
-        key: data.nextChapterKey,
-        mangaId: data.mangaId.toString(),
-        startingChapterId: data.chapterId,
-        api: data.api,
-        reloadChapters: data.reloadChapters,
-        onNextPage: data.onNextPage,
-        direction: SkipDirection.right,
-        db: db,
-      ),
+      // NavigationAction()
+      // SkipChapterButton(
+      //   mangaTitle: data.mangaTitle,
+      //   key: data.prevChaterKey,
+      //   mangaId: data.mangaId.toString(),
+      //   startingChapterId: data.chapterId,
+      //   api: data.api,
+      //   reloadChapters: data.reloadChapters,
+      //   onNextPage: data.onNextPage,
+      //   direction: SkipDirection.left,
+      //   db: db,
+      // ),
+      // SkipChapterButton(
+      //   mangaTitle: data.mangaTitle,
+      //   key: data.nextChapterKey,
+      //   mangaId: data.mangaId.toString(),
+      //   startingChapterId: data.chapterId,
+      //   api: data.api,
+      //   reloadChapters: data.reloadChapters,
+      //   onNextPage: data.onNextPage,
+      //   direction: SkipDirection.right,
+      //   db: db,
+      // ),
     ];
   }
 

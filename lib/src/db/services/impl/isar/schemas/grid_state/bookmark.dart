@@ -22,14 +22,13 @@ class IsarBookmark extends GridBookmarkImpl implements $GridBookmark {
     required this.isarId,
   });
 
-  const IsarBookmark.noId({
+  const IsarBookmark.noIdList({
     required this.name,
     required this.time,
     required this.tags,
     required this.booru,
-    required List<GridBookmarkThumbnail> thumbnails,
   })  : isarId = null,
-        thumbnails = thumbnails as List<IsarGridBookmarkThumbnail>;
+        thumbnails = const [];
 
   final Id? isarId;
 

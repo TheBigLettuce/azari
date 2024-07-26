@@ -17,7 +17,7 @@ extension ContentWidgetsExt on ContentWidgets {
     return const [];
   }
 
-  List<Widget> tryAsAppBarButtonable(BuildContext context) {
+  List<NavigationAction> tryAsAppBarButtonable(BuildContext context) {
     if (this is AppBarButtonable) {
       return (this as AppBarButtonable).appBarButtons(context);
     }
@@ -61,18 +61,37 @@ sealed class Contentable {
   ContentWidgets get widgets;
 }
 
-abstract interface class ContentWidgets implements UniqueKeyable, Aliasable {}
+abstract interface class ContentWidgets implements UniqueKeyable, Aliasable {
+  const factory ContentWidgets.empty() = _EmptyContentWidgets;
+}
+
+class _EmptyContentWidgets implements ContentWidgets {
+  const _EmptyContentWidgets();
+
+  @override
+  String alias(bool long) => "";
+
+  @override
+  Key uniqueKey() => ValueKey(alias(false));
+}
 
 abstract interface class ImageViewActionable {
   List<ImageViewAction> actions(BuildContext context);
 }
 
 abstract interface class AppBarButtonable {
-  List<Widget> appBarButtons(BuildContext context);
+  List<NavigationAction> appBarButtons(BuildContext context);
 }
 
 abstract interface class Infoable {
   Widget info(BuildContext context);
+}
+
+class NavigationAction {
+  const NavigationAction(this.icon, this.onPressed);
+
+  final IconData icon;
+  final void Function() onPressed;
 }
 
 /// Displays an error page in the image view.

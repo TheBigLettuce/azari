@@ -78,7 +78,13 @@ internal class CacheLocker(private val context: Context) {
     }
 
     fun count(fromPinned: Boolean): Long {
-        return (if (fromPinned) pinnedDirectoryFile() else directoryFile()).walk().sumOf { file ->
+        val dir = if (fromPinned) pinnedDirectoryFile() else directoryFile()
+
+        if (!dir.exists() || !dir.isDirectory) {
+            return 0
+        }
+
+        return (dir).walk().sumOf { file ->
             return@sumOf file.length()
         }
     }

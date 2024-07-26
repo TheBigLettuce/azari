@@ -581,7 +581,8 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
   void unsetIsWatchingAll(List<SavedAnimeEntryData> entries) {
     db.writeTxnSync(
       () => collection.putAllBySiteIdSync(
-        (entries as List<IsarSavedAnimeEntry>)
+        entries
+            .cast<IsarSavedAnimeEntry>()
             .map((e) => e.copy(inBacklog: true))
             .toList(),
       ),
@@ -658,30 +659,34 @@ class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
               (element) => !watchedAnime.watched(element.id, element.site),
             )
             .map(
-              (e) => IsarSavedAnimeEntry(
-                isarId: null,
-                id: e.id,
-                explicit: e.explicit,
-                type: e.type,
-                inBacklog: true,
-                site: e.site,
-                staff: e.staff.cast(),
-                relations: e.relations.cast(),
-                thumbUrl: e.thumbUrl,
-                title: e.title,
-                titleJapanese: e.titleJapanese,
-                titleEnglish: e.titleEnglish,
-                score: e.score,
-                synopsis: e.synopsis,
-                year: e.year,
-                background: e.background,
-                siteUrl: e.siteUrl,
-                isAiring: e.isAiring,
-                titleSynonyms: e.titleSynonyms,
-                genres: e.genres.cast(),
-                trailerUrl: e.trailerUrl,
-                episodes: e.episodes,
-              ),
+              (e) => e is IsarSavedAnimeEntry
+                  ? e
+                  : IsarSavedAnimeEntry(
+                      isarId: null,
+                      id: e.id,
+                      explicit: e.explicit,
+                      type: e.type,
+                      inBacklog: true,
+                      site: e.site,
+                      staff: e.staff.cast(),
+                      relations: e.relations.cast(),
+                      thumbUrl: e.thumbUrl,
+                      imageUrl: e.imageUrl,
+                      title: e.title,
+                      titleJapanese: e.titleJapanese,
+                      titleEnglish: e.titleEnglish,
+                      score: e.score,
+                      synopsis: e.synopsis,
+                      background: e.background,
+                      siteUrl: e.siteUrl,
+                      isAiring: e.isAiring,
+                      titleSynonyms: e.titleSynonyms,
+                      genres: e.genres.cast(),
+                      trailerUrl: e.trailerUrl,
+                      episodes: e.episodes,
+                      airedFrom: e.airedFrom,
+                      airedTo: e.airedTo,
+                    ),
             )
             .toList(),
       ),
@@ -739,6 +744,12 @@ class IsarVideoService implements VideoSettingsService {
       () => collection.putSync(data as IsarVideoSettings),
     );
   }
+
+  @override
+  StreamSubscription<VideoSettingsData> watch(
+    void Function(VideoSettingsData p1) f,
+  ) =>
+      collection.watchLazy().map((_) => current).listen(f);
 }
 
 class IsarMiscSettingsService implements MiscSettingsService {
@@ -1043,7 +1054,8 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
                 titleEnglish: entry.titleEnglish,
                 score: entry.score,
                 synopsis: entry.synopsis,
-                year: entry.year,
+                airedFrom: entry.airedFrom,
+                airedTo: entry.airedTo,
                 id: entry.id,
                 staff: entry.staff.cast(),
                 siteUrl: entry.siteUrl,
@@ -1052,6 +1064,7 @@ class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
                 genres: entry.genres.cast(),
                 trailerUrl: entry.trailerUrl,
                 episodes: entry.episodes,
+                imageUrl: entry.imageUrl,
                 isarId: null,
               ),
             )
@@ -1616,6 +1629,13 @@ class IsarFavoriteFileService implements FavoriteFileService {
           .toList();
 
   @override
+  List<int> getAllIds(List<int> ids) => _Dbs.g.blacklisted.isarFavoriteFiles
+      .getAllSync(ids)
+      .where((e) => e != null)
+      .map((e) => e!.id)
+      .toList();
+
+  @override
   void addAll(List<int> ids) {
     _Dbs.g.blacklisted.writeTxnSync(
       () {
@@ -1777,8 +1797,8 @@ class IsarCompactMangaDataService implements CompactMangaDataService {
   @override
   void addAll(List<CompactMangaData> l) {
     _Dbs.g.anime.writeTxnSync(
-      () => _Dbs.g.anime.isarCompactMangaDatas
-          .putAllByMangaIdSiteSync(l as List<IsarCompactMangaData>),
+      () =>
+          _Dbs.g.anime.isarCompactMangaDatas.putAllByMangaIdSiteSync(l.cast()),
     );
   }
 
@@ -1835,8 +1855,7 @@ class IsarPinnedMangaService implements PinnedMangaService {
 
   @override
   void reAdd(List<PinnedManga> l) => _Dbs.g.anime.writeTxnSync(
-        () => _Dbs.g.anime.isarPinnedMangas
-            .putAllByMangaIdSiteSync(l as List<IsarPinnedManga>),
+        () => _Dbs.g.anime.isarPinnedMangas.putAllByMangaIdSiteSync(l.cast()),
       );
 
   @override
@@ -2065,8 +2084,7 @@ class IsarSavedMangaChaptersService implements SavedMangaChaptersService {
       () => _Dbs.g.anime.isarSavedMangaChapters.putByMangaIdSiteSync(
         IsarSavedMangaChapters(
           page: page,
-          chapters: (prev?.chapters ?? const []) +
-              (chapters as List<IsarMangaChapter>),
+          chapters: (prev?.chapters ?? const []) + (chapters.cast()),
           mangaId: mangaId,
           site: site,
           isarId: null,

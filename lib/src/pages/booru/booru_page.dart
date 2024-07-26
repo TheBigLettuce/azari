@@ -32,6 +32,7 @@ import "package:gallery/src/pages/home.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
@@ -270,7 +271,6 @@ class _BooruPageState extends State<BooruPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return switch (BooruSubPage.of(context)) {
       BooruSubPage.booru => GridPopScope(
@@ -342,7 +342,7 @@ class _BooruPageState extends State<BooruPage> {
                   updateScrollPosition: pagingState.setOffset,
                   registerNotifiers: (child) => OnBooruTagPressed(
                     onPressed: (context, booru, value, safeMode) {
-                      Navigator.pop(context);
+                      ExitOnPressRoute.exitOf(context);
 
                       _onBooruTagPressed(context, booru, value, safeMode);
                     },

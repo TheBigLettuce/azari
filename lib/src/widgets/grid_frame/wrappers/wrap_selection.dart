@@ -81,9 +81,26 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
             },
             onWillAcceptWithDetails: (data) => true,
             builder: (context, _, __) {
-              return Draggable(
+              if (selection.isNotEmpty) {
+                return Draggable(
+                  data: 1,
+                  affinity: Axis.horizontal,
+                  feedback: const SizedBox(),
+                  child: _WrappedSelectionCore(
+                    functionality: functionality,
+                    thisIndx: thisIndx,
+                    shape: shape,
+                    onPressed: onPressed,
+                    selectFrom: selectFrom,
+                    selection: selection,
+                    limitedSize: limitedSize,
+                    child: child,
+                  ),
+                );
+              }
+
+              return LongPressDraggable(
                 data: 1,
-                affinity: Axis.horizontal,
                 feedback: const SizedBox(),
                 child: _WrappedSelectionCore(
                   functionality: functionality,
@@ -313,37 +330,38 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
   Widget build(BuildContext context) {
     final selection = widget.selection;
 
-    return RawGestureDetector(
-      gestures: {
-        LongPressGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-                () => LongPressGestureRecognizer(
-                      debugOwner: this,
-                      postAcceptSlopTolerance: 30,
-                    ), (LongPressGestureRecognizer instance) {
-          instance
-            ..onLongPress = selection.isEmpty
-                ? widget.thisIndx.isNegative || selection.addActions.isEmpty
-                    ? null
-                    : () {
-                        selection.selectOrUnselect(context, widget.thisIndx);
-                      }
-                : () {
-                    selection.selectUnselectUntil(
-                      context,
-                      widget.thisIndx,
-                      selectFrom: widget.selectFrom,
-                    );
-                    HapticFeedback.vibrate();
-                  }
-            ..onLongPressMoveUpdate = (details) {
-              if (details.offsetFromOrigin.dy >= 18) {
-                widget.selection.selectAll(context);
-              }
-            };
-        }),
-      },
-      child: widget.child,
-    );
+    return widget.selection.isEmpty
+        ? widget.child
+        : RawGestureDetector(
+            gestures: {
+              LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                      LongPressGestureRecognizer>(
+                  () => LongPressGestureRecognizer(
+                        debugOwner: this,
+                        postAcceptSlopTolerance: 30,
+                      ), (LongPressGestureRecognizer instance) {
+                instance
+                  ..onLongPress = selection.isEmpty
+                      ? widget.thisIndx.isNegative ||
+                              selection.addActions.isEmpty
+                          ? null
+                          : null
+                      : () {
+                          selection.selectUnselectUntil(
+                            context,
+                            widget.thisIndx,
+                            selectFrom: widget.selectFrom,
+                          );
+                          HapticFeedback.vibrate();
+                        }
+                  ..onLongPressMoveUpdate = (details) {
+                    if (details.offsetFromOrigin.dy >= 18) {
+                      widget.selection.selectAll(context);
+                    }
+                  };
+              }),
+            },
+            child: widget.child,
+          );
   }
 }
