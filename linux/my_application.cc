@@ -209,7 +209,7 @@ static void my_application_dispose(GObject *object) {
   MyApplication *self = MY_APPLICATION(object);
   g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
   g_clear_object(&self->fullscreen_channel);
-  g_clear_object(&self->in_fullscreen);
+  // g_clear_object(&self->in_fullscreen);
   G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
 }
 

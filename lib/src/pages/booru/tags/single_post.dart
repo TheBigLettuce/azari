@@ -18,8 +18,6 @@ import "package:gallery/src/net/booru/post.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
-import "package:permission_handler/permission_handler.dart";
-import "package:qrscan/qrscan.dart";
 
 class SinglePost extends StatefulWidget {
   const SinglePost({
@@ -178,49 +176,49 @@ class _SinglePostState extends State<SinglePost> {
     }
   }
 
-  Future<void> _qrCode(
-    DownloadManager downloadManager,
-    PostTags postTags,
-    AppLocalizations l10n,
-  ) async {
-    final camera = await Permission.camera.request();
+  // Future<void> _qrCode(
+  //   DownloadManager downloadManager,
+  //   PostTags postTags,
+  //   AppLocalizations l10n,
+  // ) async {
+  //   final camera = await Permission.camera.request();
 
-    if (!camera.isGranted && mounted) {
-      return Navigator.push<void>(
-        context,
-        DialogRoute(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(l10n.error),
-              content: Text(l10n.cameraPermQrCodeErr),
-            );
-          },
-        ),
-      );
-    } else {
-      final value = await scan();
-      if (value == null) {
-        return;
-      }
+  //   if (!camera.isGranted && mounted) {
+  //     return Navigator.push<void>(
+  //       context,
+  //       DialogRoute(
+  //         context: context,
+  //         builder: (context) {
+  //           return AlertDialog(
+  //             title: Text(l10n.error),
+  //             content: Text(l10n.cameraPermQrCodeErr),
+  //           );
+  //         },
+  //       ),
+  //     );
+  //   } else {
+  //     final value = await scan();
+  //     if (value == null) {
+  //       return;
+  //     }
 
-      if (RegExp("^[0-9]").hasMatch(value)) {
-        controller.text = value;
-      } else {
-        try {
-          final f = value.split("_");
+  //     if (RegExp("^[0-9]").hasMatch(value)) {
+  //       controller.text = value;
+  //     } else {
+  //       try {
+  //         final f = value.split("_");
 
-          return _launch(
-            downloadManager,
-            l10n,
-            postTags,
-            Booru.fromPrefix(f[0]),
-            int.parse(f[1]),
-          );
-        } catch (_) {}
-      }
-    }
-  }
+  //         return _launch(
+  //           downloadManager,
+  //           l10n,
+  //           postTags,
+  //           Booru.fromPrefix(f[0]),
+  //           int.parse(f[1]),
+  //         );
+  //       } catch (_) {}
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -239,10 +237,10 @@ class _SinglePostState extends State<SinglePost> {
             icon: const Icon(Icons.close),
             onPressed: controller.clear,
           ),
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            onPressed: () => _qrCode(downloadManager, postTags, l10n),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.qr_code_scanner_rounded),
+          //   onPressed: () => _qrCode(downloadManager, postTags, l10n),
+          // ),
           IconButton(
             icon: const Icon(Icons.content_paste),
             onPressed: _tryClipboard,

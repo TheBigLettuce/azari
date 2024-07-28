@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require "runbuild"
+
+# Entrypoint
+class Main
+  include Build
+
+  def self.process_argv(argv)
+    raise "expecting one argument" if argv.size != 1
+
+    path = Pathname.new argv.first.strip
+    raise "argument isn't a directory" unless path.directory?
+
+    path.realpath.to_s
+  end
+end
+
+Main.new.run_all Main.process_argv ARGV

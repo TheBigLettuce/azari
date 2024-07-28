@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require "regen"
+
+# Entrypoint
+class Main
+  include Regen
+
+  def self.process_argv(argv)
+    raise "expecting two arguments" if argv.size != 2
+
+    path = Pathname.new argv.first.strip
+    raise "base dir argument isn't a directory: #{path}" unless path.directory?
+
+    isar_path = path.join(argv.last.strip)
+    raise "isar dir argument isn't a directory: #{isar_path}" unless isar_path.directory?
+
+    [path.realpath.to_s, isar_path.realpath.to_s]
+  end
+end
+
+Main.new.regen_all(*Main.process_argv(ARGV))

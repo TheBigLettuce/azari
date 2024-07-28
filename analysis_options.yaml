@@ -23,6 +23,7 @@ analyzer:
     strict-raw-types: true
 
   exclude:
+    - "isar/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "test/.test_coverage.dart"

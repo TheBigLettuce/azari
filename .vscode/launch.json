@@ -7,16 +7,24 @@
         {
             "type": "gdb",
             "request": "launch",
-            "name": "Debug baloo lib",
-            "target": "${workspaceFolder}/linux/baloo_integration/build/baloo_integration",
-            "cwd": "${fileDirname}",
+            "name": "Launch Program",
+            "target": "${workspaceFolder}/build/linux/x64/debug/bundle/gallery",
+            "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText"
         },
+        // {
+        //     "type": "gdb",
+        //     "request": "launch",
+        //     "name": "Debug baloo lib",
+        //     "target": "${workspaceFolder}/linux/baloo_integration/build/baloo_integration",
+        //     "cwd": "${fileDirname}",
+        //     "valuesFormatting": "parseText"
+        // },
         // {
         //     "name": "(gdb) Launch",
         //     "type": "cppdbg",
         //     "request": "launch",
-        //     "program": "${workspaceFolder}/linux/baloo_integration/build/baloo_integration",
+        //     "program": "${workspaceFolder}/build/linux/x64/debug/bundle/gallery",
         //     "args": [],
         //     "stopAtEntry": false,
         //     "cwd": "${fileDirname}",
