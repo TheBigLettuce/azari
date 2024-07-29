@@ -88,15 +88,16 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
     final theme = Theme.of(context);
 
     final icon = TweenAnimationBuilder(
-        tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
-        duration: Durations.medium1,
-        curve: Easing.linear,
-        builder: (context, color, _) {
-          return Icon(
-            data.$1,
-            color: color,
-          );
-        });
+      tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
+      duration: Durations.medium1,
+      curve: Easing.linear,
+      builder: (context, color, _) {
+        return Icon(
+          data.$1,
+          color: color,
+        );
+      },
+    );
 
     if (widget.iconOnly) {
       return GestureDetector(
@@ -129,8 +130,9 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
         child: IconButton(
           style: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(
-                theme.colorScheme.surfaceContainerLow.withOpacity(0.9)),
-            shape: WidgetStatePropertyAll(
+              theme.colorScheme.surfaceContainerLow.withOpacity(0.9),
+            ),
+            shape: const WidgetStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
               ),

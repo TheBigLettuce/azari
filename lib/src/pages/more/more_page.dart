@@ -51,7 +51,6 @@ class MorePage extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Center(child: _ChangingGradient(theme: theme)),
               Padding(
                 padding: EdgeInsets.only(
                   left: 24,
@@ -191,112 +190,6 @@ class MorePage extends StatelessWidget {
     };
   }
 }
-
-// class _ChangingGradient extends StatefulWidget {
-//   const _ChangingGradient({super.key, required this.theme});
-
-//   final ThemeData theme;
-
-//   @override
-//   State<_ChangingGradient> createState() => __ChangingGradientState();
-// }
-
-// class __ChangingGradientState extends State<_ChangingGradient>
-//     with SingleTickerProviderStateMixin {
-//   late final AnimationController controller;
-//   final random = math.Random();
-
-//   ThemeData get theme => widget.theme;
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     controller = AnimationController(
-//       vsync: this,
-//       duration: Duration(seconds: 6, milliseconds: 50),
-//       reverseDuration: Duration(seconds: 12, milliseconds: 100),
-//     );
-//     controller.loop(
-//       // max: 0.6,
-//       // min: 0.1,
-//       reverse: true,
-//       period: Duration(seconds: 6, milliseconds: 50),
-//     );
-//   }
-
-//   @override
-//   void dispose() {
-//     controller.dispose();
-
-//     super.dispose();
-//   }
-
-//   late final gradientFrom = LinearGradient(
-//     // tileMode: TileMode.mirror,
-//     begin: Alignment.topCenter, // Alignment.bottomRight,
-//     end: Alignment.bottomCenter, // Alignment.topLeft,
-//     // stops: [0.1, 0.2, 0.4, 0.6, 0.8],
-//     colors: [
-//       theme.colorScheme.secondary
-//           .withOpacity(0.055 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.secondary
-//           .withOpacity(0.085 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.secondary
-//           .withOpacity(0.04 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.secondary
-//           .withOpacity(0.035 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.secondary
-//           .withOpacity(0.015 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//     ],
-//   );
-
-//   late final gradientTo = LinearGradient(
-//     // tileMode: TileMode.mirror,
-//     begin: Alignment.topCenter,
-//     end: Alignment.bottomCenter,
-//     // stops: [0.1, 0.2, 0.4, 0.6, 0.8],
-//     colors: [
-//       theme.colorScheme.primary
-//           .withOpacity(0.015 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.primary
-//           .withOpacity(0.035 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.primary
-//           .withOpacity(0.04 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.primary
-//           .withOpacity(0.055 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//       theme.colorScheme.primary
-//           .withOpacity(0.085 * (theme.brightness == Brightness.dark ? 1 : 2)),
-//     ],
-//   );
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     return ListenableBuilder(
-//       listenable: controller.view,
-//       builder: (context, widget) {
-//         final transforemedValue =
-//             controller.drive(CurveTween(curve: Easing.standard)).value;
-
-//         return DecoratedBox(
-//           decoration: BoxDecoration(
-//             gradient:
-//                 Gradient.lerp(gradientFrom, gradientTo, transforemedValue),
-//           ),
-//           child: widget,
-//         );
-//       },
-//       child: Builder(
-//         builder: (context) => SizedBox(
-//           height: double.infinity,
-//           width: double.infinity,
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 class TimeSpentWidget extends StatefulWidget {
   const TimeSpentWidget({

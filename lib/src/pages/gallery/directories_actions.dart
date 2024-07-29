@@ -275,7 +275,6 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
                 autofocus: true,
                 focusNode: focus,
                 controller: controller,
-                // initialValue: widget.initalValue(widget.selected),
                 onFieldSubmitted: (value) {
                   onSubmitted();
                   widget.onSubmitted(widget.selected, value, toPin).then((e) {

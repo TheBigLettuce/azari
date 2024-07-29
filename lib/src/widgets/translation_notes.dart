@@ -38,30 +38,11 @@ class TranslationNotes extends StatefulWidget {
         );
       },
       label: Text(l10n.hasTranslations),
-      icon: Icon(
+      icon: const Icon(
         Icons.open_in_new_rounded,
         size: 18,
       ),
     );
-
-    //  ListTile(
-    //   title: Text(l10n.hasTranslations),
-    //   subtitle: Text(l10n.tapToView),
-    //   onTap: () {
-    //     Navigator.push(
-    //       context,
-    //       DialogRoute<void>(
-    //         context: context,
-    //         builder: (context) {
-    //           return TranslationNotes(
-    //             postId: postId,
-    //             booru: booru,
-    //           );
-    //         },
-    //       ),
-    //     );
-    //   },
-    // );
   }
 
   @override

@@ -27,8 +27,6 @@ void main() {
     await Isar.initializeIsarCore(download: true);
     services = IoServicesImplTable();
 
-    print("test db dir: $dir");
-
     await initalizeIsarDb(false, services, dir.path, tempDir.path);
   });
 

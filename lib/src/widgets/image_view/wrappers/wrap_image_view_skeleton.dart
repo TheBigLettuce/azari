@@ -38,18 +38,6 @@ class WrapImageViewSkeleton extends StatefulWidget {
 
   final Widget child;
 
-  // static double minPixelsFor(BuildContext context) {
-  //   final widgets = CurrentContentNotifier.of(context).widgets;
-  //   final viewPadding = MediaQuery.viewPaddingOf(context);
-
-  //   return minPixels(widgets, viewPadding);
-  // }
-
-  // static double minPixels(ContentWidgets widgets, EdgeInsets viewPadding) =>
-  //     widgets is! Infoable
-  //         ? 80 + viewPadding.bottom
-  //         : (80 + viewPadding.bottom);
-
   @override
   State<WrapImageViewSkeleton> createState() => _WrapImageViewSkeletonState();
 }
@@ -105,22 +93,6 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
         extendBody: true,
         endDrawerEnableOpenDragGesture: false,
         resizeToAvoidBottomInset: false,
-        // bottomNavigationBar:
-        //     showRail ||
-        // bottomNavigationBar:
-        //  _BottomNavigationBar(
-        //             bottomSheetController: widget.bottomSheetController,
-        //           ),
-        // appBar: showRail
-        //     ? null
-        //     : PreferredSize(
-        //         preferredSize:
-        //             const Size.fromHeight(kToolbarHeight + 4 + 18 + 8),
-        // child: ImageViewAppBar(
-        //   actions: [],
-        //   controller: widget.controller,
-        // ),
-        //       ),
         endDrawer: showRail
             ? (!showDrawer && infoWidget != null)
                 ? _Drawer(
@@ -142,21 +114,23 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                   fit: StackFit.passthrough,
                   children: [
                     widget.child,
-                    Builder(builder: (context) {
-                      final status = LoadingProgressNotifier.of(context);
+                    Builder(
+                      builder: (context) {
+                        final status = LoadingProgressNotifier.of(context);
 
-                      return status == 1
-                          ? const SizedBox.shrink()
-                          : Center(
-                              child: CircularProgressIndicator(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                backgroundColor: theme
-                                    .colorScheme.surfaceContainer
-                                    .withOpacity(0.4),
-                                value: status,
-                              ),
-                            );
-                    }),
+                        return status == 1
+                            ? const SizedBox.shrink()
+                            : Center(
+                                child: CircularProgressIndicator(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  backgroundColor: theme
+                                      .colorScheme.surfaceContainer
+                                      .withOpacity(0.4),
+                                  value: status,
+                                ),
+                              );
+                      },
+                    ),
                     Animate(
                       effects: const [
                         SlideEffect(
@@ -176,8 +150,10 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                             height: 100,
                             width: double.infinity,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 8) +
+                              padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ) +
                                   EdgeInsets.only(top: viewPadding.top),
                               child: Row(
                                 mainAxisAlignment:
@@ -186,8 +162,10 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                                 children: [
                                   BackButton(
                                     style: ButtonStyle(
-                                        backgroundColor: WidgetStatePropertyAll(
-                                            colorScheme.surface)),
+                                      backgroundColor: WidgetStatePropertyAll(
+                                        colorScheme.surface,
+                                      ),
+                                    ),
                                   ),
                                   Row(
                                     children: widgets
@@ -195,22 +173,18 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                                         .reversed
                                         .map(
                                           (e) => Padding(
-                                            padding: EdgeInsets.only(left: 8),
+                                            padding:
+                                                const EdgeInsets.only(left: 8),
                                             child: IconButton(
                                               onPressed: e.onPressed,
                                               icon: Icon(e.icon),
                                               style: ButtonStyle(
-                                                // visualDensity: VisualDensity.compact,
-                                                // shape: WidgetStatePropertyAll(
-                                                //     RoundedRectangleBorder(
-                                                //         borderRadius:
-                                                //             BorderRadius.circular(
-                                                //                 15))),
                                                 foregroundColor:
-                                                    WidgetStatePropertyAll(theme
-                                                        .colorScheme
-                                                        .onSurfaceVariant
-                                                        .withOpacity(0.95)),
+                                                    WidgetStatePropertyAll(
+                                                  theme.colorScheme
+                                                      .onSurfaceVariant
+                                                      .withOpacity(0.95),
+                                                ),
                                                 backgroundColor:
                                                     WidgetStatePropertyAll(
                                                   theme.colorScheme
@@ -259,9 +233,10 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                           ),
                         ],
                         child: ClipRRect(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(15),
-                              topRight: Radius.circular(15)),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            topRight: Radius.circular(15),
+                          ),
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surface.withOpacity(0.9),
@@ -316,7 +291,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
 
 class _BottomIcons extends StatefulWidget {
   const _BottomIcons({
-    super.key,
+    // super.key,
     required this.viewPadding,
     required this.bottomSheetController,
     required this.visibilityController,
@@ -338,9 +313,6 @@ class __BottomIconsState extends State<_BottomIcons>
   Widget build(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
     final actions = widgets.tryAsActionable(context);
-    final theme = Theme.of(context);
-
-    // final appBarIcons = widget.widgets.tryAsAppBarButtonable(context);
 
     return SizedBox(
       width: double.infinity,
@@ -348,7 +320,7 @@ class __BottomIconsState extends State<_BottomIcons>
         alignment: Alignment.bottomCenter,
         child: Padding(
           padding: EdgeInsets.only(bottom: widget.viewPadding.bottom + 18) +
-              EdgeInsets.symmetric(horizontal: 16),
+              const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -361,61 +333,30 @@ class __BottomIconsState extends State<_BottomIcons>
                     mainAxisSize: MainAxisSize.min,
                     children: actions.reversed
                         .map(
-                          (e) => Padding(
-                            padding: EdgeInsets.only(top: 0),
-                            child: WrapGridActionButton(
-                                e.icon,
-                                () => e.onPress(
-                                    CurrentContentNotifier.of(context)),
-                                onLongPress: null,
-                                whenSingleContext: null,
-                                play: e.play,
-                                animate: e.animate,
-                                color: e.color,
-                                watch: e.watch,
-                                animation: e.animation),
+                          (e) => WrapGridActionButton(
+                            e.icon,
+                            () => e.onPress(
+                              CurrentContentNotifier.of(context),
+                            ),
+                            onLongPress: null,
+                            whenSingleContext: null,
+                            play: e.play,
+                            animate: e.animate,
+                            color: e.color,
+                            watch: e.watch,
+                            animation: e.animation,
                           ),
                         )
                         .toList(),
                   ),
                 ),
               ),
-              // const SizedBox(),
-              Expanded(
-                  child: Align(
-                alignment: Alignment.bottomCenter,
-                child: _BottomRibbon(),
-              )),
-              // Expanded(
-              //   child: Align(
-              //     alignment: Alignment.bottomCenter,
-              //     child: SingleChildScrollView(
-              //       scrollDirection: Axis.horizontal,
-              //       child: Padding(
-              //         padding:
-              //             EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              //         child: Row(
-              //           mainAxisSize: MainAxisSize.min,
-              //           mainAxisAlignment: MainAxisAlignment.center,
-              //           children: actions.indexed.map(
-              //             (e) {
-              //               return Padding(
-              //                 padding: EdgeInsets.only(
-              //                     right: e.$1 == actions.length - 1 ? 0 : 8),
-              //                 child: IconButton.filledTonal(
-              //                   icon: Icon(e.$2.icon),
-              //                   onPressed: () => e.$2.onPress(
-              //                     CurrentContentNotifier.of(context),
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //           ).toList(),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
+              const Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: _BottomRibbon(),
+                ),
+              ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: ImageViewFab(
@@ -447,82 +388,41 @@ class _BottomRibbon extends StatelessWidget {
         .tryAsStickerable(context, true);
 
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _PinnedTagsRow(),
-            Padding(padding: EdgeInsets.only(bottom: 16)),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 8,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: stickers
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(
-                          right: 8,
-                        ),
-                        child: Icon(
-                          e.icon,
-                          size: 16,
-                          color: e.important
-                              ? colorScheme.secondary
-                              : colorScheme.onSurface.withOpacity(
-                                  0.6,
-                                ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _PinnedTagsRow(),
+          const Padding(padding: EdgeInsets.only(bottom: 16)),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 8,
             ),
-          ],
-        )
-
-        // SizedBox(
-        //   height: 18,
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        // children: [
-        //   if (stickers.isNotEmpty)
-        //     Padding(
-        //       padding: const EdgeInsets.only(
-        //         left: 8,
-        //       ),
-        //       child: Row(
-        //         children: stickers
-        //             .map(
-        //               (e) => Padding(
-        //                 padding: const EdgeInsets.only(
-        //                   right: 8,
-        //                 ),
-        //                 child: Icon(
-        //                   e.icon,
-        //                   size: 16,
-        //                   color: e.important
-        //                       ? colorScheme.secondary
-        //                       : colorScheme.onSurface.withOpacity(
-        //                           0.6,
-        //                         ),
-        //                 ),
-        //               ),
-        //             )
-        //             .toList(),
-        //       ),
-        //     )
-        //       else
-        //         const SizedBox.shrink(),
-        //       const Padding(
-        //         padding: EdgeInsets.only(right: 8),
-        //         child: _PinnedTagsRow(),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        );
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: stickers
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(
+                        right: 8,
+                      ),
+                      child: Icon(
+                        e.icon,
+                        size: 16,
+                        color: e.important
+                            ? colorScheme.secondary
+                            : colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -696,10 +596,6 @@ class _InlineDrawer extends StatelessWidget {
         ],
       );
     } else {
-      final appBarIcons = CurrentContentNotifier.of(context)
-          .widgets
-          .tryAsAppBarButtonable(context);
-
       return Stack(
         children: [
           child,
@@ -733,9 +629,8 @@ class _InlineDrawer extends StatelessWidget {
                           color: theme.colorScheme.surfaceContainer
                               .withOpacity(0.9),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          // children: appBarIcons,
                         ),
                       ),
                     ),
@@ -753,57 +648,6 @@ class _InlineDrawer extends StatelessWidget {
         ],
       );
     }
-  }
-}
-
-class _BottomNavigationBar extends StatelessWidget {
-  const _BottomNavigationBar({
-    // super.key,
-    required this.widgets,
-    required this.viewPadding,
-    required this.bottomSheetController,
-  });
-
-  final ContentWidgets widgets;
-  final EdgeInsets viewPadding;
-
-  final DraggableScrollableController bottomSheetController;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Animate(
-      effects: const [
-        SlideEffect(
-          duration: Duration(milliseconds: 500),
-          curve: Easing.emphasizedAccelerate,
-          begin: Offset.zero,
-          end: Offset(0, 1),
-        ),
-      ],
-      autoPlay: false,
-      target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(15),
-        ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surface.withOpacity(0.98),
-          ),
-          child: IgnorePointer(
-            ignoring: !AppBarVisibilityNotifier.of(context),
-            child: ImageViewBottomAppBar(
-              addInfoFab: true,
-              viewPadding: viewPadding,
-              bottomSheetController: bottomSheetController,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -927,11 +771,6 @@ class _NavigationRail extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
           groupAlignment: -0.8,
-          // trailing: !showDrawer
-          //     ? null
-          //     : ListBody(
-          //         children: widgets.tryAsAppBarButtonable(context),
-          //       ),
           destinations: [
             const NavigationRailDestination(
               icon: Icon(Icons.image),

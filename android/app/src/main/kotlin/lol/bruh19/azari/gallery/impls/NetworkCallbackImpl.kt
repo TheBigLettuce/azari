@@ -15,10 +15,6 @@ class NetworkCallbackImpl(
     private val galleryApi: GalleryApi,
     private val context: FlutterFragmentActivity,
 ) : ConnectivityManager.NetworkCallback() {
-//    override fun onLost(network: Network) {
-//        context.runOnUiThread { galleryApi.notifyNetworkStatus(false) {} }
-//    }
-
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
         val capInternet =
             networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

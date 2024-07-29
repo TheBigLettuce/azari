@@ -70,10 +70,6 @@ class Gelbooru implements BooruAPI {
     BooruTagSorting sorting = BooruTagSorting.count,
     int limit = 30,
   ]) async {
-    // if (t.isEmpty) {
-    //   return const [];
-    // }
-
     final resp = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(booru.url, "/index.php", {
         "page": "dapi",

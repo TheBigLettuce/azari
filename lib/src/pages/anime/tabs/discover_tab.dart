@@ -121,8 +121,6 @@ class DiscoverPagingEntry implements PagingEntry {
 class _DiscoverTabState extends State<DiscoverTab> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
   WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
-  // WatchableGridSettingsData get gridSettings =>
-  //     widget.db.gridSettings.animeDiscovery;
 
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
@@ -141,11 +139,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
   @override
   void initState() {
     super.initState();
-
-    // pagingState = widget.registry.getOrRegister(
-    //   "discover",
-    //   () => DiscoverPagingEntry.prototype(widget.api),
-    // );
   }
 
   @override

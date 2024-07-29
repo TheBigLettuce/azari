@@ -176,11 +176,7 @@ class _FakeSourceTags implements FilesSourceTags {
 
 class _GenericListSource extends GenericListSource<GalleryFile>
     implements SortingResourceSource<int, GalleryFile> {
-  _GenericListSource(
-    super.clearRefresh, {
-    super.next,
-    super.watchCount,
-  });
+  _GenericListSource(super.clearRefresh);
 
   @override
   Future<int> clearRefreshSilent() => clearRefresh();

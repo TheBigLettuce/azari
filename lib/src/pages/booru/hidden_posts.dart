@@ -71,8 +71,6 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return _HideBlacklistedImagesHolder(
       key: _hideKey,
       child: GridConfiguration(

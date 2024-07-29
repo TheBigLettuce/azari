@@ -16,39 +16,8 @@ import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/menu_wrapper.dart";
 import "package:gallery/src/widgets/translation_notes.dart";
-import "package:qr_flutter/qr_flutter.dart";
 import "package:url_launcher/url_launcher.dart";
-
-Future<void> showQr(BuildContext context, String prefix, int id) {
-  return Navigator.push(
-    context,
-    DialogRoute<void>(
-      themes: InheritedTheme.capture(from: context, to: null),
-      context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-
-        return AlertDialog(
-          content: Container(
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            width: 320,
-            height: 320,
-            clipBehavior: Clip.antiAlias,
-            child: QrImageView(
-              data: "${prefix}_$id",
-              backgroundColor: theme.colorScheme.onSurface,
-              size: 320,
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
 
 class OpenInBrowserButton extends StatelessWidget {
   const OpenInBrowserButton(
@@ -148,36 +117,11 @@ class _PostInfoState extends State<PostInfo> {
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           sliver: TagsRibbon(
             selectTag: (str) {
               HapticFeedback.mediumImpact();
 
-              // radioDialog<SafeMode>(
-              //   context,
-              //   SafeMode.values.map(
-              //     (e) => (e, e.translatedString(l10n)),
-              //   ),
-              //   settings.safeMode,
-              //   (s) {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute<void>(
-              //         builder: (context) {
-              //           return BooruRestoredPage(
-              //             booru: settings.selectedBooru,
-              //             tags: str,
-              //             saveSelectedPage: (e) {},
-              //             overrideSafeMode: s ?? settings.safeMode,
-              //             db: DatabaseConnectionNotifier.of(context),
-              //           );
-              //         },
-              //       ),
-              //     );
-              //   },
-              //   title: l10n.chooseSafeMode,
-              //   allowSingle: true,
-              // );
               _launchGrid(context, str);
             },
             tagManager: TagManager.of(context),
@@ -203,15 +147,6 @@ class _PostInfoState extends State<PostInfo> {
                 _launchGrid,
                 l10n,
               ),
-              // if (widget.addRemoveTag)
-              //   PopupMenuItem(
-              //     onTap: () {
-              //       DatabaseConnectionNotifier.of(context)
-              //           .localTags
-              //           .removeSingle([widget.filename], tag);
-              //     },
-              //     child: Text(l10n.delete),
-              //   ),
               PopupMenuItem(
                 onTap: () {
                   if (tagManager.pinned.exists(tag)) {
@@ -231,50 +166,12 @@ class _PostInfoState extends State<PostInfo> {
         ),
         SliverList.list(
           children: [
-            // MenuWrapper(
-            //   title: post.fileDownloadUrl(),
-            //   child: ListTile(
-            //     title: Text(l10n.urlInfoPage),
-            //     subtitle: Text(post.fileDownloadUrl()),
-            // onTap: () => launchUrl(
-            //   Uri.parse(post.fileDownloadUrl()),
-            //   mode: LaunchMode.externalApplication,
-            // ),
-            //   ),
-            // ),
-            // ListTile(
-            //   title: Text(l10n.widthInfoPage),
-            //   subtitle: Text(l10n.pixels(post.width)),
-            // ),
             DimensionsRow(
               l10n: l10n,
               width: post.width,
               height: post.height,
               createdAt: post.createdAt,
             ),
-            // ListTile(
-            //   title: Text(l10n.heightInfoPage),
-            //   subtitle: Text(l10n.pixels(post.height)),
-            // ),
-            // ListTile(
-            //   title: Text(l10n.createdAtInfoPage),
-            //   subtitle: Text(l10n.date(post.createdAt)),
-            // ),
-
-            // MenuWrapper(
-            //   title: post.sourceUrl,
-            //   child: ListTile(
-            //     title: Text(l10n.sourceFileInfoPage),
-            //     subtitle: Text(post.sourceUrl),
-            // onTap: post.sourceUrl.isNotEmpty &&
-            //         Uri.tryParse(post.sourceUrl) != null
-            //     ? () => launchUrl(
-            //           Uri.parse(post.sourceUrl),
-            //           mode: LaunchMode.externalApplication,
-            //         )
-            //     : null,
-            //   ),
-            // ),
             ListTile(
               title: Center(
                 child: Text(l10n.ratingInfoPage),
@@ -292,7 +189,7 @@ class _PostInfoState extends State<PostInfo> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Wrap(
                 runSpacing: 4,
                 alignment: WrapAlignment.center,
@@ -302,8 +199,8 @@ class _PostInfoState extends State<PostInfo> {
                       Uri.parse(post.fileDownloadUrl()),
                       mode: LaunchMode.externalApplication,
                     ),
-                    label: Text("Link"),
-                    icon: Icon(
+                    label: const Text("Link"),
+                    icon: const Icon(
                       Icons.open_in_new_rounded,
                       size: 18,
                     ),
@@ -316,8 +213,8 @@ class _PostInfoState extends State<PostInfo> {
                               mode: LaunchMode.externalApplication,
                             )
                         : null,
-                    label: Text("Source"),
-                    icon: Icon(
+                    label: const Text("Source"),
+                    icon: const Icon(
                       Icons.open_in_new_rounded,
                       size: 18,
                     ),
@@ -353,7 +250,7 @@ class DimensionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: SizedBox(
         width: double.infinity,
         height: 60,
@@ -384,7 +281,7 @@ class DimensionsRow extends StatelessWidget {
 
 class _ColoredRectangle extends StatelessWidget {
   const _ColoredRectangle({
-    super.key,
+    // super.key,
     required this.title,
     required this.subtitle,
     required this.primaryColor,
@@ -409,7 +306,7 @@ class _ColoredRectangle extends StatelessWidget {
                 : theme.colorScheme.secondaryContainer,
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [

@@ -182,18 +182,6 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
                     return;
                   }
 
-                  // if (submitOnPress) {
-                  //   focusMain();
-                  //   controller!.text = "";
-                  //   onSubmit(elem);
-                  //   return;
-                  // }
-
-                  // if (noSticky) {
-                  //   onSelected(elem);
-                  //   return;
-                  // }
-
                   final tags = List<String>.from(
                     search.textEditingController!.text.split(" "),
                   );
@@ -236,7 +224,6 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
                         final highlight =
                             AutocompleteHighlightedOption.of(context) == index;
                         if (highlight) {
-                          // highlightChanged(options.elementAt(index));
                           WidgetsBinding.instance
                               .scheduleFrameCallback((timeStamp) {
                             Scrollable.ensureVisible(context);

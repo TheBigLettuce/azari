@@ -5,11 +5,11 @@
 
 import "dart:async";
 
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/init_main/restart_widget.dart";
 import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
@@ -31,8 +31,8 @@ import "package:logging/logging.dart";
 import "package:photo_view/photo_view_gallery.dart";
 import "package:wakelock_plus/wakelock_plus.dart";
 
-part "video_controls.dart";
 part "body.dart";
+part "video_controls.dart";
 
 class ImageViewStatistics {
   const ImageViewStatistics({required this.swiped, required this.viewed});
@@ -476,7 +476,7 @@ class ImageViewState extends State<ImageView>
                   curve: Easing.emphasizedAccelerate,
                   begin: Offset(0.1, 0),
                   end: Offset.zero,
-                )
+                ),
               ],
               child: Animate(
                 controller: slideAnimationRight,

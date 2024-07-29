@@ -168,19 +168,16 @@ class GalleryDirectoryBase {
   });
 
   final int thumbFileId;
-  // @Index(unique: true)
+
   final String bucketId;
 
-  // @Index()
   final String name;
 
   final String relativeLoc;
   final String volumeName;
 
-  // @Index()
   final int lastModified;
 
-  // @Index()
   final String tag;
 }
 
@@ -188,7 +185,7 @@ class TrashCell implements AsyncCell<GalleryDirectory> {
   TrashCell(this.l10n, this.objFactory);
 
   final _events = StreamController<GalleryDirectory?>.broadcast();
-  // final _key = UniqueKey();
+
   final AppLocalizations l10n;
   final GalleryObjFactoryMixin objFactory;
 

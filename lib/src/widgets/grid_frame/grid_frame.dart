@@ -211,7 +211,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
               controller: controller ?? GridScrollNotifier.of(context),
               child: GridExtrasNotifier(
                 data: GridExtrasData(
-                  // tryScrollUntil,
                   selection,
                   functionality,
                   description,

@@ -13,7 +13,6 @@ import "package:gallery/src/net/manga/impl/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/manga/launch_reader.dart";
 import "package:gallery/src/pages/manga/manga_info_page.dart";
-import "package:gallery/src/pages/manga/next_chapter_button.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -127,7 +126,7 @@ class MangaImage
       return const [];
     }
 
-    final db = DatabaseConnectionNotifier.of(context);
+    // final db = DatabaseConnectionNotifier.of(context);
 
     return [
       // NavigationAction()

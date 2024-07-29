@@ -510,38 +510,6 @@ class _LatestAndExcluded extends StatefulWidget {
   State<_LatestAndExcluded> createState() => __LatestAndExcludedState();
 }
 
-// Future<List<List<(String, SafeMode)>>> _refreshHottestTagsThumbs(
-//   BooruAPI api,
-//   List<BooruTag> tags,
-//   SafeMode safeMode,
-//   TagManager tagManager,
-// ) async {
-//   final ret = <HottestTag>[];
-
-//   for (final tag in tags) {
-//     try {
-//       final posts =
-//           await api.page(0, tag.tag, tagManager.excluded, safeMode, 10);
-
-//       final urlsSafeModes =
-//           posts.$1.map((e) => (e.previewUrl, e.rating.asSafeMode)).toList();
-
-//       ret.add(urlsSafeModes);
-//     } catch (e) {
-//       continue;
-//     }
-//   }
-
-//   return ret;
-// }
-
-// void _fetchHottestTags(BooruAPI api) async {
-//   final mostFrequentTags = await api.searchTag("", BooruTagSorting.count, 15);
-
-//   final thumbs = await _refreshHottestTagsThumbs(
-//       api, mostFrequentTags, safeMode, tagManager);
-// }
-
 class __LatestAndExcludedState extends State<_LatestAndExcluded> {
   BooruTagging get excluded => widget.tagManager.excluded;
   BooruTagging get latest => widget.tagManager.latest;
@@ -549,28 +517,6 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
   bool showExcluded = false;
 
   LatestAndExcludedNotifier? notifier;
-
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-
-  //   final tab = GlobalProgressTab.maybeOf(context);
-  //   if (tab != null && notifier == null) {
-  //     notifier = tab.latestAndExcluded(widget.api.booru);
-  //     if (notifier!.value.$1.isEmpty && notifier!.value.$2 == null) {
-  //       notifier!.value = (
-  //         notifier!.value.$1,
-  //         Future(() async {
-  //           final tags = await widget.api.searchTag("");
-
-  //           notifier!.value = (tags, null);
-  //         }).onError((e, trace) {
-  //           notifier!.value = (const [], null);
-  //         })
-  //       );
-  //     }
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -658,26 +604,6 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
             },
             child: Text(l10n.showExcludedTags),
           ),
-        // if (notifier != null)
-        //   Padding(
-        //     padding: EdgeInsets.only(top: 40),
-        //     child: ListenableBuilder(
-        //       listenable: notifier!,
-        //       builder: (context, widget) {
-        //         if (notifier!.value.$2 != null) {
-        //           return CircularProgressIndicator();
-        //         } else if (notifier!.value.$1.isEmpty) {
-        //           return SizedBox.shrink();
-        //         }
-
-        //         final tags = notifier!.value.$1;
-
-        //         return Row(
-        //           children: tags.map((e) => Text(e.tag)).toList(),
-        //         );
-        //       },
-        //     ),
-        //   )
       ],
     );
   }

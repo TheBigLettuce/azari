@@ -192,17 +192,6 @@ class AndroidApiFunctions implements PlatformApi {
     ).then((value) => (value as bool?) ?? false);
   }
 
-  // Future<bool> moveFromInternal(
-  //   String fromInternalFile,
-  //   String toDir,
-  //   String volume,
-  // ) {
-  //   return _channel.invokeMethod(
-  //     "moveFromInternal",
-  //     {"from": fromInternalFile, "to": toDir, "volume": volume},
-  //   ).then((value) => (value as bool?) ?? false);
-  // }
-
   Future<int> currentMediastoreVersion() {
     return appContext
         .invokeMethod("currentMediastoreVersion")

@@ -71,21 +71,6 @@ abstract class PostImpl
           PlatformApi.current().shareMedia(fileUrl, url: true);
         },
       ),
-      // OpenInBrowserButton(
-      //   Uri.base,
-      //   overrideOnPressed: () {
-      //     launchUrl(
-      //       booru.browserLink(id),
-      //       mode: LaunchMode.externalApplication,
-      //     );
-      //   },
-      // ),
-      // ShareButton(
-      //   fileUrl,
-      //   onLongPress: () {
-      //     showQr(context, booru.prefix, id);
-      //   },
-      // ),
     ];
   }
 
@@ -100,10 +85,7 @@ abstract class PostImpl
     return [
       ImageViewAction(
         Icons.favorite_border_rounded,
-        (_) {
-          favorites.addRemove([this]);
-          // db.localTagDictionary.add(post.tags);
-        },
+        (_) => favorites.addRemove([this]),
         animate: true,
         watch: (f, [fire = false]) => db.favoritePosts.watchSingle(
           id,

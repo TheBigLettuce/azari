@@ -51,14 +51,6 @@ internal class ImageView(
             imageView = SubsamplingScaleImageView(context)
             imageView.setOnClickListener { galleryApi.galleryTapDownEvent { } }
             (imageView as SubsamplingScaleImageView).setImage(ImageSource.uri(Uri.parse(params["uri"])))
-//            try {
-//                Glide.with(context).load(Uri.parse(params["uri"])).diskCacheStrategy(
-//                    DiskCacheStrategy.NONE
-//                )
-//                    .into(imageView)
-//            } catch (e: java.lang.Exception) {
-//                Log.e("loading image", e.toString())
-//            }
         }
     }
 }

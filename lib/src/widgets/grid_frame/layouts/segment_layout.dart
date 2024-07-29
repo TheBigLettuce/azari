@@ -620,30 +620,6 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       modifiers: val.modifiers,
       count: val.list.length,
       sliver: switch (config.layoutType) {
-        //  GridLayoutType.gridMasonry => SliverMasonryGrid(
-        //     gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-        //       crossAxisCount: config.columns.number,
-        //     ),
-        //     delegate: SliverChildBuilderDelegate(childCount: val.list.length,
-        //         (context, idx) {
-        //       final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
-        //           config.columns.number;
-
-        //       final rem = ((gridSeed + idx) % 11) * 0.5;
-        //       final maxHeight = (size / config.aspectRatio.value) +
-        //           (rem *
-        //                   (size *
-        //                       (0.037 +
-        //                           (config.columns.number / 100) -
-        //                           rem * 0.01)))
-        //               .toInt();
-
-        //       return ConstrainedBox(
-        //         constraints: BoxConstraints(maxHeight: maxHeight),
-        //         child: buildItem(context, idx),
-        //       );
-        //     }),
-        //   ),
         GridLayoutType.grid || GridLayoutType.gridMasonry => SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               childAspectRatio: config.aspectRatio.value,

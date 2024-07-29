@@ -77,7 +77,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
             ? filter(list.$1)
             : filter(list.$1).where(_extraTags),
       );
-    } catch (e, trace) {
+    } catch (e) {
       progress.error = e;
     }
 

@@ -315,10 +315,13 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                                   : () {
                                       if (_inDb) {
                                         savedAnimeEntries.deleteAll(
-                                            [(entry.id, entry.site)]);
+                                          [(entry.id, entry.site)],
+                                        );
                                       } else {
                                         savedAnimeEntries.addAll(
-                                            [entry], watchedAnimeEntries);
+                                          [entry],
+                                          watchedAnimeEntries,
+                                        );
                                       }
                                     },
                               isSelected: _inDb,
@@ -341,7 +344,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
-    super.key,
+    // super.key,
     required this.icon,
     required this.label,
     required this.onPress,

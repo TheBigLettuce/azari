@@ -859,11 +859,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "0685380243233f9aa2e4b0d3c7b6534f7554f583"
-      resolved-ref: "0685380243233f9aa2e4b0d3c7b6534f7554f583"
+      ref: "92d9b36b7b17719b1e851de3f8d963688da1c279"
+      resolved-ref: "92d9b36b7b17719b1e851de3f8d963688da1c279"
       url: "git@github.com:TheBigLettuce/photo_view.git"
     source: git
-    version: "0.14.0"
+    version: "0.15.0"
   pigeon:
     dependency: "direct dev"
     description:

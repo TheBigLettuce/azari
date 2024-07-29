@@ -19,7 +19,6 @@ class BodyPadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const padding = EdgeInsets.only(
-      // top: 8,
       left: 22,
       right: 22,
     );

@@ -165,19 +165,6 @@ class Jikan implements AnimeAPI {
 AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
     AnimeCharacter(imageUrl: e.imageUrl, name: e.name, role: e.role);
 
-// List<AnimeRelation> _fromMeta(api.BuiltList<api.Meta> l) {
-//   return l
-//       .map(
-//         (e) => AnimeRelation(
-//           thumbUrl: e.url,
-//           title: e.name,
-//           type: e.type,
-//           id: e.malId,
-//         ),
-//       )
-//       .toList();
-// }
-
 AnimeGenre _metaFromJson(
   Map<dynamic, dynamic> json, {
   required bool unpressable,
@@ -275,11 +262,13 @@ AnimeSearchEntry _fromJson(Map<dynamic, dynamic> json) {
         )
         .followedBy(
           demographics.map(
-              (e) => _metaFromJson(e, unpressable: false, explicit: false)),
+            (e) => _metaFromJson(e, unpressable: false, explicit: false),
+          ),
         )
         .followedBy(
           themes.map(
-              (e) => _metaFromJson(e, unpressable: false, explicit: false)),
+            (e) => _metaFromJson(e, unpressable: false, explicit: false),
+          ),
         )
         .followedBy(
           studios

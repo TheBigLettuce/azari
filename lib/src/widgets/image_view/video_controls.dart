@@ -207,8 +207,6 @@ class _VideoControlsState extends State<VideoControls>
                                   },
                                   icon: const Icon(Icons.fullscreen_outlined),
                                 ),
-                                // _VideoSeekBackward(controller: controller),
-                                // _VideoSeekForward(controller: controller),
                               ],
                             ),
                           ),
@@ -276,7 +274,7 @@ class __SeekTimeState extends State<_SeekTime> {
         FadeEffect(
           begin: 0,
           end: 1,
-        )
+        ),
       ],
       child: Padding(
         padding: EdgeInsets.only(bottom: widget.bottomPadding + 8 + 60),
@@ -351,42 +349,6 @@ class __PlayButtonState extends State<_PlayButton> {
     );
   }
 }
-
-// class _VideoSeekForward extends StatelessWidget {
-//   const _VideoSeekForward({
-//     required this.controller,
-//   });
-//   final _VideoControlsControllerImpl controller;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return IconButton(
-//       onPressed: () {
-//         controller
-//             .seekTo(controller.value.position + const Duration(seconds: 5));
-//       },
-//       icon: const Icon(Icons.fast_forward_rounded),
-//     );
-//   }
-// }
-
-// class _VideoSeekBackward extends StatelessWidget {
-//   const _VideoSeekBackward({
-//     required this.controller,
-//   });
-//   final _VideoControlsControllerImpl controller;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return IconButton(
-//       onPressed: () {
-//         controller
-//             .seekTo(controller.value.position - const Duration(seconds: 5));
-//       },
-//       icon: const Icon(Icons.fast_rewind_rounded),
-//     );
-//   }
-// }
 
 class _VideoTime extends StatefulWidget {
   const _VideoTime({

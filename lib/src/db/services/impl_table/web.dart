@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/services/impl/memory_only/impl.dart";
 import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
@@ -19,9 +18,9 @@ import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/manga_api.dart";
 
 Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
-    Future.value((db as MemoryOnlyServicesImplTable).init());
+    throw UnimplementedError();
 
-ServicesImplTable getApi() => MemoryOnlyServicesImplTable();
+ServicesImplTable getApi() => throw UnimplementedError();
 
 class $SavedAnimeEntryData extends AnimeEntryDataImpl
     with DefaultSavedAnimeEntryPressable
@@ -944,13 +943,13 @@ class MemoryTagManager implements TagManager {
   MemoryTagManager();
 
   @override
-  final BooruTagging excluded = MemoryBooruTagging(TagType.excluded);
+  final BooruTagging excluded = throw UnimplementedError();
 
   @override
-  final BooruTagging latest = MemoryBooruTagging(TagType.normal);
+  final BooruTagging latest = throw UnimplementedError();
 
   @override
-  final BooruTagging pinned = MemoryBooruTagging(TagType.pinned);
+  final BooruTagging pinned = throw UnimplementedError();
 }
 
 class $SettingsPath extends SettingsPath {

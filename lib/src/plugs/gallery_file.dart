@@ -37,7 +37,9 @@ mixin GalleryFile
           );
         }),
       NavigationAction(
-          Icons.share, () => PlatformApi.current().shareMedia(originalUri)),
+        Icons.share,
+        () => PlatformApi.current().shareMedia(originalUri),
+      ),
     ];
   }
 
@@ -268,19 +270,17 @@ class FileBase {
     required this.originalUri,
   });
 
-  // @Index(unique: true)
   final int id;
   final String bucketId;
-  // @Index()
+
   final String name;
-  // @Index()
+
   final int lastModified;
   final String originalUri;
 
   final int height;
   final int width;
 
-  // @Index()
   final int size;
 
   final bool isVideo;
@@ -300,8 +300,6 @@ class GalleryFileInfo extends StatefulWidget {
 }
 
 class _GalleryFileInfoState extends State<GalleryFileInfo> {
-  // int currentPage = 0;
-
   GalleryFile get file => widget.file;
 
   final filesExtended = MiscSettingsService.db().current.filesExtendedActions;
@@ -327,14 +325,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     );
   }
 
-  // int currentPageF() => currentPage;
-
-  // void setPage(int i) {
-  //   setState(() {
-  //     currentPage = i;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     final filename = file.name;
@@ -347,7 +337,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           sliver: TagsRibbon(
             emptyWidget: res == null
                 ? const SliverPadding(padding: EdgeInsets.zero)
@@ -410,15 +400,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 _launchGrid,
                 l10n,
               ),
-              // if (widget.addRemoveTag)
-              //   PopupMenuItem(
-              //     onTap: () {
-              //       DatabaseConnectionNotifier.of(context)
-              //           .localTags
-              //           .removeSingle([widget.filename], tag);
-              //     },
-              //     child: Text(l10n.delete),
-              //   ),
               PopupMenuItem(
                 onTap: () {
                   if (tagManager.pinned.exists(tag)) {
@@ -436,23 +417,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
             ],
           ),
         ),
-        // SliverPadding(
-        //   padding: const EdgeInsets.only(left: 16),
-        //   sliver: LabelSwitcherWidget(
-        //     pages: [
-        //       PageLabel(l10n.infoHeadline),
-        //       PageLabel(
-        //         l10n.tagsInfoPage,
-        //         count: ImageTagsNotifier.of(context).length,
-        //       ),
-        //     ],
-        //     currentPage: currentPageF,
-        //     switchPage: setPage,
-        //     sliver: true,
-        //     noHorizontalPadding: true,
-        //   ),
-        // ),
-        // if (currentPage == 0)
         SliverList.list(
           children: [
             MenuWrapper(
@@ -513,126 +477,29 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
               createdAt:
                   DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
             ),
-            // addInfoTile(
-            //   title: l10n.dateModified,
-            //   subtitle: l10n.date(
-            // DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
-            //   ),
-            // ),
-            // addInfoTile(
-            //   title: l10n.widthInfoPage,
-            //   subtitle: l10n.pixels(file.width),
-            // ),
-            // addInfoTile(
-            //   title: l10n.heightInfoPage,
-            //   subtitle: l10n.pixels(file.height),
-            // ),
             addInfoTile(
               title: l10n.sizeInfoPage,
               subtitle: kbMbSize(context, file.size),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Wrap(
                 runSpacing: 4,
                 alignment: WrapAlignment.center,
                 children: [
                   if (res != null)
                     RedownloadButton(
-                        key: file.uniqueKey(), file: file, res: res),
+                      key: file.uniqueKey(),
+                      file: file,
+                      res: res,
+                    ),
                   if (!file.isVideo && !file.isGif)
                     SetWallpaperButton(id: file.id),
-
-                  // TextButton.icon(
-                  //   onPressed: post.sourceUrl.isNotEmpty &&
-                  //           Uri.tryParse(post.sourceUrl) != null
-                  //       ? () => launchUrl(
-                  //             Uri.parse(post.sourceUrl),
-                  //             mode: LaunchMode.externalApplication,
-                  //           )
-                  //       : null,
-                  //   label: Text("Source"),
-                  //   icon: Icon(
-                  //     Icons.open_in_new_rounded,
-                  //     size: 18,
-                  //   ),
-                  // ),
-                  // if (post.tags.contains("translated"))
-                  //   TranslationNotes.button(context, post.id, post.booru),
                 ],
               ),
             ),
           ],
         ),
-        //   else if (res != null) ...[
-        //     SliverPadding(
-        //       padding: const EdgeInsets.only(left: 16, right: 16),
-        //       sliver: SliverToBoxAdapter(
-        //         child: Row(
-        //           mainAxisSize: MainAxisSize.min,
-        //           mainAxisAlignment: MainAxisAlignment.end,
-        //           children: [
-        //             IconButton.filledTonal(
-        //               onPressed: () {
-        //                 final notifier =
-        //                     GlobalProgressTab.maybeOf(context)?.loadTags();
-        //                 final db =
-        //                     DatabaseConnectionNotifier.of(context).localTags;
-
-        //                 db.delete(filename);
-
-        //                 notifier?.value = Future(() {})
-        //                     .whenComplete(() => notifier.value = null);
-        //               },
-        //               icon: const Icon(Icons.delete_rounded),
-        //               visualDensity: VisualDensity.compact,
-        //               iconSize: 18,
-        //             ),
-        //             IconButton.filledTonal(
-        //               onPressed: () {
-        //                 final db =
-        //                     DatabaseConnectionNotifier.of(context).localTags;
-
-        //                 openAddTagDialog(
-        //                   context,
-        //                   (v, delete) {
-        //                     if (delete) {
-        //                       db.removeSingle([filename], v);
-        //                     } else {
-        //                       db.addMultiple([filename], v);
-        //                     }
-        //                   },
-        //                   l10n,
-        //                 );
-        //               },
-        //               icon: const Icon(Icons.add_rounded),
-        //               visualDensity: VisualDensity.compact,
-        //               iconSize: 18,
-        //             ),
-        //           ],
-        //         ),
-        //       ),
-        //     ),
-        //     SliverToBoxAdapter(
-        //       child: SearchTextField(
-        //         filename,
-        //         key: ValueKey(filename),
-        //       ),
-        //     ),
-        // TagsListWidget(
-        //   key: ValueKey(filename),
-        //   filename,
-        //   res: res,
-        //   launchGrid: _launchGrid,
-        //   addRemoveTag: true,
-        //   db: TagManager.of(context),
-        // ),
-        //   ] else
-        //     const SliverToBoxAdapter(
-        //       child: EmptyWidget(
-        //         gridSeed: 2,
-        //       ),
-        //     ),
       ],
     );
   }
@@ -689,7 +556,7 @@ class _RedownloadButtonState extends State<RedownloadButton> {
               redownloadFiles(context, [widget.file]);
             },
       label: Text(l10n.redownloadLabel),
-      icon: Icon(
+      icon: const Icon(
         Icons.download_outlined,
         size: 18,
       ),
@@ -823,7 +690,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Text(l10n.setAsWallpaper),
-      icon: Icon(
+      icon: const Icon(
         Icons.wallpaper_rounded,
         size: 18,
       ),

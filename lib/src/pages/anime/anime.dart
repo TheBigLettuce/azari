@@ -267,7 +267,7 @@ class _AnimePageState extends State<AnimePage> {
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               sliver: SliverToBoxAdapter(
                 child: Text(
                   "Watching",
@@ -278,7 +278,7 @@ class _AnimePageState extends State<AnimePage> {
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 top: 14,
                 bottom: 18,
                 right: 18,
@@ -298,7 +298,7 @@ class _AnimePageState extends State<AnimePage> {
 
 class _WatchingGrid extends StatefulWidget {
   const _WatchingGrid({
-    super.key,
+    // super.key,
     required this.source,
     required this.glue,
   });
