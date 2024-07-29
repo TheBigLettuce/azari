@@ -14,6 +14,7 @@ class GestureDeadZones extends StatelessWidget {
     this.onPressedRight,
     required this.child,
   });
+
   final bool left;
   final bool right;
 
@@ -62,11 +63,17 @@ class GestureDeadZones extends StatelessWidget {
           )
         else
           Align(
-            alignment: Alignment.bottomLeft,
-            child: AbsorbPointer(
-              child: SizedBox(
-                height: systemInsets.left,
-                child: Container(),
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(top: kToolbarHeight + systemInsets.top),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: AbsorbPointer(
+                  child: SizedBox(
+                    width: systemInsets.left,
+                    child: Container(),
+                  ),
+                ),
               ),
             ),
           ),
@@ -99,10 +106,16 @@ class GestureDeadZones extends StatelessWidget {
         else
           Align(
             alignment: Alignment.bottomRight,
-            child: AbsorbPointer(
-              child: SizedBox(
-                height: systemInsets.right,
-                child: Container(),
+            child: Padding(
+              padding: EdgeInsets.only(top: kToolbarHeight + systemInsets.top),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: AbsorbPointer(
+                  child: SizedBox(
+                    width: systemInsets.right,
+                    child: Container(),
+                  ),
+                ),
               ),
             ),
           ),
