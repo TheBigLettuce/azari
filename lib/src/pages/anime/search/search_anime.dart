@@ -14,14 +14,12 @@ import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/net/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
-import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -65,93 +63,93 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
   final Uri siteUri;
   final List<GridAction<T>> actions;
 
-  static void launchMangaApi(
-    BuildContext context,
-    MangaAPI api, {
-    SelectionGlue Function([Set<GluePreferences>])? generateGlue,
-    String? search,
-    AnimeSafeMode safeMode = AnimeSafeMode.safe,
-    MangaId? initalGenreId,
-  }) {
-    final db = DatabaseConnectionNotifier.of(context);
+  // static void launchMangaApi(
+  //   BuildContext context,
+  //   MangaAPI api, {
+  //   SelectionGlue Function([Set<GluePreferences>])? generateGlue,
+  //   String? search,
+  //   AnimeSafeMode safeMode = AnimeSafeMode.safe,
+  //   MangaId? initalGenreId,
+  // }) {
+  //   final db = DatabaseConnectionNotifier.of(context);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return SearchAnimePage<MangaEntry, MangaId, MangaGenre>(
-            generateGlue: generateGlue,
-            initalText: search,
-            explicit: safeMode,
-            actions: [
-              GridAction(
-                Icons.push_pin_rounded,
-                (selected) {
-                  final toDelete = <MangaEntry>[];
-                  final toAdd = <MangaEntry>[];
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute<void>(
+  //       builder: (context) {
+  //         return SearchAnimePage<MangaEntry, MangaId, MangaGenre>(
+  //           generateGlue: generateGlue,
+  //           initalText: search,
+  //           explicit: safeMode,
+  //           actions: [
+  //             GridAction(
+  //               Icons.push_pin_rounded,
+  //               (selected) {
+  //                 final toDelete = <MangaEntry>[];
+  //                 final toAdd = <MangaEntry>[];
 
-                  for (final e in selected) {
-                    if (db.pinnedManga.exist(e.id.toString(), e.site)) {
-                      toDelete.add(e);
-                    } else {
-                      toAdd.add(e);
-                    }
-                  }
+  //                 for (final e in selected) {
+  //                   if (db.pinnedManga.exist(e.id.toString(), e.site)) {
+  //                     toDelete.add(e);
+  //                   } else {
+  //                     toAdd.add(e);
+  //                   }
+  //                 }
 
-                  db.pinnedManga.addAll(toAdd);
+  //                 db.pinnedManga.addAll(toAdd);
 
-                  db.pinnedManga.deleteAll(
-                    toDelete.map((e) => (e.id, e.site)).toList(),
-                  );
-                },
-                true,
-              ),
-            ],
-            initalGenreId: initalGenreId,
-            info: api.site.name,
-            siteUri: Uri.https(api.site.browserUrl()),
-            idFromGenre: (genre) {
-              return (genre.id, genre.name);
-            },
-            onPressed: (cell) {
-              return Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return MangaInfoPage(
-                      id: cell.id,
-                      entry: cell,
-                      api: api,
-                      db: db,
-                    );
-                  },
-                ),
-              );
-            },
-            search: (text, page, id, safeMode) {
-              return api.search(
-                text,
-                page: page,
-                includesTag: id != null ? [id] : null,
-                safeMode: safeMode,
-                count: 30,
-              );
-            },
-            genres: (safeMode) {
-              return api.tags().then((value) {
-                final m = <MangaId, MangaGenre>{};
+  //                 db.pinnedManga.deleteAll(
+  //                   toDelete.map((e) => (e.id, e.site)).toList(),
+  //                 );
+  //               },
+  //               true,
+  //             ),
+  //           ],
+  //           initalGenreId: initalGenreId,
+  //           info: api.site.name,
+  //           siteUri: Uri.https(api.site.browserUrl()),
+  //           idFromGenre: (genre) {
+  //             return (genre.id, genre.name);
+  //           },
+  //           onPressed: (cell) {
+  //             return Navigator.of(context, rootNavigator: true).push(
+  //               MaterialPageRoute(
+  //                 builder: (context) {
+  //                   return MangaInfoPage(
+  //                     id: cell.id,
+  //                     entry: cell,
+  //                     api: api,
+  //                     db: db,
+  //                   );
+  //                 },
+  //               ),
+  //             );
+  //           },
+  //           search: (text, page, id, safeMode) {
+  //             return api.search(
+  //               text,
+  //               page: page,
+  //               includesTag: id != null ? [id] : null,
+  //               safeMode: safeMode,
+  //               count: 30,
+  //             );
+  //           },
+  //           genres: (safeMode) {
+  //             return api.tags().then((value) {
+  //               final m = <MangaId, MangaGenre>{};
 
-                for (final e in value) {
-                  m[e.id] = e;
-                }
+  //               for (final e in value) {
+  //                 m[e.id] = e;
+  //               }
 
-                return m;
-              });
-            },
-          );
-        },
-      ),
-    );
-  }
+  //               return m;
+  //             });
+  //           },
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 
   static void launchAnimeApi(
     BuildContext context,

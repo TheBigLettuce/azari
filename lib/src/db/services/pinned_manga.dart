@@ -56,26 +56,26 @@ abstract class PinnedMangaImpl implements PinnedManga {
     PinnedManga cell,
     int idx,
   ) {
-    final (client, setInner) = MangaPageDataNotifier.of(context);
-    setInner(true);
+    // final (client, setInner) = MangaPageDataNotifier.of(context);
+    // setInner(true);
 
-    final api = site.api(client);
+    // final api = site.api(client);
 
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return MangaInfoPage(
-            id: MangaStringId(cell.mangaId),
-            api: api,
-            db: DatabaseConnectionNotifier.of(context),
-          );
-        },
-      ),
-    ).then((value) {
-      setInner(false);
+    // Navigator.of(context, rootNavigator: true).push(
+    //   MaterialPageRoute<void>(
+    //     builder: (context) {
+    //       return MangaInfoPage(
+    //         id: MangaStringId(cell.mangaId),
+    //         api: api,
+    //         db: DatabaseConnectionNotifier.of(context),
+    //       );
+    //     },
+    //   ),
+    // ).then((value) {
+    //   setInner(false);
 
-      return value;
-    });
+    //   return value;
+    // });
   }
 }
 

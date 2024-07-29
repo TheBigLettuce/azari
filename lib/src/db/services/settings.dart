@@ -57,12 +57,10 @@ abstract class SettingsData {
   DisplayQuality get quality;
   SafeMode get safeMode;
   bool get showWelcomePage;
-  bool get showAnimeMangaPages;
   bool get extraSafeFilters;
 
   SettingsData copy({
     bool? extraSafeFilters,
-    bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,

@@ -16,7 +16,6 @@ import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/gallery/callback_description.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/pages/more/more_page.dart";
 import "package:gallery/src/pages/more/settings/settings_widget.dart";
 import "package:gallery/src/plugs/network_status.dart";
@@ -31,7 +30,6 @@ part "home/change_page_mixin.dart";
 part "home/icons/anime_icon.dart";
 part "home/icons/booru_icon.dart";
 part "home/icons/gallery_icon.dart";
-part "home/icons/manga_icon.dart";
 part "home/navigator_shell.dart";
 
 class Home extends StatefulWidget {
@@ -48,33 +46,14 @@ class _HomeState extends State<Home>
         ChangePageMixin,
         AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
-  late final StreamSubscription<void> _settingsSubscription;
-
   final state = SkeletonState();
   final settings = SettingsService.db().current;
 
   bool isRefreshing = false;
 
-  late bool showAnimeMangaPages = settings.showAnimeMangaPages;
-
   @override
   void initState() {
     super.initState();
-
-    _settingsSubscription = settings.s.watch((s) {
-      if (showAnimeMangaPages != s!.showAnimeMangaPages) {
-        setState(() {
-          showAnimeMangaPages = s.showAnimeMangaPages;
-          if (showAnimeMangaPages &&
-              _routeNotifier.value == CurrentRoute.manga) {
-            _routeNotifier.value = CurrentRoute.more;
-          } else if (!showAnimeMangaPages &&
-              _routeNotifier.value == CurrentRoute.more) {
-            _routeNotifier.value = CurrentRoute.manga;
-          }
-        });
-      }
-    });
 
     initChangePage(this, settings);
     initIcons(this);
@@ -97,7 +76,6 @@ class _HomeState extends State<Home>
     _morePageNotifier.dispose();
     _galleryPageNotifier.dispose();
     _booruPageNotifier.dispose();
-    _settingsSubscription.cancel();
     disposeIcons();
     disposeChangePage();
 
@@ -127,16 +105,13 @@ class _HomeState extends State<Home>
                 pop,
               ),
               child: HomeSkeleton(
-                key: ValueKey(showAnimeMangaPages),
                 _CurrentPageWidget(
                   icons: this,
                   changePage: this,
                   callback: widget.callback,
-                  showAnimeMangaPages: showAnimeMangaPages,
                 ),
                 noNavBar: widget.callback != null,
                 animatedIcons: this,
-                showAnimeMangaPages: showAnimeMangaPages,
                 onDestinationSelected: (context, route) {
                   GlueProvider.generateOf(context)().updateCount(0);
 
@@ -159,12 +134,9 @@ class _HomeState extends State<Home>
                             ? GallerySubPage.blacklisted
                             : GallerySubPage.gallery;
 
-                    animateIcons(this, showAnimeMangaPages);
-                  } else if (showAnimeMangaPages
-                      ? route == CurrentRoute.more &&
-                          currentRoute == CurrentRoute.more
-                      : route == CurrentRoute.manga &&
-                          currentRoute == CurrentRoute.manga) {
+                    animateIcons(this);
+                  } else if (route == CurrentRoute.more &&
+                      currentRoute == CurrentRoute.more) {
                     final nav = moreKey.currentState;
                     if (nav != null) {
                       while (nav.canPop()) {
@@ -177,13 +149,9 @@ class _HomeState extends State<Home>
                             ? MoreSubPage.dashboard
                             : MoreSubPage.more;
 
-                    animateIcons(this, showAnimeMangaPages);
+                    animateIcons(this);
                   } else {
-                    switchPage(
-                      this,
-                      route,
-                      showAnimeMangaPages,
-                    );
+                    switchPage(this, route);
                   }
                 },
                 changePage: this,

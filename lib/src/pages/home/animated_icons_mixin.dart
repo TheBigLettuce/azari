@@ -14,7 +14,6 @@ mixin AnimatedIconsMixin on State<Home> {
   late final AnimationController booruIconController;
   late final AnimationController moreIconController;
   late final AnimationController galleryIconController;
-  late final AnimationController favoritesIconController;
   late final AnimationController animeIconController;
 
   void hideNavBar(bool hide) {
@@ -62,7 +61,6 @@ mixin AnimatedIconsMixin on State<Home> {
 
     booruIconController = AnimationController(vsync: ticker);
     galleryIconController = AnimationController(vsync: ticker);
-    favoritesIconController = AnimationController(vsync: ticker);
     animeIconController = AnimationController(vsync: ticker);
   }
 
@@ -74,19 +72,15 @@ mixin AnimatedIconsMixin on State<Home> {
 
     booruIconController.dispose();
     galleryIconController.dispose();
-    favoritesIconController.dispose();
     animeIconController.dispose();
     moreIconController.dispose();
   }
 
-  List<NavigationRailDestination> railIcons(
-    Booru selectedBooru,
-    bool showAnimeMangaPages,
-  ) {
+  List<NavigationRailDestination> railIcons(Booru selectedBooru) {
     final l10n = AppLocalizations.of(context)!;
 
     NavigationRailDestination item(CurrentRoute e) => NavigationRailDestination(
-          icon: e.icon(showAnimeMangaPages, this),
+          icon: e.icon(this),
           label: Builder(
             builder: (context) {
               return Text(e.label(context, l10n, selectedBooru));
@@ -94,24 +88,18 @@ mixin AnimatedIconsMixin on State<Home> {
           ),
         );
 
-    return CurrentRoute.valuesAnimeManga(showAnimeMangaPages)
-        .map(item)
-        .toList();
+    return CurrentRoute.values.map(item).toList();
   }
 
-  List<Widget> icons(
-    BuildContext context,
-    Booru selectedBooru,
-    bool showAnimeMangaPages,
-  ) {
+  List<Widget> icons(BuildContext context, Booru selectedBooru) {
     final l10n = AppLocalizations.of(context)!;
 
-    return CurrentRoute.valuesAnimeManga(showAnimeMangaPages)
+    return CurrentRoute.values
         .map(
           (e) => Builder(
             builder: (context) {
               return NavigationDestination(
-                icon: e.icon(showAnimeMangaPages, this),
+                icon: e.icon(this),
                 label: e.label(context, l10n, selectedBooru),
               );
             },
@@ -125,10 +113,8 @@ class MoreDestinationIcon extends StatelessWidget {
   const MoreDestinationIcon({
     super.key,
     required this.controller,
-    required this.showAnimeMangaPages,
   });
 
-  final bool showAnimeMangaPages;
   final AnimationController controller;
 
   @override
@@ -136,8 +122,7 @@ class MoreDestinationIcon extends StatelessWidget {
     final selectedMorePage = MoreSubPage.of(context);
     final theme = Theme.of(context);
 
-    final isSelected = CurrentRoute.of(context) ==
-        (showAnimeMangaPages ? CurrentRoute.more : CurrentRoute.manga);
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.more;
 
     return Animate(
       controller: controller,

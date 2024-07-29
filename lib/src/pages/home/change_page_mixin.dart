@@ -8,39 +8,29 @@ part of "../home.dart";
 enum CurrentRoute {
   booru,
   gallery,
-  manga,
   anime,
   more;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
         0 => booru,
         1 => gallery,
-        2 => manga,
-        3 => anime,
-        4 => more,
+        2 => anime,
+        3 => more,
         int() => throw "no route",
       };
 
-  Widget icon(
-    bool showAnimeMangaPages,
-    AnimatedIconsMixin mixin,
-  ) =>
-      switch (this) {
+  Widget icon(AnimatedIconsMixin mixin) => switch (this) {
         CurrentRoute.booru => BooruDestinationIcon(
             controller: mixin.booruIconController,
           ),
         CurrentRoute.gallery => GalleryDestinationIcon(
             controller: mixin.galleryIconController,
           ),
-        CurrentRoute.manga => MangaDestinationIcon(
-            controller: mixin.favoritesIconController,
-          ),
         CurrentRoute.anime => AnimeDestinationIcon(
             controller: mixin.animeIconController,
           ),
         CurrentRoute.more => MoreDestinationIcon(
             controller: mixin.moreIconController,
-            showAnimeMangaPages: showAnimeMangaPages,
           ),
       };
 
@@ -56,20 +46,9 @@ enum CurrentRoute {
           _booruDestinationLabel(context, l10n, booru.string),
         CurrentRoute.gallery =>
           GallerySubPage.of(context).translatedString(l10n),
-        CurrentRoute.manga => l10n.mangaPage,
         CurrentRoute.anime => l10n.animePage,
         CurrentRoute.more => MoreSubPage.of(context).translatedString(l10n),
       };
-
-  static Iterable<CurrentRoute> valuesAnimeManga(bool showAnimeMangaPages) {
-    return !showAnimeMangaPages
-        ? const [
-            booru,
-            gallery,
-            more,
-          ]
-        : values;
-  }
 
   static CurrentRoute of(BuildContext context) {
     return context
@@ -263,7 +242,6 @@ mixin ChangePageMixin on State<Home> {
   final mainKey = GlobalKey<NavigatorState>();
   final galleryKey = GlobalKey<NavigatorState>();
   final moreKey = GlobalKey<NavigatorState>();
-  final mangaKey = GlobalKey<NavigatorState>();
 
   final _routeNotifier = ValueNotifier<CurrentRoute>(CurrentRoute.booru);
 
@@ -298,7 +276,6 @@ mixin ChangePageMixin on State<Home> {
         _procPop(galleryPage, morePage, icons, false);
       }
     });
-    mangaKey.currentState?.maybePop();
   }
 
   void initChangePage(AnimatedIconsMixin icons, SettingsData settings) {}
@@ -312,11 +289,7 @@ mixin ChangePageMixin on State<Home> {
     }
   }
 
-  void switchPage(
-    AnimatedIconsMixin icons,
-    CurrentRoute to,
-    bool showAnimeMangaPages,
-  ) {
+  void switchPage(AnimatedIconsMixin icons, CurrentRoute to) {
     if (to == _routeNotifier.value) {
       return;
     }
@@ -335,7 +308,7 @@ mixin ChangePageMixin on State<Home> {
       icons.pageFadeAnimation.reset();
       setState(() {});
 
-      animateIcons(icons, showAnimeMangaPages);
+      animateIcons(icons);
 
       icons.pageRiseAnimation.forward();
     });
@@ -348,26 +321,16 @@ mixin ChangePageMixin on State<Home> {
     bool pop,
   ) {
     if (!pop) {
-      final showAnimeMangaPages =
-          SettingsService.db().current.showAnimeMangaPages;
-
       if (_routeNotifier.value == CurrentRoute.gallery &&
           galleryPage.value != GallerySubPage.gallery) {
         galleryPage.value = GallerySubPage.gallery;
-        animateIcons(icons, showAnimeMangaPages);
-      } else if (_routeNotifier.value ==
-              (showAnimeMangaPages
-                  ? CurrentRoute.gallery
-                  : CurrentRoute.manga) &&
+        animateIcons(icons);
+      } else if (_routeNotifier.value == CurrentRoute.gallery &&
           morePage.value != MoreSubPage.more) {
         morePage.value = MoreSubPage.more;
-        animateIcons(icons, showAnimeMangaPages);
+        animateIcons(icons);
       } else {
-        switchPage(
-          icons,
-          CurrentRoute.booru,
-          showAnimeMangaPages,
-        );
+        switchPage(icons, CurrentRoute.booru);
       }
     }
   }
@@ -381,54 +344,28 @@ mixin ChangePageMixin on State<Home> {
       if (_routeNotifier.value == CurrentRoute.booru &&
           booruPage.value != BooruSubPage.booru) {
         booruPage.value = BooruSubPage.booru;
-        animateIcons(icons, SettingsService.db().current.showAnimeMangaPages);
+        animateIcons(icons);
       } else {
-        final showAnimeMangaPages =
-            SettingsService.db().current.showAnimeMangaPages;
-
-        switchPage(
-          icons,
-          showAnimeMangaPages ? CurrentRoute.manga : CurrentRoute.gallery,
-          showAnimeMangaPages,
-        );
+        switchPage(icons, CurrentRoute.gallery);
       }
     }
   }
 
-  Future<void> animateIcons(
-    AnimatedIconsMixin icons,
-    bool showAnimeMangaPages,
-  ) {
-    return !showAnimeMangaPages
-        ? switch (_routeNotifier.value) {
-            CurrentRoute.booru => icons.booruIconController
-                .reverse()
-                .then((value) => icons.booruIconController.forward()),
-            CurrentRoute.gallery => icons.galleryIconController
-                .reverse()
-                .then((value) => icons.galleryIconController.forward()),
-            CurrentRoute.manga => icons.moreIconController
-                .reverse()
-                .then((value) => icons.moreIconController.forward()),
-            CurrentRoute() => Future.value(),
-          }
-        : switch (_routeNotifier.value) {
-            CurrentRoute.booru => icons.booruIconController
-                .reverse()
-                .then((value) => icons.booruIconController.forward()),
-            CurrentRoute.gallery => icons.galleryIconController
-                .reverse()
-                .then((value) => icons.galleryIconController.forward()),
-            CurrentRoute.manga => icons.favoritesIconController
-                .reverse()
-                .then((value) => icons.favoritesIconController.forward()),
-            CurrentRoute.anime => icons.animeIconController
-                .forward()
-                .then((value) => icons.animeIconController.value = 0),
-            CurrentRoute.more => icons.moreIconController
-                .reverse()
-                .then((value) => icons.moreIconController.forward()),
-          };
+  Future<void> animateIcons(AnimatedIconsMixin icons) {
+    return switch (_routeNotifier.value) {
+      CurrentRoute.booru => icons.booruIconController
+          .reverse()
+          .then((value) => icons.booruIconController.forward()),
+      CurrentRoute.gallery => icons.galleryIconController
+          .reverse()
+          .then((value) => icons.galleryIconController.forward()),
+      CurrentRoute.anime => icons.animeIconController
+          .reverse()
+          .then((value) => icons.animeIconController.forward()),
+      CurrentRoute.more => icons.moreIconController
+          .reverse()
+          .then((value) => icons.moreIconController.forward()),
+    };
   }
 }
 
@@ -438,15 +375,12 @@ class _CurrentPageWidget extends StatelessWidget {
     required this.icons,
     required this.changePage,
     required this.callback,
-    required this.showAnimeMangaPages,
   });
 
   final AnimatedIconsMixin icons;
   final ChangePageMixin changePage;
 
   final CallbackDescriptionNested? callback;
-
-  final bool showAnimeMangaPages;
 
   @override
   Widget build(BuildContext context) {
@@ -483,103 +417,52 @@ class _CurrentPageWidget extends StatelessWidget {
         ),
       ],
       child: Animate(
-        target: 0,
-        effects: [
-          FadeEffect(duration: 50.ms, begin: 1, end: 0),
-          const ThenEffect(delay: Duration(milliseconds: 50)),
-        ],
-        controller: icons.pageFadeAnimation,
-        child: showAnimeMangaPages
-            ? switch (changePage._routeNotifier.value) {
-                CurrentRoute.booru => _NavigatorShell(
-                    navigatorKey: changePage.mainKey,
-                    child: BooruPage(
-                      pagingRegistry: changePage.pagingRegistry,
-                      procPop: (pop) =>
-                          changePage._procPopA(booruPage, icons, pop),
-                      db: DatabaseConnectionNotifier.of(context),
-                    ),
+          target: 0,
+          effects: [
+            FadeEffect(duration: 50.ms, begin: 1, end: 0),
+            const ThenEffect(delay: Duration(milliseconds: 50)),
+          ],
+          controller: icons.pageFadeAnimation,
+          child: switch (changePage._routeNotifier.value) {
+            CurrentRoute.booru => _NavigatorShell(
+                navigatorKey: changePage.mainKey,
+                child: BooruPage(
+                  pagingRegistry: changePage.pagingRegistry,
+                  procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
+                  db: DatabaseConnectionNotifier.of(context),
+                ),
+              ),
+            CurrentRoute.gallery => _NavigatorShell(
+                navigatorKey: changePage.galleryKey,
+                child: GalleryDirectories(
+                  procPop: (pop) => changePage._procPop(
+                    galleryPage,
+                    morePage,
+                    icons,
+                    pop,
                   ),
-                CurrentRoute.gallery => _NavigatorShell(
-                    navigatorKey: changePage.galleryKey,
-                    child: GalleryDirectories(
-                      procPop: (pop) => changePage._procPop(
-                        galleryPage,
-                        morePage,
-                        icons,
-                        pop,
-                      ),
-                      db: DatabaseConnectionNotifier.of(context),
-                      l10n: AppLocalizations.of(context)!,
-                    ),
+                  db: DatabaseConnectionNotifier.of(context),
+                  l10n: AppLocalizations.of(context)!,
+                ),
+              ),
+            CurrentRoute.anime => AnimePage(
+                procPop: (pop) =>
+                    changePage._procPop(galleryPage, morePage, icons, pop),
+                db: DatabaseConnectionNotifier.of(context),
+              ),
+            CurrentRoute.more => _NavigatorShell(
+                navigatorKey: changePage.moreKey,
+                child: MorePage(
+                  popScope: (pop) => changePage._procPop(
+                    galleryPage,
+                    morePage,
+                    icons,
+                    pop,
                   ),
-                CurrentRoute.manga => _NavigatorShell(
-                    navigatorKey: changePage.mangaKey,
-                    child: MangaPage(
-                      procPop: (pop) => changePage._procPop(
-                        galleryPage,
-                        morePage,
-                        icons,
-                        pop,
-                      ),
-                      db: DatabaseConnectionNotifier.of(context),
-                    ),
-                  ),
-                CurrentRoute.anime => AnimePage(
-                    procPop: (pop) =>
-                        changePage._procPop(galleryPage, morePage, icons, pop),
-                    db: DatabaseConnectionNotifier.of(context),
-                  ),
-                CurrentRoute.more => _NavigatorShell(
-                    navigatorKey: changePage.moreKey,
-                    child: MorePage(
-                      popScope: (pop) => changePage._procPop(
-                        galleryPage,
-                        morePage,
-                        icons,
-                        pop,
-                      ),
-                      db: DatabaseConnectionNotifier.of(context),
-                    ),
-                  ),
-              }
-            : switch (changePage._routeNotifier.value) {
-                CurrentRoute.booru => _NavigatorShell(
-                    navigatorKey: changePage.mainKey,
-                    child: BooruPage(
-                      pagingRegistry: changePage.pagingRegistry,
-                      procPop: (pop) =>
-                          changePage._procPopA(booruPage, icons, pop),
-                      db: DatabaseConnectionNotifier.of(context),
-                    ),
-                  ),
-                CurrentRoute.gallery => _NavigatorShell(
-                    navigatorKey: changePage.galleryKey,
-                    child: GalleryDirectories(
-                      procPop: (pop) => changePage._procPop(
-                        galleryPage,
-                        morePage,
-                        icons,
-                        pop,
-                      ),
-                      db: DatabaseConnectionNotifier.of(context),
-                      l10n: AppLocalizations.of(context)!,
-                    ),
-                  ),
-                CurrentRoute() => _NavigatorShell(
-                    navigatorKey: changePage.moreKey,
-                    child: MorePage(
-                      popScope: (pop) => changePage._procPop(
-                        galleryPage,
-                        morePage,
-                        icons,
-                        pop,
-                      ),
-                      db: DatabaseConnectionNotifier.of(context),
-                    ),
-                  ),
-              },
-      ),
+                  db: DatabaseConnectionNotifier.of(context),
+                ),
+              ),
+          }),
     );
   }
 }

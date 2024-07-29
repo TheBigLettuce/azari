@@ -190,21 +190,6 @@ void _settingsServiceTests(IoServicesImplTable services) {
       expect(services.settings.current.selectedBooru, equals(Booru.danbooru));
     }
 
-    // showAnimeMangaPages
-    {
-      final s = services.settings.current;
-
-      expect(s.showAnimeMangaPages, equals(false));
-
-      final sCopy = s.copy(showAnimeMangaPages: true);
-
-      expect(sCopy.showAnimeMangaPages, equals(true));
-
-      sCopy.save();
-
-      expect(services.settings.current.showAnimeMangaPages, equals(true));
-    }
-
     // showWelcomePage
     {
       final s = services.settings.current;

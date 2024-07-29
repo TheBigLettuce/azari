@@ -38,7 +38,6 @@ class IsarSettings extends SettingsData {
     required this.quality,
     required this.safeMode,
     required this.showWelcomePage,
-    required this.showAnimeMangaPages,
     required this.extraSafeFilters,
   });
 
@@ -63,15 +62,11 @@ class IsarSettings extends SettingsData {
   final Booru selectedBooru;
 
   @override
-  final bool showAnimeMangaPages;
-
-  @override
   final bool showWelcomePage;
 
   @override
   IsarSettings copy({
     bool? extraSafeFilters,
-    bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,
@@ -80,7 +75,6 @@ class IsarSettings extends SettingsData {
   }) {
     return IsarSettings(
       extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
-      showAnimeMangaPages: showAnimeMangaPages ?? this.showAnimeMangaPages,
       showWelcomePage: showWelcomePage ?? this.showWelcomePage,
       path: (path as IsarSettingsPath?) ?? this.path,
       selectedBooru: selectedBooru ?? this.selectedBooru,

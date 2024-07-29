@@ -27,8 +27,6 @@ import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/manga/manga_info_page.dart";
-import "package:gallery/src/pages/manga/manga_page.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/glue_provider.dart";

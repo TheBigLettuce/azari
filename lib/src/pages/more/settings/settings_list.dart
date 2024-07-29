@@ -307,12 +307,6 @@ class _SettingsListState extends State<SettingsList> {
               _miscSettings.copy(animeAlwaysLoadFromNet: value).save(),
         ),
         SwitchListTile(
-          title: Text(l10n.showAnimeManga),
-          value: _settings.showAnimeMangaPages,
-          onChanged: (value) =>
-              _settings.copy(showAnimeMangaPages: value).save(),
-        ),
-        SwitchListTile(
           title: Text(l10n.extraSafeModeFilters),
           subtitle: Text(
             l10n.blacklistsTags(BooruAPI.additionalSafetyTags.keys.join(", ")),

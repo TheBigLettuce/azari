@@ -8,11 +8,8 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/net/manga/impl/manga_dex.dart";
 import "package:gallery/src/pages/anime/anime.dart";
-import "package:gallery/src/pages/manga/launch_reader.dart";
-import "package:gallery/src/pages/manga/manga_info_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -72,22 +69,22 @@ enum MangaChapterOrder {
   asc;
 }
 
-extension MangaImageExt on MangaImage {
-  void download(BuildContext context, ReaderData data, int i) {
-    DownloadManager.of(context).putAll(
-      [
-        DownloadEntry.d(
-          name: "$i / $maxPages - ${data.chapterId}.${url.split(".").last}",
-          url: url,
-          thumbUrl: url,
-          site: data.mangaTitle,
-          thenMoveTo: null,
-        ),
-      ],
-      SettingsService.db().current,
-    );
-  }
-}
+// extension MangaImageExt on MangaImage {
+//   void download(BuildContext context, ReaderData data, int i) {
+//     DownloadManager.of(context).putAll(
+//       [
+//         DownloadEntry.d(
+//           name: "$i / $maxPages - ${data.chapterId}.${url.split(".").last}",
+//           url: url,
+//           thumbUrl: url,
+//           site: data.mangaTitle,
+//           thenMoveTo: null,
+//         ),
+//       ],
+//       SettingsService.db().current,
+//     );
+//   }
+// }
 
 class MangaImage
     implements
@@ -120,11 +117,11 @@ class MangaImage
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
-    final data = MangaReaderNotifier.maybeOf(context);
+    // final data = MangaReaderNotifier.maybeOf(context);
 
-    if (data == null) {
-      return const [];
-    }
+    // if (data == null) {
+    //   return const [];
+    // }
 
     // final db = DatabaseConnectionNotifier.of(context);
 
@@ -201,21 +198,21 @@ mixin MangaEntry
     MangaEntry cell,
     int idx,
   ) {
-    final client = Dio();
-    final api = site.api(client);
+    // final client = Dio();
+    // final api = site.api(client);
 
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return MangaInfoPage(
-            id: id,
-            api: api,
-            entry: this,
-            db: DatabaseConnectionNotifier.of(context),
-          );
-        },
-      ),
-    ).whenComplete(client.close);
+    // Navigator.of(context, rootNavigator: true).push(
+    //   MaterialPageRoute<void>(
+    //     builder: (context) {
+    //       return MangaInfoPage(
+    //         id: id,
+    //         api: api,
+    //         entry: this,
+    //         db: DatabaseConnectionNotifier.of(context),
+    //       );
+    //     },
+    //   ),
+    // ).whenComplete(client.close);
   }
 }
 

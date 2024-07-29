@@ -5,6 +5,41 @@
 
 part of "../../home.dart";
 
+// class AnimeDestinationIcon extends StatelessWidget {
+//   const AnimeDestinationIcon({
+//     super.key,
+//     required this.controller,
+//   });
+
+//   final AnimationController controller;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
+
+//     final isSelected = CurrentRoute.of(context) == CurrentRoute.anime;
+
+//     return Animate(
+//       controller: controller,
+//       autoPlay: false,
+//       target: 0,
+//       effects: [
+//         RotateEffect(
+//           delay: 50.ms,
+//           duration: 400.ms,
+//           begin: 0,
+//           end: 1,
+//           curve: Easing.emphasizedDecelerate,
+//         ),
+//       ],
+//       child: Icon(
+//         isSelected ? Icons.video_library_rounded : Icons.video_library_outlined,
+//         color: isSelected ? theme.colorScheme.primary : null,
+//       ),
+//     );
+//   }
+// }
+
 class AnimeDestinationIcon extends StatelessWidget {
   const AnimeDestinationIcon({
     super.key,
@@ -15,26 +50,34 @@ class AnimeDestinationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     final isSelected = CurrentRoute.of(context) == CurrentRoute.anime;
 
     return Animate(
       controller: controller,
       autoPlay: false,
-      target: 0,
+      target: 1,
       effects: [
-        RotateEffect(
-          delay: 50.ms,
-          duration: 400.ms,
-          begin: 0,
-          end: 1,
-          curve: Easing.emphasizedDecelerate,
+        ShimmerEffect(
+          angle: pi / -5,
+          duration: 440.ms,
+          colors: [
+            colorScheme.primary.withOpacity(isSelected ? 1 : 0),
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+            Colors.indigo,
+            Colors.purple,
+            Colors.red,
+          ],
         ),
       ],
       child: Icon(
         isSelected ? Icons.video_library_rounded : Icons.video_library_outlined,
-        color: isSelected ? theme.colorScheme.primary : null,
+        color: isSelected ? colorScheme.primary : null,
       ),
     );
   }

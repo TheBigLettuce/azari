@@ -349,7 +349,6 @@ class $SettingsData extends SettingsData {
     required this.quality,
     required this.safeMode,
     required this.showWelcomePage,
-    required this.showAnimeMangaPages,
     required this.extraSafeFilters,
   });
 
@@ -366,9 +365,6 @@ class $SettingsData extends SettingsData {
   final Booru selectedBooru;
 
   @override
-  final bool showAnimeMangaPages;
-
-  @override
   final bool showWelcomePage;
 
   @override
@@ -377,7 +373,6 @@ class $SettingsData extends SettingsData {
   @override
   SettingsData copy({
     bool? extraSafeFilters,
-    bool? showAnimeMangaPages,
     SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,
@@ -385,7 +380,6 @@ class $SettingsData extends SettingsData {
     bool? showWelcomePage,
   }) =>
       $SettingsData(
-        showAnimeMangaPages: showAnimeMangaPages ?? this.showAnimeMangaPages,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
         safeMode: safeMode ?? this.safeMode,

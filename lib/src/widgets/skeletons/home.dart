@@ -28,7 +28,6 @@ class HomeSkeleton extends StatefulWidget {
     super.key,
     required this.noNavBar,
     required this.animatedIcons,
-    required this.showAnimeMangaPages,
     required this.onDestinationSelected,
     required this.changePage,
     required this.booru,
@@ -44,7 +43,6 @@ class HomeSkeleton extends StatefulWidget {
 
   final CallbackDescriptionNested? callback;
 
-  final bool showAnimeMangaPages;
   final bool noNavBar;
 
   final Widget child;
@@ -110,7 +108,6 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
             onDestinationSelected: widget.onDestinationSelected,
             callback: widget.callback,
             booru: widget.booru,
-            showAnimeMangaPages: widget.showAnimeMangaPages,
             showRail: showRail,
           ),
           resizeToAvoidBottomInset: false,
@@ -126,7 +123,6 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
                       onDestinationSelected: widget.onDestinationSelected,
                       animatedIcons: widget.animatedIcons,
                       booru: widget.booru,
-                      showAnimeMangaPages: widget.showAnimeMangaPages,
                     ),
                     const VerticalDivider(width: 1),
                     Expanded(child: child),
@@ -244,7 +240,6 @@ class _NavigationRail extends StatelessWidget {
     required this.onDestinationSelected,
     required this.animatedIcons,
     required this.booru,
-    required this.showAnimeMangaPages,
   });
 
   final void Function(BuildContext, CurrentRoute) onDestinationSelected;
@@ -252,8 +247,6 @@ class _NavigationRail extends StatelessWidget {
   final AnimatedIconsMixin animatedIcons;
 
   final Booru booru;
-
-  final bool showAnimeMangaPages;
 
   @override
   Widget build(BuildContext context) {
@@ -274,10 +267,7 @@ class _NavigationRail extends StatelessWidget {
           context,
           CurrentRoute.fromIndex(i),
         ),
-        destinations: animatedIcons.railIcons(
-          booru,
-          showAnimeMangaPages,
-        ),
+        destinations: animatedIcons.railIcons(booru),
         selectedIndex: CurrentRoute.of(context).index,
       ),
     );
@@ -292,7 +282,6 @@ class _BottomNavigationBar extends StatelessWidget {
     required this.onDestinationSelected,
     required this.callback,
     required this.booru,
-    required this.showAnimeMangaPages,
     required this.showRail,
   });
 
@@ -305,7 +294,6 @@ class _BottomNavigationBar extends StatelessWidget {
 
   final Booru booru;
 
-  final bool showAnimeMangaPages;
   final bool showRail;
 
   @override
@@ -340,7 +328,6 @@ class _BottomNavigationBar extends StatelessWidget {
                     : animatedIcons.icons(
                         context,
                         booru,
-                        showAnimeMangaPages,
                       ),
               ),
       );
@@ -512,10 +499,7 @@ class __DrawerState extends State<_Drawer> {
 
         BooruSubPage.selectOf(context, BooruSubPage.fromIdx(value));
         Scaffold.of(context).closeDrawer();
-        widget.changePage.animateIcons(
-          widget.animatedIcons,
-          SettingsService.db().current.showAnimeMangaPages,
-        );
+        widget.changePage.animateIcons(widget.animatedIcons);
       },
       selectedIndex: selectedBooruPage.index,
       children: [
