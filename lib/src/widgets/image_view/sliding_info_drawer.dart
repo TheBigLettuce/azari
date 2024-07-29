@@ -9,6 +9,78 @@ import "package:gallery/src/widgets/gesture_dead_zones.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
+class ImageViewSlidingInfoDrawer extends StatefulWidget {
+  const ImageViewSlidingInfoDrawer({
+    super.key,
+    required this.widgets,
+    required this.bottomSheetController,
+    required this.viewPadding,
+  });
+
+  final ContentWidgets widgets;
+  final DraggableScrollableController bottomSheetController;
+  final EdgeInsets viewPadding;
+
+  @override
+  State<ImageViewSlidingInfoDrawer> createState() =>
+      _ImageViewSlidingInfoDrawerState();
+}
+
+class _ImageViewSlidingInfoDrawerState
+    extends State<ImageViewSlidingInfoDrawer> {
+  ContentWidgets get widgets => widget.widgets;
+  DraggableScrollableController get bottomSheetController =>
+      widget.bottomSheetController;
+
+  @override
+  Widget build(BuildContext context) {
+    final min = MediaQuery.sizeOf(context);
+
+    return DraggableScrollableSheet(
+      controller: bottomSheetController,
+      expand: false,
+      snap: true,
+      shouldCloseOnMinExtent: false,
+      maxChildSize:
+          1 - ((kToolbarHeight + widget.viewPadding.top + 8) / min.height),
+      minChildSize: 0,
+      initialChildSize: 0,
+      builder: (context, scrollController) {
+        return GestureDeadZones(
+          left: true,
+          right: true,
+          child: CustomScrollView(
+            key: ValueKey((widget.viewPadding.bottom, min)),
+            controller: scrollController,
+            slivers: [
+              Builder(
+                builder: (context) {
+                  FocusNotifier.of(context);
+                  ImageViewInfoTilesRefreshNotifier.of(
+                    context,
+                  );
+
+                  return _IgnoringPointer(
+                    bottomSheetController: bottomSheetController,
+                    viewPadding: widget.viewPadding,
+                    widgets: widget.widgets,
+                    child: widgets.tryAsInfoable(context)!,
+                  );
+                },
+              ),
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 80,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class ImageViewFab extends StatefulWidget {
   const ImageViewFab({
     super.key,
@@ -153,78 +225,6 @@ class __IgnoringPointerState extends State<_IgnoringPointer> {
     return SliverIgnorePointer(
       ignoring: ignorePointer,
       sliver: widget.child,
-    );
-  }
-}
-
-class ImageViewSlidingInfoDrawer extends StatefulWidget {
-  const ImageViewSlidingInfoDrawer({
-    super.key,
-    required this.widgets,
-    required this.bottomSheetController,
-    required this.viewPadding,
-  });
-
-  final ContentWidgets widgets;
-  final DraggableScrollableController bottomSheetController;
-  final EdgeInsets viewPadding;
-
-  @override
-  State<ImageViewSlidingInfoDrawer> createState() =>
-      _ImageViewSlidingInfoDrawerState();
-}
-
-class _ImageViewSlidingInfoDrawerState
-    extends State<ImageViewSlidingInfoDrawer> {
-  ContentWidgets get widgets => widget.widgets;
-  DraggableScrollableController get bottomSheetController =>
-      widget.bottomSheetController;
-
-  @override
-  Widget build(BuildContext context) {
-    final min = MediaQuery.sizeOf(context);
-
-    return DraggableScrollableSheet(
-      controller: bottomSheetController,
-      expand: false,
-      snap: true,
-      shouldCloseOnMinExtent: false,
-      maxChildSize:
-          1 - ((kToolbarHeight + widget.viewPadding.top + 8) / min.height),
-      minChildSize: 0,
-      initialChildSize: 0,
-      builder: (context, scrollController) {
-        return GestureDeadZones(
-          left: true,
-          right: true,
-          child: CustomScrollView(
-            key: ValueKey((widget.viewPadding.bottom, min)),
-            controller: scrollController,
-            slivers: [
-              Builder(
-                builder: (context) {
-                  FocusNotifier.of(context);
-                  ImageViewInfoTilesRefreshNotifier.of(
-                    context,
-                  );
-
-                  return _IgnoringPointer(
-                    bottomSheetController: bottomSheetController,
-                    viewPadding: widget.viewPadding,
-                    widgets: widget.widgets,
-                    child: widgets.tryAsInfoable(context)!,
-                  );
-                },
-              ),
-              SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom + 80,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

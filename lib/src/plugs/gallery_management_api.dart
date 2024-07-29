@@ -5,8 +5,7 @@
 
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/gallery_management/dummy.dart"
-    if (dart.library.io) "package:gallery/src/plugs/gallery_management/io.dart"
+import "package:gallery/src/plugs/gallery_management/io.dart"
     if (dart.library.html) "package:gallery/src/plugs/gallery_management/web.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 

@@ -15,7 +15,7 @@ import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
-import "package:gallery/src/widgets/image_view/bottom_bar.dart";
+import "package:gallery/src/widgets/image_view/sliding_info_drawer.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 class WrapImageViewSkeleton extends StatefulWidget {

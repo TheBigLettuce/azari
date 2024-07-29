@@ -69,23 +69,6 @@ enum MangaChapterOrder {
   asc;
 }
 
-// extension MangaImageExt on MangaImage {
-//   void download(BuildContext context, ReaderData data, int i) {
-//     DownloadManager.of(context).putAll(
-//       [
-//         DownloadEntry.d(
-//           name: "$i / $maxPages - ${data.chapterId}.${url.split(".").last}",
-//           url: url,
-//           thumbUrl: url,
-//           site: data.mangaTitle,
-//           thenMoveTo: null,
-//         ),
-//       ],
-//       SettingsService.db().current,
-//     );
-//   }
-// }
-
 class MangaImage
     implements
         CellBase,

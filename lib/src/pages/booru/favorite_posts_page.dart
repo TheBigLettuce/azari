@@ -20,6 +20,7 @@ import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/actions.dart" as booru_actions;
 import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -30,141 +31,29 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-class FavoritePostsPage extends StatelessWidget {
+class FavoritePostsPage extends StatefulWidget with DbConnHandle<DbConn> {
   const FavoritePostsPage({
     super.key,
-    required this.state,
     this.asSliver = true,
     this.wrapGridPage = false,
     required this.db,
     required this.api,
+    required this.rootNavigatorPop,
   });
 
-  final FavoriteBooruPageState state;
   final bool asSliver;
   final bool wrapGridPage;
   final BooruAPI api;
-
-  final DbConn db;
-
-  void _onPressed(
-    BuildContext context,
-    Booru booru,
-    String t,
-    SafeMode? safeMode,
-  ) {
-    Navigator.pop(context);
-
-    state.searchTextController.text = t;
-    state.filter.filteringMode = FilteringMode.tag;
-  }
-
-  GridFrame<FavoritePost> child(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return GridFrame<FavoritePost>(
-      key: state.state.gridKey,
-      slivers: [
-        CurrentGridSettingsLayout<FavoritePost>(
-          source: state.filter.backingStorage,
-          progress: state.filter.progress,
-          gridSeed: state.state.gridSeed,
-        ),
-      ],
-      functionality: GridFunctionality(
-        search: PageNameSearchWidget(
-          leading: IconButton(
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-            icon: const Icon(Icons.menu_rounded),
-          ),
-          trailingItems: [
-            ChainedFilterIcon(
-              filter: state.filter,
-              controller: state.searchTextController,
-              complete: api.searchTag,
-              onChange: (str) => state.filter.clearRefresh(),
-              focusNode: state.searchFocus,
-            ),
-          ],
-        ),
-        settingsButton: GridSettingsButton.fromWatchable(state.gridSettings),
-        registerNotifiers: (child) => OnBooruTagPressed(
-          onPressed: _onPressed,
-          child: child,
-        ),
-        selectionGlue: GlueProvider.generateOf(context)(),
-        download: state.download,
-        source: state.filter,
-      ),
-      description: GridDescription(
-        actions: state.gridActions(),
-        showAppBar: !asSliver,
-        asSliver: asSliver,
-        keybindsDescription: l10n.favoritesLabel,
-        pageName: l10n.favoritesLabel,
-        gridSeed: state.state.gridSeed,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GridConfiguration(
-      sliver: asSliver,
-      watch: state.gridSettings.watch,
-      child: wrapGridPage
-          ? WrapGridPage(
-              child: child(context),
-            )
-          : child(context),
-    );
-  }
-}
-
-class FavoriteBooruStateHolder extends StatefulWidget
-    with DbConnHandle<DbConn> {
-  const FavoriteBooruStateHolder({
-    super.key,
-    required this.build,
-    required this.db,
-  });
-
-  final Widget Function(BuildContext context, FavoriteBooruPageState state)
-      build;
+  final void Function(bool)? rootNavigatorPop;
 
   @override
   final DbConn db;
 
   @override
-  State<FavoriteBooruStateHolder> createState() =>
-      _FavoriteBooruStateHolderState();
+  State<FavoritePostsPage> createState() => _FavoritePostsPageState();
 }
 
-class _FavoriteBooruStateHolderState extends State<FavoriteBooruStateHolder>
-    with FavoriteBooruPageState<FavoriteBooruStateHolder> {
-  @override
-  void initState() {
-    super.initState();
-
-    initFavoriteBooruState();
-  }
-
-  @override
-  void dispose() {
-    disposeFavoriteBooruState();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.build(context, this);
-  }
-}
-
-mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
+class _FavoritePostsPageState extends State<FavoritePostsPage> {
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   WatchableGridSettingsData get gridSettings =>
       widget.db.gridSettings.favoritePosts;
@@ -174,64 +63,14 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
 
-  Iterable<FavoritePost> _collector(
-    Map<String, Set<(int, Booru)>>? data,
-  ) sync* {
-    for (final ids in data!.values) {
-      for (final i in ids) {
-        yield favoritePosts.forIdxUnsafe((i.$1, i.$2));
-      }
-    }
-  }
-
-  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
-    Iterable<T> cells,
-    dynamic data_,
-    bool end,
-    Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
-    SafeMode currentSafeMode,
-  ) {
-    final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
-
-    T? prevCell;
-    for (final e in cells) {
-      if (!currentSafeMode.inLevel(e.rating.asSafeMode)) {
-        continue;
-      }
-
-      if (prevCell != null) {
-        if (prevCell.md5 == e.md5) {
-          final prev = data[e.md5] ?? {};
-
-          data[e.md5] = {...prev, (e.id, e.booru)};
-        }
-      }
-
-      prevCell = e;
-    }
-
-    if (end) {
-      return (collect(data), null);
-    }
-
-    return (const [], data);
-  }
-
   late final state = GridSkeletonState<FavoritePost>();
 
   late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
 
-  void disposeFavoriteBooruState() {
-    settingsWatcher.cancel();
-    filter.destroy();
+  @override
+  void initState() {
+    super.initState();
 
-    searchFocus.dispose();
-    searchTextController.dispose();
-
-    state.dispose();
-  }
-
-  void initFavoriteBooruState() {
     filter = ChainedFilterResourceSource(
       favoritePosts,
       filter: (cells, filteringMode, sortingMode, end, [data]) {
@@ -308,6 +147,74 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
     filter.clearRefresh();
   }
 
+  @override
+  void dispose() {
+    settingsWatcher.cancel();
+    filter.destroy();
+
+    searchFocus.dispose();
+    searchTextController.dispose();
+
+    state.dispose();
+
+    super.dispose();
+  }
+
+  Iterable<FavoritePost> _collector(
+    Map<String, Set<(int, Booru)>>? data,
+  ) sync* {
+    for (final ids in data!.values) {
+      for (final i in ids) {
+        yield favoritePosts.forIdxUnsafe((i.$1, i.$2));
+      }
+    }
+  }
+
+  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
+    Iterable<T> cells,
+    dynamic data_,
+    bool end,
+    Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
+    SafeMode currentSafeMode,
+  ) {
+    final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
+
+    T? prevCell;
+    for (final e in cells) {
+      if (!currentSafeMode.inLevel(e.rating.asSafeMode)) {
+        continue;
+      }
+
+      if (prevCell != null) {
+        if (prevCell.md5 == e.md5) {
+          final prev = data[e.md5] ?? {};
+
+          data[e.md5] = {...prev, (e.id, e.booru)};
+        }
+      }
+
+      prevCell = e;
+    }
+
+    if (end) {
+      return (collect(data), null);
+    }
+
+    return (const [], data);
+  }
+
+  void _onPressed(
+    BuildContext context,
+    Booru booru,
+    String t,
+    SafeMode? safeMode,
+  ) {
+    Navigator.pop(context);
+
+    searchTextController.text = t;
+    filter.filteringMode = FilteringMode.tag;
+  }
+
   void download(int i) => filter
       .forIdxUnsafe(i)
       .download(DownloadManager.of(context), PostTags.fromContext(context));
@@ -321,5 +228,67 @@ mixin FavoriteBooruPageState<T extends DbConnHandle<DbConn>> on State<T> {
         showDeleteSnackbar: true,
       ),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final child = GridFrame<FavoritePost>(
+      key: state.gridKey,
+      slivers: [
+        CurrentGridSettingsLayout<FavoritePost>(
+          source: filter.backingStorage,
+          progress: filter.progress,
+          gridSeed: state.gridSeed,
+        ),
+      ],
+      functionality: GridFunctionality(
+        search: PageNameSearchWidget(
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: const Icon(Icons.menu_rounded),
+          ),
+          trailingItems: [
+            ChainedFilterIcon(
+              filter: filter,
+              controller: searchTextController,
+              complete: widget.api.searchTag,
+              onChange: (str) => filter.clearRefresh(),
+              focusNode: searchFocus,
+            ),
+          ],
+        ),
+        settingsButton: GridSettingsButton.fromWatchable(gridSettings),
+        registerNotifiers: (child) => OnBooruTagPressed(
+          onPressed: _onPressed,
+          child: child,
+        ),
+        selectionGlue: GlueProvider.generateOf(context)(),
+        download: download,
+        source: filter,
+      ),
+      description: GridDescription(
+        actions: gridActions(),
+        showAppBar: !widget.asSliver,
+        asSliver: widget.asSliver,
+        keybindsDescription: l10n.favoritesLabel,
+        pageName: l10n.favoritesLabel,
+        gridSeed: state.gridSeed,
+      ),
+    );
+
+    return GridPopScope(
+      searchTextController: searchTextController,
+      filter: filter,
+      rootNavigatorPop: widget.rootNavigatorPop,
+      child: GridConfiguration(
+        sliver: widget.asSliver,
+        watch: gridSettings.watch,
+        child: widget.wrapGridPage ? WrapGridPage(child: child) : child,
+      ),
+    );
   }
 }

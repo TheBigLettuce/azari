@@ -6,8 +6,7 @@
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/plugs/api_functions/dummy.dart"
-    if (dart.library.io) "package:gallery/src/plugs/api_functions/io.dart"
+import "package:gallery/src/plugs/api_functions/io.dart"
     if (dart.library.html) "package:gallery/src/plugs/api_functions/web.dart";
 
 @immutable

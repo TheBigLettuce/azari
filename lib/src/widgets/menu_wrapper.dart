@@ -7,8 +7,6 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-import "package:gallery/src/pages/more/settings/settings_label.dart";
-
 class MenuWrapper extends StatefulWidget {
   const MenuWrapper({
     super.key,
@@ -97,6 +95,43 @@ class _MenuWrapperState extends State<MenuWrapper> {
         );
       },
       child: widget.child,
+    );
+  }
+}
+
+class MenuLabel extends StatefulWidget {
+  const MenuLabel({
+    super.key,
+    required this.title,
+  });
+  final String title;
+
+  @override
+  State<MenuLabel> createState() => _MenuLabelState();
+}
+
+class _MenuLabelState extends State<MenuLabel> {
+  bool expandTitle = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: () {
+        expandTitle = !expandTitle;
+
+        setState(() {});
+      },
+      child: Text(
+        widget.title,
+        style: theme.textTheme.titleSmall!.copyWith(
+          color: theme.colorScheme.primary,
+          letterSpacing: 0.6,
+        ),
+        maxLines: expandTitle ? null : 1,
+        overflow: expandTitle ? null : TextOverflow.ellipsis,
+      ),
     );
   }
 }

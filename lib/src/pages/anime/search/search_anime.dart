@@ -14,7 +14,6 @@ import "package:gallery/src/db/services/resource_source/resource_source.dart";
 import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/pages/anime/anime.dart";
 import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";
@@ -169,7 +168,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
           return SearchAnimePage<AnimeEntryData, int, AnimeGenre>(
             initalText: search,
             explicit: safeMode,
-            actions: DiscoverTab.actions(db.savedAnimeEntries, db.watchedAnime),
+            actions: _animeSearchActions(db.savedAnimeEntries, db.watchedAnime),
             initalGenreId: initalGenreId,
             siteUri: Uri.https(api.site.browserUrl()),
             info: api.site.name,
@@ -616,3 +615,30 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
     );
   }
 }
+
+List<GridAction<AnimeSearchEntry>> _animeSearchActions(
+  SavedAnimeEntriesService savedAnimeEntries,
+  WatchedAnimeEntryService watchedAnimeEntries,
+) =>
+    [
+      GridAction(
+        Icons.add,
+        (selected) {
+          final toDelete = <AnimeSearchEntry>[];
+          final toAdd = <AnimeSearchEntry>[];
+
+          for (final e in selected) {
+            final entry = savedAnimeEntries.maybeGet(e.id, e.site);
+            if (entry == null) {
+              toAdd.add(e);
+            } else if (entry.inBacklog) {
+              toDelete.add(e);
+            }
+          }
+
+          savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
+          savedAnimeEntries.deleteAll(toDelete.toIds);
+        },
+        true,
+      ),
+    ];

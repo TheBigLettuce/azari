@@ -5,7 +5,5 @@
 
 class CloudflareException implements Exception {
   @override
-  String toString() {
-    return "403, Cloudflare";
-  }
+  String toString() => "403, Cloudflare";
 }

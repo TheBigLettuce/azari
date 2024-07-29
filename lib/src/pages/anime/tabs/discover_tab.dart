@@ -5,304 +5,278 @@
 
 part of "../anime.dart";
 
-class DiscoverExtra {
-  String searchText = "";
-  List<AnimeSearchEntry> entries = [];
-  int? genreId;
-  AnimeSafeMode mode = AnimeSafeMode.safe;
-  Future<Map<int, AnimeGenre>>? future;
-}
+// class DiscoverExtra {
+//   String searchText = "";
+//   List<AnimeSearchEntry> entries = [];
+//   int? genreId;
+//   AnimeSafeMode mode = AnimeSafeMode.safe;
+//   Future<Map<int, AnimeGenre>>? future;
+// }
 
-class DiscoverTab extends StatefulWidget {
-  const DiscoverTab({
-    super.key,
-    required this.api,
-    required this.db,
-    required this.entry,
-  });
+// class DiscoverTab extends StatefulWidget {
+//   const DiscoverTab({
+//     super.key,
+//     required this.api,
+//     required this.db,
+//     required this.entry,
+//   });
 
-  final AnimeAPI api;
-  final DiscoverPagingEntry entry;
+//   final AnimeAPI api;
+//   final DiscoverPagingEntry entry;
 
-  final DbConn db;
+//   final DbConn db;
 
-  static List<GridAction<AnimeSearchEntry>> actions(
-    SavedAnimeEntriesService savedAnimeEntries,
-    WatchedAnimeEntryService watchedAnimeEntries,
-  ) =>
-      [
-        GridAction(
-          Icons.add,
-          (selected) {
-            final toDelete = <AnimeSearchEntry>[];
-            final toAdd = <AnimeSearchEntry>[];
 
-            for (final e in selected) {
-              final entry = savedAnimeEntries.maybeGet(e.id, e.site);
-              if (entry == null) {
-                toAdd.add(e);
-              } else if (entry.inBacklog) {
-                toDelete.add(e);
-              }
-            }
+//   @override
+//   State<DiscoverTab> createState() => _DiscoverTabState();
+// }
 
-            savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
-            savedAnimeEntries.deleteAll(toDelete.toIds);
-          },
-          true,
-        ),
-      ];
+// class DiscoverPagingEntry implements PagingEntry {
+//   DiscoverPagingEntry(this.api);
 
-  @override
-  State<DiscoverTab> createState() => _DiscoverTabState();
-}
+//   factory DiscoverPagingEntry.prototype(AnimeAPI api) =>
+//       DiscoverPagingEntry(api);
 
-class DiscoverPagingEntry implements PagingEntry {
-  DiscoverPagingEntry(this.api);
+//   final AnimeAPI api;
+//   late final source = GenericListSource<AnimeSearchEntry>(
+//     () {
+//       page = 0;
 
-  factory DiscoverPagingEntry.prototype(AnimeAPI api) =>
-      DiscoverPagingEntry(api);
+//       return api.search(
+//         searchText,
+//         page,
+//         genreId,
+//         mode,
+//       );
+//     },
+//     next: () => api
+//         .search(
+//       searchText,
+//       page + 1,
+//       genreId,
+//       mode,
+//     )
+//         .then((l) {
+//       page += 1;
 
-  final AnimeAPI api;
-  late final source = GenericListSource<AnimeSearchEntry>(
-    () {
-      page = 0;
+//       return l;
+//     }),
+//   );
 
-      return api.search(
-        searchText,
-        page,
-        genreId,
-        mode,
-      );
-    },
-    next: () => api
-        .search(
-      searchText,
-      page + 1,
-      genreId,
-      mode,
-    )
-        .then((l) {
-      page += 1;
+//   Future<Map<int, AnimeGenre>>? future;
 
-      return l;
-    }),
-  );
+//   int? genreId;
 
-  Future<Map<int, AnimeGenre>>? future;
+//   String searchText = "";
 
-  int? genreId;
+//   AnimeSafeMode mode = AnimeSafeMode.safe;
 
-  String searchText = "";
+//   @override
+//   int page = 0;
 
-  AnimeSafeMode mode = AnimeSafeMode.safe;
+//   @override
+//   bool reachedEnd = false;
 
-  @override
-  int page = 0;
+//   @override
+//   void dispose() {
+//     source.destroy();
+//   }
 
-  @override
-  bool reachedEnd = false;
+//   @override
+//   double offset = 0;
 
-  @override
-  void dispose() {
-    source.destroy();
-  }
+//   @override
+//   void setOffset(double o) => offset = o;
 
-  @override
-  double offset = 0;
+//   @override
+//   void updateTime() {}
+// }
 
-  @override
-  void setOffset(double o) => offset = o;
+// class _DiscoverTabState extends State<DiscoverTab> {
+//   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
+//   WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
 
-  @override
-  void updateTime() {}
-}
+//   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+//     hideName: false,
+//     aspectRatio: GridAspectRatio.zeroSeven,
+//     columns: GridColumn.three,
+//     layoutType: GridLayoutType.grid,
+//   );
 
-class _DiscoverTabState extends State<DiscoverTab> {
-  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
-  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+//   final GridSkeletonState<AnimeSearchEntry> state =
+//       GridSkeletonState<AnimeSearchEntry>();
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
-    hideName: false,
-    aspectRatio: GridAspectRatio.zeroSeven,
-    columns: GridColumn.three,
-    layoutType: GridLayoutType.grid,
-  );
+//   GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
-  final GridSkeletonState<AnimeSearchEntry> state =
-      GridSkeletonState<AnimeSearchEntry>();
+//   DiscoverPagingEntry get pagingState => widget.entry;
 
-  GenericListSource<AnimeSearchEntry> get source => pagingState.source;
+//   @override
+//   void initState() {
+//     super.initState();
+//   }
 
-  DiscoverPagingEntry get pagingState => widget.entry;
+//   @override
+//   void dispose() {
+//     state.dispose();
 
-  @override
-  void initState() {
-    super.initState();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  void dispose() {
-    state.dispose();
+//   // void openSearchSheet() {
+//   //   showModalBottomSheet<void>(
+//   //     context: context,
+//   //     isScrollControlled: true,
+//   //     useRootNavigator: true,
+//   //     showDragHandle: true,
+//   //     builder: (context) {
+//   //       return SafeArea(
+//   //         child: SearchOptions<int, AnimeGenre>(
+//   //           info: widget.api.site.name,
+//   //           setCurrentGenre: (g) {
+//   //             pagingState.genreId = g;
 
-    super.dispose();
-  }
+//   //             source.clearRefresh();
+//   //           },
+//   //           initalGenreId: pagingState.genreId,
+//   //           header: _SearchBar(
+//   //             pagingState: pagingState,
+//   //             gridKey: state.gridKey,
+//   //           ),
+//   //           genreFuture: () {
+//   //             if (pagingState.future != null) {
+//   //               return pagingState.future!;
+//   //             }
 
-  // void openSearchSheet() {
-  //   showModalBottomSheet<void>(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     useRootNavigator: true,
-  //     showDragHandle: true,
-  //     builder: (context) {
-  //       return SafeArea(
-  //         child: SearchOptions<int, AnimeGenre>(
-  //           info: widget.api.site.name,
-  //           setCurrentGenre: (g) {
-  //             pagingState.genreId = g;
+//   //             pagingState.future = widget.api.genres(AnimeSafeMode.safe);
 
-  //             source.clearRefresh();
-  //           },
-  //           initalGenreId: pagingState.genreId,
-  //           header: _SearchBar(
-  //             pagingState: pagingState,
-  //             gridKey: state.gridKey,
-  //           ),
-  //           genreFuture: () {
-  //             if (pagingState.future != null) {
-  //               return pagingState.future!;
-  //             }
+//   //             return pagingState.future!;
+//   //           },
+//   //           idFromGenre: (genre) => (genre.id, genre.title),
+//   //         ),
+//   //       );
+//   //     },
+//   //   );
+//   // }
 
-  //             pagingState.future = widget.api.genres(AnimeSafeMode.safe);
+//   void search(String string) {
+//     pagingState.searchText = string;
+//     source.clearRefresh();
+//   }
 
-  //             return pagingState.future!;
-  //           },
-  //           idFromGenre: (genre) => (genre.id, genre.title),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+//   @override
+//   Widget build(BuildContext context) {
+//     return GridConfiguration(
+//       watch: gridSettings.watch,
+//       child: GridPopScope(
+//         searchTextController: null,
+//         filter: null,
+//         child: GridFrame<AnimeSearchEntry>(
+//           key: state.gridKey,
+//           slivers: [
+//             CurrentGridSettingsLayout<AnimeSearchEntry>(
+//               source: source.backingStorage,
+//               progress: source.progress,
+//               gridSeed: state.gridSeed,
+//             ),
+//           ],
+//           initalScrollPosition: pagingState.offset,
+//           functionality: GridFunctionality(
+//             updateScrollPosition: pagingState.setOffset,
+//             selectionGlue: GlueProvider.generateOf(context)(),
+//             source: source,
+//           ),
+//           description: GridDescription(
+//             animationsOnSourceWatch: false,
+//             showAppBar: false,
+//             actions:
+//                 DiscoverTab.actions(savedAnimeEntries, watchedAnimeEntries),
+//             keybindsDescription: AppLocalizations.of(context)!.discoverTab,
+//             gridSeed: state.gridSeed,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-  void search(String string) {
-    pagingState.searchText = string;
-    source.clearRefresh();
-  }
+// class _SearchBar extends StatefulWidget {
+//   const _SearchBar({
+//     required this.pagingState,
+//     required this.gridKey,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: GridPopScope(
-        searchTextController: null,
-        filter: null,
-        child: GridFrame<AnimeSearchEntry>(
-          key: state.gridKey,
-          slivers: [
-            CurrentGridSettingsLayout<AnimeSearchEntry>(
-              source: source.backingStorage,
-              progress: source.progress,
-              gridSeed: state.gridSeed,
-            ),
-          ],
-          initalScrollPosition: pagingState.offset,
-          functionality: GridFunctionality(
-            updateScrollPosition: pagingState.setOffset,
-            selectionGlue: GlueProvider.generateOf(context)(),
-            source: source,
-          ),
-          description: GridDescription(
-            animationsOnSourceWatch: false,
-            showAppBar: false,
-            actions:
-                DiscoverTab.actions(savedAnimeEntries, watchedAnimeEntries),
-            keybindsDescription: AppLocalizations.of(context)!.discoverTab,
-            gridSeed: state.gridSeed,
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   final DiscoverPagingEntry pagingState;
+//   final GlobalKey<GridFrameState> gridKey;
 
-class _SearchBar extends StatefulWidget {
-  const _SearchBar({
-    required this.pagingState,
-    required this.gridKey,
-  });
+//   @override
+//   State<_SearchBar> createState() => __SearchBarState();
+// }
 
-  final DiscoverPagingEntry pagingState;
-  final GlobalKey<GridFrameState> gridKey;
+// class __SearchBarState extends State<_SearchBar> {
+//   late final TextEditingController controller;
 
-  @override
-  State<_SearchBar> createState() => __SearchBarState();
-}
+//   DiscoverPagingEntry get pagingState => widget.pagingState;
+//   GenericListSource<AnimeSearchEntry> get source => pagingState.source;
 
-class __SearchBarState extends State<_SearchBar> {
-  late final TextEditingController controller;
+//   @override
+//   void initState() {
+//     super.initState();
 
-  DiscoverPagingEntry get pagingState => widget.pagingState;
-  GenericListSource<AnimeSearchEntry> get source => pagingState.source;
+//     controller = TextEditingController(text: pagingState.searchText);
+//   }
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void dispose() {
+//     controller.dispose();
 
-    controller = TextEditingController(text: pagingState.searchText);
-  }
+//     super.dispose();
+//   }
 
-  @override
-  void dispose() {
-    controller.dispose();
+//   void _search(BuildContext context, String value) {
+//     final gridState = widget.gridKey.currentState;
+//     if (gridState == null || source.progress.inRefreshing) {
+//       return;
+//     }
 
-    super.dispose();
-  }
+//     if (value == pagingState.searchText) {
+//       return;
+//     }
 
-  void _search(BuildContext context, String value) {
-    final gridState = widget.gridKey.currentState;
-    if (gridState == null || source.progress.inRefreshing) {
-      return;
-    }
+//     pagingState.searchText = value;
 
-    if (value == pagingState.searchText) {
-      return;
-    }
+//     source.clearRefresh();
 
-    pagingState.searchText = value;
+//     Navigator.pop(context);
+//   }
 
-    source.clearRefresh();
+//   @override
+//   Widget build(BuildContext context) {
+//     return SearchBar(
+//       onSubmitted: (value) => _search(context, value),
+//       controller: controller,
+//       elevation: const WidgetStatePropertyAll(0),
+//       hintText: AppLocalizations.of(context)!.searchHint,
+//       leading: const Icon(Icons.search_rounded),
+//       trailing: [
+//         StatefulBuilder(
+//           builder: (context, setState) {
+//             return SafetyButton(
+//               mode: pagingState.mode,
+//               set: (m) {
+//                 pagingState.mode = m;
 
-    Navigator.pop(context);
-  }
+//                 source.clearRefresh();
 
-  @override
-  Widget build(BuildContext context) {
-    return SearchBar(
-      onSubmitted: (value) => _search(context, value),
-      controller: controller,
-      elevation: const WidgetStatePropertyAll(0),
-      hintText: AppLocalizations.of(context)!.searchHint,
-      leading: const Icon(Icons.search_rounded),
-      trailing: [
-        StatefulBuilder(
-          builder: (context, setState) {
-            return SafetyButton(
-              mode: pagingState.mode,
-              set: (m) {
-                pagingState.mode = m;
-
-                source.clearRefresh();
-
-                setState(() {});
-              },
-            );
-          },
-        ),
-        IconButton(
-          onPressed: () => _search(context, ""),
-          icon: const Icon(Icons.close_rounded),
-        ),
-      ],
-    );
-  }
-}
+//                 setState(() {});
+//               },
+//             );
+//           },
+//         ),
+//         IconButton(
+//           onPressed: () => _search(context, ""),
+//           icon: const Icon(Icons.close_rounded),
+//         ),
+//       ],
+//     );
+//   }
+// }

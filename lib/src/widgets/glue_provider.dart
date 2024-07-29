@@ -6,6 +6,13 @@
 import "package:flutter/material.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 
+typedef GenerateGlueFnc = SelectionGlue Function([Set<GluePreferences>]);
+
+enum GluePreferences {
+  persistentBarHeight,
+  zeroSize;
+}
+
 class GlueProvider extends InheritedWidget {
   const GlueProvider({
     super.key,
@@ -34,10 +41,3 @@ class GlueProvider extends InheritedWidget {
   bool updateShouldNotify(GlueProvider oldWidget) =>
       generate != oldWidget.generate;
 }
-
-enum GluePreferences {
-  persistentBarHeight,
-  zeroSize;
-}
-
-typedef GenerateGlueFnc = SelectionGlue Function([Set<GluePreferences>]);

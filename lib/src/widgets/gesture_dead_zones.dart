@@ -62,7 +62,7 @@ class GestureDeadZones extends StatelessWidget {
           )
         else
           Align(
-            alignment: Alignment.bottomCenter,
+            alignment: Alignment.bottomLeft,
             child: AbsorbPointer(
               child: SizedBox(
                 height: systemInsets.left,
@@ -98,7 +98,7 @@ class GestureDeadZones extends StatelessWidget {
           )
         else
           Align(
-            alignment: Alignment.bottomCenter,
+            alignment: Alignment.bottomRight,
             child: AbsorbPointer(
               child: SizedBox(
                 height: systemInsets.right,

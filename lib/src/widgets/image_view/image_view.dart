@@ -23,10 +23,11 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/mixins/loading_builder.dart";
 import "package:gallery/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:gallery/src/widgets/image_view/mixins/palette.dart";
+import "package:gallery/src/widgets/image_view/video_controls_controller.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
-import "package:gallery/src/widgets/tags_list_widget.dart";
+import "package:gallery/src/widgets/load_tags.dart";
 import "package:logging/logging.dart";
 import "package:photo_view/photo_view_gallery.dart";
 import "package:wakelock_plus/wakelock_plus.dart";
@@ -520,75 +521,6 @@ class ImageViewState extends State<ImageView>
       ),
     );
   }
-}
-
-sealed class VideoControlsEvent {
-  const VideoControlsEvent();
-}
-
-class VolumeButton implements VideoControlsEvent {
-  const VolumeButton();
-}
-
-class FullscreenButton implements VideoControlsEvent {
-  const FullscreenButton();
-}
-
-class PlayButton implements VideoControlsEvent {
-  const PlayButton();
-}
-
-class LoopingButton implements VideoControlsEvent {
-  const LoopingButton();
-}
-
-class AddDuration implements VideoControlsEvent {
-  const AddDuration(this.durationSeconds);
-
-  final double durationSeconds;
-}
-
-abstract class VideoControlsController {
-  void setDuration(Duration d);
-  void setProgress(Duration p);
-  void setPlayState(PlayState p);
-
-  void clear();
-
-  Stream<VideoControlsEvent> get events;
-}
-
-@immutable
-sealed class PlayerUpdate {
-  const PlayerUpdate();
-}
-
-class DurationUpdate extends PlayerUpdate {
-  const DurationUpdate(this.duration);
-
-  final Duration duration;
-}
-
-class ProgressUpdate extends PlayerUpdate {
-  const ProgressUpdate(this.progress);
-
-  final Duration progress;
-}
-
-class PlayStateUpdate extends PlayerUpdate {
-  const PlayStateUpdate(this.playState);
-
-  final PlayState playState;
-}
-
-class ClearUpdate extends PlayerUpdate {
-  const ClearUpdate();
-}
-
-enum PlayState {
-  isPlaying,
-  buffering,
-  stopped;
 }
 
 class _VideoControlsControllerImpl implements VideoControlsController {

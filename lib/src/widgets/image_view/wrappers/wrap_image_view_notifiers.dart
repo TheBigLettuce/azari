@@ -13,7 +13,7 @@ import "package:gallery/src/widgets/focus_notifier.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/image_view/video_controls_controller.dart";
 
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({

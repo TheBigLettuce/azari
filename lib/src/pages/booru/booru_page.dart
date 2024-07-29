@@ -372,25 +372,15 @@ class _BooruPageState extends State<BooruPage> {
             ),
           ),
         ),
-      BooruSubPage.favorites => FavoriteBooruStateHolder(
-          db: widget.db,
-          build: (context, favoriteBooruState) {
-            return GridPopScope(
-              searchTextController: favoriteBooruState.searchTextController,
-              filter: favoriteBooruState.filter,
-              rootNavigatorPop: widget.procPop,
-              child: GlueProvider(
-                generate: GlueProvider.generateOf(context),
-                child: FavoritePostsPage(
-                  wrapGridPage: true,
-                  asSliver: false,
-                  api: pagingState.api,
-                  state: favoriteBooruState,
-                  db: widget.db,
-                ),
-              ),
-            );
-          },
+      BooruSubPage.favorites => GlueProvider(
+          generate: GlueProvider.generateOf(context),
+          child: FavoritePostsPage(
+            wrapGridPage: true,
+            asSliver: false,
+            rootNavigatorPop: widget.procPop,
+            api: pagingState.api,
+            db: widget.db,
+          ),
         ),
       BooruSubPage.bookmarks => GridPopScope(
           searchTextController: null,

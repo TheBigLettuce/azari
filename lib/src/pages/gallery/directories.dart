@@ -572,7 +572,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             searchTextController: null,
             filter: null,
             rootNavigatorPop: widget.procPop,
-            child: BlacklistedPage(
+            child: BlacklistedDirectories(
               popScope: widget.procPop ??
                   (_) =>
                       GallerySubPage.selectOf(context, GallerySubPage.gallery),

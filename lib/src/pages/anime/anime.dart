@@ -18,11 +18,6 @@ import "package:gallery/src/net/anime/anime_api.dart";
 import "package:gallery/src/net/anime/anime_entry.dart";
 import "package:gallery/src/net/anime/impl/jikan.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
-import "package:gallery/src/pages/anime/search/search_anime.dart";
-import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/gallery/files.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/widgets/glue_provider.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -34,18 +29,10 @@ import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-part "tab_bar_wrapper.dart";
 part "tabs/discover_tab.dart";
-part "tabs/finished_tab.dart";
-part "tabs/watching_tab.dart";
-
-const int kWatchingTabIndx = 0;
-const int kDiscoverTabIndx = 1;
-const int kWatchedTabIndx = 2;
 
 abstract interface class AnimeCell implements CellBase {
   Contentable openImage();
@@ -83,10 +70,10 @@ class _AnimePageState extends State<AnimePage> {
   late final ChainedFilterResourceSource<int, SavedAnimeEntryData>
       filterBacklog;
 
-  final finishedKey = GlobalKey<__FinishedTabState>();
-  final discoverKey = GlobalKey<_DiscoverTabState>();
+  // final finishedKey = GlobalKey<__FinishedTabState>();
+  // final discoverKey = GlobalKey<_DiscoverTabState>();
   final overlayKey = GlobalKey<__MoreOverlayState>();
-  final animeSearchKey = GlobalKey<__AnimeSearchState>();
+  // final animeSearchKey = GlobalKey<__AnimeSearchState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
@@ -127,7 +114,7 @@ class _AnimePageState extends State<AnimePage> {
   final client = Dio();
   late final api = Jikan(client);
 
-  late final entry = DiscoverPagingEntry(api);
+  // late final entry = DiscoverPagingEntry(api);
 
   String _filteringValue = "";
 
@@ -162,7 +149,7 @@ class _AnimePageState extends State<AnimePage> {
   void dispose() {
     sourceWatching.destroy();
     client.close();
-    entry.dispose();
+    // entry.dispose();
     searchController.dispose();
     source.destroy();
 
@@ -189,7 +176,7 @@ class _AnimePageState extends State<AnimePage> {
     }
 
     // watchingKey.currentState?.doFilter(value);
-    finishedKey.currentState?.doFilter(value);
+    // finishedKey.currentState?.doFilter(value);
   }
 
   void _procPop(bool pop, dynamic __) {
@@ -215,36 +202,37 @@ class _AnimePageState extends State<AnimePage> {
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1),
           ),
-          leading: Center(
-            child: SearchAnchor(
-              searchController: searchController,
-              builder: (context, controller) {
-                return IconButton(
-                  onPressed: controller.openView,
-                  icon: const Icon(Icons.search_rounded),
-                );
-              },
-              viewOnSubmitted: (value) {
-                animeSearchKey.currentState?.performSearch(value);
-              },
-              viewHintText: l10n.searchHint,
-              viewTrailing: [
-                _RefresingIcon(
-                  controller: searchController,
-                  progress: entry.source.progress,
-                ),
-              ],
-              viewBuilder: (_) {
-                return _AnimeSearch(
-                  key: animeSearchKey,
-                  api: api,
-                  entry: entry,
-                  generateGlue: GlueProvider.generateOf(context),
-                );
-              },
-              suggestionsBuilder: (context, controller) => const [],
-            ),
-          ),
+          // leading: Center(
+          //   child:
+          //   SearchAnchor(
+          //     searchController: searchController,
+          //     builder: (context, controller) {
+          //       return IconButton(
+          //         onPressed: controller.openView,
+          //         icon: const Icon(Icons.search_rounded),
+          //       );
+          //     },
+          //     viewOnSubmitted: (value) {
+          //       animeSearchKey.currentState?.performSearch(value);
+          //     },
+          //     viewHintText: l10n.searchHint,
+          //     viewTrailing: [
+          //       _RefresingIcon(
+          //         controller: searchController,
+          //         progress: entry.source.progress,
+          //       ),
+          //     ],
+          //     viewBuilder: (_) {
+          //       return _AnimeSearch(
+          //         key: animeSearchKey,
+          //         api: api,
+          //         entry: entry,
+          //         generateGlue: GlueProvider.generateOf(context),
+          //       );
+          //     },
+          //     suggestionsBuilder: (context, controller) => const [],
+          //   ),
+          // ),
           centerTitle: true,
           title: Text(l10n.animePage),
           actions: [
@@ -756,47 +744,47 @@ class __RefresingIconState extends State<_RefresingIcon> {
   }
 }
 
-class _AnimeSearch extends StatefulWidget {
-  const _AnimeSearch({
-    super.key,
-    required this.api,
-    required this.generateGlue,
-    required this.entry,
-  });
+// class _AnimeSearch extends StatefulWidget {
+//   const _AnimeSearch({
+//     super.key,
+//     required this.api,
+//     required this.generateGlue,
+//     required this.entry,
+//   });
 
-  final AnimeAPI api;
-  final GenerateGlueFnc generateGlue;
-  final DiscoverPagingEntry entry;
+//   final AnimeAPI api;
+//   final GenerateGlueFnc generateGlue;
+//   final DiscoverPagingEntry entry;
 
-  @override
-  State<_AnimeSearch> createState() => __AnimeSearchState();
-}
+//   @override
+//   State<_AnimeSearch> createState() => __AnimeSearchState();
+// }
 
-class __AnimeSearchState extends State<_AnimeSearch> {
-  final key = GlobalKey<_DiscoverTabState>();
+// class __AnimeSearchState extends State<_AnimeSearch> {
+//   final key = GlobalKey<_DiscoverTabState>();
 
-  void performSearch(String search) {
-    key.currentState?.search(search);
-  }
+//   void performSearch(String search) {
+//     key.currentState?.search(search);
+//   }
 
-  @override
-  void initState() {
-    super.initState();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WrapGridPage(
-      addScaffold: true,
-      child: DiscoverTab(
-        key: key,
-        api: widget.api,
-        db: DatabaseConnectionNotifier.of(context),
-        entry: widget.entry,
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return WrapGridPage(
+//       addScaffold: true,
+//       child: DiscoverTab(
+//         key: key,
+//         api: widget.api,
+//         db: DatabaseConnectionNotifier.of(context),
+//         entry: widget.entry,
+//       ),
+//     );
+//   }
+// }
 
 class _MoreOverlay extends StatefulWidget {
   const _MoreOverlay({super.key, required this.entry, required this.source});

@@ -21,8 +21,8 @@ import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-class BlacklistedPage extends StatefulWidget {
-  const BlacklistedPage({
+class BlacklistedDirectories extends StatefulWidget {
+  const BlacklistedDirectories({
     super.key,
     required this.db,
     required this.generate,
@@ -34,10 +34,10 @@ class BlacklistedPage extends StatefulWidget {
   final void Function(bool) popScope;
 
   @override
-  State<BlacklistedPage> createState() => _BlacklistedPageState();
+  State<BlacklistedDirectories> createState() => _BlacklistedDirectoriesState();
 }
 
-class _BlacklistedPageState extends State<BlacklistedPage> {
+class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.db.blacklistedDirectories;
 

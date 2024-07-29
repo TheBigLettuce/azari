@@ -29,8 +29,7 @@ import "package:gallery/src/pages/gallery/directories.dart";
 import "package:gallery/src/pages/gallery/files.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/plugs/gallery/android/api.g.dart";
-import "package:gallery/src/plugs/gallery/dummy_.dart"
-    if (dart.library.io) "package:gallery/src/plugs/gallery/io.dart"
+import "package:gallery/src/plugs/gallery/io.dart"
     if (dart.library.html) "package:gallery/src/plugs/gallery/web.dart";
 import "package:gallery/src/plugs/gallery_file_functions.dart";
 import "package:gallery/src/plugs/gallery_management_api.dart";
@@ -44,8 +43,8 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/load_tags.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
-import "package:gallery/src/widgets/tags_list_widget.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";

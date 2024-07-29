@@ -9,7 +9,8 @@ import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/image_view/video_controls_controller.dart"
+    as controls;
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:gallery/src/widgets/loading_error_widget.dart";
 import "package:video_player/video_player.dart";
@@ -34,14 +35,14 @@ class PhotoGalleryPageVideo extends StatefulWidget
 }
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
-  StreamSubscription<VideoControlsEvent>? eventsSubscr;
+  StreamSubscription<controls.VideoControlsEvent>? eventsSubscr;
 
   late VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
   Object? error;
 
-  late VideoControlsController playerControls;
+  late controls.VideoControlsController playerControls;
 
   @override
   void initState() {
@@ -59,7 +60,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     playerControls = VideoControlsNotifier.of(context);
     eventsSubscr ??= playerControls.events.listen((event) {
       switch (event) {
-        case VolumeButton():
+        case controls.VolumeButton():
           double newVolume;
 
           if (controller.value.volume > 0) {
@@ -71,7 +72,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
           controller.setVolume(newVolume);
 
           widget.db.current.copy(volume: newVolume).save();
-        case FullscreenButton():
+        case controls.FullscreenButton():
           final orientation = MediaQuery.orientationOf(context);
           if (orientation == Orientation.landscape) {
             SystemChrome.setPreferredOrientations([
@@ -86,7 +87,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               DeviceOrientation.landscapeRight,
             ]);
           }
-        case PlayButton():
+        case controls.PlayButton():
           if (controller.value.isBuffering) {
             return;
           }
@@ -96,12 +97,12 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
           } else {
             controller.play();
           }
-        case LoopingButton():
+        case controls.LoopingButton():
           final newLooping = !controller.value.isLooping;
 
           controller.setLooping(newLooping);
           widget.db.current.copy(looping: newLooping).save();
-        case AddDuration():
+        case controls.AddDuration():
           controller.seekTo(
             controller.value.position +
                 Duration(seconds: event.durationSeconds.toInt()),
@@ -168,16 +169,16 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   }
 
   Duration? prevProgress;
-  PlayState? prevPlayState;
+  controls.PlayState? prevPlayState;
 
   void _listener() {
     final value = controller.value;
 
     final newPlayState = value.isBuffering
-        ? PlayState.buffering
+        ? controls.PlayState.buffering
         : value.isPlaying
-            ? PlayState.isPlaying
-            : PlayState.stopped;
+            ? controls.PlayState.isPlaying
+            : controls.PlayState.stopped;
 
     final newProgress = value.position;
 
