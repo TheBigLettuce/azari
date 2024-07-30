@@ -61,7 +61,7 @@ class MediaLoaderAndMover(private val context: Context) {
 
     private var initDone = false
 
-    fun initMover(notifyGallery: (CoroutineScope, String) -> Unit) {
+    fun initMover() {
         if (initDone) {
             return
         }
@@ -177,8 +177,8 @@ class MediaLoaderAndMover(private val context: Context) {
                         Log.e("Mover move coro", e.toString())
                     }
 
-                    notifyGallery(uiScope, op.dir)
-
+                    op.notifyGallery(uiScope, op.dir)
+                    
                     Path(op.source).deleteIfExists()
                 })
             }

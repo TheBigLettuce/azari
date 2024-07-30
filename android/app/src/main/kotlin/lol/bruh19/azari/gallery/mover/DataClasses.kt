@@ -41,7 +41,13 @@ data class FilesDest(
 data class NetworkThumbOp(val url: String, val id: Long)
 data class RenameOp(val uri: Uri, val newName: String, val notify: Boolean)
 data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (Boolean) -> Unit)
-data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
+data class MoveOp(
+    val source: String,
+    val rootUri: Uri,
+    val dir: String,
+    val notifyGallery: (CoroutineScope, String?) -> Unit
+)
+
 data class ThumbOp(
     val thumb: Any,
     val saveToPinned: Boolean = false,

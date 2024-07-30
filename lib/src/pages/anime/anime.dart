@@ -258,7 +258,7 @@ class _AnimePageState extends State<AnimePage> {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               sliver: SliverToBoxAdapter(
                 child: Text(
-                  "Watching",
+                  l10n.watchingTab,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -934,7 +934,7 @@ class _MoreOverlayBody extends StatelessWidget {
             child: source.isEmpty
                 ? Center(
                     child: Text(
-                      "No elements", // TODO: change
+                      l10n.emptyValue,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),

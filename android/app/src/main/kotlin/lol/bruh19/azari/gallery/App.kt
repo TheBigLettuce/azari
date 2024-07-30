@@ -14,24 +14,14 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.dart.DartExecutor
-import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
-import lol.bruh19.azari.gallery.generated.GalleryHostApi
-import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
 import lol.bruh19.azari.gallery.impls.NativeViewFactory
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
 
 class App : Application() {
+    var appContextChannelRegistered = false
     internal lateinit var engines: FlutterEngineGroup
     val mediaLoaderAndMover = MediaLoaderAndMover(this)
-    val appContextChannel: AppContextChannel by lazy {
-        val engine = getOrMakeEngine(this, "main")
-        GalleryHostApi.setUp(
-            engine.dartExecutor.binaryMessenger,
-            GalleryHostApiImpl(this, mediaLoaderAndMover)
-        )
-        AppContextChannel(engine, GalleryApi(engine.dartExecutor.binaryMessenger))
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -46,12 +36,7 @@ class App : Application() {
         }
 
         engines = FlutterEngineGroup(this)
-        mediaLoaderAndMover.initMover(appContextChannel::notifyGallery)
-        appContextChannel.attach(
-            this,
-            mediaLoaderAndMover,
-            getSystemService(ConnectivityManager::class.java)
-        )
+        mediaLoaderAndMover.initMover()
     }
 }
 

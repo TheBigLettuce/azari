@@ -60,8 +60,7 @@ class PickFileActivity : FlutterFragmentActivity() {
             GalleryHostApiImpl(this, mediaLoaderAndMover),
         )
 
-
-        appContextChannel.attach(
+        appContextChannel.attachSecondary(
             this, mediaLoaderAndMover,
             getSystemService(
                 ConnectivityManager::class.java

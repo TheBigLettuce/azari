@@ -34,6 +34,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import lol.bruh19.azari.gallery.ActivityResultIntents
+import lol.bruh19.azari.gallery.App
 import lol.bruh19.azari.gallery.generated.Directory
 import lol.bruh19.azari.gallery.generated.DirectoryFile
 import lol.bruh19.azari.gallery.generated.GalleryApi
@@ -58,10 +59,33 @@ class AppContextChannel(
     )
 
     fun attach(
+        app: App,
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        connectivityManager: ConnectivityManager,
+    ) {
+        if (app.appContextChannelRegistered) {
+            return
+        }
+
+        setMethodHandler(app, mediaLoaderAndMover, connectivityManager)
+
+        app.appContextChannelRegistered = true
+    }
+
+    fun attachSecondary(
+        context: FlutterFragmentActivity,
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        connectivityManager: ConnectivityManager,
+    ) {
+        setMethodHandler(context, mediaLoaderAndMover, connectivityManager)
+    }
+
+    private fun setMethodHandler(
         context: Context,
         mediaLoaderAndMover: MediaLoaderAndMover,
         connectivityManager: ConnectivityManager,
     ) {
+
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "move" -> {
@@ -76,7 +100,14 @@ class AppContextChannel(
                     } else if (dir == null) {
                         result.error("directory is empty", null, null)
                     } else {
-                        mediaLoaderAndMover.add(MoveOp(source, Uri.parse(rootUri), dir))
+                        mediaLoaderAndMover.add(
+                            MoveOp(
+                                source,
+                                Uri.parse(rootUri),
+                                dir,
+                                ::notifyGallery
+                            ),
+                        )
                         result.success(null)
                     }
                 }

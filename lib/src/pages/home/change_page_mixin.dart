@@ -417,52 +417,53 @@ class _CurrentPageWidget extends StatelessWidget {
         ),
       ],
       child: Animate(
-          target: 0,
-          effects: [
-            FadeEffect(duration: 50.ms, begin: 1, end: 0),
-            const ThenEffect(delay: Duration(milliseconds: 50)),
-          ],
-          controller: icons.pageFadeAnimation,
-          child: switch (changePage._routeNotifier.value) {
-            CurrentRoute.booru => _NavigatorShell(
-                navigatorKey: changePage.mainKey,
-                child: BooruPage(
-                  pagingRegistry: changePage.pagingRegistry,
-                  procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-                  db: DatabaseConnectionNotifier.of(context),
-                ),
-              ),
-            CurrentRoute.gallery => _NavigatorShell(
-                navigatorKey: changePage.galleryKey,
-                child: GalleryDirectories(
-                  procPop: (pop) => changePage._procPop(
-                    galleryPage,
-                    morePage,
-                    icons,
-                    pop,
-                  ),
-                  db: DatabaseConnectionNotifier.of(context),
-                  l10n: AppLocalizations.of(context)!,
-                ),
-              ),
-            CurrentRoute.anime => AnimePage(
-                procPop: (pop) =>
-                    changePage._procPop(galleryPage, morePage, icons, pop),
+        target: 0,
+        effects: [
+          FadeEffect(duration: 50.ms, begin: 1, end: 0),
+          const ThenEffect(delay: Duration(milliseconds: 50)),
+        ],
+        controller: icons.pageFadeAnimation,
+        child: switch (changePage._routeNotifier.value) {
+          CurrentRoute.booru => _NavigatorShell(
+              navigatorKey: changePage.mainKey,
+              child: BooruPage(
+                pagingRegistry: changePage.pagingRegistry,
+                procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
                 db: DatabaseConnectionNotifier.of(context),
               ),
-            CurrentRoute.more => _NavigatorShell(
-                navigatorKey: changePage.moreKey,
-                child: MorePage(
-                  popScope: (pop) => changePage._procPop(
-                    galleryPage,
-                    morePage,
-                    icons,
-                    pop,
-                  ),
-                  db: DatabaseConnectionNotifier.of(context),
+            ),
+          CurrentRoute.gallery => _NavigatorShell(
+              navigatorKey: changePage.galleryKey,
+              child: GalleryDirectories(
+                procPop: (pop) => changePage._procPop(
+                  galleryPage,
+                  morePage,
+                  icons,
+                  pop,
                 ),
+                db: DatabaseConnectionNotifier.of(context),
+                l10n: AppLocalizations.of(context)!,
               ),
-          }),
+            ),
+          CurrentRoute.anime => AnimePage(
+              procPop: (pop) =>
+                  changePage._procPop(galleryPage, morePage, icons, pop),
+              db: DatabaseConnectionNotifier.of(context),
+            ),
+          CurrentRoute.more => _NavigatorShell(
+              navigatorKey: changePage.moreKey,
+              child: MorePage(
+                popScope: (pop) => changePage._procPop(
+                  galleryPage,
+                  morePage,
+                  icons,
+                  pop,
+                ),
+                db: DatabaseConnectionNotifier.of(context),
+              ),
+            ),
+        },
+      ),
     );
   }
 }

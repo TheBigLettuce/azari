@@ -18,12 +18,24 @@ import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
 import lol.bruh19.azari.gallery.generated.GalleryApi
 import lol.bruh19.azari.gallery.impls.NetworkCallbackImpl
 import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
+import lol.bruh19.azari.gallery.generated.GalleryHostApi
+import lol.bruh19.azari.gallery.impls.GalleryHostApiImpl
 
 class MainActivity : FlutterFragmentActivity() {
     private val intents =
         ActivityResultIntents(this, { activityContextChannel }, { mediaLoaderAndMover })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
-    private val appContextChannel: AppContextChannel by lazy { (applicationContext as App).appContextChannel }
+    val appContextChannel: AppContextChannel by lazy {
+        val app = this.applicationContext as App
+
+        val engine = getOrMakeEngine(app, "main")
+        GalleryHostApi.setUp(
+            engine.dartExecutor.binaryMessenger,
+            GalleryHostApiImpl(this, mediaLoaderAndMover)
+        )
+        AppContextChannel(engine, GalleryApi(engine.dartExecutor.binaryMessenger))
+    }
+
     private val mediaLoaderAndMover: MediaLoaderAndMover by lazy { (applicationContext as App).mediaLoaderAndMover }
 
     private val activityContextChannel: ActivityContextChannel by lazy {
@@ -44,6 +56,12 @@ class MainActivity : FlutterFragmentActivity() {
 
         super.onCreate(savedInstanceState)
 
+        appContextChannel.attach(
+            this.applicationContext as App,
+            mediaLoaderAndMover,
+            getSystemService(ConnectivityManager::class.java)
+        )
+
         connectivityManager.registerDefaultNetworkCallback(netStatus)
         activityContextChannel.attach(this, intents, mediaLoaderAndMover)
     }
@@ -58,6 +76,6 @@ class MainActivity : FlutterFragmentActivity() {
         intents.unregisterAll()
         activityContextChannel.detach()
 
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
     }
 }
