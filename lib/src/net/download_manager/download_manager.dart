@@ -6,19 +6,19 @@
 import "dart:async";
 import "dart:io";
 
+import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/notifications.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/post_tags.dart";
-import "package:gallery/src/db/services/resource_source/basic.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/plugs/gallery_management_api.dart";
-import "package:gallery/src/plugs/notifications.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 import "package:path/path.dart";

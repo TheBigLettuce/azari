@@ -30,7 +30,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace 'lol.bruh19.azari.gallery'
+    namespace 'com.github.thebiglettuce.azari'
     compileSdk 34
     ndkVersion "26.1.10909125"
 
@@ -53,7 +53,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "lol.bruh19.azari.gallery"
+        applicationId 'com.github.thebiglettuce.azari'
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
         minSdkVersion 30

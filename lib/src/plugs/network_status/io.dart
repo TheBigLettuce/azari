@@ -5,7 +5,7 @@
 
 import "dart:io";
 
-import "package:gallery/src/plugs/platform_functions.dart";
+import "package:azari/src/plugs/platform_functions.dart";
 
 Future<bool> register() async => Platform.isAndroid
     ? await const AndroidApiFunctions().currentNetworkStatus()

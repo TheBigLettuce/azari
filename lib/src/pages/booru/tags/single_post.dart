@@ -5,18 +5,18 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/post.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/post_tags.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/net/booru/post.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
 
 class SinglePost extends StatefulWidget {

@@ -5,22 +5,22 @@
 
 import "dart:async";
 
+import "package:azari/init_main/build_theme.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/pages/booru/booru_restored_page.dart";
+import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/glue_bottom_app_bar.dart";
+import "package:azari/src/pages/home.dart";
+import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/widgets/gesture_dead_zones.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/init_main/build_theme.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/pages/booru/booru_restored_page.dart";
-import "package:gallery/src/pages/gallery/callback_description.dart";
-import "package:gallery/src/pages/glue_bottom_app_bar.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/plugs/network_status.dart";
-import "package:gallery/src/widgets/gesture_dead_zones.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton(

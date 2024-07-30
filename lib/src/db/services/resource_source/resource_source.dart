@@ -5,9 +5,9 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/services/resource_source/basic.dart";
-import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
 
 typedef FilterFnc<T> = bool Function(T);
 

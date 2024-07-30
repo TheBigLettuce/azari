@@ -5,31 +5,31 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/chained_filter.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/post.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/booru/actions.dart" as booru_actions;
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
+import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/post_tags.dart";
-import "package:gallery/src/db/services/resource_source/basic.dart";
-import "package:gallery/src/db/services/resource_source/chained_filter.dart";
-import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/net/booru/post.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/booru/actions.dart" as booru_actions;
-import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/gallery/files.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class FavoritePostsPage extends StatefulWidget with DbConnHandle<DbConn> {
   const FavoritePostsPage({

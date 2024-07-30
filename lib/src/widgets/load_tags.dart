@@ -5,12 +5,12 @@
 
 import "dart:async";
 
+import "package:azari/init_main/restart_widget.dart";
+import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/plugs/gallery.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/init_main/restart_widget.dart";
-import "package:gallery/src/db/services/post_tags.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/plugs/gallery.dart";
 
 extension LoadTagsGlobalNotifier on GlobalProgressTab {
   ValueNotifier<Future<void>?> loadTags() {

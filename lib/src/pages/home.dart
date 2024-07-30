@@ -6,23 +6,23 @@
 import "dart:async";
 import "dart:math";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/pages/anime/anime.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/more/more_page.dart";
+import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:azari/src/widgets/skeletons/home.dart";
+import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/pages/anime/anime.dart";
-import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/pages/gallery/callback_description.dart";
-import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/more/more_page.dart";
-import "package:gallery/src/pages/more/settings/settings_widget.dart";
-import "package:gallery/src/plugs/network_status.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
-import "package:gallery/src/widgets/skeletons/home.dart";
-import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 part "home/animated_icons_mixin.dart";
 part "home/before_you_continue_dialog_mixin.dart";

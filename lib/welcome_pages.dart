@@ -5,17 +5,17 @@
 
 import "dart:async";
 
+import "package:azari/init_main/build_theme.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/plugs/platform_functions.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/init_main/build_theme.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/display_quality.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/settings/radio_dialog.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
 import "package:permission_handler/permission_handler.dart";
 
 class AndroidPermissionsPage extends StatefulWidget {

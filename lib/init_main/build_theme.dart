@@ -5,10 +5,10 @@
 
 import "dart:ui" as ui;
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
 
 ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = MiscSettingsService.db().current.themeType;

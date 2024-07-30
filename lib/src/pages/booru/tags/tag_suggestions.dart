@@ -5,13 +5,13 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class TagSuggestions extends StatefulWidget {
   const TagSuggestions({

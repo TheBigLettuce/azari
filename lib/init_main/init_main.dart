@@ -6,15 +6,15 @@
 import "dart:developer";
 import "dart:ui" as ui;
 
+import "package:azari/init_main/app_info.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/plugs/notifications.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
-import "package:gallery/init_main/app_info.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/network_status.dart";
-import "package:gallery/src/plugs/notifications.dart";
 import "package:logging/logging.dart";
 
 Future<void> initMain(bool temporary) async {

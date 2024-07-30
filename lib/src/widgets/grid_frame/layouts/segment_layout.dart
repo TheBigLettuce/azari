@@ -6,23 +6,23 @@
 import "dart:async";
 import "dart:ui";
 
+import "package:azari/init_main/app_info.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
-import "package:gallery/init_main/app_info.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:local_auth/local_auth.dart";
 
 class SegmentLayout<T extends CellBase> extends StatefulWidget {

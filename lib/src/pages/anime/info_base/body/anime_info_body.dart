@@ -3,22 +3,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
+import "package:azari/src/pages/anime/info_base/body/anime_characters_widgets.dart";
+import "package:azari/src/pages/anime/info_base/body/anime_genres.dart";
+import "package:azari/src/pages/anime/info_base/body/anime_relations.dart";
+import "package:azari/src/pages/anime/info_base/body/body_padding.dart";
+import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
+import "package:azari/src/pages/anime/info_base/body/similar_anime.dart";
+import "package:azari/src/pages/anime/info_base/body/synopsis_background.dart";
+import "package:azari/src/pages/anime/search/search_anime.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/pages/anime/info_base/body/anime_characters_widgets.dart";
-import "package:gallery/src/pages/anime/info_base/body/anime_genres.dart";
-import "package:gallery/src/pages/anime/info_base/body/anime_relations.dart";
-import "package:gallery/src/pages/anime/info_base/body/body_padding.dart";
-import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
-import "package:gallery/src/pages/anime/info_base/body/similar_anime.dart";
-import "package:gallery/src/pages/anime/info_base/body/synopsis_background.dart";
-import "package:gallery/src/pages/anime/search/search_anime.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 
 class AnimeInfoBody extends StatelessWidget {
   const AnimeInfoBody({

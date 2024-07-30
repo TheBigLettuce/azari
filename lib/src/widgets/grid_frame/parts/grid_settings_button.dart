@@ -5,15 +5,15 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/widgets/focus_notifier.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/widgets/focus_notifier.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/search/autocomplete/autocomplete_widget.dart";
 
 class GridSettingsButton extends StatelessWidget {
   const GridSettingsButton({

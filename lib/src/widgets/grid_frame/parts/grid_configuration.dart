@@ -5,8 +5,8 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/services.dart";
 
 class GridConfiguration extends StatefulWidget {
   const GridConfiguration({

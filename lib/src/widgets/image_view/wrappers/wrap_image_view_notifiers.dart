@@ -5,15 +5,15 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/widgets/focus_notifier.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/image_view/video_controls_controller.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/post_tags.dart";
-import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
-import "package:gallery/src/widgets/focus_notifier.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/image_view/video_controls_controller.dart";
 
 class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({

@@ -3,29 +3,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:gallery/src/db/services/impl/isar/impl.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/hottest_tag.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
-import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/post.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/net/manga/manga_api.dart";
+import "package:azari/src/db/services/impl/isar/impl.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
+import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:azari/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
+import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
+import "package:azari/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
+import "package:azari/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
+import "package:azari/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
+import "package:azari/src/db/services/impl/isar/schemas/tags/hottest_tag.dart";
+import "package:azari/src/db/services/impl/isar/schemas/tags/local_tags.dart";
+import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/post.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/net/manga/manga_api.dart";
 import "package:path_provider/path_provider.dart";
 
 Future<DownloadManager> init(ServicesImplTable db, bool temporary) async {

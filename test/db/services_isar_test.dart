@@ -5,13 +5,13 @@
 
 import "dart:io";
 
+import "package:azari/src/db/services/impl/isar/impl.dart";
+import "package:azari/src/db/services/impl_table/io.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:gallery/src/db/services/impl/isar/impl.dart";
-import "package:gallery/src/db/services/impl_table/io.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/display_quality.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
 import "package:isar/isar.dart";
 import "package:path/path.dart" as path;
 

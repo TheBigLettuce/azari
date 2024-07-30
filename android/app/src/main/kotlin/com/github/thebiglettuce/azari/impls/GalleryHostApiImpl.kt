@@ -1,4 +1,4 @@
-package lol.bruh19.azari.gallery.impls
+package com.github.thebiglettuce.azari.impls
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -7,10 +7,10 @@ import android.system.Os
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import lol.bruh19.azari.gallery.generated.DirectoryFile
-import lol.bruh19.azari.gallery.generated.GalleryHostApi
-import lol.bruh19.azari.gallery.generated.UriFile
-import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.generated.DirectoryFile
+import com.github.thebiglettuce.azari.generated.GalleryHostApi
+import com.github.thebiglettuce.azari.generated.UriFile
+import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
 internal class GalleryHostApiImpl(
     private val context: Context,

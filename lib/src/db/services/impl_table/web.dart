@@ -5,17 +5,17 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/net/booru/display_quality.dart";
-import "package:gallery/src/net/booru/post.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/net/manga/manga_api.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/net/booru/post.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/net/manga/manga_api.dart";
 
 Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
     throw UnimplementedError();

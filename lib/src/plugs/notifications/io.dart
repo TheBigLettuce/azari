@@ -5,11 +5,11 @@
 
 import "dart:io";
 
+import "package:azari/src/plugs/notifications.dart";
+import "package:azari/src/plugs/notifications/android.dart";
+import "package:azari/src/plugs/notifications/dummy.dart";
+import "package:azari/src/plugs/notifications/kde.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
-import "package:gallery/src/plugs/notifications.dart";
-import "package:gallery/src/plugs/notifications/android.dart";
-import "package:gallery/src/plugs/notifications/dummy.dart";
-import "package:gallery/src/plugs/notifications/kde.dart";
 
 NotificationPlug getApi() {
   if (Platform.isLinux) {

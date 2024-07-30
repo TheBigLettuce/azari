@@ -5,10 +5,10 @@
 
 import "dart:io";
 
-import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
-import "package:gallery/src/plugs/gallery/dummy.dart";
-import "package:gallery/src/plugs/gallery/linux/impl.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
+import "package:azari/src/plugs/gallery/dummy.dart";
+import "package:azari/src/plugs/gallery/linux/impl.dart";
 
 GalleryPlug getApi() {
   if (Platform.isAndroid) {

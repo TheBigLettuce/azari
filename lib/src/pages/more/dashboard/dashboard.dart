@@ -3,12 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/more/dashboard/dashboard_card.dart";
+import "package:azari/src/widgets/skeletons/settings.dart";
+import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
-import "package:gallery/src/widgets/skeletons/settings.dart";
-import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class Dashboard extends StatefulWidget {
   const Dashboard({

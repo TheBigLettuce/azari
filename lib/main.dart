@@ -3,21 +3,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/init_main/build_theme.dart";
+import "package:azari/init_main/init_main.dart";
+import "package:azari/init_main/restart_widget.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/home.dart";
+import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
+import "package:azari/src/plugs/gallery/android/api.g.dart";
+import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/widgets/copy_move_preview.dart";
+import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/init_main/build_theme.dart";
-import "package:gallery/init_main/init_main.dart";
-import "package:gallery/init_main/restart_widget.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/pages/gallery/callback_description.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/plugs/gallery/android/android_api_directories.dart";
-import "package:gallery/src/plugs/gallery/android/api.g.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
-import "package:gallery/src/widgets/copy_move_preview.dart";
-import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
-import "package:gallery/welcome_pages.dart";
 
 part "main_pick_file.dart";
 part "main_quick_view.dart";

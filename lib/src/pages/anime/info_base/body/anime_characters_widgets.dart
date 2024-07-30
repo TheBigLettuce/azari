@@ -5,16 +5,16 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
+import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 
 class AnimeCharactersWidget extends StatefulWidget
     with DbConnHandle<SavedAnimeCharactersService> {

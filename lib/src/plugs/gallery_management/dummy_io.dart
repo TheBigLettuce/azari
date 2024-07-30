@@ -5,8 +5,8 @@
 
 import "dart:io";
 
-import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/gallery_management_api.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart";
 

@@ -5,21 +5,21 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/post.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/gallery/android/api.g.dart";
+import "package:azari/src/plugs/gallery_management/android.dart";
+import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/resource_source/basic.dart";
-import "package:gallery/src/db/services/resource_source/filtering_mode.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/post.dart";
-import "package:gallery/src/plugs/gallery.dart";
-import "package:gallery/src/plugs/gallery/android/api.g.dart";
-import "package:gallery/src/plugs/gallery_management/android.dart";
-import "package:gallery/src/plugs/network_status.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
 
 part "android_api_files.dart";
 part "android_gallery.dart";

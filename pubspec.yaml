@@ -1,5 +1,10 @@
-name: gallery
+name: azari
 description: A *booru client app.
+repository: https://github.com/TheBigLettuce/azari
+
+platforms:
+  linux:
+  android:
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

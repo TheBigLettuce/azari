@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-package lol.bruh19.azari.gallery.impls
+package com.github.thebiglettuce.azari.impls
 
 import android.content.Context
 import android.net.Uri
@@ -16,7 +16,7 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import lol.bruh19.azari.gallery.generated.GalleryApi
+import com.github.thebiglettuce.azari.generated.GalleryApi
 
 internal class ImageView(
     context: Context,

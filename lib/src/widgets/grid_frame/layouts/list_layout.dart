@@ -5,14 +5,14 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
 
 class ListLayout<T extends CellBase> extends StatefulWidget {
   const ListLayout({

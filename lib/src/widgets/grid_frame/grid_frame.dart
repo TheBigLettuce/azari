@@ -5,26 +5,26 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/chained_filter.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/focus_notifier.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/search/autocomplete/autocomplete_tag.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/resource_source/chained_filter.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/focus_notifier.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/search/autocomplete/autocomplete_tag.dart";
 
 part "configuration/grid_action.dart";
 part "configuration/grid_description.dart";

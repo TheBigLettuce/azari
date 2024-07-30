@@ -5,13 +5,13 @@
 
 import "dart:ui";
 
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
+import "package:azari/src/widgets/loading_error_widget.dart";
+import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/parts/sticker_widget.dart";
-import "package:gallery/src/widgets/loading_error_widget.dart";
-import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
 
 /// The cell of [GridFrame].
 class GridCell<T extends CellBase> extends StatefulWidget {

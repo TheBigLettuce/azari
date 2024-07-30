@@ -5,11 +5,11 @@
 
 import "dart:io";
 
+import "package:azari/src/plugs/gallery_management/android.dart";
+import "package:azari/src/plugs/gallery_management/dummy_io.dart";
+import "package:azari/src/plugs/gallery_management_api.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/plugs/gallery_management/android.dart";
-import "package:gallery/src/plugs/gallery_management/dummy_io.dart";
-import "package:gallery/src/plugs/gallery_management_api.dart";
 
 GalleryManagementApi getApi() => Platform.isAndroid
     ? const AndroidGalleryManagementApi()

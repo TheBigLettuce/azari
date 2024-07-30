@@ -3,20 +3,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-package lol.bruh19.azari.gallery
+package com.github.thebiglettuce.azari
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
-import android.net.ConnectivityManager
 import android.os.StrictMode
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.dart.DartExecutor
-import lol.bruh19.azari.gallery.generated.GalleryApi
-import lol.bruh19.azari.gallery.impls.NativeViewFactory
-import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.generated.GalleryApi
+import com.github.thebiglettuce.azari.impls.NativeViewFactory
+import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
 class App : Application() {
     var appContextChannelRegistered = false

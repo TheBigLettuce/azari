@@ -9,28 +9,28 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/resource_source/basic.dart";
-import "package:gallery/src/db/services/resource_source/chained_filter.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/resource_source/source_storage.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/net/anime/impl/jikan.dart";
-import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
-import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/chained_filter.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
+import "package:azari/src/net/anime/impl/jikan.dart";
+import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 
 part "tabs/discover_tab.dart";
 
@@ -116,7 +116,7 @@ class _AnimePageState extends State<AnimePage> {
 
   // late final entry = DiscoverPagingEntry(api);
 
-  String _filteringValue = "";
+  final String _filteringValue = "";
 
   late final OverlayEntry overlayEntry = OverlayEntry(
     builder: (context) => _MoreOverlay(

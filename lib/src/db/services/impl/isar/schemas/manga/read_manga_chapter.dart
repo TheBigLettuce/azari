@@ -5,7 +5,7 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/services/services.dart";
+import "package:azari/src/db/services/services.dart";
 import "package:isar/isar.dart";
 
 part "read_manga_chapter.g.dart";

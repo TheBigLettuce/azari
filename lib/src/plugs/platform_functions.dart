@@ -3,11 +3,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/plugs/api_functions/io.dart"
+    if (dart.library.html) "package:azari/src/plugs/api_functions/web.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/plugs/api_functions/io.dart"
-    if (dart.library.html) "package:gallery/src/plugs/api_functions/web.dart";
 
 @immutable
 class ThumbId {
@@ -66,7 +66,7 @@ class DummyApiFunctions implements PlatformApi {
 class LinuxApiFunctions implements PlatformApi {
   const LinuxApiFunctions();
 
-  static const _channel = MethodChannel("lol.bruh19.azari.gallery");
+  static const _channel = MethodChannel("com.github.thebiglettuce.azari");
 
   @override
   bool get requiresPermissions => false;
@@ -113,10 +113,10 @@ class AndroidApiFunctions implements PlatformApi {
   const AndroidApiFunctions();
 
   static const appContext =
-      MethodChannel("lol.bruh19.azari.gallery.app_context");
+      MethodChannel("com.github.thebiglettuce.azari.app_context");
 
   static const activityContext =
-      MethodChannel("lol.bruh19.azari.gallery.activity_context");
+      MethodChannel("com.github.thebiglettuce.azari.activity_context");
 
   @override
   bool get requiresPermissions => true;

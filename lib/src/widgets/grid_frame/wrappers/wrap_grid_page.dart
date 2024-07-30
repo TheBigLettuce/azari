@@ -3,14 +3,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/init_main/build_theme.dart";
+import "package:azari/src/pages/glue_bottom_app_bar.dart";
+import "package:azari/src/widgets/gesture_dead_zones.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
-import "package:gallery/init_main/build_theme.dart";
-import "package:gallery/src/pages/glue_bottom_app_bar.dart";
-import "package:gallery/src/widgets/gesture_dead_zones.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class WrapGridPage extends StatefulWidget {
   const WrapGridPage({

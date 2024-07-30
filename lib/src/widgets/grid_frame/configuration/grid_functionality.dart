@@ -5,16 +5,16 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/resource_source/resource_source.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({

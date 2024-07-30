@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Bob"]
 
   spec.summary = "Builds Isar"
-  spec.homepage = "https://github.com/TheBigLettuce/acarya"
+  spec.homepage = "https://github.com/TheBigLettuce/azari"
   spec.required_ruby_version = ">= 3.3.2"
 
   # Specify which files should be added to the gem when it is released.

@@ -3,17 +3,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
+import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/loading_error_widget.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/image_view/image_view.dart";
-import "package:gallery/src/widgets/image_view/video/photo_gallery_page_video.dart";
-import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/loading_error_widget.dart";
 import "package:photo_view/photo_view.dart";
 import "package:photo_view/photo_view_gallery.dart";
 

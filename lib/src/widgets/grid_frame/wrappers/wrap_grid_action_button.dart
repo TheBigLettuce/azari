@@ -5,10 +5,10 @@
 
 import "dart:async";
 
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class WrapGridActionButton extends StatefulWidget {
   const WrapGridActionButton(

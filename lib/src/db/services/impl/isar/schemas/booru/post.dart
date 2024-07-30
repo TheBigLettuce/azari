@@ -5,10 +5,10 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/services/impl_table/io.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/post.dart";
+import "package:azari/src/db/services/impl_table/io.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
 part "post.g.dart";

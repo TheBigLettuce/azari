@@ -5,7 +5,7 @@ gradle-wrapper.jar
 /gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
-/app/src/main/kotlin/lol/bruh19/azari/gallery/generated/*
+/app/src/main/kotlin/com/github/thebiglettuce/azari/generated/*
 /build
 
 # Remember to never publicly share your keystore.

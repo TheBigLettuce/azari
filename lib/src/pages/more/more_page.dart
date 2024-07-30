@@ -5,19 +5,19 @@
 
 import "dart:async";
 
+import "package:azari/init_main/app_info.dart";
+import "package:azari/init_main/restart_widget.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/more/dashboard/dashboard.dart";
+import "package:azari/src/pages/more/downloads/downloads.dart";
+import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/widgets/glue_provider.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/init_main/app_info.dart";
-import "package:gallery/init_main/restart_widget.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/download_manager/download_manager.dart";
-import "package:gallery/src/pages/gallery/directories.dart";
-import "package:gallery/src/pages/home.dart";
-import "package:gallery/src/pages/more/dashboard/dashboard.dart";
-import "package:gallery/src/pages/more/downloads/downloads.dart";
-import "package:gallery/src/pages/more/settings/settings_widget.dart";
-import "package:gallery/src/widgets/glue_provider.dart";
 
 class MorePage extends StatelessWidget {
   const MorePage({

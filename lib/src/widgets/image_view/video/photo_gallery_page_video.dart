@@ -5,14 +5,14 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/image_view/video_controls_controller.dart"
+    as controls;
+import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/loading_error_widget.dart";
 import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/image_view/video_controls_controller.dart"
-    as controls;
-import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:gallery/src/widgets/loading_error_widget.dart";
 import "package:video_player/video_player.dart";
 
 class PhotoGalleryPageVideo extends StatefulWidget

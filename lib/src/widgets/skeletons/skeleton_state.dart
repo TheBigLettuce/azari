@@ -5,10 +5,10 @@
 
 import "dart:math" as math;
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class SkeletonState {
   SkeletonState();

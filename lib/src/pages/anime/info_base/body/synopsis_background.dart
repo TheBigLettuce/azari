@@ -5,12 +5,12 @@
 
 import "dart:math";
 
+import "package:azari/src/pages/anime/info_base/body/anime_body_text_selection_toolbar.dart";
+import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_markdown/flutter_markdown.dart";
-import "package:gallery/src/pages/anime/info_base/body/anime_body_text_selection_toolbar.dart";
-import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
 import "package:url_launcher/url_launcher_string.dart";
 
 class SynopsisBackground extends StatelessWidget {

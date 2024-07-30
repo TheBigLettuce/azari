@@ -5,9 +5,9 @@
 
 import "dart:async";
 
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/net/cloudflare_exception.dart";
 import "package:dio/dio.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/net/cloudflare_exception.dart";
 import "package:logging/logging.dart";
 
 class LogReq {

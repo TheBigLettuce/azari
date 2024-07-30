@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-package lol.bruh19.azari.gallery
+package com.github.thebiglettuce.azari
 
 import android.app.Activity
 import android.content.ContentValues
@@ -18,11 +18,10 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import io.flutter.embedding.android.FlutterFragmentActivity
 import kotlinx.coroutines.launch
-import lol.bruh19.azari.gallery.enginebindings.ActivityContextChannel
-import lol.bruh19.azari.gallery.enginebindings.AppContextChannel
-import lol.bruh19.azari.gallery.enginebindings.copyFile
-import lol.bruh19.azari.gallery.enginebindings.copyOrMove
-import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
+import com.github.thebiglettuce.azari.enginebindings.copyFile
+import com.github.thebiglettuce.azari.enginebindings.copyOrMove
+import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 import okio.FileSystem
 import okio.Path.Companion.toPath
 

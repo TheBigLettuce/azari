@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/lol/bruh19/azari/Gallery">
+  <gresource prefix="/com/github/thebiglettuce/Azari">
     <file alias="app_icon">icon/icon.png</file>
   </gresource>
 </gresources>

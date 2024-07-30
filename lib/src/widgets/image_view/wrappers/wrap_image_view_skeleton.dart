@@ -3,20 +3,20 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
+import "package:azari/src/widgets/image_view/sliding_info_drawer.dart";
+import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/safe_mode.dart";
-import "package:gallery/src/pages/booru/booru_page.dart";
-import "package:gallery/src/pages/more/settings/radio_dialog.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
-import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
-import "package:gallery/src/widgets/image_view/sliding_info_drawer.dart";
-import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 
 class WrapImageViewSkeleton extends StatefulWidget {
   const WrapImageViewSkeleton({

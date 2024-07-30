@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-package lol.bruh19.azari.gallery.enginebindings
+package com.github.thebiglettuce.azari.enginebindings
 
 //noinspection SuspiciousImport
 import android.R
@@ -33,17 +33,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import lol.bruh19.azari.gallery.ActivityResultIntents
-import lol.bruh19.azari.gallery.App
-import lol.bruh19.azari.gallery.generated.Directory
-import lol.bruh19.azari.gallery.generated.DirectoryFile
-import lol.bruh19.azari.gallery.generated.GalleryApi
-import lol.bruh19.azari.gallery.generated.GalleryHostApi
-import lol.bruh19.azari.gallery.mover.FilesDest
-import lol.bruh19.azari.gallery.mover.MoveInternalOp
-import lol.bruh19.azari.gallery.mover.MoveOp
-import lol.bruh19.azari.gallery.mover.MediaLoaderAndMover
-import lol.bruh19.azari.gallery.mover.RenameOp
+import com.github.thebiglettuce.azari.ActivityResultIntents
+import com.github.thebiglettuce.azari.App
+import com.github.thebiglettuce.azari.generated.Directory
+import com.github.thebiglettuce.azari.generated.DirectoryFile
+import com.github.thebiglettuce.azari.generated.GalleryApi
+import com.github.thebiglettuce.azari.generated.GalleryHostApi
+import com.github.thebiglettuce.azari.mover.FilesDest
+import com.github.thebiglettuce.azari.mover.MoveInternalOp
+import com.github.thebiglettuce.azari.mover.MoveOp
+import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.mover.RenameOp
 import okio.use
 import java.io.File
 
@@ -358,7 +358,7 @@ class AppContextChannel(
     }
 
     companion object {
-        const val CHANNEL_NAME = "lol.bruh19.azari.gallery.app_context"
+        const val CHANNEL_NAME = "com.github.thebiglettuce.azari.app_context"
     }
 }
 
@@ -850,6 +850,6 @@ class ActivityContextChannel(
     }
 
     companion object {
-        const val CHANNEL_NAME = "lol.bruh19.azari.gallery.activity_context"
+        const val CHANNEL_NAME = "com.github.thebiglettuce.azari.activity_context"
     }
 }

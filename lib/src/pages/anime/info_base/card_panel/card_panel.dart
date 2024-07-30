@@ -3,14 +3,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
+import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:azari/src/pages/anime/info_base/card_panel/anime_news.dart";
+import "package:azari/src/pages/anime/info_base/card_panel/card_shell.dart";
+import "package:azari/src/pages/more/dashboard/dashboard_card.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/net/anime/anime_api.dart";
-import "package:gallery/src/net/anime/anime_entry.dart";
-import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
-import "package:gallery/src/pages/anime/info_base/card_panel/anime_news.dart";
-import "package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart";
-import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class CardPanel extends StatefulWidget {

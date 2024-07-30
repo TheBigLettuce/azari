@@ -5,18 +5,18 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/pages/more/settings/settings_label.dart";
+import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/widgets/menu_wrapper.dart";
+import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/net/booru/booru.dart";
-import "package:gallery/src/net/booru/booru_api.dart";
-import "package:gallery/src/net/booru/display_quality.dart";
-import "package:gallery/src/pages/more/settings/radio_dialog.dart";
-import "package:gallery/src/pages/more/settings/settings_label.dart";
-import "package:gallery/src/pages/more/settings/settings_widget.dart";
-import "package:gallery/src/plugs/gallery_management_api.dart";
-import "package:gallery/src/widgets/menu_wrapper.dart";
-import "package:gallery/welcome_pages.dart";
 
 class SettingsList extends StatefulWidget {
   const SettingsList({
