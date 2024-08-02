@@ -17,7 +17,6 @@ class ImageViewBody extends StatelessWidget {
     required this.onTap,
     required this.onPressedLeft,
     required this.onPressedRight,
-    required this.videoControls,
   });
 
   final void Function(int idx) onPageChanged;
@@ -31,8 +30,6 @@ class ImageViewBody extends StatelessWidget {
   final void Function()? onPressedRight;
   final void Function()? onPressedLeft;
 
-  final _VideoControlsControllerImpl videoControls;
-
   @override
   Widget build(BuildContext context) {
     return GestureDeadZones(
@@ -40,23 +37,19 @@ class ImageViewBody extends StatelessWidget {
       right: true,
       onPressedRight: onPressedRight,
       onPressedLeft: onPressedLeft,
-      child: VideoControls(
-        db: DatabaseConnectionNotifier.of(context).videoSettings,
-        videoControls: videoControls,
-        child: GestureDetector(
-          onLongPress: onLongPress,
-          onTap: onTap,
-          child: PhotoViewGallery.builder(
-            loadingBuilder: loadingBuilder,
-            enableRotation: true,
-            backgroundDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-            ),
-            onPageChanged: onPageChanged,
-            pageController: pageController,
-            itemCount: itemCount,
-            builder: builder,
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        onTap: onTap,
+        child: PhotoViewGallery.builder(
+          loadingBuilder: loadingBuilder,
+          enableRotation: true,
+          backgroundDecoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
           ),
+          onPageChanged: onPageChanged,
+          pageController: pageController,
+          itemCount: itemCount,
+          builder: builder,
         ),
       ),
     );

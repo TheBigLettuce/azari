@@ -10,14 +10,16 @@ class VideoControls extends StatefulWidget {
     super.key,
     required this.videoControls,
     required this.db,
-    required this.child,
+    required this.seekTimeAnchor,
+    required this.vertical,
   });
 
-  final _VideoControlsControllerImpl videoControls;
+  final VideoControlsControllerImpl videoControls;
+  final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
+
+  final bool vertical;
 
   final VideoSettingsService db;
-
-  final Widget child;
 
   @override
   State<VideoControls> createState() => _VideoControlsState();
@@ -33,7 +35,7 @@ class _VideoControlsState extends State<VideoControls>
   final videoTimeKey = GlobalKey<__VideoTimeState>();
   final playButtonKey = GlobalKey<__PlayButtonState>();
 
-  _VideoControlsControllerImpl get controls => widget.videoControls;
+  VideoControlsControllerImpl get controls => widget.videoControls;
 
   Contentable currentContent = const EmptyContent(ContentWidgets.empty());
   bool appBarVisible = true;
@@ -95,157 +97,141 @@ class _VideoControlsState extends State<VideoControls>
     }
   }
 
-  final _timeKey = GlobalKey<__SeekTimeState>();
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom +
-        (MediaQuery.orientationOf(context) == Orientation.portrait
-            ? 100 + 16
-            : 0);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        _SeekTime(
-          key: _timeKey,
-          bottomPadding: bottomPadding,
-          videoControls: widget.videoControls,
+    final children = [
+      _PlayButton(
+        key: playButtonKey,
+        controller: controls,
+      ),
+      IconButton(
+        onPressed: () {
+          controls._events.add(const VolumeButton());
+        },
+        icon: videoSettings.volume == 0
+            ? const Icon(Icons.volume_off_outlined)
+            : const Icon(Icons.volume_up_outlined),
+      ),
+      IconButton(
+        onPressed: () {
+          controls._events.add(const LoopingButton());
+        },
+        icon: Icon(
+          Icons.loop_outlined,
+          color: videoSettings.looping
+              ? Colors.blue.harmonizeWith(
+                  theme.colorScheme.primary,
+                )
+              : null,
         ),
-        Animate(
-          autoPlay: false,
-          effects: const [
-            FadeEffect(
-              delay: Durations.short1,
-              duration: Durations.medium3,
-              curve: Easing.linear,
-              begin: 0,
-              end: 1,
-            ),
-            SlideEffect(
-              duration: Durations.medium1,
-              curve: Easing.emphasizedDecelerate,
-              begin: Offset(0, 1),
-              end: Offset.zero,
-            ),
-          ],
-          controller: animationController,
-          child: Builder(
-            builder: (context) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: bottomPadding,
-                ),
-                child: Animate(
-                  effects: const [
-                    FadeEffect(
-                      begin: 1,
-                      end: 0,
-                      duration: Duration(milliseconds: 500),
-                    ),
-                  ],
-                  autoPlay: false,
-                  target: appBarVisible ? 0 : 1,
-                  child: IgnorePointer(
-                    ignoring: !appBarVisible,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: SizedBox(
-                        height: 60,
-                        child: Card.filled(
-                          color: theme.colorScheme.surfaceContainerHigh,
-                          child: GestureDetector(
-                            onPanStart: (details) {
-                              _timeKey.currentState?.updateDuration(0);
-                            },
-                            onPanUpdate: (details) {
-                              _timeKey.currentState
-                                  ?.updateDuration(details.delta.dx);
-                            },
-                            onPanEnd: (details) {
-                              _timeKey.currentState?.finishUpdating();
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _PlayButton(
-                                  key: playButtonKey,
-                                  controller: controls,
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    controls._events.add(const VolumeButton());
-                                  },
-                                  icon: videoSettings.volume == 0
-                                      ? const Icon(Icons.volume_off_outlined)
-                                      : const Icon(Icons.volume_up_outlined),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    controls._events.add(const LoopingButton());
-                                  },
-                                  icon: Icon(
-                                    Icons.loop_outlined,
-                                    color: videoSettings.looping
-                                        ? Colors.blue.harmonizeWith(
-                                            theme.colorScheme.primary,
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                                _VideoTime(
-                                  key: videoTimeKey,
-                                  controller: controls,
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    controls._events
-                                        .add(const FullscreenButton());
-                                  },
-                                  icon: const Icon(Icons.fullscreen_outlined),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+      ),
+      _VideoTime(
+        key: videoTimeKey,
+        controller: controls,
+      ),
+      IconButton(
+        onPressed: () {
+          controls._events.add(const FullscreenButton());
+        },
+        icon: const Icon(Icons.fullscreen_outlined),
+      ),
+    ];
+
+    return Animate(
+      autoPlay: false,
+      effects: const [
+        FadeEffect(
+          delay: Durations.short1,
+          duration: Durations.medium3,
+          curve: Easing.linear,
+          begin: 0,
+          end: 1,
+        ),
+        SlideEffect(
+          duration: Durations.medium1,
+          curve: Easing.emphasizedDecelerate,
+          begin: Offset(0, 1),
+          end: Offset.zero,
         ),
       ],
+      controller: animationController,
+      child: Animate(
+        effects: const [
+          FadeEffect(
+            begin: 1,
+            end: 0,
+            duration: Duration(milliseconds: 500),
+          ),
+        ],
+        autoPlay: false,
+        target: appBarVisible ? 0 : 1,
+        child: IgnorePointer(
+          ignoring: !appBarVisible,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              width: widget.vertical ? null : 60,
+              height: widget.vertical ? 60 : null,
+              child: Card.filled(
+                color: theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
+                child: GestureDetector(
+                  onPanStart: (details) {
+                    widget.seekTimeAnchor.currentState
+                        ?.updateDuration(0, false);
+                  },
+                  onPanUpdate: (details) {
+                    widget.seekTimeAnchor.currentState?.updateDuration(
+                      widget.vertical ? details.delta.dx : details.delta.dy,
+                      widget.vertical,
+                    );
+                  },
+                  onPanEnd: (details) {
+                    widget.seekTimeAnchor.currentState?.finishUpdating();
+                  },
+                  child: widget.vertical
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: children,
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: children,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _SeekTime extends StatefulWidget {
-  const _SeekTime({
+class SeekTimeAnchor extends StatefulWidget {
+  const SeekTimeAnchor({
     required super.key,
     required this.bottomPadding,
     required this.videoControls,
   });
 
-  final _VideoControlsControllerImpl videoControls;
+  final VideoControlsControllerImpl videoControls;
 
   final double bottomPadding;
 
   @override
-  State<_SeekTime> createState() => __SeekTimeState();
+  State<SeekTimeAnchor> createState() => SeekTimeAnchorState();
 }
 
-class __SeekTimeState extends State<_SeekTime> {
+class SeekTimeAnchorState extends State<SeekTimeAnchor> {
   double? seekDuration;
 
-  void updateDuration(double d) {
+  void updateDuration(double d, bool isVertical) {
     setState(() {
       if (seekDuration != null) {
-        seekDuration = seekDuration! + (d * 0.2);
+        seekDuration =
+            isVertical ? seekDuration! + (d * 0.2) : seekDuration! - (d * 0.2);
       } else {
         seekDuration = d;
       }
@@ -307,7 +293,7 @@ class _PlayButton extends StatefulWidget {
     required this.controller,
   });
 
-  final _VideoControlsControllerImpl controller;
+  final VideoControlsControllerImpl controller;
 
   @override
   State<_PlayButton> createState() => __PlayButtonState();
@@ -356,7 +342,7 @@ class _VideoTime extends StatefulWidget {
     required this.controller,
   });
 
-  final _VideoControlsControllerImpl controller;
+  final VideoControlsControllerImpl controller;
 
   @override
   State<_VideoTime> createState() => __VideoTimeState();

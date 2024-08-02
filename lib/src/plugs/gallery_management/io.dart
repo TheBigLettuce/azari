@@ -13,7 +13,7 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 GalleryManagementApi getApi() => Platform.isAndroid
     ? const AndroidGalleryManagementApi()
-    : Platform.isAndroid
+    : Platform.isLinux
         ? const LinuxGalleryManagementApi()
         : const DummyIoGalleryManagementApi();
 

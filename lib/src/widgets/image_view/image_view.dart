@@ -222,7 +222,7 @@ class ImageViewState extends State<ImageView>
   final scrollController = ScrollController();
   final mainFocus = FocusNode();
 
-  final videoControls = _VideoControlsControllerImpl();
+  final videoControls = VideoControlsControllerImpl();
 
   late PageController controller =
       PageController(initialPage: widget.startingCell);
@@ -462,6 +462,7 @@ class ImageViewState extends State<ImageView>
           previousPallete: previousPallete,
           child: WrapImageViewSkeleton(
             scaffoldKey: key,
+            videoControls: videoControls,
             bottomSheetController: bottomSheetController,
             controller: animationController,
             next: _onPressedRight,
@@ -493,7 +494,6 @@ class ImageViewState extends State<ImageView>
                   ),
                 ],
                 child: ImageViewBody(
-                  videoControls: videoControls,
                   key: _k,
                   onPressedLeft: _onPressedLeft,
                   onPressedRight: _onPressedRight,
@@ -523,8 +523,8 @@ class ImageViewState extends State<ImageView>
   }
 }
 
-class _VideoControlsControllerImpl implements VideoControlsController {
-  _VideoControlsControllerImpl();
+class VideoControlsControllerImpl implements VideoControlsController {
+  VideoControlsControllerImpl();
 
   final _events = StreamController<VideoControlsEvent>.broadcast();
   final _playerEvents = StreamController<PlayerUpdate>.broadcast();

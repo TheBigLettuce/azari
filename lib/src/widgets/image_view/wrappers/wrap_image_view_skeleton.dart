@@ -11,6 +11,7 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/sliding_info_drawer.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:flutter/material.dart";
@@ -27,6 +28,7 @@ class WrapImageViewSkeleton extends StatefulWidget {
     required this.child,
     required this.next,
     required this.prev,
+    required this.videoControls,
   });
 
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -35,6 +37,8 @@ class WrapImageViewSkeleton extends StatefulWidget {
 
   final void Function() next;
   final void Function() prev;
+
+  final VideoControlsControllerImpl videoControls;
 
   final Widget child;
 
@@ -45,6 +49,8 @@ class WrapImageViewSkeleton extends StatefulWidget {
 class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController visibilityController;
+
+  final GlobalKey<SeekTimeAnchorState> seekTimeAnchor = GlobalKey();
 
   @override
   void initState() {
@@ -214,9 +220,11 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                         b.isEmpty &&
                         widgets is! Infoable))
                       _BottomIcons(
+                        videoControls: widget.videoControls,
                         viewPadding: viewPadding,
                         bottomSheetController: widget.bottomSheetController,
                         visibilityController: visibilityController,
+                        seekTimeAnchor: seekTimeAnchor,
                       ),
                     Align(
                       alignment: Alignment.bottomCenter,
@@ -251,6 +259,11 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                         ),
                       ),
                     ),
+                    SeekTimeAnchor(
+                      key: seekTimeAnchor,
+                      bottomPadding: viewPadding.top,
+                      videoControls: widget.videoControls,
+                    ),
                   ],
                 ),
               )
@@ -281,6 +294,21 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                         child: SizedBox.shrink(),
                       ),
                     ),
+                    SeekTimeAnchor(
+                      key: seekTimeAnchor,
+                      bottomPadding: viewPadding.bottom + 60,
+                      videoControls: widget.videoControls,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: viewPadding.bottom),
+                      child: VideoControls(
+                        videoControls: widget.videoControls,
+                        db: DatabaseConnectionNotifier.of(context)
+                            .videoSettings,
+                        seekTimeAnchor: seekTimeAnchor,
+                        vertical: true,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -295,11 +323,16 @@ class _BottomIcons extends StatefulWidget {
     required this.viewPadding,
     required this.bottomSheetController,
     required this.visibilityController,
+    required this.videoControls,
+    required this.seekTimeAnchor,
   });
 
   final EdgeInsets viewPadding;
 
   final AnimationController visibilityController;
+
+  final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
+  final VideoControlsControllerImpl videoControls;
 
   final DraggableScrollableController bottomSheetController;
 
@@ -359,11 +392,23 @@ class __BottomIconsState extends State<_BottomIcons>
               ),
               Align(
                 alignment: Alignment.bottomCenter,
-                child: ImageViewFab(
-                  widgets: widgets,
-                  bottomSheetController: widget.bottomSheetController,
-                  viewPadding: widget.viewPadding,
-                  visibilityController: widget.visibilityController,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    VideoControls(
+                      videoControls: widget.videoControls,
+                      db: DatabaseConnectionNotifier.of(context).videoSettings,
+                      seekTimeAnchor: widget.seekTimeAnchor,
+                      vertical: false,
+                    ),
+                    const Padding(padding: EdgeInsets.only(bottom: 8)),
+                    ImageViewFab(
+                      widgets: widgets,
+                      bottomSheetController: widget.bottomSheetController,
+                      viewPadding: widget.viewPadding,
+                      visibilityController: widget.visibilityController,
+                    ),
+                  ],
                 ),
               ),
             ],

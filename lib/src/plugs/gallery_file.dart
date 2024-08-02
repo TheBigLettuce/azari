@@ -345,7 +345,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                     filename: filename,
                     res: res,
                   ),
-            selectTag: (str) {
+            selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
 
               Navigator.pop(context);
@@ -379,7 +379,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
             },
             tagManager: TagManager.of(context),
             showPin: false,
-            items: (tag) => [
+            items: (tag, controller) => [
               PopupMenuItem(
                 onTap: () {
                   if (tagManager.excluded.exists(tag)) {
@@ -409,6 +409,9 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                   }
 
                   ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+
+                  controller.animateTo(0,
+                      duration: Durations.medium3, curve: Easing.standard);
                 },
                 child: Text(
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,

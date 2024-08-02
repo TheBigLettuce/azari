@@ -30,15 +30,6 @@ class SynopsisBackground extends StatelessWidget {
   final bool markdown;
   final bool showLabel;
 
-  Widget _textSelectionToolbar(
-    BuildContext context,
-    EditableTextState editableTextState,
-  ) =>
-      AnimeBodyTextSelectionToolbar(
-        editableTextState: editableTextState,
-        search: search,
-      );
-
   void onTapLink(String text, String? href, String title) {
     if (href != null) {
       launchUrlString(href);
@@ -97,10 +88,10 @@ class SynopsisBackground extends StatelessWidget {
                       ),
                     ),
                   )
-                : SelectableText(
-                    synopsis,
-                    contextMenuBuilder: _textSelectionToolbar,
-                    style: textTheme.textTheme.bodyMedium,
+                : _BodyTextCollapsible(
+                    text: synopsis,
+                    textTheme: textTheme,
+                    search: search,
                   ),
           ),
         ),
@@ -123,13 +114,96 @@ class SynopsisBackground extends StatelessWidget {
                         a: TextStyle(color: colorScheme.primary),
                       ),
                     )
-                  : SelectableText(
-                      background,
-                      contextMenuBuilder: _textSelectionToolbar,
-                      style: textTheme.textTheme.bodyMedium,
+                  : _BodyTextCollapsible(
+                      text: background,
+                      textTheme: textTheme,
+                      search: search,
                     ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _BodyTextCollapsible extends StatefulWidget {
+  const _BodyTextCollapsible({
+    super.key,
+    required this.text,
+    required this.search,
+    required this.textTheme,
+  });
+
+  final String text;
+  final ThemeData textTheme;
+
+  final void Function(String) search;
+
+  @override
+  State<_BodyTextCollapsible> createState() => __BodyTextCollapsibleState();
+}
+
+class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
+  bool collapse = true;
+
+  Widget _textSelectionToolbar(
+    BuildContext context,
+    EditableTextState editableTextState,
+  ) =>
+      AnimeBodyTextSelectionToolbar(
+        editableTextState: editableTextState,
+        search: widget.search,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final child = SelectableText(
+      collapse && widget.text.length > 150
+          ? "${widget.text.substring(0, 150)}..."
+          : widget.text,
+      contextMenuBuilder: _textSelectionToolbar,
+      style: widget.textTheme.textTheme.bodyMedium,
+    );
+
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        child,
+        DecoratedBox(
+          decoration: BoxDecoration(
+              gradient: !collapse
+                  ? null
+                  : LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        theme.colorScheme.surface.withOpacity(0.2),
+                        theme.colorScheme.surface.withOpacity(0.4),
+                        theme.colorScheme.surface.withOpacity(0.6),
+                        theme.colorScheme.surface.withOpacity(0.8),
+                      ],
+                    )),
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    collapse = !collapse;
+                  });
+                },
+                child: Text(!collapse ? "Collapse" : "More"),
+                // style: theme.textTheme.labelLarge?.copyWith(
+                //   color: theme.colorScheme.onSurface.withOpacity(0.8),
+                // ),
+              ),
+            ),
+          ),
+        ),
+        // Text("data"),
       ],
     );
   }

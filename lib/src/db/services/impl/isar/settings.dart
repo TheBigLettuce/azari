@@ -34,7 +34,8 @@ class IsarSettingsService implements SettingsService {
       resp = await GalleryManagementApi.current()
           .chooseDirectory(l10n)
           .then((e) => IsarSettingsPath(path: e!.$2, pathDisplay: e.$1));
-    } catch (e) {
+    } catch (e, trace) {
+      Logger.root.severe("chooseDirectory", e, trace);
       onError(l10n.emptyResult);
       return false;
     }

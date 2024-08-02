@@ -585,7 +585,9 @@ class _ButtonWithPadding extends StatelessWidget {
               label: Text(label),
             )
           : FilledButton.tonalIcon(
-              icon: const Icon(Icons.check_rounded),
+              icon: variant == ButtonVariant.selected
+                  ? const Icon(Icons.check_rounded)
+                  : icon,
               onPressed: variant == ButtonVariant.selected ? null : onPressed,
               label: Text(label),
             ),

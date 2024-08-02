@@ -278,9 +278,11 @@ class _GalleryFilesState extends State<GalleryFiles> {
 
   FilteringMode? beforeButtons;
 
-  void _filterTag(String tag) {
+  void _filterTag(String tag, ScrollController scrollController) {
     searchTextController.text = tag;
     filter.filteringMode = FilteringMode.tag;
+    scrollController.animateTo(0,
+        duration: Durations.medium3, curve: Easing.standard);
   }
 
   @override
@@ -304,7 +306,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                   tagSource: api.sourceTags,
                   tagManager: TagManager.of(context),
                   child: TagsRibbon(
-                    onLongPress: (String tag) {
+                    onLongPress: (tag, controller) {
                       final settings = SettingsService.db().current;
 
                       HapticFeedback.mediumImpact();
@@ -691,10 +693,11 @@ class TagsRibbon extends StatefulWidget {
     this.emptyWidget = const SliverPadding(padding: EdgeInsets.zero),
   });
 
-  final void Function(String tag)? onLongPress;
-  final void Function(String tag) selectTag;
+  final void Function(String tag, ScrollController controller)? onLongPress;
+  final void Function(String tag, ScrollController controller) selectTag;
   final TagManager tagManager;
-  final List<PopupMenuItem<void>> Function(String tag)? items;
+  final List<PopupMenuItem<void>> Function(
+      String tag, ScrollController controller)? items;
   final bool showPin;
 
   final Widget emptyWidget;
@@ -842,7 +845,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
                             onLongPress: widget.onLongPress == null
                                 ? null
                                 : () {
-                                    widget.onLongPress!(elem.tag);
+                                    widget.onLongPress!(
+                                        elem.tag, scrollController);
                                   },
                             child: ActionChip(
                               labelStyle: elem.excluded
@@ -854,7 +858,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
                               avatar: elem.favorite
                                   ? const Icon(Icons.push_pin_rounded)
                                   : null,
-                              onPressed: () => widget.selectTag(elem.tag),
+                              onPressed: () =>
+                                  widget.selectTag(elem.tag, scrollController),
                               label: Text(elem.tag),
                             ),
                           );
@@ -867,7 +872,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
                                 ? child
                                 : MenuWrapper(
                                     title: elem.tag,
-                                    items: widget.items!(elem.tag),
+                                    items: widget.items!(
+                                        elem.tag, scrollController),
                                     child: child,
                                   ),
                           );

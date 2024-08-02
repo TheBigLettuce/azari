@@ -119,14 +119,14 @@ class _PostInfoState extends State<PostInfo> {
         SliverPadding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           sliver: TagsRibbon(
-            selectTag: (str) {
+            selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
 
               _launchGrid(context, str);
             },
             tagManager: TagManager.of(context),
             showPin: false,
-            items: (tag) => [
+            items: (tag, controller) => [
               PopupMenuItem(
                 onTap: () {
                   if (tagManager.excluded.exists(tag)) {
@@ -156,6 +156,9 @@ class _PostInfoState extends State<PostInfo> {
                   }
 
                   ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+
+                  controller.animateTo(0,
+                      duration: Durations.medium3, curve: Easing.standard);
                 },
                 child: Text(
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
