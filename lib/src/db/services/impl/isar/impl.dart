@@ -13,6 +13,7 @@ import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_entry.
 import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:azari/src/db/services/impl/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
@@ -2839,4 +2840,54 @@ class IsarMainGridService implements MainGridService {
           (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
         ],
       );
+}
+
+class IsarVisitedPostsService implements VisitedPostsService {
+  const IsarVisitedPostsService();
+
+  Isar get db => _Dbs.g.anime;
+
+  IsarCollection<IsarVisitedPost> get collection => db.isarVisitedPosts;
+
+  @override
+  List<VisitedPost> get all =>
+      collection.where().sortByDateDesc().findAllSync();
+
+  @override
+  void addAll(List<VisitedPost> visitedPosts) {
+    if (visitedPosts.isEmpty) {
+      return;
+    }
+
+    db.writeTxnSync(() => collection.putAllByIdBooruSync(visitedPosts.cast()));
+
+    if (collection.countSync() >= 500) {
+      db.writeTxnSync(
+        () => collection
+            .where()
+            .sortByIdDesc()
+            .limit(collection.countSync() - 500)
+            .deleteAllSync(),
+      );
+    }
+  }
+
+  @override
+  void removeAll(List<VisitedPost> visitedPosts) {
+    final (ids, boorus) = visitedPosts.fold((<int>[], <Booru>[]), (lists, e) {
+      lists.$1.add(e.id);
+      lists.$2.add(e.booru);
+
+      return lists;
+    });
+
+    db.writeTxnSync(() => collection.deleteAllByIdBooruSync(ids, boorus));
+  }
+
+  @override
+  void clear() => db.writeTxnSync(() => collection.clearSync());
+
+  @override
+  StreamSubscription<void> watch(void Function(void p1) f) =>
+      collection.watchLazy().listen(f);
 }

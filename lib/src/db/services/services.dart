@@ -110,6 +110,7 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   DirectoryTagService get directoryTags;
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
+  VisitedPostsService get visitedPosts;
 
   TagManager get tagManager;
 
@@ -124,6 +125,83 @@ abstract interface class ServicesImplTable implements ServiceMarker {
 
 final ServicesImplTable _currentDb = getApi();
 typedef DbConn = ServicesImplTable;
+
+@immutable
+abstract class VisitedPost
+    implements CellBase, Thumbnailable, Pressable<VisitedPost> {
+  const factory VisitedPost({
+    required Booru booru,
+    required int id,
+    required String thumbUrl,
+    required DateTime date,
+  }) = $VisitedPost;
+
+  Booru get booru;
+  int get id;
+  String get thumbUrl;
+  DateTime get date;
+}
+
+mixin VisitedPostImpl implements VisitedPost {
+  @override
+  String alias(bool long) => id.toString();
+
+  @override
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((booru, id));
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<VisitedPost> functionality,
+    VisitedPost cell,
+    int idx,
+  ) {
+    final db = DatabaseConnectionNotifier.of(context);
+
+    ImageView.launchWrappedAsyncSingle(
+      context,
+      () async {
+        final dio = BooruAPI.defaultClientForBooru(booru);
+        final api = BooruAPI.fromEnum(booru, dio, PageSaver.noPersist());
+
+        final Post post;
+        try {
+          post = await api.singlePost(id);
+        } catch (e) {
+          rethrow;
+        } finally {
+          dio.close(force: true);
+        }
+
+        db.visitedPosts.addAll([
+          VisitedPost(
+              booru: booru, id: id, thumbUrl: thumbUrl, date: DateTime.now())
+        ]);
+
+        return () => post.content();
+      },
+      tags: (c) => DefaultPostPressable.imageViewTags(c, db.tagManager),
+      watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, db.tagManager),
+    );
+  }
+}
+
+abstract interface class VisitedPostsService {
+  List<VisitedPost> get all;
+
+  void addAll(List<VisitedPost> visitedPosts);
+  void removeAll(List<VisitedPost> visitedPosts);
+
+  void clear();
+
+  StreamSubscription<void> watch(void Function(void) f);
+}
 
 class DatabaseConnectionNotifier extends InheritedWidget {
   const DatabaseConnectionNotifier._({
@@ -218,6 +296,7 @@ abstract interface class DirectoryTagService {
   void delete(Iterable<String> buckedIds);
 }
 
+@immutable
 abstract class TagData {
   const factory TagData({
     required String tag,

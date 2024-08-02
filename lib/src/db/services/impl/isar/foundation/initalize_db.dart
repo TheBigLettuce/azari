@@ -44,7 +44,8 @@ Future<DownloadManager> initalizeIsarDb(
   }
 
   final anime = Isar.openSync(
-    [
+    const [
+      IsarVisitedPostSchema,
       IsarSavedAnimeEntrySchema,
       IsarWatchedAnimeEntrySchema,
       IsarSavedAnimeCharactersSchema,
@@ -60,7 +61,7 @@ Future<DownloadManager> initalizeIsarDb(
   );
 
   final localTags = Isar.openSync(
-    [
+    const [
       IsarTagSchema,
       IsarLocalTagsSchema,
       IsarLocalTagDictionarySchema,
@@ -72,7 +73,7 @@ Future<DownloadManager> initalizeIsarDb(
   );
 
   final main = Isar.openSync(
-    [
+    const [
       IsarSettingsSchema,
       IsarFavoritePostSchema,
       IsarLocalTagDictionarySchema,
@@ -96,7 +97,7 @@ Future<DownloadManager> initalizeIsarDb(
   );
 
   final blacklistedDirIsar = Isar.openSync(
-    [
+    const [
       IsarBlacklistedDirectorySchema,
       IsarFavoriteFileSchema,
       IsarDirectoryMetadataSchema,
@@ -110,7 +111,10 @@ Future<DownloadManager> initalizeIsarDb(
 
   if (Platform.isAndroid) {
     thumbnailIsar = Isar.openSync(
-      [IsarThumbnailSchema, IsarPinnedThumbnailSchema],
+      const [
+        IsarThumbnailSchema,
+        IsarPinnedThumbnailSchema,
+      ],
       directory: directoryPath,
       inspector: false,
       name: "androidThumbnails",

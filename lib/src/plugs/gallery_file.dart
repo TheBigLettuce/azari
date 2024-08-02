@@ -220,6 +220,7 @@ mixin GalleryFile
       idx,
       (c) => _tags(c, db.localTags, tagManager),
       (c, f) => _watchTags(c, f, db.localTags, tagManager),
+      null,
     );
   }
 

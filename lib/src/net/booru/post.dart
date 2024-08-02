@@ -306,22 +306,31 @@ mixin DefaultPostPressable<T extends PostImpl> implements Pressable<T> {
     T cell,
     int idx,
   ) {
+    final db = DatabaseConnectionNotifier.of(context);
     final tagManager = TagManager.of(context);
 
     ImageView.defaultForGrid<T>(
-      context,
-      functionality,
-      ImageViewDescription(
-        ignoreOnNearEnd: false,
-        statistics: StatisticsBooruService.asImageViewStatistics(),
-      ),
-      idx,
-      (c) => _imageViewTags(c, tagManager),
-      (c, f) => _watchTags(c, f, tagManager),
-    );
+        context,
+        functionality,
+        ImageViewDescription(
+          ignoreOnNearEnd: false,
+          statistics: StatisticsBooruService.asImageViewStatistics(),
+        ),
+        idx,
+        (c) => imageViewTags(c, tagManager),
+        (c, f) => watchTags(c, f, tagManager), (post) {
+      db.visitedPosts.addAll([
+        VisitedPost(
+          booru: post.booru,
+          id: post.id,
+          thumbUrl: post.previewUrl,
+          date: DateTime.now(),
+        ),
+      ]);
+    });
   }
 
-  List<ImageTag> _imageViewTags(Contentable c, TagManager tagManager) =>
+  static List<ImageTag> imageViewTags(Contentable c, TagManager tagManager) =>
       (c.widgets as PostBase)
           .tags
           .map(
@@ -333,7 +342,7 @@ mixin DefaultPostPressable<T extends PostImpl> implements Pressable<T> {
           )
           .toList();
 
-  StreamSubscription<List<ImageTag>> _watchTags(
+  static StreamSubscription<List<ImageTag>> watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
     TagManager tagManager,

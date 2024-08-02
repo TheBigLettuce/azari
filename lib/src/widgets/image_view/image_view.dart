@@ -8,6 +8,7 @@ import "dart:async";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
@@ -39,6 +40,19 @@ class ImageViewStatistics {
   const ImageViewStatistics({required this.swiped, required this.viewed});
   final void Function() swiped;
   final void Function() viewed;
+
+  ImageViewStatistics operator +(ImageViewStatistics other) {
+    return ImageViewStatistics(
+      swiped: () {
+        other.swiped();
+        swiped();
+      },
+      viewed: () {
+        other.viewed();
+        viewed();
+      },
+    );
+  }
 }
 
 abstract interface class ImageViewContentable {
@@ -147,6 +161,43 @@ class ImageView extends StatefulWidget {
     );
   }
 
+  static Future<void> launchWrappedAsyncSingle(
+    BuildContext context,
+    Future<Contentable Function()> Function() cell, {
+    void Function(int)? download,
+    Key? key,
+    List<ImageTag> Function(Contentable)? tags,
+    StreamSubscription<List<ImageTag>> Function(
+      Contentable,
+      void Function(List<ImageTag> l),
+    )? watchTags,
+  }) {
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return WrapFutureRestartable(
+            newStatus: cell,
+            builder: (context, value) => GlueProvider.empty(
+              context,
+              child: ImageView(
+                key: key,
+                cellCount: 1,
+                download: download,
+                tags: tags,
+                watchTags: watchTags,
+                scrollUntill: (_) {},
+                startingCell: 0,
+                onExit: () {},
+                getCell: (_) => value(),
+                onNearEnd: null,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   static Future<void> defaultForGrid<T extends ContentableCell>(
     BuildContext gridContext,
     GridFunctionality<T> functionality,
@@ -157,10 +208,13 @@ class ImageView extends StatefulWidget {
       Contentable,
       void Function(List<ImageTag> l),
     )? watchTags,
+    void Function(T)? addToVisited,
   ) {
     functionality.selectionGlue.hideNavBar(true);
 
     final getCell = CellProvider.of<T>(gridContext);
+
+    addToVisited?.call(getCell(startingCell));
 
     return Navigator.of(gridContext, rootNavigator: true).push(
       MaterialPageRoute<void>(
@@ -173,7 +227,10 @@ class ImageView extends StatefulWidget {
             statistics: imageDesctipion.statistics,
             scrollUntill: (i) =>
                 GridScrollNotifier.scrollToOf<T>(gridContext, i),
-            pageChange: imageDesctipion.pageChange,
+            pageChange: (state) {
+              imageDesctipion.pageChange?.call(state);
+              addToVisited?.call(getCell(state.currentPage));
+            },
             watchTags: watchTags,
             onExit: imageDesctipion.onExit,
             getCell: (idx) => getCell(idx).content(),

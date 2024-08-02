@@ -93,6 +93,10 @@ enum BooruSubPage {
   hiddenPosts(
     icon: Icons.hide_image_outlined,
     selectedIcon: Icons.hide_image_rounded,
+  ),
+  viewed(
+    icon: Icons.schedule_outlined,
+    selectedIcon: Icons.schedule_rounded,
   );
 
   const BooruSubPage({
@@ -105,6 +109,7 @@ enum BooruSubPage {
         1 => favorites,
         2 => bookmarks,
         3 => hiddenPosts,
+        4 => viewed,
         int() => booru,
       };
 
@@ -112,10 +117,11 @@ enum BooruSubPage {
   final IconData selectedIcon;
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        BooruSubPage.booru => l10n.booruLabel,
-        BooruSubPage.favorites => l10n.favoritesLabel,
-        BooruSubPage.bookmarks => l10n.bookmarksPageName,
-        BooruSubPage.hiddenPosts => l10n.hiddenPostsPageName,
+        booru => l10n.booruLabel,
+        favorites => l10n.favoritesLabel,
+        bookmarks => l10n.bookmarksPageName,
+        hiddenPosts => l10n.hiddenPostsPageName,
+        viewed => "Visited", //TODO: change
       };
 
   static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>

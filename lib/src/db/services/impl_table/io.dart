@@ -9,6 +9,7 @@ import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_entry.
 import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:azari/src/db/services/impl/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
@@ -117,6 +118,9 @@ class IoServicesImplTable implements ServicesImplTable {
 
   @override
   final TagManager tagManager = const IsarTagManager();
+
+  @override
+  VisitedPostsService get visitedPosts => const IsarVisitedPostsService();
 
   @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
@@ -346,4 +350,13 @@ abstract class $FavoritePost extends FavoritePost {
     required Booru booru,
     required PostContentType type,
   }) = IsarFavoritePost.noId;
+}
+
+abstract class $VisitedPost extends VisitedPost {
+  const factory $VisitedPost({
+    required Booru booru,
+    required int id,
+    required String thumbUrl,
+    required DateTime date,
+  }) = IsarVisitedPost.noId;
 }
