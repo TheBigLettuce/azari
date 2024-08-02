@@ -274,6 +274,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         actions: gridActions(),
         showAppBar: !widget.asSliver,
         asSliver: widget.asSliver,
+        pullToRefresh: false,
         keybindsDescription: l10n.favoritesLabel,
         pageName: l10n.favoritesLabel,
         gridSeed: state.gridSeed,

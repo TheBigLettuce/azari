@@ -148,7 +148,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
               selectionGlue: GlueProvider.generateOf(context)(),
             ),
             description: GridDescription(
-              actions: [],
+              actions: const [],
+              pullToRefresh: false,
               gridSeed: state.gridSeed,
               keybindsDescription: l10n.bookmarksPageName,
             ),

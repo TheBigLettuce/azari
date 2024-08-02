@@ -204,11 +204,11 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
       SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     });
 
-    playerControls.clear();
+    // playerControls.clear();
 
     eventsSubscr?.cancel();
     disposed = true;
-    controller.pause();
+    // controller.pause();
     controller.dispose();
     chewieController?.dispose();
     super.dispose();
