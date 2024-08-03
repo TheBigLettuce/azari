@@ -10,6 +10,7 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/gallery_thumbnail_provider.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
+import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";

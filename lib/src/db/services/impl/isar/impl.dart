@@ -2637,11 +2637,16 @@ class IsarGridStateBooruService implements GridBookmarkService {
       _Dbs.g.main.isarBookmarks.getByNameSync(name);
 
   @override
-  GridBookmark? getFirstByTags(String tags) => _Dbs.g.main.isarBookmarks
-      .filter()
-      .tagsStartsWith(tags)
-      .limit(1)
-      .findFirstSync();
+  GridBookmark? getFirstByTags(String tags, Booru preferBooru) =>
+      _Dbs.g.main.isarBookmarks
+          .filter()
+          .tagsStartsWith(tags)
+          .booruEqualTo(preferBooru)
+          .or()
+          .not()
+          .booruEqualTo(preferBooru)
+          .limit(1)
+          .findFirstSync();
 
   @override
   void delete(String name) {

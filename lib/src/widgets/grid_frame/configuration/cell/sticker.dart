@@ -9,8 +9,11 @@ class Sticker {
   const Sticker(
     this.icon, {
     this.important = false,
+    this.subtitle,
   });
 
   final IconData icon;
   final bool important;
+
+  final String? subtitle;
 }

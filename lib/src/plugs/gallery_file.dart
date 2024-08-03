@@ -186,9 +186,15 @@ mixin GalleryFile
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     final db = DatabaseConnectionNotifier.of(context);
 
+    final filteringData = FilteringData.maybeOf(context);
+
     if (excludeDuplicate) {
       final stickers = <Sticker>[
         ...defaultStickersFile(context, this, db.localTags),
+        if (filteringData != null &&
+            (filteringData.sortingMode == SortingMode.size ||
+                filteringData.filteringMode == FilteringMode.same))
+          Sticker(Icons.square_foot_rounded, subtitle: kbMbSize(context, size)),
       ];
 
       return stickers.isEmpty ? const [] : stickers;

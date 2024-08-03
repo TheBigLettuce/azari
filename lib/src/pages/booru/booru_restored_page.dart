@@ -125,7 +125,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     final tagsTrimmed = widget.tags.trim();
 
     final bookmarkByName = widget.trySearchBookmarkByTags
-        ? gridBookmarks.getFirstByTags(tagsTrimmed)
+        ? gridBookmarks.getFirstByTags(tagsTrimmed, widget.booru)
         : null;
 
     final String name;
@@ -143,17 +143,17 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             name,
             bookmarkByName != null || widget.name != null,
             bookmarkByName != null ? null : widget.overrideSafeMode,
-            tagsTrimmed,
+            bookmarkByName?.tags ?? tagsTrimmed,
           ),
         ) ??
         makePageEntry(
           name,
           bookmarkByName != null || widget.name != null,
           bookmarkByName != null ? null : widget.overrideSafeMode,
-          tagsTrimmed,
+          bookmarkByName?.tags ?? tagsTrimmed,
         );
 
-    pagingState.tagManager.latest.add(tagsTrimmed);
+    pagingState.tagManager.latest.add(bookmarkByName?.tags ?? tagsTrimmed);
 
     if (gridBookmarks.get(pagingState.secondaryGrid.name) == null) {
       gridBookmarks.add(
@@ -161,7 +161,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
           booru: widget.booru,
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
-          tags: tagsTrimmed,
+          tags: bookmarkByName?.tags ?? tagsTrimmed,
         ),
       );
     }

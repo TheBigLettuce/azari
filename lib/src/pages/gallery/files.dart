@@ -308,9 +308,50 @@ class _GalleryFilesState extends State<GalleryFiles> {
                   child: TagsRibbon(
                     onLongPress: (tag, controller) {
                       final settings = SettingsService.db().current;
+                      final generateGlue = GlueProvider.generateOf(context);
+
+                      void launchGrid(SafeMode? s) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) {
+                              return BooruRestoredPage(
+                                generateGlue: generateGlue,
+                                booru: settings.selectedBooru,
+                                thenMoveTo: ((widget.directory == null
+                                            ? api.directories.length == 1
+                                            : true)
+                                        ? () {
+                                            final dir = widget.directory ??
+                                                api.directories.first;
+
+                                            return PathVolume(
+                                              dir.relativeLoc,
+                                              dir.volumeName,
+                                              widget.dirName,
+                                            );
+                                          }
+                                        : null)
+                                    ?.call(),
+                                tags: tag,
+                                trySearchBookmarkByTags: true,
+                                saveSelectedPage: (e) {},
+                                overrideSafeMode: s ?? settings.safeMode,
+                                db: widget.db,
+                              );
+                            },
+                          ),
+                        );
+                      }
+
+                      final bookmark = widget.db.gridBookmarks
+                          .getFirstByTags(tag.trim(), settings.selectedBooru);
+                      if (bookmark != null) {
+                        launchGrid(null);
+                        return;
+                      }
 
                       HapticFeedback.mediumImpact();
-                      final generateGlue = GlueProvider.generateOf(context);
 
                       radioDialog<SafeMode>(
                         context,
@@ -318,41 +359,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                           (e) => (e, e.translatedString(l10n)),
                         ),
                         settings.safeMode,
-                        (s) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (context) {
-                                return BooruRestoredPage(
-                                  generateGlue: generateGlue,
-                                  booru: settings.selectedBooru,
-                                  thenMoveTo: ((widget.directory == null
-                                              ? api.directories.length == 1
-                                              : true)
-                                          ? () {
-                                              final dir = widget.directory ??
-                                                  api.directories.first;
-
-                                              return PathVolume(
-                                                dir.relativeLoc,
-                                                dir.volumeName,
-                                                widget.dirName,
-                                              );
-                                            }
-                                          : null)
-                                      ?.call(),
-                                  tags: tag,
-                                  trySearchBookmarkByTags: true,
-                                  saveSelectedPage: (e) {},
-                                  overrideSafeMode: s ?? settings.safeMode,
-                                  db: DatabaseConnectionNotifier.of(
-                                    context,
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                        launchGrid,
                         title: l10n.chooseSafeMode,
                         allowSingle: true,
                       );
@@ -437,7 +444,10 @@ class _GalleryFilesState extends State<GalleryFiles> {
                     nestedCallback: widget.callback,
                     child: OnBooruTagPressed(
                       onPressed: _onBooruTagPressed,
-                      child: child,
+                      child: FilteringDataHolder(
+                        source: filter,
+                        child: child,
+                      ),
                     ),
                   );
                 },
@@ -1335,6 +1345,55 @@ class StatisticsCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class FilteringDataHolder extends StatefulWidget {
+  const FilteringDataHolder({
+    super.key,
+    required this.source,
+    required this.child,
+  });
+
+  final ChainedFilterResourceSource<dynamic, dynamic> source;
+
+  final Widget child;
+
+  @override
+  State<FilteringDataHolder> createState() => _FilteringDataHolderState();
+}
+
+class _FilteringDataHolderState extends State<FilteringDataHolder> {
+  late final StreamSubscription<dynamic> subscr;
+
+  late FilteringData filteringData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    filteringData =
+        FilteringData(widget.source.filteringMode, widget.source.sortingMode);
+    subscr = widget.source.watchFilter((data) {
+      setState(() {
+        filteringData = data;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilteringDataNotifier(
+      data: filteringData,
+      child: widget.child,
     );
   }
 }

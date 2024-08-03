@@ -12,6 +12,7 @@ import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:azari/src/widgets/image_view/video_controls_controller.dart";
 import "package:flutter/material.dart";
 
@@ -19,18 +20,20 @@ class WrapImageViewNotifiers extends StatefulWidget {
   const WrapImageViewNotifiers({
     super.key,
     required this.hardRefresh,
-    required this.currentCell,
+    required this.currentPage,
+    required this.page,
     required this.tags,
     required this.watchTags,
     required this.mainFocus,
     required this.controller,
     required this.bottomSheetController,
     required this.gridContext,
-    required this.child,
     required this.videoControls,
+    required this.child,
   });
 
-  final Contentable currentCell;
+  final ImageViewPageTypeMixin page;
+  final Stream<int> currentPage;
   final FocusNode mainFocus;
   final void Function([bool refreshPalette]) hardRefresh;
   final BuildContext? gridContext;
@@ -52,6 +55,10 @@ class WrapImageViewNotifiers extends StatefulWidget {
 class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   final _bottomSheetKey = GlobalKey<__BottomSheetPopScopeState>();
 
+  late final StreamSubscription<int> subscr;
+  late Contentable content;
+  late int currentCell;
+
   bool _isPaused = false;
   double? _loadingProgress = 1;
 
@@ -63,10 +70,22 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   @override
   void initState() {
     super.initState();
+    final (c, cc) = widget.page.currentCell();
+    content = c;
+    currentCell = cc;
+
+    subscr = widget.currentPage.listen((i) {
+      final (c, cc) = widget.page.currentCell();
+      content = c;
+      currentCell = cc;
+
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    subscr.cancel();
     _searchData.dispose();
 
     super.dispose();
@@ -104,10 +123,10 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
       generate: GlueProvider.generateOf(widget.gridContext ?? context),
       gridContext: widget.gridContext ?? context,
       child: ImageViewTagWatcher(
-        key: ValueKey(widget.currentCell),
+        key: ValueKey((currentCell, content.widgets.uniqueKey())),
         tags: widget.tags,
         watchTags: widget.watchTags,
-        currentCell: widget.currentCell,
+        currentCell: content,
         child: ReloadImageNotifier(
           reload: widget.hardRefresh,
           child: PauseVideoNotifier(
@@ -122,7 +141,7 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                   child: FocusNotifier(
                     notifier: _searchData.searchFocus,
                     child: CurrentContentNotifier(
-                      content: widget.currentCell,
+                      content: content,
                       child: LoadingProgressNotifier(
                         progress: _loadingProgress,
                         child: _BottomSheetPopScope(

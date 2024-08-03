@@ -451,15 +451,26 @@ class _BottomRibbon extends StatelessWidget {
                       padding: const EdgeInsets.only(
                         right: 8,
                       ),
-                      child: Icon(
-                        e.icon,
-                        size: 16,
-                        color: e.important
-                            ? colorScheme.secondary
-                            : colorScheme.onSurface.withOpacity(
-                                0.6,
+                      child: e.subtitle != null
+                          ? Text(
+                              e.subtitle!,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: e.important
+                                    ? colorScheme.secondary
+                                    : colorScheme.onSurface.withOpacity(
+                                        0.6,
+                                      ),
                               ),
-                      ),
+                            )
+                          : Icon(
+                              e.icon,
+                              size: 16,
+                              color: e.important
+                                  ? colorScheme.secondary
+                                  : colorScheme.onSurface.withOpacity(
+                                      0.6,
+                                    ),
+                            ),
                     ),
                   )
                   .toList(),

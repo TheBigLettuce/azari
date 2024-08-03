@@ -25,6 +25,8 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   (Contentable, int)? _previousCell;
   (Contentable, int)? _nextCell;
 
+  (Contentable, int) currentCell() => _currentCell!;
+
   Contentable drawCell(int i, [bool currentCellOnly = false]) {
     if (currentCellOnly) {
       return _currentCell!.$1;
@@ -80,9 +82,9 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
 
     return switch (content) {
       AndroidImage() =>
-        _makeAndroidImage(context, key, content.size, content.uri, false),
+        _makeAndroidImage(context, key, i, content.size, content.uri, false),
       AndroidGif() =>
-        _makeAndroidImage(context, key, content.size, content.uri, true),
+        _makeAndroidImage(context, key, i, content.size, content.uri, true),
       NetGif() => _makeNetImage(key, content.provider),
       NetImage() => _makeNetImage(key, content.provider),
       AndroidVideo() => _makeVideo(context, key, content.uri, true),
@@ -134,6 +136,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   PhotoViewGalleryPageOptions _makeAndroidImage(
     BuildContext context,
     Key key,
+    int idx,
     Size size,
     String uri,
     bool isGif,
@@ -142,7 +145,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         gestureDetectorBehavior: HitTestBehavior.translucent,
         disableGestures: true,
         child: KeyedSubtree(
-          key: key,
+          key: ValueKey((key, idx)),
           child: Center(
             child: SizedBox(
               height: MediaQuery.of(context).size.height,

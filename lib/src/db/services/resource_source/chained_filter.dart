@@ -8,6 +8,7 @@ import "dart:async";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:flutter/widgets.dart";
 
 typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
   Iterable<V> e,
@@ -72,7 +73,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
 
-  final StreamController<FilteringMode> _filterEvents =
+  final StreamController<FilteringData> _filterEvents =
       StreamController.broadcast();
 
   final void Function() prefilter;
@@ -101,7 +102,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     }
 
     _mode = f;
-    _filterEvents.add(f);
+    _filterEvents.add(FilteringData(_mode, _sorting));
 
     clearRefresh();
   }
@@ -120,6 +121,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     }
 
     _sorting = s;
+    _filterEvents.add(FilteringData(_mode, _sorting));
 
     if (_original is SortingResourceSource<K, V>) {
       _original.sortingMode = sortingMode;
@@ -197,8 +199,37 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     _originalSubscr.cancel();
   }
 
-  StreamSubscription<FilteringMode> watchFilter(
-    void Function(FilteringMode) f,
+  StreamSubscription<FilteringData> watchFilter(
+    void Function(FilteringData) f,
   ) =>
       _filterEvents.stream.listen(f);
+}
+
+@immutable
+class FilteringData {
+  const FilteringData(this.filteringMode, this.sortingMode);
+
+  final FilteringMode filteringMode;
+  final SortingMode sortingMode;
+
+  static FilteringData? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<FilteringDataNotifier>();
+
+    return widget?.data;
+  }
+}
+
+class FilteringDataNotifier extends InheritedWidget {
+  const FilteringDataNotifier({
+    super.key,
+    required this.data,
+    required super.child,
+  });
+
+  final FilteringData data;
+
+  @override
+  bool updateShouldNotify(FilteringDataNotifier oldWidget) =>
+      data != oldWidget.data || data != oldWidget.data;
 }

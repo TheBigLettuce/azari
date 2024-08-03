@@ -167,9 +167,9 @@ class __FilterIconState extends State<_FilterIcon>
     controller = AnimationController(vsync: this);
 
     subscr = widget.filter.watchFilter((f) {
-      if (filteringMode != f) {
+      if (filteringMode != f.filteringMode) {
         controller.reverse().then((_) {
-          filteringMode = f;
+          filteringMode = f.filteringMode;
 
           setState(() {});
 

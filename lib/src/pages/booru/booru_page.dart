@@ -8,7 +8,6 @@ import "dart:async";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/posts_source.dart";
-import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
@@ -23,6 +22,7 @@ import "package:azari/src/pages/booru/favorite_posts_page.dart";
 import "package:azari/src/pages/booru/hidden_posts.dart";
 import "package:azari/src/pages/booru/tags/single_post.dart";
 import "package:azari/src/pages/booru/tags/tag_suggestions.dart";
+import "package:azari/src/pages/booru/visited_posts.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
@@ -30,11 +30,8 @@ import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/pages/more/settings/settings_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
@@ -416,136 +413,6 @@ class _BooruPageState extends State<BooruPage> {
           ),
         ),
     };
-  }
-}
-
-class VisitedPostsPage extends StatefulWidget {
-  const VisitedPostsPage({
-    super.key,
-    required this.generateGlue,
-    required this.db,
-  });
-
-  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
-
-  final VisitedPostsService db;
-
-  @override
-  State<VisitedPostsPage> createState() => _VisitedPostsPageState();
-}
-
-class _VisitedPostsPageState extends State<VisitedPostsPage> {
-  VisitedPostsService get visitedPosts => widget.db;
-
-  late final StreamSubscription<void> subscr;
-
-  late final state = GridSkeletonState<VisitedPost>();
-  late final source = GenericListSource<VisitedPost>(
-    () => Future.value(visitedPosts.all),
-  );
-
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
-    hideName: true,
-    aspectRatio: GridAspectRatio.one,
-    columns: GridColumn.three,
-    layoutType: GridLayoutType.grid,
-  );
-
-  @override
-  void initState() {
-    super.initState();
-
-    subscr = widget.db.watch((_) {
-      source.clearRefresh();
-    });
-  }
-
-  @override
-  void dispose() {
-    subscr.cancel();
-    gridSettings.cancel();
-    source.destroy();
-    state.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: GlueProvider(
-        generate: widget.generateGlue,
-        child: GridFrame<VisitedPost>(
-          key: state.gridKey,
-          slivers: [
-            CurrentGridSettingsLayout<VisitedPost>(
-              source: source.backingStorage,
-              gridSeed: state.gridSeed,
-              progress: source.progress,
-            ),
-            // ListLayout<VisitedPost>(
-            //   hideThumbnails: false,
-            //   source: source.backingStorage,
-            //   progress: source.progress,
-            //   itemFactory: (context, index, cell) {
-            //     final extras =
-            //         GridExtrasNotifier.of<VisitedPost>(context);
-
-            //     return DefaultListTile(
-            //       functionality: extras.functionality,
-            //       selection: extras.selection,
-            //       index: index,
-            //       cell: cell,
-            //       trailing: Text(cell.booru.string),
-            //       hideThumbnails: HideHiddenImagesThumbsNotifier.of(context),
-            //       dismiss: TileDismiss(
-            //         () {
-            //           hiddenBooruPost.removeAll([(cell.postId, cell.booru)]);
-
-            //           source.clearRefresh();
-            //         },
-            //         Icons.image_rounded,
-            //       ),
-            //     );
-            //   },
-            // ),
-          ],
-          functionality: GridFunctionality(
-            selectionGlue: widget.generateGlue(),
-            search: PageNameSearchWidget(
-              leading: IconButton(
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-                icon: const Icon(Icons.menu_rounded),
-              ),
-              trailingItems: [
-                IconButton(
-                  onPressed: visitedPosts.clear,
-                  icon: const Icon(Icons.clear_all_rounded),
-                ),
-              ],
-            ),
-            source: source,
-          ),
-          description: GridDescription(
-            pullToRefresh: false,
-            actions: [
-              GridAction(
-                Icons.remove_rounded,
-                visitedPosts.removeAll,
-                true,
-              ),
-            ],
-            keybindsDescription: "Visited", // TODO: change
-            gridSeed: state.gridSeed,
-          ),
-        ),
-      ),
-    );
   }
 }
 

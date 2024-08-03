@@ -178,7 +178,7 @@ class MediaLoaderAndMover(private val context: Context) {
                     }
 
                     op.notifyGallery(uiScope, op.dir)
-                    
+
                     Path(op.source).deleteIfExists()
                 })
             }
@@ -234,7 +234,7 @@ class MediaLoaderAndMover(private val context: Context) {
             isLockedFilesMux.lock()
 
             loadMedia(
-                "favorites",
+                listOf(),
                 context,
                 inRefreshAtEnd = true,
                 type = LoadMediaType.Normal,
@@ -271,7 +271,7 @@ class MediaLoaderAndMover(private val context: Context) {
     ) {
         scope.launch {
             loadMedia(
-                dir,
+                listOf(dir),
                 context,
                 inRefreshAtEnd = true,
                 type = type,
@@ -288,7 +288,7 @@ class MediaLoaderAndMover(private val context: Context) {
     ) {
         scope.launch {
             loadMedia(
-                "",
+                listOf(),
                 context,
                 inRefreshAtEnd = true,
                 type = LoadMediaType.Normal,
@@ -314,7 +314,7 @@ class MediaLoaderAndMover(private val context: Context) {
             isLockedFilesMux.lock()
 
             loadMedia(
-                dirId,
+                listOf(dirId),
                 context,
                 inRefreshAtEnd = inRefreshAtEnd,
                 type = type,
@@ -328,7 +328,7 @@ class MediaLoaderAndMover(private val context: Context) {
         }
     }
 
-    suspend fun refreshFilesMultiple(
+    fun refreshFilesMultiple(
         dirs: List<String>, sortingMode: FilesSortingMode,
         sendMedia: SendMedia,
     ) {
@@ -347,48 +347,22 @@ class MediaLoaderAndMover(private val context: Context) {
 
         val time = Calendar.getInstance().time.time
 
-        isLockedFilesMux.lock()
+        scope.launch {
+            isLockedFilesMux.lock()
 
-        val jobs = mutableListOf<Job>()
-
-        for (d in dirs.subList(0, dirs.count() - 1)) {
-            if (jobs.count() == cap) {
-                jobs.first().join()
-                jobs.removeFirst()
+            loadMedia(
+                dirs,
+                context,
+                inRefreshAtEnd = true,
+                type = LoadMediaType.Normal,
+                limit = 0,
+                sortingMode = sortingMode,
+            ) { content, notFound, empty, inRefresh ->
+                sendMedia(scope, uiScope, dirs.last(), time, content, notFound, empty, inRefresh)
             }
 
-            jobs.add(scope.launch {
-                loadMedia(
-                    d,
-                    context,
-                    inRefreshAtEnd = false,
-                    type = LoadMediaType.Normal,
-                    limit = 0,
-                    sortingMode = sortingMode,
-                ) { content, notFound, empty, inRefresh ->
-                    sendMedia(scope, uiScope, d, time, content, notFound, empty, inRefresh)
-                }
-            })
+            isLockedFilesMux.unlock()
         }
-
-        for (job in jobs) {
-            job.join()
-        }
-
-        val last = dirs.last()
-
-        loadMedia(
-            last,
-            context,
-            inRefreshAtEnd = true,
-            type = LoadMediaType.Normal,
-            limit = 0,
-            sortingMode = sortingMode,
-        ) { content, notFound, empty, inRefresh ->
-            sendMedia(scope, uiScope, last, time, content, notFound, empty, inRefresh)
-        }
-
-        isLockedFilesMux.unlock()
     }
 
     fun thumbCacheSize(res: MethodChannel.Result, fromPinned: Boolean) {
@@ -489,7 +463,7 @@ class MediaLoaderAndMover(private val context: Context) {
 
 
     private suspend fun loadMedia(
-        dir: String,
+        dirs: List<String>,
         context: Context,
         inRefreshAtEnd: Boolean,
         type: LoadMediaType,
@@ -511,8 +485,23 @@ class MediaLoaderAndMover(private val context: Context) {
             MediaStore.Files.FileColumns.WIDTH
         )
 
+        val s = StringBuilder()
+
+        if (dirs.size == 1) {
+            s.append("${MediaStore.Files.FileColumns.BUCKET_ID} = ? ")
+        } else {
+            s.append("(")
+            s.append("${MediaStore.Files.FileColumns.BUCKET_ID} = ?")
+
+            for (i in 1..<dirs.size) {
+                s.append(" OR ")
+                s.append("${MediaStore.Files.FileColumns.BUCKET_ID} = ?")
+            }
+            s.append(") ")
+        }
+        
         var selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (type != LoadMediaType.Normal || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (type != LoadMediaType.Normal || showOnly != null) "" else "AND $s"}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
 
         if (showOnly != null) {
             if (showOnly.isEmpty()) {
@@ -536,8 +525,7 @@ class MediaLoaderAndMover(private val context: Context) {
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                if (type != LoadMediaType.Normal || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
-                    dir,
+                if (type != LoadMediaType.Normal || showOnly != null) arrayOf("image/vnd.djvu") else dirs.toTypedArray() + arrayOf(
                     "image/vnd.djvu"
                 )
             )

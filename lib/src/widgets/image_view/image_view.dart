@@ -269,7 +269,7 @@ class ImageViewState extends State<ImageView>
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
-  final _k = GlobalKey();
+  // final _k = GlobalKey();
 
   late final AnimationController animationController;
   late final AnimationController slideAnimationLeft;
@@ -295,6 +295,8 @@ class ImageViewState extends State<ImageView>
 
   GlobalProgressTab? globalProgressTab;
 
+  final currentPageStream = StreamController<int>.broadcast();
+
   @override
   void initState() {
     super.initState();
@@ -311,18 +313,28 @@ class ImageViewState extends State<ImageView>
         return;
       }
 
-      if (cellCount != c) {
-        widget.statistics?.viewed();
-      }
+      final shiftCurrentPage = c - cellCount;
 
       cellCount = c;
       final prev = currentPage;
-      currentPage = prev.clamp(0, cellCount - 1);
+      currentPage = (prev +
+              (shiftCurrentPage.isNegative || prev == 0 ? 0 : shiftCurrentPage))
+          .clamp(0, cellCount - 1);
 
-      loadCells(currentPage, cellCount);
-      refreshPalette();
+      if (currentPage != prev && prev != 0) {
+        controller.jumpToPage(currentPage);
+      } else {
+        if (cellCount != c) {
+          widget.statistics?.viewed();
+        }
 
-      setState(() {});
+        loadCells(currentPage, cellCount);
+        refreshPalette();
+
+        currentPageStream.add(currentPage);
+
+        setState(() {});
+      }
     });
 
     widget.statistics?.viewed();
@@ -352,6 +364,7 @@ class ImageViewState extends State<ImageView>
 
   @override
   void dispose() {
+    currentPageStream.close();
     animationController.dispose();
     slideAnimationLeft.dispose();
     slideAnimationRight.dispose();
@@ -453,6 +466,8 @@ class ImageViewState extends State<ImageView>
 
     refreshPalette();
 
+    currentPageStream.add(currentPage);
+
     setState(() {});
   }
 
@@ -511,7 +526,8 @@ class ImageViewState extends State<ImageView>
         controller: animationController,
         gridContext: widget.gridContext,
         key: wrapNotifiersKey,
-        currentCell: drawCell(currentPage),
+        page: this,
+        currentPage: currentPageStream.stream,
         videoControls: videoControls,
         child: WrapImageViewTheme(
           key: wrapThemeKey,
@@ -551,7 +567,6 @@ class ImageViewState extends State<ImageView>
                   ),
                 ],
                 child: ImageViewBody(
-                  key: _k,
                   onPressedLeft: _onPressedLeft,
                   onPressedRight: _onPressedRight,
                   onPageChanged: _onPageChanged,

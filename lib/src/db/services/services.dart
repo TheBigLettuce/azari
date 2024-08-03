@@ -454,7 +454,7 @@ abstract interface class GridBookmarkService {
   List<GridBookmark> get all;
 
   GridBookmark? get(String name);
-  GridBookmark? getFirstByTags(String tags);
+  GridBookmark? getFirstByTags(String tags, Booru preferBooru);
 
   List<GridBookmark> firstNumber(int n);
 
