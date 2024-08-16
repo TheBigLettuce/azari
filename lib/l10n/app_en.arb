@@ -1490,5 +1490,9 @@
                 "type": "int"
             }
         }
+    },
+    "visitedPage": "Visited",
+    "@visitedPage": {
+        "description": "Visited booru posts page"
     }
 }

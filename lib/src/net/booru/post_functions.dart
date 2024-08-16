@@ -157,8 +157,11 @@ class _PostInfoState extends State<PostInfo> {
 
                   ImageViewInfoTilesRefreshNotifier.refreshOf(context);
 
-                  controller.animateTo(0,
-                      duration: Durations.medium3, curve: Easing.standard);
+                  controller.animateTo(
+                    0,
+                    duration: Durations.medium3,
+                    curve: Easing.standard,
+                  );
                 },
                 child: Text(
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
@@ -181,6 +184,14 @@ class _PostInfoState extends State<PostInfo> {
               ),
               subtitle: Center(
                 child: Text(post.rating.translatedName(l10n)),
+              ),
+            ),
+            ListTile(
+              title: Center(
+                child: Text(l10n.booruLabel),
+              ),
+              subtitle: Center(
+                child: Text(post.booru.string),
               ),
             ),
             ListTile(

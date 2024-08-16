@@ -6,16 +6,68 @@
 import "dart:async";
 
 import "package:azari/src/db/services/impl/isar/schemas/anime/anime_entry_base.dart";
-import "package:azari/src/db/services/impl/isar/schemas/anime/watching_anime_entry.dart";
+import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:isar/isar.dart";
 
-part "watched_anime_entry.g.dart";
+part "watching_anime_entry.g.dart";
+
+@embedded
+class IsarAnimeGenre implements $AnimeGenre {
+  const IsarAnimeGenre({
+    this.id = 0,
+    this.title = "",
+    this.unpressable = false,
+    this.explicit = false,
+  });
+
+  const IsarAnimeGenre.required({
+    required this.id,
+    required this.title,
+    required this.unpressable,
+    required this.explicit,
+  });
+
+  @override
+  final String title;
+  @override
+  final int id;
+  @override
+  final bool unpressable;
+  @override
+  final bool explicit;
+}
+
+@embedded
+class IsarAnimeRelation implements $AnimeRelation {
+  const IsarAnimeRelation({
+    this.thumbUrl = "",
+    this.title = "",
+    this.type = "",
+    this.id = 0,
+  });
+
+  const IsarAnimeRelation.required({
+    required this.thumbUrl,
+    required this.title,
+    required this.type,
+    required this.id,
+  });
+
+  @override
+  final String thumbUrl;
+  @override
+  final String title;
+  @override
+  final String type;
+  @override
+  final int id;
+}
 
 @collection
-class IsarWatchedAnimeEntry extends IsarAnimeEntry {
-  const IsarWatchedAnimeEntry({
+class IsarWatchingAnimeEntry extends IsarAnimeEntry {
+  const IsarWatchingAnimeEntry({
     required super.imageUrl,
     required super.airedFrom,
     required super.airedTo,
@@ -39,18 +91,15 @@ class IsarWatchedAnimeEntry extends IsarAnimeEntry {
     required super.episodes,
     required super.genres,
     required super.staff,
-    required this.date,
   });
 
   final Id? isarId;
 
-  final DateTime date;
+  @override
+  Null properties() => null;
 
   @override
-  dynamic properties() => date;
-
-  @override
-  IsarWatchedAnimeEntry copy({
+  IsarWatchingAnimeEntry copy({
     bool? inBacklog,
     AnimeMetadata? site,
     int? episodes,
@@ -69,19 +118,17 @@ class IsarWatchedAnimeEntry extends IsarAnimeEntry {
     double? score,
     String? thumbUrl,
     String? synopsis,
-    DateTime? date,
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
     DateTime? airedFrom,
     DateTime? airedTo,
   }) {
-    return IsarWatchedAnimeEntry(
+    return IsarWatchingAnimeEntry(
       isarId: isarId,
       imageUrl: imageUrl ?? this.imageUrl,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,
-      date: date ?? this.date,
       site: site ?? this.site,
       thumbUrl: thumbUrl ?? this.thumbUrl,
       title: title ?? this.title,

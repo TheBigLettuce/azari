@@ -316,6 +316,11 @@ class ImageViewState extends State<ImageView>
       final shiftCurrentPage = c - cellCount;
 
       cellCount = c;
+      if (widget.onNearEnd != null) {
+        setState(() {});
+        return;
+      }
+
       final prev = currentPage;
       currentPage = (prev +
               (shiftCurrentPage.isNegative || prev == 0 ? 0 : shiftCurrentPage))

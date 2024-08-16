@@ -11,11 +11,11 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:isar/isar.dart";
 
-part "watched_anime_entry.g.dart";
+part "backlog_anime_entry.g.dart";
 
 @collection
-class IsarWatchedAnimeEntry extends IsarAnimeEntry {
-  const IsarWatchedAnimeEntry({
+class IsarBacklogAnimeEntry extends IsarAnimeEntry {
+  const IsarBacklogAnimeEntry({
     required super.imageUrl,
     required super.airedFrom,
     required super.airedTo,
@@ -39,18 +39,42 @@ class IsarWatchedAnimeEntry extends IsarAnimeEntry {
     required super.episodes,
     required super.genres,
     required super.staff,
-    required this.date,
   });
+
+  const IsarBacklogAnimeEntry.noIdList({
+    required super.imageUrl,
+    required super.airedFrom,
+    required super.airedTo,
+    required super.explicit,
+    required super.type,
+    required super.site,
+    required super.thumbUrl,
+    required super.title,
+    required super.titleJapanese,
+    required super.titleEnglish,
+    required super.score,
+    required super.synopsis,
+    required super.id,
+    required super.siteUrl,
+    required super.isAiring,
+    required super.titleSynonyms,
+    required super.background,
+    required super.trailerUrl,
+    required super.episodes,
+  })  : isarId = null,
+        super(
+          staff: const [],
+          genres: const [],
+          relations: const [],
+        );
 
   final Id? isarId;
 
-  final DateTime date;
+  @override
+  Null properties() => null;
 
   @override
-  dynamic properties() => date;
-
-  @override
-  IsarWatchedAnimeEntry copy({
+  IsarBacklogAnimeEntry copy({
     bool? inBacklog,
     AnimeMetadata? site,
     int? episodes,
@@ -69,19 +93,17 @@ class IsarWatchedAnimeEntry extends IsarAnimeEntry {
     double? score,
     String? thumbUrl,
     String? synopsis,
-    DateTime? date,
     String? type,
     AnimeSafeMode? explicit,
     List<AnimeRelation>? staff,
     DateTime? airedFrom,
     DateTime? airedTo,
   }) {
-    return IsarWatchedAnimeEntry(
+    return IsarBacklogAnimeEntry(
       isarId: isarId,
       imageUrl: imageUrl ?? this.imageUrl,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,
-      date: date ?? this.date,
       site: site ?? this.site,
       thumbUrl: thumbUrl ?? this.thumbUrl,
       title: title ?? this.title,

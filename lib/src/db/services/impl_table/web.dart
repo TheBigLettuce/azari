@@ -22,14 +22,11 @@ Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
 
 ServicesImplTable getApi() => throw UnimplementedError();
 
-class $SavedAnimeEntryData extends AnimeEntryDataImpl
-    with DefaultSavedAnimeEntryPressable
-    implements SavedAnimeEntryData {
-  const $SavedAnimeEntryData({
+class $AnimeEntryData extends AnimeEntryDataImpl implements AnimeEntryData {
+  const $AnimeEntryData({
     required this.imageUrl,
     required this.airedFrom,
     required this.airedTo,
-    required this.inBacklog,
     required this.relations,
     required this.explicit,
     required this.type,
@@ -50,9 +47,6 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
     required this.genres,
     required this.staff,
   });
-
-  @override
-  final bool inBacklog;
 
   @override
   final String background;
@@ -121,38 +115,41 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
   final String imageUrl;
 
   @override
-  SavedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]) =>
-      $SavedAnimeEntryData(
-        imageUrl: e.imageUrl,
-        genres: e.genres,
-        relations: ignoreRelations ? relations : e.relations,
-        staff: e.staff,
-        inBacklog: inBacklog,
-        site: e.site,
-        type: e.type,
-        thumbUrl: e.thumbUrl,
-        title: e.title,
-        titleJapanese: e.titleJapanese,
-        titleEnglish: e.titleEnglish,
-        score: e.score,
-        synopsis: e.synopsis,
-        id: e.id,
-        siteUrl: e.siteUrl,
-        isAiring: e.isAiring,
-        titleSynonyms: e.titleSynonyms,
-        trailerUrl: e.trailerUrl,
-        episodes: e.episodes,
-        background: e.background,
-        explicit: e.explicit,
-        airedFrom: e.airedFrom,
-        airedTo: e.airedTo,
-      );
+  dynamic properties() => null;
+
+  // @override
+  // AnimeEntryData copySuper(
+  //   AnimeEntryData e, [
+  //   bool ignoreRelations = false,
+  // ]) =>
+  //     $SavedAnimeEntryData(
+  //       imageUrl: e.imageUrl,
+  //       genres: e.genres,
+  //       relations: ignoreRelations ? relations : e.relations,
+  //       staff: e.staff,
+  //       inBacklog: inBacklog,
+  //       site: e.site,
+  //       type: e.type,
+  //       thumbUrl: e.thumbUrl,
+  //       title: e.title,
+  //       titleJapanese: e.titleJapanese,
+  //       titleEnglish: e.titleEnglish,
+  //       score: e.score,
+  //       synopsis: e.synopsis,
+  //       id: e.id,
+  //       siteUrl: e.siteUrl,
+  //       isAiring: e.isAiring,
+  //       titleSynonyms: e.titleSynonyms,
+  //       trailerUrl: e.trailerUrl,
+  //       episodes: e.episodes,
+  //       background: e.background,
+  //       explicit: e.explicit,
+  //       airedFrom: e.airedFrom,
+  //       airedTo: e.airedTo,
+  //     );
 
   @override
-  SavedAnimeEntryData copy({
+  AnimeEntryData copy({
     bool? inBacklog,
     AnimeMetadata? site,
     int? episodes,
@@ -178,14 +175,13 @@ class $SavedAnimeEntryData extends AnimeEntryDataImpl
     DateTime? airedFrom,
     DateTime? airedTo,
   }) =>
-      $SavedAnimeEntryData(
+      $AnimeEntryData(
         imageUrl: imageUrl ?? this.imageUrl,
         airedFrom: airedFrom ?? this.airedFrom,
         airedTo: airedTo ?? this.airedTo,
         genres: genres ?? this.genres,
         relations: relations ?? this.relations,
         staff: staff ?? this.staff,
-        inBacklog: inBacklog ?? this.inBacklog,
         site: site ?? this.site,
         type: type ?? this.type,
         thumbUrl: thumbUrl ?? this.thumbUrl,
@@ -523,189 +519,189 @@ class $DownloadFileData extends DownloadFileDataImpl
       );
 }
 
-class $WatchedAnimeEntryData extends AnimeEntryDataImpl
-    with DefaultWatchedAnimeEntryPressable
-    implements WatchedAnimeEntryData {
-  const $WatchedAnimeEntryData({
-    required this.imageUrl,
-    required this.airedFrom,
-    required this.airedTo,
-    required this.date,
-    required this.relations,
-    required this.explicit,
-    required this.type,
-    required this.site,
-    required this.thumbUrl,
-    required this.title,
-    required this.titleJapanese,
-    required this.titleEnglish,
-    required this.score,
-    required this.synopsis,
-    required this.id,
-    required this.siteUrl,
-    required this.isAiring,
-    required this.titleSynonyms,
-    required this.background,
-    required this.trailerUrl,
-    required this.episodes,
-    required this.genres,
-    required this.staff,
-  });
+// class $WatchedAnimeEntryData extends AnimeEntryDataImpl
+//     with DefaultWatchedAnimeEntryPressable
+//     implements WatchedAnimeEntryData {
+//   const $WatchedAnimeEntryData({
+//     required this.imageUrl,
+//     required this.airedFrom,
+//     required this.airedTo,
+//     required this.date,
+//     required this.relations,
+//     required this.explicit,
+//     required this.type,
+//     required this.site,
+//     required this.thumbUrl,
+//     required this.title,
+//     required this.titleJapanese,
+//     required this.titleEnglish,
+//     required this.score,
+//     required this.synopsis,
+//     required this.id,
+//     required this.siteUrl,
+//     required this.isAiring,
+//     required this.titleSynonyms,
+//     required this.background,
+//     required this.trailerUrl,
+//     required this.episodes,
+//     required this.genres,
+//     required this.staff,
+//   });
 
-  @override
-  final String background;
+//   @override
+//   final String background;
 
-  @override
-  final DateTime date;
+//   @override
+//   final DateTime date;
 
-  @override
-  final int episodes;
+//   @override
+//   final int episodes;
 
-  @override
-  final AnimeSafeMode explicit;
+//   @override
+//   final AnimeSafeMode explicit;
 
-  @override
-  final int id;
+//   @override
+//   final int id;
 
-  @override
-  final bool isAiring;
+//   @override
+//   final bool isAiring;
 
-  @override
-  final double score;
+//   @override
+//   final double score;
 
-  @override
-  final AnimeMetadata site;
+//   @override
+//   final AnimeMetadata site;
 
-  @override
-  final String siteUrl;
+//   @override
+//   final String siteUrl;
 
-  @override
-  final String synopsis;
+//   @override
+//   final String synopsis;
 
-  @override
-  final String thumbUrl;
+//   @override
+//   final String thumbUrl;
 
-  @override
-  final String title;
+//   @override
+//   final String title;
 
-  @override
-  final String titleEnglish;
+//   @override
+//   final String titleEnglish;
 
-  @override
-  final String titleJapanese;
+//   @override
+//   final String titleJapanese;
 
-  @override
-  final List<String> titleSynonyms;
+//   @override
+//   final List<String> titleSynonyms;
 
-  @override
-  final String trailerUrl;
+//   @override
+//   final String trailerUrl;
 
-  @override
-  final String type;
+//   @override
+//   final String type;
 
-  @override
-  final List<AnimeGenre> genres;
+//   @override
+//   final List<AnimeGenre> genres;
 
-  @override
-  final List<AnimeRelation> relations;
+//   @override
+//   final List<AnimeRelation> relations;
 
-  @override
-  final List<AnimeRelation> staff;
+//   @override
+//   final List<AnimeRelation> staff;
 
-  @override
-  final DateTime? airedFrom;
+//   @override
+//   final DateTime? airedFrom;
 
-  @override
-  final DateTime? airedTo;
+//   @override
+//   final DateTime? airedTo;
 
-  @override
-  final String imageUrl;
+//   @override
+//   final String imageUrl;
 
-  @override
-  WatchedAnimeEntryData copy({
-    bool? inBacklog,
-    AnimeMetadata? site,
-    int? episodes,
-    String? trailerUrl,
-    String? imageUrl,
-    String? siteUrl,
-    String? title,
-    String? titleJapanese,
-    String? titleEnglish,
-    String? background,
-    int? id,
-    List<AnimeGenre>? genres,
-    List<String>? titleSynonyms,
-    List<AnimeRelation>? relations,
-    bool? isAiring,
-    int? year,
-    double? score,
-    String? thumbUrl,
-    String? synopsis,
-    DateTime? date,
-    String? type,
-    AnimeSafeMode? explicit,
-    List<AnimeRelation>? staff,
-    DateTime? airedFrom,
-    DateTime? airedTo,
-  }) =>
-      $WatchedAnimeEntryData(
-        imageUrl: imageUrl ?? this.imageUrl,
-        genres: genres ?? this.genres,
-        relations: relations ?? this.relations,
-        staff: staff ?? this.staff,
-        site: site ?? this.site,
-        type: type ?? this.type,
-        thumbUrl: thumbUrl ?? this.thumbUrl,
-        title: title ?? this.title,
-        titleJapanese: titleJapanese ?? this.titleJapanese,
-        titleEnglish: titleEnglish ?? this.titleEnglish,
-        score: score ?? this.score,
-        synopsis: synopsis ?? this.synopsis,
-        id: id ?? this.id,
-        siteUrl: siteUrl ?? this.siteUrl,
-        isAiring: isAiring ?? this.isAiring,
-        titleSynonyms: titleSynonyms ?? this.titleSynonyms,
-        trailerUrl: trailerUrl ?? this.trailerUrl,
-        episodes: episodes ?? this.episodes,
-        background: background ?? this.background,
-        explicit: explicit ?? this.explicit,
-        date: date ?? this.date,
-        airedFrom: airedFrom ?? this.airedFrom,
-        airedTo: airedTo ?? this.airedTo,
-      );
+//   @override
+//   WatchedAnimeEntryData copy({
+//     bool? inBacklog,
+//     AnimeMetadata? site,
+//     int? episodes,
+//     String? trailerUrl,
+//     String? imageUrl,
+//     String? siteUrl,
+//     String? title,
+//     String? titleJapanese,
+//     String? titleEnglish,
+//     String? background,
+//     int? id,
+//     List<AnimeGenre>? genres,
+//     List<String>? titleSynonyms,
+//     List<AnimeRelation>? relations,
+//     bool? isAiring,
+//     int? year,
+//     double? score,
+//     String? thumbUrl,
+//     String? synopsis,
+//     DateTime? date,
+//     String? type,
+//     AnimeSafeMode? explicit,
+//     List<AnimeRelation>? staff,
+//     DateTime? airedFrom,
+//     DateTime? airedTo,
+//   }) =>
+//       $WatchedAnimeEntryData(
+//         imageUrl: imageUrl ?? this.imageUrl,
+//         genres: genres ?? this.genres,
+//         relations: relations ?? this.relations,
+//         staff: staff ?? this.staff,
+//         site: site ?? this.site,
+//         type: type ?? this.type,
+//         thumbUrl: thumbUrl ?? this.thumbUrl,
+//         title: title ?? this.title,
+//         titleJapanese: titleJapanese ?? this.titleJapanese,
+//         titleEnglish: titleEnglish ?? this.titleEnglish,
+//         score: score ?? this.score,
+//         synopsis: synopsis ?? this.synopsis,
+//         id: id ?? this.id,
+//         siteUrl: siteUrl ?? this.siteUrl,
+//         isAiring: isAiring ?? this.isAiring,
+//         titleSynonyms: titleSynonyms ?? this.titleSynonyms,
+//         trailerUrl: trailerUrl ?? this.trailerUrl,
+//         episodes: episodes ?? this.episodes,
+//         background: background ?? this.background,
+//         explicit: explicit ?? this.explicit,
+//         date: date ?? this.date,
+//         airedFrom: airedFrom ?? this.airedFrom,
+//         airedTo: airedTo ?? this.airedTo,
+//       );
 
-  @override
-  WatchedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]) =>
-      $WatchedAnimeEntryData(
-        imageUrl: e.imageUrl,
-        genres: e.genres,
-        relations: ignoreRelations ? relations : e.relations,
-        staff: e.staff,
-        site: e.site,
-        type: e.type,
-        thumbUrl: e.thumbUrl,
-        title: e.title,
-        titleJapanese: e.titleJapanese,
-        titleEnglish: e.titleEnglish,
-        score: e.score,
-        synopsis: e.synopsis,
-        id: e.id,
-        siteUrl: e.siteUrl,
-        isAiring: e.isAiring,
-        titleSynonyms: e.titleSynonyms,
-        trailerUrl: e.trailerUrl,
-        episodes: e.episodes,
-        background: e.background,
-        explicit: e.explicit,
-        date: date,
-        airedFrom: e.airedFrom,
-        airedTo: e.airedTo,
-      );
-}
+//   @override
+//   WatchedAnimeEntryData copySuper(
+//     AnimeEntryData e, [
+//     bool ignoreRelations = false,
+//   ]) =>
+//       $WatchedAnimeEntryData(
+//         imageUrl: e.imageUrl,
+//         genres: e.genres,
+//         relations: ignoreRelations ? relations : e.relations,
+//         staff: e.staff,
+//         site: e.site,
+//         type: e.type,
+//         thumbUrl: e.thumbUrl,
+//         title: e.title,
+//         titleJapanese: e.titleJapanese,
+//         titleEnglish: e.titleEnglish,
+//         score: e.score,
+//         synopsis: e.synopsis,
+//         id: e.id,
+//         siteUrl: e.siteUrl,
+//         isAiring: e.isAiring,
+//         titleSynonyms: e.titleSynonyms,
+//         trailerUrl: e.trailerUrl,
+//         episodes: e.episodes,
+//         background: e.background,
+//         explicit: e.explicit,
+//         date: date,
+//         airedFrom: e.airedFrom,
+//         airedTo: e.airedTo,
+//       );
+// }
 
 class $GridBookmarkThumbnail implements GridBookmarkThumbnail {
   const $GridBookmarkThumbnail({

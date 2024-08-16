@@ -303,6 +303,33 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
   }
 }
 
+class GridCellPlaceholder extends StatelessWidget {
+  const GridCellPlaceholder({
+    super.key,
+    required this.description,
+  });
+
+  final CellStaticData description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: description.tightMode
+          ? const EdgeInsets.all(0.5)
+          : const EdgeInsets.all(4),
+      child: description.circle
+          ? const ClipPath(
+              clipper: ShapeBorderClipper(shape: CircleBorder()),
+              child: ShimmerLoadingIndicator(reverse: true),
+            )
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: const ShimmerLoadingIndicator(reverse: true),
+            ),
+    );
+  }
+}
+
 class CustomGridCellWrapper extends StatelessWidget {
   const CustomGridCellWrapper({
     super.key,

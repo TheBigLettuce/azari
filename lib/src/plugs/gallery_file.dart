@@ -417,8 +417,11 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
 
                   ImageViewInfoTilesRefreshNotifier.refreshOf(context);
 
-                  controller.animateTo(0,
-                      duration: Durations.medium3, curve: Easing.standard);
+                  controller.animateTo(
+                    0,
+                    duration: Durations.medium3,
+                    curve: Easing.standard,
+                  );
                 },
                 child: Text(
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,

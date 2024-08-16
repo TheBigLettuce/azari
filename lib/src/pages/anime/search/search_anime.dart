@@ -168,7 +168,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
           return SearchAnimePage<AnimeEntryData, int, AnimeGenre>(
             initalText: search,
             explicit: safeMode,
-            actions: _animeSearchActions(db.savedAnimeEntries, db.watchedAnime),
+            actions: _animeSearchActions(db.savedAnimeEntries),
             initalGenreId: initalGenreId,
             siteUri: Uri.https(api.site.browserUrl()),
             info: api.site.name,
@@ -618,27 +618,27 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
 
 List<GridAction<AnimeSearchEntry>> _animeSearchActions(
   SavedAnimeEntriesService savedAnimeEntries,
-  WatchedAnimeEntryService watchedAnimeEntries,
 ) =>
-    [
-      GridAction(
-        Icons.add,
-        (selected) {
-          final toDelete = <AnimeSearchEntry>[];
-          final toAdd = <AnimeSearchEntry>[];
+    throw UnimplementedError();
+    // [
+    //   GridAction(
+    //     Icons.add,
+    //     (selected) {
+    //       final toDelete = <AnimeSearchEntry>[];
+    //       final toAdd = <AnimeSearchEntry>[];
 
-          for (final e in selected) {
-            final entry = savedAnimeEntries.maybeGet(e.id, e.site);
-            if (entry == null) {
-              toAdd.add(e);
-            } else if (entry.inBacklog) {
-              toDelete.add(e);
-            }
-          }
+    //       for (final e in selected) {
+    //         final entry = savedAnimeEntries.maybeGet(e.id, e.site);
+    //         if (entry == null) {
+    //           toAdd.add(e);
+    //         } else if (entry.inBacklog) {
+    //           toDelete.add(e);
+    //         }
+    //       }
 
-          savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
-          savedAnimeEntries.deleteAll(toDelete.toIds);
-        },
-        true,
-      ),
-    ];
+    //       savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
+    //       savedAnimeEntries.deleteAll(toDelete.toIds);
+    //     },
+    //     true,
+    //   ),
+    // ];

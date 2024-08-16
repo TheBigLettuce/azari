@@ -100,6 +100,33 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
   }
 }
 
+class GridLayoutPlaceholder extends StatelessWidget {
+  const GridLayoutPlaceholder({
+    super.key,
+    required this.description,
+  });
+
+  final CellStaticData description;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = GridConfiguration.of(context);
+
+    return SliverGrid.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        childAspectRatio: config.aspectRatio.value,
+        crossAxisCount: config.columns.number,
+      ),
+      itemCount: config.columns.number * 20,
+      itemBuilder: (context, idx) {
+        return GridCellPlaceholder(
+          description: description,
+        );
+      },
+    );
+  }
+}
+
 class EmptyWidgetOrContent extends StatefulWidget {
   const EmptyWidgetOrContent({
     super.key,

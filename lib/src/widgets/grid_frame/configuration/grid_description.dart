@@ -19,6 +19,7 @@ class GridDescription<T extends CellBase> {
     this.pageName,
     this.overrideEmptyWidgetNotice,
     this.animationsOnSourceWatch = true,
+    this.showLoadingIndicator = true,
   });
 
   /// Displayed in the keybinds info page name.
@@ -38,7 +39,7 @@ class GridDescription<T extends CellBase> {
   final bool showAppBar;
   final bool pullToRefresh;
   final bool animationsOnSourceWatch;
-
+  final bool showLoadingIndicator;
   final bool asSliver;
 
   final int gridSeed;

@@ -4,9 +4,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/db/services/impl/isar/impl.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/backlog_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
-import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/watching_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/visited_post.dart";
@@ -48,14 +49,11 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   IsarMiscSettingsService get miscSettings => const IsarMiscSettingsService();
   @override
-  SavedAnimeEntriesService get savedAnimeEntries =>
-      const IsarSavedAnimeEntriesService();
+  late SavedAnimeEntriesService savedAnimeEntries =
+      IsarSavedAnimeEntriesService();
   @override
   SavedAnimeCharactersService get savedAnimeCharacters =>
       const IsarSavedAnimeCharatersService();
-  @override
-  WatchedAnimeEntryService get watchedAnime =>
-      const IsarWatchedAnimeEntryService();
   @override
   VideoSettingsService get videoSettings => const IsarVideoService();
   @override
@@ -115,6 +113,8 @@ class IoServicesImplTable implements ServicesImplTable {
       IsarBlacklistedDirectoryService();
   @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
+  @override
+  NewestAnimeService get newestAnime => const IsarNewestAnimeService();
 
   @override
   final TagManager tagManager = const IsarTagManager();
@@ -264,36 +264,35 @@ abstract class $PinnedManga extends PinnedManga {
   }) = IsarPinnedManga.noId;
 }
 
-abstract class $WatchedAnimeEntryData extends WatchedAnimeEntryData {
-  const factory $WatchedAnimeEntryData({
-    required DateTime date,
-    required DateTime? airedFrom,
-    required DateTime? airedTo,
-    required AnimeMetadata site,
-    required String type,
-    required String thumbUrl,
-    required String imageUrl,
-    required String title,
-    required String titleJapanese,
-    required String titleEnglish,
-    required double score,
-    required String synopsis,
-    required int id,
-    required String siteUrl,
-    required bool isAiring,
-    required List<String> titleSynonyms,
-    required String trailerUrl,
-    required int episodes,
-    required String background,
-    required AnimeSafeMode explicit,
-  }) = IsarWatchedAnimeEntry.noIdList;
-}
+// abstract class $WatchedAnimeEntryData extends WatchedAnimeEntryData {
+//   const factory $WatchedAnimeEntryData({
+//     required DateTime date,
+//     required DateTime? airedFrom,
+//     required DateTime? airedTo,
+//     required AnimeMetadata site,
+//     required String type,
+//     required String thumbUrl,
+//     required String imageUrl,
+//     required String title,
+//     required String titleJapanese,
+//     required String titleEnglish,
+//     required double score,
+//     required String synopsis,
+//     required int id,
+//     required String siteUrl,
+//     required bool isAiring,
+//     required List<String> titleSynonyms,
+//     required String trailerUrl,
+//     required int episodes,
+//     required String background,
+//     required AnimeSafeMode explicit,
+//   }) = IsarWatchedAnimeEntry.noIdList;
+// }
 
-abstract class $SavedAnimeEntryData extends SavedAnimeEntryData {
-  const factory $SavedAnimeEntryData({
+abstract class $AnimeEntryData extends AnimeEntryData {
+  const factory $AnimeEntryData({
     required DateTime? airedFrom,
     required DateTime? airedTo,
-    required bool inBacklog,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
@@ -311,7 +310,7 @@ abstract class $SavedAnimeEntryData extends SavedAnimeEntryData {
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-  }) = IsarSavedAnimeEntry.noIdList;
+  }) = IsarBacklogAnimeEntry.noIdList;
 }
 
 abstract class $Post extends Post {
@@ -359,4 +358,105 @@ abstract class $VisitedPost extends VisitedPost {
     required String thumbUrl,
     required DateTime date,
   }) = IsarVisitedPost.noId;
+}
+
+extension AnimeEntryCopySuperExt on AnimeEntryData {
+  IsarBacklogAnimeEntry copySuperBacklog() => IsarBacklogAnimeEntry(
+        imageUrl: imageUrl,
+        airedFrom: airedFrom,
+        airedTo: airedTo,
+        isarId: null,
+        explicit: explicit,
+        type: type,
+        site: site,
+        thumbUrl: thumbUrl,
+        title: title,
+        titleJapanese: titleJapanese,
+        titleEnglish: titleEnglish,
+        score: score,
+        synopsis: synopsis,
+        id: id,
+        siteUrl: siteUrl,
+        isAiring: isAiring,
+        titleSynonyms: titleSynonyms,
+        background: background,
+        trailerUrl: trailerUrl,
+        episodes: episodes,
+        relations: relations is List<IsarAnimeRelation>
+            ? relations as List<IsarAnimeRelation>
+            : relations.cast(),
+        staff: staff is List<IsarAnimeRelation>
+            ? staff as List<IsarAnimeRelation>
+            : staff.cast(),
+        genres: genres is List<IsarAnimeGenre>
+            ? genres as List<IsarAnimeGenre>
+            : genres.cast(),
+      );
+
+  IsarWatchedAnimeEntry copySuperWatched() => IsarWatchedAnimeEntry(
+        imageUrl: imageUrl,
+        airedFrom: airedFrom,
+        airedTo: airedTo,
+        isarId: null,
+        explicit: explicit,
+        type: type,
+        site: site,
+        thumbUrl: thumbUrl,
+        title: title,
+        titleJapanese: titleJapanese,
+        titleEnglish: titleEnglish,
+        score: score,
+        synopsis: synopsis,
+        id: id,
+        siteUrl: siteUrl,
+        isAiring: isAiring,
+        titleSynonyms: titleSynonyms,
+        background: background,
+        trailerUrl: trailerUrl,
+        episodes: episodes,
+        relations: relations is List<IsarAnimeRelation>
+            ? relations as List<IsarAnimeRelation>
+            : relations.cast(),
+        staff: staff is List<IsarAnimeRelation>
+            ? staff as List<IsarAnimeRelation>
+            : staff.cast(),
+        genres: genres is List<IsarAnimeGenre>
+            ? genres as List<IsarAnimeGenre>
+            : genres.cast(),
+        date: this is IsarWatchedAnimeEntry
+            ? (this as IsarWatchedAnimeEntry).date
+            : DateTime.now(),
+      );
+
+  IsarWatchingAnimeEntry copySuperWatching() => IsarWatchingAnimeEntry(
+        imageUrl: imageUrl,
+        airedFrom: airedFrom,
+        airedTo: airedTo,
+        isarId: null,
+        explicit: explicit,
+        type: type,
+        site: site,
+        thumbUrl: thumbUrl,
+        title: title,
+        titleJapanese: titleJapanese,
+        titleEnglish: titleEnglish,
+        score: score,
+        synopsis: synopsis,
+        id: id,
+        siteUrl: siteUrl,
+        isAiring: isAiring,
+        titleSynonyms: titleSynonyms,
+        background: background,
+        trailerUrl: trailerUrl,
+        episodes: episodes,
+        relations: relations is List<IsarAnimeRelation>
+            ? relations as List<IsarAnimeRelation>
+            : relations.cast(),
+        staff: staff is List<IsarAnimeRelation>
+            ? staff as List<IsarAnimeRelation>
+            : staff.cast(),
+        genres: genres is List<IsarAnimeGenre>
+            ? genres as List<IsarAnimeGenre>
+            : genres.cast(),
+      );
 }

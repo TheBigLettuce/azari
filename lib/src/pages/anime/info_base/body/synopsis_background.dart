@@ -173,18 +173,19 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
         child,
         DecoratedBox(
           decoration: BoxDecoration(
-              gradient: !collapse
-                  ? null
-                  : LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        theme.colorScheme.surface.withOpacity(0.2),
-                        theme.colorScheme.surface.withOpacity(0.4),
-                        theme.colorScheme.surface.withOpacity(0.6),
-                        theme.colorScheme.surface.withOpacity(0.8),
-                      ],
-                    )),
+            gradient: !collapse
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      theme.colorScheme.surface.withOpacity(0.2),
+                      theme.colorScheme.surface.withOpacity(0.4),
+                      theme.colorScheme.surface.withOpacity(0.6),
+                      theme.colorScheme.surface.withOpacity(0.8),
+                    ],
+                  ),
+          ),
           child: Align(
             alignment: Alignment.bottomRight,
             child: Padding(

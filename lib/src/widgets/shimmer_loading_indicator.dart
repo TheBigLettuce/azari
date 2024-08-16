@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:math";
+
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -11,10 +13,12 @@ class ShimmerLoadingIndicator extends StatelessWidget {
     super.key,
     this.delay = const Duration(seconds: 1),
     this.duration = const Duration(milliseconds: 500),
+    this.reverse = false,
   });
 
   final Duration delay;
   final Duration duration;
+  final bool reverse;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,13 @@ class ShimmerLoadingIndicator extends StatelessWidget {
       onComplete: (controller) => controller.repeat(),
       effects: [
         ShimmerEffect(
-          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+          angle: reverse ? pi + (pi / 12) : null,
+          // curve: Easing.emphasizedDecelerate,
+          colors: [
+            colorScheme.primary.withOpacity(0.1),
+            colorScheme.onSurfaceVariant.withOpacity(0.5),
+            colorScheme.primary.withOpacity(0.1),
+          ],
           delay: delay,
           duration: duration,
         ),

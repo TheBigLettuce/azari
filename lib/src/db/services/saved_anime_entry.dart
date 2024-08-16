@@ -5,9 +5,11 @@
 
 part of "services.dart";
 
-extension SavedAnimeEntryDataExt on SavedAnimeEntryData {
-  void save() =>
-      _currentDb.savedAnimeEntries.addAll([this], _currentDb.watchedAnime);
+extension SavedAnimeEntryDataExt on AnimeEntryData {
+  void saveWatching() =>
+      _currentDb.savedAnimeEntries.watching.backingStorage.add(this);
+  void saveBacklog() =>
+      _currentDb.savedAnimeEntries.backlog.backingStorage.add(this);
 }
 
 extension SavedAnimeEntryDataListExt on List<AnimeEntryData> {
@@ -16,38 +18,45 @@ extension SavedAnimeEntryDataListExt on List<AnimeEntryData> {
 }
 
 abstract interface class SavedAnimeEntriesService implements ServiceMarker {
-  int get count;
+  AnimeEntriesSource get watching;
+  AnimeEntriesSource get backlog;
+  AnimeEntriesSource get watched;
 
-  List<SavedAnimeEntryData> get backlogAll;
-  List<SavedAnimeEntryData> get currentlyWatchingAll;
+  // void unsetIsWatchingAll(List<SavedAnimeEntryData> entries);
 
-  void unsetIsWatchingAll(List<SavedAnimeEntryData> entries);
-  SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
+  // (bool, bool) isWatchingBacklog(int id, AnimeMetadata site);
+
+  // StreamSubscription<void> watchAll(
+  //   void Function(void) f, [
+  //   bool fire = false,
+  // ]);
+}
+
+abstract interface class AnimeEntriesSource
+    implements ResourceSource<(int id, AnimeMetadata site), AnimeEntryData> {
+  // List<SavedAnimeEntryData> get all;
+
+  // SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site);
+
   void update(AnimeEntryData e);
 
-  (bool, bool) isWatchingBacklog(int id, AnimeMetadata site);
-  void deleteAll(List<(int, AnimeMetadata)> ids);
-  void reAdd(List<SavedAnimeEntryData> entries);
+  // void reAdd(List<SavedAnimeEntryData> entries);
+  // void addAll(
+  //   List<AnimeEntryData> entries,
+  //   WatchedAnimeEntryService watchedAnime,
+  // );
 
-  void addAll(
-    List<AnimeEntryData> entries,
-    WatchedAnimeEntryService watchedAnime,
-  );
+  // void deleteAll(List<(int, AnimeMetadata)> ids);
 
-  StreamSubscription<void> watchAll(
-    void Function(void) f, [
-    bool fire = false,
-  ]);
+  // StreamSubscription<int> watchCount(
+  //   void Function(int) f, [
+  //   bool fire = false,
+  // ]);
 
-  StreamSubscription<int> watchCount(
-    void Function(int) f, [
-    bool fire = false,
-  ]);
-
-  StreamSubscription<SavedAnimeEntryData?> watch(
+  StreamSubscription<AnimeEntryData?> watchSingle(
     int id,
     AnimeMetadata site,
-    void Function(SavedAnimeEntryData?) f, [
+    void Function(AnimeEntryData?) f, [
     bool fire = false,
   ]);
 }

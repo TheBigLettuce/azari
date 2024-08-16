@@ -105,3 +105,33 @@ class _GridQuiltedLayoutState<T extends CellBase>
     );
   }
 }
+
+class GridQuiltedLayoutPlaceholder extends StatelessWidget {
+  const GridQuiltedLayoutPlaceholder({
+    super.key,
+    required this.description,
+    required this.randomNumber,
+  });
+
+  final CellStaticData description;
+  final int randomNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = GridConfiguration.of(context);
+
+    return SliverGrid.builder(
+      gridDelegate: SliverQuiltedGridDelegate(
+        crossAxisCount: config.columns.number,
+        repeatPattern: QuiltedGridRepeatPattern.inverted,
+        pattern: config.columns.pattern(randomNumber),
+      ),
+      itemCount: config.columns.number * 20,
+      itemBuilder: (context, idx) {
+        return GridCellPlaceholder(
+          description: description,
+        );
+      },
+    );
+  }
+}

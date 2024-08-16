@@ -351,7 +351,8 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
               child: description.footer,
             ),
           ),
-        if ((!description.showAppBar ||
+        if (description.showLoadingIndicator &&
+            (!description.showAppBar ||
                 functionality.search is BarSearchWidget) &&
             functionality.selectionGlue.barHeight() != 0 &&
             functionality.selectionGlue.persistentBarHeight)
@@ -736,7 +737,8 @@ class GridExtrasData<T extends CellBase> {
     if (description.showAppBar) {
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
-          : functionality.search is BarSearchWidget
+          : functionality.search is BarSearchWidget ||
+                  !description.showLoadingIndicator
               ? null
               : PreferredSize(
                   preferredSize: const Size.fromHeight(4),

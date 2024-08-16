@@ -8,9 +8,11 @@ import "dart:io";
 
 import "package:async/async.dart";
 import "package:azari/init_main/app_info.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/backlog_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/newest_anime.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
-import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/watching_anime_entry.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/visited_post.dart";
@@ -47,6 +49,7 @@ import "package:azari/src/db/services/impl/isar/schemas/statistics/statistics_ge
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -54,7 +57,6 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
@@ -571,160 +573,365 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
   }
 }
 
+enum _IsarAnimeEntriesType {
+  backlog,
+  watching,
+  watched;
+}
+
 class IsarSavedAnimeEntriesService implements SavedAnimeEntriesService {
-  const IsarSavedAnimeEntriesService();
+  IsarSavedAnimeEntriesService();
+
+  @override
+  AnimeEntriesSource backlog =
+      IsarAnimeEntriesSource(_IsarAnimeEntriesType.backlog);
+
+  @override
+  AnimeEntriesSource watching =
+      IsarAnimeEntriesSource(_IsarAnimeEntriesType.watching);
+
+  @override
+  AnimeEntriesSource watched =
+      IsarAnimeEntriesSource(_IsarAnimeEntriesType.watched);
+}
+
+class IsarAnimeEntriesSource implements AnimeEntriesSource {
+  IsarAnimeEntriesSource(this.type)
+      : backingStorage = switch (type) {
+          _IsarAnimeEntriesType.backlog =>
+            IsarBacklogAnimeEntriesStorage(_Dbs.g.anime),
+          _IsarAnimeEntriesType.watching =>
+            IsarWatchingAnimeEntriesStorage(_Dbs.g.anime),
+          _IsarAnimeEntriesType.watched =>
+            IsarWatchedAnimeEntriesStorage(_Dbs.g.anime),
+        };
+
+  final _IsarAnimeEntriesType type;
+
+  @override
+  bool get hasNext => false;
 
   Isar get db => _Dbs.g.anime;
 
-  IsarCollection<IsarSavedAnimeEntry> get collection => db.isarSavedAnimeEntrys;
+  @override
+  final SourceStorage<(int, AnimeMetadata), AnimeEntryData> backingStorage;
 
   @override
-  void unsetIsWatchingAll(List<SavedAnimeEntryData> entries) {
-    db.writeTxnSync(
-      () => collection.putAllBySiteIdSync(
-        entries
-            .cast<IsarSavedAnimeEntry>()
-            .map((e) => e.copy(inBacklog: true))
-            .toList(),
-      ),
-    );
-  }
-
-  @override
-  List<SavedAnimeEntryData> get backlogAll =>
-      collection.filter().inBacklogEqualTo(true).findAllSync();
-
-  @override
-  List<SavedAnimeEntryData> get currentlyWatchingAll =>
-      collection.filter().inBacklogEqualTo(false).findAllSync();
-
-  @override
-  SavedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
-      collection.getBySiteIdSync(site, id);
+  final ClosableRefreshProgress progress =
+      ClosableRefreshProgress(canLoadMore: false);
 
   @override
   void update(AnimeEntryData e) {
-    final prev = maybeGet(e.id, e.site);
+    final prev = backingStorage.get((e.id, e.site));
 
     if (prev == null) {
       return;
     }
 
-    prev.copySuper(e).save();
+    backingStorage.add(e);
   }
 
   @override
-  int get count => collection.countSync();
+  Future<int> clearRefresh() => Future.value(backingStorage.count);
 
   @override
-  (bool, bool) isWatchingBacklog(int id, AnimeMetadata site) {
-    final e = collection.getBySiteIdSync(site, id);
+  Future<int> next() => clearRefresh();
 
-    if (e == null) {
-      return (false, false);
-    }
-
-    return (true, e.inBacklog);
+  @override
+  void destroy() {
+    progress.close();
   }
 
   @override
-  void deleteAll(List<(int, AnimeMetadata)> ids) {
-    db.writeTxnSync(
-      () => collection.deleteAllBySiteIdSync(
-        ids.map((e) => e.$2).toList(),
-        ids.map((e) => e.$1).toList(),
-      ),
-    );
-  }
-
-  @override
-  void reAdd(List<SavedAnimeEntryData> entries) {
-    db.writeTxnSync(
-      () => collection.putAllSync(entries.cast()),
-    );
-  }
-
-  @override
-  void addAll(
-    List<AnimeEntryData> entries,
-    WatchedAnimeEntryService watchedAnime,
-  ) {
-    if (entries.isEmpty) {
-      return;
-    }
-
-    db.writeTxnSync(
-      () => collection.putAllBySiteIdSync(
-        entries
-            .where(
-              (element) => !watchedAnime.watched(element.id, element.site),
-            )
-            .map(
-              (e) => e is IsarSavedAnimeEntry
-                  ? e
-                  : IsarSavedAnimeEntry(
-                      isarId: null,
-                      id: e.id,
-                      explicit: e.explicit,
-                      type: e.type,
-                      inBacklog: true,
-                      site: e.site,
-                      staff: e.staff.cast(),
-                      relations: e.relations.cast(),
-                      thumbUrl: e.thumbUrl,
-                      imageUrl: e.imageUrl,
-                      title: e.title,
-                      titleJapanese: e.titleJapanese,
-                      titleEnglish: e.titleEnglish,
-                      score: e.score,
-                      synopsis: e.synopsis,
-                      background: e.background,
-                      siteUrl: e.siteUrl,
-                      isAiring: e.isAiring,
-                      titleSynonyms: e.titleSynonyms,
-                      genres: e.genres.cast(),
-                      trailerUrl: e.trailerUrl,
-                      episodes: e.episodes,
-                      airedFrom: e.airedFrom,
-                      airedTo: e.airedTo,
-                    ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  @override
-  StreamSubscription<void> watchAll(
-    void Function(void) f, [
-    bool fire = false,
-  ]) =>
-      collection.watchLazy(fireImmediately: fire).listen(f);
-
-  @override
-  StreamSubscription<SavedAnimeEntryData?> watch(
+  StreamSubscription<AnimeEntryData?> watchSingle(
     int id,
     AnimeMetadata site,
-    void Function(SavedAnimeEntryData?) f, [
+    void Function(AnimeEntryData? p1) f, [
     bool fire = false,
   ]) =>
-      collection
-          .where()
-          .siteIdEqualTo(site, id)
-          .watchLazy(fireImmediately: fire)
-          .map((event) {
-        return collection.getBySiteIdSync(site, id);
-      }).listen(f);
+      switch (type) {
+        _IsarAnimeEntriesType.backlog => db.isarBacklogAnimeEntrys
+            .where()
+            .siteIdEqualTo(site, id)
+            .watch()
+            .map((e) => e.firstOrNull)
+            .listen(f),
+        _IsarAnimeEntriesType.watching => db.isarWatchingAnimeEntrys
+            .where()
+            .siteIdEqualTo(site, id)
+            .watch()
+            .map((e) => e.firstOrNull)
+            .listen(f),
+        _IsarAnimeEntriesType.watched => db.isarWatchedAnimeEntrys
+            .where()
+            .siteIdEqualTo(site, id)
+            .watch()
+            .map((e) => e.firstOrNull)
+            .listen(f),
+      };
+}
+
+class IsarBacklogAnimeEntriesStorage
+    extends _IsarCollectionStorage<(int, AnimeMetadata), IsarBacklogAnimeEntry>
+    implements SourceStorage<(int, AnimeMetadata), IsarBacklogAnimeEntry> {
+  IsarBacklogAnimeEntriesStorage(
+    super.db, {
+    super.closeOnDestroy = false,
+  });
 
   @override
-  StreamSubscription<int> watchCount(
-    void Function(int p1) f, [
-    bool fire = false,
-  ]) =>
-      collection
-          .watchLazy(fireImmediately: fire)
-          .map((event) => count)
-          .listen(f);
+  IsarCollection<IsarBacklogAnimeEntry> get _collection =>
+      db.isarBacklogAnimeEntrys;
+
+  @override
+  IsarBacklogAnimeEntry? get((int, AnimeMetadata) idx) =>
+      _collection.getBySiteIdSync(idx.$2, idx.$1);
+
+  @override
+  void add(AnimeEntryData e, [bool silent = false]) {
+    db.writeTxnSync(
+      () => db.isarWatchingAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchedAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => _collection.putBySiteIdSync(
+        e is IsarBacklogAnimeEntry ? e : e.copySuperBacklog(),
+      ),
+    );
+  }
+
+  @override
+  void addAll(Iterable<AnimeEntryData> l, [bool silent = false]) {
+    final e = l
+        .map((e) => e is IsarBacklogAnimeEntry ? e : e.copySuperBacklog())
+        .toList();
+
+    final (ids, sites) = _foldTulpeListFnc(e, (e) => (e.id, e.site));
+
+    db.writeTxnSync(
+      () => db.isarWatchingAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchedAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(() => _collection.putAllBySiteIdSync(e));
+  }
+
+  @override
+  List<IsarBacklogAnimeEntry> removeAll(
+    Iterable<(int, AnimeMetadata)> idx, [
+    bool silent = false,
+  ]) {
+    final (ids, sites) = _foldTulpeList(idx);
+
+    final ret = _collection.getAllBySiteIdSync(sites, ids);
+
+    db.writeTxnSync(
+      () => _collection.deleteAllBySiteIdSync(
+        sites,
+        ids,
+      ),
+    );
+
+    return ret.where((e) => e != null).cast<IsarBacklogAnimeEntry>().toList();
+  }
+}
+
+class IsarWatchedAnimeEntriesStorage
+    extends _IsarCollectionStorage<(int, AnimeMetadata), IsarWatchedAnimeEntry>
+    implements SourceStorage<(int, AnimeMetadata), IsarWatchedAnimeEntry> {
+  IsarWatchedAnimeEntriesStorage(
+    super.db, {
+    super.closeOnDestroy = false,
+  });
+
+  @override
+  IsarCollection<IsarWatchedAnimeEntry> get _collection =>
+      db.isarWatchedAnimeEntrys;
+
+  @override
+  IsarWatchedAnimeEntry? get((int, AnimeMetadata) idx) =>
+      _collection.getBySiteIdSync(idx.$2, idx.$1);
+
+  @override
+  void add(AnimeEntryData e, [bool silent = false]) {
+    db.writeTxnSync(
+      () => db.isarBacklogAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchingAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => _collection.putBySiteIdSync(
+        e is IsarWatchedAnimeEntry ? e : e.copySuperWatched(),
+      ),
+    );
+  }
+
+  @override
+  void addAll(Iterable<AnimeEntryData> l, [bool silent = false]) {
+    final e = l
+        .map((e) => e is IsarWatchedAnimeEntry ? e : e.copySuperWatched())
+        .toList();
+
+    final (ids, sites) = _foldTulpeListFnc(e, (e) => (e.id, e.site));
+
+    db.writeTxnSync(
+      () => db.isarBacklogAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchingAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(() => _collection.putAllBySiteIdSync(e));
+  }
+
+  @override
+  List<IsarWatchedAnimeEntry> removeAll(
+    Iterable<(int, AnimeMetadata)> idx, [
+    bool silent = false,
+  ]) {
+    final (ids, sites) = _foldTulpeList(idx);
+
+    final ret = _collection.getAllBySiteIdSync(sites, ids);
+
+    db.writeTxnSync(
+      () => _collection.deleteAllBySiteIdSync(
+        sites,
+        ids,
+      ),
+    );
+
+    return ret.where((e) => e != null).cast<IsarWatchedAnimeEntry>().toList();
+  }
+}
+
+class IsarWatchingAnimeEntriesStorage
+    extends _IsarCollectionStorage<(int, AnimeMetadata), IsarWatchingAnimeEntry>
+    implements SourceStorage<(int, AnimeMetadata), IsarWatchingAnimeEntry> {
+  IsarWatchingAnimeEntriesStorage(
+    super.db, {
+    super.closeOnDestroy = false,
+  });
+
+  @override
+  IsarCollection<IsarWatchingAnimeEntry> get _collection =>
+      db.isarWatchingAnimeEntrys;
+
+  @override
+  IsarWatchingAnimeEntry? get((int, AnimeMetadata) idx) =>
+      _collection.getBySiteIdSync(idx.$2, idx.$1);
+
+  @override
+  void add(AnimeEntryData e, [bool silent = false]) {
+    db.writeTxnSync(
+      () => db.isarBacklogAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchedAnimeEntrys.deleteBySiteIdSync(e.site, e.id),
+    );
+
+    db.writeTxnSync(
+      () => _collection.putBySiteIdSync(
+        e is IsarWatchingAnimeEntry ? e : e.copySuperWatching(),
+      ),
+    );
+  }
+
+  @override
+  void addAll(Iterable<AnimeEntryData> l, [bool silent = false]) {
+    final e = l
+        .map((e) => e is IsarWatchingAnimeEntry ? e : e.copySuperWatching())
+        .toList();
+
+    final (ids, sites) = _foldTulpeListFnc(e, (e) => (e.id, e.site));
+
+    db.writeTxnSync(
+      () => db.isarBacklogAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(
+      () => db.isarWatchedAnimeEntrys.deleteAllBySiteIdSync(sites, ids),
+    );
+
+    db.writeTxnSync(() => _collection.putAllBySiteIdSync(e));
+  }
+
+  @override
+  List<IsarWatchingAnimeEntry> removeAll(
+    Iterable<(int, AnimeMetadata)> idx, [
+    bool silent = false,
+  ]) {
+    final (ids, sites) = _foldTulpeList(idx);
+
+    final ret = _collection.getAllBySiteIdSync(sites, ids);
+
+    db.writeTxnSync(
+      () => _collection.deleteAllBySiteIdSync(
+        sites,
+        ids,
+      ),
+    );
+
+    return ret.where((e) => e != null).cast<IsarWatchingAnimeEntry>().toList();
+  }
+}
+
+abstract class _IsarCollectionStorage<K, V> extends SourceStorage<K, V> {
+  _IsarCollectionStorage(
+    this.db, {
+    required this.closeOnDestroy,
+  });
+
+  final Isar db;
+  final bool closeOnDestroy;
+
+  IsarCollection<V> get _collection;
+
+  @override
+  Iterable<V> get reversed => _IsarCollectionReverseIterable(
+        _IsarCollectionIterator<V>(_collection, reversed: true),
+      );
+
+  @override
+  int get count => _collection.countSync();
+
+  @override
+  Iterator<V> get iterator =>
+      _IsarCollectionIterator<V>(_collection, reversed: false);
+
+  @override
+  void clear([bool silent = false]) => db.writeTxnSync(
+        _collection.clearSync,
+        silent: silent,
+      );
+
+  @override
+  void destroy([bool delete = false]) =>
+      closeOnDestroy ? db.close(deleteFromDisk: delete) : null;
+
+  @override
+  V operator [](K index) => get(index)!;
+
+  @override
+  void operator []=(K index, V value) => addAll([value]);
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
+
+  @override
+  Iterable<V> trySorted(SortingMode sort) => this;
 }
 
 class IsarVideoService implements VideoSettingsService {
@@ -960,152 +1167,152 @@ class IsarFavoritePostService implements FavoritePostSourceService {
           .listen(f);
 }
 
-class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
-  const IsarWatchedAnimeEntryService();
+// class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
+//   const IsarWatchedAnimeEntryService();
 
-  Isar get db => _Dbs.g.anime;
+//   Isar get db => _Dbs.g.anime;
 
-  IsarCollection<IsarWatchedAnimeEntry> get collection =>
-      db.isarWatchedAnimeEntrys;
+//   IsarCollection<IsarWatchedAnimeEntry> get collection =>
+//       db.isarWatchedAnimeEntrys;
 
-  @override
-  bool watched(int id, AnimeMetadata site) =>
-      collection.getBySiteIdSync(site, id) != null;
+//   @override
+//   bool watched(int id, AnimeMetadata site) =>
+//       collection.getBySiteIdSync(site, id) != null;
 
-  @override
-  void delete(int id, AnimeMetadata site) {
-    db.writeTxnSync(
-      () => collection.deleteBySiteIdSync(site, id),
-    );
-  }
+//   @override
+//   void delete(int id, AnimeMetadata site) {
+//     db.writeTxnSync(
+//       () => collection.deleteBySiteIdSync(site, id),
+//     );
+//   }
 
-  @override
-  void deleteAll(List<(int, AnimeMetadata)> ids) {
-    db.writeTxnSync(
-      () => collection.deleteAllBySiteIdSync(
-        ids.map((e) => e.$2).toList(),
-        ids.map((e) => e.$1).toList(),
-      ),
-    );
-  }
+//   @override
+//   void deleteAll(List<(int, AnimeMetadata)> ids) {
+//     db.writeTxnSync(
+//       () => collection.deleteAllBySiteIdSync(
+//         ids.map((e) => e.$2).toList(),
+//         ids.map((e) => e.$1).toList(),
+//       ),
+//     );
+//   }
 
-  @override
-  int get count => collection.countSync();
+//   @override
+//   int get count => collection.countSync();
 
-  @override
-  List<WatchedAnimeEntryData> get all => collection.where().findAllSync();
+//   @override
+//   List<WatchedAnimeEntryData> get all => collection.where().findAllSync();
 
-  @override
-  void update(AnimeEntryData e) {
-    final prev = maybeGet(e.id, e.site);
+//   @override
+//   void update(AnimeEntryData e) {
+//     final prev = maybeGet(e.id, e.site);
 
-    if (prev == null) {
-      return;
-    }
+//     if (prev == null) {
+//       return;
+//     }
 
-    prev.copySuper(e).save();
-  }
+//     prev.copySuper(e).save();
+//   }
 
-  @override
-  void add(WatchedAnimeEntryData entry) {
-    db.writeTxnSync(
-      () => collection.putBySiteIdSync(entry as IsarWatchedAnimeEntry),
-    );
-  }
+//   @override
+//   void add(WatchedAnimeEntryData entry) {
+//     db.writeTxnSync(
+//       () => collection.putBySiteIdSync(entry as IsarWatchedAnimeEntry),
+//     );
+//   }
 
-  @override
-  void reAdd(List<WatchedAnimeEntryData> entries) {
-    db.writeTxnSync(
-      () => collection.putAllSync(entries.cast()),
-    );
-  }
+//   @override
+//   void reAdd(List<WatchedAnimeEntryData> entries) {
+//     db.writeTxnSync(
+//       () => collection.putAllSync(entries.cast()),
+//     );
+//   }
 
-  @override
-  WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
-      collection.getBySiteIdSync(site, id);
+//   @override
+//   WatchedAnimeEntryData? maybeGet(int id, AnimeMetadata site) =>
+//       collection.getBySiteIdSync(site, id);
 
-  @override
-  void moveAllReversed(
-    List<WatchedAnimeEntryData> entries,
-    SavedAnimeEntriesService s,
-  ) {
-    deleteAll(entries.toIds);
+//   @override
+//   void moveAllReversed(
+//     List<WatchedAnimeEntryData> entries,
+//     SavedAnimeEntriesService s,
+//   ) {
+//     deleteAll(entries.toIds);
 
-    s.addAll(entries, this);
-  }
+//     s.addAll(entries, this);
+//   }
 
-  @override
-  void moveAll(List<AnimeEntryData> entries, SavedAnimeEntriesService s) {
-    s.deleteAll(entries.toIds);
+//   @override
+//   void moveAll(List<AnimeEntryData> entries, SavedAnimeEntriesService s) {
+//     s.deleteAll(entries.toIds);
 
-    db.writeTxnSync(
-      () => collection.putAllBySiteIdSync(
-        entries
-            .map(
-              (entry) => IsarWatchedAnimeEntry(
-                type: entry.type,
-                explicit: entry.explicit,
-                date: DateTime.now(),
-                site: entry.site,
-                relations: entry.relations.cast(),
-                background: entry.background,
-                thumbUrl: entry.thumbUrl,
-                title: entry.title,
-                titleJapanese: entry.titleJapanese,
-                titleEnglish: entry.titleEnglish,
-                score: entry.score,
-                synopsis: entry.synopsis,
-                airedFrom: entry.airedFrom,
-                airedTo: entry.airedTo,
-                id: entry.id,
-                staff: entry.staff.cast(),
-                siteUrl: entry.siteUrl,
-                isAiring: entry.isAiring,
-                titleSynonyms: entry.titleSynonyms,
-                genres: entry.genres.cast(),
-                trailerUrl: entry.trailerUrl,
-                episodes: entry.episodes,
-                imageUrl: entry.imageUrl,
-                isarId: null,
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
+//     db.writeTxnSync(
+//       () => collection.putAllBySiteIdSync(
+//         entries
+//             .map(
+//               (entry) => IsarWatchedAnimeEntry(
+//                 type: entry.type,
+//                 explicit: entry.explicit,
+//                 date: DateTime.now(),
+//                 site: entry.site,
+//                 relations: entry.relations.cast(),
+//                 background: entry.background,
+//                 thumbUrl: entry.thumbUrl,
+//                 title: entry.title,
+//                 titleJapanese: entry.titleJapanese,
+//                 titleEnglish: entry.titleEnglish,
+//                 score: entry.score,
+//                 synopsis: entry.synopsis,
+//                 airedFrom: entry.airedFrom,
+//                 airedTo: entry.airedTo,
+//                 id: entry.id,
+//                 staff: entry.staff.cast(),
+//                 siteUrl: entry.siteUrl,
+//                 isAiring: entry.isAiring,
+//                 titleSynonyms: entry.titleSynonyms,
+//                 genres: entry.genres.cast(),
+//                 trailerUrl: entry.trailerUrl,
+//                 episodes: entry.episodes,
+//                 imageUrl: entry.imageUrl,
+//                 isarId: null,
+//               ),
+//             )
+//             .toList(),
+//       ),
+//     );
+//   }
 
-  @override
-  StreamSubscription<void> watchAll(
-    void Function(void) f, [
-    bool fire = false,
-  ]) =>
-      collection.watchLazy(fireImmediately: fire).listen(f);
+//   @override
+//   StreamSubscription<void> watchAll(
+//     void Function(void) f, [
+//     bool fire = false,
+//   ]) =>
+//       collection.watchLazy(fireImmediately: fire).listen(f);
 
-  @override
-  StreamSubscription<WatchedAnimeEntryData?> watchSingle(
-    int id,
-    AnimeMetadata site,
-    void Function(WatchedAnimeEntryData?) f, [
-    bool fire = false,
-  ]) =>
-      collection
-          .where()
-          .siteIdEqualTo(site, id)
-          .watchLazy(fireImmediately: fire)
-          .map((event) {
-        return maybeGet(id, site);
-      }).listen(f);
+//   @override
+//   StreamSubscription<WatchedAnimeEntryData?> watchSingle(
+//     int id,
+//     AnimeMetadata site,
+//     void Function(WatchedAnimeEntryData?) f, [
+//     bool fire = false,
+//   ]) =>
+//       collection
+//           .where()
+//           .siteIdEqualTo(site, id)
+//           .watchLazy(fireImmediately: fire)
+//           .map((event) {
+//         return maybeGet(id, site);
+//       }).listen(f);
 
-  @override
-  StreamSubscription<int> watchCount(
-    void Function(int p1) f, [
-    bool fire = false,
-  ]) =>
-      collection
-          .watchLazy(fireImmediately: fire)
-          .map((event) => count)
-          .listen(f);
-}
+//   @override
+//   StreamSubscription<int> watchCount(
+//     void Function(int p1) f, [
+//     bool fire = false,
+//   ]) =>
+//       collection
+//           .watchLazy(fireImmediately: fire)
+//           .map((event) => count)
+//           .listen(f);
+// }
 
 class IsarDownloadFileService implements DownloadFileService {
   const IsarDownloadFileService();
@@ -2870,7 +3077,6 @@ class IsarVisitedPostsService implements VisitedPostsService {
       db.writeTxnSync(
         () => collection
             .where()
-            .sortByIdDesc()
             .limit(collection.countSync() - 500)
             .deleteAllSync(),
       );
@@ -2879,12 +3085,8 @@ class IsarVisitedPostsService implements VisitedPostsService {
 
   @override
   void removeAll(List<VisitedPost> visitedPosts) {
-    final (ids, boorus) = visitedPosts.fold((<int>[], <Booru>[]), (lists, e) {
-      lists.$1.add(e.id);
-      lists.$2.add(e.booru);
-
-      return lists;
-    });
+    final (ids, boorus) =
+        _foldTulpeListFnc(visitedPosts, (e) => (e.id, e.booru));
 
     db.writeTxnSync(() => collection.deleteAllByIdBooruSync(ids, boorus));
   }
@@ -2895,4 +3097,101 @@ class IsarVisitedPostsService implements VisitedPostsService {
   @override
   StreamSubscription<void> watch(void Function(void p1) f) =>
       collection.watchLazy().listen(f);
+}
+
+(List<A>, List<B>) _foldTulpeList<A, B>(Iterable<(A, B)> t) {
+  final (listA, listB) = t.fold((<A>[], <B>[]), (lists, e) {
+    lists.$1.add(e.$1);
+    lists.$2.add(e.$2);
+
+    return lists;
+  });
+
+  return (listA, listB);
+}
+
+(List<A>, List<B>) _foldTulpeListFnc<T, A, B>(
+  Iterable<T> t,
+  (A, B) Function(T) f,
+) {
+  final (listA, listB) = t.fold((<A>[], <B>[]), (lists, e) {
+    final (a, b) = f(e);
+
+    lists.$1.add(a);
+    lists.$2.add(b);
+
+    return lists;
+  });
+
+  return (listA, listB);
+}
+
+class IsarNewestAnimeService implements NewestAnimeService {
+  const IsarNewestAnimeService();
+
+  Isar get db => _Dbs.g.anime;
+
+  IsarCollection<IsarNewestAnime> get collection => db.isarNewestAnimes;
+
+  @override
+  (DateTime, List<AnimeEntryData>) get current {
+    final e = collection.getSync(0);
+
+    return e == null ? (DateTime(0), const []) : (e.time, e.entries);
+  }
+
+  @override
+  void set(List<AnimeEntryData> l) {
+    db.writeTxnSync(
+      () => collection.putSync(
+        IsarNewestAnime(
+          time: DateTime.now(),
+          entries: l
+              .map(
+                (e) => IsarNewestAnimeEntry.required(
+                  imageUrl: e.imageUrl,
+                  airedFrom: e.airedFrom,
+                  airedTo: e.airedTo,
+                  relations: (e.relations is List<IsarAnimeRelation>
+                      ? e.relations as List<IsarAnimeRelation>
+                      : e.relations.cast()),
+                  staff: (e.staff is List<IsarAnimeRelation>
+                      ? e.staff as List<IsarAnimeRelation>
+                      : e.staff.cast()),
+                  genres: (e.genres is List<IsarAnimeGenre>
+                      ? e.genres as List<IsarAnimeGenre>
+                      : e.genres.cast()),
+                  explicit: e.explicit,
+                  type: e.type,
+                  site: e.site,
+                  thumbUrl: e.thumbUrl,
+                  title: e.title,
+                  titleJapanese: e.titleJapanese,
+                  titleEnglish: e.titleEnglish,
+                  score: e.score,
+                  synopsis: e.synopsis,
+                  id: e.id,
+                  siteUrl: e.siteUrl,
+                  isAiring: e.isAiring,
+                  titleSynonyms: e.titleSynonyms,
+                  background: e.background,
+                  trailerUrl: e.trailerUrl,
+                  episodes: e.episodes,
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void clear() => db.writeTxnSync(() => collection.clearSync());
+
+  @override
+  StreamSubscription<void> watchAll(
+    void Function(void p1) f, [
+    bool fire = false,
+  ]) =>
+      collection.watchObject(0, fireImmediately: fire).listen(f);
 }

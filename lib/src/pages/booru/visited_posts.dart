@@ -115,7 +115,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
                 true,
               ),
             ],
-            keybindsDescription: "Visited", // TODO: change
+            keybindsDescription: l10n.visitedPage,
             gridSeed: state.gridSeed,
           ),
         ),

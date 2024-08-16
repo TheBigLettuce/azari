@@ -5,7 +5,6 @@
 
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/pages/anime/info_base/body/anime_characters_widgets.dart";
 import "package:azari/src/pages/anime/info_base/body/anime_genres.dart";
 import "package:azari/src/pages/anime/info_base/body/anime_relations.dart";

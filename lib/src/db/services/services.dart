@@ -12,7 +12,6 @@ import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
@@ -86,7 +85,6 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   MiscSettingsService get miscSettings;
   SavedAnimeEntriesService get savedAnimeEntries;
   SavedAnimeCharactersService get savedAnimeCharacters;
-  WatchedAnimeEntryService get watchedAnime;
   VideoSettingsService get videoSettings;
   HiddenBooruPostService get hiddenBooruPost;
   DownloadFileService get downloads;
@@ -111,6 +109,7 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
   VisitedPostsService get visitedPosts;
+  NewestAnimeService get newestAnime;
 
   TagManager get tagManager;
 
@@ -181,7 +180,11 @@ mixin VisitedPostImpl implements VisitedPost {
 
         db.visitedPosts.addAll([
           VisitedPost(
-              booru: booru, id: id, thumbUrl: thumbUrl, date: DateTime.now())
+            booru: booru,
+            id: id,
+            thumbUrl: thumbUrl,
+            date: DateTime.now(),
+          ),
         ]);
 
         return () => post.content();
@@ -632,12 +635,17 @@ abstract class AnimeRelation {
   String toString() => title;
 }
 
-abstract class SavedAnimeEntryData extends AnimeEntryData
-    implements Pressable<SavedAnimeEntryData> {
-  const factory SavedAnimeEntryData({
+@immutable
+abstract class AnimeEntryData
+    implements
+        AnimeCell,
+        ContentWidgets,
+        Thumbnailable,
+        Downloadable,
+        Stickerable {
+  const factory AnimeEntryData({
     required DateTime? airedFrom,
     required DateTime? airedTo,
-    required bool inBacklog,
     required AnimeMetadata site,
     required String type,
     required String thumbUrl,
@@ -655,17 +663,42 @@ abstract class SavedAnimeEntryData extends AnimeEntryData
     required int episodes,
     required String background,
     required AnimeSafeMode explicit,
-  }) = $SavedAnimeEntryData;
+  }) = $AnimeEntryData;
 
-  bool get inBacklog;
+  int get id;
 
-  SavedAnimeEntryData copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]);
+  String get thumbUrl;
+  String get imageUrl;
+  String get siteUrl;
+  String get trailerUrl;
+  String get title;
+  String get titleJapanese;
+  String get titleEnglish;
+  String get synopsis;
+  String get background;
+  String get type;
 
-  SavedAnimeEntryData copy({
-    bool? inBacklog,
+  List<String> get titleSynonyms;
+  List<AnimeGenre> get genres;
+
+  List<AnimeRelation> get relations;
+  List<AnimeRelation> get staff;
+
+  double get score;
+
+  DateTime? get airedFrom;
+  DateTime? get airedTo;
+
+  int get episodes;
+
+  bool get isAiring;
+  AnimeSafeMode get explicit;
+  AnimeMetadata get site;
+
+  void openInfoPage(BuildContext context);
+  dynamic properties();
+
+  AnimeEntryData copy({
     AnimeMetadata? site,
     int? episodes,
     String? trailerUrl,
@@ -691,13 +724,13 @@ abstract class SavedAnimeEntryData extends AnimeEntryData
   });
 }
 
-mixin DefaultSavedAnimeEntryPressable
-    implements Pressable<SavedAnimeEntryData>, SavedAnimeEntryData {
+mixin DefaultAnimeEntryPressable
+    implements Pressable<AnimeEntryData>, AnimeEntryData {
   @override
   void onPress(
     BuildContext context,
-    GridFunctionality<SavedAnimeEntryData> functionality,
-    SavedAnimeEntryData cell,
+    GridFunctionality<AnimeEntryData> functionality,
+    AnimeEntryData cell,
     int idx,
   ) {
     openInfoPage(context);
@@ -744,4 +777,16 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
 
     return PostContentType.fromUrl(url);
   }
+}
+
+abstract interface class NewestAnimeService implements ServiceMarker {
+  (DateTime, List<AnimeEntryData>) get current;
+
+  void set(List<AnimeEntryData> l);
+  void clear();
+
+  StreamSubscription<void> watchAll(
+    void Function(void) f, [
+    bool fire = false,
+  ]);
 }

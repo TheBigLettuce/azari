@@ -337,6 +337,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                         },
                       ),
                     ),
+                    GridConfigPlaceholders(
+                      progress: source.progress,
+                      randomNumber: state.gridSeed,
+                    ),
                     GridFooter<void>(
                       storage: source.backingStorage,
                       name: source.tags,
@@ -402,6 +406,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       ),
                       actions.hide(context, hiddenBooruPost),
                     ],
+                    showLoadingIndicator: false,
                     animationsOnSourceWatch: false,
                     keybindsDescription: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,

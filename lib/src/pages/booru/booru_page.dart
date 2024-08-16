@@ -34,6 +34,8 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:azari/src/widgets/grid_frame/layouts/grid_quilted.dart";
+import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
@@ -301,6 +303,10 @@ class _BooruPageState extends State<BooruPage> {
                       },
                     ),
                   ),
+                  GridConfigPlaceholders(
+                    progress: source.progress,
+                    randomNumber: state.gridSeed,
+                  ),
                   GridFooter<void>(storage: source.backingStorage),
                 ],
                 functionality: GridFunctionality(
@@ -354,6 +360,7 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                 ),
                 description: GridDescription(
+                  showLoadingIndicator: false,
                   actions: [
                     actions.download(context, pagingState.api.booru, null),
                     actions.favorites(
@@ -411,6 +418,63 @@ class _BooruPageState extends State<BooruPage> {
             generateGlue: GlueProvider.generateOf(context),
             db: widget.db.visitedPosts,
           ),
+        ),
+    };
+  }
+}
+
+class GridConfigPlaceholders extends StatefulWidget {
+  const GridConfigPlaceholders({
+    super.key,
+    required this.progress,
+    this.description = const CellStaticData(),
+    required this.randomNumber,
+  });
+
+  final CellStaticData description;
+  final int randomNumber;
+  final RefreshingProgress progress;
+
+  @override
+  State<GridConfigPlaceholders> createState() => _GridConfigPlaceholdersState();
+}
+
+class _GridConfigPlaceholdersState extends State<GridConfigPlaceholders> {
+  late final StreamSubscription<bool> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.progress.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.progress.inRefreshing) {
+      return const SliverPadding(padding: EdgeInsets.zero);
+    }
+
+    final gridConfig = GridConfiguration.of(context);
+
+    return switch (gridConfig.layoutType) {
+      GridLayoutType.grid ||
+      GridLayoutType.gridMasonry =>
+        GridLayoutPlaceholder(description: widget.description),
+      GridLayoutType.list =>
+        ListLayoutPlaceholder(description: widget.description),
+      GridLayoutType.gridQuilted => GridQuiltedLayoutPlaceholder(
+          description: widget.description,
+          randomNumber: widget.randomNumber,
         ),
     };
   }

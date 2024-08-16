@@ -3,9 +3,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/anime/anime_info_page.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -107,49 +107,61 @@ class AnimeSearchEntry extends AnimeEntryDataImpl
       ),
     );
   }
-}
 
-@immutable
-abstract class AnimeEntryData
-    implements
-        AnimeCell,
-        ContentWidgets,
-        Thumbnailable,
-        Downloadable,
-        Stickerable {
-  const AnimeEntryData();
+  @override
+  dynamic properties() => null;
 
-  int get id;
-
-  String get thumbUrl;
-  String get imageUrl;
-  String get siteUrl;
-  String get trailerUrl;
-  String get title;
-  String get titleJapanese;
-  String get titleEnglish;
-  String get synopsis;
-  String get background;
-  String get type;
-
-  List<String> get titleSynonyms;
-  List<AnimeGenre> get genres;
-
-  List<AnimeRelation> get relations;
-  List<AnimeRelation> get staff;
-
-  double get score;
-
-  DateTime? get airedFrom;
-  DateTime? get airedTo;
-
-  int get episodes;
-
-  bool get isAiring;
-  AnimeSafeMode get explicit;
-  AnimeMetadata get site;
-
-  void openInfoPage(BuildContext context);
+  @override
+  AnimeSearchEntry copy({
+    bool? inBacklog,
+    AnimeMetadata? site,
+    int? episodes,
+    String? trailerUrl,
+    String? siteUrl,
+    String? imageUrl,
+    String? title,
+    String? titleJapanese,
+    String? titleEnglish,
+    String? background,
+    int? id,
+    List<AnimeGenre>? genres,
+    List<String>? titleSynonyms,
+    List<AnimeRelation>? relations,
+    bool? isAiring,
+    double? score,
+    String? thumbUrl,
+    String? synopsis,
+    String? type,
+    AnimeSafeMode? explicit,
+    List<AnimeRelation>? staff,
+    DateTime? airedFrom,
+    DateTime? airedTo,
+  }) {
+    return AnimeSearchEntry(
+      imageUrl: imageUrl ?? this.imageUrl,
+      explicit: explicit ?? this.explicit,
+      type: type ?? this.type,
+      site: site ?? this.site,
+      thumbUrl: thumbUrl ?? this.thumbUrl,
+      title: title ?? this.title,
+      titleJapanese: titleJapanese ?? this.titleJapanese,
+      titleEnglish: titleEnglish ?? this.titleEnglish,
+      score: score ?? this.score,
+      synopsis: synopsis ?? this.synopsis,
+      id: id ?? this.id,
+      relations: relations ?? this.relations,
+      staff: staff ?? this.staff,
+      genres: genres ?? this.genres,
+      siteUrl: siteUrl ?? this.siteUrl,
+      isAiring: isAiring ?? this.isAiring,
+      titleSynonyms: titleSynonyms ?? this.titleSynonyms,
+      background: background ?? this.background,
+      trailerUrl: trailerUrl ?? this.trailerUrl,
+      episodes: episodes ?? this.episodes,
+      airedFrom: airedFrom ?? this.airedFrom,
+      airedTo: airedTo ?? this.airedTo,
+    );
+  }
 }
 
 @immutable
@@ -181,15 +193,15 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     final db = DatabaseConnectionNotifier.of(context);
 
-    final (watching, inBacklog) =
-        db.savedAnimeEntries.isWatchingBacklog(id, site);
+    final watching =
+        db.savedAnimeEntries.watching.backingStorage.get((id, site)) != null;
+    final inBacklog =
+        db.savedAnimeEntries.backlog.backingStorage.get((id, site)) != null;
 
     return [
-      if (this is! SavedAnimeEntryData && watching)
-        !inBacklog
-            ? const Sticker(Icons.play_arrow_rounded)
-            : const Sticker(Icons.library_add_check),
-      if (this is! WatchedAnimeEntryData && db.watchedAnime.watched(id, site))
+      if (inBacklog) const Sticker(Icons.library_add_check),
+      if (watching) const Sticker(Icons.play_arrow_rounded),
+      if (!watching && db.savedAnimeEntries.watched.forIdx((id, site)) != null)
         const Sticker(Icons.check, important: true),
     ];
   }

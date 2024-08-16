@@ -263,7 +263,7 @@ class ListStorage<V> extends SourceStorage<int, V> {
   void addAll(Iterable<V> l, [bool silent = false]) {
     list.addAll(l);
 
-    if (!silent) {
+    if (!silent && !_events.isClosed) {
       _events.add(count);
     }
   }

@@ -11,6 +11,7 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -95,6 +96,32 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
                 );
           },
         ),
+      ),
+    );
+  }
+}
+
+class ListLayoutPlaceholder extends StatelessWidget {
+  const ListLayoutPlaceholder({
+    super.key,
+    required this.description,
+  });
+
+  final CellStaticData description;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.only(right: 8, left: 8),
+      sliver: SliverList.builder(
+        itemCount: 20,
+        itemBuilder: (context, index) {
+          // final cell = getCell(index);
+
+          return DefaultListTilePlaceholder(
+            index: index,
+          );
+        },
       ),
     );
   }
@@ -224,5 +251,35 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
         },
       ),
     ).animate(key: cell.uniqueKey()).fadeIn();
+  }
+}
+
+class DefaultListTilePlaceholder extends StatelessWidget {
+  const DefaultListTilePlaceholder({super.key, required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ClipPath(
+      clipper: const ShapeBorderClipper(shape: StadiumBorder()),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: index.isOdd
+              ? theme.colorScheme.secondary.withOpacity(0.1)
+              : theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
+        ),
+        child: ListTile(
+          minVerticalPadding: 1,
+          contentPadding: EdgeInsets.zero,
+          title: SizedBox.fromSize(
+            size: const Size(double.infinity, 56),
+            child: const ShimmerLoadingIndicator(),
+          ),
+        ),
+      ),
+    );
   }
 }

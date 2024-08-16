@@ -5,19 +5,14 @@
 
 import "dart:async";
 
-import "package:dio/dio.dart";
-import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/net/anime/impl/jikan.dart";
-import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -31,6 +26,11 @@ import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:logging/logging.dart";
 
 part "tabs/discover_tab.dart";
 
@@ -53,27 +53,30 @@ class AnimePage extends StatefulWidget {
   State<AnimePage> createState() => _AnimePageState();
 }
 
+extension NewestAnimeGlobalProgress on GlobalProgressTab {
+  ValueNotifier<Future<void>?> newestAnime() =>
+      get("newestAnime", () => ValueNotifier(null));
+}
+
 class _AnimePageState extends State<AnimePage> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
-  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+  NewestAnimeService get newestAnime => widget.db.newestAnime;
+  AnimeEntriesSource get watchedAnimeEntries => savedAnimeEntries.watched;
 
-  late final sourceBacklog = GenericListSource<SavedAnimeEntryData>(
-    () => Future.value(savedAnimeEntries.backlogAll),
-    watchCount: savedAnimeEntries.watchCount,
-  );
+  // late final sourceBacklog = GenericListSource<AnimeEntryData>(
+  //   () => Future.value(savedAnimeEntries.backlogAll),
+  //   watchCount: savedAnimeEntries.watchCount,
+  // );
 
-  late final sourceWatching = GenericListSource<SavedAnimeEntryData>(
-    () => Future.value(savedAnimeEntries.currentlyWatchingAll),
-    watchCount: savedAnimeEntries.watchCount,
-  );
+  // late final sourceWatching = GenericListSource<AnimeEntryData>(
+  //   () => Future.value(savedAnimeEntries.currentlyWatchingAll),
+  //   watchCount: savedAnimeEntries.watchCount,
+  // );
 
-  late final ChainedFilterResourceSource<int, SavedAnimeEntryData>
-      filterBacklog;
+  late final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> filterBacklog;
 
-  // final finishedKey = GlobalKey<__FinishedTabState>();
-  // final discoverKey = GlobalKey<_DiscoverTabState>();
   final overlayKey = GlobalKey<__MoreOverlayState>();
-  // final animeSearchKey = GlobalKey<__AnimeSearchState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
@@ -81,35 +84,7 @@ class _AnimePageState extends State<AnimePage> {
 
   final searchController = SearchController();
 
-  late final source = GenericListSource<AnimeSearchEntry>(
-    () => api
-        .search(
-      "",
-      0,
-      null,
-      null,
-      sortOrder: AnimeSortOrder.latest,
-    )
-        .then((e) {
-      int? prev;
-
-      return e.where((e) {
-        if (prev == null) {
-          prev = e.id;
-          return true;
-        }
-
-        if (prev == e.id) {
-          prev = e.id;
-          return false;
-        }
-
-        prev = e.id;
-
-        return true;
-      }).toList();
-    }),
-  );
+  ValueNotifier<Future<void>?>? refreshingStatus;
 
   final client = Dio();
   late final api = Jikan(client);
@@ -131,29 +106,83 @@ class _AnimePageState extends State<AnimePage> {
     super.initState();
 
     filterBacklog = ChainedFilterResourceSource.basic(
-      sourceBacklog,
+      savedAnimeEntries.backlog,
       ListStorage(),
       filter: (cells, filteringMode, sortingMode, end, [data]) =>
           (cells.where((e) => e.title.contains(_filteringValue)), null),
     );
 
-    watcherWatched = watchedAnimeEntries.watchAll((_) {
+    watcherWatched = watchedAnimeEntries.backingStorage.watch((_) {
       setState(() {});
     });
 
-    sourceBacklog.clearRefresh();
-    sourceWatching.clearRefresh();
+    // sourceBacklog.clearRefresh();
+    // sourceWatching.clearRefresh();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final r = GlobalProgressTab.maybeOf(context)?.newestAnime();
+    if (refreshingStatus == null && r != null) {
+      refreshingStatus = r;
+      final data = newestAnime.current;
+      if (data.$2.isEmpty ||
+          DateTime.now().isAfter(data.$1.add(const Duration(days: 1)))) {
+        refreshingStatus!.value = Future(() async {
+          final client = Dio();
+          late final api = Jikan(client);
+
+          try {
+            final result = await api.search(
+              "",
+              0,
+              null,
+              null,
+              sortOrder: AnimeSortOrder.latest,
+            );
+
+            int? prev;
+
+            final f = result.where((e) {
+              if (prev == null) {
+                prev = e.id;
+                return true;
+              }
+
+              if (prev == e.id) {
+                prev = e.id;
+                return false;
+              }
+
+              prev = e.id;
+
+              return true;
+            }).toList();
+
+            newestAnime.set(f);
+          } catch (e, trace) {
+            Logger.root.warning("newestAnime", e, trace);
+          } finally {
+            client.close(force: true);
+            refreshingStatus!.value = null;
+          }
+        });
+
+        return;
+      }
+    }
   }
 
   @override
   void dispose() {
-    sourceWatching.destroy();
+    // sourceWatching.destroy();
     client.close();
     // entry.dispose();
     searchController.dispose();
-    source.destroy();
 
-    sourceBacklog.destroy();
+    // sourceBacklog.destroy();
     filterBacklog.destroy();
 
     if (overlayEntry.mounted) {
@@ -246,14 +275,11 @@ class _AnimePageState extends State<AnimePage> {
         ),
         body: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
-              child: FadingPanel(
-                label: "Newest", // TODO: change
-                source: source,
-                childSize: _NewAnime.size,
-                child: _NewAnime(source: source),
+            if (refreshingStatus != null)
+              _NewestAnimeNotifier(
+                notifier: refreshingStatus!,
+                db: widget.db,
               ),
-            ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               sliver: SliverToBoxAdapter(
@@ -273,12 +299,68 @@ class _AnimePageState extends State<AnimePage> {
                 left: 18,
               ),
               sliver: _WatchingGrid(
-                source: sourceWatching,
+                source: filterBacklog,
                 glue: GlueProvider.generateOf(context)(),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NewestAnimeNotifier extends StatefulWidget {
+  const _NewestAnimeNotifier({
+    super.key,
+    required this.notifier,
+    required this.db,
+  });
+
+  final ValueNotifier<Future<void>?> notifier;
+  final DbConn db;
+
+  @override
+  State<_NewestAnimeNotifier> createState() => __NewestAnimeNotifierState();
+}
+
+class __NewestAnimeNotifierState extends State<_NewestAnimeNotifier> {
+  NewestAnimeService get newestAnime => widget.db.newestAnime;
+
+  late final newestSource = GenericListSource<AnimeEntryData>(
+    () => Future.value(newestAnime.current.$2),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+
+    newestSource.backingStorage.addAll(newestAnime.current.$2, true);
+    newestSource.progress.inRefreshing = widget.notifier.value != null;
+    widget.notifier.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    widget.notifier.removeListener(_listener);
+    newestSource.destroy();
+
+    super.dispose();
+  }
+
+  void _listener() {
+    newestSource.progress.inRefreshing = widget.notifier.value != null;
+    newestSource.clearRefresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: FadingPanel(
+        label: "Newest", // TODO: change
+        source: newestSource,
+        childSize: _NewAnime.size,
+        child: _NewAnime(source: newestSource),
       ),
     );
   }
@@ -291,7 +373,7 @@ class _WatchingGrid extends StatefulWidget {
     required this.glue,
   });
 
-  final GenericListSource<SavedAnimeEntryData> source;
+  final ChainedFilterResourceSource<dynamic, AnimeEntryData> source;
   final SelectionGlue glue;
 
   @override
@@ -301,7 +383,7 @@ class _WatchingGrid extends StatefulWidget {
 class __WatchingGridState extends State<_WatchingGrid> {
   late final StreamSubscription<int> subsc;
   final focusNode = FocusNode();
-  late final selection = GridSelection<SavedAnimeEntryData>(
+  late final selection = GridSelection<AnimeEntryData>(
     const [],
     widget.glue,
     noAppBar: true,
@@ -338,7 +420,7 @@ class __WatchingGridState extends State<_WatchingGrid> {
     return GridConfiguration(
       sliver: true,
       watch: gridSettings.watch,
-      child: GridExtrasNotifier<SavedAnimeEntryData>(
+      child: GridExtrasNotifier<AnimeEntryData>(
         data: GridExtrasData(
           selection,
           GridFunctionality(source: widget.source, selectionGlue: widget.glue),
@@ -566,56 +648,71 @@ class _ShimmerPlaceholdersHorizontalState
   }
 }
 
-class _NewAnime extends StatelessWidget {
+class _NewAnime extends StatefulWidget {
   const _NewAnime({
-    // super.key,
+    super.key,
     required this.source,
   });
 
-  final GenericListSource<AnimeSearchEntry> source;
+  final GenericListSource<AnimeEntryData> source;
 
   static const size = Size(180 / 1.5, 180);
   static const listPadding = EdgeInsets.symmetric(horizontal: 18);
 
   @override
+  State<_NewAnime> createState() => __NewAnimeState();
+}
+
+class __NewAnimeState extends State<_NewAnime> {
+  GenericListSource<AnimeEntryData> get source => widget.source;
+
+  late final StreamSubscription<void> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.source.progress.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: size.height,
-      child: WrapFutureRestartable<int>(
-        placeholder: const ShimmerPlaceholdersHorizontal(
-          childSize: size,
-          padding: listPadding,
-        ),
-        newStatus: () {
-          if (source.backingStorage.isNotEmpty) {
-            return Future.value(source.backingStorage.count);
-          }
+      height: _NewAnime.size.height,
+      child: widget.source.progress.inRefreshing
+          ? const ShimmerPlaceholdersHorizontal(
+              childSize: _NewAnime.size,
+              padding: _NewAnime.listPadding,
+            )
+          : ListView.builder(
+              padding: _NewAnime.listPadding,
+              scrollDirection: Axis.horizontal,
+              itemCount: source.backingStorage.count,
+              itemBuilder: (context, i) {
+                final cell = source.backingStorage[i];
 
-          return source.clearRefresh();
-        },
-        builder: (context, _) {
-          return ListView.builder(
-            padding: listPadding,
-            scrollDirection: Axis.horizontal,
-            itemCount: source.backingStorage.count,
-            itemBuilder: (context, i) {
-              final cell = source.backingStorage[i];
-
-              return InkWell(
-                onTap: () {
-                  cell.openInfoPage(context);
-                },
-                borderRadius: BorderRadius.circular(15),
-                child: SizedBox(
-                  width: size.width,
-                  child: GridCell(cell: cell, hideTitle: false),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                return InkWell(
+                  onTap: () {
+                    cell.openInfoPage(context);
+                  },
+                  borderRadius: BorderRadius.circular(15),
+                  child: SizedBox(
+                    width: _NewAnime.size.width,
+                    child: GridCell(cell: cell, hideTitle: false),
+                  ),
+                );
+              },
+            ).animate().fadeIn(),
     );
   }
 }
@@ -790,7 +887,7 @@ class _MoreOverlay extends StatefulWidget {
   const _MoreOverlay({super.key, required this.entry, required this.source});
 
   final OverlayEntry entry;
-  final ReadOnlyStorage<int, SavedAnimeEntryData> source;
+  final ReadOnlyStorage<int, AnimeEntryData> source;
 
   @override
   State<_MoreOverlay> createState() => __MoreOverlayState();
@@ -901,7 +998,7 @@ class _MoreOverlayBody extends StatelessWidget {
 
   final OverlayEntry entry;
   final AnimationController controller;
-  final ReadOnlyStorage<int, SavedAnimeEntryData> source;
+  final ReadOnlyStorage<int, AnimeEntryData> source;
 
   @override
   Widget build(BuildContext context) {

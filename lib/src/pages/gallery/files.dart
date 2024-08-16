@@ -281,8 +281,11 @@ class _GalleryFilesState extends State<GalleryFiles> {
   void _filterTag(String tag, ScrollController scrollController) {
     searchTextController.text = tag;
     filter.filteringMode = FilteringMode.tag;
-    scrollController.animateTo(0,
-        duration: Durations.medium3, curve: Easing.standard);
+    scrollController.animateTo(
+      0,
+      duration: Durations.medium3,
+      curve: Easing.standard,
+    );
   }
 
   @override
@@ -707,7 +710,9 @@ class TagsRibbon extends StatefulWidget {
   final void Function(String tag, ScrollController controller) selectTag;
   final TagManager tagManager;
   final List<PopupMenuItem<void>> Function(
-      String tag, ScrollController controller)? items;
+    String tag,
+    ScrollController controller,
+  )? items;
   final bool showPin;
 
   final Widget emptyWidget;
@@ -856,7 +861,9 @@ class _TagsRibbonState extends State<TagsRibbon> {
                                 ? null
                                 : () {
                                     widget.onLongPress!(
-                                        elem.tag, scrollController);
+                                      elem.tag,
+                                      scrollController,
+                                    );
                                   },
                             child: ActionChip(
                               labelStyle: elem.excluded
@@ -883,7 +890,9 @@ class _TagsRibbonState extends State<TagsRibbon> {
                                 : MenuWrapper(
                                     title: elem.tag,
                                     items: widget.items!(
-                                        elem.tag, scrollController),
+                                      elem.tag,
+                                      scrollController,
+                                    ),
                                     child: child,
                                   ),
                           );

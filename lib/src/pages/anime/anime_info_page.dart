@@ -5,9 +5,9 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
-import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/pages/anime/info_base/anime_info_app_bar.dart";
 import "package:azari/src/pages/anime/info_base/anime_info_theme.dart";
@@ -42,8 +42,10 @@ class AnimeInfoPage extends StatefulWidget {
 }
 
 class _AnimeInfoPageState extends State<AnimeInfoPage> {
-  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
-  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+  AnimeEntriesSource get backlogEntries => widget.db.savedAnimeEntries.backlog;
+  AnimeEntriesSource get watchingEntries =>
+      widget.db.savedAnimeEntries.watching;
+  AnimeEntriesSource get watchedEntries => widget.db.savedAnimeEntries.watched;
 
   final state = SkeletonState();
   final textController = TextEditingController();
@@ -75,8 +77,9 @@ class _AnimeInfoPageState extends State<AnimeInfoPage> {
     }
 
     return api.info(widget.id).then((value) {
-      savedAnimeEntries.update(value);
-      watchedAnimeEntries.update(value);
+      backlogEntries.update(value);
+      watchingEntries.update(value);
+      watchedEntries.update(value);
 
       return value;
     });
@@ -116,63 +119,132 @@ class _AnimeInfoBody extends StatefulWidget {
 }
 
 class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
-  SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
-  WatchedAnimeEntryService get watchedAnimeEntries => widget.db.watchedAnime;
+  AnimeEntriesSource get backlogEntries => widget.db.savedAnimeEntries.backlog;
+  AnimeEntriesSource get watchingEntries =>
+      widget.db.savedAnimeEntries.watching;
+  AnimeEntriesSource get watchedEntries => widget.db.savedAnimeEntries.watched;
 
-  late final StreamSubscription<void> entriesWatcher;
-  late final StreamSubscription<WatchedAnimeEntryData?> watchedEntryWatcher;
+  late final StreamSubscription<AnimeEntryData?> backlogEntryWatcher;
+  late final StreamSubscription<AnimeEntryData?> watchingEntryWatcher;
+  late final StreamSubscription<AnimeEntryData?> watchedEntryWatcher;
 
   final scrollController = ScrollController();
 
   late AnimeEntryData entry = widget.entry;
   AnimeAPI get api => widget.api;
 
-  late bool _inDb;
-  late bool _backlog;
-  late bool _watched;
+  late bool isBacklog;
+  late bool isWatched;
+  late bool isWatching;
 
   @override
   void initState() {
     super.initState();
 
-    final r = savedAnimeEntries.isWatchingBacklog(entry.id, entry.site);
+    isBacklog = backlogEntries.forIdx((entry.id, entry.site)) != null;
+    isWatched = watchedEntries.forIdx((entry.id, entry.site)) != null;
+    isWatching = watchingEntries.forIdx((entry.id, entry.site)) != null;
 
-    _inDb = r.$1;
-    _backlog = r.$2;
-
-    _watched = watchedAnimeEntries.watched(entry.id, entry.site);
-
-    watchedEntryWatcher =
-        watchedAnimeEntries.watchSingle(entry.id, api.site, (e) {
-      final e = watchedAnimeEntries.maybeGet(entry.id, entry.site);
-      _watched = e != null;
-      if (e != null) {
-        entry = e;
-      }
-
-      setState(() {});
+    backlogEntryWatcher = backlogEntries.watchSingle(entry.id, entry.site, (e) {
+      setState(() {
+        if (e != null) {
+          entry = e;
+        }
+        isBacklog = e != null;
+      });
     });
 
-    entriesWatcher = savedAnimeEntries.watchAll((_) {
-      final e = savedAnimeEntries.maybeGet(entry.id, entry.site);
-
-      if (e == null) {
-        _inDb = false;
-        _backlog = false;
-      } else {
-        _inDb = true;
-        _backlog = e.inBacklog;
-
-        entry = e;
-      }
-
-      setState(() {});
+    watchingEntryWatcher =
+        watchingEntries.watchSingle(entry.id, entry.site, (e) {
+      setState(() {
+        if (e != null) {
+          entry = e;
+        }
+        isWatching = e != null;
+      });
     });
+
+    watchedEntryWatcher = watchedEntries.watchSingle(entry.id, entry.site, (e) {
+      setState(() {
+        if (e != null) {
+          entry = e;
+        }
+        isWatched = e != null;
+      });
+    });
+
+    // final r = savedAnimeEntries.isWatchingBacklog(entry.id, entry.site);
+
+    // _inDb = r.$1;
+    // _backlog = r.$2;
+
+    // _watched = watchedAnimeEntries.watched(entry.id, entry.site);
+
+    // watchedEntryWatcher =
+    //     watchedAnimeEntries.watchSingle(entry.id, api.site, (e) {
+    //   final e = watchedAnimeEntries.maybeGet(entry.id, entry.site);
+    //   _watched = e != null;
+    //   if (e != null) {
+    //     entry = e;
+    //   }
+
+    //   setState(() {});
+    // });
+
+    // entriesWatcher = savedAnimeEntries.watchAll((_) {
+    //   final e = savedAnimeEntries.maybeGet(entry.id, entry.site);
+
+    //   if (e == null) {
+    //     _inDb = false;
+    //     _backlog = false;
+    //   } else {
+    //     _inDb = true;
+    //     _backlog = e.inBacklog;
+
+    //     entry = e;
+    //   }
+
+    //   setState(() {});
+    // });
   }
+
+  // bool checkFoundInDb({
+  //   bool? watched,
+  //   bool? watching,
+  //   bool? backlog,
+  // }) {
+  //   final bool foundWatched;
+  //   final bool foundBacklog;
+  //   final bool foundWatching;
+
+  //   if (watched == null) {
+  //     foundWatched =
+  //         watchedEntries.backingStorage.get((entry.id, entry.site)) != null;
+  //   } else {
+  //     foundWatched = watched;
+  //   }
+
+  //   if (watching == null) {
+  //     foundWatching =
+  //         watchingEntries.backingStorage.get((entry.id, entry.site)) != null;
+  //   } else {
+  //     foundWatching = watching;
+  //   }
+
+  //   if (backlog == null) {
+  //     foundBacklog =
+  //         backlogEntries.backingStorage.get((entry.id, entry.site)) != null;
+  //   } else {
+  //     foundBacklog = backlog;
+  //   }
+
+  //   return foundWatching || foundBacklog || foundWatched;
+  // }
 
   @override
   void dispose() {
-    entriesWatcher.cancel();
+    backlogEntryWatcher.cancel();
+    watchingEntryWatcher.cancel();
     watchedEntryWatcher.cancel();
 
     scrollController.dispose();
@@ -181,15 +253,13 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
   }
 
   void _save(AnimeEntryData e) {
-    if (_inDb) {
-      savedAnimeEntries.update(e);
-    } else if (_watched) {
-      watchedAnimeEntries.update(e);
-    } else {
-      entry = e;
+    entry = e;
 
-      setState(() {});
-    }
+    setState(() {});
+
+    backlogEntries.update(e);
+    watchingEntries.update(e);
+    watchedEntries.update(e);
   }
 
   @override
@@ -260,25 +330,21 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             flex: 2,
                             child: _ActionButton(
                               icon: Icons.play_arrow_rounded,
-                              label: !_backlog && _inDb
+                              label: isWatching
                                   ? "Remove from watching"
                                   : "Add to watching",
-                              onPress: !_inDb
-                                  ? null
-                                  : () {
-                                      final prevEntry =
-                                          savedAnimeEntries.maybeGet(
-                                        entry.id,
-                                        entry.site,
-                                      )!;
-
-                                      if (_backlog) {
-                                        prevEntry.copy(inBacklog: false).save();
-                                      } else {
-                                        prevEntry.copy(inBacklog: true).save();
-                                      }
-                                    },
-                              isSelected: !_backlog,
+                              onPress: () {
+                                if (isWatching) {
+                                  watchingEntries.backingStorage.removeAll(
+                                    [(entry.id, entry.site)],
+                                  );
+                                } else {
+                                  watchingEntries.backingStorage.addAll(
+                                    [entry],
+                                  );
+                                }
+                              },
+                              isSelected: isWatching,
                             ),
                           ),
                           const Padding(padding: EdgeInsets.only(left: 8)),
@@ -286,45 +352,39 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             flex: 2,
                             child: _ActionButton(
                               icon: Icons.check_rounded,
-                              label: _watched
+                              label: isWatched
                                   ? "Remove from watched"
                                   : "Add to watched",
                               onPress: () {
-                                if (!_watched) {
-                                  watchedAnimeEntries
-                                      .moveAll([entry], savedAnimeEntries);
+                                if (isWatched) {
+                                  watchedEntries.backingStorage
+                                      .removeAll([(entry.id, entry.site)]);
                                 } else {
-                                  watchedAnimeEntries.delete(
-                                    entry.id,
-                                    entry.site,
-                                  );
+                                  watchedEntries.backingStorage.addAll([entry]);
                                 }
                               },
-                              isSelected: _watched,
+                              isSelected: isWatched,
                             ),
                           ),
                           const Padding(padding: EdgeInsets.only(left: 8)),
                           Expanded(
                             child: _ActionButton(
                               icon: Icons.video_collection_rounded,
-                              label: _inDb
+                              label: isBacklog
                                   ? "Remove from backlog"
                                   : "Add to backlog",
-                              onPress: _watched
-                                  ? null
-                                  : () {
-                                      if (_inDb) {
-                                        savedAnimeEntries.deleteAll(
-                                          [(entry.id, entry.site)],
-                                        );
-                                      } else {
-                                        savedAnimeEntries.addAll(
-                                          [entry],
-                                          watchedAnimeEntries,
-                                        );
-                                      }
-                                    },
-                              isSelected: _inDb,
+                              onPress: () {
+                                if (isBacklog) {
+                                  backlogEntries.backingStorage.removeAll(
+                                    [(entry.id, entry.site)],
+                                  );
+                                } else {
+                                  backlogEntries.backingStorage.addAll(
+                                    [entry],
+                                  );
+                                }
+                              },
+                              isSelected: isBacklog,
                             ),
                           ),
                         ],

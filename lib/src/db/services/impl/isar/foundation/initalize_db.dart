@@ -45,9 +45,11 @@ Future<DownloadManager> initalizeIsarDb(
 
   final anime = Isar.openSync(
     const [
+      IsarNewestAnimeSchema,
       IsarVisitedPostSchema,
-      IsarSavedAnimeEntrySchema,
       IsarWatchedAnimeEntrySchema,
+      IsarWatchingAnimeEntrySchema,
+      IsarBacklogAnimeEntrySchema,
       IsarSavedAnimeCharactersSchema,
       IsarReadMangaChapterSchema,
       IsarCompactMangaDataSchema,

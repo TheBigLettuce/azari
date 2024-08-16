@@ -3,78 +3,61 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
-
+import "package:azari/src/db/services/impl/isar/schemas/anime/watching_anime_entry.dart";
 import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/anime/anime_entry.dart";
 import "package:isar/isar.dart";
 
-part "saved_anime_entry.g.dart";
-
-@embedded
-class IsarAnimeGenre implements $AnimeGenre {
-  const IsarAnimeGenre({
-    this.id = 0,
-    this.title = "",
-    this.unpressable = false,
-    this.explicit = false,
-  });
-
-  const IsarAnimeGenre.required({
-    required this.id,
-    required this.title,
-    required this.unpressable,
-    required this.explicit,
-  });
-
-  @override
-  final String title;
-  @override
-  final int id;
-  @override
-  final bool unpressable;
-  @override
-  final bool explicit;
-}
-
-@embedded
-class IsarAnimeRelation implements $AnimeRelation {
-  const IsarAnimeRelation({
-    this.thumbUrl = "",
-    this.title = "",
-    this.type = "",
-    this.id = 0,
-  });
-
-  const IsarAnimeRelation.required({
-    required this.thumbUrl,
-    required this.title,
-    required this.type,
-    required this.id,
-  });
-
-  @override
-  final String thumbUrl;
-  @override
-  final String title;
-  @override
-  final String type;
-  @override
-  final int id;
-}
+part "newest_anime.g.dart";
 
 @collection
-class IsarSavedAnimeEntry extends AnimeEntryDataImpl
-    with DefaultSavedAnimeEntryPressable
-    implements $SavedAnimeEntryData {
-  const IsarSavedAnimeEntry({
+class IsarNewestAnime {
+  const IsarNewestAnime({
+    required this.time,
+    required this.entries,
+  });
+
+  Id get isarId => 0;
+
+  @Index()
+  final DateTime time;
+  final List<IsarNewestAnimeEntry> entries;
+}
+
+@embedded
+class IsarNewestAnimeEntry extends AnimeEntryDataImpl
+    implements $AnimeEntryData {
+  const IsarNewestAnimeEntry({
+    this.imageUrl = "",
+    this.airedFrom,
+    this.airedTo,
+    this.relations = const [],
+    this.explicit = AnimeSafeMode.h,
+    this.type = "",
+    this.site = AnimeMetadata.jikan,
+    this.thumbUrl = "",
+    this.title = "",
+    this.titleJapanese = "",
+    this.titleEnglish = "",
+    this.score = 0,
+    this.synopsis = "",
+    this.id = -1,
+    this.siteUrl = "",
+    this.isAiring = false,
+    this.titleSynonyms = const [],
+    this.background = "",
+    this.trailerUrl = "",
+    this.episodes = -1,
+    this.genres = const [],
+    this.staff = const [],
+  });
+
+  const IsarNewestAnimeEntry.required({
     required this.imageUrl,
     required this.airedFrom,
     required this.airedTo,
-    required this.isarId,
-    required this.inBacklog,
     required this.relations,
     required this.explicit,
     required this.type,
@@ -96,11 +79,10 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.staff,
   });
 
-  const IsarSavedAnimeEntry.noIdList({
+  const IsarNewestAnimeEntry.noList({
     required this.imageUrl,
     required this.airedFrom,
     required this.airedTo,
-    required this.inBacklog,
     required this.explicit,
     required this.type,
     required this.site,
@@ -117,12 +99,9 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     required this.background,
     required this.trailerUrl,
     required this.episodes,
-  })  : isarId = null,
-        staff = const [],
+  })  : staff = const [],
         genres = const [],
         relations = const [];
-
-  final Id? isarId;
 
   @override
   final List<IsarAnimeGenre> genres;
@@ -132,9 +111,6 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
 
   @override
   final List<IsarAnimeRelation> staff;
-
-  @override
-  final bool inBacklog;
 
   @override
   final String background;
@@ -156,7 +132,6 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
   final double score;
 
   @override
-  @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
   @enumerated
   final AnimeMetadata site;
 
@@ -167,7 +142,6 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
   final String synopsis;
 
   @override
-  @Index(unique: true, replace: true)
   final String thumbUrl;
 
   @override
@@ -198,48 +172,10 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
   final String imageUrl;
 
   @override
-  IsarSavedAnimeEntry copySuper(
-    AnimeEntryData e, [
-    bool ignoreRelations = false,
-  ]) {
-    return IsarSavedAnimeEntry(
-      isarId: isarId,
-      imageUrl: e.imageUrl,
-      id: e.id,
-      type: e.type,
-      inBacklog: inBacklog,
-      site: e.site,
-      explicit: e.explicit,
-      thumbUrl: e.thumbUrl,
-      title: e.title,
-      relations: ignoreRelations
-          ? relations
-          : (e.relations is List<IsarAnimeRelation>
-              ? e.relations as List<IsarAnimeRelation>
-              : e.relations.cast()),
-      staff: (e.staff is List<IsarAnimeRelation>
-          ? e.staff as List<IsarAnimeRelation>
-          : e.staff.cast()),
-      genres: (e.genres is List<IsarAnimeGenre>
-          ? e.genres as List<IsarAnimeGenre>
-          : e.genres.cast()),
-      titleJapanese: e.titleJapanese,
-      titleEnglish: e.titleEnglish,
-      score: e.score,
-      synopsis: e.synopsis,
-      siteUrl: e.siteUrl,
-      isAiring: e.isAiring,
-      titleSynonyms: e.titleSynonyms,
-      background: e.background,
-      trailerUrl: e.trailerUrl,
-      episodes: e.episodes,
-      airedFrom: e.airedFrom,
-      airedTo: e.airedTo,
-    );
-  }
+  Null properties() => null;
 
   @override
-  IsarSavedAnimeEntry copy({
+  IsarNewestAnimeEntry copy({
     bool? inBacklog,
     AnimeMetadata? site,
     int? episodes,
@@ -264,12 +200,18 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
     DateTime? airedFrom,
     DateTime? airedTo,
   }) {
-    return IsarSavedAnimeEntry(
-      isarId: isarId,
+    return IsarNewestAnimeEntry(
       imageUrl: imageUrl ?? this.imageUrl,
-      id: id ?? this.id,
       explicit: explicit ?? this.explicit,
       type: type ?? this.type,
+      site: site ?? this.site,
+      thumbUrl: thumbUrl ?? this.thumbUrl,
+      title: title ?? this.title,
+      titleJapanese: titleJapanese ?? this.titleJapanese,
+      titleEnglish: titleEnglish ?? this.titleEnglish,
+      score: score ?? this.score,
+      synopsis: synopsis ?? this.synopsis,
+      id: id ?? this.id,
       relations: (relations is List<IsarAnimeRelation>
               ? relations
               : relations?.cast()) ??
@@ -278,18 +220,10 @@ class IsarSavedAnimeEntry extends AnimeEntryDataImpl
           this.staff,
       genres: (genres is List<IsarAnimeGenre> ? genres : genres?.cast()) ??
           this.genres,
-      background: background ?? this.background,
-      inBacklog: inBacklog ?? this.inBacklog,
-      site: site ?? this.site,
-      thumbUrl: thumbUrl ?? this.thumbUrl,
-      title: title ?? this.title,
-      titleJapanese: titleJapanese ?? this.titleJapanese,
-      titleEnglish: titleEnglish ?? this.titleEnglish,
-      score: score ?? this.score,
-      synopsis: synopsis ?? this.synopsis,
       siteUrl: siteUrl ?? this.siteUrl,
       isAiring: isAiring ?? this.isAiring,
       titleSynonyms: titleSynonyms ?? this.titleSynonyms,
+      background: background ?? this.background,
       trailerUrl: trailerUrl ?? this.trailerUrl,
       episodes: episodes ?? this.episodes,
       airedFrom: airedFrom ?? this.airedFrom,
