@@ -57,15 +57,7 @@ class SettingsSkeleton extends StatelessWidget {
               ? CustomScrollView(
                   slivers: [
                     SliverAppBar.large(
-                      expandedHeight: 160,
-                      flexibleSpace: FlexibleSpaceBar(
-                        title: Text(
-                          pageDescription,
-                          style: TextStyle(
-                            color: theme.textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                      ),
+                      title: Text(pageDescription),
                     ),
                     SliverPadding(
                       padding: EdgeInsets.only(bottom: insets.bottom),

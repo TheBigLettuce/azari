@@ -6,7 +6,6 @@
 import "dart:async";
 
 import "package:azari/init_main/app_info.dart";
-import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/gallery/directories.dart";
@@ -32,150 +31,97 @@ class MorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface.withOpacity(0.8);
-
-    final l10n = AppLocalizations.of(context)!;
-
-    final (time, stream) = TimeSpentNotifier.streamOf(context);
-
-    final timeNow = DateTime.now();
-    final emoji = timeNow.hour > 20 || timeNow.hour <= 6 ? "🌙" : "☀️";
 
     return switch (MoreSubPage.of(context)) {
-      MoreSubPage.more => AnnotatedRegion(
-          value: SystemUiOverlayStyle(
-            statusBarIconBrightness: theme.brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
-            statusBarColor: theme.colorScheme.surface.withOpacity(0),
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  bottom: 12,
-                  top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton.filled(
-                          icon: const Icon(Icons.download_outlined),
-                          onPressed: () {
-                            final g = GlueProvider.generateOf(context);
+      MoreSubPage.more => GridPopScope(
+          searchTextController: null,
+          filter: null,
+          rootNavigatorPop: popScope,
+          child: AnnotatedRegion(
+            value: SystemUiOverlayStyle(
+              statusBarIconBrightness: theme.brightness == Brightness.dark
+                  ? Brightness.light
+                  : Brightness.dark,
+              statusBarColor: theme.colorScheme.surface.withOpacity(0),
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    bottom: 12,
+                    top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton.filled(
+                            icon: const Icon(Icons.download_outlined),
+                            onPressed: () {
+                              final g = GlueProvider.generateOf(context);
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                builder: (context) {
-                                  return Downloads(
-                                    generateGlue: g,
-                                    downloadManager:
-                                        DownloadManager.of(context),
-                                    db: db,
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                        const Padding(padding: EdgeInsets.only(left: 8)),
-                        IconButton.filled(
-                          icon: const Icon(Icons.settings_outlined),
-                          onPressed: () {
-                            Navigator.of(context, rootNavigator: true).push(
-                              MaterialPageRoute<void>(
-                                builder: (context) {
-                                  return const SettingsWidget();
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const Padding(padding: EdgeInsets.only(top: 80)),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        "${l10n.date(timeNow)} $emoji",
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.9),
-                        ),
-                      ),
-                    ),
-                    const Padding(padding: EdgeInsets.only(top: 40)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: TimeSpentWidget(
-                              stream: stream,
-                              initalDuration: time,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  StatisticsDailyService.db()
-                                      .current
-                                      .swipedBoth
-                                      .toString(),
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: color,
-                                  ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (context) {
+                                    return Downloads(
+                                      generateGlue: g,
+                                      downloadManager:
+                                          DownloadManager.of(context),
+                                      db: db,
+                                    );
+                                  },
                                 ),
-                                Text(
-                                  l10n.cardPicturesSeenToday,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: color.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
+                          const Padding(padding: EdgeInsets.only(left: 8)),
+                          IconButton.filled(
+                            icon: const Icon(Icons.settings_outlined),
+                            onPressed: () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) {
+                                    return const SettingsWidget();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Transform.rotate(
+                        angle: 0.4363323,
+                        child: Icon(
+                          const IconData(0x963F),
+                          size: 78,
+                          color: theme.colorScheme.onSurface.withOpacity(0.1),
+                          applyTextScaling: true,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Transform.rotate(
-                      angle: 0.4363323,
-                      child: Icon(
-                        const IconData(0x963F),
-                        size: 78,
-                        color: theme.colorScheme.onSurface.withOpacity(0.1),
-                        applyTextScaling: true,
                       ),
-                    ),
-                    const Padding(padding: EdgeInsets.only(top: 12)),
-                    Text(
-                      AppInfo().version,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.05),
+                      const Padding(padding: EdgeInsets.only(top: 12)),
+                      Text(
+                        AppInfo().version,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.05),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       MoreSubPage.dashboard => GridPopScope(
