@@ -48,6 +48,8 @@ class GenericListSource<V> implements ResourceSource<int, V> {
       return count;
     }
     progress.inRefreshing = true;
+    progress.canLoadMore = true;
+    progress.error = null;
 
     backingStorage.clear();
 

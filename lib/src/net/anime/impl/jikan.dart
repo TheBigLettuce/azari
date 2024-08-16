@@ -58,7 +58,8 @@ class Jikan implements AnimeAPI {
     AnimeSortOrder sortOrder = AnimeSortOrder.normal,
   }) async {
     final url = Uri.https(site.apiUrl, "/v4/anime", {
-      if (mode == AnimeSafeMode.ecchi) "rating": "rx",
+      if (mode == AnimeSafeMode.ecchi) "rating": "r",
+      if (mode == AnimeSafeMode.h) "rating": "rx",
       if (mode == AnimeSafeMode.safe) "sfw": "true",
       "page": (page + 1).toString(),
       "q": title,
@@ -73,9 +74,6 @@ class Jikan implements AnimeAPI {
       if (genreId != null || mode == AnimeSafeMode.ecchi)
         "genres": [
           if (genreId != null) genreId,
-
-          /// havent found a good way
-          if (mode == AnimeSafeMode.ecchi) 9,
         ].join(","),
     });
 

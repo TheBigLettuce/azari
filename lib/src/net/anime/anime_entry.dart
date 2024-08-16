@@ -193,15 +193,10 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     final db = DatabaseConnectionNotifier.of(context);
 
-    final watching =
-        db.savedAnimeEntries.watching.backingStorage.get((id, site)) != null;
-    final inBacklog =
-        db.savedAnimeEntries.backlog.backingStorage.get((id, site)) != null;
-
     return [
-      if (inBacklog) const Sticker(Icons.library_add_check),
-      if (watching) const Sticker(Icons.play_arrow_rounded),
-      if (!watching && db.savedAnimeEntries.watched.forIdx((id, site)) != null)
+      // if (inBacklog) const Sticker(Icons.library_add_check),
+      // if (watching) const Sticker(Icons.play_arrow_rounded),
+      if (db.savedAnimeEntries.watched.forIdx((id, site)) != null)
         const Sticker(Icons.check, important: true),
     ];
   }

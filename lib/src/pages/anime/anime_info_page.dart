@@ -172,74 +172,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
         isWatched = e != null;
       });
     });
-
-    // final r = savedAnimeEntries.isWatchingBacklog(entry.id, entry.site);
-
-    // _inDb = r.$1;
-    // _backlog = r.$2;
-
-    // _watched = watchedAnimeEntries.watched(entry.id, entry.site);
-
-    // watchedEntryWatcher =
-    //     watchedAnimeEntries.watchSingle(entry.id, api.site, (e) {
-    //   final e = watchedAnimeEntries.maybeGet(entry.id, entry.site);
-    //   _watched = e != null;
-    //   if (e != null) {
-    //     entry = e;
-    //   }
-
-    //   setState(() {});
-    // });
-
-    // entriesWatcher = savedAnimeEntries.watchAll((_) {
-    //   final e = savedAnimeEntries.maybeGet(entry.id, entry.site);
-
-    //   if (e == null) {
-    //     _inDb = false;
-    //     _backlog = false;
-    //   } else {
-    //     _inDb = true;
-    //     _backlog = e.inBacklog;
-
-    //     entry = e;
-    //   }
-
-    //   setState(() {});
-    // });
   }
-
-  // bool checkFoundInDb({
-  //   bool? watched,
-  //   bool? watching,
-  //   bool? backlog,
-  // }) {
-  //   final bool foundWatched;
-  //   final bool foundBacklog;
-  //   final bool foundWatching;
-
-  //   if (watched == null) {
-  //     foundWatched =
-  //         watchedEntries.backingStorage.get((entry.id, entry.site)) != null;
-  //   } else {
-  //     foundWatched = watched;
-  //   }
-
-  //   if (watching == null) {
-  //     foundWatching =
-  //         watchingEntries.backingStorage.get((entry.id, entry.site)) != null;
-  //   } else {
-  //     foundWatching = watching;
-  //   }
-
-  //   if (backlog == null) {
-  //     foundBacklog =
-  //         backlogEntries.backingStorage.get((entry.id, entry.site)) != null;
-  //   } else {
-  //     foundBacklog = backlog;
-  //   }
-
-  //   return foundWatching || foundBacklog || foundWatched;
-  // }
 
   @override
   void dispose() {
@@ -331,7 +264,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.play_arrow_rounded,
                               label: isWatching
-                                  ? "Remove from watching"
+                                  ? "Remove from watching" // TODO: change
                                   : "Add to watching",
                               onPress: () {
                                 if (isWatching) {
@@ -353,7 +286,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.check_rounded,
                               label: isWatched
-                                  ? "Remove from watched"
+                                  ? "Remove from watched" // TODO: change
                                   : "Add to watched",
                               onPress: () {
                                 if (isWatched) {
@@ -371,7 +304,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.video_collection_rounded,
                               label: isBacklog
-                                  ? "Remove from backlog"
+                                  ? "Remove from backlog" // TODO: change
                                   : "Add to backlog",
                               onPress: () {
                                 if (isBacklog) {

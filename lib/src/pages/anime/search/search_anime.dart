@@ -331,11 +331,13 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                           SafetyButton(
                             mode: mode,
                             set: (m) {
+                              if (source.progress.inRefreshing) {
+                                return;
+                              }
+
                               mode = m;
 
-                              if (source.backingStorage.isNotEmpty) {
-                                source.clearRefresh();
-                              }
+                              source.clearRefresh();
 
                               setState(() {});
                             },
@@ -619,26 +621,32 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
 List<GridAction<AnimeSearchEntry>> _animeSearchActions(
   SavedAnimeEntriesService savedAnimeEntries,
 ) =>
-    throw UnimplementedError();
-    // [
-    //   GridAction(
-    //     Icons.add,
-    //     (selected) {
-    //       final toDelete = <AnimeSearchEntry>[];
-    //       final toAdd = <AnimeSearchEntry>[];
+    [
+      GridAction(
+        Icons.play_arrow_rounded,
+        (selected) {
+          final watching = savedAnimeEntries.watching;
 
-    //       for (final e in selected) {
-    //         final entry = savedAnimeEntries.maybeGet(e.id, e.site);
-    //         if (entry == null) {
-    //           toAdd.add(e);
-    //         } else if (entry.inBacklog) {
-    //           toDelete.add(e);
-    //         }
-    //       }
+          watching.backingStorage.addAll(selected);
+        },
+        true,
+      ),
+      GridAction(
+        Icons.check_rounded,
+        (selected) {
+          final watched = savedAnimeEntries.watched;
 
-    //       savedAnimeEntries.addAll(toAdd, watchedAnimeEntries);
-    //       savedAnimeEntries.deleteAll(toDelete.toIds);
-    //     },
-    //     true,
-    //   ),
-    // ];
+          watched.backingStorage.addAll(selected);
+        },
+        true,
+      ),
+      GridAction(
+        Icons.video_collection_rounded,
+        (selected) {
+          final backlog = savedAnimeEntries.backlog;
+
+          backlog.backingStorage.addAll(selected);
+        },
+        true,
+      ),
+    ];

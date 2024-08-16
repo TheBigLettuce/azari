@@ -13,6 +13,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/anime/impl/jikan.dart";
+import "package:azari/src/pages/anime/search/search_anime.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -231,37 +232,13 @@ class _AnimePageState extends State<AnimePage> {
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1),
           ),
-          // leading: Center(
-          //   child:
-          //   SearchAnchor(
-          //     searchController: searchController,
-          //     builder: (context, controller) {
-          //       return IconButton(
-          //         onPressed: controller.openView,
-          //         icon: const Icon(Icons.search_rounded),
-          //       );
-          //     },
-          //     viewOnSubmitted: (value) {
-          //       animeSearchKey.currentState?.performSearch(value);
-          //     },
-          //     viewHintText: l10n.searchHint,
-          //     viewTrailing: [
-          //       _RefresingIcon(
-          //         controller: searchController,
-          //         progress: entry.source.progress,
-          //       ),
-          //     ],
-          //     viewBuilder: (_) {
-          //       return _AnimeSearch(
-          //         key: animeSearchKey,
-          //         api: api,
-          //         entry: entry,
-          //         generateGlue: GlueProvider.generateOf(context),
-          //       );
-          //     },
-          //     suggestionsBuilder: (context, controller) => const [],
-          //   ),
-          // ),
+          leading: Center(
+            child: IconButton(
+                onPressed: () {
+                  SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
+                },
+                icon: Icon(Icons.search_rounded)),
+          ),
           centerTitle: true,
           title: Text(l10n.animePage),
           actions: [
