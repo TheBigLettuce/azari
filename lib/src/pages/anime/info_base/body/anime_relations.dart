@@ -6,7 +6,7 @@
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/anime/anime_info_page.dart";
 import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
-import "package:azari/src/pages/anime/search/search_anime.dart";
+import "package:azari/src/pages/anime/search_anime.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";

@@ -57,19 +57,28 @@ class Jikan implements AnimeAPI {
     AnimeSafeMode? mode, {
     AnimeSortOrder sortOrder = AnimeSortOrder.normal,
   }) async {
+    final date = DateTime.now();
+
     final url = Uri.https(site.apiUrl, "/v4/anime", {
       if (mode == AnimeSafeMode.ecchi) "rating": "r",
       if (mode == AnimeSafeMode.h) "rating": "rx",
       if (mode == AnimeSafeMode.safe) "sfw": "true",
       "page": (page + 1).toString(),
       "q": title,
+      if (sortOrder == AnimeSortOrder.upcoming)
+        "start_date":
+            "${date.year}-${date.month <= 9 ? '0${date.month}' : date.month}-${date.day <= 9 ? '0${date.day}' : date.day}",
+      // if (sortOrder == AnimeSortOrder.upcoming)
+      //   "end_date":
+      //       "${date.year + 1}-${date.month <= 9 ? '0${date.month}' : date.month}-${date.day <= 9 ? '0${date.day}' : date.day}",
+      if (sortOrder == AnimeSortOrder.upcoming) "status": "upcoming",
       "order_by": switch (sortOrder) {
-        AnimeSortOrder.normal => title.isEmpty ? "score" : "title",
-        AnimeSortOrder.latest => "start_date",
+        AnimeSortOrder.normal => "score",
+        AnimeSortOrder.upcoming => "start_date",
       },
       "sort": switch (sortOrder) {
-        AnimeSortOrder.normal => title.isEmpty ? "desc" : "asc",
-        AnimeSortOrder.latest => "desc",
+        AnimeSortOrder.normal => "desc",
+        AnimeSortOrder.upcoming => "asc",
       },
       if (genreId != null || mode == AnimeSafeMode.ecchi)
         "genres": [
@@ -85,6 +94,23 @@ class Jikan implements AnimeAPI {
     final ret = (resp.data!["data"] as List<dynamic>)
         .map<AnimeSearchEntry>((e) => _fromJson(e as Map<dynamic, dynamic>))
         .toList();
+
+    if (title.isNotEmpty) {
+      final startsWithTitle = <AnimeSearchEntry>[];
+
+      final titleLower = title.toLowerCase();
+
+      ret.removeWhere((e) {
+        final startsWith = e.title.toLowerCase().startsWith(titleLower);
+        if (startsWith) {
+          startsWithTitle.add(e);
+        }
+
+        return startsWith;
+      });
+
+      return startsWithTitle + ret;
+    }
 
     return ret;
   }

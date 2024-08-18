@@ -264,8 +264,8 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.play_arrow_rounded,
                               label: isWatching
-                                  ? "Remove from watching" // TODO: change
-                                  : "Add to watching",
+                                  ? l10n.removeWatching
+                                  : l10n.addWatching,
                               onPress: () {
                                 if (isWatching) {
                                   watchingEntries.backingStorage.removeAll(
@@ -286,8 +286,8 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.check_rounded,
                               label: isWatched
-                                  ? "Remove from watched" // TODO: change
-                                  : "Add to watched",
+                                  ? l10n.removeWatched
+                                  : l10n.addWatched,
                               onPress: () {
                                 if (isWatched) {
                                   watchedEntries.backingStorage
@@ -304,8 +304,8 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                             child: _ActionButton(
                               icon: Icons.video_collection_rounded,
                               label: isBacklog
-                                  ? "Remove from backlog" // TODO: change
-                                  : "Add to backlog",
+                                  ? l10n.removeBacklog
+                                  : l10n.addBacklog,
                               onPress: () {
                                 if (isBacklog) {
                                   backlogEntries.backingStorage.removeAll(

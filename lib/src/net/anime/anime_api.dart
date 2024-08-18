@@ -35,7 +35,7 @@ abstract class AnimeAPI {
 
 enum AnimeSortOrder {
   normal,
-  latest,
+  upcoming,
 }
 
 enum AnimeMetadata {

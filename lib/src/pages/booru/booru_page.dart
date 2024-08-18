@@ -410,7 +410,7 @@ class _BooruPageState extends State<BooruPage> {
             db: widget.db.hiddenBooruPost,
           ),
         ),
-      BooruSubPage.viewed => GridPopScope(
+      BooruSubPage.visited => GridPopScope(
           searchTextController: null,
           filter: null,
           rootNavigatorPop: widget.procPop,

@@ -59,9 +59,9 @@ dependencies:
   http_parser: ^4.0.2
 
   intl: any
-  isar: 
+  isar:
     path: isar/packages/isar
-  isar_flutter_libs: 
+  isar_flutter_libs:
     path: isar/packages/isar_flutter_libs
 
   jikan_api: ^2.2.0

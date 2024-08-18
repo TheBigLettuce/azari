@@ -161,7 +161,7 @@
     "ungrouped": "Без группы",
     "more": "Больше",
     "newsTab": "Новости",
-    "watchingTab": "Беклог",
+    "watchingTab": "Смотрю",
     "discoverTab": "Поиск",
     "finishedTab": "Завершено",
     "animePage": "Аниме",
@@ -219,9 +219,9 @@
     "gridView": "Сетка",
     "listView": "Лист",
     "cardDone": "Просмотрено",
-    "removedFromWatching": "Удалено из просмотренных",
+    "removedFromWatching": "Удалено из смотрю",
     "cantWatchThree": "Можно смотреть не больше трех",
-    "cardWatching": "Беклог",
+    "cardWatching": "Смотрю",
     "reset": "Сбросить",
     "cardInBrowser": "В браузере",
     "cardTrailer": "Трейлер",
@@ -496,5 +496,12 @@
             }
         }
     },
-    "visitedPage": "Просмотренное"
+    "visitedPage": "Просмотренное",
+    "upcomingAnime": "Скоро",
+    "removeWatching": "Не смотрю",
+    "addWatching": "В смотрю",
+    "removeWatched": "Удалить из просмотренного",
+    "addWatched": "В просмотренно",
+    "removeBacklog": "Удалить из беклога",
+    "addBacklog": "В беклог"
 }

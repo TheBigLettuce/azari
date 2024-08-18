@@ -306,6 +306,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                         source: source.backingStorage,
                         progress: source.progress,
                         gridSeed: state.gridSeed,
+                        unselectOnUpdate: false,
                         buildEmpty: (e) => EmptyWidgetWithButton(
                           error: e,
                           buttonText: l10n.openInBrowser,

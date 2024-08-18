@@ -14,8 +14,7 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 
-class AnimeSearchEntry extends AnimeEntryDataImpl
-    implements AnimeEntryData, Pressable<AnimeSearchEntry> {
+class AnimeSearchEntry extends AnimeEntryDataImpl implements AnimeEntryData {
   const AnimeSearchEntry({
     required this.imageUrl,
     required this.airedFrom,
@@ -216,5 +215,15 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
         },
       ),
     );
+  }
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<AnimeEntryData> functionality,
+    AnimeEntryData cell,
+    int idx,
+  ) {
+    openInfoPage(context);
   }
 }

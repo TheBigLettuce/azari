@@ -226,39 +226,41 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                         visibilityController: visibilityController,
                         seekTimeAnchor: seekTimeAnchor,
                       ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Animate(
-                        value: 0,
-                        autoPlay: false,
-                        controller: visibilityController,
-                        effects: const [
-                          FadeEffect(
-                            curve: Easing.standard,
-                            duration: Durations.long1,
-                            begin: 0,
-                            end: 1,
-                          ),
-                        ],
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(15),
-                            topRight: Radius.circular(15),
-                          ),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface.withOpacity(0.9),
+                    if (infoWidget != null)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Animate(
+                          value: 0,
+                          autoPlay: false,
+                          controller: visibilityController,
+                          effects: const [
+                            FadeEffect(
+                              curve: Easing.standard,
+                              duration: Durations.long1,
+                              begin: 0,
+                              end: 1,
                             ),
-                            child: ImageViewSlidingInfoDrawer(
-                              widgets: widgets,
-                              bottomSheetController:
-                                  widget.bottomSheetController,
-                              viewPadding: viewPadding,
+                          ],
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(15),
+                              topRight: Radius.circular(15),
+                            ),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surface.withOpacity(0.9),
+                              ),
+                              child: ImageViewSlidingInfoDrawer(
+                                widgets: widgets,
+                                bottomSheetController:
+                                    widget.bottomSheetController,
+                                viewPadding: viewPadding,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                     SeekTimeAnchor(
                       key: seekTimeAnchor,
                       bottomPadding: viewPadding.top,
@@ -402,12 +404,13 @@ class __BottomIconsState extends State<_BottomIcons>
                       vertical: false,
                     ),
                     const Padding(padding: EdgeInsets.only(bottom: 8)),
-                    ImageViewFab(
-                      widgets: widgets,
-                      bottomSheetController: widget.bottomSheetController,
-                      viewPadding: widget.viewPadding,
-                      visibilityController: widget.visibilityController,
-                    ),
+                    if (widgets.tryAsInfoable(context) != null)
+                      ImageViewFab(
+                        widgets: widgets,
+                        bottomSheetController: widget.bottomSheetController,
+                        viewPadding: widget.viewPadding,
+                        visibilityController: widget.visibilityController,
+                      ),
                   ],
                 ),
               ),
@@ -830,7 +833,7 @@ class _NavigationRail extends StatelessWidget {
           destinations: [
             const NavigationRailDestination(
               icon: Icon(Icons.image),
-              label: Text(""), // TODO: think about it
+              label: Text(""),
             ),
             if (actions.isEmpty)
               const NavigationRailDestination(

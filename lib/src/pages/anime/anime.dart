@@ -13,7 +13,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/anime/impl/jikan.dart";
-import "package:azari/src/pages/anime/search/search_anime.dart";
+import "package:azari/src/pages/anime/search_anime.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -32,8 +32,6 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
-
-part "tabs/discover_tab.dart";
 
 abstract interface class AnimeCell implements CellBase {
   Contentable openImage();
@@ -62,26 +60,20 @@ extension NewestAnimeGlobalProgress on GlobalProgressTab {
 class _AnimePageState extends State<AnimePage> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
   NewestAnimeService get newestAnime => widget.db.newestAnime;
-  AnimeEntriesSource get watchedAnimeEntries => savedAnimeEntries.watched;
 
-  // late final sourceBacklog = GenericListSource<AnimeEntryData>(
-  //   () => Future.value(savedAnimeEntries.backlogAll),
-  //   watchCount: savedAnimeEntries.watchCount,
-  // );
-
-  // late final sourceWatching = GenericListSource<AnimeEntryData>(
-  //   () => Future.value(savedAnimeEntries.currentlyWatchingAll),
-  //   watchCount: savedAnimeEntries.watchCount,
-  // );
+  late final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> filterWatching;
 
   late final ChainedFilterResourceSource<(int id, AnimeMetadata site),
       AnimeEntryData> filterBacklog;
+
+  late final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> filterWatched;
 
   final overlayKey = GlobalKey<__MoreOverlayState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
-  late final StreamSubscription<void> watcherWatched;
 
   final searchController = SearchController();
 
@@ -90,21 +82,26 @@ class _AnimePageState extends State<AnimePage> {
   final client = Dio();
   late final api = Jikan(client);
 
-  // late final entry = DiscoverPagingEntry(api);
-
   final String _filteringValue = "";
 
   late final OverlayEntry overlayEntry = OverlayEntry(
     builder: (context) => _MoreOverlay(
       key: overlayKey,
       entry: overlayEntry,
-      source: filterBacklog.backingStorage,
+      source: filterWatched.backingStorage,
     ),
   );
 
   @override
   void initState() {
     super.initState();
+
+    filterWatching = ChainedFilterResourceSource.basic(
+      savedAnimeEntries.watching,
+      ListStorage(),
+      filter: (cells, filteringMode, sortingMode, end, [data]) =>
+          (cells.where((e) => e.title.contains(_filteringValue)), null),
+    );
 
     filterBacklog = ChainedFilterResourceSource.basic(
       savedAnimeEntries.backlog,
@@ -113,12 +110,16 @@ class _AnimePageState extends State<AnimePage> {
           (cells.where((e) => e.title.contains(_filteringValue)), null),
     );
 
-    watcherWatched = watchedAnimeEntries.backingStorage.watch((_) {
-      setState(() {});
-    });
+    filterWatched = ChainedFilterResourceSource.basic(
+      savedAnimeEntries.watched,
+      ListStorage(),
+      filter: (cells, filteringMode, sortingMode, end, [data]) =>
+          (cells.where((e) => e.title.contains(_filteringValue)), null),
+    );
 
-    // sourceBacklog.clearRefresh();
-    // sourceWatching.clearRefresh();
+    filterWatching.clearRefresh();
+    filterBacklog.clearRefresh();
+    filterWatched.clearRefresh();
   }
 
   @override
@@ -140,8 +141,8 @@ class _AnimePageState extends State<AnimePage> {
               "",
               0,
               null,
-              null,
-              sortOrder: AnimeSortOrder.latest,
+              AnimeSafeMode.safe,
+              sortOrder: AnimeSortOrder.upcoming,
             );
 
             int? prev;
@@ -178,13 +179,12 @@ class _AnimePageState extends State<AnimePage> {
 
   @override
   void dispose() {
-    // sourceWatching.destroy();
     client.close();
-    // entry.dispose();
     searchController.dispose();
 
-    // sourceBacklog.destroy();
+    filterWatched.destroy();
     filterBacklog.destroy();
+    filterWatching.destroy();
 
     if (overlayEntry.mounted) {
       overlayEntry.remove();
@@ -192,21 +192,9 @@ class _AnimePageState extends State<AnimePage> {
     overlayEntry.dispose();
 
     state.dispose();
-    watcherWatched.cancel();
     _textController.dispose();
 
     super.dispose();
-  }
-
-  void _filter(String? value) {
-    setState(() {});
-
-    if (value == null) {
-      return;
-    }
-
-    // watchingKey.currentState?.doFilter(value);
-    // finishedKey.currentState?.doFilter(value);
   }
 
   void _procPop(bool pop, dynamic __) {
@@ -220,7 +208,6 @@ class _AnimePageState extends State<AnimePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -234,10 +221,11 @@ class _AnimePageState extends State<AnimePage> {
           ),
           leading: Center(
             child: IconButton(
-                onPressed: () {
-                  SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
-                },
-                icon: Icon(Icons.search_rounded)),
+              onPressed: () {
+                SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
+              },
+              icon: const Icon(Icons.search_rounded),
+            ),
           ),
           centerTitle: true,
           title: Text(l10n.animePage),
@@ -257,28 +245,10 @@ class _AnimePageState extends State<AnimePage> {
                 notifier: refreshingStatus!,
                 db: widget.db,
               ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  l10n.watchingTab,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.8),
-                  ),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.only(
-                top: 14,
-                bottom: 18,
-                right: 18,
-                left: 18,
-              ),
-              sliver: _WatchingGrid(
-                source: filterBacklog,
-                glue: GlueProvider.generateOf(context)(),
-              ),
+            WatchingAnimePanel(
+              source: filterWatching,
+              sourceBacklog: filterBacklog,
+              // watchingBacklogChange: watchingBacklogChange.stream,
             ),
           ],
         ),
@@ -287,9 +257,111 @@ class _AnimePageState extends State<AnimePage> {
   }
 }
 
+class WatchingAnimePanel extends StatefulWidget {
+  const WatchingAnimePanel({
+    super.key,
+    required this.source,
+    required this.sourceBacklog,
+  });
+
+  final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> source;
+
+  final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> sourceBacklog;
+
+  @override
+  State<WatchingAnimePanel> createState() => _WatchingAnimePanelState();
+}
+
+class _WatchingAnimePanelState extends State<WatchingAnimePanel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+
+  final sourceChange = StreamController<bool>.broadcast();
+
+  bool showWatching = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller =
+        AnimationController(vsync: this, value: 1, duration: Durations.medium1);
+  }
+
+  @override
+  void dispose() {
+    sourceChange.close();
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  final tween = Tween<double>(begin: 0, end: 1);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final child = SliverPadding(
+      padding: const EdgeInsets.only(
+        // top: 14,
+        bottom: 18,
+        right: 18,
+        left: 18,
+      ),
+      sliver: _WatchingGrid(
+        source: showWatching ? widget.source : widget.sourceBacklog,
+        glue: GlueProvider.generateOf(context)(),
+        sourceBacklog: widget.sourceBacklog,
+        sourceChange: sourceChange.stream,
+      ),
+    );
+
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: FadingPanelLabel(
+            horizontalPadding: const EdgeInsets.symmetric(horizontal: 18),
+            label: showWatching ? l10n.watchingTab : l10n.backlogLabel,
+            icon: Icons.cached_rounded,
+            onPressed: () {
+              controller.reverse().then((_) {
+                if (showWatching) {
+                  showWatching = false;
+                } else {
+                  showWatching = true;
+                }
+
+                setState(() {});
+
+                sourceChange.add(showWatching);
+
+                controller.forward();
+              });
+            },
+          ),
+        ),
+        AnimatedBuilder(
+          animation: controller.view,
+          builder: (context, child) => SliverFadeTransition(
+            opacity: CurvedAnimation(
+              parent: controller,
+              curve: Easing.standard,
+            ),
+            sliver: child,
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
 class _NewestAnimeNotifier extends StatefulWidget {
   const _NewestAnimeNotifier({
-    super.key,
+    // super.key,
     required this.notifier,
     required this.db,
   });
@@ -307,6 +379,18 @@ class __NewestAnimeNotifierState extends State<_NewestAnimeNotifier> {
   late final newestSource = GenericListSource<AnimeEntryData>(
     () => Future.value(newestAnime.current.$2),
   );
+
+  // int _sortAnimeEntry(AnimeEntryData e1, AnimeEntryData e2) {
+  //   if (e1.airedTo != null && e2.airedTo != null) {
+  //     return e1.airedTo!.compareTo(e2.airedFrom!);
+  //   }
+
+  //   if (e1.airedFrom != null && e2.airedFrom != null) {
+  //     return e1.airedFrom!.compareTo(e2.airedFrom!);
+  //   }
+
+  //   return e1.id.compareTo(e2.id);
+  // }
 
   @override
   void initState() {
@@ -332,9 +416,11 @@ class __NewestAnimeNotifierState extends State<_NewestAnimeNotifier> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: "Newest", // TODO: change
+        label: l10n.upcomingAnime,
         source: newestSource,
         childSize: _NewAnime.size,
         child: _NewAnime(source: newestSource),
@@ -348,17 +434,26 @@ class _WatchingGrid extends StatefulWidget {
     // super.key,
     required this.source,
     required this.glue,
+    required this.sourceBacklog,
+    required this.sourceChange,
   });
 
   final ChainedFilterResourceSource<dynamic, AnimeEntryData> source;
+  final ChainedFilterResourceSource<(int id, AnimeMetadata site),
+      AnimeEntryData> sourceBacklog;
   final SelectionGlue glue;
+
+  final Stream<bool> sourceChange;
 
   @override
   State<_WatchingGrid> createState() => __WatchingGridState();
 }
 
 class __WatchingGridState extends State<_WatchingGrid> {
-  late final StreamSubscription<int> subsc;
+  late final StreamSubscription<int> subscWatching;
+  late final StreamSubscription<int> subscBacklog;
+  late final StreamSubscription<void> sourceChangeSubsc;
+
   final focusNode = FocusNode();
   late final selection = GridSelection<AnimeEntryData>(
     const [],
@@ -374,18 +469,36 @@ class __WatchingGridState extends State<_WatchingGrid> {
     layoutType: GridLayoutType.grid,
   );
 
+  bool showWatching = true;
+
   @override
   void initState() {
     super.initState();
 
-    subsc = widget.source.backingStorage.watch((_) {
+    subscBacklog = widget.sourceBacklog.backingStorage.watch((_) {
+      setState(() {});
+    });
+
+    subscWatching = widget.source.backingStorage.watch((_) {
+      setState(() {});
+    });
+
+    sourceChangeSubsc = widget.sourceChange.listen((_) {
+      if (showWatching) {
+        showWatching = false;
+      } else {
+        showWatching = true;
+      }
+
       setState(() {});
     });
   }
 
   @override
   void dispose() {
-    subsc.cancel();
+    sourceChangeSubsc.cancel();
+    subscWatching.cancel();
+    subscBacklog.cancel();
     focusNode.dispose();
     gridSettings.cancel();
 
@@ -394,13 +507,15 @@ class __WatchingGridState extends State<_WatchingGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final source = showWatching ? widget.source : widget.sourceBacklog;
+
     return GridConfiguration(
       sliver: true,
       watch: gridSettings.watch,
       child: GridExtrasNotifier<AnimeEntryData>(
         data: GridExtrasData(
           selection,
-          GridFunctionality(source: widget.source, selectionGlue: widget.glue),
+          GridFunctionality(source: source, selectionGlue: widget.glue),
           const GridDescription(
             actions: [],
             gridSeed: 0,
@@ -409,10 +524,10 @@ class __WatchingGridState extends State<_WatchingGrid> {
           focusNode,
         ),
         child: CellProvider(
-          getCell: widget.source.forIdxUnsafe,
+          getCell: source.forIdxUnsafe,
           child: GridLayout(
-            progress: widget.source.progress,
-            source: widget.source.backingStorage,
+            progress: source.progress,
+            source: source.backingStorage,
           ),
         ),
       ),
@@ -492,71 +607,27 @@ class _FadingPanelState extends State<FadingPanel>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12, top: 18) +
-                widget.horizontalPadding,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(15),
-                  onTap: () {
-                    if (shrink) {
-                      controller.forward().then((_) {
-                        setState(() {
-                          shrink = false;
-                        });
-                      });
-                    } else {
-                      controller.reverse().then((_) {
-                        setState(() {
-                          shrink = true;
-                        });
-                      });
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: !widget.enableHide
-                        ? Text(
-                            widget.label,
-                            style: textStyle,
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.label,
-                                style: textStyle,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16),
-                                child: AnimatedBuilder(
-                                  animation: controller.view,
-                                  builder: (context, _) {
-                                    return Transform.rotate(
-                                      angle: tween.transform(
-                                        Easing.standard
-                                            .transform(controller.value),
-                                      ),
-                                      child: Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        size: 24,
-                                        color:
-                                            textStyle?.color?.withOpacity(0.9),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-                if (widget.trailing != null) widget.trailing!,
-              ],
-            ),
+          FadingPanelLabel(
+            horizontalPadding: widget.horizontalPadding,
+            label: widget.label,
+            controller: controller,
+            onPressed: () {
+              if (shrink) {
+                controller.forward().then((_) {
+                  setState(() {
+                    shrink = false;
+                  });
+                });
+              } else {
+                controller.reverse().then((_) {
+                  setState(() {
+                    shrink = true;
+                  });
+                });
+              }
+            },
+            icon: Icons.keyboard_arrow_down_rounded,
+            trailing: widget.trailing,
           ),
           Animate(
             value: 1,
@@ -570,6 +641,100 @@ class _FadingPanelState extends State<FadingPanel>
             ],
             child: shrink ? const SizedBox.shrink() : widget.child,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class FadingPanelLabel extends StatelessWidget {
+  const FadingPanelLabel({
+    super.key,
+    required this.horizontalPadding,
+    this.onPressed,
+    required this.label,
+    this.icon,
+    this.controller,
+    this.trailing,
+    this.tween,
+  });
+
+  final EdgeInsets horizontalPadding;
+
+  final void Function()? onPressed;
+
+  final String label;
+  final IconData? icon;
+
+  final AnimationController? controller;
+
+  final Widget? trailing;
+
+  final Tween<double>? tween;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.titleLarge?.copyWith(
+      color: theme.colorScheme.onSurface.withOpacity(0.8),
+    );
+
+    final t = tween ?? Tween<double>(begin: -1.570796, end: 0);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 18) + horizontalPadding,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: icon == null
+                  ? Text(
+                      label,
+                      style: textStyle,
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label,
+                          style: textStyle,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16),
+                          child: controller == null
+                              ? Icon(
+                                  icon,
+                                  size: 24,
+                                  color: textStyle?.color?.withOpacity(0.9),
+                                )
+                              : AnimatedBuilder(
+                                  animation: controller!.view,
+                                  builder: (context, _) {
+                                    return Transform.rotate(
+                                      angle: t.transform(
+                                        Easing.standard
+                                            .transform(controller!.value),
+                                      ),
+                                      child: Icon(
+                                        icon,
+                                        size: 24,
+                                        color:
+                                            textStyle?.color?.withOpacity(0.9),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          if (trailing != null) trailing!,
         ],
       ),
     );
@@ -627,7 +792,7 @@ class _ShimmerPlaceholdersHorizontalState
 
 class _NewAnime extends StatefulWidget {
   const _NewAnime({
-    super.key,
+    // super.key,
     required this.source,
   });
 
@@ -769,97 +934,6 @@ class _FadingControllerState extends State<FadingController>
   }
 }
 
-class _RefresingIcon extends StatefulWidget {
-  const _RefresingIcon({
-    // super.key,
-    required this.progress,
-    required this.controller,
-  });
-
-  final RefreshingProgress progress;
-  final SearchController controller;
-
-  @override
-  State<_RefresingIcon> createState() => __RefresingIconState();
-}
-
-class __RefresingIconState extends State<_RefresingIcon> {
-  late final StreamSubscription<bool> subscription;
-
-  @override
-  void initState() {
-    super.initState();
-
-    subscription = widget.progress.watch((_) {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    subscription.cancel();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.progress.inRefreshing
-        ? const Center(
-            child: SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          )
-        : IconButton(
-            onPressed: widget.controller.clear,
-            icon: const Icon(Icons.close_rounded),
-          );
-  }
-}
-
-// class _AnimeSearch extends StatefulWidget {
-//   const _AnimeSearch({
-//     super.key,
-//     required this.api,
-//     required this.generateGlue,
-//     required this.entry,
-//   });
-
-//   final AnimeAPI api;
-//   final GenerateGlueFnc generateGlue;
-//   final DiscoverPagingEntry entry;
-
-//   @override
-//   State<_AnimeSearch> createState() => __AnimeSearchState();
-// }
-
-// class __AnimeSearchState extends State<_AnimeSearch> {
-//   final key = GlobalKey<_DiscoverTabState>();
-
-//   void performSearch(String search) {
-//     key.currentState?.search(search);
-//   }
-
-//   @override
-//   void initState() {
-//     super.initState();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return WrapGridPage(
-//       addScaffold: true,
-//       child: DiscoverTab(
-//         key: key,
-//         api: widget.api,
-//         db: DatabaseConnectionNotifier.of(context),
-//         entry: widget.entry,
-//       ),
-//     );
-//   }
-// }
-
 class _MoreOverlay extends StatefulWidget {
   const _MoreOverlay({super.key, required this.entry, required this.source});
 
@@ -992,7 +1066,7 @@ class _MoreOverlayBody extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  l10n.backlogLabel,
+                  l10n.cardWatched,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.9),
                   ),

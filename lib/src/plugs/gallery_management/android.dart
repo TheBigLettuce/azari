@@ -141,8 +141,6 @@ class AndroidFilesManagement implements FilesManagement {
       return Future.value();
     }
 
-    // TODO: make awaitable in platform
-
     AndroidApiFunctions.activityContext.invokeMethod(
       "rename",
       {"uri": uri, "newName": newName, "notify": notify},

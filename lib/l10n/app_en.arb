@@ -1494,5 +1494,33 @@
     "visitedPage": "Visited",
     "@visitedPage": {
         "description": "Visited booru posts page"
+    },
+    "upcomingAnime": "Upcoming",
+    "@upcomingAnime": {
+        "description": "Upcoming anime panel title"
+    },
+    "removeWatching": "Remove from watching",
+    "@removeWatching": {
+        "description": "Anime info page button label"
+    },
+    "addWatching": "Add to watching",
+    "@addWatching": {
+        "description": "Anime info page button label"
+    },
+    "removeWatched": "Remove from watched",
+    "@removeWatched": {
+        "description": "Anime info page button label"
+    },
+    "addWatched": "Add to watched",
+    "@addWatched": {
+        "description": "Anime info page button label"
+    },
+    "removeBacklog": "Remove from backlog",
+    "@removeBacklog": {
+        "description": "Anime info page button label"
+    },
+    "addBacklog": "Add to backlog",
+    "@addBacklog": {
+        "description": "Anime info page button label"
     }
 }

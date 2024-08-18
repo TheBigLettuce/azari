@@ -38,9 +38,7 @@ class LinuxGalleryPlug implements GalleryPlug {
   }
 
   @override
-  void notify(String? target) {
-    // TODO: implement notify
-  }
+  void notify(String? target) {}
 
   @override
   Stream<void>? get galleryTapDownEvents => null;

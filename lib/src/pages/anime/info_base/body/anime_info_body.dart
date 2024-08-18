@@ -12,7 +12,7 @@ import "package:azari/src/pages/anime/info_base/body/body_padding.dart";
 import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
 import "package:azari/src/pages/anime/info_base/body/similar_anime.dart";
 import "package:azari/src/pages/anime/info_base/body/synopsis_background.dart";
-import "package:azari/src/pages/anime/search/search_anime.dart";
+import "package:azari/src/pages/anime/search_anime.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";

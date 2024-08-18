@@ -128,7 +128,7 @@ class SynopsisBackground extends StatelessWidget {
 
 class _BodyTextCollapsible extends StatefulWidget {
   const _BodyTextCollapsible({
-    super.key,
+    // super.key,
     required this.text,
     required this.search,
     required this.textTheme,
@@ -167,45 +167,44 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
       style: widget.textTheme.textTheme.bodyMedium,
     );
 
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      children: [
-        child,
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: !collapse
-                ? null
-                : LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.colorScheme.surface.withOpacity(0.2),
-                      theme.colorScheme.surface.withOpacity(0.4),
-                      theme.colorScheme.surface.withOpacity(0.6),
-                      theme.colorScheme.surface.withOpacity(0.8),
-                    ],
+    return widget.text.length < 150
+        ? child
+        : Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              child,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: !collapse
+                      ? null
+                      : LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            theme.colorScheme.surface.withOpacity(0.2),
+                            theme.colorScheme.surface.withOpacity(0.4),
+                            theme.colorScheme.surface.withOpacity(0.6),
+                            theme.colorScheme.surface.withOpacity(0.8),
+                          ],
+                        ),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          collapse = !collapse;
+                        });
+                      },
+                      child: Text(!collapse ? "Collapse" : "More"),
+                    ),
                   ),
-          ),
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: TextButton(
-                onPressed: () {
-                  setState(() {
-                    collapse = !collapse;
-                  });
-                },
-                child: Text(!collapse ? "Collapse" : "More"),
-                // style: theme.textTheme.labelLarge?.copyWith(
-                //   color: theme.colorScheme.onSurface.withOpacity(0.8),
-                // ),
+                ),
               ),
-            ),
-          ),
-        ),
-        // Text("data"),
-      ],
-    );
+              // Text("data"),
+            ],
+          );
   }
 }

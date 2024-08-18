@@ -642,6 +642,7 @@ abstract class AnimeEntryData
         ContentWidgets,
         Thumbnailable,
         Downloadable,
+        Pressable<AnimeEntryData>,
         Stickerable {
   const factory AnimeEntryData({
     required DateTime? airedFrom,

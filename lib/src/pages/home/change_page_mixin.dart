@@ -94,7 +94,7 @@ enum BooruSubPage {
     icon: Icons.hide_image_outlined,
     selectedIcon: Icons.hide_image_rounded,
   ),
-  viewed(
+  visited(
     icon: Icons.schedule_outlined,
     selectedIcon: Icons.schedule_rounded,
   );
@@ -109,7 +109,7 @@ enum BooruSubPage {
         1 => favorites,
         2 => bookmarks,
         3 => hiddenPosts,
-        4 => viewed,
+        4 => visited,
         int() => booru,
       };
 
@@ -121,7 +121,7 @@ enum BooruSubPage {
         favorites => l10n.favoritesLabel,
         bookmarks => l10n.bookmarksPageName,
         hiddenPosts => l10n.hiddenPostsPageName,
-        viewed => "Visited", //TODO: change
+        visited => l10n.visitedPage,
       };
 
   static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>
