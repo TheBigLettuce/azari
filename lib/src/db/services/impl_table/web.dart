@@ -1065,6 +1065,7 @@ class $HottestTag implements HottestTag {
     required this.tag,
     required this.thumbUrls,
     required this.count,
+    required this.booru,
   });
 
   @override
@@ -1075,6 +1076,23 @@ class $HottestTag implements HottestTag {
 
   @override
   final List<ThumbUrlRating> thumbUrls;
+
+  @override
+  final Booru booru;
+
+  @override
+  HottestTag copy({
+    String? tag,
+    int? count,
+    Booru? booru,
+    List<ThumbUrlRating>? thumbUrls,
+  }) =>
+      $HottestTag(
+        tag: tag ?? this.tag,
+        thumbUrls: thumbUrls ?? this.thumbUrls,
+        count: count ?? this.count,
+        booru: booru ?? this.booru,
+      );
 }
 
 class $ThumbUrlRating implements ThumbUrlRating {

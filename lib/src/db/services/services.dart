@@ -110,6 +110,7 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   GridSettingsService get gridSettings;
   VisitedPostsService get visitedPosts;
   NewestAnimeService get newestAnime;
+  HottestTagsService get hottestTags;
 
   TagManager get tagManager;
 
@@ -574,11 +575,21 @@ abstract class HottestTag {
   const factory HottestTag({
     required String tag,
     required int count,
+    required Booru booru,
   }) = $HottestTag;
 
-  String get tag;
   List<ThumbUrlRating> get thumbUrls;
+
+  Booru get booru;
+  String get tag;
   int get count;
+
+  HottestTag copy({
+    String? tag,
+    int? count,
+    Booru? booru,
+    List<ThumbUrlRating>? thumbUrls,
+  });
 }
 
 @immutable
@@ -593,6 +604,8 @@ abstract class ThumbUrlRating {
 }
 
 abstract interface class HottestTagsService {
+  DateTime? refreshedAt(Booru booru);
+
   List<HottestTag> all(Booru booru);
 
   void replace(List<HottestTag> tags, Booru booru);

@@ -8,6 +8,7 @@ import "package:azari/init_main/init_main.dart";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
 import "package:azari/src/plugs/gallery/android/api.g.dart";

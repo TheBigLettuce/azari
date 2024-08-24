@@ -13,8 +13,7 @@ import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";
-import "package:azari/src/pages/more/more_page.dart";
-import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/plugs/network_status.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
@@ -33,7 +32,11 @@ part "home/icons/gallery_icon.dart";
 part "home/navigator_shell.dart";
 
 class Home extends StatefulWidget {
-  const Home({super.key, this.callback});
+  const Home({
+    super.key,
+    this.callback,
+  });
+
   final CallbackDescriptionNested? callback;
 
   @override
@@ -73,7 +76,6 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
-    _morePageNotifier.dispose();
     _galleryPageNotifier.dispose();
     _booruPageNotifier.dispose();
     disposeIcons();
@@ -90,74 +92,55 @@ class _HomeState extends State<Home>
   Widget build(BuildContext context) {
     return CurrentRoute.wrap(
       _routeNotifier,
-      MoreSubPage.wrap(
-        _morePageNotifier,
-        GallerySubPage.wrap(
-          _galleryPageNotifier,
-          BooruSubPage.wrap(
-            _booruPageNotifier,
-            PopScope(
-              canPop: widget.callback != null,
-              onPopInvokedWithResult: (pop, _) => _procPopAll(
-                _galleryPageNotifier,
-                _morePageNotifier,
-                this,
-                pop,
-              ),
-              child: HomeSkeleton(
-                _CurrentPageWidget(
-                  icons: this,
-                  changePage: this,
-                  callback: widget.callback,
-                ),
-                noNavBar: widget.callback != null,
-                animatedIcons: this,
-                onDestinationSelected: (context, route) {
-                  GlueProvider.generateOf(context)().updateCount(0);
-
-                  final currentRoute = _routeNotifier.value;
-
-                  if (route == CurrentRoute.booru &&
-                      currentRoute == CurrentRoute.booru) {
-                    Scaffold.of(context).openDrawer();
-                  } else if (route == CurrentRoute.gallery &&
-                      currentRoute == CurrentRoute.gallery) {
-                    final nav = galleryKey.currentState;
-                    if (nav != null) {
-                      while (nav.canPop()) {
-                        nav.pop();
-                      }
-                    }
-
-                    _galleryPageNotifier.value =
-                        _galleryPageNotifier.value == GallerySubPage.gallery
-                            ? GallerySubPage.blacklisted
-                            : GallerySubPage.gallery;
-
-                    animateIcons(this);
-                  } else if (route == CurrentRoute.more &&
-                      currentRoute == CurrentRoute.more) {
-                    final nav = moreKey.currentState;
-                    if (nav != null) {
-                      while (nav.canPop()) {
-                        nav.pop();
-                      }
-                    }
-
-                    _morePageNotifier.value =
-                        _morePageNotifier.value == MoreSubPage.more
-                            ? MoreSubPage.dashboard
-                            : MoreSubPage.more;
-
-                    animateIcons(this);
-                  } else {
-                    switchPage(this, route);
-                  }
-                },
+      GallerySubPage.wrap(
+        _galleryPageNotifier,
+        BooruSubPage.wrap(
+          _booruPageNotifier,
+          PopScope(
+            canPop: widget.callback != null,
+            onPopInvokedWithResult: (pop, _) => _procPopAll(
+              _galleryPageNotifier,
+              this,
+              pop,
+            ),
+            child: HomeSkeleton(
+              _CurrentPageWidget(
+                icons: this,
                 changePage: this,
-                booru: settings.selectedBooru,
                 callback: widget.callback,
               ),
+              noNavBar: widget.callback != null,
+              animatedIcons: this,
+              onDestinationSelected: (context, route) {
+                GlueProvider.generateOf(context)().updateCount(0);
+
+                final currentRoute = _routeNotifier.value;
+
+                if (route == CurrentRoute.booru &&
+                    currentRoute == CurrentRoute.booru) {
+                  Scaffold.of(context).openDrawer();
+                } else if (route == CurrentRoute.gallery &&
+                    currentRoute == CurrentRoute.gallery) {
+                  final nav = galleryKey.currentState;
+                  if (nav != null) {
+                    while (nav.canPop()) {
+                      nav.pop();
+                    }
+                  }
+
+                  _galleryPageNotifier.value =
+                      _galleryPageNotifier.value == GallerySubPage.gallery
+                          ? GallerySubPage.blacklisted
+                          : GallerySubPage.gallery;
+
+                  animateIcons(this);
+                } else {
+                  switchPage(this, route);
+                }
+              },
+              changePage: this,
+              booru: settings.selectedBooru,
+              callback: widget.callback,
             ),
           ),
         ),

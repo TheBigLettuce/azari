@@ -55,7 +55,6 @@ internal class ImageView(
     }
 }
 
-
 class NativeViewFactory(private val galleryApi: GalleryApi) :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {

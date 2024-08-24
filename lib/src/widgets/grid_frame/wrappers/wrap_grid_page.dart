@@ -90,7 +90,6 @@ class _WrapGridPageState extends State<WrapGridPage>
               highTone: false,
             ),
             child: Scaffold(
-              backgroundColor: theme.colorScheme.surface.withOpacity(0),
               extendBody: true,
               resizeToAvoidBottomInset: false,
               bottomNavigationBar: GlueBottomAppBar(

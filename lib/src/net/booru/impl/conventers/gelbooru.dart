@@ -20,8 +20,21 @@ class GelbooruTagsRet {
     required this.posts,
   });
 
-  factory GelbooruTagsRet.fromJson(Map<String, dynamic> json) =>
-      _$GelbooruTagsRetFromJson(json);
+  factory GelbooruTagsRet.fromJson(
+    Map<String, dynamic> json,
+    bool onlyTypeZero,
+  ) {
+    var ret = _$GelbooruTagsRetFromJson(json);
+
+    if (onlyTypeZero) {
+      ret = GelbooruTagsRet(
+        attributes: ret.attributes,
+        posts: ret.posts.where((e) => e.type == 0).toList(),
+      );
+    }
+
+    return ret;
+  }
 
   @JsonKey(name: "@attributes")
   final Map<String, dynamic> attributes;
@@ -33,6 +46,7 @@ class GelbooruTagsRet {
 @JsonSerializable()
 class _GelbooruTag implements BooruTag {
   const _GelbooruTag({
+    required this.type,
     required this.count,
     required this.tag,
   });
@@ -48,6 +62,9 @@ class _GelbooruTag implements BooruTag {
   @TagEscaper()
   @JsonKey(name: "name")
   final String tag;
+
+  @JsonKey(name: "type")
+  final int type;
 }
 
 @JsonSerializable()

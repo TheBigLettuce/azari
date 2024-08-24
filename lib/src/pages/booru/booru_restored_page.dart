@@ -20,7 +20,7 @@ import "package:azari/src/pages/booru/tags/tag_suggestions.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
-import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";

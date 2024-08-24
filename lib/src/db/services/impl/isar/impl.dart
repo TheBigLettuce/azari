@@ -46,6 +46,8 @@ import "package:azari/src/db/services/impl/isar/schemas/statistics/daily_statist
 import "package:azari/src/db/services/impl/isar/schemas/statistics/statistics_booru.dart";
 import "package:azari/src/db/services/impl/isar/schemas/statistics/statistics_gallery.dart";
 import "package:azari/src/db/services/impl/isar/schemas/statistics/statistics_general.dart";
+import "package:azari/src/db/services/impl/isar/schemas/tags/hottest_tag.dart";
+import "package:azari/src/db/services/impl/isar/schemas/tags/hottest_tag_refresh_date.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
@@ -3194,4 +3196,36 @@ class IsarNewestAnimeService implements NewestAnimeService {
     bool fire = false,
   ]) =>
       collection.watchObject(0, fireImmediately: fire).listen(f);
+}
+
+class IsarHottestTagsService implements HottestTagsService {
+  const IsarHottestTagsService();
+
+  Isar get db => _Dbs.g.localTags;
+
+  IsarCollection<IsarHottestTag> get collection => db.isarHottestTags;
+
+  @override
+  DateTime? refreshedAt(Booru booru) =>
+      db.isarHottestTagDates.getByBooruSync(booru)?.date;
+
+  @override
+  List<HottestTag> all(Booru booru) =>
+      collection.where().booruEqualTo(booru).findAllSync();
+
+  @override
+  void replace(List<HottestTag> tags, Booru booru) {
+    db.writeTxnSync(() {
+      collection.where().booruEqualTo(booru).deleteAllSync();
+      collection.putAllSync(tags.cast());
+
+      db.isarHottestTagDates.putByBooruSync(
+        IsarHottestTagDate(isarId: null, booru: booru, date: DateTime.now()),
+      );
+    });
+  }
+
+  @override
+  StreamSubscription<void> watch(Booru booru, void Function(void p1) f) =>
+      collection.where().booruEqualTo(booru).watchLazy().listen(f);
 }

@@ -23,23 +23,31 @@ Future<void> mainPickfile() async {
         theme: buildTheme(Brightness.light, accentColor),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Home(
-          callback: CallbackDescriptionNested(
-            (chosen) {
-              const AndroidApiFunctions().returnUri(chosen.originalUri);
-            },
-            preview: PreferredSize(
-              preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
-              child: Builder(
-                builder: (context) {
-                  final l10n = AppLocalizations.of(context)!;
-
-                  return CopyMovePreview(
-                    files: null,
-                    title: l10n.pickFileNotice,
-                    icon: Icons.file_open_rounded,
-                  );
+        home: Builder(
+          builder: (context) => WrapGridPage(
+            addScaffold: true,
+            child: GalleryDirectories(
+              db: DatabaseConnectionNotifier.of(context),
+              l10n: AppLocalizations.of(context)!,
+              nestedCallback: CallbackDescriptionNested(
+                (chosen) {
+                  const AndroidApiFunctions().returnUri(chosen.originalUri);
                 },
+                preview: PreferredSize(
+                  preferredSize:
+                      Size.fromHeight(CopyMovePreview.size.toDouble()),
+                  child: Builder(
+                    builder: (context) {
+                      final l10n = AppLocalizations.of(context)!;
+
+                      return CopyMovePreview(
+                        files: null,
+                        title: l10n.pickFileNotice,
+                        icon: Icons.file_open_rounded,
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),

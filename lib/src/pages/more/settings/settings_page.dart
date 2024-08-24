@@ -16,14 +16,16 @@ part "is_restart.dart";
 part "select_booru.dart";
 part "select_theme.dart";
 
-class SettingsWidget extends StatefulWidget {
-  const SettingsWidget({super.key});
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({
+    super.key,
+  });
 
   @override
-  State<SettingsWidget> createState() => _SettingsWidgetState();
+  State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsWidgetState extends State<SettingsWidget> {
+class _SettingsPageState extends State<SettingsPage> {
   final skeletonState = SkeletonState();
 
   @override
@@ -39,7 +41,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       AppLocalizations.of(context)!.settingsPageName,
       skeletonState,
       child: SliverPadding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 8) +
+            EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         sliver: SettingsList(
           sliver: true,
           db: DatabaseConnectionNotifier.of(context),

@@ -137,6 +137,12 @@ class _DownloadsState extends State<Downloads> {
           ],
           functionality: GridFunctionality(
             search: PageNameSearchWidget(
+              leading: IconButton(
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                icon: const Icon(Icons.menu_rounded),
+              ),
               trailingItems: [
                 IconButton(
                   onPressed: downloadManager.clear,

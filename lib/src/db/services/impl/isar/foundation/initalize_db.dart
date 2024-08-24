@@ -68,6 +68,8 @@ Future<DownloadManager> initalizeIsarDb(
       IsarLocalTagsSchema,
       IsarLocalTagDictionarySchema,
       DirectoryTagSchema,
+      IsarHottestTagSchema,
+      IsarHottestTagDateSchema,
     ],
     directory: directoryPath,
     inspector: false,

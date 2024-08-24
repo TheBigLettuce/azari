@@ -30,6 +30,7 @@ Future<void> mainQuickView() async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WrapGridPage(
+          addScaffold: true,
           child: PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {

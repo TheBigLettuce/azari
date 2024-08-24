@@ -12,6 +12,8 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/glue_bottom_app_bar.dart";
 import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/more/dashboard/dashboard.dart";
+import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/plugs/network_status.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
@@ -317,8 +319,7 @@ class _BottomNavigationBar extends StatelessWidget {
         child: callback != null
             ? const SizedBox.shrink()
             : NavigationBar(
-                labelBehavior:
-                    NavigationDestinationLabelBehavior.onlyShowSelected,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
                 backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
                 selectedIndex: currentRoute.index,
                 onDestinationSelected: (i) =>
@@ -503,12 +504,47 @@ class __DrawerState extends State<_Drawer> {
       },
       selectedIndex: selectedBooruPage.index,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-          child: Text(
-            l10n.booruLabel,
-            style: theme.textTheme.titleSmall,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+              child: Text(
+                l10n.booruLabel,
+                style: theme.textTheme.titleSmall,
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: GestureDetector(
+                  onLongPress: () =>
+                      Navigator.of(context, rootNavigator: true).push<void>(
+                    MaterialPageRoute(
+                      builder: (context) => Dashboard(
+                        db: widget.db.localTags,
+                        popScope: (_) =>
+                            Navigator.of(context, rootNavigator: true).pop(),
+                      ),
+                    ),
+                  ),
+                  child: IconButton(
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => const SettingsPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.settings_outlined),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         ...BooruSubPage.values.map(
           (e) => NavigationDrawerDestination(

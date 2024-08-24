@@ -9,12 +9,15 @@ mixin AnimatedIconsMixin on State<Home> {
   late final AnimationController controllerNavBar;
 
   late final AnimationController selectionBarController;
+
   late final AnimationController pageFadeAnimation;
   late final AnimationController pageRiseAnimation;
+
   late final AnimationController booruIconController;
-  late final AnimationController moreIconController;
   late final AnimationController galleryIconController;
   late final AnimationController animeIconController;
+  // late final AnimationController downloadsIconController;
+  late final AnimationController settingsIconController;
 
   void hideNavBar(bool hide) {
     if (hide) {
@@ -47,7 +50,7 @@ mixin AnimatedIconsMixin on State<Home> {
   }
 
   void initIcons(TickerProviderStateMixin ticker) {
-    moreIconController = AnimationController(vsync: ticker);
+    // downloadsIconController = AnimationController(vsync: ticker);
     controllerNavBar = AnimationController(
       vsync: ticker,
       duration: const Duration(milliseconds: 200),
@@ -62,6 +65,7 @@ mixin AnimatedIconsMixin on State<Home> {
     booruIconController = AnimationController(vsync: ticker);
     galleryIconController = AnimationController(vsync: ticker);
     animeIconController = AnimationController(vsync: ticker);
+    settingsIconController = AnimationController(vsync: ticker);
   }
 
   void disposeIcons() {
@@ -73,7 +77,8 @@ mixin AnimatedIconsMixin on State<Home> {
     booruIconController.dispose();
     galleryIconController.dispose();
     animeIconController.dispose();
-    moreIconController.dispose();
+    // downloadsIconController.dispose();
+    settingsIconController.dispose();
   }
 
   List<NavigationRailDestination> railIcons(Booru selectedBooru) {
@@ -109,44 +114,44 @@ mixin AnimatedIconsMixin on State<Home> {
   }
 }
 
-class MoreDestinationIcon extends StatelessWidget {
-  const MoreDestinationIcon({
-    super.key,
-    required this.controller,
-  });
+// class SettingsDestinationIcon extends StatelessWidget {
+//   const SettingsDestinationIcon({
+//     super.key,
+//     required this.controller,
+//   });
 
-  final AnimationController controller;
+//   final AnimationController controller;
 
-  @override
-  Widget build(BuildContext context) {
-    final selectedMorePage = MoreSubPage.of(context);
-    final theme = Theme.of(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     // final selectedMorePage = SettingsSubPage.of(context);
+//     final theme = Theme.of(context);
 
-    final isSelected = CurrentRoute.of(context) == CurrentRoute.more;
+//     final isSelected = CurrentRoute.of(context) == CurrentRoute.settings;
 
-    return Animate(
-      controller: controller,
-      autoPlay: false,
-      target: 1,
-      effects: const [
-        SlideEffect(
-          duration: Durations.medium4,
-          curve: Easing.emphasizedDecelerate,
-          begin: Offset(1, 0),
-          end: Offset.zero,
-        ),
-        FadeEffect(
-          delay: Durations.short1,
-          duration: Durations.medium4,
-          curve: Easing.standard,
-          begin: 0,
-          end: 1,
-        ),
-      ],
-      child: Icon(
-        isSelected ? selectedMorePage.selectedIcon : selectedMorePage.icon,
-        color: isSelected ? theme.colorScheme.primary : null,
-      ),
-    );
-  }
-}
+//     return Animate(
+//       controller: controller,
+//       autoPlay: false,
+//       target: 1,
+//       effects: const [
+//         SlideEffect(
+//           duration: Durations.medium4,
+//           curve: Easing.emphasizedDecelerate,
+//           begin: Offset(1, 0),
+//           end: Offset.zero,
+//         ),
+//         FadeEffect(
+//           delay: Durations.short1,
+//           duration: Durations.medium4,
+//           curve: Easing.standard,
+//           begin: 0,
+//           end: 1,
+//         ),
+//       ],
+//       child: Icon(
+//         isSelected ? selectedMorePage.selectedIcon : selectedMorePage.icon,
+//         color: isSelected ? theme.colorScheme.primary : null,
+//       ),
+//     );
+//   }
+// }

@@ -14,7 +14,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = MiscSettingsService.db().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
-      ..[TargetPlatform.android] = const PredictiveBackPageTransitionsBuilder()
+      ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder()
       ..[TargetPlatform.linux] = const FadeSidewaysPageTransitionBuilder(),
   );
 
@@ -113,6 +113,12 @@ SystemUiOverlayStyle navBarStyleForTheme(
   bool highTone = true,
 }) =>
     SystemUiOverlayStyle(
+      statusBarIconBrightness: theme.brightness == ui.Brightness.dark
+          ? ui.Brightness.light
+          : ui.Brightness.dark,
+      statusBarColor:
+          (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
+              .withOpacity(0.8),
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,

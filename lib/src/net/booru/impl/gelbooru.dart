@@ -75,7 +75,9 @@ class Gelbooru implements BooruAPI {
         "page": "dapi",
         "s": "tag",
         "q": "index",
-        "limit": limit.toString(),
+        "limit": t.isEmpty && sorting == BooruTagSorting.count
+            ? 100.toString()
+            : limit.toString(),
         "json": "1",
         "name_pattern": "$t%",
         "orderby": sorting == BooruTagSorting.count ? "count" : "name",
@@ -87,7 +89,12 @@ class Gelbooru implements BooruAPI {
       LogReq(LogReq.completeTag(t), _log),
     );
 
-    return GelbooruTagsRet.fromJson(resp.data!).posts;
+    final tags = GelbooruTagsRet.fromJson(
+      resp.data!,
+      t.isEmpty && sorting == BooruTagSorting.count,
+    ).posts;
+
+    return tags.length > 30 ? tags.take(limit).toList() : tags;
   }
 
   @override

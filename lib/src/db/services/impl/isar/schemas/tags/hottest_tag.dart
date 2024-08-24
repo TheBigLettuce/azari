@@ -4,6 +4,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/db/services/impl_table/io.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
@@ -16,25 +18,48 @@ class IsarHottestTag implements $HottestTag {
     required this.thumbUrls,
     required this.count,
     required this.isarId,
+    required this.booru,
   });
 
   const IsarHottestTag.noIdList({
     required this.tag,
     required this.count,
+    required this.booru,
   })  : isarId = null,
         thumbUrls = const [];
 
   final Id? isarId;
 
   @override
+  @enumerated
+  @Index()
+  final Booru booru;
+
+  @override
   final int count;
 
   @override
-  @Index(unique: true, replace: true)
   final String tag;
 
   @override
   final List<IsarThumbUrlRating> thumbUrls;
+
+  @override
+  HottestTag copy({
+    String? tag,
+    int? count,
+    Booru? booru,
+    List<ThumbUrlRating>? thumbUrls,
+  }) =>
+      IsarHottestTag(
+        isarId: isarId,
+        tag: tag ?? this.tag,
+        count: count ?? this.count,
+        booru: booru ?? this.booru,
+        thumbUrls: thumbUrls is List<IsarThumbUrlRating>
+            ? thumbUrls
+            : thumbUrls?.cast() ?? this.thumbUrls,
+      );
 }
 
 @embedded

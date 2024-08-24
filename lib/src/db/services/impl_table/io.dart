@@ -123,6 +123,9 @@ class IoServicesImplTable implements ServicesImplTable {
   VisitedPostsService get visitedPosts => const IsarVisitedPostsService();
 
   @override
+  HottestTagsService get hottestTags => const IsarHottestTagsService();
+
+  @override
   MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
   @override
   SecondaryGridService secondaryGrid(
@@ -144,6 +147,7 @@ abstract class $HottestTag extends HottestTag {
   const factory $HottestTag({
     required String tag,
     required int count,
+    required Booru booru,
   }) = IsarHottestTag.noIdList;
 }
 

@@ -8,30 +8,33 @@ part of "../home.dart";
 enum CurrentRoute {
   booru,
   gallery,
-  anime,
-  more;
+  anime;
+  // downloads,
+  // settings;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
         0 => booru,
         1 => gallery,
         2 => anime,
-        3 => more,
+        // 3 => downloads,
+        // 3 => settings,
         int() => throw "no route",
       };
 
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
-        CurrentRoute.booru => BooruDestinationIcon(
+        booru => BooruDestinationIcon(
             controller: mixin.booruIconController,
           ),
-        CurrentRoute.gallery => GalleryDestinationIcon(
+        gallery => GalleryDestinationIcon(
             controller: mixin.galleryIconController,
           ),
-        CurrentRoute.anime => AnimeDestinationIcon(
+        anime => AnimeDestinationIcon(
             controller: mixin.animeIconController,
           ),
-        CurrentRoute.more => MoreDestinationIcon(
-            controller: mixin.moreIconController,
-          ),
+        // downloads => Icon(Icons.download_rounded),
+        // settings => SettingsDestinationIcon(
+        //     controller: mixin.downloadsIconController,
+        //   ),
       };
 
   static Widget wrap(ValueNotifier<CurrentRoute> notifier, Widget child) =>
@@ -44,10 +47,10 @@ enum CurrentRoute {
       switch (this) {
         CurrentRoute.booru =>
           _booruDestinationLabel(context, l10n, booru.string),
-        CurrentRoute.gallery =>
-          GallerySubPage.of(context).translatedString(l10n),
-        CurrentRoute.anime => l10n.animePage,
-        CurrentRoute.more => MoreSubPage.of(context).translatedString(l10n),
+        gallery => GallerySubPage.of(context).translatedString(l10n),
+        anime => l10n.animePage,
+        // downloads => l10n.downloadsPageName,
+        // settings => SettingsSubPage.of(context).translatedString(l10n),
       };
 
   static CurrentRoute of(BuildContext context) {
@@ -94,6 +97,10 @@ enum BooruSubPage {
     icon: Icons.hide_image_outlined,
     selectedIcon: Icons.hide_image_rounded,
   ),
+  downloads(
+    icon: Icons.download_outlined,
+    selectedIcon: Icons.download_rounded,
+  ),
   visited(
     icon: Icons.schedule_outlined,
     selectedIcon: Icons.schedule_rounded,
@@ -109,7 +116,8 @@ enum BooruSubPage {
         1 => favorites,
         2 => bookmarks,
         3 => hiddenPosts,
-        4 => visited,
+        4 => downloads,
+        5 => visited,
         int() => booru,
       };
 
@@ -121,6 +129,7 @@ enum BooruSubPage {
         favorites => l10n.favoritesLabel,
         bookmarks => l10n.bookmarksPageName,
         hiddenPosts => l10n.hiddenPostsPageName,
+        downloads => l10n.downloadsPageName,
         visited => l10n.visitedPage,
       };
 
@@ -193,74 +202,75 @@ enum GallerySubPage {
   }
 }
 
-enum MoreSubPage {
-  more(
-    icon: Icons.more_horiz_outlined,
-    selectedIcon: Icons.more_horiz_rounded,
-  ),
-  dashboard(
-    icon: Icons.dashboard_outlined,
-    selectedIcon: Icons.dashboard_rounded,
-  );
+// enum SettingsSubPage {
+//   settings(
+//     icon: Icons.account_circle_outlined,
+//     selectedIcon: Icons.account_circle_rounded,
+//   ),
+//   dashboard(
+//     icon: Icons.dashboard_outlined,
+//     selectedIcon: Icons.dashboard_rounded,
+//   );
 
-  const MoreSubPage({
-    required this.icon,
-    required this.selectedIcon,
-  });
+//   const SettingsSubPage({
+//     required this.icon,
+//     required this.selectedIcon,
+//   });
 
-  factory MoreSubPage.fromIdx(int idx) => switch (idx) {
-        0 => more,
-        1 => dashboard,
-        int() => more,
-      };
+//   factory SettingsSubPage.fromIdx(int idx) => switch (idx) {
+//         0 => settings,
+//         1 => dashboard,
+//         int() => settings,
+//       };
 
-  final IconData icon;
-  final IconData selectedIcon;
+//   final IconData icon;
+//   final IconData selectedIcon;
 
-  String translatedString(AppLocalizations l10n) => switch (this) {
-        MoreSubPage.more => l10n.more,
-        MoreSubPage.dashboard => l10n.dashboardPage,
-      };
+//   String translatedString(AppLocalizations l10n) => switch (this) {
+//         SettingsSubPage.settings => l10n.settingsLabel,
+//         SettingsSubPage.dashboard => l10n.dashboardPage,
+//       };
 
-  static Widget wrap(ValueNotifier<MoreSubPage> notifier, Widget child) =>
-      _SelectedMorePage(notifier: notifier, child: child);
+//   static Widget wrap(ValueNotifier<SettingsSubPage> notifier, Widget child) =>
+//       _SelectedMorePage(notifier: notifier, child: child);
 
-  static MoreSubPage of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
+//   static SettingsSubPage of(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
 
-    return widget!.notifier!.value;
-  }
+//     return widget!.notifier!.value;
+//   }
 
-  static void selectOf(BuildContext context, MoreSubPage page) {
-    GlueProvider.generateOf(context)().updateCount(0);
+//   static void selectOf(BuildContext context, SettingsSubPage page) {
+//     GlueProvider.generateOf(context)().updateCount(0);
 
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
 
-    widget!.notifier!.value = page;
-  }
-}
+//     widget!.notifier!.value = page;
+//   }
+// }
 
 mixin ChangePageMixin on State<Home> {
   final pagingRegistry = PagingStateRegistry();
 
   final mainKey = GlobalKey<NavigatorState>();
   final galleryKey = GlobalKey<NavigatorState>();
-  final moreKey = GlobalKey<NavigatorState>();
+  final settingsKey = GlobalKey<NavigatorState>();
 
   final _routeNotifier = ValueNotifier<CurrentRoute>(CurrentRoute.booru);
 
   final _booruPageNotifier = ValueNotifier<BooruSubPage>(BooruSubPage.booru);
   final _galleryPageNotifier =
       ValueNotifier<GallerySubPage>(GallerySubPage.gallery);
-  final _morePageNotifier = ValueNotifier<MoreSubPage>(MoreSubPage.more);
+  // final _settingsPageNotifier =
+  // ValueNotifier<SettingsSubPage>(SettingsSubPage.settings);
 
   String? restoreBookmarksPage;
 
   void _procPopAll(
     ValueNotifier<GallerySubPage> galleryPage,
-    ValueNotifier<MoreSubPage> morePage,
+    // ValueNotifier<SettingsSubPage> morePage,
     AnimatedIconsMixin icons,
     bool _,
   ) {
@@ -277,9 +287,9 @@ mixin ChangePageMixin on State<Home> {
     }
 
     galleryKey.currentState?.maybePop();
-    moreKey.currentState?.maybePop().then((value) {
+    settingsKey.currentState?.maybePop().then((value) {
       if (!value) {
-        _procPop(galleryPage, morePage, icons, false);
+        _procPop(galleryPage, icons, false);
       }
     });
   }
@@ -322,7 +332,7 @@ mixin ChangePageMixin on State<Home> {
 
   void _procPop(
     ValueNotifier<GallerySubPage> galleryPage,
-    ValueNotifier<MoreSubPage> morePage,
+    // ValueNotifier<SettingsSubPage> morePage,
     AnimatedIconsMixin icons,
     bool pop,
   ) {
@@ -331,11 +341,13 @@ mixin ChangePageMixin on State<Home> {
           galleryPage.value != GallerySubPage.gallery) {
         galleryPage.value = GallerySubPage.gallery;
         animateIcons(icons);
-      } else if (_routeNotifier.value == CurrentRoute.gallery &&
-          morePage.value != MoreSubPage.more) {
-        morePage.value = MoreSubPage.more;
-        animateIcons(icons);
-      } else {
+      }
+      // else if (_routeNotifier.value == CurrentRoute.gallery &&
+      //     morePage.value != SettingsSubPage.settings) {
+      //   morePage.value = SettingsSubPage.settings;
+      //   animateIcons(icons);
+      // }
+      else {
         switchPage(icons, CurrentRoute.booru);
       }
     }
@@ -368,9 +380,10 @@ mixin ChangePageMixin on State<Home> {
       CurrentRoute.anime => icons.animeIconController
           .reverse()
           .then((value) => icons.animeIconController.forward()),
-      CurrentRoute.more => icons.moreIconController
-          .reverse()
-          .then((value) => icons.moreIconController.forward()),
+      // CurrentRoute.settings => icons.downloadsIconController
+      //     .reverse()
+      //     .then((value) => icons.downloadsIconController.forward()),
+      // CurrentRoute.downloads => Future.value(),
     };
   }
 }
@@ -391,14 +404,13 @@ class _CurrentPageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final galleryPage = changePage._galleryPageNotifier;
-    final morePage = changePage._morePageNotifier;
+    // final morePage = changePage._settingsPageNotifier;
     final booruPage = changePage._booruPageNotifier;
 
     if (callback != null) {
       return GalleryDirectories(
         nestedCallback: callback,
-        procPop: (pop) =>
-            changePage._procPop(galleryPage, morePage, icons, pop),
+        procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
         db: DatabaseConnectionNotifier.of(context),
         l10n: AppLocalizations.of(context)!,
       );
@@ -443,7 +455,6 @@ class _CurrentPageWidget extends StatelessWidget {
               child: GalleryDirectories(
                 procPop: (pop) => changePage._procPop(
                   galleryPage,
-                  morePage,
                   icons,
                   pop,
                 ),
@@ -452,22 +463,24 @@ class _CurrentPageWidget extends StatelessWidget {
               ),
             ),
           CurrentRoute.anime => AnimePage(
-              procPop: (pop) =>
-                  changePage._procPop(galleryPage, morePage, icons, pop),
+              procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
               db: DatabaseConnectionNotifier.of(context),
             ),
-          CurrentRoute.more => _NavigatorShell(
-              navigatorKey: changePage.moreKey,
-              child: MorePage(
-                popScope: (pop) => changePage._procPop(
-                  galleryPage,
-                  morePage,
-                  icons,
-                  pop,
-                ),
-                db: DatabaseConnectionNotifier.of(context),
-              ),
-            ),
+          // CurrentRoute.downloads => Downloads(
+          //     generateGlue: GlueProvider.generateOf(context),
+          //     downloadManager: DownloadManager.of(context),
+          //     db: DatabaseConnectionNotifier.of(context),
+          //   ),
+          // CurrentRoute.settings => _NavigatorShell(
+          //     navigatorKey: changePage.settingsKey,
+          //     child: AccountsPage(
+          //       popScope: (pop) => changePage._procPop(
+          //         galleryPage,
+          //         icons,
+          //         pop,
+          //       ),
+          //     ),
+          //   ),
         },
       ),
     );
@@ -536,9 +549,10 @@ class _SelectedGalleryPage
   }) : super(notifier: notifier);
 }
 
-class _SelectedMorePage extends InheritedNotifier<ValueNotifier<MoreSubPage>> {
-  const _SelectedMorePage({
-    required ValueNotifier<MoreSubPage> notifier,
-    required super.child,
-  }) : super(notifier: notifier);
-}
+// class _SelectedMorePage
+//     extends InheritedNotifier<ValueNotifier<SettingsSubPage>> {
+//   const _SelectedMorePage({
+//     required ValueNotifier<SettingsSubPage> notifier,
+//     required super.child,
+//   }) : super(notifier: notifier);
+// }

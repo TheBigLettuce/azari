@@ -61,10 +61,6 @@ class Danbooru implements BooruAPI {
     BooruTagSorting sorting = BooruTagSorting.count,
     int limit = 30,
   ]) async {
-    if (tag.isEmpty) {
-      return const [];
-    }
-
     final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/tags.json", {
         "search[name_matches]": "$tag*",

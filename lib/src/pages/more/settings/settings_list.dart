@@ -11,7 +11,7 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/pages/more/settings/settings_label.dart";
-import "package:azari/src/pages/more/settings/settings_widget.dart";
+import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/welcome_pages.dart";
