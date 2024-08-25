@@ -39,7 +39,9 @@ module Regen
       Dart.check_conf(Dir.pwd)
       Flutter.pub_get
 
-      clang_dir = Open3.capture2(%(clang -v 2>&1 | grep "Selected GCC installation" | rev | cut -d' ' -f1 | rev)).first.strip
+      command = %(clang -v 2>&1 | grep "Selected GCC installation" | rev | cut -d' ' -f1 | rev)
+
+      clang_dir = Open3.capture2(command).first.strip
 
       Dart.run("ffigen", "--config", "ffigen.yaml", env: { "CPATH" => "#{clang_dir}/include" })
 

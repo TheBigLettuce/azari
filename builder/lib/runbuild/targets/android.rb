@@ -48,7 +48,7 @@ module Targets
       ndk_dir_bin.to_s
     end
 
-    def prepare_env_vars(ndk_dir_bin)
+    def prepare_env_vars(ndk_dir_bin) # rubocop:disable Metrics/MethodLength
       prev_path = ENV["PATH"]
 
       {

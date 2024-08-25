@@ -20,7 +20,7 @@ module Targets
       "#{dir}/#{LINUX_LIB_DIR}/libisar.so"
     end
 
-    def path_lib_android(dir, target)
+    def path_lib_android(dir, target) # rubocop:disable Metrics/MethodLength
       case target
       when TARGET_ANDROID_ARMV7
         "#{dir}/#{ANDROID_LIB_DIR}/armeabi-v7a/libisar.so"
