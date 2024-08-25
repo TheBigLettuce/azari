@@ -112,7 +112,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     try {
       final settings = SettingsService.db().current;
 
-      final list = await api.fromPost(
+      final list = await api.fromPostId(
         currentSkipped != null && currentSkipped! < p.id
             ? currentSkipped!
             : p.id,

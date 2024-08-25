@@ -217,6 +217,12 @@ abstract class PostImpl
     final isHidden = db.hiddenBooruPost.isHidden(id, booru);
 
     return [
+      if (score > 10)
+        Sticker(
+          Icons.thumb_up_rounded,
+          subtitle: score.toString(),
+          important: true,
+        ),
       if (isHidden) const Sticker(Icons.hide_image_rounded),
       if (this is! FavoritePost && db.favoritePosts.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),

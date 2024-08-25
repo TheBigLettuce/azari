@@ -35,29 +35,34 @@ abstract class BooruAPI {
   /// Get a single post by it's id.
   Future<Post> singlePost(int id);
 
+  /// Load random 30 posts.
+  Future<List<Post>> randomPosts(BooruTagging excludedTags, SafeMode safeMode);
+
   /// Get posts by a certain page.
   /// This is only used to refresh the grid,
-  /// the code which loads and presets the posts uses [fromPost] for further posts loading.
+  /// the code which loads and presets the posts uses [fromPostId] for further posts loading.
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]);
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  });
 
   /// Get the post's notes.
   /// Usually used for translations.
   Future<Iterable<String>> notes(int postId);
 
   /// Get posts down a certain post number.
-  Future<(List<Post>, int?)> fromPost(
+  Future<(List<Post>, int?)> fromPostId(
     int postId,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]);
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  });
 
   Future<List<BooruTag>> searchTag(
     String tag, [
@@ -108,6 +113,11 @@ abstract class BooruAPI {
 enum BooruTagSorting {
   similarity,
   count;
+}
+
+enum BooruPostsOrder {
+  latest,
+  score;
 }
 
 class BooruTag {

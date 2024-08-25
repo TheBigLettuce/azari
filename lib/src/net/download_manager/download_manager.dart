@@ -407,6 +407,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
       entry.data.site,
       "Downloader",
       body: entry.data.site,
+      payload: "downloads",
     );
 
     try {

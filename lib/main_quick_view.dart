@@ -9,7 +9,10 @@ part of "main.dart";
 /// Shows the image or video from ACTION_VIEW.
 @pragma("vm:entry-point")
 Future<void> mainQuickView() async {
-  await initMain(true);
+  final notificationStream =
+      StreamController<NotificationRouteEvent>.broadcast();
+
+  await initMain(true, notificationStream);
 
   final accentColor = await PlatformApi.current().accentColor();
 

@@ -9,7 +9,10 @@ part of "main.dart";
 /// Picks a file and returns to the app requested.
 @pragma("vm:entry-point")
 Future<void> mainPickfile() async {
-  await initMain(true);
+  final notificationStream =
+      StreamController<NotificationRouteEvent>.broadcast();
+
+  await initMain(true, notificationStream);
 
   final accentColor = await PlatformApi.current().accentColor();
 

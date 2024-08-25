@@ -38,6 +38,7 @@ class Danbooru implements BooruAPI {
       safeMode: SafeMode.none,
       page: 0,
       limit: 1,
+      order: BooruPostsOrder.latest,
     );
 
     return resp.$1.firstOrNull?.id ?? 0;
@@ -95,35 +96,55 @@ class Danbooru implements BooruAPI {
   }
 
   @override
+  Future<List<Post>> randomPosts(
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) async {
+    final p = await page(
+      0,
+      "random:30",
+      excludedTags,
+      safeMode,
+      limit: 30,
+    );
+
+    return p.$1;
+  }
+
+  @override
   Future<(List<Post>, int?)> page(
     int i,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]) =>
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  }) =>
       _commonPosts(
         tags,
         excludedTags,
         page: i,
         safeMode: safeMode,
         limit: limit,
+        order: order,
       );
 
   @override
-  Future<(List<Post>, int?)> fromPost(
+  Future<(List<Post>, int?)> fromPostId(
     int postId,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]) =>
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  }) =>
       _commonPosts(
         tags,
         excludedTags,
         postid: postId,
         safeMode: safeMode,
         limit: limit,
+        order: order,
       );
 
   Future<(List<Post>, int?)> _commonPosts(
@@ -133,6 +154,7 @@ class Danbooru implements BooruAPI {
     int? page,
     required SafeMode safeMode,
     int? limit,
+    required BooruPostsOrder order,
   }) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
@@ -151,7 +173,8 @@ class Danbooru implements BooruAPI {
       "format": "json",
 
       /// anonymous api calls to danbooru are limited by two tags per search req
-      "post[tags]": "${safeModeS()} ${tags.split(" ").take(2).join(" ")}",
+      "post[tags]":
+          "${order == BooruPostsOrder.score ? 'order:score' : ''} ${safeModeS()} ${tags.split(" ").take(2).join(" ")}",
     };
 
     if (postid != null) {
@@ -159,7 +182,7 @@ class Danbooru implements BooruAPI {
     }
 
     if (page != null) {
-      query["page"] = page.toString();
+      query["page"] = (page + 1).toString();
     }
 
     try {

@@ -36,7 +36,14 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<int> totalPosts(String tags, SafeMode safeMode) async {
-    final res = await _commonPosts(tags, 0, null, safeMode, limit: 1);
+    final res = await _commonPosts(
+      tags,
+      0,
+      null,
+      safeMode,
+      limit: 1,
+      order: BooruPostsOrder.latest,
+    );
 
     return res.$1.firstOrNull?.id ?? 0;
   }
@@ -102,9 +109,10 @@ class Gelbooru implements BooruAPI {
     int p,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]) {
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  }) {
     pageSaver.page = p;
 
     return _commonPosts(
@@ -113,6 +121,7 @@ class Gelbooru implements BooruAPI {
       excludedTags,
       safeMode,
       limit: limit,
+      order: order,
     );
   }
 
@@ -122,6 +131,7 @@ class Gelbooru implements BooruAPI {
     BooruTagging? excludedTags,
     SafeMode safeMode, {
     int? limit,
+    required BooruPostsOrder order,
   }) async {
     final excluded = excludedTags?.get(-1).map((e) => "-${e.tag} ").toList();
 
@@ -144,7 +154,8 @@ class Gelbooru implements BooruAPI {
       "q": "index",
       "pid": p.toString(),
       "json": "1",
-      "tags": "$safeMode_ $excludedTagsString $tags",
+      "tags":
+          "${order == BooruPostsOrder.score ? 'sort:score' : ''} $safeMode_ $excludedTagsString $tags",
       "limit": limit?.toString() ?? numberOfElementsPerRefresh().toString(),
     };
 
@@ -189,19 +200,37 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<(List<Post>, int?)> fromPost(
+  Future<List<Post>> randomPosts(
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+  ) async {
+    final p = await page(
+      0,
+      "sort:random",
+      excludedTags,
+      safeMode,
+      limit: 30,
+    );
+
+    return p.$1;
+  }
+
+  @override
+  Future<(List<Post>, int?)> fromPostId(
     int _,
     String tags,
     BooruTagging excludedTags,
-    SafeMode safeMode, [
+    SafeMode safeMode, {
     int? limit,
-  ]) {
+    BooruPostsOrder order = BooruPostsOrder.latest,
+  }) {
     final f = _commonPosts(
       tags,
       pageSaver.page + 1,
       excludedTags,
       safeMode,
       limit: limit,
+      order: order,
     );
 
     return f.then((value) {

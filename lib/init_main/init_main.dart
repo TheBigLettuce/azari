@@ -3,6 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
 import "dart:developer";
 import "dart:ui" as ui;
 
@@ -17,7 +18,10 @@ import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:logging/logging.dart";
 
-Future<void> initMain(bool temporary) async {
+Future<void> initMain(
+  bool temporary,
+  StreamController<NotificationRouteEvent> stream,
+) async {
   _initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +30,7 @@ Future<void> initMain(bool temporary) async {
 
   await initServices(temporary);
   await initAppInfo();
-  await initNotifications();
+  await initNotifications(stream);
   await initNetworkStatus();
   initGalleryPlug(temporary);
 

@@ -252,6 +252,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.end,
                           direction: Axis.vertical,
                           children:
                               stickers.map((e) => StickerWidget(e)).toList(),

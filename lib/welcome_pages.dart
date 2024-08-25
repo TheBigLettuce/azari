@@ -10,7 +10,6 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:flutter/material.dart";
@@ -21,9 +20,10 @@ import "package:permission_handler/permission_handler.dart";
 class AndroidPermissionsPage extends StatefulWidget {
   const AndroidPermissionsPage({
     super.key,
-    required this.doNotLaunchHome,
+    required this.onEnd,
   });
-  final bool doNotLaunchHome;
+
+  final void Function(BuildContext context)? onEnd;
 
   @override
   State<AndroidPermissionsPage> createState() => _AndroidPermissionsPageState();
@@ -157,7 +157,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     MaterialPageRoute<void>(
                       builder: (context) {
                         return CongratulationPage(
-                          doNotLaunchHome: widget.doNotLaunchHome,
+                          onEnd: widget.onEnd,
                         );
                       },
                     ),
@@ -171,8 +171,12 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 }
 
 class WelcomePage extends StatefulWidget {
-  const WelcomePage({super.key, this.doNotLaunchHome = false});
-  final bool doNotLaunchHome;
+  const WelcomePage({
+    super.key,
+    this.onEnd,
+  });
+
+  final void Function(BuildContext context)? onEnd;
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -205,7 +209,7 @@ class _WelcomePageState extends State<WelcomePage> {
               MaterialPageRoute<void>(
                 builder: (context) {
                   return InitalSettings(
-                    doNotLaunchHome: widget.doNotLaunchHome,
+                    onEnd: widget.onEnd,
                   );
                 },
               ),
@@ -221,9 +225,10 @@ class _WelcomePageState extends State<WelcomePage> {
 class CongratulationPage extends StatelessWidget {
   const CongratulationPage({
     super.key,
-    required this.doNotLaunchHome,
+    required this.onEnd,
   });
-  final bool doNotLaunchHome;
+
+  final void Function(BuildContext context)? onEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -251,20 +256,7 @@ class CongratulationPage extends StatelessWidget {
                     .copy(showWelcomePage: false)
                     .save();
 
-                if (doNotLaunchHome) {
-                  Navigator.pop(context);
-
-                  return;
-                }
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) {
-                      return const Home();
-                    },
-                  ),
-                );
+                onEnd?.call(context);
               },
             ),
           ],
@@ -277,9 +269,10 @@ class CongratulationPage extends StatelessWidget {
 class InitalSettings extends StatefulWidget {
   const InitalSettings({
     super.key,
-    required this.doNotLaunchHome,
+    required this.onEnd,
   });
-  final bool doNotLaunchHome;
+
+  final void Function(BuildContext context)? onEnd;
 
   @override
   State<InitalSettings> createState() => _InitalSettingsState();
@@ -318,14 +311,14 @@ class _InitalSettingsState extends State<InitalSettings> {
           ? MaterialPageRoute<void>(
               builder: (context) {
                 return AndroidPermissionsPage(
-                  doNotLaunchHome: widget.doNotLaunchHome,
+                  onEnd: widget.onEnd,
                 );
               },
             )
           : MaterialPageRoute<void>(
               builder: (context) {
                 return CongratulationPage(
-                  doNotLaunchHome: widget.doNotLaunchHome,
+                  onEnd: widget.onEnd,
                 );
               },
             ),
@@ -459,6 +452,7 @@ class _WrapPadding extends StatelessWidget {
     this.explanation,
     this.addCenteredIcon = false,
   });
+
   final List<Widget> buttons;
   final String title;
   final Widget body;
@@ -569,6 +563,7 @@ class _ButtonWithPadding extends StatelessWidget {
     required this.label,
     required this.variant,
   });
+
   final Icon icon;
   final void Function() onPressed;
   final String label;

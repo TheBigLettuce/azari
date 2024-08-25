@@ -241,6 +241,7 @@ class OriginalGridContext extends InheritedWidget {
     required this.generate,
     required super.child,
   });
+
   final BuildContext gridContext;
   final SelectionGlue Function() generate;
 

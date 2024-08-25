@@ -15,6 +15,7 @@ import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
 import "package:azari/src/widgets/skeletons/home.dart";
@@ -35,9 +36,11 @@ class Home extends StatefulWidget {
   const Home({
     super.key,
     this.callback,
+    required this.stream,
   });
 
   final CallbackDescriptionNested? callback;
+  final Stream<NotificationRouteEvent> stream;
 
   @override
   State<Home> createState() => _HomeState();
@@ -52,11 +55,26 @@ class _HomeState extends State<Home>
   final state = SkeletonState();
   final settings = SettingsService.db().current;
 
+  late final StreamSubscription<NotificationRouteEvent> notificationEvents;
+
   bool isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+
+    notificationEvents = widget.stream.listen((route) {
+      final currentRoute = _routeNotifier.value;
+
+      switch (route) {
+        case NotificationRouteEvent.downloads:
+          if (currentRoute != CurrentRoute.booru) {
+            switchPage(this, CurrentRoute.booru);
+          }
+
+          _booruPageNotifier.value = BooruSubPage.downloads;
+      }
+    });
 
     initChangePage(this, settings);
     initIcons(this);
@@ -76,6 +94,8 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
+    notificationEvents.cancel();
+
     _galleryPageNotifier.dispose();
     _booruPageNotifier.dispose();
     disposeIcons();

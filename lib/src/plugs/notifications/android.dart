@@ -15,6 +15,7 @@ class AndroidProgress implements NotificationProgress {
     required this.name,
     required this.channelName,
     required this.body,
+    required this.payload,
   });
 
   final String group;
@@ -22,6 +23,7 @@ class AndroidProgress implements NotificationProgress {
   final String name;
   final String channelName;
   final String? body;
+  final String? payload;
 
   int total = 0;
   int _step = 0;
@@ -49,6 +51,7 @@ class AndroidProgress implements NotificationProgress {
           showProgress: true,
         ),
       ),
+      payload: payload,
     );
   }
 
@@ -92,6 +95,7 @@ class AndroidNotifications implements NotificationPlug {
     String group,
     String channelName, {
     String? body,
+    String? payload,
   }) =>
       Future.value(
         AndroidProgress(
@@ -100,6 +104,7 @@ class AndroidNotifications implements NotificationPlug {
           name: name,
           channelName: channelName,
           body: body,
+          payload: payload,
         ),
       );
 }

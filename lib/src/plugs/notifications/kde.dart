@@ -49,6 +49,7 @@ class KDENotifications implements NotificationPlug {
     __,
     ___, {
     String? body,
+    String? payload,
   }) async {
     try {
       final object = OrgKdeJobViewServer(
@@ -56,7 +57,7 @@ class KDENotifications implements NotificationPlug {
         "org.kde.kuiserver",
         DBusObjectPath("/JobViewServer"),
       );
-      final id = await object.callrequestView("Ācārya", "", 0);
+      final id = await object.callrequestView("Azari", "", 0);
 
       final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);
 

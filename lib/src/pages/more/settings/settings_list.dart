@@ -321,8 +321,10 @@ class _SettingsListState extends State<SettingsList> {
               context,
               MaterialPageRoute<void>(
                 builder: (context) {
-                  return const WelcomePage(
-                    doNotLaunchHome: true,
+                  return WelcomePage(
+                    onEnd: (context) {
+                      Navigator.pop(context);
+                    },
                   );
                 },
               ),

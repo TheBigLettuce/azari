@@ -22,7 +22,43 @@ class StickerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (e.subtitle != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: e.important
+                ? colorScheme.onPrimary.withOpacity(0.9)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: Row(
+              children: [
+                Icon(
+                  e.icon,
+                  size: 14,
+                  color: e.important
+                      ? colorScheme.primary.withOpacity(0.9)
+                      : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                ),
+                const Padding(padding: EdgeInsets.only(right: 6)),
+                Text(
+                  e.subtitle!,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),

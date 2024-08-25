@@ -28,6 +28,7 @@ class DummyNotifications implements NotificationPlug {
     ___,
     ____, {
     String? body,
+    String? payload,
   }) =>
       Future.value(const DummyProgress());
 }
