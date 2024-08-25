@@ -54,12 +54,11 @@ jobs:
           flutter-version: "3.25.0-0.1.pre"
           channel: "beta"
           cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
       - name: Generate and build Isar
         run: ./regen && ./runbuild
+        
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Start release build
         run: flutter build apk --split-per-abi --split-debug-info=debug_info
