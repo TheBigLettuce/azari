@@ -20,6 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install latest Rust Nightly
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+          components: rustfmt, clippy
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3.2'
