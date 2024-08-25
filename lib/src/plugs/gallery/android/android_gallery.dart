@@ -95,6 +95,6 @@ class AndroidGallery implements GalleryPlug {
 
 void initalizeAndroidGallery(bool temporary) {
   if (_global == null) {
-    GalleryApi.setup(_GalleryImpl(temporary));
+    GalleryApi.setUp(_GalleryImpl(temporary));
   }
 }
