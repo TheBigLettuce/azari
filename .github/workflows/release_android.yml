@@ -24,7 +24,7 @@ jobs:
         with:
           ruby-version: '3.3.2'
           bundler-cache: true
-      - run: cd builder && bundle exec rake
+      - run: cd builder && bundle install && bundle exec rake
 
       - name: Download Android keystore
         id: android_keystore
