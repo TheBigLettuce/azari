@@ -258,6 +258,10 @@ class _BooruPageState extends State<BooruPage> {
     String tag,
     SafeMode? safeMode,
   ) {
+    if (tag.isEmpty) {
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute<void>(
@@ -460,7 +464,7 @@ class _BooruPageState extends State<BooruPage> {
 
 class _PopularRandomButtons extends StatelessWidget {
   const _PopularRandomButtons({
-    super.key,
+    // super.key,
     required this.api,
     required this.db,
   });
@@ -470,6 +474,8 @@ class _PopularRandomButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext gridContext) {
+    final l10n = AppLocalizations.of(gridContext)!;
+
     return SliverPadding(
       padding: const EdgeInsets.only(
         left: 8,
@@ -494,7 +500,7 @@ class _PopularRandomButtons extends StatelessWidget {
                     ),
                   );
                 },
-                label: Text("Popular"),
+                label: Text(l10n.popularPosts),
                 icon: const Icon(Icons.whatshot_rounded),
               ),
               TextButton.icon(
@@ -556,7 +562,7 @@ class _PopularRandomButtons extends StatelessWidget {
                     ),
                   );
                 },
-                label: const Text("Random"), // TODO: change
+                label: Text(l10n.randomPosts),
                 icon: const Icon(Icons.shuffle_rounded),
               ),
             ],
@@ -705,7 +711,6 @@ class _PopularPageState extends State<PopularPage> {
                   functionality: GridFunctionality(
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
-                      SafeModeButton(settingsWatcher: state.settings.s.watch),
                     ),
                     selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
@@ -721,7 +726,7 @@ class _PopularPageState extends State<PopularPage> {
                               child: SizedBox.shrink(),
                             ),
                         // centerTitle: true,
-                        title: Text("Popular"),
+                        title: Text(l10n.popularPosts),
                         actions: [if (settingsButton != null) settingsButton],
                       ),
                     ),

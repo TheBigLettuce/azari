@@ -1522,5 +1522,13 @@
     "addBacklog": "Add to backlog",
     "@addBacklog": {
         "description": "Anime info page button label"
+    },
+    "popularPosts": "Popular",
+    "@popularPosts": {
+        "description": "Button label to show popular posts on booru"
+    },
+    "randomPosts": "Random",
+    "@randomPosts": {
+        "description": "Button label to show random posts on booru"
     }
 }

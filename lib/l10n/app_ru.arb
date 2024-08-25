@@ -503,5 +503,7 @@
     "removeWatched": "Удалить из просмотренного",
     "addWatched": "В просмотренно",
     "removeBacklog": "Удалить из беклога",
-    "addBacklog": "В беклог"
+    "addBacklog": "В беклог",
+    "popularPosts": "Популярные",
+    "randomPosts": "Случайные"
 }

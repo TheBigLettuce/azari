@@ -173,6 +173,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         child: TagSuggestions(
           tagging: tagManager.latest,
           onPress: (tag, safeMode) {
+            if (tag.isEmpty) {
+              return;
+            }
+
             pagingState.source.tags = tag;
             pagingState.source.clearRefresh();
             gridBookmarks.get(name)!.copy(tags: tag).save();
@@ -186,6 +190,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       searchText: pagingState.source.tags,
       addItems: (_) => const [],
       onSubmit: (context, tag) {
+        if (tag.isEmpty) {
+          return;
+        }
+
         pagingState.source.tags = tag;
         pagingState.source.clearRefresh();
         gridBookmarks.get(name)!.copy(tags: tag).save();
