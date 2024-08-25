@@ -34,7 +34,7 @@ jobs:
           encodedString: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Init submodules
-        run: git submodule init
+        run: git submodule update --init
 
       - name: Create key.properties
         run: |
