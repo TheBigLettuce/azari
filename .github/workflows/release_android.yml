@@ -60,6 +60,10 @@ jobs:
           flutter-version: "3.25.0-0.1.pre"
           channel: "beta"
           cache: true
+
+      - name: Create Isar target dirs
+        run: mkdir -p isar/packages/isar_flutter_libs/android/src/main/jniLibs && mkdir -p isar/packages/isar_flutter_libs/linux
+          
       - name: Generate and build Isar
         run: ./regen && ./runbuild
         
