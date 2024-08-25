@@ -52,7 +52,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.25.0-0.1.pre"
-          channel: "stable"
+          channel: "beta"
           cache: true
 
       - name: Get dependencies
