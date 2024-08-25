@@ -515,6 +515,19 @@ class _PopularRandomButtons extends StatelessWidget {
                           final gridExtra =
                               GridExtrasNotifier.of<Post>(gridContext);
 
+                          {
+                            final post = value.first;
+
+                            db.visitedPosts.addAll([
+                              VisitedPost(
+                                booru: post.booru,
+                                id: post.id,
+                                thumbUrl: post.previewUrl,
+                                date: DateTime.now(),
+                              ),
+                            ]);
+                          }
+
                           final i = ImageView(
                             gridContext: gridContext,
                             cellCount: value.length,

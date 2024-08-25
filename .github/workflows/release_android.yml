@@ -18,7 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.2'
+          bundler-cache: true
+      - run: cd builder && bundle exec rake
 
       - name: Download Android keystore
         id: android_keystore
@@ -26,6 +32,9 @@ jobs:
         with:
           fileName: upload-keystore.jks
           encodedString: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Init submodules
+        run: git submodule init
 
       - name: Create key.properties
         run: |
@@ -37,24 +46,35 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: "zulu"
-          java-version: "12.x"
+          java-version: "17.x"
           cache: gradle
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.19.3"
+          flutter-version: "3.25.0-0.1.pre"
           channel: "stable"
           cache: true
+
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Generate
-        run: make regenerate
+      - name: Generate and build Isar
+        run: ./regen && ./runbuild
 
       - name: Start release build
-        run: flutter build apk --split-per-abi --no-tree-shake-icons
+        run: flutter build apk --split-per-abi --split-debug-info=debug_info
 
       - uses: actions/upload-artifact@v3
         with:
           name: output
           path: build/app/outputs/flutter-apk/
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/app/outputs/flutter-apk/*
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ${{ github.ref }}
