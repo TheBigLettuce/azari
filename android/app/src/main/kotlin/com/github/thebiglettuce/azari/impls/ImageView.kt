@@ -13,6 +13,9 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+import com.github.piasy.biv.view.BigImageView
+import com.github.piasy.biv.view.GlideImageViewFactory
+import com.github.thebiglettuce.azari.App
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
@@ -34,23 +37,11 @@ internal class ImageView(
     }
 
     init {
-        val isGif = params.containsKey("gif")
-
-        if (isGif) {
-            imageView = android.widget.ImageView(context)
-
-            try {
-                Glide.with(context).asGif()
-                    .load(Uri.parse(params["uri"])).diskCacheStrategy(
-                        DiskCacheStrategy.NONE
-                    ).into(imageView as android.widget.ImageView)
-            } catch (e: Exception) {
-                Log.e("loading image", e.toString())
-            }
-        } else {
-            imageView = SubsamplingScaleImageView(context)
-            imageView.setOnClickListener { galleryApi.galleryTapDownEvent { } }
-            (imageView as SubsamplingScaleImageView).setImage(ImageSource.uri(Uri.parse(params["uri"])))
+        imageView = BigImageView(context).apply {
+            setOnClickListener { galleryApi.galleryTapDownEvent { } }
+            setImageViewFactory(GlideImageViewFactory())
+            setOptimizeDisplay(false)
+            showImage(Uri.parse(params["uri"]))
         }
     }
 }
@@ -58,6 +49,11 @@ internal class ImageView(
 class NativeViewFactory(private val galleryApi: GalleryApi) :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-        return ImageView(context, viewId, galleryApi, args as Map<String, String>)
+        return ImageView(
+            context,
+            viewId,
+            galleryApi,
+            args as Map<String, String>
+        )
     }
 }

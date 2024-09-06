@@ -6,11 +6,13 @@
 package com.github.thebiglettuce.azari
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -20,6 +22,7 @@ import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
 import com.github.thebiglettuce.azari.enginebindings.AppContextChannel
 import com.github.thebiglettuce.azari.generated.GalleryApi
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
+import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
@@ -27,23 +30,25 @@ class PickFileActivity : FlutterFragmentActivity() {
     private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = getOrMakeEngine(app, "mainPickfile")
+        val engine = makeEngine(app, "mainPickfile")
 
         AppContextChannel(
             engine, GalleryApi(engine.dartExecutor.binaryMessenger),
         )
     }
 
-    private val activityContextChannel: ActivityContextChannel by lazy {
-        val engine = FlutterEngineCache.getInstance()["mainPickfile"]!!
+    private var activityContextChannel: ActivityContextChannel? = null
 
-        ActivityContextChannel(engine.dartExecutor, GalleryApi(engine.dartExecutor.binaryMessenger))
+    private val notificationsHolder: CurrentNotificationsHolder by lazy {
+        CurrentNotificationsHolder(
+            getSystemService(NotificationManager::class.java)
+        )
     }
 
     private val intents: ActivityResultIntents by lazy {
         ActivityResultIntents(
             this,
-            { activityContextChannel },
+            { activityContextChannel!! },
             { mediaLoaderAndMover },
         )
     }
@@ -67,7 +72,12 @@ class PickFileActivity : FlutterFragmentActivity() {
             ),
         )
 
-        activityContextChannel.attach(this, intents, mediaLoaderAndMover)
+        activityContextChannel = ActivityContextChannel(
+            appContextChannel.engine.dartExecutor,
+            GalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
+        )
+
+        activityContextChannel!!.attach(this, intents, mediaLoaderAndMover)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -77,20 +87,35 @@ class PickFileActivity : FlutterFragmentActivity() {
             Toast.makeText(this, "No permissions", Toast.LENGTH_SHORT).show()
             finish()
         }
+
+        NotificationsApi.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            NotificationsApiImpl(
+                this,
+                getSystemService(NotificationManager::class.java),
+                notificationsHolder
+            ),
+        )
     }
 
-    override fun getCachedEngineId(): String = "mainPickfile"
+    override fun getCachedEngineId(): String? = null
     override fun provideFlutterEngine(context: Context): FlutterEngine = appContextChannel.engine
 
     override fun onDestroy() {
         super.onDestroy()
         appContextChannel.detach()
-        appContextChannel.engine.destroy()
-        FlutterEngineCache.getInstance().remove("mainPickfile")
+
+        try {
+            appContextChannel.engine.destroy()
+        } catch (e: Exception) {
+            Log.w("PickFileActivity.onDestroy", "threw on destroying engine", e)
+        }
+
         intents.unregisterAll()
         GalleryHostApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
-        activityContextChannel.detach()
+        NotificationsApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        activityContextChannel!!.detach()
 
-//        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+        notificationsHolder.cancelAll()
     }
 }

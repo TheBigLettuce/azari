@@ -1184,7 +1184,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
     final refreshedAt = widget.db.hottestTags.refreshedAt(widget.api.booru);
 
     if (refreshedAt == null ||
-        DateTime.now().add(const Duration(days: 3)).isBefore(refreshedAt)) {
+        refreshedAt.add(const Duration(days: 3)).isBefore(DateTime.now())) {
       _loadHottestTags(widget.notifier, widget.db, widget.api);
     }
 

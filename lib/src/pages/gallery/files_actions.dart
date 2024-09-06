@@ -396,10 +396,10 @@ Future<void> _saveTags(
   }
 
   final notifi = await chooseNotificationPlug().newProgress(
-    l10n.savingTags,
-    savingTagsNotifId,
-    "Saving tags",
-    l10n.savingTags,
+    title: l10n.savingTags,
+    id: NotificationPlug.savingTagsId,
+    group: NotificationGroup.misc,
+    channel: NotificationChannel.misc,
     body: "${l10n.savingTagsSaving}"
         " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
   );

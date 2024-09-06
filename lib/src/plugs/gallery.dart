@@ -25,11 +25,11 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
-import "package:azari/src/plugs/gallery/android/api.g.dart";
 import "package:azari/src/plugs/gallery/io.dart"
     if (dart.library.html) "package:azari/src/plugs/gallery/web.dart";
 import "package:azari/src/plugs/gallery_file_functions.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/glue_provider.dart";

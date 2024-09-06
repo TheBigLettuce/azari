@@ -25,6 +25,7 @@ import "package:azari/src/pages/gallery/files_filters.dart" as filters;
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
@@ -319,7 +320,9 @@ class _GalleryFilesState extends State<GalleryFiles> {
                           MaterialPageRoute<void>(
                             builder: (context) {
                               return BooruRestoredPage(
-                                generateGlue: generateGlue,
+                                generateGlue: widget.callback != null
+                                    ? null
+                                    : generateGlue,
                                 booru: settings.selectedBooru,
                                 thenMoveTo: ((widget.directory == null
                                             ? api.directories.length == 1
@@ -337,6 +340,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                         : null)
                                     ?.call(),
                                 tags: tag,
+                                wrapScaffold: widget.callback != null,
                                 trySearchBookmarkByTags: true,
                                 saveSelectedPage: (e) {},
                                 overrideSafeMode: s ?? settings.safeMode,

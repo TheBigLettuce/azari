@@ -9,6 +9,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -19,16 +20,17 @@ import com.github.thebiglettuce.azari.generated.GalleryApi
 import com.github.thebiglettuce.azari.impls.NetworkCallbackImpl
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
+import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 
 class MainActivity : FlutterFragmentActivity() {
     private val intents =
-        ActivityResultIntents(this, { activityContextChannel }, { mediaLoaderAndMover })
+        ActivityResultIntents(this, { activityContextChannel!! }, { mediaLoaderAndMover })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
     val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = getOrMakeEngine(app, "main")
+        val engine = makeEngine(app, "main")
         GalleryHostApi.setUp(
             engine.dartExecutor.binaryMessenger,
             GalleryHostApiImpl(this, mediaLoaderAndMover)
@@ -37,12 +39,13 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private val mediaLoaderAndMover: MediaLoaderAndMover by lazy { (applicationContext as App).mediaLoaderAndMover }
-
-    private val activityContextChannel: ActivityContextChannel by lazy {
-        val engine = FlutterEngineCache.getInstance()["main"]!!
-
-        ActivityContextChannel(engine.dartExecutor, GalleryApi(engine.dartExecutor.binaryMessenger))
+    private val notificationsHolder: CurrentNotificationsHolder by lazy {
+        CurrentNotificationsHolder(
+            getSystemService(NotificationManager::class.java)
+        )
     }
+
+    private var activityContextChannel: ActivityContextChannel? = null
 
     private val netStatus by lazy {
         NetworkCallbackImpl(
@@ -63,19 +66,42 @@ class MainActivity : FlutterFragmentActivity() {
         )
 
         connectivityManager.registerDefaultNetworkCallback(netStatus)
-        activityContextChannel.attach(this, intents, mediaLoaderAndMover)
+
+        activityContextChannel = ActivityContextChannel(
+            appContextChannel.engine.dartExecutor,
+            GalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
+        )
+        activityContextChannel!!.attach(this, intents, mediaLoaderAndMover)
+
+        NotificationsApi.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            NotificationsApiImpl(
+                this,
+                getSystemService(NotificationManager::class.java),
+                notificationsHolder
+            ),
+        )
     }
 
-    override fun getCachedEngineId(): String = "main"
+    override fun getCachedEngineId(): String? = null
     override fun provideFlutterEngine(context: Context): FlutterEngine = appContextChannel.engine
 
     override fun onDestroy() {
         super.onDestroy()
 
+        appContextChannel.detach()
+        try {
+            appContextChannel.engine.destroy()
+        } catch (e: Exception) {
+            Log.w("MainActivity.onDestroy", "threw on destroying engine", e)
+        }
+
         connectivityManager.unregisterNetworkCallback(netStatus)
         intents.unregisterAll()
-        activityContextChannel.detach()
+        activityContextChannel!!.detach()
 
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+        NotificationsApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+
+        notificationsHolder.cancelAll()
     }
 }

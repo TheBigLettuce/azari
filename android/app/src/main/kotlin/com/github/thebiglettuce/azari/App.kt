@@ -6,14 +6,27 @@
 package com.github.thebiglettuce.azari
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.StrictMode
+import android.util.Log
+import androidx.core.content.getSystemService
+import com.github.piasy.biv.BigImageViewer
+import com.github.piasy.biv.loader.glide.GlideImageLoader
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.dart.DartExecutor
 import com.github.thebiglettuce.azari.generated.GalleryApi
+import com.github.thebiglettuce.azari.generated.Notification
+import com.github.thebiglettuce.azari.generated.NotificationGroup
+import com.github.thebiglettuce.azari.generated.NotificationsApi
+import com.github.thebiglettuce.azari.generated.NotificationChannel as NotificationChannelApi
 import com.github.thebiglettuce.azari.impls.NativeViewFactory
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
@@ -34,17 +47,36 @@ class App : Application() {
             )
         }
 
+        BigImageViewer.initialize(GlideImageLoader.with(applicationContext))
+
         engines = FlutterEngineGroup(this)
         mediaLoaderAndMover.initMover()
+
+        createNotifChannels(this)
     }
 }
 
-fun getOrMakeEngine(app: App, entrypoint: String): FlutterEngine {
-    val flutterCache = FlutterEngineCache.getInstance()
-    if (flutterCache.contains(entrypoint)) {
-        return flutterCache[entrypoint]!!
-    }
+private fun createNotifChannels(context: Context) {
+    context.getSystemService<NotificationManager>()!!.apply {
+        createNotificationChannel(
+            NotificationChannel(
+                NotificationChannelApi.MISC.id(),
+                context.getString(R.string.misc_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+        )
 
+        createNotificationChannel(
+            NotificationChannel(
+                NotificationChannelApi.DOWNLOADER.id(),
+                context.getString(R.string.downloader_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+        )
+    }
+}
+
+fun makeEngine(app: App, entrypoint: String): FlutterEngine {
     val dartEntrypoint =
         DartExecutor.DartEntrypoint(
             FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
@@ -54,7 +86,15 @@ fun getOrMakeEngine(app: App, entrypoint: String): FlutterEngine {
         "imageview",
         NativeViewFactory(GalleryApi(engine.dartExecutor.binaryMessenger))
     )
-    flutterCache.put(entrypoint, engine)
 
     return engine
+}
+
+
+class LocaleBroadcastReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_LOCALE_CHANGED) {
+            createNotifChannels(context)
+        }
+    }
 }

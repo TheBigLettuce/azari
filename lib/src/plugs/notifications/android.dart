@@ -3,8 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
-import "package:flutter_local_notifications/flutter_local_notifications.dart";
 
 const _max = 12;
 
@@ -12,16 +12,16 @@ class AndroidProgress implements NotificationProgress {
   AndroidProgress({
     required this.group,
     required this.id,
-    required this.name,
-    required this.channelName,
+    required this.title,
+    required this.channel,
     required this.body,
     required this.payload,
   });
 
-  final String group;
   final int id;
-  final String name;
-  final String channelName;
+  final String title;
+  final NotificationChannel channel;
+  final NotificationGroup group;
   final String? body;
   final String? payload;
 
@@ -29,30 +29,40 @@ class AndroidProgress implements NotificationProgress {
   int _step = 0;
   int _currentSteps = 0;
 
+  final api = NotificationsApi();
+
   void _showNotification(int progress, String name) {
-    FlutterLocalNotificationsPlugin().show(
-      id,
-      name,
-      body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channelName.toLowerCase(),
-          channelName,
-          groupKey: group,
-          ongoing: true,
-          playSound: false,
-          enableVibration: false,
-          importance: Importance.low,
-          category: AndroidNotificationCategory.progress,
-          maxProgress: total,
-          progress: progress,
-          visibility: NotificationVisibility.private,
-          indeterminate: total == -1,
-          showProgress: true,
-        ),
+    api.post(
+      channel,
+      Notification(
+        id: id,
+        title: name,
+        body: body,
+        group: group,
+        maxProgress: total,
+        currentProgress: progress,
+        indeterminate: total == -1,
+        payload: payload,
       ),
-      payload: payload,
     );
+    // FlutterLocalNotificationsPlugin().show(
+    //   id,
+    //   name,
+    //   body,
+    //   NotificationDetails(
+    //     android: AndroidNotificationDetails(
+    //       channelName.toLowerCase(),
+    //       channelName,
+    //       groupKey: group,
+    //       playSound: false,
+    //       enableVibration: false,
+    //       importance: Importance.low,
+    //       category: AndroidNotificationCategory.progress,
+    //       showProgress: true,
+    //     ),
+    //   ),
+    //   payload: payload,
+    // );
   }
 
   @override
@@ -63,19 +73,19 @@ class AndroidProgress implements NotificationProgress {
       if (progress > (_currentSteps == 0 ? _step : _step * _currentSteps)) {
         _currentSteps++;
 
-        _showNotification(progress, name);
+        _showNotification(progress, title);
       }
     }
   }
 
   @override
   void error(String s) {
-    FlutterLocalNotificationsPlugin().cancel(id);
+    api.cancel(id);
   }
 
   @override
   void done() {
-    FlutterLocalNotificationsPlugin().cancel(id);
+    api.cancel(id);
   }
 
   @override
@@ -89,11 +99,11 @@ class AndroidProgress implements NotificationProgress {
 
 class AndroidNotifications implements NotificationPlug {
   @override
-  Future<NotificationProgress> newProgress(
-    String name,
-    int id,
-    String group,
-    String channelName, {
+  Future<NotificationProgress> newProgress({
+    required int id,
+    required String title,
+    required NotificationChannel channel,
+    required NotificationGroup group,
     String? body,
     String? payload,
   }) =>
@@ -101,8 +111,8 @@ class AndroidNotifications implements NotificationPlug {
         AndroidProgress(
           group: group,
           id: id,
-          name: name,
-          channelName: channelName,
+          title: title,
+          channel: channel,
           body: body,
           payload: payload,
         ),

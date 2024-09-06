@@ -12,6 +12,7 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart" as platform_api;
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -402,10 +403,10 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
     }
 
     final progress = await notificationPlug.newProgress(
-      entry.data.name,
-      _notificationId += 1,
-      entry.data.site,
-      "Downloader",
+      id: _notificationId += 1,
+      title: entry.data.name,
+      channel: platform_api.NotificationChannel.downloader,
+      group: platform_api.NotificationGroup.downloader,
       body: entry.data.site,
       payload: "downloads",
     );

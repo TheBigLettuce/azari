@@ -10,6 +10,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:flutter/material.dart";
@@ -69,8 +70,6 @@ Future<void> loadNetworkThumb(
   BuildContext context,
   String filename,
   int id,
-  String groupNotifString,
-  String notifChannelName,
   ThumbnailService thumbnails,
   PinnedThumbnailService pinnedThumbnails, [
   bool addToPinned = true,
@@ -87,10 +86,10 @@ Future<void> loadNetworkThumb(
     final plug = chooseNotificationPlug();
 
     final notif = await plug.newProgress(
-      "",
-      savingThumbNotifId,
-      groupNotifString,
-      notifChannelName,
+      id: NotificationPlug.savingThumbId,
+      title: "",
+      channel: NotificationChannel.misc,
+      group: NotificationGroup.misc,
     );
 
     notif.update(0, filename);

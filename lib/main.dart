@@ -13,7 +13,7 @@ import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
-import "package:azari/src/plugs/gallery/android/api.g.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";

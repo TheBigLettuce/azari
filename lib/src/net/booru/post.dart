@@ -200,6 +200,16 @@ abstract class PostImpl
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
+    if (this is FavoritePost) {
+      return defaultStickersPost(
+        type,
+        context,
+        tags,
+        id,
+        booru,
+      );
+    }
+
     if (excludeDuplicate) {
       final icons = defaultStickersPost(
         type,
@@ -224,7 +234,7 @@ abstract class PostImpl
           important: true,
         ),
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (this is! FavoritePost && db.favoritePosts.isFavorite(id, booru))
+      if (db.favoritePosts.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),
       ...defaultStickersPost(
         type,

@@ -16,7 +16,7 @@ android_install:
 regenerate:
 	flutter gen-l10n
 	mkdir -p test
-	flutter pub run pigeon --input pigeons/gallery.dart
+	flutter pub run pigeon --input pigeons/platform_api.dart
 	dart run build_runner build
 
 generate_dbus:

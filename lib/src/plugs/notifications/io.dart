@@ -10,7 +10,6 @@ import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/notifications/android.dart";
 import "package:azari/src/plugs/notifications/dummy.dart";
 import "package:azari/src/plugs/notifications/kde.dart";
-import "package:flutter_local_notifications/flutter_local_notifications.dart";
 
 NotificationPlug getApi() {
   if (Platform.isLinux) {
@@ -24,21 +23,5 @@ NotificationPlug getApi() {
 
 Future<void> init(
   StreamController<NotificationRouteEvent> stream,
-) async {
-  await FlutterLocalNotificationsPlugin().initialize(
-    const InitializationSettings(
-      linux: LinuxInitializationSettings(defaultActionName: "Default action"),
-      android: AndroidInitializationSettings("@drawable/ic_notification"),
-    ),
-    onDidReceiveNotificationResponse: (details) {
-      final payload = details.payload;
-      if (payload != null) {
-        if (payload == "downloads") {
-          stream.add(NotificationRouteEvent.downloads);
-        }
-      }
-    },
-  );
-
-  await FlutterLocalNotificationsPlugin().cancelAll();
-}
+) =>
+    Future.value();

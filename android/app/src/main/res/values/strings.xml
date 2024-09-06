@@ -1,1 +1,4 @@
-<resources></resources>
+<resources>
+    <string name="downloader_channel">Downloader</string>
+    <string name="misc_channel">Misc</string>
+</resources>

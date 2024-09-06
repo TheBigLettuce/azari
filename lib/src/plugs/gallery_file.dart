@@ -606,10 +606,10 @@ Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
   final apis = <Booru, BooruAPI>{};
 
   final notif = chooseNotificationPlug().newProgress(
-    l10n.redownloadFetchingUrls,
-    redownloadFilesNotifId,
-    "redownload files",
-    "Redownloading files",
+    id: NotificationPlug.redownloadFilesId,
+    title: l10n.redownloadFetchingUrls,
+    group: NotificationGroup.misc,
+    channel: NotificationChannel.misc,
     body: l10n.redownloadRedowloadingFiles(files.length),
   );
 

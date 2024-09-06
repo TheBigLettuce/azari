@@ -2852,6 +2852,7 @@ class IsarGridStateBooruService implements GridBookmarkService {
           .tagsStartsWith(tags)
           .booruEqualTo(preferBooru)
           .or()
+          .tagsStartsWith(tags)
           .not()
           .booruEqualTo(preferBooru)
           .limit(1)

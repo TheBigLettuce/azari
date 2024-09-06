@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications/io.dart"
     if (dart.library.html) "package:azari/src/plugs/notifications/web.dart";
 
@@ -16,11 +17,15 @@ abstract class NotificationProgress {
 }
 
 abstract class NotificationPlug {
-  Future<NotificationProgress> newProgress(
-    String name,
-    int id,
-    String group,
-    String channelName, {
+  static const savingTagsId = -10;
+  static const savingThumbId = -11;
+  static const redownloadFilesId = -12;
+
+  Future<NotificationProgress> newProgress({
+    required int id,
+    required String title,
+    required NotificationChannel channel,
+    required NotificationGroup group,
     String? body,
     String? payload,
   });
@@ -32,10 +37,6 @@ Future<void> initNotifications(
   StreamController<NotificationRouteEvent> stream,
 ) =>
     init(stream);
-
-const savingTagsNotifId = -10;
-const savingThumbNotifId = -11;
-const redownloadFilesNotifId = -12;
 
 enum NotificationRouteEvent {
   downloads;

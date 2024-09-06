@@ -5,6 +5,7 @@
 
 import "package:azari/dbus/job_view.g.dart";
 import "package:azari/dbus/job_view_server.g.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/notifications/dummy.dart";
 import "package:dbus/dbus.dart";
@@ -43,11 +44,11 @@ class KDENotifications implements NotificationPlug {
   final DBusClient _client = DBusClient.session();
 
   @override
-  Future<NotificationProgress> newProgress(
-    String name,
-    _,
-    __,
-    ___, {
+  Future<NotificationProgress> newProgress({
+    required int id,
+    required String title,
+    required NotificationChannel channel,
+    required NotificationGroup group,
     String? body,
     String? payload,
   }) async {
@@ -61,7 +62,7 @@ class KDENotifications implements NotificationPlug {
 
       final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);
 
-      await notif.callsetInfoMessage(name);
+      await notif.callsetInfoMessage(title);
       if (body != null) {
         await notif.callsetDescriptionField(0, "", body);
       }

@@ -7,10 +7,10 @@ import "package:pigeon/pigeon.dart";
 
 @ConfigurePigeon(
   PigeonOptions(
-    dartOut: "lib/src/plugs/gallery/android/api.g.dart",
-    dartTestOut: "test/test_api.g.dart",
+    dartOut: "lib/src/plugs/generated/platform_api.g.dart",
+    dartTestOut: "test/platform_api.g.dart",
     kotlinOut:
-        "android/app/src/main/kotlin/com/github/thebiglettuce/azari/generated/Gallery.kt",
+        "android/app/src/main/kotlin/com/github/thebiglettuce/azari/generated/Generated.kt",
     kotlinOptions: KotlinOptions(
       package: "com.github.thebiglettuce.azari.generated",
     ),
@@ -129,4 +129,46 @@ class CopyOp {
 
   final String from;
   final String to;
+}
+
+class Notification {
+  const Notification({
+    required this.maxProgress,
+    required this.currentProgress,
+    required this.indeterminate,
+    required this.payload,
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.group,
+  });
+
+  final int id;
+  final String title;
+  final String? body;
+
+  final NotificationGroup group;
+
+  final int maxProgress;
+  final int currentProgress;
+  final bool indeterminate;
+
+  final String? payload;
+}
+
+@HostApi()
+abstract class NotificationsApi {
+  @async
+  void post(NotificationChannel channel, Notification notif);
+  void cancel(int id);
+}
+
+enum NotificationGroup {
+  downloader,
+  misc;
+}
+
+enum NotificationChannel {
+  downloader,
+  misc;
 }
