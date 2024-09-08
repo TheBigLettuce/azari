@@ -20,7 +20,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.8.0+20
+version: 1.8.1+21
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -81,8 +81,6 @@ dependencies:
     git:
       url: https://github.com/TheBigLettuce/photo_view.git
       ref: 92d9b36b7b17719b1e851de3f8d963688da1c279
-
-  qr_flutter: ^4.1.0
 
   sliver_tools: ^0.2.12
   stream_transform: ^2.1.0
