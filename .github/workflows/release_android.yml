@@ -68,7 +68,7 @@ jobs:
         run: ./regen && ./runbuild
         
       - name: Get dependencies
-        run: flutter pub get && flutter gen-l10n && flutter pub run pigeon --input pigeons/gallery.dart
+        run: flutter pub get && flutter gen-l10n && flutter pub run pigeon --input pigeons/platform_api.dart
 
       - name: Start release build
         run: flutter build apk --split-per-abi --split-debug-info=debug_info
