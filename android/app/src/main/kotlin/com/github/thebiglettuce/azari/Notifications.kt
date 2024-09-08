@@ -5,8 +5,10 @@
 
 package com.github.thebiglettuce.azari
 
+import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
 import com.github.thebiglettuce.azari.generated.Notification
 import com.github.thebiglettuce.azari.generated.NotificationChannel
 import com.github.thebiglettuce.azari.generated.NotificationGroup
@@ -62,6 +64,11 @@ class NotificationsApiImpl(
         notif: Notification,
         callback: (Result<Unit>) -> Unit,
     ) {
+        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            callback(Result.success(Unit))
+            return
+        }
+
         var n = android.app.Notification.Builder(context, channel.id())
             .setProgress(
                 notif.maxProgress.toInt(),
@@ -90,13 +97,6 @@ class NotificationsApiImpl(
                 android.app.Notification.Builder(context, channel.id())
                     .setContentTitle("")
                     .setSmallIcon(R.drawable.ic_notification)
-//                    .setStyle(
-//                        android.app.Notification.InboxStyle()
-//                            .addLine("Alex Faarborg Check this out")
-//                            .addLine("Jeff Chang Launch Party")
-//                            .setBigContentTitle("2 new messages")
-//                            .setSummaryText("janedoe@example.com")
-//                    )
                     .setGroup(notif.group.id())
                     .setGroupSummary(true)
                     .build(),
@@ -113,12 +113,17 @@ class NotificationsApiImpl(
         )
 
         currentNotifications.add(notif.id.toInt())
+        callback(Result.success(Unit))
     }
 
-    override fun cancel(id: Long) {
+    override fun cancel(
+        id: Long,
+        callback: (Result<Unit>) -> Unit,
+    ) {
         val n = manager.activeNotifications.find { it.id == id.toInt() }
         currentNotifications.remove(id.toInt())
         if (n == null) {
+            callback(Result.success(Unit))
             return
         }
 
@@ -137,6 +142,8 @@ class NotificationsApiImpl(
         if (deleteGroup) {
             manager.cancel(groupNotifId)
         }
+
+        callback(Result.success(Unit))
     }
 }
 

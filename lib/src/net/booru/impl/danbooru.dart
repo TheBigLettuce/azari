@@ -99,13 +99,36 @@ class Danbooru implements BooruAPI {
   Future<List<Post>> randomPosts(
     BooruTagging excludedTags,
     SafeMode safeMode,
-  ) async {
-    final p = await page(
-      0,
-      "random:30",
+    bool videosOnly, {
+    RandomPostsOrder order = RandomPostsOrder.random,
+    String addTags = "",
+    int page = 0,
+  }) async {
+    // Danbooru limits anon users to 2 tags per search
+    // this maakes impossible to make random videos with tags on Danbooru
+    // instead, show only latest videos if addTags is not empty
+    //
+    // free metatags don't even include order...
+
+    final p = await this.page(
+      order == RandomPostsOrder.random ? 0 : page,
+      addTags.isNotEmpty && videosOnly
+          ? "video $addTags"
+          : "${order == RandomPostsOrder.random ? 'random:30' : ''}"
+                  "${videosOnly ? ' video' : ''}"
+                  " $addTags"
+              .trim(),
       excludedTags,
       safeMode,
       limit: 30,
+      order: addTags.isNotEmpty && videosOnly
+          ? BooruPostsOrder.latest
+          : switch (order) {
+              RandomPostsOrder.random ||
+              RandomPostsOrder.latest =>
+                BooruPostsOrder.latest,
+              RandomPostsOrder.rating => BooruPostsOrder.score,
+            },
     );
 
     return p.$1;
@@ -169,7 +192,7 @@ class Danbooru implements BooruAPI {
         };
 
     final query = <String, dynamic>{
-      "limit": limit?.toString() ?? numberOfElementsPerRefresh().toString(),
+      "limit": limit?.toString() ?? refreshPostCountLimit().toString(),
       "format": "json",
 
       /// anonymous api calls to danbooru are limited by two tags per search req

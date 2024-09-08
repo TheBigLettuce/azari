@@ -45,6 +45,8 @@ abstract class MiscSettingsData {
   bool get animeWatchingOrderReversed;
   ThemeType get themeType;
   FilteringMode get favoritesPageMode;
+  String get randomVideosAddTags;
+  RandomPostsOrder get randomVideosOrder;
 
   MiscSettingsData copy({
     bool? filesExtendedActions,
@@ -53,5 +55,7 @@ abstract class MiscSettingsData {
     bool? animeAlwaysLoadFromNet,
     bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
   });
 }

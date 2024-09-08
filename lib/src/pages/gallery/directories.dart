@@ -528,7 +528,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   ),
                 ],
           footer: widget.callback?.preview ?? widget.nestedCallback?.preview,
-          keybindsDescription: widget.l10n.androidGKeybindsDescription,
+          keybindsDescription: widget.l10n.galleryLabel,
           gridSeed: state.gridSeed,
         ),
       ),

@@ -5,6 +5,7 @@
 
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru_api.dart";
 import "package:isar/isar.dart";
 
 part "misc_settings.g.dart";
@@ -18,6 +19,8 @@ class IsarMiscSettings extends MiscSettingsData {
     required this.themeType,
     required this.favoritesPageMode,
     required this.animeWatchingOrderReversed,
+    required this.randomVideosAddTags,
+    required this.randomVideosOrder,
   });
 
   Id get id => 0;
@@ -43,6 +46,13 @@ class IsarMiscSettings extends MiscSettingsData {
   final ThemeType themeType;
 
   @override
+  final String randomVideosAddTags;
+
+  @override
+  @enumerated
+  final RandomPostsOrder randomVideosOrder;
+
+  @override
   MiscSettingsData copy({
     bool? filesExtendedActions,
     int? favoritesThumbId,
@@ -50,6 +60,8 @@ class IsarMiscSettings extends MiscSettingsData {
     bool? animeAlwaysLoadFromNet,
     bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
   }) =>
       IsarMiscSettings(
         animeWatchingOrderReversed:
@@ -60,5 +72,7 @@ class IsarMiscSettings extends MiscSettingsData {
         favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
         filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
         favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId,
+        randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
+        randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
       );
 }

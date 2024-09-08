@@ -186,6 +186,7 @@ class _SinglePostState extends State<SinglePost> {
       menuChildren: menuItems,
       controller: menuController,
       child: SearchBar(
+        elevation: const WidgetStatePropertyAll(0),
         hintText: AppLocalizations.of(context)!.goPostHint,
         controller: controller,
         trailing: [

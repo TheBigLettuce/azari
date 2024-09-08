@@ -329,6 +329,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 child: GridFrame<Post>(
                   key: state.gridKey,
                   slivers: [
+                    PopularRandomButtons(
+                      api: api,
+                      db: widget.db,
+                      safeMode: () => pagingState.safeMode,
+                      tags: pagingState.source.tags,
+                    ),
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,

@@ -3,16 +3,6 @@
     "ok": "ок",
     "refresh": "Обновить",
     "back": "Назад",
-    "keybindsFor": "Хоткеи для: {keybind}",
-    "@keybindsFor": {
-        "placeholders": {
-            "keybind": {
-                "type": "String",
-                "example": "Settings"
-            }
-        }
-    },
-    "keybindsDialog": "Это меню",
     "searchHint": "Поиск",
     "goPostHint": "Открыть пост",
     "notANumber": "'{text}' — не номер.",
@@ -29,11 +19,6 @@
     "downloadsPageName": "Загрузки",
     "yes": "да",
     "no": "нет",
-    "showImageInfo": "Показать 'о изображении'",
-    "downloadImage": "Сохранить",
-    "hideAppBar": "Полный экран",
-    "previousImage": "Предыдущее изображение",
-    "nextImage": "Следующее изображение",
     "imageViewPageName": "Изображение",
     "tagDeleteDialogTitle": "Удалить",
     "settingsPageName": "Настройки",
@@ -43,8 +28,6 @@
     "imageDisplayQualityInfo": "Качество загруженного изображения всегда Оригинал.",
     "safeModeSetting": "Контент фильтр",
     "licenseSetting": "Лицензия",
-    "tagsInfoPage": "Теги",
-    "urlInfoPage": "URL",
     "widthInfoPage": "Ширина",
     "heightInfoPage": "Вышина",
     "sourceFileInfoPage": "Оригинал",
@@ -68,20 +51,14 @@
     "savedTagsCount": "Сохраненные теги",
     "nameTitle": "Название",
     "directoriesHint": "Папки",
-    "androidGKeybindsDescription": "Галерея",
     "copiedClipboard": "Скопировано!",
     "aspectRatio": "Коэффициент пропорциональности",
-    "autoRefresh": "Автоматическое обновление сетки",
-    "autoRefreshHours": "Автоматическое обновление в часах",
-    "timeInHours": "Введите время в часах",
     "hideNames": "Скрыть названия",
     "gridColumns": "Клеток в сетке",
     "metricsLabel": "Метрика",
     "thumbnailsCSize": "Размер кэша миниатюр",
     "purgeThumbnails": "Очистить",
     "areYouSure": "Точно?",
-    "autoRefreshSubtitle": "Обновлять несвежую сетку на главном экране.",
-    "autoRefreshHoursSubtitle": "После этого времени сетка становится несвежей.",
     "booruLabel": "Booru",
     "filterHint": "Фильтровать",
     "elementSingular": "элемент",
@@ -91,25 +68,6 @@
     "cantCopySameDest": "Нельзя копировать в исходное место",
     "cantMoveSameDest": "Нельзя переместить в исходное место",
     "pickFileNotice": "Выбрать файл",
-    "couldntRestoreBackup": "Не удалось восстановить бэкап: {error}",
-    "@couldntRestoreBackup": {
-        "placeholders": {
-            "error": {
-                "type": "String"
-            }
-        }
-    },
-    "restore": "Восстановить",
-    "couldntBackup": "Ошибка: {error}",
-    "@couldntBackup": {
-        "placeholders": {
-            "error": {
-                "type": "String"
-            }
-        }
-    },
-    "backupSuccess": "Сохранено в Папка загрузок/backup",
-    "backup": "Бэкап",
     "blacklistedFoldersPage": "Скрытые папки",
     "currentTagTitle": "Тег",
     "enterNewTagTitle": "Изменить тег",
@@ -120,10 +78,7 @@
     "savingTags": "Сохранение тегов",
     "tagSingular": "тег",
     "tagPlural": "тегов",
-    "bulkRenameTitle": "Переименование",
     "valueIsNull": "Значение нулевое",
-    "newNameShouldntBeEmpty": "Новое название не может быть пустым",
-    "newNameShouldIncludeOneStar": "Новое название не может не включать в себя одну *",
     "youCanRestoreFromTrash": "Можно восстановить из корзины",
     "resultsIncomplete": "Результат неполный",
     "loadMoreLabel": "Загрузить больше",
@@ -161,30 +116,19 @@
     "ungrouped": "Без группы",
     "more": "Больше",
     "newsTab": "Новости",
-    "watchingTab": "Смотрю",
-    "discoverTab": "Поиск",
-    "finishedTab": "Завершено",
     "animePage": "Аниме",
     "cardWatched": "Просмотрено",
-    "cardRemove": "Удалить",
-    "removeFromWatched": "Удаленно из просмотренного",
     "hasTranslations": "Есть перевод",
     "tapToView": "Нажмите для просмотра",
     "translationTitle": "Перевод",
-    "cameraPermQrCodeErr": "Без разрешения доступа к камере считывать QR-код невозможно.",
-    "note": "Заметка",
-    "save": "Сохранить",
     "miscLabel": "Остальное",
     "loadingPlaceholder": "...",
     "pinnedThumbnailsSize": "Размер кэша закрепленных миниатюр",
     "extendedFilesGridActions": "Показывать дополнительные кнопки действия для файлов",
     "animeAlwaysOnline": "Всегда загружать информацию об аниме с интернета",
     "add": "Добавить",
-    "newNotePlaceholder": "Новая заметка",
-    "noteDeleted": "Заметка удаленна",
     "group": "Группа",
     "bookmarked": "Добавлено в закладки",
-    "notesPage": "Заметки",
     "dashboardPage": "Статистика",
     "emptyTrashTitle": "Очистить корзину?",
     "thisIsPermanent": "Восстановлению не подлежит",
@@ -218,11 +162,6 @@
     "showNames": "Показывать названияы",
     "gridView": "Сетка",
     "listView": "Лист",
-    "cardDone": "Просмотрено",
-    "removedFromWatching": "Удалено из смотрю",
-    "cantWatchThree": "Можно смотреть не больше трех",
-    "cardWatching": "Смотрю",
-    "reset": "Сбросить",
     "cardInBrowser": "В браузере",
     "cardTrailer": "Трейлер",
     "cardBacklog": "Беклог",
@@ -255,27 +194,9 @@
     "animeLoadPictures": "Загрузить изображения",
     "animeSimilar": "Похожее",
     "animeLoadSimilar": "Загрузить похожее",
-    "invalidAnimeEntry": "Неправильное аниме",
-    "mangaMarkAsRead": "Пометить как прочитанное",
-    "mangaRemoveProgress": "Сбросить прогресс",
-    "mangaChapterName": "Глава {name}",
-    "@mangaChapterName": {
-        "placeholders": {
-            "name": {
-                "type": "String"
-            }
-        }
-    },
-    "mangaProgressDone": "прочитано",
-    "mangaChaptersLabel": "Главы",
-    "mangaShowRead": "Показывать прочитанное",
-    "mangaHideRead": "Скрыть прочитанное",
-    "mangaClearCachedMangaChapters": "Очистить",
-    "mangaLoadNextChapters": "Загрузить еще",
-    "mangaLoadChapters": "Загрузить главы",
     "copyLabel": "Скопировать",
     "chooseSafeMode": "Выбрать контент фильтр",
-    "launchWithSafeMode": "Поиск с выбранным контент фильтром",
+    "searchWithSafeMode": "Поиск с выбранным контент фильтром",
     "removeFromExcluded": "Убрать из исключенных тегов",
     "addToExcluded": "Добавить в исключенные теги",
     "pinTag": "Закрепить",
@@ -299,14 +220,9 @@
     "showExcludedTags": "Показать исключенные",
     "searchSinglePost": "Искать одиночный пост",
     "searchTextIsEmpty": "Текст поиска пустой",
-    "mangaPage": "Манга",
-    "mangaInfoPage": "Манга",
     "cardStatus": "Статус",
     "cardVolumes": "Том",
     "cardDemographics": "Демография",
-    "mangaReadingLabel": "Последнее",
-    "mangaContinueReading": "Продолжить",
-    "mangaPinnedLabel": "Закрепленное",
     "enumPostRatingGeneral": "Повсеместный",
     "enumPostRatingSensitive": "Чуствительный",
     "enumPostRatingQuestionable": "Сомнительный",
@@ -329,7 +245,6 @@
     "enumFilteringModeTagReversed": "Тег наоборот",
     "enumFilteringModeGroup": "Группа",
     "enumFilteringModeUngrouped": "Без группы",
-    "enumFilteringModeNotes": "Заметки",
     "enumFilteringModeNoFilter": "Без фильтра",
     "filteringLabel": "Фильтр",
     "sortingModesLabel": "Режим сортировки",
@@ -338,15 +253,6 @@
     "noInternet": "Нет интернета",
     "layoutLabel": "Разметка",
     "homePage": "Начальная страница",
-    "mangaVolumeName": "Том {name}",
-    "@mangaVolumeName": {
-        "placeholders": {
-            "name": {
-                "type": "String"
-            }
-        }
-    },
-    "mangaStartReading": "Читать",
     "segmentsUncategorized": "Остальное",
     "segmentsSpecial": "Специальное",
     "galleryDirectoriesFavorites": "Фавориты",
@@ -413,7 +319,6 @@
     "welcomeDone": "Это все",
     "welcomeInitalSettings": "Настройки",
     "welcomeInitalSettingsExplanation": "Папка для загрузок имеет несколько применений",
-    "mangaUnpinned": "Откреплено",
     "usingApi": "Используя {apiName}",
     "@usingApi": {
         "placeholders": {
@@ -443,7 +348,6 @@
     "changeGroupReason": "Сменить группу",
     "hideDirectoryReason": "Скрыть папки",
     "joinDirectoriesReason": "Соединить папки",
-    "showAnimeManga": "Показывать странницы аниме и манги",
     "someFilesShownNotice": "Некоторые файлы не могут быть отображены",
     "cardPicturesSeenToday": "Изображений просмотрено сегодня",
     "cardTimeSpentToday": "Время проведено сегодня",
@@ -505,5 +409,7 @@
     "removeBacklog": "Удалить из беклога",
     "addBacklog": "В беклог",
     "popularPosts": "Популярные",
-    "randomPosts": "Случайные"
+    "randomPosts": "Случайные",
+    "videosLabel": "Видео",
+    "addTagsSearch": "Дополнительные теги"
 }

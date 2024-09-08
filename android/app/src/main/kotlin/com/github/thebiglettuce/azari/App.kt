@@ -31,7 +31,6 @@ import com.github.thebiglettuce.azari.impls.NativeViewFactory
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
 class App : Application() {
-    var appContextChannelRegistered = false
     internal lateinit var engines: FlutterEngineGroup
     val mediaLoaderAndMover = MediaLoaderAndMover(this)
 

@@ -5,12 +5,13 @@
 
 import "dart:async";
 
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/notifications/dummy.dart";
 
 NotificationPlug getApi() => const DummyNotifications();
 
-Future<void> init(
+Future<NotificationPressedImpl> init(
   StreamController<NotificationRouteEvent> stream,
 ) =>
-    Future.value();
+    Future.value(NotificationPressedImpl(stream.sink));

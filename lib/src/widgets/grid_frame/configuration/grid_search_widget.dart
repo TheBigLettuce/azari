@@ -307,6 +307,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                             onSubmitted();
                             widget.onChange?.call(str);
                           },
+                          elevation: const WidgetStatePropertyAll(0),
                           focusNode: focus,
                           controller: controller,
                           onChanged: widget.onChange,
@@ -324,6 +325,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                         ),
                       )
                     : SearchBar(
+                        elevation: const WidgetStatePropertyAll(0),
                         controller: widget.controller,
                         onChanged: widget.onChange,
                         hintText: l10n.filterHint,

@@ -984,6 +984,8 @@ class IsarMiscSettingsService implements MiscSettingsService {
         themeType: ThemeType.systemAccent,
         favoritesThumbId: 0,
         favoritesPageMode: FilteringMode.tag,
+        randomVideosAddTags: "",
+        randomVideosOrder: RandomPostsOrder.latest,
       );
 
   @override

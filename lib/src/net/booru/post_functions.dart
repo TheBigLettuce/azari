@@ -129,26 +129,6 @@ class _PostInfoState extends State<PostInfo> {
             items: (tag, controller) => [
               PopupMenuItem(
                 onTap: () {
-                  if (tagManager.excluded.exists(tag)) {
-                    tagManager.excluded.delete(tag);
-                  } else {
-                    tagManager.excluded.add(tag);
-                  }
-                },
-                child: Text(
-                  tagManager.excluded.exists(tag)
-                      ? l10n.removeFromExcluded
-                      : l10n.addToExcluded,
-                ),
-              ),
-              launchGridSafeModeItem(
-                context,
-                tag,
-                _launchGrid,
-                l10n,
-              ),
-              PopupMenuItem(
-                onTap: () {
                   if (tagManager.pinned.exists(tag)) {
                     tagManager.pinned.delete(tag);
                   } else {
@@ -165,6 +145,26 @@ class _PostInfoState extends State<PostInfo> {
                 },
                 child: Text(
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+                ),
+              ),
+              launchGridSafeModeItem(
+                context,
+                tag,
+                _launchGrid,
+                l10n,
+              ),
+              PopupMenuItem(
+                onTap: () {
+                  if (tagManager.excluded.exists(tag)) {
+                    tagManager.excluded.delete(tag);
+                  } else {
+                    tagManager.excluded.add(tag);
+                  }
+                },
+                child: Text(
+                  tagManager.excluded.exists(tag)
+                      ? l10n.removeFromExcluded
+                      : l10n.addToExcluded,
                 ),
               ),
             ],

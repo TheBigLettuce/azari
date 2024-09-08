@@ -33,11 +33,18 @@ abstract class NotificationPlug {
 
 NotificationPlug chooseNotificationPlug() => getApi();
 
-Future<void> initNotifications(
+Future<NotificationPressedImpl> initNotifications(
   StreamController<NotificationRouteEvent> stream,
 ) =>
     init(stream);
 
-enum NotificationRouteEvent {
-  downloads;
+class NotificationPressedImpl implements OnNotificationPressed {
+  const NotificationPressedImpl(this.sink);
+
+  final Sink<NotificationRouteEvent> sink;
+
+  @override
+  void onPressed(NotificationRouteEvent r) {
+    sink.add(r);
+  }
 }

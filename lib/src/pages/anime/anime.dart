@@ -324,7 +324,7 @@ class _WatchingAnimePanelState extends State<WatchingAnimePanel>
         SliverToBoxAdapter(
           child: FadingPanelLabel(
             horizontalPadding: const EdgeInsets.symmetric(horizontal: 18),
-            label: showWatching ? l10n.watchingTab : l10n.backlogLabel,
+            label: showWatching ? l10n.watchingLabel : l10n.backlogLabel,
             icon: Icons.cached_rounded,
             onPressed: () {
               controller.reverse().then((_) {

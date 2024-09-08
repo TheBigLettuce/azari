@@ -63,13 +63,7 @@ class AppContextChannel(
         mediaLoaderAndMover: MediaLoaderAndMover,
         connectivityManager: ConnectivityManager,
     ) {
-        if (app.appContextChannelRegistered) {
-            return
-        }
-
         setMethodHandler(app, mediaLoaderAndMover, connectivityManager)
-
-        app.appContextChannelRegistered = true
     }
 
     fun attachSecondary(
@@ -301,7 +295,7 @@ class AppContextChannel(
         content: List<DirectoryFile>,
         notFound: List<Long>,
         empty: Boolean,
-        inRefresh: Boolean
+        inRefresh: Boolean,
     ) {
         uiScope.launch {
             galleryApi.updatePictures(

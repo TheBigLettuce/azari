@@ -36,7 +36,14 @@ abstract class BooruAPI {
   Future<Post> singlePost(int id);
 
   /// Load random 30 posts.
-  Future<List<Post>> randomPosts(BooruTagging excludedTags, SafeMode safeMode);
+  Future<List<Post>> randomPosts(
+    BooruTagging excludedTags,
+    SafeMode safeMode,
+    bool videosOnly, {
+    RandomPostsOrder order = RandomPostsOrder.random,
+    String addTags = "",
+    int page = 0,
+  });
 
   /// Get posts by a certain page.
   /// This is only used to refresh the grid,
@@ -108,6 +115,12 @@ abstract class BooruAPI {
       Booru.gelbooru => Gelbooru(client, pageSaver),
     };
   }
+}
+
+enum RandomPostsOrder {
+  random,
+  latest,
+  rating;
 }
 
 enum BooruTagSorting {

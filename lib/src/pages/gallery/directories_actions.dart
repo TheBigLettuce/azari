@@ -261,6 +261,17 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
 
     return AlertDialog(
       title: Text(l10n.group),
+      actions: [
+        IconButton.filled(
+          onPressed: () {
+            toPin = !toPin;
+
+            setState(() {});
+          },
+          icon: const Icon(Icons.push_pin_rounded),
+          isSelected: toPin,
+        ),
+      ],
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -275,6 +286,10 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
                 autofocus: true,
                 focusNode: focus,
                 controller: controller,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  prefixIcon: Icon(Icons.tag_rounded),
+                ),
                 onFieldSubmitted: (value) {
                   onSubmitted();
                   widget.onSubmitted(widget.selected, value, toPin).then((e) {
@@ -289,16 +304,6 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
             },
             searchFocus: focus,
           ),
-          if (widget.showPinButton)
-            SwitchListTile(
-              title: Text(l10n.pinGroupLabel),
-              value: toPin,
-              onChanged: (b) {
-                toPin = b;
-
-                setState(() {});
-              },
-            ),
         ],
       ),
     );

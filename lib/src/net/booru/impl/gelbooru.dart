@@ -156,7 +156,7 @@ class Gelbooru implements BooruAPI {
       "json": "1",
       "tags":
           "${order == BooruPostsOrder.score ? 'sort:score' : ''} $safeMode_ $excludedTagsString $tags",
-      "limit": limit?.toString() ?? numberOfElementsPerRefresh().toString(),
+      "limit": limit?.toString() ?? refreshPostCountLimit().toString(),
     };
 
     final resp = await client.getUriLog<Map<String, dynamic>>(
@@ -203,13 +203,25 @@ class Gelbooru implements BooruAPI {
   Future<List<Post>> randomPosts(
     BooruTagging excludedTags,
     SafeMode safeMode,
-  ) async {
-    final p = await page(
-      0,
-      "sort:random",
+    bool videosOnly, {
+    RandomPostsOrder order = RandomPostsOrder.random,
+    String addTags = "",
+    int page = 0,
+  }) async {
+    final p = await this.page(
+      page,
+      "${order == RandomPostsOrder.random ? 'sort:random' : ''}"
+      "${videosOnly ? ' video' : ''}"
+      " $addTags",
       excludedTags,
       safeMode,
       limit: 30,
+      order: switch (order) {
+        RandomPostsOrder.random ||
+        RandomPostsOrder.latest =>
+          BooruPostsOrder.latest,
+        RandomPostsOrder.rating => BooruPostsOrder.score,
+      },
     );
 
     return p.$1;

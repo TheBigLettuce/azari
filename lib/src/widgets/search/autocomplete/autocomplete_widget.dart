@@ -145,6 +145,7 @@ class AutocompleteWidget extends StatelessWidget {
           (context, textEditingController, focusNode, onFieldSubmitted) {
         return plainSearchBar
             ? SearchBar(
+                elevation: const WidgetStatePropertyAll(0),
                 controller: textEditingController,
                 focusNode: focusNode,
                 hintText: AppLocalizations.of(context)!.searchHint,
@@ -277,6 +278,7 @@ class AutocompleteSearchBar extends StatelessWidget {
             hintColor: onPrimary.withOpacity(0.5),
           ),
           child: SearchBar(
+            elevation: const WidgetStatePropertyAll(0),
             side: const WidgetStatePropertyAll(BorderSide.none),
             leading: !notifier.hasFocus
                 ? swapSearchIcon && addItems != null && addItems!.length == 1

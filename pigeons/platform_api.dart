@@ -160,7 +160,14 @@ class Notification {
 abstract class NotificationsApi {
   @async
   void post(NotificationChannel channel, Notification notif);
+
+  @async
   void cancel(int id);
+}
+
+@FlutterApi()
+abstract class OnNotificationPressed {
+  void onPressed(NotificationRouteEvent r);
 }
 
 enum NotificationGroup {
@@ -171,4 +178,8 @@ enum NotificationGroup {
 enum NotificationChannel {
   downloader,
   misc;
+}
+
+enum NotificationRouteEvent {
+  downloads;
 }

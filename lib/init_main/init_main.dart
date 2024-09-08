@@ -10,6 +10,7 @@ import "dart:ui" as ui;
 import "package:azari/init_main/app_info.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/network_status.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:flutter/foundation.dart";
@@ -28,9 +29,10 @@ Future<void> initMain(
 
   _changeExceptionErrorColors();
 
+  OnNotificationPressed.setUp(await initNotifications(stream));
+
   await initServices(temporary);
   await initAppInfo();
-  await initNotifications(stream);
   await initNetworkStatus();
   initGalleryPlug(temporary);
 

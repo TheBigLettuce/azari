@@ -69,13 +69,8 @@ Future<void> initServices(bool temporary) async {
   return Future.value();
 }
 
-int numberOfElementsPerRefresh() {
-  final booruSettings = _currentDb.gridSettings.booru.current;
-  if (booruSettings.layoutType == GridLayoutType.list) {
-    return 40;
-  }
-
-  return 15 * booruSettings.columns.number;
+int refreshPostCountLimit() {
+  return 100;
 }
 
 DownloadManager? _downloadManager;

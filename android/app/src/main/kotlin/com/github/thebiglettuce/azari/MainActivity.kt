@@ -27,7 +27,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val intents =
         ActivityResultIntents(this, { activityContextChannel!! }, { mediaLoaderAndMover })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
-    val appContextChannel: AppContextChannel by lazy {
+    private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
         val engine = makeEngine(app, "main")
@@ -58,6 +58,8 @@ class MainActivity : FlutterFragmentActivity() {
         enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
+
+        Log.w("onCreate", "called")
 
         appContextChannel.attach(
             this.applicationContext as App,

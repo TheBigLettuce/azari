@@ -307,9 +307,10 @@ class _BooruPageState extends State<BooruPage> {
                 child: GridFrame<Post>(
                   key: state.gridKey,
                   slivers: [
-                    _PopularRandomButtons(
+                    PopularRandomButtons(
                       db: widget.db,
                       api: pagingState.api,
+                      safeMode: () => state.settings.safeMode,
                     ),
                     _HottestTagNotifier(
                       api: pagingState.api,
@@ -462,19 +463,181 @@ class _BooruPageState extends State<BooruPage> {
   }
 }
 
-class _PopularRandomButtons extends StatelessWidget {
-  const _PopularRandomButtons({
+class PopularRandomButtons extends StatelessWidget {
+  const PopularRandomButtons({
     // super.key,
     required this.api,
     required this.db,
+    required this.safeMode,
+    this.tags,
   });
 
   final BooruAPI api;
+  final String? tags;
+
+  final SafeMode Function() safeMode;
+
   final DbConn db;
+
+  void launchVideos(
+    BuildContext gridContext,
+    AppLocalizations l10n,
+    ThemeData theme,
+    bool longPress,
+  ) {
+    final value = <Post>[];
+    int page = 0;
+    bool canLoadMore = true;
+
+    Navigator.of(gridContext, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) => WrapFutureRestartable(
+          builder: (context, _) {
+            if (value.isEmpty) {
+              return Scaffold(
+                appBar: AppBar(),
+                body: Center(
+                  child: Text(
+                    l10n.emptyResult,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+              );
+            }
+
+            final downloadManager = DownloadManager.of(context);
+            final postTags = PostTags.fromContext(context);
+
+            final gridExtra = GridExtrasNotifier.of<Post>(gridContext);
+
+            {
+              final post = value.first;
+
+              db.visitedPosts.addAll([
+                VisitedPost(
+                  booru: post.booru,
+                  id: post.id,
+                  thumbUrl: post.previewUrl,
+                  date: DateTime.now(),
+                ),
+              ]);
+            }
+
+            final i = ImageView(
+              gridContext: gridContext,
+              cellCount: value.length,
+              scrollUntill: (_) {},
+              startingCell: 0,
+              getCell: (i) => value[i].content(),
+              onNearEnd: () async {
+                if (!canLoadMore) {
+                  return value.length;
+                }
+
+                final List<Post> next;
+
+                if (tags == null) {
+                  final miscSettings = MiscSettingsService.db().current;
+                  next = await api.randomPosts(
+                    db.tagManager.excluded,
+                    safeMode(),
+                    true,
+                    order: miscSettings.randomVideosOrder,
+                    addTags: miscSettings.randomVideosAddTags,
+                    page: page + 1,
+                  );
+                } else {
+                  next = await api.randomPosts(
+                    db.tagManager.excluded,
+                    safeMode(),
+                    true,
+                    order: longPress
+                        ? RandomPostsOrder.random
+                        : RandomPostsOrder.latest,
+                    addTags: tags!,
+                    page: page + 1,
+                  );
+                }
+
+                page += 1;
+                value.addAll(next);
+                if (next.isEmpty) {
+                  canLoadMore = false;
+                }
+
+                return value.length;
+              },
+              statistics: StatisticsBooruService.asImageViewStatistics(),
+              download: (i) => value[i].download(downloadManager, postTags),
+              tags: (c) => DefaultPostPressable.imageViewTags(
+                c,
+                db.tagManager,
+              ),
+              watchTags: (c, f) => DefaultPostPressable.watchTags(
+                c,
+                f,
+                db.tagManager,
+              ),
+              pageChange: (state) {
+                final post = value[state.currentPage];
+
+                db.visitedPosts.addAll([
+                  VisitedPost(
+                    booru: post.booru,
+                    id: post.id,
+                    thumbUrl: post.previewUrl,
+                    date: DateTime.now(),
+                  ),
+                ]);
+              },
+            );
+
+            return gridExtra.functionality.registerNotifiers != null
+                ? gridExtra.functionality.registerNotifiers!(i)
+                : i;
+          },
+          newStatus: () async {
+            page = 0;
+            value.clear();
+            canLoadMore = true;
+
+            final List<Post> posts;
+
+            if (tags == null) {
+              final miscSettings = MiscSettingsService.db().current;
+
+              posts = await api.randomPosts(
+                db.tagManager.excluded,
+                safeMode(),
+                true,
+                order: miscSettings.randomVideosOrder,
+                addTags: miscSettings.randomVideosAddTags,
+              );
+            } else {
+              posts = await api.randomPosts(
+                db.tagManager.excluded,
+                safeMode(),
+                true,
+                order: longPress
+                    ? RandomPostsOrder.random
+                    : RandomPostsOrder.latest,
+                addTags: tags!,
+              );
+            }
+
+            value.addAll(posts);
+
+            return value;
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext gridContext) {
     final l10n = AppLocalizations.of(gridContext)!;
+    final theme = Theme.of(gridContext);
 
     return SliverPadding(
       padding: const EdgeInsets.only(
@@ -495,13 +658,15 @@ class _PopularRandomButtons extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => PopularPage(
                         api: api,
+                        tags: tags,
                         db: db,
+                        safeMode: safeMode,
                       ),
                     ),
                   );
                 },
                 label: Text(l10n.popularPosts),
-                icon: const Icon(Icons.whatshot_rounded),
+                icon: const Icon(Icons.whatshot_outlined),
               ),
               TextButton.icon(
                 onPressed: () {
@@ -569,16 +734,156 @@ class _PopularRandomButtons extends StatelessWidget {
                         },
                         newStatus: () => api.randomPosts(
                           db.tagManager.excluded,
-                          db.settings.current.safeMode,
+                          safeMode(),
+                          false,
+                          addTags: tags ?? "",
                         ),
                       ),
                     ),
                   );
                 },
                 label: Text(l10n.randomPosts),
-                icon: const Icon(Icons.shuffle_rounded),
+                icon: const Icon(Icons.shuffle_outlined),
+              ),
+              TextButton.icon(
+                onPressed: () => launchVideos(gridContext, l10n, theme, false),
+                onLongPress: tags != null
+                    ? () => launchVideos(gridContext, l10n, theme, true)
+                    : () {
+                        Navigator.of(gridContext, rootNavigator: true)
+                            .push<void>(
+                          DialogRoute(
+                            context: gridContext,
+                            builder: (context) => _VideosSettingsDialog(
+                              api: api,
+                            ),
+                          ),
+                        );
+                      },
+                label: Text(l10n.videosLabel),
+                icon: const Icon(Icons.video_collection_outlined),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideosSettingsDialog extends StatefulWidget {
+  const _VideosSettingsDialog({
+    // super.key,
+    required this.api,
+  });
+
+  final BooruAPI api;
+
+  @override
+  State<_VideosSettingsDialog> createState() => __VideosSettingsDialogState();
+}
+
+class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
+  late final StreamSubscription<MiscSettingsData?> subscr;
+  MiscSettingsData miscSettings = MiscSettingsService.db().current;
+
+  late final TextEditingController textController;
+  final focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+
+    textController =
+        TextEditingController(text: miscSettings.randomVideosAddTags);
+
+    subscr = miscSettings.s.watch((settings) {
+      setState(() {
+        miscSettings = settings!;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+    focus.dispose();
+
+    if (miscSettings.randomVideosAddTags != textController.text) {
+      miscSettings.copy(randomVideosAddTags: textController.text).save();
+    }
+
+    textController.dispose();
+
+    super.dispose();
+  }
+
+  (String, List<BooruTag>)? latestSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Text(l10n.settingsLabel),
+      actions: [
+        IconButton.filled(
+          onPressed: () => miscSettings
+              .copy(randomVideosOrder: RandomPostsOrder.random)
+              .save(),
+          icon: const Icon(Icons.shuffle_rounded),
+          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.random,
+        ),
+        IconButton.filled(
+          onPressed: () => miscSettings
+              .copy(randomVideosOrder: RandomPostsOrder.rating)
+              .save(),
+          icon: const Icon(Icons.whatshot_rounded),
+          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.rating,
+        ),
+        IconButton.filled(
+          onPressed: () => miscSettings
+              .copy(randomVideosOrder: RandomPostsOrder.latest)
+              .save(),
+          icon: const Icon(Icons.schedule_rounded),
+          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.latest,
+        ),
+      ],
+      content: Padding(
+        padding: EdgeInsets.zero,
+        child: SearchBarAutocompleteWrapper(
+          search: BarSearchWidget(
+            onChange: null,
+            complete: (str) async {
+              if (str == latestSearch?.$1) {
+                return latestSearch!.$2;
+              }
+
+              final res = await widget.api.searchTag(str);
+
+              latestSearch = (str, res);
+
+              return res;
+            },
+            textEditingController: textController,
+          ),
+          searchFocus: focus,
+          child: (context, controller, focus, onSelected) => TextField(
+            decoration: InputDecoration(
+              icon: const Icon(Icons.tag_outlined),
+              suffix: IconButton(
+                onPressed: () {
+                  controller.clear();
+                  focus.unfocus();
+                },
+                icon: const Icon(Icons.close_rounded),
+              ),
+              hintText: l10n.addTagsSearch,
+              border: InputBorder.none,
+            ),
+            controller: controller,
+            focusNode: focus,
+            // onSubmitted: onSubmit,
           ),
         ),
       ),
@@ -591,9 +896,14 @@ class PopularPage extends StatefulWidget {
     super.key,
     required this.api,
     required this.db,
+    required this.tags,
+    required this.safeMode,
   });
 
   final BooruAPI api;
+  final String? tags;
+
+  final SafeMode Function() safeMode;
 
   final DbConn db;
 
@@ -615,9 +925,9 @@ class _PopularPageState extends State<PopularPage> {
 
       final ret = await widget.api.page(
         page,
-        "",
+        widget.tags ?? "",
         widget.db.tagManager.excluded,
-        widget.db.settings.current.safeMode,
+        widget.safeMode(),
         order: BooruPostsOrder.score,
       );
 
@@ -626,9 +936,9 @@ class _PopularPageState extends State<PopularPage> {
     next: () async {
       final ret = await widget.api.page(
         page + 1,
-        "",
+        widget.tags ?? "",
         widget.db.tagManager.excluded,
-        widget.db.settings.current.safeMode,
+        widget.safeMode(),
         order: BooruPostsOrder.score,
       );
 
@@ -739,7 +1049,11 @@ class _PopularPageState extends State<PopularPage> {
                               child: SizedBox.shrink(),
                             ),
                         // centerTitle: true,
-                        title: Text(l10n.popularPosts),
+                        title: Text(
+                          widget.tags != null
+                              ? "${l10n.popularPosts} '${widget.tags}'"
+                              : l10n.popularPosts,
+                        ),
                         actions: [if (settingsButton != null) settingsButton],
                       ),
                     ),
@@ -955,8 +1269,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
             padding: const EdgeInsets.only(left: 8, right: 8),
             child: IconButton(
               onPressed: () {
-                Navigator.push(
-                  context,
+                Navigator.of(context, rootNavigator: true).push(
                   DialogRoute<void>(
                     context: context,
                     builder: (context) {
@@ -985,8 +1298,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
               padding: const EdgeInsets.only(left: 8, right: 8),
               child: IconButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     DialogRoute<void>(
                       context: context,
                       builder: (context) {
@@ -1122,7 +1434,7 @@ PopupMenuItem<void> launchGridSafeModeItem(
           allowSingle: true,
         );
       },
-      child: Text(l10n.launchWithSafeMode),
+      child: Text(l10n.searchWithSafeMode),
     );
 
 class _HottestTagNotifier extends StatelessWidget {
@@ -1299,6 +1611,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
                   context,
                   list[i].tag,
                   widget.api.booru,
+                  overrideSafeMode: SettingsService.db().current.safeMode,
                 );
               },
               children: list.map<Widget>((tag) {

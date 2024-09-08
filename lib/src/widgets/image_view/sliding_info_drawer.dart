@@ -145,6 +145,8 @@ class _ImageViewFabState extends State<ImageViewFab>
     final theme = Theme.of(context);
 
     return FloatingActionButton(
+      elevation: 0,
+      heroTag: null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       backgroundColor: theme.colorScheme.surfaceContainerHigh.withOpacity(0.9),
       foregroundColor: theme.colorScheme.onSurfaceVariant.withOpacity(0.95),

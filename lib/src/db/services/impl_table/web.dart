@@ -965,6 +965,8 @@ class $MiscSettingsData extends MiscSettingsData {
     required this.themeType,
     required this.favoritesPageMode,
     required this.animeWatchingOrderReversed,
+    required this.randomVideosAddTags,
+    required this.randomVideosOrder,
   });
 
   @override
@@ -986,6 +988,12 @@ class $MiscSettingsData extends MiscSettingsData {
   final ThemeType themeType;
 
   @override
+  final String randomVideosAddTags;
+
+  @override
+  final RandomPostsOrder randomVideosOrder;
+
+  @override
   MiscSettingsData copy({
     bool? filesExtendedActions,
     int? favoritesThumbId,
@@ -993,6 +1001,8 @@ class $MiscSettingsData extends MiscSettingsData {
     bool? animeAlwaysLoadFromNet,
     bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
   }) =>
       $MiscSettingsData(
         filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
@@ -1003,6 +1013,8 @@ class $MiscSettingsData extends MiscSettingsData {
         favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
         animeWatchingOrderReversed:
             animeWatchingOrderReversed ?? this.animeWatchingOrderReversed,
+        randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
+        randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
       );
 }
 

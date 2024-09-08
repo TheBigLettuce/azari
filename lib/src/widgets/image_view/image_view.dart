@@ -369,6 +369,8 @@ class ImageViewState extends State<ImageView>
 
   @override
   void dispose() {
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+
     currentPageStream.close();
     animationController.dispose();
     slideAnimationLeft.dispose();

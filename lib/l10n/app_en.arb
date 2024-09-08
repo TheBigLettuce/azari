@@ -12,20 +12,6 @@
     "@back": {
         "description": "Keybinding key info, goes back a page"
     },
-    "keybindsFor": "Keybinds for: {keybind}",
-    "@keybindsFor": {
-        "description": "Keybinding key info, registered keybinds on a page dialog title",
-        "placeholders": {
-            "keybind": {
-                "type": "String",
-                "example": "Settings"
-            }
-        }
-    },
-    "keybindsDialog": "This menu",
-    "@keybindsDialog": {
-        "description": "Keybinding key info, shows the dialog about the keybinds"
-    },
     "searchHint": "Search",
     "@searchHint": {
         "description": "Text field hint, on tag search text field"
@@ -67,26 +53,6 @@
     "@no": {
         "description": "Dialog button, to dismiss the dialog"
     },
-    "showImageInfo": "Show info",
-    "@showImageInfo": {
-        "description": "Keybinding key info, toggles the currently viewing image's info"
-    },
-    "downloadImage": "Download file",
-    "@downloadImage": {
-        "description": "Keybinding key info, download the currently viewing image"
-    },
-    "hideAppBar": "Hide app bar",
-    "@hideAppBar": {
-        "description": "Keybinding key info, hide the app bar in the image view"
-    },
-    "previousImage": "Previous image",
-    "@previousImage": {
-        "description": "Keybinding key info, shows previous image in the image view"
-    },
-    "nextImage": "Next image",
-    "@nextImage": {
-        "description": "Keybinding key info, shows next image in the image view"
-    },
     "imageViewPageName": "Image view",
     "@imageViewPageName": {
         "description": "Image view page name"
@@ -122,14 +88,6 @@
     "licenseSetting": "License",
     "@licenseSetting": {
         "description": "Settings, license"
-    },
-    "tagsInfoPage": "Tags",
-    "@tagsInfoPage": {
-        "description": "Image view, displayed in info above the image's tag list"
-    },
-    "urlInfoPage": "URL",
-    "@urlInfoPage": {
-        "description": "Image view, title of an URL or a path to a file in info"
     },
     "widthInfoPage": "Width",
     "@widthInfoPage": {
@@ -193,10 +151,6 @@
     "@directoriesHint": {
         "description": "Android gallery, filter bar hint"
     },
-    "androidGKeybindsDescription": "Android Gallery",
-    "@androidGKeybindsDescription": {
-        "description": "Android gallery keybinds description"
-    },
     "copiedClipboard": "Copied!",
     "@copiedClipboard": {
         "description": "Showed when post number gets copied to clipboard"
@@ -204,18 +158,6 @@
     "aspectRatio": "Aspect ratio",
     "@aspectRatio": {
         "description": "Settings, grid cell aspect ratio"
-    },
-    "autoRefresh": "Auto refresh",
-    "@autoRefresh": {
-        "description": "Settings, auto refresh booru main grid after a certain time. Only works on the booru API where posts can become stale"
-    },
-    "autoRefreshHours": "Auto refresh stale hours",
-    "@autoRefreshHours": {
-        "description": "Settings, auto refresh hours"
-    },
-    "timeInHours": "Enter time in hours",
-    "@timeInHours": {
-        "description": "Settings, time in hours for auto refresh"
     },
     "hideNames": "Hide names",
     "@hideNames": {
@@ -240,14 +182,6 @@
     "areYouSure": "Are you sure?",
     "@areYouSure": {
         "description": "Settings, showed in the thumbnail db deletion dialog"
-    },
-    "autoRefreshSubtitle": "Refresh booru main grid on app open if it is stale.",
-    "@autoRefreshSubtitle": {
-        "description": "Settings, auto refresh info"
-    },
-    "autoRefreshHoursSubtitle": "After this time the grid becomes stale.",
-    "@autoRefreshHoursSubtitle": {
-        "description": "Settings, auto refresh hours info"
     },
     "booruLabel": "Booru",
     "@booruLabel": {
@@ -284,36 +218,6 @@
     "pickFileNotice": "Pick a file",
     "@pickFileNotice": {
         "description": "Showed when the app is asked to pick a file"
-    },
-    "couldntRestoreBackup": "Couldn't restore backup: {error}",
-    "@couldntRestoreBackup": {
-        "description": "Showed when the saved tags restoration failed",
-        "placeholders": {
-            "error": {
-                "type": "String"
-            }
-        }
-    },
-    "restore": "Restore",
-    "@restore": {
-        "description": "The button to restore the saved tags"
-    },
-    "couldntBackup": "Couldn't backup: {error}",
-    "@couldntBackup": {
-        "description": "Showed when backing up the saved tags failed",
-        "placeholders": {
-            "error": {
-                "type": "String"
-            }
-        }
-    },
-    "backupSuccess": "Output written to Download directory/backup",
-    "@backupSuccess": {
-        "description": "Showed when backing up the saved tags succeeded"
-    },
-    "backup": "Backup",
-    "@backup": {
-        "description": "Backup button"
     },
     "blacklistedFoldersPage": "Blacklisted Folders",
     "@blacklistedFoldersPage": {
@@ -355,21 +259,9 @@
     "@tagPlural": {
         "description": "Plural form of tags"
     },
-    "bulkRenameTitle": "Bulk rename",
-    "@bulkRenameTitle": {
-        "description": "Dialog title when renaming multiple files"
-    },
     "valueIsNull": "Value is null",
     "@valueIsNull": {
         "description": "Displayed when text field has null string"
-    },
-    "newNameShouldntBeEmpty": "New name should not be empty",
-    "@newNameShouldntBeEmpty": {
-        "description": "Displayed when bulk rename field has empty string"
-    },
-    "newNameShouldIncludeOneStar": "New name should include one *",
-    "@newNameShouldIncludeOneStar": {
-        "description": "Displayed when bulk rename field has no *(wildcard)"
     },
     "youCanRestoreFromTrash": "You can restore it from the trash",
     "@youCanRestoreFromTrash": {
@@ -496,18 +388,6 @@
     "@newsTab": {
         "description": "Anime page, news tab"
     },
-    "watchingTab": "Watching",
-    "@watchingTab": {
-        "description": "Anime page, watching tab"
-    },
-    "discoverTab": "Discover",
-    "@discoverTab": {
-        "description": "Anime page, discover tab"
-    },
-    "finishedTab": "Finished",
-    "@finishedTab": {
-        "description": "Anime page, finished tab"
-    },
     "animePage": "Anime",
     "@animePage": {
         "description": "Anime page label"
@@ -515,14 +395,6 @@
     "cardWatched": "Watched",
     "@cardWatched": {
         "description": "Anime card panel, watched button"
-    },
-    "cardRemove": "Remove",
-    "@cardRemove": {
-        "description": "Anime card panel, remove button"
-    },
-    "removeFromWatched": "Removed from watched",
-    "@removeFromWatched": {
-        "description": "Anime card panel, remove button snackbar text"
     },
     "hasTranslations": "Has translations",
     "@hasTranslations": {
@@ -535,18 +407,6 @@
     "translationTitle": "Translation",
     "@translationTitle": {
         "description": "Image view, translation title dialog title"
-    },
-    "cameraPermQrCodeErr": "Camera permission must be granted for reading the QR codes.",
-    "@cameraPermQrCodeErr": {
-        "description": "Showed when camera permission is not granted when reading Qr code"
-    },
-    "note": "Note",
-    "@note": {
-        "description": "Notes page, note name"
-    },
-    "save": "Save",
-    "@save": {
-        "description": "Notes page, save the notes button"
     },
     "miscLabel": "Misc",
     "@miscLabel": {
@@ -572,14 +432,6 @@
     "@add": {
         "description": "Add button text"
     },
-    "newNotePlaceholder": "New note",
-    "@newNotePlaceholder": {
-        "description": "Notes page, new note text placeholder"
-    },
-    "noteDeleted": "Note deleted",
-    "@noteDeleted": {
-        "description": "Notes page, note deleted snackbar text"
-    },
     "group": "Group",
     "@group": {
         "description": "Group feature title"
@@ -587,10 +439,6 @@
     "bookmarked": "Bookmarked",
     "@bookmarked": {
         "description": "Booru grid, bookmarked snackbar text"
-    },
-    "notesPage": "Notes",
-    "@notesPage": {
-        "description": "Notes page name"
     },
     "dashboardPage": "Dashboard",
     "@dashboardPage": {
@@ -719,26 +567,6 @@
     "@listView": {
         "description": "Grid settings, list view on the grid"
     },
-    "cardDone": "Done",
-    "@cardDone": {
-        "description": "Anime card panel, add to finished button card"
-    },
-    "removedFromWatching": "Removed from watching",
-    "@removedFromWatching": {
-        "description": "Anime card panel, remove button watching page snackbar text"
-    },
-    "cantWatchThree": "Can't watch more than 3 at a time",
-    "@cantWatchThree": {
-        "description": "Anime card panel, watching button card"
-    },
-    "cardWatching": "Watching",
-    "@cardWatching": {
-        "description": "Anime card panel, watching card in watching page"
-    },
-    "reset": "Reset",
-    "@reset": {
-        "description": "Reset action"
-    },
     "cardInBrowser": "In browser",
     "@cardInBrowser": {
         "description": "Anime card panel, open in browser card"
@@ -799,9 +627,9 @@
     "@backlogLabel": {
         "description": "Anime page, watching page backlog label"
     },
-    "watchingLabel": "Currently watching",
+    "watchingLabel": "Watching",
     "@watchingLabel": {
-        "description": "Anime page,  watching page watching label"
+        "description": "Anime page, watching page watching label"
     },
     "searchAnimePage": "Search Anime",
     "@searchAnimePage": {
@@ -844,55 +672,6 @@
     "@animeLoadSimilar": {
         "description": "Button label to load the anime's similar"
     },
-    "invalidAnimeEntry": "Invalid anime entry",
-    "@invalidAnimeEntry": {
-        "description": "Error message displayed when the anime entry cannot be loaded from the API"
-    },
-    "mangaMarkAsRead": "Mark as read",
-    "@mangaMarkAsRead": {
-        "description": "Button label to mark the manga chapter as read"
-    },
-    "mangaRemoveProgress": "Remove progress",
-    "@mangaRemoveProgress": {
-        "description": "Button label to clear the manga chapter's reading progress"
-    },
-    "mangaChapterName": "Chapter {name}",
-    "@mangaChapterName": {
-        "description": "Formatted manga chapter's name",
-        "placeholders": {
-            "name": {
-                "type": "String"
-            }
-        }
-    },
-    "mangaProgressDone": "done",
-    "@mangaProgressDone": {
-        "description": "Displayed instead of the manga's chapter count"
-    },
-    "mangaChaptersLabel": "Chapters",
-    "@mangaChaptersLabel": {
-        "description": "Displayed above the manga's chapters"
-    },
-    "mangaShowRead": "Show read",
-    "@mangaShowRead": {
-        "description": "Button label to show the read manga chapters"
-    },
-    "mangaHideRead": "Hide read",
-    "@mangaHideRead": {
-        "description": "Button label to hide the read manga chapters"
-    },
-    "mangaClearCachedMangaChapters": "Clear",
-    "@mangaClearCachedMangaChapters": {
-        "description": "Button label to clear the cached manga chapters"
-    },
-    "mangaLoadNextChapters": "Load next",
-    "@mangaLoadNextChapters": {
-        "description": "Button label to load next manga's chapters"
-    },
-    "mangaLoadChapters": "Load chapters",
-    "@mangaLoadChapters": {
-        "description": "Button label to try loading the manga's chapters"
-    },
     "copyLabel": "Copy",
     "@copyLabel": {
         "description": "Copy piece of information"
@@ -901,8 +680,8 @@
     "@chooseSafeMode": {
         "description": "Dialog title to choose the safe mode with which the booru search page will be launched"
     },
-    "launchWithSafeMode": "Launch with safe mode",
-    "@launchWithSafeMode": {
+    "searchWithSafeMode": "Search with safe mode",
+    "@searchWithSafeMode": {
         "description": "Button label to open the choose the safe mode dialog"
     },
     "removeFromExcluded": "Remove from excluded",
@@ -961,38 +740,6 @@
     "searchTextIsEmpty": "Search text is empty",
     "@searchTextIsEmpty": {
         "description": "Displayed when trying to add a search page to bookmarks but the search text is empty"
-    },
-    "mangaPage": "Manga",
-    "@mangaPage": {
-        "description": "Manga page name"
-    },
-    "mangaInfoPage": "Manga info",
-    "@mangaInfoPage": {
-        "description": "Manga info page name"
-    },
-    "cardStatus": "Status",
-    "@cardStatus": {
-        "description": "Manga card panel, status of the manga"
-    },
-    "cardVolumes": "Volumes",
-    "@cardVolumes": {
-        "description": "Manga card panel. volumes of the manga"
-    },
-    "cardDemographics": "Demographics",
-    "@cardDemographics": {
-        "description": "Manga card panel, demographics of the manga"
-    },
-    "mangaReadingLabel": "Reading",
-    "@mangaReadingLabel": {
-        "description": "Displayed above the recently read mangas"
-    },
-    "mangaContinueReading": "Continue reading",
-    "@mangaContinueReading": {
-        "description": "Button label to read the latest read manga"
-    },
-    "mangaPinnedLabel": "Pinned",
-    "@mangaPinnedLabel": {
-        "description": "Displayed above the pinned manga"
     },
     "enumPostRatingGeneral": "General",
     "@enumPostRatingGeneral": {
@@ -1082,10 +829,6 @@
     "@enumFilteringModeUngrouped": {
         "description": "FilteringMode.ungrouped"
     },
-    "enumFilteringModeNotes": "Notes",
-    "@enumFilteringModeNotes": {
-        "description": "FilteringMode.notes"
-    },
     "enumFilteringModeNoFilter": "No filter",
     "@enumFilteringModeNoFilter": {
         "description": "FilteringMode.noFilter"
@@ -1117,19 +860,6 @@
     "homePage": "Home",
     "@homePage": {
         "description": "Home page name"
-    },
-    "mangaVolumeName": "Volume {name}",
-    "@mangaVolumeName": {
-        "description": "Formatted manga chapter's name",
-        "placeholders": {
-            "name": {
-                "type": "String"
-            }
-        }
-    },
-    "mangaStartReading": "Start reading",
-    "@mangaStartReading": {
-        "description": "Button label to start reading the manga"
     },
     "segmentsUncategorized": "Uncategorized",
     "@segmentsUncategorized": {
@@ -1247,10 +977,6 @@
     "@deletedFromWatched": {
         "description": "Anime page, showed when anime deleted from watched"
     },
-    "deletedFromBacklog": "Deleted from backlog",
-    "@deletedFromBacklog": {
-        "description": "Manga page, showed when manga deleted from backlog"
-    },
     "buddhaModeTags": "Tags",
     "@buddhaModeTags": {
         "description": "Buddha mode replacement of end drawer app bar title"
@@ -1314,10 +1040,6 @@
     "welcomeInitalSettingsExplanation": "Download directory is used for multiple purposes",
     "@welcomeInitalSettingsExplanation": {
         "description": "Welcome page, inital page inital page explanation"
-    },
-    "mangaUnpinned": "Unpinned",
-    "@mangaUnpinned": {
-        "description": "Manga page, showed when manga pinned"
     },
     "usingApi": "Using {apiName}",
     "@usingApi": {
@@ -1411,10 +1133,6 @@
     "joinDirectoriesReason": "Join directories",
     "@joinDirectoriesReason": {
         "description": "Auth reasons"
-    },
-    "showAnimeManga": "Show anime and manga pages",
-    "@showAnimeManga": {
-        "description": "Settings"
     },
     "someFilesShownNotice": "Some files can't be shown",
     "@someFilesShownNotice": {
@@ -1530,5 +1248,13 @@
     "randomPosts": "Random",
     "@randomPosts": {
         "description": "Button label to show random posts on booru"
+    },
+    "videosLabel": "Videos",
+    "@videosLabel": {
+        "description": "Popular random videos button labels"
+    },
+    "addTagsSearch": "Add tags to search",
+    "@addTagsSearch": {
+        "description": "Random videos button settings"
     }
 }

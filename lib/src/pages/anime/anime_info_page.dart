@@ -202,7 +202,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
     return AnimeInfoTheme(
       mode: entry.explicit,
       child: SettingsSkeleton(
-        l10n.watchingTab,
+        entry.titleEnglish,
         widget.state,
         bottomAppBar: BottomAppBar(
           child: Row(

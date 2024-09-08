@@ -22,12 +22,14 @@ class PhotoGalleryPageVideo extends StatefulWidget
     required this.url,
     required this.localVideo,
     required this.db,
+    required this.networkThumb,
   });
 
   @override
   final VideoSettingsService db;
 
   final String url;
+  final ImageProvider? networkThumb;
   final bool localVideo;
 
   @override
@@ -197,15 +199,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]).then((_) {
-      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    });
-
-    // playerControls.clear();
-
     eventsSubscr?.cancel();
     disposed = true;
     // controller.pause();
@@ -241,7 +234,13 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                 },
               )
             : chewieController == null
-                ? const Center(child: CircularProgressIndicator())
+                ? widget.networkThumb != null
+                    ? Image(
+                        image: widget.networkThumb!,
+                        filterQuality: FilterQuality.high,
+                        fit: BoxFit.contain,
+                      )
+                    : const Center(child: CircularProgressIndicator())
                 : GestureDetector(
                     onDoubleTap: () {
                       if (!disposed) {

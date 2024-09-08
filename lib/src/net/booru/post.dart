@@ -229,9 +229,9 @@ abstract class PostImpl
     return [
       if (score > 10)
         Sticker(
-          Icons.thumb_up_rounded,
+          score > 80 ? Icons.whatshot_rounded : Icons.thumb_up_rounded,
           subtitle: score.toString(),
-          important: true,
+          important: score > 80,
         ),
       if (isHidden) const Sticker(Icons.hide_image_rounded),
       if (db.favoritePosts.isFavorite(id, booru))

@@ -75,6 +75,7 @@ class _AppBar extends StatelessWidget {
                       onChanged: search.onChange,
                       focusNode: focusNode,
                       controller: textEditingController,
+                      elevation: const WidgetStatePropertyAll(0),
                       onSubmitted: (_) {
                         search.onSubmitted?.call(textEditingController.text);
                         onFieldSubmitted();
@@ -95,6 +96,7 @@ class _AppBar extends StatelessWidget {
                     ),
                   )
                 : SearchBar(
+                    elevation: const WidgetStatePropertyAll(0),
                     onSubmitted: search.onSubmitted,
                     onChanged: search.onChange,
                     focusNode: searchFocus,
@@ -217,6 +219,7 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
                 constraints:
                     const BoxConstraints(maxHeight: 200, maxWidth: 200),
                 child: ListView.builder(
+                  shrinkWrap: true,
                   itemCount: tiles.length,
                   itemBuilder: (context, index) {
                     return Builder(

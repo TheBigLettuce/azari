@@ -87,8 +87,20 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         _makeAndroidImage(context, key, i, content.size, content.uri, true),
       NetGif() => _makeNetImage(key, content.provider),
       NetImage() => _makeNetImage(key, content.provider),
-      AndroidVideo() => _makeVideo(context, key, content.uri, true),
-      NetVideo() => _makeVideo(context, key, content.uri, false),
+      AndroidVideo() => _makeVideo(
+          context,
+          key,
+          content.uri,
+          cell.widgets.tryAsThumbnailable(),
+          true,
+        ),
+      NetVideo() => _makeVideo(
+          context,
+          key,
+          content.uri,
+          cell.widgets.tryAsThumbnailable(),
+          false,
+        ),
       EmptyContent() =>
         PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
     };
@@ -98,6 +110,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
     BuildContext context,
     Key key,
     String uri,
+    ImageProvider? networkThumb,
     bool local,
   ) =>
       PhotoViewGalleryPageOptions.customChild(
@@ -106,6 +119,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         child: PhotoGalleryPageVideo(
           key: key,
           url: uri,
+          networkThumb: networkThumb,
           localVideo: local,
           db: DatabaseConnectionNotifier.of(context).videoSettings,
         ),

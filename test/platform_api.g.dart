@@ -38,6 +38,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else     if (value is NotificationChannel) {
       buffer.putUint8(134);
       writeValue(buffer, value.index);
+    } else     if (value is NotificationRouteEvent) {
+      buffer.putUint8(135);
+      writeValue(buffer, value.index);
     } else {
       super.writeValue(buffer, value);
     }
@@ -60,6 +63,9 @@ class _PigeonCodec extends StandardMessageCodec {
       case 134: 
         final int? value = readValue(buffer) as int?;
         return value == null ? null : NotificationChannel.values[value];
+      case 135: 
+        final int? value = readValue(buffer) as int?;
+        return value == null ? null : NotificationRouteEvent.values[value];
       default:
         return super.readValueOfType(type, buffer);
     }

@@ -13,6 +13,7 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
 
 class GridLayout<T extends CellBase> extends StatefulWidget {
   const GridLayout({
@@ -147,7 +148,8 @@ class EmptyWidgetOrContent extends StatefulWidget {
   State<EmptyWidgetOrContent> createState() => _EmptyWidgetOrContentState();
 }
 
-class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent> {
+class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
+    with SingleTickerProviderStateMixin {
   late final StreamSubscription<bool> _watcher;
 
   @override
@@ -172,15 +174,17 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent> {
         ? SliverPadding(
             padding: const EdgeInsets.only(top: 16),
             sliver: SliverToBoxAdapter(
-              child: widget.buildEmpty?.call(widget.progress.error) ??
-                  EmptyWidget(
-                    gridSeed: 0,
-                    error: widget.progress.error == null
-                        ? null
-                        : EmptyWidget.unwrapDioError(
-                            widget.progress.error,
-                          ),
-                  ),
+              child: (widget.buildEmpty?.call(widget.progress.error) ??
+                      EmptyWidget(
+                        gridSeed: 0,
+                        error: widget.progress.error == null
+                            ? null
+                            : EmptyWidget.unwrapDioError(
+                                widget.progress.error,
+                              ),
+                      ))
+                  .animate()
+                  .fadeIn(),
             ),
           )
         : widget.child;
