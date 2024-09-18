@@ -171,11 +171,12 @@ class ImageView extends StatefulWidget {
       Contentable,
       void Function(List<ImageTag> l),
     )? watchTags,
+    Widget Function(Widget child)? wrapNotifiers,
   }) {
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) {
-          return WrapFutureRestartable(
+          final c = WrapFutureRestartable(
             newStatus: cell,
             builder: (context, value) => GlueProvider.empty(
               context,
@@ -193,6 +194,8 @@ class ImageView extends StatefulWidget {
               ),
             ),
           );
+
+          return wrapNotifiers != null ? wrapNotifiers(c) : c;
         },
       ),
     );

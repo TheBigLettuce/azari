@@ -331,8 +331,9 @@ void moveOrCopyFnc(
 void favoriteOrUnfavorite(
   BuildContext context,
   List<GalleryFile> selected,
-  FavoriteFileService favoriteFile,
-) {
+  FavoriteFileService favoriteFile, [
+  bool showSnackbar = true,
+]) {
   final l10n = AppLocalizations.of(context)!;
 
   final toDelete = <int>[];
@@ -350,9 +351,9 @@ void favoriteOrUnfavorite(
     favoriteFile.addAll(toAdd);
   }
 
-  if (toDelete.isNotEmpty) {
-    favoriteFile.deleteAll(toDelete);
+  favoriteFile.deleteAll(toDelete);
 
+  if (toDelete.isNotEmpty && showSnackbar) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.deletedFromFavorites),

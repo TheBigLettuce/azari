@@ -438,6 +438,15 @@ class ActivityContextChannel(
                     result.success(null)
                 }
 
+                "version" -> {
+                    result.success(
+                        context.packageManager!!.getPackageInfo(
+                            context.packageName,
+                            0
+                        ).versionName ?: ""
+                    )
+                }
+
                 "emptyTrash" -> {
                     mediaLoaderAndMover.scope.launch {
                         mediaLoaderAndMover.trashDeleteMux.lock()

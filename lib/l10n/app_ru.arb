@@ -411,5 +411,7 @@
     "popularPosts": "Популярные",
     "randomPosts": "Случайные",
     "videosLabel": "Видео",
-    "addTagsSearch": "Дополнительные теги"
+    "addTagsSearch": "Дополнительные теги",
+    "linkLabel": "Ссылка",
+    "imageDimensions": "Размер"
 }

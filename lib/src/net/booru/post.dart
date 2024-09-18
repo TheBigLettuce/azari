@@ -211,13 +211,21 @@ abstract class PostImpl
     }
 
     if (excludeDuplicate) {
-      final icons = defaultStickersPost(
-        type,
-        context,
-        tags,
-        id,
-        booru,
-      );
+      final icons = [
+        if (score > 10)
+          Sticker(
+            score > 80 ? Icons.whatshot_rounded : Icons.thumb_up_rounded,
+            subtitle: score.toString(),
+            important: score > 80,
+          ),
+        ...defaultStickersPost(
+          type,
+          context,
+          tags,
+          id,
+          booru,
+        ),
+      ];
 
       return icons.isEmpty ? const [] : icons;
     }

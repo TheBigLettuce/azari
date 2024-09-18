@@ -15,7 +15,10 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 sealed class GridSearchWidget {
-  const GridSearchWidget({required this.leading, required this.trailingItems});
+  const GridSearchWidget({
+    required this.leading,
+    required this.trailingItems,
+  });
 
   final Widget? leading;
   final List<Widget>? trailingItems;

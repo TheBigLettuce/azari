@@ -56,6 +56,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     }
     progress.inRefreshing = true;
     progress.error = null;
+    entry.page = 0;
 
     clear();
 
@@ -112,14 +113,24 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     try {
       final settings = SettingsService.db().current;
 
-      final list = await api.fromPostId(
-        currentSkipped != null && currentSkipped! < p.id
-            ? currentSkipped!
-            : p.id,
-        tags,
-        excluded,
-        safeMode,
-      );
+      final (List<Post>, int?) list;
+      if (tags.isNotEmpty) {
+        list = await api.page(
+          entry.page + 1,
+          tags,
+          excluded,
+          safeMode,
+        );
+      } else {
+        list = await api.fromPostId(
+          currentSkipped != null && currentSkipped! < p.id
+              ? currentSkipped!
+              : p.id,
+          tags,
+          excluded,
+          safeMode,
+        );
+      }
 
       if (list.$1.isEmpty && currentSkipped == null) {
         entry.reachedEnd = true;

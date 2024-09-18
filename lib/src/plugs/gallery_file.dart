@@ -86,6 +86,7 @@ mixin GalleryFile
                       context,
                       [this],
                       db.favoriteFiles,
+                      false,
                     );
                   },
                   animate: true,
@@ -338,13 +339,14 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     final res = ImageTagsNotifier.resOf(context);
 
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final tagManager = TagManager.of(context);
     final settings = SettingsService.db().current;
 
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.only(top: 10, bottom: 4),
           sliver: TagsRibbon(
             emptyWidget: res == null
                 ? const SliverPadding(padding: EdgeInsets.zero)
@@ -487,12 +489,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
               l10n: l10n,
               width: file.width,
               height: file.height,
-              createdAt:
-                  DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
-            ),
-            addInfoTile(
-              title: l10n.sizeInfoPage,
-              subtitle: kbMbSize(context, file.size),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -509,6 +505,32 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                   if (!file.isVideo && !file.isGif)
                     SetWallpaperButton(id: file.id),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 2,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  text: kbMbSize(context, file.size),
+                  children: [
+                    TextSpan(
+                      text: "\n${l10n.date(
+                        DateTime.fromMillisecondsSinceEpoch(
+                          file.lastModified * 1000,
+                        ),
+                      )}",
+                    ),
+                  ],
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(
+                      0.7,
+                    ),
+                  ),
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],

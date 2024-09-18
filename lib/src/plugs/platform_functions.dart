@@ -3,11 +3,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:convert";
+import "dart:io";
+
 import "package:azari/src/plugs/api_functions/io.dart"
     if (dart.library.html) "package:azari/src/plugs/api_functions/web.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:path/path.dart" as path;
 
 @immutable
 class ThumbId {
@@ -35,6 +39,7 @@ abstract interface class PlatformApi {
   Future<void> setWallpaper(int id);
 
   Future<void> hideRecents(bool hide);
+  Future<String> version();
 }
 
 class DummyApiFunctions implements PlatformApi {
@@ -61,6 +66,9 @@ class DummyApiFunctions implements PlatformApi {
 
   @override
   Future<void> hideRecents(bool hide) => Future.value();
+
+  @override
+  Future<String> version() => Future.value("");
 }
 
 class LinuxApiFunctions implements PlatformApi {
@@ -107,6 +115,22 @@ class LinuxApiFunctions implements PlatformApi {
 
   @override
   Future<void> hideRecents(bool hide) => Future.value();
+
+  @override
+  Future<String> version() async {
+    try {
+      final exePath = await File("/proc/self/exe").resolveSymbolicLinks();
+      final appPath = path.dirname(exePath);
+      final assetPath = path.join(appPath, "data", "flutter_assets");
+      final versionPath = path.join(assetPath, "version.json");
+      // ignore: avoid_dynamic_calls
+      return jsonDecode(await File(versionPath).readAsString())["version"]
+              as String? ??
+          "";
+    } catch (_) {
+      return "";
+    }
+  }
 }
 
 class AndroidApiFunctions implements PlatformApi {
@@ -207,4 +231,8 @@ class AndroidApiFunctions implements PlatformApi {
   Future<void> setWallpaper(int id) {
     return activityContext.invokeMethod("setWallpaper", id);
   }
+
+  @override
+  Future<String> version() =>
+      activityContext.invokeMethod("version").then((v) => v as String);
 }

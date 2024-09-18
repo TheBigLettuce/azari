@@ -416,6 +416,7 @@ class _NavBar extends StatelessWidget {
     return noNavigationIcons
         ? GlueBottomAppBar(glueState, controller: icons.selectionBarController)
         : Stack(
+            alignment: Alignment.bottomCenter,
             children: [
               GlueBottomAppBar(
                 glueState,

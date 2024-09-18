@@ -113,8 +113,6 @@ class Gelbooru implements BooruAPI {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
   }) {
-    pageSaver.page = p;
-
     return _commonPosts(
       tags,
       p,
@@ -122,7 +120,11 @@ class Gelbooru implements BooruAPI {
       safeMode,
       limit: limit,
       order: order,
-    );
+    ).then((v) {
+      pageSaver.page = p;
+
+      return v;
+    });
   }
 
   Future<(List<Post>, int?)> _commonPosts(

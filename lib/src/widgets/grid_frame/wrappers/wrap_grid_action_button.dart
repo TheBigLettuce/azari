@@ -23,6 +23,7 @@ class WrapGridActionButton extends StatefulWidget {
     this.watch,
     required this.animation,
     this.iconOnly = false,
+    this.addBorder = true,
   });
 
   final IconData icon;
@@ -37,6 +38,8 @@ class WrapGridActionButton extends StatefulWidget {
   final WatchFire<(IconData?, Color?, bool?)>? watch;
 
   final bool iconOnly;
+
+  final bool addBorder;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -128,16 +131,18 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
                 HapticFeedback.lightImpact();
               },
         child: IconButton(
-          style: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(
-              theme.colorScheme.surfaceContainerLow.withOpacity(0.9),
-            ),
-            shape: const WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
-              ),
-            ),
-          ),
+          style: !widget.addBorder
+              ? null
+              : ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    theme.colorScheme.surfaceContainerLow.withOpacity(0.9),
+                  ),
+                  shape: const WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
+                    ),
+                  ),
+                ),
           onPressed: widget.whenSingleContext != null &&
                   SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
               ? null

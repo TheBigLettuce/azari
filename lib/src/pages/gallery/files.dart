@@ -89,6 +89,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
 
   final GlobalKey<BarIconState> _favoriteButtonKey = GlobalKey();
+  final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
 
   GalleryAPIFiles get api => widget.api;
@@ -125,12 +126,19 @@ class _GalleryFilesState extends State<GalleryFiles> {
         if (filter.filteringMode == FilteringMode.favorite) {
           _favoriteButtonKey.currentState?.toggle(true);
           _duplicateButtonKey.currentState?.toggle(false);
+          _videoButtonKey.currentState?.toggle(false);
         } else if (filter.filteringMode == FilteringMode.duplicate) {
           _duplicateButtonKey.currentState?.toggle(true);
           _favoriteButtonKey.currentState?.toggle(false);
+          _videoButtonKey.currentState?.toggle(false);
+        } else if (filter.filteringMode == FilteringMode.video) {
+          _videoButtonKey.currentState?.toggle(true);
+          _favoriteButtonKey.currentState?.toggle(false);
+          _duplicateButtonKey.currentState?.toggle(false);
         } else {
           _duplicateButtonKey.currentState?.toggle(false);
           _favoriteButtonKey.currentState?.toggle(false);
+          _videoButtonKey.currentState?.toggle(false);
           beforeButtons = null;
         }
 
@@ -375,46 +383,30 @@ class _GalleryFilesState extends State<GalleryFiles> {
                     tagManager: widget.tagManager,
                   ),
                 ),
-                if (!api.type.isFavorites())
-                  Builder(
-                    builder: (context) {
-                      return IconBarGridHeader(
-                        countWatcher: filter.backingStorage.watch,
-                        icons: [
-                          BarIcon(
-                            icon: Icons.select_all_rounded,
-                            onPressed: () {
-                              final gridExtras =
-                                  GridExtrasNotifier.of<GalleryFile>(context);
-
-                              if (gridExtras.selection.count ==
-                                  gridExtras.functionality.source.count) {
-                                gridExtras.selection.reset(true);
-                              } else {
-                                gridExtras.selection.selectAll(context);
-                              }
-
-                              return null;
-                            },
-                          ),
-                          BarIcon(
-                            key: _duplicateButtonKey,
-                            icon: FilteringMode.duplicate.icon,
-                            onPressed: () {
-                              if (filter.filteringMode ==
-                                  FilteringMode.duplicate) {
-                                filter.filteringMode = beforeButtons ==
-                                        FilteringMode.duplicate
-                                    ? FilteringMode.noFilter
-                                    : (beforeButtons ?? FilteringMode.noFilter);
-                                return false;
-                              } else {
-                                beforeButtons = filter.filteringMode;
-                                filter.filteringMode = FilteringMode.duplicate;
-                                return true;
-                              }
-                            },
-                          ),
+                Builder(
+                  builder: (context) {
+                    return IconBarGridHeader(
+                      countWatcher: filter.backingStorage.watch,
+                      icons: [
+                        BarIcon(
+                          key: _duplicateButtonKey,
+                          icon: FilteringMode.duplicate.icon,
+                          onPressed: () {
+                            if (filter.filteringMode ==
+                                FilteringMode.duplicate) {
+                              filter.filteringMode = beforeButtons ==
+                                      FilteringMode.duplicate
+                                  ? FilteringMode.noFilter
+                                  : (beforeButtons ?? FilteringMode.noFilter);
+                              return false;
+                            } else {
+                              beforeButtons = filter.filteringMode;
+                              filter.filteringMode = FilteringMode.duplicate;
+                              return true;
+                            }
+                          },
+                        ),
+                        if (!api.type.isFavorites())
                           BarIcon(
                             key: _favoriteButtonKey,
                             icon: FilteringMode.favorite.icon,
@@ -433,10 +425,27 @@ class _GalleryFilesState extends State<GalleryFiles> {
                               }
                             },
                           ),
-                        ],
-                      );
-                    },
-                  ),
+                        BarIcon(
+                          key: _videoButtonKey,
+                          icon: FilteringMode.video.icon,
+                          onPressed: () {
+                            if (filter.filteringMode == FilteringMode.video) {
+                              filter.filteringMode =
+                                  beforeButtons == FilteringMode.video
+                                      ? FilteringMode.noFilter
+                                      : beforeButtons ?? FilteringMode.noFilter;
+                              return false;
+                            } else {
+                              beforeButtons = filter.filteringMode;
+                              filter.filteringMode = FilteringMode.video;
+                              return true;
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 CurrentGridSettingsLayout<GalleryFile>(
                   source: filter.backingStorage,
                   progress: filter.progress,
@@ -966,17 +975,64 @@ class BarIconState extends State<BarIcon> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton.filled(
-      isSelected: _toggled,
-      onPressed: () {
-        final ret = widget.onPressed();
-        if (ret != null) {
-          setState(() {
-            _toggled = ret;
-          });
-        }
-      },
-      icon: Icon(widget.icon),
+    final theme = Theme.of(context);
+
+    // return IconButton.filled(
+    //   isSelected: _toggled,
+    //   onPressed: () {
+    //     final ret = widget.onPressed();
+    //     if (ret != null) {
+    //       setState(() {
+    //         _toggled = ret;
+    //       });
+    //     }
+    //   },
+    //   icon: Icon(widget.icon),
+    // );
+
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: GestureDetector(
+        onTap: () {
+          widget.onPressed();
+        },
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: TweenAnimationBuilder(
+            tween: ColorTween(
+              end: _toggled
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.surfaceContainer,
+            ),
+            duration: Durations.medium3,
+            curve: Easing.standard,
+            builder: (context, value, child) => DecoratedBox(
+              decoration: BoxDecoration(
+                color: value,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: child,
+            ),
+            child: Center(
+              child: TweenAnimationBuilder(
+                tween: ColorTween(
+                  end: _toggled
+                      ? theme.colorScheme.onPrimary.withOpacity(0.9)
+                      : theme.colorScheme.primary.withOpacity(0.9),
+                ),
+                duration: Durations.medium3,
+                curve: Easing.standard,
+                builder: (context, value, child) => Icon(
+                  widget.icon,
+                  color: value,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1002,16 +1058,35 @@ class IconBarGridHeader extends StatelessWidget {
       ),
       sliver: SliverToBoxAdapter(
         child: SizedBox(
-          height: 56,
           child: Row(
             mainAxisAlignment: countWatcher == null
                 ? MainAxisAlignment.end
                 : MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
             children: [
-              if (countWatcher != null)
-                Expanded(child: _CountWatcher(countWatcher: countWatcher!)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.select_all_rounded),
+                    onPressed: () {
+                      final gridExtras =
+                          GridExtrasNotifier.of<GalleryFile>(context);
+
+                      if (gridExtras.selection.count ==
+                          gridExtras.functionality.source.count) {
+                        gridExtras.selection.reset(true);
+                      } else {
+                        gridExtras.selection.selectAll(context);
+                      }
+                    },
+                  ),
+                  if (countWatcher != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: _CountWatcher(countWatcher: countWatcher!),
+                    ),
+                ],
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: icons,
@@ -1065,11 +1140,10 @@ class __CountWatcherState extends State<_CountWatcher> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
 
     return Text(
-      "$count ${count == 1 ? l10n.elementSingular : l10n.elementPlural}",
-      style: theme.textTheme.titleLarge?.copyWith(
+      count.toString(),
+      style: theme.textTheme.labelLarge?.copyWith(
         color: theme.colorScheme.onSurface.withOpacity(0.4),
       ),
     );

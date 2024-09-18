@@ -16,13 +16,15 @@ import "package:logging/logging.dart";
 
 class Danbooru implements BooruAPI {
   const Danbooru(
-    this.client, {
+    this.client,
+    this.pageSaver, {
     this.booru = Booru.danbooru,
   });
 
   static final _log = Logger("Danbooru API");
 
   final Dio client;
+  final PageSaver pageSaver;
 
   @override
   final Booru booru;
@@ -150,7 +152,11 @@ class Danbooru implements BooruAPI {
         safeMode: safeMode,
         limit: limit,
         order: order,
-      );
+      ).then((v) {
+        pageSaver.page = i;
+
+        return v;
+      });
 
   @override
   Future<(List<Post>, int?)> fromPostId(

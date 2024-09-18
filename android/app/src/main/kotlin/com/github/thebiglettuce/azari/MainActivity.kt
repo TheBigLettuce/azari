@@ -59,8 +59,6 @@ class MainActivity : FlutterFragmentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        Log.w("onCreate", "called")
-
         appContextChannel.attach(
             this.applicationContext as App,
             mediaLoaderAndMover,

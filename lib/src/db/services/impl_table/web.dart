@@ -1109,9 +1109,13 @@ class $HottestTag implements HottestTag {
 
 class $ThumbUrlRating implements ThumbUrlRating {
   const $ThumbUrlRating({
+    required this.postId,
     required this.url,
     required this.rating,
   });
+
+  @override
+  final int postId;
 
   @override
   final PostRating rating;

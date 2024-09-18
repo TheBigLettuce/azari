@@ -1256,5 +1256,13 @@
     "addTagsSearch": "Add tags to search",
     "@addTagsSearch": {
         "description": "Random videos button settings"
+    },
+    "linkLabel": "Link",
+    "@linkLabel": {
+        "description": "Button label to the post image"
+    },
+    "imageDimensions": "Dimensions",
+    "@imageDimensions": {
+        "description": "Image dimensions"
     }
 }

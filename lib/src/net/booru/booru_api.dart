@@ -46,8 +46,6 @@ abstract class BooruAPI {
   });
 
   /// Get posts by a certain page.
-  /// This is only used to refresh the grid,
-  /// the code which loads and presets the posts uses [fromPostId] for further posts loading.
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
@@ -111,7 +109,7 @@ abstract class BooruAPI {
   /// current selected/used one.
   static BooruAPI fromEnum(Booru booru, Dio client, PageSaver pageSaver) {
     return switch (booru) {
-      Booru.danbooru => Danbooru(client),
+      Booru.danbooru => Danbooru(client, pageSaver),
       Booru.gelbooru => Gelbooru(client, pageSaver),
     };
   }

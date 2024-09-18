@@ -41,8 +41,7 @@ class _ImageViewSlidingInfoDrawerState
       expand: false,
       snap: true,
       shouldCloseOnMinExtent: false,
-      maxChildSize:
-          1 - ((kToolbarHeight + widget.viewPadding.top + 8) / min.height),
+      maxChildSize: 0.5 - ((widget.viewPadding.top + 8) / min.height),
       minChildSize: 0,
       initialChildSize: 0,
       builder: (context, scrollController) {
@@ -151,6 +150,27 @@ class _ImageViewFabState extends State<ImageViewFab>
       backgroundColor: theme.colorScheme.surfaceContainerHigh.withOpacity(0.9),
       foregroundColor: theme.colorScheme.onSurfaceVariant.withOpacity(0.95),
       onPressed: () {
+        // showModalBottomSheet(context: context, builder: builder)
+        // Navigator.push<void>(
+        //   context,
+        //   ModalBottomSheetRoute(
+        //     isScrollControlled: false,
+        //     builder: (sheetContext) => BottomSheet(
+        //       enableDrag: false,
+        //       showDragHandle: false,
+        //       onClosing: () {},
+        //       builder: (sheetContext) => CustomScrollView(
+        //         slivers: [
+        //           ImageTagsNotifier(
+        //             tags: ImageTagsNotifier.of(context),
+        //             res: ImageTagsNotifier.resOf(context),
+        //             child: widget.widgets.tryAsInfoable(context)!,
+        //           ),
+        //         ],
+        //       ),
+        //     ),
+        //   ),
+        // );
         if (widget.bottomSheetController.size > 0) {
           widget.bottomSheetController.animateTo(
             0,

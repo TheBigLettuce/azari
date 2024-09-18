@@ -94,6 +94,7 @@ class _BooruPageState extends State<BooruPage> {
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
   late final StreamSubscription<void> hiddenPostWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
 
   final searchController = SearchController();
   final menuController = MenuController();
@@ -197,6 +198,12 @@ class _BooruPageState extends State<BooruPage> {
       pagingState.updateTime();
     }
 
+    settingsWatcher = state.settings.s.watch((settings) {
+      state.settings = settings!;
+
+      setState(() {});
+    });
+
     favoritesWatcher = favoritePosts.backingStorage.watch((event) {
       source.backingStorage.addAll([]);
     });
@@ -234,6 +241,7 @@ class _BooruPageState extends State<BooruPage> {
     searchController.dispose();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
+    settingsWatcher.cancel();
 
     if (!isRestart) {
       pagingState.restoreSecondaryGrid = null;
@@ -339,7 +347,7 @@ class _BooruPageState extends State<BooruPage> {
                     GridFooter<void>(storage: source.backingStorage),
                   ],
                   functionality: GridFunctionality(
-                    updatesAvailable: source.updatesAvailable,
+                    // updatesAvailable: source.updatesAvailable,
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
                       SafeModeButton(settingsWatcher: state.settings.s.watch),
@@ -634,6 +642,115 @@ class PopularRandomButtons extends StatelessWidget {
     );
   }
 
+  void launchRandom(
+    BuildContext gridContext,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
+    final value = <Post>[];
+    int page = 0;
+    bool canLoadMore = true;
+
+    Navigator.of(gridContext, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) => WrapFutureRestartable(
+          builder: (context, value) {
+            final downloadManager = DownloadManager.of(context);
+            final postTags = PostTags.fromContext(context);
+
+            final gridExtra = GridExtrasNotifier.of<Post>(gridContext);
+
+            {
+              final post = value.first;
+
+              db.visitedPosts.addAll([
+                VisitedPost(
+                  booru: post.booru,
+                  id: post.id,
+                  thumbUrl: post.previewUrl,
+                  date: DateTime.now(),
+                ),
+              ]);
+            }
+
+            final i = ImageView(
+              gridContext: gridContext,
+              cellCount: value.length,
+              scrollUntill: (_) {},
+              startingCell: 0,
+              getCell: (i) => value[i].content(),
+              onNearEnd: () async {
+                if (!canLoadMore) {
+                  return value.length;
+                }
+
+                final ret = await api.randomPosts(
+                  db.tagManager.excluded,
+                  safeMode(),
+                  false,
+                  addTags: tags ?? "",
+                  page: page + 1,
+                );
+
+                page += 1;
+                value.addAll(ret);
+                if (ret.isEmpty) {
+                  canLoadMore = false;
+                }
+
+                return value.length;
+              },
+              statistics: StatisticsBooruService.asImageViewStatistics(),
+              download: (i) => value[i].download(downloadManager, postTags),
+              tags: (c) => DefaultPostPressable.imageViewTags(
+                c,
+                db.tagManager,
+              ),
+              watchTags: (c, f) => DefaultPostPressable.watchTags(
+                c,
+                f,
+                db.tagManager,
+              ),
+              preloadNextPictures: true,
+              pageChange: (state) {
+                final post = value[state.currentPage];
+
+                db.visitedPosts.addAll([
+                  VisitedPost(
+                    booru: post.booru,
+                    id: post.id,
+                    thumbUrl: post.previewUrl,
+                    date: DateTime.now(),
+                  ),
+                ]);
+              },
+            );
+
+            return gridExtra.functionality.registerNotifiers != null
+                ? gridExtra.functionality.registerNotifiers!(i)
+                : i;
+          },
+          newStatus: () async {
+            page = 0;
+            value.clear();
+            canLoadMore = true;
+
+            final ret = await api.randomPosts(
+              db.tagManager.excluded,
+              safeMode(),
+              false,
+              addTags: tags ?? "",
+            );
+
+            value.addAll(ret);
+
+            return value;
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext gridContext) {
     final l10n = AppLocalizations.of(gridContext)!;
@@ -648,122 +765,54 @@ class PopularRandomButtons extends StatelessWidget {
       ),
       sliver: SliverToBoxAdapter(
         child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.of(gridContext, rootNavigator: true).push<void>(
-                    MaterialPageRoute(
-                      builder: (context) => PopularPage(
-                        api: api,
-                        tags: tags,
-                        db: db,
-                        safeMode: safeMode,
-                      ),
-                    ),
-                  );
-                },
-                label: Text(l10n.popularPosts),
-                icon: const Icon(Icons.whatshot_outlined),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.of(gridContext, rootNavigator: true).push<void>(
-                    MaterialPageRoute(
-                      builder: (context) => WrapFutureRestartable(
-                        builder: (context, value) {
-                          final downloadManager = DownloadManager.of(context);
-                          final postTags = PostTags.fromContext(context);
-
-                          final gridExtra =
-                              GridExtrasNotifier.of<Post>(gridContext);
-
-                          {
-                            final post = value.first;
-
-                            db.visitedPosts.addAll([
-                              VisitedPost(
-                                booru: post.booru,
-                                id: post.id,
-                                thumbUrl: post.previewUrl,
-                                date: DateTime.now(),
-                              ),
-                            ]);
-                          }
-
-                          final i = ImageView(
-                            gridContext: gridContext,
-                            cellCount: value.length,
-                            scrollUntill: (_) {},
-                            startingCell: 0,
-                            getCell: (i) => value[i].content(),
-                            onNearEnd: null,
-                            statistics:
-                                StatisticsBooruService.asImageViewStatistics(),
-                            download: (i) =>
-                                value[i].download(downloadManager, postTags),
-                            tags: (c) => DefaultPostPressable.imageViewTags(
-                              c,
-                              db.tagManager,
-                            ),
-                            watchTags: (c, f) => DefaultPostPressable.watchTags(
-                              c,
-                              f,
-                              db.tagManager,
-                            ),
-                            pageChange: (state) {
-                              final post = value[state.currentPage];
-
-                              db.visitedPosts.addAll([
-                                VisitedPost(
-                                  booru: post.booru,
-                                  id: post.id,
-                                  thumbUrl: post.previewUrl,
-                                  date: DateTime.now(),
-                                ),
-                              ]);
-                            },
-                          );
-
-                          return gridExtra.functionality.registerNotifiers !=
-                                  null
-                              ? gridExtra.functionality.registerNotifiers!(i)
-                              : i;
-                        },
-                        newStatus: () => api.randomPosts(
-                          db.tagManager.excluded,
-                          safeMode(),
-                          false,
-                          addTags: tags ?? "",
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(gridContext, rootNavigator: true).push<void>(
+                      MaterialPageRoute(
+                        builder: (context) => PopularPage(
+                          api: api,
+                          tags: tags,
+                          db: db,
+                          safeMode: safeMode,
                         ),
                       ),
-                    ),
-                  );
-                },
-                label: Text(l10n.randomPosts),
-                icon: const Icon(Icons.shuffle_outlined),
-              ),
-              TextButton.icon(
-                onPressed: () => launchVideos(gridContext, l10n, theme, false),
-                onLongPress: tags != null
-                    ? () => launchVideos(gridContext, l10n, theme, true)
-                    : () {
-                        Navigator.of(gridContext, rootNavigator: true)
-                            .push<void>(
-                          DialogRoute(
-                            context: gridContext,
-                            builder: (context) => _VideosSettingsDialog(
-                              api: api,
+                    );
+                  },
+                  label: Text(l10n.popularPosts),
+                  icon: const Icon(Icons.whatshot_outlined),
+                ),
+                TextButton.icon(
+                  onPressed: () => launchRandom(gridContext, l10n, theme),
+                  label: Text(l10n.randomPosts),
+                  icon: const Icon(Icons.shuffle_outlined),
+                ),
+                TextButton.icon(
+                  onPressed: () =>
+                      launchVideos(gridContext, l10n, theme, false),
+                  onLongPress: tags != null
+                      ? () => launchVideos(gridContext, l10n, theme, true)
+                      : () {
+                          Navigator.of(gridContext, rootNavigator: true)
+                              .push<void>(
+                            DialogRoute(
+                              context: gridContext,
+                              builder: (context) => _VideosSettingsDialog(
+                                api: api,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                label: Text(l10n.videosLabel),
-                icon: const Icon(Icons.video_collection_outlined),
-              ),
-            ],
+                          );
+                        },
+                  label: Text(l10n.videosLabel),
+                  icon: const Icon(Icons.video_collection_outlined),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -975,9 +1024,9 @@ class _PopularPageState extends State<PopularPage> {
           return BooruRestoredPage(
             booru: booru,
             tags: tag,
-            generateGlue: GlueProvider.generateOf(context),
             overrideSafeMode: safeMode,
             db: widget.db,
+            wrapScaffold: true,
             saveSelectedPage: (_) {},
             // pagingRegistry: widget.pagingRegistry,
           );
@@ -1523,27 +1572,35 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
       }
 
       if (urlList.length == 1) {
+        final urlRating = urlList.first;
+
         ret.add(
           _HottestTagData(
+            postId: urlRating.postId,
             tag: tag.tag,
             count: tag.count,
-            thumbUrl: urlList.first.url,
+            thumbUrl: urlRating.url,
           ),
         );
       } else {
-        var first = urlList.first.url;
+        var first = urlList.first;
         for (final url in urlList) {
           if (m.containsKey(url.url)) {
             continue;
           } else {
             m[url.url] = null;
 
-            first = url.url;
+            first = url;
           }
         }
 
         ret.add(
-          _HottestTagData(tag: tag.tag, count: tag.count, thumbUrl: first),
+          _HottestTagData(
+            postId: first.postId,
+            tag: tag.tag,
+            count: tag.count,
+            thumbUrl: first.url,
+          ),
         );
       }
     }
@@ -1615,7 +1672,10 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
                 );
               },
               children: list.map<Widget>((tag) {
-                return HottestTagWidget(tag: tag);
+                return HottestTagWidget(
+                  tag: tag,
+                  booru: widget.api.booru,
+                );
               }).toList(),
             ),
           ),
@@ -1627,10 +1687,13 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
 
 class _HottestTagData {
   const _HottestTagData({
+    required this.postId,
     required this.tag,
     required this.count,
     required this.thumbUrl,
   });
+
+  final int postId;
 
   final String tag;
   final int count;
@@ -1641,9 +1704,11 @@ class HottestTagWidget extends StatelessWidget {
   const HottestTagWidget({
     super.key,
     required this.tag,
+    required this.booru,
   });
 
   final _HottestTagData tag;
+  final Booru booru;
 
   @override
   Widget build(BuildContext context) {
@@ -1691,6 +1756,15 @@ class HottestTagWidget extends StatelessWidget {
             ),
           ),
         ),
+        // GestureDetector(
+        //   onLongPress: () {
+        //     Post.imageViewSingle(
+        //       context,
+        //       booru,
+        //       tag.postId,
+        //     );
+        //   },
+        // ),
       ],
     );
   }
@@ -1729,8 +1803,11 @@ Future<void> _loadHottestTags(
           HottestTag(tag: tag.tag, count: tag.count, booru: api.booru).copy(
             thumbUrls: posts.$1
                 .map(
-                  (post) =>
-                      ThumbUrlRating(url: post.previewUrl, rating: post.rating),
+                  (post) => ThumbUrlRating(
+                    postId: post.id,
+                    url: post.previewUrl,
+                    rating: post.rating,
+                  ),
                 )
                 .toList(),
           ),

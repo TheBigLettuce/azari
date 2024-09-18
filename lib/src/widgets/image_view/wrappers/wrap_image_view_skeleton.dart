@@ -113,12 +113,17 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
         body: !showRail
             ? AnnotatedRegion(
                 value: SystemUiOverlayStyle(
-                  statusBarColor: colorScheme.surface.withOpacity(0),
+                  statusBarColor: colorScheme.surface.withOpacity(0.1),
                   statusBarIconBrightness:
                       colorScheme.brightness == Brightness.dark
                           ? Brightness.light
                           : Brightness.dark,
-                  systemNavigationBarColor: colorScheme.surface.withOpacity(0),
+                  systemNavigationBarIconBrightness:
+                      colorScheme.brightness == Brightness.dark
+                          ? Brightness.light
+                          : Brightness.dark,
+                  systemNavigationBarColor:
+                      colorScheme.surface.withOpacity(0.1),
                 ),
                 child: Stack(
                   alignment: Alignment.bottomCenter,
@@ -190,17 +195,9 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                                               onPressed: e.onPressed,
                                               icon: Icon(e.icon),
                                               style: ButtonStyle(
-                                                foregroundColor:
-                                                    WidgetStatePropertyAll(
-                                                  theme.colorScheme
-                                                      .onSurfaceVariant
-                                                      .withOpacity(0.95),
-                                                ),
                                                 backgroundColor:
                                                     WidgetStatePropertyAll(
-                                                  theme.colorScheme
-                                                      .surfaceContainerHigh
-                                                      .withOpacity(0.9),
+                                                  colorScheme.surface,
                                                 ),
                                               ),
                                             ),
@@ -354,72 +351,85 @@ class __BottomIconsState extends State<_BottomIcons>
     final widgets = CurrentContentNotifier.of(context).widgets;
     final actions = widgets.tryAsActionable(context);
 
-    return SizedBox(
-      width: double.infinity,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: widget.viewPadding.bottom + 18) +
-              const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: 56,
-                  child: Column(
-                    key: widgets.uniqueKey(),
-                    mainAxisSize: MainAxisSize.min,
-                    children: actions.reversed
-                        .map(
-                          (e) => WrapGridActionButton(
-                            e.icon,
-                            () => e.onPress(
-                              CurrentContentNotifier.of(context),
+    return Animate(
+      value: 1,
+      target: AppBarVisibilityNotifier.of(context) ? 1 : 0,
+      effects: const [
+        FadeEffect(
+          duration: Durations.medium3,
+          curve: Easing.standard,
+          begin: 0.5,
+          end: 1,
+        ),
+      ],
+      child: SizedBox(
+        width: double.infinity,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: widget.viewPadding.bottom + 18) +
+                const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SizedBox(
+                    width: 56,
+                    child: Column(
+                      key: widgets.uniqueKey(),
+                      mainAxisSize: MainAxisSize.min,
+                      children: actions.reversed
+                          .map(
+                            (e) => WrapGridActionButton(
+                              e.icon,
+                              () => e.onPress(
+                                CurrentContentNotifier.of(context),
+                              ),
+                              onLongPress: null,
+                              whenSingleContext: null,
+                              play: e.play,
+                              animate: e.animate,
+                              color: e.color,
+                              watch: e.watch,
+                              animation: e.animation,
                             ),
-                            onLongPress: null,
-                            whenSingleContext: null,
-                            play: e.play,
-                            animate: e.animate,
-                            color: e.color,
-                            watch: e.watch,
-                            animation: e.animation,
-                          ),
-                        )
-                        .toList(),
+                          )
+                          .toList(),
+                    ),
                   ),
                 ),
-              ),
-              const Expanded(
-                child: Align(
+                const Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _BottomRibbon(),
+                  ),
+                ),
+                Align(
                   alignment: Alignment.bottomCenter,
-                  child: _BottomRibbon(),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    VideoControls(
-                      videoControls: widget.videoControls,
-                      db: DatabaseConnectionNotifier.of(context).videoSettings,
-                      seekTimeAnchor: widget.seekTimeAnchor,
-                      vertical: false,
-                    ),
-                    const Padding(padding: EdgeInsets.only(bottom: 8)),
-                    if (widgets.tryAsInfoable(context) != null)
-                      ImageViewFab(
-                        widgets: widgets,
-                        bottomSheetController: widget.bottomSheetController,
-                        viewPadding: widget.viewPadding,
-                        visibilityController: widget.visibilityController,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      VideoControls(
+                        videoControls: widget.videoControls,
+                        db: DatabaseConnectionNotifier.of(context)
+                            .videoSettings,
+                        seekTimeAnchor: widget.seekTimeAnchor,
+                        vertical: false,
                       ),
-                  ],
+                      const Padding(padding: EdgeInsets.only(bottom: 8)),
+                      if (widgets.tryAsInfoable(context) != null)
+                        ImageViewFab(
+                          widgets: widgets,
+                          bottomSheetController: widget.bottomSheetController,
+                          viewPadding: widget.viewPadding,
+                          visibilityController: widget.visibilityController,
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -459,26 +469,59 @@ class _BottomRibbon extends StatelessWidget {
                       padding: const EdgeInsets.only(
                         right: 8,
                       ),
-                      child: e.subtitle != null
-                          ? Text(
-                              e.subtitle!,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: e.important
-                                    ? colorScheme.secondary
-                                    : colorScheme.onSurface.withOpacity(
-                                        0.6,
-                                      ),
-                              ),
-                            )
-                          : Icon(
-                              e.icon,
-                              size: 16,
-                              color: e.important
-                                  ? colorScheme.secondary
-                                  : colorScheme.onSurface.withOpacity(
-                                      0.6,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: theme.colorScheme.surface,
+                        ),
+                        child: Padding(
+                          padding: e.subtitle != null
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                )
+                              : const EdgeInsets.all(4),
+                          child: e.subtitle != null
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      e.icon,
+                                      size: 10,
+                                      color: e.important
+                                          ? colorScheme.secondary
+                                          : colorScheme.onSurface.withOpacity(
+                                              0.6,
+                                            ),
                                     ),
-                            ),
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 4),
+                                    ),
+                                    Text(
+                                      e.subtitle!,
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: e.important
+                                            ? colorScheme.secondary
+                                            : colorScheme.onSurface.withOpacity(
+                                                0.6,
+                                              ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Icon(
+                                  e.icon,
+                                  size: 16,
+                                  color: e.important
+                                      ? colorScheme.secondary
+                                      : colorScheme.onSurface.withOpacity(
+                                          0.6,
+                                        ),
+                                ),
+                        ),
+                      ),
                     ),
                   )
                   .toList(),

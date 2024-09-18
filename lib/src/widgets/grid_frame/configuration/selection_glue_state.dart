@@ -68,6 +68,7 @@ class SelectionGlueState {
             play: e.play,
             animation: const [],
             whenSingleContext: e.showOnlyWhenSingle ? context : null,
+            addBorder: false,
           ),
           c
         );

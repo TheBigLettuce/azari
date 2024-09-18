@@ -153,6 +153,7 @@ abstract class $HottestTag extends HottestTag {
 
 abstract class $ThumbUrlRating extends ThumbUrlRating {
   const factory $ThumbUrlRating({
+    required int postId,
     required String url,
     required PostRating rating,
   }) = IsarThumbUrlRating.required;

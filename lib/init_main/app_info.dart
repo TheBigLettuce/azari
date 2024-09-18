@@ -5,7 +5,6 @@
 
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:local_auth/local_auth.dart";
-import "package:package_info_plus/package_info_plus.dart";
 
 late final AppInfo _instance;
 
@@ -21,7 +20,7 @@ Future<void> initAppInfo() async {
     canUseAuth = false;
   }
 
-  _instance = AppInfo._(canUseAuth, (await PackageInfo.fromPlatform()).version);
+  _instance = AppInfo._(canUseAuth, await PlatformApi.current().version());
 }
 
 final class AppInfo {

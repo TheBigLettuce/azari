@@ -271,6 +271,7 @@ class ImageTagsNotifier extends InheritedWidget {
     required this.res,
     required super.child,
   });
+
   final List<ImageTag> tags;
   final DisassembleResult? res;
 

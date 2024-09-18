@@ -156,39 +156,13 @@ mixin VisitedPostImpl implements VisitedPost {
     GridFunctionality<VisitedPost> functionality,
     VisitedPost cell,
     int idx,
-  ) {
-    final db = DatabaseConnectionNotifier.of(context);
-
-    ImageView.launchWrappedAsyncSingle(
-      context,
-      () async {
-        final dio = BooruAPI.defaultClientForBooru(booru);
-        final api = BooruAPI.fromEnum(booru, dio, PageSaver.noPersist());
-
-        final Post post;
-        try {
-          post = await api.singlePost(id);
-        } catch (e) {
-          rethrow;
-        } finally {
-          dio.close(force: true);
-        }
-
-        db.visitedPosts.addAll([
-          VisitedPost(
-            booru: booru,
-            id: id,
-            thumbUrl: thumbUrl,
-            date: DateTime.now(),
-          ),
-        ]);
-
-        return () => post.content();
-      },
-      tags: (c) => DefaultPostPressable.imageViewTags(c, db.tagManager),
-      watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, db.tagManager),
-    );
-  }
+  ) =>
+      Post.imageViewSingle(
+        context,
+        booru,
+        id,
+        wrapNotifiers: functionality.registerNotifiers,
+      );
 }
 
 abstract interface class VisitedPostsService {
@@ -590,10 +564,12 @@ abstract class HottestTag {
 @immutable
 abstract class ThumbUrlRating {
   const factory ThumbUrlRating({
+    required int postId,
     required String url,
     required PostRating rating,
   }) = $ThumbUrlRating;
 
+  int get postId;
   String get url;
   PostRating get rating;
 }
@@ -785,6 +761,46 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
     final url = getUrl(p);
 
     return PostContentType.fromUrl(url);
+  }
+
+  static void imageViewSingle(
+    BuildContext context,
+    Booru booru,
+    int postId, {
+    Widget Function(Widget)? wrapNotifiers,
+  }) {
+    final db = DatabaseConnectionNotifier.of(context);
+
+    ImageView.launchWrappedAsyncSingle(
+      context,
+      () async {
+        final dio = BooruAPI.defaultClientForBooru(booru);
+        final api = BooruAPI.fromEnum(booru, dio, PageSaver.noPersist());
+
+        final Post post;
+        try {
+          post = await api.singlePost(postId);
+        } catch (e) {
+          rethrow;
+        } finally {
+          dio.close(force: true);
+        }
+
+        db.visitedPosts.addAll([
+          VisitedPost(
+            booru: booru,
+            id: postId,
+            thumbUrl: post.previewUrl,
+            date: DateTime.now(),
+          ),
+        ]);
+
+        return () => post.content();
+      },
+      wrapNotifiers: wrapNotifiers,
+      tags: (c) => DefaultPostPressable.imageViewTags(c, db.tagManager),
+      watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, db.tagManager),
+    );
   }
 }
 

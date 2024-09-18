@@ -7,8 +7,13 @@ import "dart:async";
 
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -71,6 +76,35 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
     super.dispose();
   }
 
+  void _onBooruTagPressed(
+    BuildContext imageViewContext,
+    Booru booru,
+    String tag,
+    SafeMode? safeMode,
+  ) {
+    if (tag.isEmpty) {
+      return;
+    }
+
+    ExitOnPressRoute.maybeExitOf(imageViewContext);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return BooruRestoredPage(
+            booru: booru,
+            tags: tag,
+            generateGlue: widget.generateGlue,
+            overrideSafeMode: safeMode,
+            db: DatabaseConnectionNotifier.of(context),
+            saveSelectedPage: (_) {},
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -90,6 +124,10 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
           ],
           functionality: GridFunctionality(
             selectionGlue: widget.generateGlue(),
+            registerNotifiers: (child) => OnBooruTagPressed(
+              onPressed: _onBooruTagPressed,
+              child: child,
+            ),
             search: PageNameSearchWidget(
               leading: IconButton(
                 onPressed: () {

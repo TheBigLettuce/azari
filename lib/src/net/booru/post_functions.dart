@@ -112,12 +112,13 @@ class _PostInfoState extends State<PostInfo> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final tagManager = TagManager.of(context);
 
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.only(top: 10, bottom: 4),
           sliver: TagsRibbon(
             selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
@@ -176,31 +177,6 @@ class _PostInfoState extends State<PostInfo> {
               l10n: l10n,
               width: post.width,
               height: post.height,
-              createdAt: post.createdAt,
-            ),
-            ListTile(
-              title: Center(
-                child: Text(l10n.ratingInfoPage),
-              ),
-              subtitle: Center(
-                child: Text(post.rating.translatedName(l10n)),
-              ),
-            ),
-            ListTile(
-              title: Center(
-                child: Text(l10n.booruLabel),
-              ),
-              subtitle: Center(
-                child: Text(post.booru.string),
-              ),
-            ),
-            ListTile(
-              title: Center(
-                child: Text(l10n.scoreInfoPage),
-              ),
-              subtitle: Center(
-                child: Text(post.score.toString()),
-              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -213,7 +189,7 @@ class _PostInfoState extends State<PostInfo> {
                       Uri.parse(post.fileDownloadUrl()),
                       mode: LaunchMode.externalApplication,
                     ),
-                    label: const Text("Link"),
+                    label: Text(l10n.linkLabel),
                     icon: const Icon(
                       Icons.open_in_new_rounded,
                       size: 18,
@@ -227,7 +203,7 @@ class _PostInfoState extends State<PostInfo> {
                               mode: LaunchMode.externalApplication,
                             )
                         : null,
-                    label: const Text("Source"),
+                    label: Text(l10n.sourceFileInfoPage),
                     icon: const Icon(
                       Icons.open_in_new_rounded,
                       size: 18,
@@ -236,6 +212,40 @@ class _PostInfoState extends State<PostInfo> {
                   if (post.tags.contains("translated"))
                     TranslationNotes.button(context, post.id, post.booru),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 2,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  text: post.rating.translatedName(l10n),
+                  children: [
+                    TextSpan(text: " • ${post.booru.string} • "),
+                    WidgetSpan(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 2, right: 4),
+                        child: Icon(
+                          Icons.thumb_up_alt_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurface.withOpacity(
+                            0.7,
+                          ),
+                        ),
+                      ),
+                    ),
+                    TextSpan(text: "${post.score}"),
+                    TextSpan(text: "\n${l10n.date(post.createdAt)}"),
+                  ],
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(
+                      0.7,
+                    ),
+                  ),
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -251,15 +261,12 @@ class DimensionsRow extends StatelessWidget {
     required this.l10n,
     required this.width,
     required this.height,
-    required this.createdAt,
   });
 
   final AppLocalizations l10n;
 
   final int width;
   final int height;
-
-  final DateTime createdAt;
 
   @override
   Widget build(BuildContext context) {
@@ -269,22 +276,12 @@ class DimensionsRow extends StatelessWidget {
         width: double.infinity,
         height: 60,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _ColoredRectangle(
-              primaryColor: true,
-              title: l10n.createdAtInfoPage,
-              subtitle: l10n.date(createdAt),
-            ),
-            _ColoredRectangle(
               primaryColor: false,
-              subtitle: l10n.pixels(width),
-              title: l10n.widthInfoPage,
-            ),
-            _ColoredRectangle(
-              primaryColor: false,
-              subtitle: l10n.pixels(height),
-              title: l10n.heightInfoPage,
+              subtitle: "$width x ${l10n.pixels(height)}",
+              title: l10n.imageDimensions,
             ),
           ],
         ),
@@ -324,21 +321,26 @@ class _ColoredRectangle extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text(
-                  subtitle,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: primaryColor
-                        ? theme.colorScheme.onPrimaryContainer
-                        : theme.colorScheme.onSecondaryContainer,
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: primaryColor
+                          ? theme.colorScheme.onPrimaryContainer
+                          : theme.colorScheme.onSecondaryContainer,
+                    ),
                   ),
                 ),
-                Text(
-                  title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: primaryColor
-                        ? theme.colorScheme.onPrimaryContainer.withOpacity(0.8)
-                        : theme.colorScheme.onSecondaryContainer
-                            .withOpacity(0.8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: primaryColor
+                          ? theme.colorScheme.onPrimaryContainer
+                              .withOpacity(0.8)
+                          : theme.colorScheme.onSecondaryContainer
+                              .withOpacity(0.8),
+                    ),
                   ),
                 ),
               ],

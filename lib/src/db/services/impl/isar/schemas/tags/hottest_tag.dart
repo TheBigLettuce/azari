@@ -67,12 +67,17 @@ class IsarThumbUrlRating implements $ThumbUrlRating {
   const IsarThumbUrlRating({
     this.url = "",
     this.rating = PostRating.general,
+    this.postId = 0,
   });
 
   const IsarThumbUrlRating.required({
+    required this.postId,
     required this.rating,
     required this.url,
   });
+
+  @override
+  final int postId;
 
   @override
   @enumerated
