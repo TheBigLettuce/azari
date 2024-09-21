@@ -362,6 +362,7 @@ abstract class $VisitedPost extends VisitedPost {
     required int id,
     required String thumbUrl,
     required DateTime date,
+    required PostRating rating,
   }) = IsarVisitedPost.noId;
 }
 

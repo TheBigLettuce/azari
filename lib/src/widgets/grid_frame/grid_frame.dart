@@ -134,9 +134,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
       }
 
       controller!.addListener(() {
-        final showFab = controller!.position.userScrollDirection ==
-                ScrollDirection.forward &&
-            controller!.offset != 0;
+        final showFab = controller!.position.pixels ==
+                controller!.position.maxScrollExtent ||
+            controller!.position.userScrollDirection ==
+                    ScrollDirection.forward &&
+                controller!.offset != 0;
         if (_scrollingNotifier!.value != showFab) {
           _scrollingNotifier.value = showFab;
         }

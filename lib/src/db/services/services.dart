@@ -129,12 +129,14 @@ abstract class VisitedPost
     required int id,
     required String thumbUrl,
     required DateTime date,
+    required PostRating rating,
   }) = $VisitedPost;
 
   Booru get booru;
   int get id;
   String get thumbUrl;
   DateTime get date;
+  PostRating get rating;
 }
 
 mixin VisitedPostImpl implements VisitedPost {
@@ -791,6 +793,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
             booru: booru,
             id: postId,
             thumbUrl: post.previewUrl,
+            rating: post.rating,
             date: DateTime.now(),
           ),
         ]);

@@ -125,7 +125,10 @@ abstract class GalleryApi {
 }
 
 class CopyOp {
-  const CopyOp({required this.from, required this.to});
+  const CopyOp({
+    required this.from,
+    required this.to,
+  });
 
   final String from;
   final String to;

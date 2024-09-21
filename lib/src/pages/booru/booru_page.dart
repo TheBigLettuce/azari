@@ -296,6 +296,7 @@ class _BooruPageState extends State<BooruPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return switch (BooruSubPage.of(context)) {
       BooruSubPage.booru => GridPopScope(
@@ -368,6 +369,8 @@ class _BooruPageState extends State<BooruPage> {
                         pinned: true,
                         snap: true,
                         stretch: true,
+                        backgroundColor:
+                            theme.colorScheme.surface.withOpacity(0.95),
                         bottom: bottomWidget ??
                             const PreferredSize(
                               preferredSize: Size.zero,
@@ -526,6 +529,7 @@ class PopularRandomButtons extends StatelessWidget {
                   booru: post.booru,
                   id: post.id,
                   thumbUrl: post.previewUrl,
+                  rating: post.rating,
                   date: DateTime.now(),
                 ),
               ]);
@@ -594,6 +598,7 @@ class PopularRandomButtons extends StatelessWidget {
                     booru: post.booru,
                     id: post.id,
                     thumbUrl: post.previewUrl,
+                    rating: post.rating,
                     date: DateTime.now(),
                   ),
                 ]);
@@ -667,6 +672,7 @@ class PopularRandomButtons extends StatelessWidget {
                 VisitedPost(
                   booru: post.booru,
                   id: post.id,
+                  rating: post.rating,
                   thumbUrl: post.previewUrl,
                   date: DateTime.now(),
                 ),
@@ -719,6 +725,7 @@ class PopularRandomButtons extends StatelessWidget {
                   VisitedPost(
                     booru: post.booru,
                     id: post.id,
+                    rating: post.rating,
                     thumbUrl: post.previewUrl,
                     date: DateTime.now(),
                   ),

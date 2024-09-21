@@ -44,10 +44,15 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
   VisitedPostsService get visitedPosts => widget.db;
 
   late final StreamSubscription<void> subscr;
+  late final StreamSubscription<SettingsData?> settingsSubsc;
 
   late final state = GridSkeletonState<VisitedPost>();
   late final source = GenericListSource<VisitedPost>(
-    () => Future.value(visitedPosts.all),
+    () => Future.value(
+      visitedPosts.all
+          .where((e) => state.settings.safeMode.inLevel(e.rating.asSafeMode))
+          .toList(),
+    ),
   );
 
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
@@ -64,10 +69,17 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
     subscr = widget.db.watch((_) {
       source.clearRefresh();
     });
+
+    settingsSubsc = state.settings.s.watch((settings) {
+      setState(() {
+        state.settings = settings!;
+      });
+    });
   }
 
   @override
   void dispose() {
+    settingsSubsc.cancel();
     subscr.cancel();
     gridSettings.cancel();
     source.destroy();

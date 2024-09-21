@@ -347,6 +347,7 @@ mixin DefaultPostPressable<T extends PostImpl> implements Pressable<T> {
         VisitedPost(
           booru: post.booru,
           id: post.id,
+          rating: post.rating,
           thumbUrl: post.previewUrl,
           date: DateTime.now(),
         ),

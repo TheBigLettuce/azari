@@ -6,6 +6,7 @@
 import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 
 part "visited_post.g.dart";
@@ -18,6 +19,7 @@ class IsarVisitedPost with VisitedPostImpl implements $VisitedPost {
     required this.booru,
     required this.isarId,
     required this.date,
+    required this.rating,
   });
 
   const IsarVisitedPost.noId({
@@ -25,6 +27,7 @@ class IsarVisitedPost with VisitedPostImpl implements $VisitedPost {
     required this.id,
     required this.booru,
     required this.date,
+    required this.rating,
   }) : isarId = null;
 
   final Id? isarId;
@@ -42,4 +45,8 @@ class IsarVisitedPost with VisitedPostImpl implements $VisitedPost {
 
   @override
   final DateTime date;
+
+  @override
+  @enumerated
+  final PostRating rating;
 }

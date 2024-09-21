@@ -54,6 +54,10 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         if (widget.preloadNextPictures && content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
+            final thumb = content.widgets.tryAsThumbnailable();
+            if (thumb != null) {
+              precacheImage(thumb, context);
+            }
           });
         }
       }
@@ -69,6 +73,10 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         if (widget.preloadNextPictures && content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
+            final thumb = content.widgets.tryAsThumbnailable();
+            if (thumb != null) {
+              precacheImage(thumb, context);
+            }
           });
         }
       }

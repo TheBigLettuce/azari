@@ -20,7 +20,7 @@ class _WrapPadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insets = EdgeInsets.only(
-      bottom: (kFloatingActionButtonMargin * 2 + 24 + 8 + 8) +
+      bottom: (kFloatingActionButtonMargin * 2 + 24 + 8 + 8 + 4) +
           (selectionGlue.keyboardVisible()
               ? 0
               : MediaQuery.viewPaddingOf(context).bottom +

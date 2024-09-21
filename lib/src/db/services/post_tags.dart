@@ -295,65 +295,63 @@ void openAddTagDialog(
   final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
   bool delete = false;
 
-  Navigator.push(
-    context,
+  Navigator.of(context, rootNavigator: true).push(
     DialogRoute<void>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text(l10n.addTag),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Form(
-                autovalidateMode: AutovalidateMode.always,
-                child: TextFormField(
-                  enabled: true,
-                  validator: (value) {
-                    if (value == null) {
-                      return l10n.valueIsNull;
-                    }
+          actions: [
+            StatefulBuilder(
+              builder: (context, setState) => IconButton.filledTonal(
+                isSelected: delete,
+                onPressed: () {
+                  delete = !delete;
 
-                    final v = value.trim();
-                    if (v.isEmpty) {
-                      return l10n.valueIsEmpty;
-                    }
-
-                    if (v.length <= 1) {
-                      return l10n.valueIsEmpty;
-                    }
-
-                    if (regexp.hasMatch(v)) {
-                      return l10n.tagValidationError;
-                    }
-
-                    return null;
-                  },
-                  onFieldSubmitted: (value) {
-                    final v = value.trim();
-                    if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
-                      return;
-                    }
-
-                    onSubmit(v, delete);
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              StatefulBuilder(
-                builder: (context, setState) {
-                  return SwitchListTile(
-                    title: Text(l10n.delete),
-                    value: delete,
-                    onChanged: (v) {
-                      delete = v;
-
-                      setState(() {});
-                    },
-                  );
+                  setState(() {});
                 },
+                icon: const Icon(Icons.delete_forever_rounded),
               ),
-            ],
+            ),
+          ],
+          content: Form(
+            autovalidateMode: AutovalidateMode.always,
+            child: TextFormField(
+              enabled: true,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                icon: Icon(Icons.tag_rounded),
+              ),
+              validator: (value) {
+                if (value == null) {
+                  return l10n.valueIsNull;
+                }
+
+                final v = value.trim();
+                if (v.isEmpty) {
+                  return l10n.valueIsEmpty;
+                }
+
+                if (v.length <= 1) {
+                  return l10n.valueIsEmpty;
+                }
+
+                if (regexp.hasMatch(v)) {
+                  return l10n.tagValidationError;
+                }
+
+                return null;
+              },
+              onFieldSubmitted: (value) {
+                final v = value.trim();
+                if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
+                  return;
+                }
+
+                onSubmit(v, delete);
+                Navigator.pop(context);
+              },
+            ),
           ),
         );
       },

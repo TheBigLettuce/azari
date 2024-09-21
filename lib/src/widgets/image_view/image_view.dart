@@ -9,6 +9,7 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
@@ -25,7 +26,10 @@ import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.d
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:dynamic_color/dynamic_color.dart";
+import "package:flutter/foundation.dart";
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
@@ -272,7 +276,7 @@ class ImageViewState extends State<ImageView>
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
-  // final _k = GlobalKey();
+  final bodyKey = GlobalKey();
 
   late final AnimationController animationController;
   late final AnimationController slideAnimationLeft;
@@ -577,6 +581,7 @@ class ImageViewState extends State<ImageView>
                   ),
                 ],
                 child: ImageViewBody(
+                  key: bodyKey,
                   onPressedLeft: _onPressedLeft,
                   onPressedRight: _onPressedRight,
                   onPageChanged: _onPageChanged,
