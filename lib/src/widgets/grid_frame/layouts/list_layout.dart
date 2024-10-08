@@ -72,9 +72,9 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
     final extras = GridExtrasNotifier.of<T>(context);
 
     return EmptyWidgetOrContent(
-      count: source.count,
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
+      source: source,
       child: SliverPadding(
         padding: const EdgeInsets.only(right: 8, left: 8),
         sliver: SliverList.builder(

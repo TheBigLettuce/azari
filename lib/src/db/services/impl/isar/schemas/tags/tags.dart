@@ -10,7 +10,7 @@ import "package:isar/isar.dart";
 part "tags.g.dart";
 
 @collection
-class IsarTag implements $TagData {
+class IsarTag extends TagDataImpl implements $TagData {
   const IsarTag({
     required this.time,
     required this.tag,

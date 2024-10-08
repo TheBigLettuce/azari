@@ -120,7 +120,6 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   @override
   Widget build(BuildContext context) {
     return OriginalGridContext(
-      generate: GlueProvider.generateOf(widget.gridContext ?? context),
       gridContext: widget.gridContext ?? context,
       child: ImageViewTagWatcher(
         key: ValueKey((currentCell, content.widgets.uniqueKey())),
@@ -188,7 +187,7 @@ class ImageViewTagWatcher extends StatefulWidget {
 
 class _ImageViewTagWatcherState extends State<ImageViewTagWatcher> {
   late final StreamSubscription<List<ImageTag>>? tagWatcher;
-  late final DisassembleResult? res;
+  late final ParsedFilenameResult? res;
 
   List<ImageTag> tags = [];
 
@@ -196,7 +195,8 @@ class _ImageViewTagWatcherState extends State<ImageViewTagWatcher> {
   void initState() {
     super.initState();
 
-    res = DisassembleResult.fromFilename(widget.currentCell.widgets.alias(true))
+    res = ParsedFilenameResult.fromFilename(
+            widget.currentCell.widgets.alias(true))
         .maybeValue();
 
     tagWatcher = widget.watchTags?.call(widget.currentCell, (t) {
@@ -238,25 +238,16 @@ class OriginalGridContext extends InheritedWidget {
   const OriginalGridContext({
     super.key,
     required this.gridContext,
-    required this.generate,
     required super.child,
   });
 
   final BuildContext gridContext;
-  final SelectionGlue Function() generate;
 
   static BuildContext? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<OriginalGridContext>();
 
     return widget?.gridContext;
-  }
-
-  static SelectionGlue Function()? generateOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<OriginalGridContext>();
-
-    return widget?.generate;
   }
 
   @override
@@ -273,7 +264,7 @@ class ImageTagsNotifier extends InheritedWidget {
   });
 
   final List<ImageTag> tags;
-  final DisassembleResult? res;
+  final ParsedFilenameResult? res;
 
   static List<ImageTag> of(BuildContext context) {
     final widget =
@@ -282,7 +273,7 @@ class ImageTagsNotifier extends InheritedWidget {
     return widget!.tags;
   }
 
-  static DisassembleResult? resOf(BuildContext context) {
+  static ParsedFilenameResult? resOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
 

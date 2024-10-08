@@ -105,8 +105,6 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   GridBookmarkService get gridBookmarks => const IsarGridStateBooruService();
   @override
-  FavoriteFileService get favoriteFiles => const IsarFavoriteFileService();
-  @override
   DirectoryTagService get directoryTags => const IsarDirectoryTagService();
   @override
   BlacklistedDirectoryService blacklistedDirectories =
@@ -114,7 +112,7 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
   @override
-  NewestAnimeService get newestAnime => const IsarNewestAnimeService();
+  AnimeListsService get animeLists => const IsarAnimeListsService();
 
   @override
   final TagManager tagManager = const IsarTagManager();

@@ -12,7 +12,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required super.source,
     required super.directoryMetadata,
     required super.directoryTag,
-    required super.favoriteFile,
+    required super.favoritePosts,
     required super.localTags,
     required super.sourceTags,
   }) : super(
@@ -37,7 +37,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
     required this.directories,
     required this.sourceTags,
     required this.localTags,
-    required this.favoriteFile,
+    required this.favoritePosts,
     required this.directoryMetadata,
     required this.directoryTag,
     required this.source,
@@ -76,7 +76,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   final DirectoryTagService directoryTag;
 
   @override
-  final FavoriteFileService favoriteFile;
+  final FavoritePostSourceService favoritePosts;
 
   @override
   final LocalTagsService localTags;
@@ -93,17 +93,17 @@ class _AndroidFileSourceJoined
   _AndroidFileSourceJoined(
     this.directories,
     this.type,
-    this.favoriteFile,
+    this.favoritePosts,
     this.sourceTags,
   ) {
-    _favoritesWatcher = favoriteFile.watch((_) {
+    _favoritesWatcher = favoritePosts.backingStorage.watch((_) {
       backingStorage.addAll([]);
     });
   }
 
   final List<GalleryDirectory> directories;
   final GalleryFilesPageType type;
-  final FavoriteFileService favoriteFile;
+  final FavoritePostSourceService favoritePosts;
   late final StreamSubscription<int>? _favoritesWatcher;
   final MapFilesSourceTags sourceTags;
 
@@ -140,21 +140,23 @@ class _AndroidFileSourceJoined
     progress.inRefreshing = true;
     if (type.isTrash()) {
       const AndroidGalleryManagementApi().refreshTrashed(sortingMode);
-    } else if (type.isFavorites()) {
-      int offset = 0;
+    }
+    // else if (type.isFavorites()) {
+    //   int offset = 0;
 
-      while (true) {
-        final f = favoriteFile.getAll(offset: offset, limit: 200);
-        offset += f.length;
+    //   while (true) {
+    //     final f = favoritePosts.getAll(offset: offset, limit: 200);
+    //     offset += f.length;
 
-        if (f.isEmpty) {
-          break;
-        }
+    //     if (f.isEmpty) {
+    //       break;
+    //     }
 
-        await const AndroidGalleryManagementApi()
-            .refreshFavorites(f, sortingMode);
-      }
-    } else {
+    //     await const AndroidGalleryManagementApi()
+    //         .refreshFavorites(f, sortingMode);
+    //   }
+    // }
+    else {
       if (directories.length == 1) {
         const AndroidGalleryManagementApi()
             .refreshFiles(directories.first.bucketId, sortingMode);

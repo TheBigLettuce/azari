@@ -12,6 +12,7 @@ abstract interface class FavoritePostSourceService
   List<PostBase> addRemove(List<PostBase> posts);
 
   bool isFavorite(int id, Booru booru);
+  bool contains(int id, Booru booru);
 
   StreamSubscription<T> watchSingle<T>(
     int id,
@@ -20,6 +21,8 @@ abstract interface class FavoritePostSourceService
     void Function(T) f, [
     bool fire = false,
   ]);
+
+  Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]);
 }
 
 @immutable

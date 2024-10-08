@@ -60,7 +60,7 @@ abstract class BlacklistedDirectoryDataImpl
       GalleryFilesPageType.normal,
       db.directoryTags,
       db.directoryMetadata,
-      db.favoriteFiles,
+      db.favoritePosts,
       db.localTags,
     );
 

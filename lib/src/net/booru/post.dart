@@ -45,7 +45,7 @@ abstract class PostImpl
   const PostImpl();
 
   String _makeName() =>
-      DisassembleResult.makeFilename(booru, fileDownloadUrl(), md5, id);
+      ParsedFilenameResult.makeFilename(booru, fileDownloadUrl(), md5, id);
 
   @override
   CellStaticData description() => const CellStaticData();
@@ -385,7 +385,7 @@ extension MultiplePostDownloadExt on List<PostImpl> {
       map(
         (e) => DownloadEntryTags.d(
           tags: e.tags,
-          name: DisassembleResult.makeFilename(
+          name: ParsedFilenameResult.makeFilename(
             e.booru,
             e.fileDownloadUrl(),
             e.md5,
@@ -413,7 +413,7 @@ extension PostDownloadExt on PostImpl {
       [
         DownloadEntryTags.d(
           tags: tags,
-          name: DisassembleResult.makeFilename(
+          name: ParsedFilenameResult.makeFilename(
             booru,
             fileDownloadUrl(),
             md5,

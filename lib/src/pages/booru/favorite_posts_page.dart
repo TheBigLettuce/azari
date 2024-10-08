@@ -20,6 +20,7 @@ import "package:azari/src/pages/booru/actions.dart" as booru_actions;
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -222,7 +223,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
   List<GridAction<FavoritePost>> gridActions() {
     return [
       booru_actions.download(context, state.settings.selectedBooru, null),
-      booru_actions.favorites(
+      booru_actions.favorites<FavoritePost>(
         context,
         favoritePosts,
         showDeleteSnackbar: true,
@@ -244,6 +245,9 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         ),
       ],
       functionality: GridFunctionality(
+        onEmptySource: const EmptyWidgetBackground(
+          subtitle: "Favorited posts will appear here...", // TODO: change
+        ),
         search: PageNameSearchWidget(
           leading: IconButton(
             onPressed: () {

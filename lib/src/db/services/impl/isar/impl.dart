@@ -9,6 +9,7 @@ import "dart:io";
 import "package:async/async.dart";
 import "package:azari/init_main/app_info.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/backlog_anime_entry.dart";
+import "package:azari/src/db/services/impl/isar/schemas/anime/current_season_anime.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/newest_anime.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/saved_anime_characters.dart";
 import "package:azari/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
@@ -20,7 +21,6 @@ import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file
 import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
-import "package:azari/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/anime_discovery.dart";
@@ -544,6 +544,23 @@ class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
 
   IsarCollection<IsarLocalTagDictionary> get collection =>
       db.isarLocalTagDictionarys;
+
+  @override
+  List<BooruTag> mostFrequent(int count) => count.isNegative
+      ? collection
+          .where()
+          .sortByFrequencyDesc()
+          .limit(100)
+          .findAllSync()
+          .map((e) => BooruTag(e.tag, e.frequency))
+          .toList()
+      : collection
+          .where()
+          .sortByFrequencyDesc()
+          .limit(count)
+          .findAllSync()
+          .map((e) => BooruTag(e.tag, e.frequency))
+          .toList();
 
   @override
   void add(List<String> tags) {
@@ -1078,8 +1095,7 @@ class IsarFavoritePostService implements FavoritePostSourceService {
   @override
   List<PostBase> addRemove(List<PostBase> posts) {
     final toAdd = <IsarFavoritePost>[];
-    final toRemoveInts = <int>[];
-    final toRemoveBoorus = <Booru>[];
+    final toRemove = <(int, Booru)>[];
 
     for (final post in posts) {
       if (!backingStorage.map_.containsKey((post.id, post.booru))) {
@@ -1105,38 +1121,21 @@ class IsarFavoritePostService implements FavoritePostSourceService {
                 ),
         );
       } else {
-        toRemoveInts.add(post.id);
-        toRemoveBoorus.add(post.booru);
+        toRemove.add((post.id, post.booru));
       }
     }
 
-    if (toAdd.isEmpty && toRemoveInts.isEmpty) {
+    if (toAdd.isEmpty && toRemove.isEmpty) {
       return const [];
     }
 
-    final deleteCopy = toRemoveInts.isEmpty
-        ? null
-        : collection.getAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
-
-    db.writeTxnSync(() {
-      collection.putAllByIdBooruSync(toAdd);
-      for (final e in toAdd) {
-        backingStorage[(e.id, e.booru)] = e;
-      }
-
-      collection.deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
-      for (final e in toRemoveBoorus.indexed) {
-        backingStorage.removeAll([(toRemoveInts[e.$1], e.$2)]);
-      }
-    });
-
-    return deleteCopy?.where((e) => e != null).cast<PostBase>().toList() ??
-        const <Post>[];
+    backingStorage.addAll(toAdd);
+    return backingStorage.removeAll(toRemove);
   }
 
   @override
-  final MapStorage<(int, Booru), FavoritePost> backingStorage =
-      MapStorage((v) => (v.id, v.booru));
+  final _FavoritePostsMap backingStorage =
+      _FavoritePostsMap((v) => (v.id, v.booru));
 
   @override
   Future<int> clearRefresh() => Future.value(backingStorage.count);
@@ -1169,6 +1168,100 @@ class IsarFavoritePostService implements FavoritePostSourceService {
           .watch(fireImmediately: fire)
           .map((e) => transform(e.isNotEmpty))
           .listen(f);
+
+  // @override
+  // StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+  //     _Dbs.g.blacklisted.isarFavoriteFiles
+  //         .watchLazy(fireImmediately: fire)
+  //         .map<int>((_) => cachedValues.length)
+  //         .listen(f);
+
+  @override
+  Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]) =>
+      collection
+          .where()
+          .idBooruEqualTo(postId, booru)
+          .watchLazy(fireImmediately: fire)
+          .map((_) => backingStorage.map_.containsKey((postId, booru)));
+
+  @override
+  bool contains(int id, Booru booru) =>
+      backingStorage.map_.containsKey((id, booru));
+}
+
+class _FavoritePostsMap extends MapStorage<(int, Booru), IsarFavoritePost> {
+  _FavoritePostsMap(super.getKey);
+
+  Isar get db => _Dbs.g.main;
+
+  IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
+
+  @override
+  void add(IsarFavoritePost e, [bool silent = false]) {
+    db.writeTxnSync(
+      () {
+        collection.putByIdBooruSync(e);
+
+        super.add(e, silent);
+      },
+      silent: silent,
+    );
+  }
+
+  @override
+  void addAll(Iterable<IsarFavoritePost> l, [bool silent = false]) {
+    db.writeTxnSync(
+      () {
+        collection.putAllByIdBooruSync(l.toList());
+
+        for (final e in l) {
+          super.add(e, true);
+        }
+
+        if (!silent) {
+          super.addAll([]);
+        }
+      },
+      silent: silent,
+    );
+  }
+
+  @override
+  void operator []=((int, Booru) index, IsarFavoritePost value) {
+    db.writeTxnSync(() {
+      collection.putByIdBooruSync(value);
+
+      super[index] = value;
+    });
+  }
+
+  @override
+  List<IsarFavoritePost> removeAll(
+    Iterable<(int, Booru)> idx, [
+    bool silent = false,
+  ]) {
+    return db.writeTxnSync<List<IsarFavoritePost>>(
+      () {
+        final (ids, boorus) = _foldTulpeList(idx);
+        collection.deleteAllByIdBooruSync(ids, boorus);
+
+        return super.removeAll(idx, silent);
+      },
+      silent: silent,
+    );
+  }
+
+  @override
+  void clear([bool silent = false]) {
+    db.writeTxnSync(
+      () {
+        collection.clearSync();
+
+        super.clear(silent);
+      },
+      silent: silent,
+    );
+  }
 }
 
 // class IsarWatchedAnimeEntryService implements WatchedAnimeEntryService {
@@ -1804,92 +1897,92 @@ class _DirectoryMetadataCap implements SegmentCapability {
   }
 }
 
-class IsarFavoriteFileService implements FavoriteFileService {
-  const IsarFavoriteFileService();
+// class IsarFavoriteFileService implements FavoriteFileService {
+//   const IsarFavoriteFileService();
 
-  @override
-  int get count => _Dbs.g.blacklisted.isarFavoriteFiles.countSync();
+//   @override
+//   int get count => _Dbs.g.blacklisted.isarFavoriteFiles.countSync();
 
-  @override
-  Map<int, void> get cachedValues => _Dbs.g._favoriteFilesCachedValues;
+//   @override
+//   Map<int, void> get cachedValues => _Dbs.g._favoriteFilesCachedValues;
 
-  @override
-  int get thumbnail => _Dbs.g.blacklisted.isarFavoriteFiles
-      .where()
-      .sortByTimeDesc()
-      .limit(1)
-      .findFirstSync()!
-      .id;
+//   @override
+//   int get thumbnail => _Dbs.g.blacklisted.isarFavoriteFiles
+//       .where()
+//       .sortByTimeDesc()
+//       .limit(1)
+//       .findFirstSync()!
+//       .id;
 
-  @override
-  bool isEmpty() => count == 0;
-  @override
-  bool isNotEmpty() => !isEmpty();
+//   @override
+//   bool isEmpty() => count == 0;
+//   @override
+//   bool isNotEmpty() => !isEmpty();
 
-  @override
-  bool isFavorite(int id) =>
-      _Dbs.g.blacklisted.isarFavoriteFiles.getSync(id) != null;
+//   @override
+//   bool isFavorite(int id) =>
+//       _Dbs.g.blacklisted.isarFavoriteFiles.getSync(id) != null;
 
-  @override
-  List<int> getAll({required int offset, required int limit}) =>
-      _Dbs.g.blacklisted.isarFavoriteFiles
-          .where()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync()
-          .map((e) => e.id)
-          .toList();
+//   @override
+//   List<int> getAll({required int offset, required int limit}) =>
+//       _Dbs.g.blacklisted.isarFavoriteFiles
+//           .where()
+//           .offset(offset)
+//           .limit(limit)
+//           .findAllSync()
+//           .map((e) => e.id)
+//           .toList();
 
-  @override
-  List<int> getAllIds(List<int> ids) => _Dbs.g.blacklisted.isarFavoriteFiles
-      .getAllSync(ids)
-      .where((e) => e != null)
-      .map((e) => e!.id)
-      .toList();
+//   @override
+//   List<int> getAllIds(List<int> ids) => _Dbs.g.blacklisted.isarFavoriteFiles
+//       .getAllSync(ids)
+//       .where((e) => e != null)
+//       .map((e) => e!.id)
+//       .toList();
 
-  @override
-  void addAll(List<int> ids) {
-    _Dbs.g.blacklisted.writeTxnSync(
-      () {
-        _Dbs.g.blacklisted.isarFavoriteFiles.putAllSync(
-          ids
-              .map((e) => IsarFavoriteFile(id: e, time: DateTime.now()))
-              .toList(),
-        );
+//   @override
+//   void addAll(List<int> ids) {
+//     _Dbs.g.blacklisted.writeTxnSync(
+//       () {
+//         _Dbs.g.blacklisted.isarFavoriteFiles.putAllSync(
+//           ids
+//               .map((e) => IsarFavoriteFile(id: e, time: DateTime.now()))
+//               .toList(),
+//         );
 
-        for (final e in ids) {
-          cachedValues[e] = null;
-        }
-      },
-    );
-  }
+//         for (final e in ids) {
+//           cachedValues[e] = null;
+//         }
+//       },
+//     );
+//   }
 
-  @override
-  void deleteAll(List<int> ids) {
-    _Dbs.g.blacklisted.writeTxnSync(
-      () {
-        _Dbs.g.blacklisted.isarFavoriteFiles.deleteAllSync(ids);
+//   @override
+//   void deleteAll(List<int> ids) {
+//     _Dbs.g.blacklisted.writeTxnSync(
+//       () {
+//         _Dbs.g.blacklisted.isarFavoriteFiles.deleteAllSync(ids);
 
-        for (final e in ids) {
-          cachedValues.remove(e);
-        }
-      },
-    );
-  }
+//         for (final e in ids) {
+//           cachedValues.remove(e);
+//         }
+//       },
+//     );
+//   }
 
-  @override
-  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
-      _Dbs.g.blacklisted.isarFavoriteFiles
-          .watchLazy(fireImmediately: fire)
-          .map<int>((_) => cachedValues.length)
-          .listen(f);
+//   @override
+//   StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+//       _Dbs.g.blacklisted.isarFavoriteFiles
+//           .watchLazy(fireImmediately: fire)
+//           .map<int>((_) => cachedValues.length)
+//           .listen(f);
 
-  @override
-  Stream<bool> streamSingle(int id, [bool fire = false]) =>
-      _Dbs.g.blacklisted.isarFavoriteFiles
-          .watchObject(id, fireImmediately: fire)
-          .map((e) => e != null);
-}
+//   @override
+//   Stream<bool> streamSingle(int id, [bool fire = false]) =>
+//       _Dbs.g.blacklisted.isarFavoriteFiles
+//           .watchObject(id, fireImmediately: fire)
+//           .map((e) => e != null);
+// }
 
 class IsarPinnedThumbnailService implements PinnedThumbnailService {
   const IsarPinnedThumbnailService();
@@ -2728,10 +2821,19 @@ class IsarBooruTagging implements BooruTagging {
   }
 
   @override
+  List<TagData> complete(String string) => tagDb.isarTags
+      .filter()
+      .tagStartsWith(string)
+      .typeEqualTo(mode)
+      .sortByTimeDesc()
+      .limit(15)
+      .findAllSync();
+
+  @override
   void add(String t) {
     tagDb.writeTxnSync(
       () => tagDb.isarTags.putByTagTypeSync(
-        IsarTag(time: DateTime.now(), tag: t, type: mode, isarId: null),
+        IsarTag(time: DateTime.now(), tag: t.trim(), type: mode, isarId: null),
       ),
     );
   }
@@ -2753,6 +2855,17 @@ class IsarBooruTagging implements BooruTagging {
   @override
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
     return tagDb.isarTags.watchLazy(fireImmediately: fire).listen(f);
+  }
+
+  @override
+  StreamSubscription<int> watchCount(
+    void Function(int) f, [
+    bool fire = false,
+  ]) {
+    return tagDb.isarTags
+        .watchLazy(fireImmediately: fire)
+        .map((_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync())
+        .listen(f);
   }
 
   @override
@@ -2859,6 +2972,13 @@ class IsarGridStateBooruService implements GridBookmarkService {
           .booruEqualTo(preferBooru)
           .limit(1)
           .findFirstSync();
+
+  @override
+  List<GridBookmark> complete(String str) => _Dbs.g.main.isarBookmarks
+      .filter()
+      .tagsContains(str)
+      .limit(15)
+      .findAllSync();
 
   @override
   void delete(String name) {
@@ -3131,24 +3251,33 @@ class IsarVisitedPostsService implements VisitedPostsService {
   return (listA, listB);
 }
 
-class IsarNewestAnimeService implements NewestAnimeService {
-  const IsarNewestAnimeService();
+class IsarAnimeListsService implements AnimeListsService {
+  const IsarAnimeListsService();
 
   Isar get db => _Dbs.g.anime;
 
-  IsarCollection<IsarNewestAnime> get collection => db.isarNewestAnimes;
+  IsarCollection<IsarNewestAnime> get collectionUpcoming => db.isarNewestAnimes;
+  IsarCollection<IsarCurrentSeasonAnime> get collectionCurrentSeason =>
+      db.isarCurrentSeasonAnimes;
 
   @override
-  (DateTime, List<AnimeEntryData>) get current {
-    final e = collection.getSync(0);
+  (DateTime, List<AnimeEntryData>) get upcoming {
+    final e = collectionUpcoming.getSync(0);
 
     return e == null ? (DateTime(0), const []) : (e.time, e.entries);
   }
 
   @override
-  void set(List<AnimeEntryData> l) {
+  (DateTime, List<AnimeEntryData>) get currentSeason {
+    final e = collectionCurrentSeason.getSync(0);
+
+    return e == null ? (DateTime(0), const []) : (e.time, e.entries);
+  }
+
+  @override
+  void setUpcoming(List<AnimeEntryData> l) {
     db.writeTxnSync(
-      () => collection.putSync(
+      () => collectionUpcoming.putSync(
         IsarNewestAnime(
           time: DateTime.now(),
           entries: l
@@ -3191,14 +3320,70 @@ class IsarNewestAnimeService implements NewestAnimeService {
   }
 
   @override
-  void clear() => db.writeTxnSync(() => collection.clearSync());
+  void setCurrentSeason(List<AnimeEntryData> l) {
+    db.writeTxnSync(
+      () => collectionCurrentSeason.putSync(
+        IsarCurrentSeasonAnime(
+          time: DateTime.now(),
+          entries: l
+              .map(
+                (e) => IsarNewestAnimeEntry.required(
+                  imageUrl: e.imageUrl,
+                  airedFrom: e.airedFrom,
+                  airedTo: e.airedTo,
+                  relations: (e.relations is List<IsarAnimeRelation>
+                      ? e.relations as List<IsarAnimeRelation>
+                      : e.relations.cast()),
+                  staff: (e.staff is List<IsarAnimeRelation>
+                      ? e.staff as List<IsarAnimeRelation>
+                      : e.staff.cast()),
+                  genres: (e.genres is List<IsarAnimeGenre>
+                      ? e.genres as List<IsarAnimeGenre>
+                      : e.genres.cast()),
+                  explicit: e.explicit,
+                  type: e.type,
+                  site: e.site,
+                  thumbUrl: e.thumbUrl,
+                  title: e.title,
+                  titleJapanese: e.titleJapanese,
+                  titleEnglish: e.titleEnglish,
+                  score: e.score,
+                  synopsis: e.synopsis,
+                  id: e.id,
+                  siteUrl: e.siteUrl,
+                  isAiring: e.isAiring,
+                  titleSynonyms: e.titleSynonyms,
+                  background: e.background,
+                  trailerUrl: e.trailerUrl,
+                  episodes: e.episodes,
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
 
   @override
-  StreamSubscription<void> watchAll(
+  void clearUpcoming() => db.writeTxnSync(() => collectionUpcoming.clearSync());
+
+  @override
+  void clearCurrentSeason() =>
+      db.writeTxnSync(() => collectionCurrentSeason.clearSync());
+
+  @override
+  StreamSubscription<void> watchAllUpcoming(
     void Function(void p1) f, [
     bool fire = false,
   ]) =>
-      collection.watchObject(0, fireImmediately: fire).listen(f);
+      collectionUpcoming.watchObject(0, fireImmediately: fire).listen(f);
+
+  @override
+  StreamSubscription<void> watchAllCurrentSeason(
+    void Function(void p1) f, [
+    bool fire = false,
+  ]) =>
+      collectionCurrentSeason.watchObject(0, fireImmediately: fire).listen(f);
 }
 
 class IsarHottestTagsService implements HottestTagsService {

@@ -6,7 +6,9 @@
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class DummyGallery implements GalleryPlug {
@@ -57,12 +59,16 @@ class DummyGallery implements GalleryPlug {
     required bool isVideo,
     required bool isGif,
     required bool isDuplicate,
+    required (int, Booru)? res,
   }) {
     throw UnimplementedError();
   }
 
   @override
   Stream<void>? get galleryTapDownEvents => null;
+
+  @override
+  Stream<GalleryPageChangeEvent>? get galleryPageChangeEvents => null;
 }
 
 class _DummyDirectories implements GalleryAPIDirectories {
@@ -89,7 +95,7 @@ class _DummyDirectories implements GalleryAPIDirectories {
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     throw UnimplementedError();
@@ -100,7 +106,7 @@ class _DummyDirectories implements GalleryAPIDirectories {
     List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     throw UnimplementedError();

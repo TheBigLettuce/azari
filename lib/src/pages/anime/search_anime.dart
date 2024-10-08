@@ -23,7 +23,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
@@ -32,7 +31,6 @@ import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:url_launcher/url_launcher.dart";
 
 class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
   const SearchAnimePage({
@@ -219,16 +217,16 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                         progress: source.progress,
                         gridSeed: state.gridSeed,
                         unselectOnUpdate: false,
-                        buildEmpty: (e) => EmptyWidgetWithButton(
-                          error: e,
-                          buttonText: l10n.openInBrowser,
-                          onPressed: () {
-                            launchUrl(
-                              widget.siteUri,
-                              mode: LaunchMode.inAppBrowserView,
-                            );
-                          },
-                        ),
+                        // buildEmpty: (e) => EmptyWidgetWithButton(
+                        //   error: e,
+                        //   buttonText: l10n.openInBrowser,
+                        //   onPressed: () {
+                        //     launchUrl(
+                        //       widget.siteUri,
+                        //       mode: LaunchMode.inAppBrowserView,
+                        //     );
+                        //   },
+                        // ),
                       ),
                     ],
                     functionality: GridFunctionality(

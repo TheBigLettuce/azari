@@ -25,7 +25,7 @@ class LoadTags extends StatelessWidget {
     required this.filename,
   });
 
-  final DisassembleResult res;
+  final ParsedFilenameResult res;
   final String filename;
 
   @override

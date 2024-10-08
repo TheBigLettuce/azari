@@ -70,7 +70,7 @@ mixin GalleryDirectory
               GalleryFilesPageType.trash,
               db.directoryTags,
               db.directoryMetadata,
-              db.favoriteFiles,
+              db.favoritePosts,
               db.localTags,
             ),
           "favorites" => api.files(
@@ -79,7 +79,7 @@ mixin GalleryDirectory
               GalleryFilesPageType.favorites,
               db.directoryTags,
               db.directoryMetadata,
-              db.favoriteFiles,
+              db.favoritePosts,
               db.localTags,
             ),
           String() => api.files(
@@ -88,7 +88,7 @@ mixin GalleryDirectory
               GalleryFilesPageType.normal,
               db.directoryTags,
               db.directoryMetadata,
-              db.favoriteFiles,
+              db.favoritePosts,
               db.localTags,
             ),
         };

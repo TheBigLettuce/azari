@@ -73,7 +73,7 @@ class _GridMasonryLayoutState<T extends CellBase>
         config.columns.number;
 
     return EmptyWidgetOrContent(
-      count: source.count,
+      source: source,
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
       child: SliverMasonryGrid(

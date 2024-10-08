@@ -905,7 +905,7 @@ class $StatisticsDailyData extends StatisticsDailyData {
       );
 }
 
-class $TagData implements TagData {
+class $TagData extends TagDataImpl implements TagData {
   const $TagData({
     required this.time,
     required this.tag,

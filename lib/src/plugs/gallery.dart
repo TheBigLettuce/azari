@@ -69,6 +69,7 @@ abstract interface class GalleryPlug with GalleryObjFactoryMixin {
   Future<int> get version;
 
   Stream<void>? get galleryTapDownEvents;
+  Stream<GalleryPageChangeEvent>? get galleryPageChangeEvents;
 }
 
 abstract class GalleryAPIDirectories {
@@ -83,7 +84,7 @@ abstract class GalleryAPIDirectories {
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   );
 
@@ -91,7 +92,7 @@ abstract class GalleryAPIDirectories {
     List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   );
 
@@ -115,7 +116,7 @@ class _FakeGalleryAPIFiles implements GalleryAPIFiles {
     Future<List<GalleryFile>> Function() clearRefresh,
     this.directoryMetadata,
     this.directoryTag,
-    this.favoriteFile,
+    this.favoritePosts,
     this.localTags,
     this.parent,
   ) : source = _GenericListSource(clearRefresh);
@@ -140,7 +141,7 @@ class _FakeGalleryAPIFiles implements GalleryAPIFiles {
   final DirectoryTagService directoryTag;
 
   @override
-  final FavoriteFileService favoriteFile;
+  final FavoritePostSourceService favoritePosts;
 
   @override
   final LocalTagsService localTags;
@@ -198,7 +199,7 @@ abstract class GalleryAPIFiles {
       clearRefresh,
       db.directoryMetadata,
       db.directoryTags,
-      db.favoriteFiles,
+      db.favoritePosts,
       db.localTags,
       parent,
     );
@@ -206,7 +207,7 @@ abstract class GalleryAPIFiles {
 
   DirectoryTagService get directoryTag;
   DirectoryMetadataService get directoryMetadata;
-  FavoriteFileService get favoriteFile;
+  FavoritePostSourceService get favoritePosts;
   LocalTagsService get localTags;
 
   SortingResourceSource<int, GalleryFile> get source;
@@ -346,5 +347,6 @@ mixin GalleryObjFactoryMixin {
     required bool isVideo,
     required bool isGif,
     required bool isDuplicate,
+    required (int, Booru)? res,
   });
 }

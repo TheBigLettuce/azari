@@ -94,7 +94,7 @@ Future<void> loadNetworkThumb(
 
     notif.update(0, filename);
 
-    final res = DisassembleResult.fromFilename(filename).maybeValue();
+    final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
     if (res != null) {
       final client = BooruAPI.defaultClientForBooru(res.booru);
       final api = BooruAPI.fromEnum(res.booru, client, PageSaver.noPersist());

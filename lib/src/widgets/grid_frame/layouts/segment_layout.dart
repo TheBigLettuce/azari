@@ -15,7 +15,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dar
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/segment_label.dart";
@@ -377,19 +376,14 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
     final extras = GridExtrasNotifier.of<T>(context);
     final config = GridConfiguration.of(context);
 
-    return EmptyWidgetOrContent(
-      count: storage.count,
-      progress: widget.progress,
-      buildEmpty: null,
-      child: SegmentLayoutBody(
-        data: _data,
-        predefined: predefined,
-        gridSeed: widget.gridSeed,
-        selection: extras.selection,
-        segments: segments,
-        gridFunctionality: extras.functionality,
-        config: config,
-      ),
+    return SegmentLayoutBody(
+      data: _data,
+      predefined: predefined,
+      gridSeed: widget.gridSeed,
+      selection: extras.selection,
+      segments: segments,
+      gridFunctionality: extras.functionality,
+      config: config,
     );
   }
 }

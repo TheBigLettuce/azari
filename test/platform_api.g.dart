@@ -32,20 +32,23 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is NotificationRouteEvent) {
       buffer.putUint8(131);
       writeValue(buffer, value.index);
-    }    else if (value is Directory) {
+    }    else if (value is GalleryPageChangeEvent) {
       buffer.putUint8(132);
-      writeValue(buffer, value.encode());
-    }    else if (value is DirectoryFile) {
+      writeValue(buffer, value.index);
+    }    else if (value is Directory) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    }    else if (value is UriFile) {
+    }    else if (value is DirectoryFile) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    }    else if (value is CopyOp) {
+    }    else if (value is UriFile) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    }    else if (value is Notification) {
+    }    else if (value is CopyOp) {
       buffer.putUint8(136);
+      writeValue(buffer, value.encode());
+    }    else if (value is Notification) {
+      buffer.putUint8(137);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -65,14 +68,17 @@ class _PigeonCodec extends StandardMessageCodec {
         final int? value = readValue(buffer) as int?;
         return value == null ? null : NotificationRouteEvent.values[value];
       case 132: 
-        return Directory.decode(readValue(buffer)!);
+        final int? value = readValue(buffer) as int?;
+        return value == null ? null : GalleryPageChangeEvent.values[value];
       case 133: 
-        return DirectoryFile.decode(readValue(buffer)!);
+        return Directory.decode(readValue(buffer)!);
       case 134: 
-        return UriFile.decode(readValue(buffer)!);
+        return DirectoryFile.decode(readValue(buffer)!);
       case 135: 
-        return CopyOp.decode(readValue(buffer)!);
+        return UriFile.decode(readValue(buffer)!);
       case 136: 
+        return CopyOp.decode(readValue(buffer)!);
+      case 137: 
         return Notification.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);

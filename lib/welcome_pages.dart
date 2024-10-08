@@ -37,6 +37,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
   bool manageMedia = false;
 
   bool? manageMediaSupported;
+  bool storagePermissionGranted = false;
 
   static const _androidApi = AndroidApiFunctions();
 
@@ -64,7 +65,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
           await Permission.videos.isGranted;
       mediaLocation = await Permission.accessMediaLocation.isGranted;
       storage = await Permission.storage.isGranted;
-      await Permission.storage.request();
+      storagePermissionGranted = (await Permission.storage.request()).isGranted;
 
       setState(() {});
     });
@@ -95,7 +96,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                   });
                 },
                 label: l10n.permissionsPhotosVideos,
-                variant: photoAndVideos
+                variant: photoAndVideos || storagePermissionGranted
                     ? ButtonVariant.selected
                     : ButtonVariant.normal,
               ),
@@ -149,7 +150,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
       buttons: [
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
-          onPressed: !photoAndVideos
+          onPressed: !photoAndVideos && !storagePermissionGranted
               ? null
               : () {
                   Navigator.pushReplacement(

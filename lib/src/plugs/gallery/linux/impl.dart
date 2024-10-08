@@ -5,11 +5,14 @@
 
 import "dart:io";
 
+import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart" as platform;
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:mime/mime.dart";
@@ -42,6 +45,9 @@ class LinuxGalleryPlug implements GalleryPlug {
 
   @override
   Stream<void>? get galleryTapDownEvents => null;
+
+  @override
+  Stream<platform.GalleryPageChangeEvent>? get galleryPageChangeEvents => null;
 
   @override
   GalleryDirectory makeGalleryDirectory({
@@ -77,6 +83,7 @@ class LinuxGalleryPlug implements GalleryPlug {
     required bool isVideo,
     required bool isGif,
     required bool isDuplicate,
+    required (int, Booru)? res,
   }) =>
       LinuxGalleryFile(
         tags: tags,
@@ -91,6 +98,7 @@ class LinuxGalleryPlug implements GalleryPlug {
         width: width,
         lastModified: lastModified,
         originalUri: originalUri,
+        res: res,
       );
 }
 
@@ -118,7 +126,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
@@ -131,7 +139,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
       type: type,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
-      favoriteFile: favoriteFile,
+      favoritePosts: favoritePosts,
       localTags: localTags,
     );
   }
@@ -141,7 +149,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
     List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
@@ -154,7 +162,7 @@ class LinuxGalleryAPIDirectories implements GalleryAPIDirectories {
       type: GalleryFilesPageType.normal,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
-      favoriteFile: favoriteFile,
+      favoritePosts: favoritePosts,
       localTags: localTags,
     );
   }
@@ -255,7 +263,7 @@ class LinuxGalleryAPIFiles implements GalleryAPIFiles {
     required this.type,
     required this.directoryMetadata,
     required this.directoryTag,
-    required this.favoriteFile,
+    required this.favoritePosts,
     required this.localTags,
   });
 
@@ -272,7 +280,7 @@ class LinuxGalleryAPIFiles implements GalleryAPIFiles {
   final DirectoryTagService directoryTag;
 
   @override
-  final FavoriteFileService favoriteFile;
+  final FavoritePostSourceService favoritePosts;
 
   @override
   final LocalTagsService localTags;
@@ -350,6 +358,7 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
               width: 0,
               lastModified: (s.modified.millisecondsSinceEpoch / 1000).round(),
               originalUri: e.path,
+              res: ParsedFilenameResult.simple(name),
             ),
             false,
           );
@@ -402,6 +411,7 @@ class LinuxGalleryFile extends FileBase with GalleryFile {
     required super.width,
     required super.lastModified,
     required super.originalUri,
+    required super.res,
   });
 
   @override

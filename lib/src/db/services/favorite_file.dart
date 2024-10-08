@@ -5,25 +5,25 @@
 
 part of "services.dart";
 
-abstract interface class FavoriteFileService {
-  int get count;
+// abstract interface class FavoriteFileService {
+//   int get count;
 
-  int get thumbnail;
+//   int get thumbnail;
 
-  Map<int, void> get cachedValues;
+//   Map<int, void> get cachedValues;
 
-  bool isEmpty();
-  bool isNotEmpty();
+//   bool isEmpty();
+//   bool isNotEmpty();
 
-  bool isFavorite(int id);
+//   bool isFavorite(int id);
 
-  List<int> getAll({required int offset, required int limit});
-  List<int> getAllIds(List<int> ids);
+//   List<int> getAll({required int offset, required int limit});
+//   List<int> getAllIds(List<int> ids);
 
-  void addAll(List<int> ids);
+//   void addAll(List<int> ids);
 
-  void deleteAll(List<int> ids);
+//   void deleteAll(List<int> ids);
 
-  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
-  Stream<bool> streamSingle(int id, [bool fire = false]);
-}
+//   StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
+//   Stream<bool> streamSingle(int id, [bool fire = false]);
+// }

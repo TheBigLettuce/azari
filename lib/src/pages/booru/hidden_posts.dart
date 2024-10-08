@@ -5,6 +5,7 @@
 
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -108,6 +109,9 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
               ),
             ],
             functionality: GridFunctionality(
+              onEmptySource: const EmptyWidgetBackground(
+                subtitle: "Hidden posts will appear here...", // TODO: change
+              ),
               selectionGlue: widget.generateGlue(),
               search: PageNameSearchWidget(
                 trailingItems: [

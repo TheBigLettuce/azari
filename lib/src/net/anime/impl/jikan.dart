@@ -116,6 +116,25 @@ class Jikan implements AnimeAPI {
   }
 
   @override
+  Future<List<AnimeSearchEntry>> seasonNow(int page, {int limit = 25}) async {
+    final url = Uri.https(site.apiUrl, "/v4/seasons/now", {
+      "page": (page + 1).toString(),
+      "limit": limit.clamp(0, 25).toString(),
+    });
+
+    final resp = await client.getUriLog<Map<dynamic, dynamic>>(
+      url,
+      LogReq("search", _log),
+    );
+
+    final ret = (resp.data!["data"] as List<dynamic>)
+        .map<AnimeSearchEntry>((e) => _fromJson(e as Map<dynamic, dynamic>))
+        .toList();
+
+    return ret;
+  }
+
+  @override
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode) async {
     final response = await api.Jikan(debug: kDebugMode).getAnimeGenres(
       type: mode == AnimeSafeMode.h ? api.GenreType.explicit_genres : null,

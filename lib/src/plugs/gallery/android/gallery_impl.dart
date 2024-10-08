@@ -24,6 +24,7 @@ extension DirectoryFileToAndroidFile on DirectoryFile {
       isVideo: isVideo,
       isGif: isGif,
       isDuplicate: _regxp.hasMatch(name),
+      res: ParsedFilenameResult.simple(name),
     );
   }
 }
@@ -55,6 +56,7 @@ class AndroidGalleryFile extends FileBase with GalleryFile {
     required super.lastModified,
     required super.originalUri,
     required super.tags,
+    required super.res,
   });
 }
 
@@ -94,9 +96,9 @@ class _GalleryImpl implements GalleryApi {
       return false;
     }
 
-    if (notFound.isNotEmpty && api.type.isFavorites()) {
-      api.favoriteFile.deleteAll(notFound.cast());
-    }
+    // if (notFound.isNotEmpty && api.type.isFavorites()) {
+    //   api.favoritePosts.deleteAll(notFound.cast());
+    // }
 
     if (empty) {
       api.source.progress.inRefreshing = false;
@@ -173,7 +175,12 @@ class _GalleryImpl implements GalleryApi {
     bool empty,
   ) {
     final api = _currentApi;
-    if (empty || api == null) {
+    if (api == null) {
+      return false;
+    } else if (empty) {
+      api.source.progress.inRefreshing = false;
+      api.source.backingStorage.clear();
+
       return false;
     } else if (d.isEmpty && !inRefresh) {
       api.source.progress.inRefreshing = false;
@@ -228,5 +235,10 @@ class _GalleryImpl implements GalleryApi {
   @override
   void galleryTapDownEvent() {
     AndroidGallery._tapDownEvents.add(null);
+  }
+
+  @override
+  void galleryPageChangeEvent(GalleryPageChangeEvent e) {
+    AndroidGallery._pageChangeEvents.add(e);
   }
 }

@@ -26,7 +26,7 @@ mixin GalleryFile
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
-    final res = DisassembleResult.fromFilename(name).maybeValue();
+    final res = ParsedFilenameResult.fromFilename(name).maybeValue();
 
     return [
       if (res != null)
@@ -51,6 +51,10 @@ mixin GalleryFile
     final (api, callback) = FilesDataNotifier.of(context);
     final db = DatabaseConnectionNotifier.of(context);
     final tagManager = TagManager.of(context);
+    final toShowDelete = DeleteDialogShowNotifier.of(context);
+
+    final buttonProgress =
+        GlobalProgressTab.maybeOf(context)?.favoritePostButton();
 
     return callback != null
         ? <ImageViewAction>[
@@ -80,32 +84,84 @@ mixin GalleryFile
               ]
             : <ImageViewAction>[
                 ImageViewAction(
-                  Icons.star_border_rounded,
-                  (selected) {
-                    favoriteOrUnfavorite(
-                      context,
-                      [this],
-                      db.favoriteFiles,
-                      false,
-                    );
-                  },
-                  animate: true,
-                  watch: (f, [bool fire = false]) {
-                    return db.favoriteFiles
-                        .streamSingle(id, fire)
-                        .map<(IconData?, Color?, bool?)>((e) {
-                      return (
-                        e ? Icons.star_rounded : Icons.star_border_rounded,
-                        e ? Colors.yellow.shade900 : null,
-                        !e
-                      );
-                    }).listen(f);
-                  },
+                  Icons.favorite_border_rounded,
+                  res == null || buttonProgress == null
+                      ? null
+                      : (selected) {
+                          if (db.favoritePosts.contains(res!.$1, res!.$2)) {
+                            db.favoritePosts.backingStorage.removeAll([res!]);
+
+                            return;
+                          }
+
+                          if (buttonProgress.value != null) {
+                            return;
+                          }
+
+                          buttonProgress.value = () async {
+                            final client =
+                                BooruAPI.defaultClientForBooru(res!.$2);
+                            final api = BooruAPI.fromEnum(
+                              res!.$2,
+                              client,
+                              PageSaver.noPersist(),
+                            );
+
+                            try {
+                              final ret = await api.singlePost(res!.$1);
+
+                              db.favoritePosts.backingStorage.add(
+                                FavoritePost(
+                                  id: ret.id,
+                                  md5: ret.md5,
+                                  tags: ret.tags,
+                                  width: ret.width,
+                                  height: ret.height,
+                                  fileUrl: ret.fileUrl,
+                                  previewUrl: ret.previewUrl,
+                                  sampleUrl: ret.sampleUrl,
+                                  sourceUrl: ret.sourceUrl,
+                                  rating: ret.rating,
+                                  score: ret.score,
+                                  createdAt: ret.createdAt,
+                                  booru: ret.booru,
+                                  type: ret.type,
+                                ),
+                              );
+                            } catch (e, trace) {
+                              Logger.root
+                                  .warning("favoritePostButton", e, trace);
+                            } finally {
+                              buttonProgress.value = null;
+                              client.close(force: true);
+                            }
+                          }();
+                        },
+                  longLoadingNotifier: buttonProgress,
+                  watch: res == null
+                      ? null
+                      : (f, [bool fire = false]) {
+                          return db.favoritePosts
+                              .streamSingle(res!.$1, res!.$2, fire)
+                              .map<(IconData?, Color?, bool?)>((e) {
+                            return (
+                              e
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              e ? Colors.red.shade900 : null,
+                              !e
+                            );
+                          }).listen(f);
+                        },
                 ),
                 ImageViewAction(
                   Icons.delete,
                   (selected) {
-                    deleteFilesDialog(context, [this]);
+                    deleteFilesDialog(
+                      context,
+                      [this],
+                      toShowDelete,
+                    );
                   },
                 ),
                 ImageViewAction(
@@ -119,16 +175,16 @@ mixin GalleryFile
                       [this],
                       false,
                       tagManager,
-                      db.favoriteFiles,
                       db.localTags,
                       api.parent,
+                      toShowDelete,
                     );
                   },
                 ),
                 ImageViewAction(
                   Icons.forward_rounded,
-                  (selected) {
-                    moveOrCopyFnc(
+                  (selected) async {
+                    return moveOrCopyFnc(
                       context,
                       api.directories.length == 1
                           ? api.directories.first.bucketId
@@ -136,9 +192,9 @@ mixin GalleryFile
                       [this],
                       true,
                       tagManager,
-                      db.favoriteFiles,
                       db.localTags,
                       api.parent,
+                      toShowDelete,
                     );
                   },
                 ),
@@ -203,8 +259,8 @@ mixin GalleryFile
 
     return [
       ...defaultStickersFile(context, this, db.localTags),
-      if (db.favoriteFiles.cachedValues.containsKey(id))
-        const Sticker(Icons.star_rounded, important: true),
+      if (res != null && db.favoritePosts.contains(res!.$1, res!.$2))
+        const Sticker(Icons.favorite_rounded, important: true),
     ];
   }
 
@@ -262,6 +318,11 @@ mixin GalleryFile
           .watchImageLocal(c.widgets.alias(false), f, localTag: localTags);
 }
 
+extension FavoritePostsGlobalProgress on GlobalProgressTab {
+  ValueNotifier<Future<void>?> favoritePostButton() =>
+      get("favoritePostButton", () => ValueNotifier(null));
+}
+
 class FileBase {
   const FileBase({
     required this.tags,
@@ -276,6 +337,7 @@ class FileBase {
     required this.width,
     required this.lastModified,
     required this.originalUri,
+    required this.res,
   });
 
   final int id;
@@ -296,6 +358,8 @@ class FileBase {
 
   final Map<String, void> tags;
   final bool isDuplicate;
+
+  final (int, Booru)? res;
 }
 
 class GalleryFileInfo extends StatefulWidget {
@@ -461,7 +525,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                                       return l10n.valueIsNull;
                                     }
 
-                                    final res = DisassembleResult.fromFilename(
+                                    final res =
+                                        ParsedFilenameResult.fromFilename(
                                       value,
                                     );
                                     if (res.hasError) {
@@ -541,10 +606,14 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
 }
 
 class RedownloadButton extends StatefulWidget {
-  const RedownloadButton({super.key, required this.file, required this.res});
+  const RedownloadButton({
+    super.key,
+    required this.file,
+    required this.res,
+  });
 
   final GalleryFile file;
-  final DisassembleResult? res;
+  final ParsedFilenameResult? res;
 
   @override
   State<RedownloadButton> createState() => _RedownloadButtonState();
@@ -645,7 +714,7 @@ Future<void> redownloadFiles(BuildContext context, List<GalleryFile> files) {
     for (final (index, file) in files.indexed) {
       progress.update(index, "$index / ${files.length}");
 
-      final res = DisassembleResult.fromFilename(file.name).maybeValue();
+      final res = ParsedFilenameResult.fromFilename(file.name).maybeValue();
       if (res == null) {
         continue;
       }

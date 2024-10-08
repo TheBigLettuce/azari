@@ -10,6 +10,7 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
@@ -26,16 +27,12 @@ import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.d
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:dynamic_color/dynamic_color.dart";
-import "package:flutter/foundation.dart";
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
-import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 import "package:photo_view/photo_view_gallery.dart";
-import "package:wakelock_plus/wakelock_plus.dart";
 
 part "body.dart";
 part "video_controls.dart";
@@ -293,6 +290,8 @@ class ImageViewState extends State<ImageView>
 
   StreamSubscription<int>? _updates;
 
+  late final StreamSubscription<GalleryPageChangeEvent>? _pageChangeEvent;
+
   late int currentPage = widget.startingCell;
   late int cellCount = widget.cellCount;
 
@@ -304,6 +303,8 @@ class ImageViewState extends State<ImageView>
 
   final currentPageStream = StreamController<int>.broadcast();
 
+  bool popd = false;
+
   @override
   void initState() {
     super.initState();
@@ -313,9 +314,21 @@ class ImageViewState extends State<ImageView>
     slideAnimationLeft = AnimationController(vsync: this);
     slideAnimationRight = AnimationController(vsync: this);
 
+    _pageChangeEvent = chooseGalleryPlug().galleryPageChangeEvents?.listen((e) {
+      switch (e) {
+        case GalleryPageChangeEvent.left:
+          _onPressedLeft();
+        case GalleryPageChangeEvent.right:
+          _onPressedRight();
+      }
+    });
+
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
-        Navigator.of(context).pop();
+        if (!popd) {
+          popd = true;
+          Navigator.of(context).pop();
+        }
 
         return;
       }
@@ -351,8 +364,6 @@ class ImageViewState extends State<ImageView>
 
     widget.statistics?.viewed();
 
-    WakelockPlus.enable();
-
     loadCells(currentPage, cellCount);
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
@@ -378,6 +389,7 @@ class ImageViewState extends State<ImageView>
   void dispose() {
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
 
+    _pageChangeEvent?.cancel();
     currentPageStream.close();
     animationController.dispose();
     slideAnimationLeft.dispose();
@@ -389,7 +401,6 @@ class ImageViewState extends State<ImageView>
 
     PlatformApi.current().setFullscreen(false);
 
-    WakelockPlus.disable();
     controller.dispose();
 
     widget.onExit?.call();

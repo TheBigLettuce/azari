@@ -122,6 +122,8 @@ abstract class GalleryApi {
 
   void notify(String? target);
   void galleryTapDownEvent();
+
+  void galleryPageChangeEvent(GalleryPageChangeEvent e);
 }
 
 class CopyOp {
@@ -185,4 +187,9 @@ enum NotificationChannel {
 
 enum NotificationRouteEvent {
   downloads;
+}
+
+enum GalleryPageChangeEvent {
+  left,
+  right;
 }

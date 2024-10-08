@@ -226,7 +226,7 @@ class MediaLoaderAndMover(private val context: Context) {
         ids: List<Long>,
         sortingMode: FilesSortingMode,
         sendMedia: SendMedia,
-        closure: () -> Unit
+        closure: () -> Unit,
     ) {
         val time = Calendar.getInstance().time.time
 
@@ -267,7 +267,7 @@ class MediaLoaderAndMover(private val context: Context) {
         dir: String = "",
         type: LoadMediaType = LoadMediaType.Normal,
         limit: Long, sortingMode: FilesSortingMode,
-        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit,
     ) {
         scope.launch {
             loadMedia(
@@ -284,7 +284,7 @@ class MediaLoaderAndMover(private val context: Context) {
 
     fun filesDirectly(
         ids: List<Long>,
-        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit,
     ) {
         scope.launch {
             loadMedia(
@@ -391,7 +391,7 @@ class MediaLoaderAndMover(private val context: Context) {
         context: Context,
         lastOnly: Boolean,
         separate: Boolean = false,
-        isFavorites: Boolean = false
+        isFavorites: Boolean = false,
     ): Pair<List<Long>, List<Long>> {
         val projection = if (separate) arrayOf(
             MediaStore.Files.FileColumns._ID,
@@ -470,7 +470,7 @@ class MediaLoaderAndMover(private val context: Context) {
         showOnly: List<Long>? = null,
         limit: Long,
         sortingMode: FilesSortingMode,
-        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit,
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -499,7 +499,7 @@ class MediaLoaderAndMover(private val context: Context) {
             }
             s.append(") ")
         }
-        
+
         var selection =
             "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (type != LoadMediaType.Normal || showOnly != null) "" else "AND $s"}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
 
@@ -685,7 +685,7 @@ class MediaLoaderAndMover(private val context: Context) {
         id: Long,
         uri: Uri,
         network: Boolean,
-        saveToPinned: Boolean
+        saveToPinned: Boolean,
     ): Pair<String, Long> {
         if (locker.exist(id)) {
             return Pair("", 0)

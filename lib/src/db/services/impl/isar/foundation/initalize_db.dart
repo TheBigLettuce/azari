@@ -56,6 +56,7 @@ Future<DownloadManager> initalizeIsarDb(
       IsarSavedMangaChaptersSchema,
       IsarChapterSettingsSchema,
       IsarPinnedMangaSchema,
+      IsarCurrentSeasonAnimeSchema,
     ],
     name: "anime",
     directory: directoryPath,
@@ -103,7 +104,6 @@ Future<DownloadManager> initalizeIsarDb(
   final blacklistedDirIsar = Isar.openSync(
     const [
       IsarBlacklistedDirectorySchema,
-      IsarFavoriteFileSchema,
       IsarDirectoryMetadataSchema,
     ],
     directory: directoryPath,
@@ -155,15 +155,6 @@ Future<DownloadManager> initalizeIsarDb(
     _IsarCollectionIterator(_Dbs.g.main.isarHiddenBooruPosts, reversed: false),
   )) {
     _dbs._hiddenBooruPostCachedValues[(e.postId, e.booru)] = e.thumbUrl;
-  }
-
-  for (final e in _IsarCollectionReverseIterable(
-    _IsarCollectionIterator(
-      _Dbs.g.blacklisted.isarFavoriteFiles,
-      reversed: false,
-    ),
-  )) {
-    _dbs._favoriteFilesCachedValues[e.id] = null;
   }
 
   final DownloadManager downloader;

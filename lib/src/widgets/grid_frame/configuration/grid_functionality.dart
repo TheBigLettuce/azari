@@ -29,6 +29,7 @@ class GridFunctionality<T extends CellBase> {
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
     this.search = const PageNameSearchWidget(),
+    this.onEmptySource,
   });
 
   final ResourceSource<int, T> source;
@@ -55,6 +56,7 @@ class GridFunctionality<T extends CellBase> {
   final GridBackButtonBehaviour backButton;
   final GridSearchWidget search;
   final UpdatesAvailable? updatesAvailable;
+  final Widget? onEmptySource;
 }
 
 sealed class GridRefreshType {

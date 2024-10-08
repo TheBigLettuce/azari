@@ -57,9 +57,14 @@ extension NewestAnimeGlobalProgress on GlobalProgressTab {
       get("newestAnime", () => ValueNotifier(null));
 }
 
+extension CurrentSeasonAnimeGlobalProgress on GlobalProgressTab {
+  ValueNotifier<Future<void>?> currentSeasonAnime() =>
+      get("currentSeasonAnime", () => ValueNotifier(null));
+}
+
 class _AnimePageState extends State<AnimePage> {
   SavedAnimeEntriesService get savedAnimeEntries => widget.db.savedAnimeEntries;
-  NewestAnimeService get newestAnime => widget.db.newestAnime;
+  AnimeListsService get animeLists => widget.db.animeLists;
 
   late final ChainedFilterResourceSource<(int id, AnimeMetadata site),
       AnimeEntryData> filterWatching;
@@ -77,7 +82,8 @@ class _AnimePageState extends State<AnimePage> {
 
   final searchController = SearchController();
 
-  ValueNotifier<Future<void>?>? refreshingStatus;
+  ValueNotifier<Future<void>?>? refreshingStatusUpcoming;
+  ValueNotifier<Future<void>?>? refreshingStatusCurrentSeason;
 
   final client = Dio();
   late final api = Jikan(client);
@@ -126,13 +132,59 @@ class _AnimePageState extends State<AnimePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final r = GlobalProgressTab.maybeOf(context)?.newestAnime();
-    if (refreshingStatus == null && r != null) {
-      refreshingStatus = r;
-      final data = newestAnime.current;
+    final tab = GlobalProgressTab.maybeOf(context);
+
+    final c = tab?.currentSeasonAnime();
+    final r = tab?.newestAnime();
+
+    if (refreshingStatusCurrentSeason == null && c != null) {
+      refreshingStatusCurrentSeason = c;
+      final data = animeLists.currentSeason;
+      if (data.$2.isEmpty ||
+          DateTime.now().isAfter(data.$1.add(const Duration(days: 5)))) {
+        refreshingStatusCurrentSeason!.value = Future(() async {
+          final client = Dio();
+          late final api = Jikan(client);
+
+          try {
+            final result = await api.seasonNow(0) + await api.seasonNow(1);
+            result.sort((e1, e2) => e2.score.compareTo(e1.score));
+
+            int? prev;
+
+            final f = result.where((e) {
+              if (prev == null) {
+                prev = e.id;
+                return true;
+              }
+
+              if (prev == e.id) {
+                prev = e.id;
+                return false;
+              }
+
+              prev = e.id;
+
+              return true;
+            }).toList();
+
+            animeLists.setCurrentSeason(f);
+          } catch (e, trace) {
+            Logger.root.warning("newestAnime", e, trace);
+          } finally {
+            client.close(force: true);
+            refreshingStatusCurrentSeason!.value = null;
+          }
+        });
+      }
+    }
+
+    if (refreshingStatusUpcoming == null && r != null) {
+      refreshingStatusUpcoming = r;
+      final data = animeLists.upcoming;
       if (data.$2.isEmpty ||
           DateTime.now().isAfter(data.$1.add(const Duration(days: 1)))) {
-        refreshingStatus!.value = Future(() async {
+        refreshingStatusUpcoming!.value = Future(() async {
           final client = Dio();
           late final api = Jikan(client);
 
@@ -163,16 +215,14 @@ class _AnimePageState extends State<AnimePage> {
               return true;
             }).toList();
 
-            newestAnime.set(f);
+            animeLists.setUpcoming(f);
           } catch (e, trace) {
-            Logger.root.warning("newestAnime", e, trace);
+            Logger.root.warning("currentSeasonAnime", e, trace);
           } finally {
             client.close(force: true);
-            refreshingStatus!.value = null;
+            refreshingStatusUpcoming!.value = null;
           }
         });
-
-        return;
       }
     }
   }
@@ -240,15 +290,33 @@ class _AnimePageState extends State<AnimePage> {
         ),
         body: CustomScrollView(
           slivers: [
-            if (refreshingStatus != null)
-              _NewestAnimeNotifier(
-                notifier: refreshingStatus!,
-                db: widget.db,
+            if (refreshingStatusUpcoming != null)
+              _AnimeListHolder(
+                label: l10n.upcomingAnime,
+                current: () => animeLists.upcoming.$2,
+                childSize: _NewAnime.size,
+                notifier: refreshingStatusUpcoming!,
+                child: (source) => _NewAnime(source: source),
+              ),
+            if (refreshingStatusCurrentSeason != null)
+              _AnimeListHolder(
+                label: "Current Season",
+                current: () => animeLists.currentSeason.$2,
+                childSize: _CurrentSeasonAnime.size,
+                notifier: refreshingStatusCurrentSeason!,
+                child: (source) => _CurrentSeasonAnime(source: source),
               ),
             WatchingAnimePanel(
               source: filterWatching,
               sourceBacklog: filterBacklog,
               // watchingBacklogChange: watchingBacklogChange.stream,
+            ),
+            Builder(
+              builder: (context) => SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom + 8,
+                ),
+              ),
             ),
           ],
         ),
@@ -359,71 +427,65 @@ class _WatchingAnimePanelState extends State<WatchingAnimePanel>
   }
 }
 
-class _NewestAnimeNotifier extends StatefulWidget {
-  const _NewestAnimeNotifier({
+class _AnimeListHolder extends StatefulWidget {
+  const _AnimeListHolder({
     // super.key,
     required this.notifier,
-    required this.db,
+    required this.current,
+    required this.label,
+    required this.childSize,
+    required this.child,
   });
 
   final ValueNotifier<Future<void>?> notifier;
-  final DbConn db;
+
+  final List<AnimeEntryData> Function() current;
+
+  final String label;
+  final Size childSize;
+
+  final Widget Function(GenericListSource<AnimeEntryData> source) child;
 
   @override
-  State<_NewestAnimeNotifier> createState() => __NewestAnimeNotifierState();
+  State<_AnimeListHolder> createState() => _AnimeListHolderState();
 }
 
-class __NewestAnimeNotifierState extends State<_NewestAnimeNotifier> {
-  NewestAnimeService get newestAnime => widget.db.newestAnime;
-
-  late final newestSource = GenericListSource<AnimeEntryData>(
-    () => Future.value(newestAnime.current.$2),
+class _AnimeListHolderState extends State<_AnimeListHolder> {
+  late final listSource = GenericListSource<AnimeEntryData>(
+    () => Future.value(widget.current()),
   );
-
-  // int _sortAnimeEntry(AnimeEntryData e1, AnimeEntryData e2) {
-  //   if (e1.airedTo != null && e2.airedTo != null) {
-  //     return e1.airedTo!.compareTo(e2.airedFrom!);
-  //   }
-
-  //   if (e1.airedFrom != null && e2.airedFrom != null) {
-  //     return e1.airedFrom!.compareTo(e2.airedFrom!);
-  //   }
-
-  //   return e1.id.compareTo(e2.id);
-  // }
 
   @override
   void initState() {
     super.initState();
 
-    newestSource.backingStorage.addAll(newestAnime.current.$2, true);
-    newestSource.progress.inRefreshing = widget.notifier.value != null;
+    listSource.backingStorage.addAll(widget.current(), true);
+    listSource.progress.inRefreshing = widget.notifier.value != null;
     widget.notifier.addListener(_listener);
   }
 
   @override
   void dispose() {
     widget.notifier.removeListener(_listener);
-    newestSource.destroy();
+    listSource.destroy();
 
     super.dispose();
   }
 
   void _listener() {
-    newestSource.progress.inRefreshing = widget.notifier.value != null;
-    newestSource.clearRefresh();
+    listSource.progress.inRefreshing = widget.notifier.value != null;
+    listSource.clearRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: l10n.upcomingAnime,
-        source: newestSource,
-        childSize: _NewAnime.size,
-        child: _NewAnime(source: newestSource),
+        label: widget.label,
+        source: listSource,
+        childSize: widget.childSize,
+        child: widget.child(listSource),
+        // _NewAnime(source: newestSource),
       ),
     );
   }
@@ -528,6 +590,10 @@ class __WatchingGridState extends State<_WatchingGrid> {
           child: GridLayout(
             progress: source.progress,
             source: source.backingStorage,
+            buildEmpty: (error) => const Padding(
+              padding: EdgeInsets.only(left: 8, right: 8, bottom: 4, top: 2),
+              child: Text("Empty..."),
+            ), // TODO: change
           ),
         ),
       ),
@@ -548,7 +614,7 @@ class FadingPanel extends StatefulWidget {
   });
 
   final String label;
-  final Widget? trailing;
+  final (IconData, void Function())? trailing;
 
   final ResourceSource<dynamic, dynamic> source;
   final Size childSize;
@@ -611,22 +677,24 @@ class _FadingPanelState extends State<FadingPanel>
             horizontalPadding: widget.horizontalPadding,
             label: widget.label,
             controller: controller,
-            onPressed: () {
-              if (shrink) {
-                controller.forward().then((_) {
-                  setState(() {
-                    shrink = false;
-                  });
-                });
-              } else {
-                controller.reverse().then((_) {
-                  setState(() {
-                    shrink = true;
-                  });
-                });
-              }
-            },
-            icon: Icons.keyboard_arrow_down_rounded,
+            onPressed: widget.enableHide
+                ? () {
+                    if (shrink) {
+                      controller.forward().then((_) {
+                        setState(() {
+                          shrink = false;
+                        });
+                      });
+                    } else {
+                      controller.reverse().then((_) {
+                        setState(() {
+                          shrink = true;
+                        });
+                      });
+                    }
+                  }
+                : null,
+            icon: widget.enableHide ? Icons.keyboard_arrow_down_rounded : null,
             trailing: widget.trailing,
           ),
           Animate(
@@ -668,7 +736,7 @@ class FadingPanelLabel extends StatelessWidget {
 
   final AnimationController? controller;
 
-  final Widget? trailing;
+  final (IconData, void Function())? trailing;
 
   final Tween<double>? tween;
 
@@ -734,7 +802,24 @@ class FadingPanelLabel extends StatelessWidget {
                     ),
             ),
           ),
-          if (trailing != null) trailing!,
+          if (trailing != null)
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(15),
+                  onTap: trailing!.$2,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(
+                      trailing!.$1,
+                      size: 24,
+                      color: textStyle?.color?.withOpacity(0.9),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -785,6 +870,88 @@ class _ShimmerPlaceholdersHorizontalState
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class ShimmerPlaceholdersChips extends StatelessWidget {
+  const ShimmerPlaceholdersChips({
+    super.key,
+    this.childPadding = const EdgeInsets.all(4),
+    this.padding = EdgeInsets.zero,
+  });
+
+  final EdgeInsets childPadding;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: 15,
+      padding: padding,
+      scrollDirection: Axis.horizontal,
+      itemBuilder: (context, index) {
+        return SizedBox(
+          key: ValueKey(index),
+          height: 42,
+          child: Padding(
+            padding: childPadding,
+            child: ActionChip(
+              labelPadding: EdgeInsets.zero,
+              // padding: EdgeInsets.zero,
+              label: SizedBox(
+                height: 42 / 2,
+                width: 58,
+                child: const ShimmerLoadingIndicator(
+                  delay: Duration(milliseconds: 900),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class ShimmerPlaceholderCarousel extends StatelessWidget {
+  const ShimmerPlaceholderCarousel({
+    super.key,
+    required this.childSize,
+    this.cornerRadius = 15,
+    this.childPadding = const EdgeInsets.all(4),
+    this.padding = EdgeInsets.zero,
+    this.weights = const [3, 2, 1],
+  });
+
+  final Size childSize;
+  final double cornerRadius;
+  final EdgeInsets childPadding;
+  final EdgeInsets padding;
+
+  final List<int> weights;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: childSize.height,
+      child: Padding(
+        padding: padding,
+        child: CarouselView.weighted(
+          padding: childPadding,
+          flexWeights: weights,
+          itemSnapping: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(cornerRadius),
+          ),
+          children: List<Widget>.generate(10, (index) {
+            return ShimmerLoadingIndicator(
+              key: ValueKey(index),
+              delay: const Duration(milliseconds: 900),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -854,6 +1021,72 @@ class __NewAnimeState extends State<_NewAnime> {
                   ),
                 );
               },
+            ).animate().fadeIn(),
+    );
+  }
+}
+
+class _CurrentSeasonAnime extends StatefulWidget {
+  const _CurrentSeasonAnime({
+    // super.key,
+    required this.source,
+  });
+
+  final GenericListSource<AnimeEntryData> source;
+
+  static const size = Size(220 / 1.3, 220);
+  static const listPadding = EdgeInsets.symmetric(horizontal: 18);
+
+  @override
+  State<_CurrentSeasonAnime> createState() => __CurrentSeasonAnimeState();
+}
+
+class __CurrentSeasonAnimeState extends State<_CurrentSeasonAnime> {
+  GenericListSource<AnimeEntryData> get source => widget.source;
+
+  late final StreamSubscription<void> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.source.progress.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: _CurrentSeasonAnime.size.height,
+      child: widget.source.progress.inRefreshing
+          ? const ShimmerPlaceholderCarousel(
+              childSize: _CurrentSeasonAnime.size,
+              padding: _CurrentSeasonAnime.listPadding,
+              weights: [4, 2, 2, 2],
+            )
+          : Padding(
+              padding: _CurrentSeasonAnime.listPadding,
+              child: CarouselView.weighted(
+                padding: EdgeInsets.zero,
+                flexWeights: const [4, 2, 2, 2],
+                itemSnapping: true,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                onTap: (idx) => source.forIdxUnsafe(idx).openInfoPage(context),
+                children: source.backingStorage
+                    .map((cell) => GridCell(cell: cell, hideTitle: false))
+                    .toList(),
+              ),
             ).animate().fadeIn(),
     );
   }

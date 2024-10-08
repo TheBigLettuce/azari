@@ -370,6 +370,11 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
               ),
             ),
           ),
+        if (functionality.onEmptySource != null)
+          _EmptyWidget(
+            source: source,
+            onEmpty: functionality.onEmptySource!,
+          ),
         Align(
           alignment: Alignment.bottomRight,
           child: Padding(
@@ -381,6 +386,60 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _EmptyWidget extends StatefulWidget {
+  const _EmptyWidget({
+    super.key,
+    required this.source,
+    required this.onEmpty,
+  });
+
+  final ResourceSource<dynamic, dynamic> source;
+  final Widget onEmpty;
+
+  @override
+  State<_EmptyWidget> createState() => __EmptyWidgetState();
+}
+
+class __EmptyWidgetState extends State<_EmptyWidget> {
+  late final StreamSubscription<void> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.source.backingStorage.watch((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.source.count != 0) {
+      return const Padding(padding: EdgeInsets.zero);
+    }
+
+    return Animate(
+      effects: const [
+        FadeEffect(
+          begin: 0,
+          end: 1,
+          delay: Durations.short1,
+          duration: Durations.short4,
+          curve: Easing.standard,
+        ),
+      ],
+      child: widget.onEmpty,
     );
   }
 }

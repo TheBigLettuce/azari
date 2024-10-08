@@ -5,11 +5,13 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery_management/android.dart";
@@ -65,7 +67,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
@@ -75,8 +77,8 @@ class _AndroidGallery implements GalleryAPIDirectories {
     final sourceTags = MapFilesSourceTags();
 
     return bindFiles = _AndroidGalleryFiles(
-      source:
-          _AndroidFileSourceJoined([directory], type, favoriteFile, sourceTags),
+      source: _AndroidFileSourceJoined(
+          [directory], type, favoritePosts, sourceTags),
       sourceTags: sourceTags,
       directories: [directory],
       target: name,
@@ -84,7 +86,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
       parent: this,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
-      favoriteFile: favoriteFile,
+      favoritePosts: favoritePosts,
       localTags: localTags,
     );
   }
@@ -94,7 +96,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     List<GalleryDirectory> directories,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
-    FavoriteFileService favoriteFile,
+    FavoritePostSourceService favoritePosts,
     LocalTagsService localTags,
   ) {
     if (bindFiles != null) {
@@ -107,7 +109,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
       source: _AndroidFileSourceJoined(
         directories,
         GalleryFilesPageType.normal,
-        favoriteFile,
+        favoritePosts,
         sourceTags,
       ),
       sourceTags: sourceTags,
@@ -115,7 +117,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
       parent: this,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
-      favoriteFile: favoriteFile,
+      favoritePosts: favoritePosts,
       localTags: localTags,
     );
   }

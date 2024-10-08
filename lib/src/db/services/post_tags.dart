@@ -31,7 +31,7 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
     String filename,
-    DisassembleResult dissassembled,
+    ParsedFilenameResult dissassembled,
     LocalTagDictionaryService localTagDictionary,
   ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
@@ -59,7 +59,8 @@ class PostTags {
   /// Adds tags to the db.
   /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
   void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
-    if (!noDisassemble && DisassembleResult.fromFilename(filename).hasError) {
+    if (!noDisassemble &&
+        ParsedFilenameResult.fromFilename(filename).hasError) {
       return;
     }
 
@@ -109,7 +110,7 @@ class PostTags {
     String filename,
     LocalTagDictionaryService localTagDictionary,
   ) async {
-    final dissassembled = DisassembleResult.fromFilename(filename);
+    final dissassembled = ParsedFilenameResult.fromFilename(filename);
     if (dissassembled.hasError) {
       return const [];
     }
@@ -153,8 +154,8 @@ enum DisassembleResultError {
 /// Result of disassembling of the filename in the format.
 /// All the files downloaded with the [Downloader] have a certain format
 /// of the filenames, this class represents the format.
-class DisassembleResult {
-  const DisassembleResult({
+class ParsedFilenameResult {
+  const ParsedFilenameResult({
     required this.booru,
     required this.ext,
     required this.hash,
@@ -182,9 +183,33 @@ class DisassembleResult {
   static final _numbersLetters = RegExp(r"^[a-zA-Z0-9]+$");
   static final _numbersLettersLowercase = RegExp(r"^[a-z0-9]+$");
 
+  static (int, Booru)? simple(String filename_) {
+    final split = filename_.split("_");
+    if (split.isEmpty || split.length != 2) {
+      return null;
+    }
+
+    final booru = Booru.fromPrefix(split.first);
+    if (booru == null) {
+      return null;
+    }
+
+    final numbersAndHash = split.last.split(" - ");
+    if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
+      return null;
+    }
+
+    final id = int.tryParse(numbersAndHash.first);
+    if (id == null) {
+      return null;
+    }
+
+    return (id, booru);
+  }
+
   /// Tries to disassemble the [filename] into the convenient class.
   /// Throws on error, with the reason string.
-  static ErrorOr<DisassembleResult> fromFilename(
+  static ErrorOr<ParsedFilenameResult> fromFilename(
     String filename_, {
     Booru? suppliedBooru,
   }) {
@@ -257,7 +282,7 @@ class DisassembleResult {
     }
 
     return ErrorOr.value(
-      DisassembleResult(
+      ParsedFilenameResult(
         id: id,
         booru: booru,
         ext: hashAndExt.last,

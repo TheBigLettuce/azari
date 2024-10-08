@@ -11,12 +11,19 @@ class AndroidGallery implements GalleryPlug {
   static final StreamController<void> _tapDownEvents =
       StreamController.broadcast();
 
+  static final StreamController<GalleryPageChangeEvent> _pageChangeEvents =
+      StreamController.broadcast();
+
   @override
   Stream<void>? get galleryTapDownEvents => _tapDownEvents.stream;
 
   @override
   Future<int> get version =>
       const AndroidApiFunctions().currentMediastoreVersion();
+
+  @override
+  Stream<GalleryPageChangeEvent>? get galleryPageChangeEvents =>
+      _pageChangeEvents.stream;
 
   @override
   bool get temporary => _global!.temporary;
@@ -76,6 +83,7 @@ class AndroidGallery implements GalleryPlug {
     required bool isVideo,
     required bool isGif,
     required bool isDuplicate,
+    required (int, Booru)? res,
   }) =>
       AndroidGalleryFile(
         id: id,
@@ -90,6 +98,7 @@ class AndroidGallery implements GalleryPlug {
         lastModified: lastModified,
         originalUri: originalUri,
         tags: tags,
+        res: res,
       );
 }
 

@@ -90,7 +90,7 @@ GridAction<GalleryDirectory> joinedDirectories(
   String Function(GalleryDirectory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
-  FavoriteFileService favoriteFile,
+  FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
   AppLocalizations l10n,
 ) {
@@ -109,7 +109,7 @@ GridAction<GalleryDirectory> joinedDirectories(
         segment,
         directoryMetadata,
         directoryTags,
-        favoriteFile,
+        favoritePosts,
         localTags,
         l10n,
       );
@@ -128,7 +128,7 @@ Future<void> joinedDirectoriesFnc(
   String Function(GalleryDirectory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
-  FavoriteFileService favoriteFile,
+  FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
   AppLocalizations l10n,
 ) {
@@ -153,7 +153,7 @@ Future<void> joinedDirectoriesFnc(
       dirs,
       directoryTags,
       directoryMetadata,
-      favoriteFile,
+      favoritePosts,
       localTags,
     );
 

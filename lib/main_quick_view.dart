@@ -19,7 +19,7 @@ Future<void> mainQuickView() async {
   final uris = await const AndroidApiFunctions().getQuickViewUris();
 
   final files = (await GalleryHostApi().getUriPicturesDirectly(uris))
-      .map((e) => AndroidUriFile.fromUriFile(e!))
+      .map((e) => AndroidUriFile.fromUriFile(e))
       .toList();
 
   runApp(

@@ -24,6 +24,7 @@ class WrapGridActionButton extends StatefulWidget {
     required this.animation,
     this.iconOnly = false,
     this.addBorder = true,
+    required this.notifier,
   });
 
   final IconData icon;
@@ -40,6 +41,8 @@ class WrapGridActionButton extends StatefulWidget {
   final bool iconOnly;
 
   final bool addBorder;
+
+  final ValueNotifier<Future<void>?>? notifier;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -67,14 +70,21 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
       },
       true,
     );
+
+    widget.notifier?.addListener(_listener);
   }
 
   @override
   void dispose() {
+    widget.notifier?.removeListener(_listener);
     controller.dispose();
     _subscr?.cancel();
 
     super.dispose();
+  }
+
+  void _listener() {
+    setState(() {});
   }
 
   void onPressed() {
@@ -90,17 +100,24 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final icon = TweenAnimationBuilder(
-      tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
-      duration: Durations.medium1,
-      curve: Easing.linear,
-      builder: (context, color, _) {
-        return Icon(
-          data.$1,
-          color: color,
-        );
-      },
-    );
+    final icon = widget.notifier != null && widget.notifier?.value != null
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : TweenAnimationBuilder(
+            tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
+            duration: Durations.medium1,
+            curve: Easing.linear,
+            builder: (context, color, _) {
+              return Icon(
+                data.$1,
+                color: widget.onPressed == null || widget.onPressed == null
+                    ? theme.disabledColor.withOpacity(0.5)
+                    : color,
+              );
+            },
+          );
 
     if (widget.iconOnly) {
       return GestureDetector(

@@ -383,9 +383,11 @@ class __BottomIconsState extends State<_BottomIcons>
                           .map(
                             (e) => WrapGridActionButton(
                               e.icon,
-                              () => e.onPress(
-                                CurrentContentNotifier.of(context),
-                              ),
+                              e.onPress == null
+                                  ? null
+                                  : () => e.onPress!(
+                                        CurrentContentNotifier.of(context),
+                                      ),
                               onLongPress: null,
                               whenSingleContext: null,
                               play: e.play,
@@ -393,6 +395,7 @@ class __BottomIconsState extends State<_BottomIcons>
                               color: e.color,
                               watch: e.watch,
                               animation: e.animation,
+                              notifier: e.longLoadingNotifier,
                             ),
                           )
                           .toList(),
@@ -946,7 +949,9 @@ class __AnimatedRailIconState extends State<_AnimatedRailIcon> {
   Widget build(BuildContext context) {
     return WrapGridActionButton(
       action.icon,
-      () => action.onPress(CurrentContentNotifier.of(context)),
+      action.onPress == null
+          ? null
+          : () => action.onPress!(CurrentContentNotifier.of(context)),
       onLongPress: null,
       whenSingleContext: null,
       play: action.play,
@@ -954,6 +959,7 @@ class __AnimatedRailIconState extends State<_AnimatedRailIcon> {
       animation: action.animation,
       watch: action.watch,
       color: action.color,
+      notifier: action.longLoadingNotifier,
       iconOnly: true,
     );
   }

@@ -77,7 +77,7 @@
                 <category android:name="android.intent.category.OPENABLE" />
 
                 <data android:mimeType="image/*" />
-                <data android:mimeType="video/*" />
+     w           <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
 

@@ -24,6 +24,7 @@ import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
 import "package:azari/src/plugs/gallery_management_api.dart";
 import "package:azari/src/plugs/generated/platform_api.g.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -93,7 +94,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       widget.db.gridSettings.directories;
   DirectoryMetadataService get directoryMetadata => widget.db.directoryMetadata;
   DirectoryTagService get directoryTags => widget.db.directoryTags;
-  FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
+  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   BlacklistedDirectoryService get blacklistedDirectories =>
       widget.db.blacklistedDirectories;
 
@@ -163,7 +164,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       api.source.clearRefresh();
     });
 
-    favoritesWatcher = favoriteFiles.watch((_) {
+    favoritesWatcher = favoritePosts.backingStorage.watch((_) {
       api.source.clearRefresh();
       setState(() {});
     });
@@ -236,20 +237,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       caps: directoryMetadata.caps(widget.l10n.segmentsSpecial),
       segment: _segmentCell,
       injectedSegments: [
-        if (favoriteFiles.isNotEmpty())
-          SyncCell(
-            galleryPlug.makeGalleryDirectory(
-              bucketId: "favorites",
-              name: widget.l10n.galleryDirectoriesFavorites,
-              tag: "",
-              volumeName: "",
-              relativeLoc: "",
-              lastModified: 0,
-              thumbFileId: miscSettings.favoritesThumbId != 0
-                  ? miscSettings.favoritesThumbId
-                  : favoriteFiles.thumbnail,
-            ),
-          ),
+        // if (favoritePosts.isNotEmpty())
+        //   SyncCell(
+        //     galleryPlug.makeGalleryDirectory(
+        //       bucketId: "favorites",
+        //       name: widget.l10n.galleryDirectoriesFavorites,
+        //       tag: "",
+        //       volumeName: "",
+        //       relativeLoc: "",
+        //       lastModified: 0,
+        //       thumbFileId: miscSettings.favoritesThumbId != 0
+        //           ? miscSettings.favoritesThumbId
+        //           : favoritePosts.thumbnail,
+        //     ),
+        //   ),
         api.trashCell,
       ],
       onLabelPressed: widget.callback != null && !widget.callback!.joinable
@@ -264,7 +265,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 _segmentCell,
                 directoryMetadata,
                 directoryTags,
-                favoriteFiles,
+                favoritePosts,
                 widget.db.localTags,
                 widget.l10n,
               ),
@@ -428,6 +429,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             segmentFnc: _segmentCell,
             child: child,
           ),
+          onEmptySource: _EmptyWidget(trashCell: api.trashCell),
           source: filter,
           settingsButton: GridSettingsButton(
             add: _add,
@@ -485,7 +487,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       _segmentCell,
                       directoryMetadata,
                       directoryTags,
-                      favoriteFiles,
+                      favoritePosts,
                       widget.db.localTags,
                       widget.l10n,
                     ),
@@ -522,7 +524,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     _segmentCell,
                     directoryMetadata,
                     directoryTags,
-                    favoriteFiles,
+                    favoritePosts,
                     widget.db.localTags,
                     widget.l10n,
                   ),
@@ -959,4 +961,54 @@ class DirectoriesDataNotifier extends InheritedWidget {
       callback != oldWidget.callback ||
       nestedCallback != oldWidget.nestedCallback ||
       segmentFnc != oldWidget.segmentFnc;
+}
+
+class _EmptyWidget extends StatefulWidget {
+  const _EmptyWidget({
+    // super.key,
+    required this.trashCell,
+  });
+
+  final TrashCell trashCell;
+
+  @override
+  State<_EmptyWidget> createState() => __EmptyWidgetState();
+}
+
+class __EmptyWidgetState extends State<_EmptyWidget> {
+  late final StreamSubscription<void> subscr;
+
+  bool haveTrashCell = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.trashCell.watch(
+      (t) {
+        setState(() {
+          haveTrashCell = t != null;
+        });
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (haveTrashCell) {
+      return const SizedBox.shrink();
+    }
+
+    return const EmptyWidgetBackground(
+      subtitle: "On-device pictures will appear here...",
+    ); // TODO: change
+  }
 }

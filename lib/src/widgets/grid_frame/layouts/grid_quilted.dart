@@ -70,9 +70,9 @@ class _GridQuiltedLayoutState<T extends CellBase>
     final config = GridConfiguration.of(context);
 
     return EmptyWidgetOrContent(
-      count: source.count,
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
+      source: source,
       child: SliverGrid.builder(
         itemCount: source.count,
         gridDelegate: SliverQuiltedGridDelegate(

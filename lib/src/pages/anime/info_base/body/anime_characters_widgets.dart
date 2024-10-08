@@ -69,6 +69,8 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (list.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -78,7 +80,15 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget>
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!_loading)
-          BodySegmentLabel(text: AppLocalizations.of(context)!.charactersLabel),
+          BodySegmentLabel(
+            text: l10n.charactersLabel,
+            onLongPress: () {
+              addAsync(widget.entry, widget.api);
+              _loading = true;
+
+              setState(() {});
+            },
+          ),
         if (_loading)
           const SizedBox(
             height: 18,

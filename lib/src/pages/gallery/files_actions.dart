@@ -5,11 +5,50 @@
 
 part of "files.dart";
 
+class DeleteDialogShow {
+  bool show = true;
+}
+
+class DeleteDialogShowNotifier extends InheritedWidget {
+  const DeleteDialogShowNotifier({
+    super.key,
+    required this.toShow,
+    required super.child,
+  });
+
+  final DeleteDialogShow toShow;
+
+  static DeleteDialogShow of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<DeleteDialogShowNotifier>();
+
+    return widget!.toShow;
+  }
+
+  @override
+  bool updateShouldNotify(DeleteDialogShowNotifier oldWidget) =>
+      toShow != oldWidget.toShow;
+}
+
 Future<void> deleteFilesDialog(
   BuildContext context,
   List<GalleryFile> selected,
+  DeleteDialogShow toShow,
 ) {
   final l10n = AppLocalizations.of(context)!;
+
+  void delete() {
+    GalleryManagementApi.current().trash.addAll(
+          selected.map((e) => e.originalUri).toList(),
+        );
+
+    StatisticsGalleryService.db().current.add(deleted: selected.length).save();
+  }
+
+  if (!toShow.show) {
+    delete();
+    return Future.value();
+  }
 
   return Navigator.of(context, rootNavigator: true).push(
     DialogRoute(
@@ -27,14 +66,15 @@ Future<void> deleteFilesDialog(
           actions: [
             TextButton(
               onPressed: () {
-                GalleryManagementApi.current().trash.addAll(
-                      selected.map((e) => e.originalUri).toList(),
-                    );
-
-                StatisticsGalleryService.db()
-                    .current
-                    .add(deleted: selected.length)
-                    .save();
+                delete();
+                toShow.show = false;
+                Navigator.pop(context);
+              },
+              child: Text("yes, hide"),
+            ),
+            TextButton(
+              onPressed: () {
+                delete();
                 Navigator.pop(context);
               },
               child: Text(l10n.yes),
@@ -114,25 +154,25 @@ GridAction<GalleryFile> _addTagAction(
   );
 }
 
-GridAction<GalleryFile> _addToFavoritesAction(
-  BuildContext context,
-  GalleryFile? f,
-  FavoriteFileService favoriteFile,
-) {
-  final isFavorites =
-      f != null && (favoriteFile.cachedValues.containsKey(f.id));
+// GridAction<GalleryFile> _addToFavoritesAction(
+//   BuildContext context,
+//   GalleryFile? f,
+//   FavoritePostSourceService favoritePosts,
+// ) {
+//   final isFavorites =
+//       f != null && (favoritePosts.cachedValues.containsKey(f.id));
 
-  return GridAction(
-    isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
-    (selected) {
-      favoriteOrUnfavorite(context, selected, favoriteFile);
-    },
-    false,
-    color: isFavorites ? Colors.yellow.shade900 : null,
-    animate: f != null,
-    play: !isFavorites,
-  );
-}
+//   return GridAction(
+//     isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
+//     (selected) {
+//       favoriteOrUnfavorite(context, selected, favoritePosts);
+//     },
+//     false,
+//     color: isFavorites ? Colors.yellow.shade900 : null,
+//     animate: f != null,
+//     play: !isFavorites,
+//   );
+// }
 
 GridAction<GalleryFile> _setFavoritesThumbnailAction(
   MiscSettingsService miscSettings,
@@ -147,11 +187,18 @@ GridAction<GalleryFile> _setFavoritesThumbnailAction(
   );
 }
 
-GridAction<GalleryFile> _deleteAction(BuildContext context) {
+GridAction<GalleryFile> _deleteAction(
+  BuildContext context,
+  DeleteDialogShow toShow,
+) {
   return GridAction(
     Icons.delete,
     (selected) {
-      deleteFilesDialog(context, selected);
+      deleteFilesDialog(
+        context,
+        selected,
+        toShow,
+      );
     },
     false,
   );
@@ -161,9 +208,9 @@ GridAction<GalleryFile> _copyAction(
   BuildContext context,
   String bucketId,
   TagManager tagManager,
-  FavoriteFileService favoriteFile,
   LocalTagsService localTags,
   GalleryAPIDirectories providedApi,
+  DeleteDialogShow toShow,
 ) {
   return GridAction(
     Icons.copy,
@@ -174,9 +221,9 @@ GridAction<GalleryFile> _copyAction(
         selected,
         false,
         tagManager,
-        favoriteFile,
         localTags,
         providedApi,
+        toShow,
       );
     },
     false,
@@ -187,9 +234,9 @@ GridAction<GalleryFile> _moveAction(
   BuildContext context,
   String bucketId,
   TagManager tagManager,
-  FavoriteFileService favoriteFile,
   LocalTagsService localTags,
   GalleryAPIDirectories providedApi,
+  DeleteDialogShow toShow,
 ) {
   return GridAction(
     Icons.forward_rounded,
@@ -200,9 +247,9 @@ GridAction<GalleryFile> _moveAction(
         selected,
         true,
         tagManager,
-        favoriteFile,
         localTags,
         providedApi,
+        toShow,
       );
     },
     false,
@@ -215,14 +262,15 @@ void moveOrCopyFnc(
   List<GalleryFile> selected,
   bool move,
   TagManager tagManager,
-  FavoriteFileService favoriteFile,
+  // FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
   GalleryAPIDirectories providedApi,
+  DeleteDialogShow toShow,
 ) {
   PauseVideoNotifier.maybePauseOf(topContext, true);
 
   final List<String> searchPrefix = [];
-  for (final tag in selected.first.tags.keys) {
+  for (final tag in localTags.get(selected.first.name)) {
     if (tagManager.pinned.exists(tag)) {
       searchPrefix.add(tag);
     }
@@ -252,9 +300,10 @@ void moveOrCopyFnc(
                 return Future.value();
               }
 
-              if (bucketId == "favorites") {
-                favoriteOrUnfavorite(context, selected, favoriteFile);
-              } else if (bucketId == "trash") {
+              // if (bucketId == "favorites") {
+              //   favoriteOrUnfavorite(context, selected, favoritePosts);
+              // } else
+              if (bucketId == "trash") {
                 if (!move) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -267,7 +316,11 @@ void moveOrCopyFnc(
                   return Future.value();
                 }
 
-                return deleteFilesDialog(context, selected);
+                return deleteFilesDialog(
+                  context,
+                  selected,
+                  toShow,
+                );
               } else {
                 GalleryManagementApi.current()
                     .files
@@ -328,45 +381,45 @@ void moveOrCopyFnc(
   });
 }
 
-void favoriteOrUnfavorite(
-  BuildContext context,
-  List<GalleryFile> selected,
-  FavoriteFileService favoriteFile, [
-  bool showSnackbar = true,
-]) {
-  final l10n = AppLocalizations.of(context)!;
+// void favoriteOrUnfavorite(
+//   BuildContext context,
+//   List<GalleryFile> selected,
+//   FavoritePostSourceService favoritePosts, [
+//   bool showSnackbar = true,
+// ]) {
+//   final l10n = AppLocalizations.of(context)!;
 
-  final toDelete = <int>[];
-  final toAdd = <int>[];
+//   final toDelete = <int>[];
+//   final toAdd = <int>[];
 
-  for (final fav in selected) {
-    if (favoriteFile.cachedValues.containsKey(fav.id)) {
-      toDelete.add(fav.id);
-    } else {
-      toAdd.add(fav.id);
-    }
-  }
+//   for (final fav in selected) {
+//     if (favoritePosts.cachedValues.containsKey(fav.id)) {
+//       toDelete.add(fav.id);
+//     } else {
+//       toAdd.add(fav.id);
+//     }
+//   }
 
-  if (toAdd.isNotEmpty) {
-    favoriteFile.addAll(toAdd);
-  }
+//   if (toAdd.isNotEmpty) {
+//     favoritePosts.addAll(toAdd);
+//   }
 
-  favoriteFile.deleteAll(toDelete);
+//   favoritePosts.deleteAll(toDelete);
 
-  if (toDelete.isNotEmpty && showSnackbar) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.deletedFromFavorites),
-        action: SnackBarAction(
-          label: l10n.undoLabel,
-          onPressed: () {
-            favoriteFile.addAll(toDelete);
-          },
-        ),
-      ),
-    );
-  }
-}
+//   if (toDelete.isNotEmpty && showSnackbar) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(l10n.deletedFromFavorites),
+//         action: SnackBarAction(
+//           label: l10n.undoLabel,
+//           onPressed: () {
+//             favoritePosts.backingStorage.addAll(toDelete);
+//           },
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 extension SaveTagsGlobalNotifier on GlobalProgressTab {
   ValueNotifier<Future<void>?> saveTags() {

@@ -84,7 +84,7 @@ class GalleryFiles extends StatefulWidget {
 }
 
 class _GalleryFilesState extends State<GalleryFiles> {
-  FavoriteFileService get favoriteFiles => widget.db.favoriteFiles;
+  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   LocalTagsService get localTags => widget.db.localTags;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
 
@@ -111,6 +111,8 @@ class _GalleryFilesState extends State<GalleryFiles> {
 
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
+
+  final toShowDelete = DeleteDialogShow();
 
   @override
   void initState() {
@@ -148,7 +150,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
       },
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
-          FilteringMode.favorite => filters.favorite(cells, favoriteFiles),
+          FilteringMode.favorite => filters.favorite(cells, favoritePosts),
           FilteringMode.untagged => filters.untagged(cells),
           FilteringMode.tag => filters.tag(cells, searchTextController.text),
           FilteringMode.tagReversed =>
@@ -458,11 +460,14 @@ class _GalleryFilesState extends State<GalleryFiles> {
                   return FilesDataNotifier(
                     api: widget.api,
                     nestedCallback: widget.callback,
-                    child: OnBooruTagPressed(
-                      onPressed: _onBooruTagPressed,
-                      child: FilteringDataHolder(
-                        source: filter,
-                        child: child,
+                    child: DeleteDialogShowNotifier(
+                      toShow: toShowDelete,
+                      child: OnBooruTagPressed(
+                        onPressed: _onBooruTagPressed,
+                        child: FilteringDataHolder(
+                          source: filter,
+                          child: child,
+                        ),
                       ),
                     ),
                   );
@@ -603,23 +608,23 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                 localTags,
                               ),
                             ],
-                            _addToFavoritesAction(context, null, favoriteFiles),
-                            _deleteAction(context),
+                            // _addToFavoritesAction(context, null, favoritePosts),
+                            _deleteAction(context, toShowDelete),
                             _copyAction(
                               context,
                               widget.bucketId,
                               widget.tagManager,
-                              favoriteFiles,
                               localTags,
                               api.parent,
+                              toShowDelete,
                             ),
                             _moveAction(
                               context,
                               widget.bucketId,
                               widget.tagManager,
-                              favoriteFiles,
                               localTags,
                               api.parent,
+                              toShowDelete,
                             ),
                           ],
                 keybindsDescription: widget.dirName,

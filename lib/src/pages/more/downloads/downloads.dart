@@ -8,6 +8,7 @@ import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -136,6 +137,9 @@ class _DownloadsState extends State<Downloads> {
             ),
           ],
           functionality: GridFunctionality(
+            onEmptySource: const EmptyWidgetBackground(
+              subtitle: "Download progress will appear here...", // TODO: change
+            ),
             search: PageNameSearchWidget(
               leading: IconButton(
                 onPressed: () {

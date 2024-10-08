@@ -40,7 +40,7 @@ class _AppBar extends StatelessWidget {
     };
 
     return switch (search) {
-      PageNameSearchWidget() => SliverAppBar.large(
+      PageNameSearchWidget() => SliverAppBar.medium(
           backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
           title: Text(pageName),
           leading: search.leading ?? b,

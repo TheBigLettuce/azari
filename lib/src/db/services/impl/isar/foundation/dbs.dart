@@ -28,7 +28,6 @@ class _Dbs {
     required this.secondaryGridDbDir,
   });
 
-  final _favoriteFilesCachedValues = <int, void>{};
   final _hiddenBooruPostCachedValues = <(int, Booru), String>{};
 
   final _currentBooruDbs = <Booru, Isar>{};

@@ -11,6 +11,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/home.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -18,7 +19,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
@@ -136,6 +136,10 @@ class _BookmarkPageState extends State<BookmarkPage> {
               ),
             ],
             functionality: GridFunctionality(
+              onEmptySource: const EmptyWidgetBackground(
+                subtitle:
+                    "Bookmarked searches will appear here...", // TODO: change
+              ),
               source: source,
               search: PageNameSearchWidget(
                 leading: IconButton(
@@ -238,12 +242,14 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
 
   @override
   Widget build(BuildContext context) {
-    return EmptyWidgetOrContent(
-      count: widget.source.count,
-      progress: widget.progress,
-      buildEmpty: null,
-      child: SliverList.list(children: makeList(context, Theme.of(context))),
-    );
+    return SliverList.list(children: makeList(context, Theme.of(context)))
+        // EmptyWidgetOrContent(
+        //   count: widget.source.count,
+        //   progress: widget.progress,
+        //   buildEmpty: null,
+        //   child: SliverList.list(children: makeList(context, Theme.of(context))),
+        // )
+        ;
   }
 }
 

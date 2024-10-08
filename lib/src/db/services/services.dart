@@ -99,12 +99,11 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   LocalTagDictionaryService get localTagDictionary;
   CompactMangaDataService get compactManga;
   GridBookmarkService get gridBookmarks;
-  FavoriteFileService get favoriteFiles;
   DirectoryTagService get directoryTags;
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
   VisitedPostsService get visitedPosts;
-  NewestAnimeService get newestAnime;
+  AnimeListsService get animeLists;
   HottestTagsService get hottestTags;
 
   TagManager get tagManager;
@@ -223,6 +222,8 @@ mixin DbConnHandle<T extends ServiceMarker> implements StatefulWidget {
 mixin DbScope<T extends ServiceMarker, W extends DbConnHandle<T>> on State<W> {}
 
 abstract interface class LocalTagDictionaryService {
+  List<BooruTag> mostFrequent(int count);
+
   void add(List<String> tags);
 
   Future<List<BooruTag>> complete(String string);
@@ -272,7 +273,7 @@ abstract interface class DirectoryTagService {
 }
 
 @immutable
-abstract class TagData {
+abstract class TagData implements CellBase {
   const factory TagData({
     required String tag,
     required TagType type,
@@ -286,12 +287,27 @@ abstract class TagData {
   TagData copy({String? tag, TagType? type});
 }
 
+abstract class TagDataImpl implements TagData, CellBase {
+  const TagDataImpl();
+
+  @override
+  String alias(bool long) => tag;
+
+  @override
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  Key uniqueKey() => ValueKey((tag, type));
+}
+
 /// Tag search history.
 /// Used for both for the recent tags and the excluded.
 abstract class BooruTagging {
   const BooruTagging();
 
   bool exists(String tag);
+
+  List<TagData> complete(String string);
 
   /// Get the current tags.
   /// Last added first.
@@ -308,6 +324,7 @@ abstract class BooruTagging {
   void clear();
 
   StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+  StreamSubscription<int> watchCount(void Function(int) f, [bool fire = false]);
 
   StreamSubscription<List<ImageTag>> watchImage(
     List<String> tags,
@@ -430,6 +447,8 @@ abstract interface class GridBookmarkService {
 
   GridBookmark? get(String name);
   GridBookmark? getFirstByTags(String tags, Booru preferBooru);
+
+  List<GridBookmark> complete(String str);
 
   List<GridBookmark> firstNumber(int n);
 
@@ -807,13 +826,22 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
   }
 }
 
-abstract interface class NewestAnimeService implements ServiceMarker {
-  (DateTime, List<AnimeEntryData>) get current;
+abstract interface class AnimeListsService implements ServiceMarker {
+  (DateTime, List<AnimeEntryData>) get upcoming;
+  (DateTime, List<AnimeEntryData>) get currentSeason;
 
-  void set(List<AnimeEntryData> l);
-  void clear();
+  void setUpcoming(List<AnimeEntryData> l);
+  void clearUpcoming();
 
-  StreamSubscription<void> watchAll(
+  void setCurrentSeason(List<AnimeEntryData> l);
+  void clearCurrentSeason();
+
+  StreamSubscription<void> watchAllUpcoming(
+    void Function(void) f, [
+    bool fire = false,
+  ]);
+
+  StreamSubscription<void> watchAllCurrentSeason(
     void Function(void) f, [
     bool fire = false,
   ]);

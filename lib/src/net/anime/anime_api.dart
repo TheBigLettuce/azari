@@ -27,6 +27,10 @@ abstract class AnimeAPI {
   Future<List<AnimeNewsEntry>> animeNews(AnimeEntryData entry, int page);
   Future<List<AnimeRecommendations>> recommendations(AnimeEntryData entry);
   Future<List<AnimePicture>> pictures(AnimeEntryData entry);
+  Future<List<AnimeSearchEntry>> seasonNow(
+    int page, {
+    int limit = 25,
+  });
 
   AnimeMetadata get site;
 

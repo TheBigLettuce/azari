@@ -167,17 +167,34 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
       style: widget.textTheme.textTheme.bodyMedium,
     );
 
-    return widget.text.length < 150
-        ? child
-        : Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              child,
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: !collapse
-                      ? null
-                      : LinearGradient(
+    return AnimatedSize(
+      curve: Easing.standardDecelerate,
+      alignment: Alignment.topCenter,
+      duration: Durations.medium1,
+      child: widget.text.length < 150
+          ? child
+          : !collapse
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    child,
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          collapse = !collapse;
+                        });
+                      },
+                      child: const Text("Collapse"), // TODO: change
+                    ),
+                  ],
+                )
+              : Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    child,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
@@ -187,24 +204,25 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
                             theme.colorScheme.surface.withOpacity(0.8),
                           ],
                         ),
-                ),
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          collapse = !collapse;
-                        });
-                      },
-                      child: Text(!collapse ? "Collapse" : "More"),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                collapse = !collapse;
+                              });
+                            },
+                            child: const Text("More"), // TODO: change
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // Text("data"),
+                  ],
                 ),
-              ),
-              // Text("data"),
-            ],
-          );
+    );
   }
 }

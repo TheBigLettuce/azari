@@ -66,7 +66,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
     final config = GridConfiguration.of(context);
 
     return EmptyWidgetOrContent(
-      count: source.count,
+      source: source,
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
       child: SliverGrid.builder(
@@ -131,13 +131,13 @@ class GridLayoutPlaceholder extends StatelessWidget {
 class EmptyWidgetOrContent extends StatefulWidget {
   const EmptyWidgetOrContent({
     super.key,
-    required this.count,
     required this.progress,
     required this.buildEmpty,
+    required this.source,
     required this.child,
   });
 
-  final int count;
+  final ReadOnlyStorage<dynamic, dynamic> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
@@ -170,58 +170,23 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
 
   @override
   Widget build(BuildContext context) {
-    return widget.count == 0 && !widget.progress.inRefreshing
-        ? SliverPadding(
-            padding: const EdgeInsets.only(top: 16),
-            sliver: SliverToBoxAdapter(
-              child: (widget.buildEmpty?.call(widget.progress.error) ??
-                      EmptyWidget(
-                        gridSeed: 0,
-                        error: widget.progress.error == null
-                            ? null
-                            : EmptyWidget.unwrapDioError(
-                                widget.progress.error,
-                              ),
-                      ))
-                  .animate()
-                  .fadeIn(),
+    final theme = Theme.of(context);
+
+    if (widget.buildEmpty == null) {
+      return widget.child;
+    }
+
+    return widget.source.count == 0 && !widget.progress.inRefreshing
+        ? SliverToBoxAdapter(
+            child: DefaultTextStyle(
+              style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ) ??
+                  const TextStyle(),
+              child:
+                  widget.buildEmpty!(widget.progress.error).animate().fadeIn(),
             ),
           )
         : widget.child;
-  }
-}
-
-class EmptyWidgetWithButton extends StatelessWidget {
-  const EmptyWidgetWithButton({
-    super.key,
-    this.overrideText,
-    required this.error,
-    required this.onPressed,
-    required this.buttonText,
-  });
-
-  final String? overrideText;
-  final Object? error;
-  final void Function() onPressed;
-  final String buttonText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        EmptyWidget(
-          gridSeed: 0,
-          overrideEmpty: overrideText,
-          error: error == null
-              ? null
-              : EmptyWidget.unwrapDioError(
-                  error,
-                ),
-        ),
-        const Padding(padding: EdgeInsets.only(top: 4)),
-        FilledButton.tonal(onPressed: onPressed, child: Text(buttonText)),
-      ],
-    );
   }
 }

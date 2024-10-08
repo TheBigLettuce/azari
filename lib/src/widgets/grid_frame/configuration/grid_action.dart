@@ -60,6 +60,7 @@ class ImageViewAction {
     this.animate = false,
     this.play = true,
     this.watch,
+    this.longLoadingNotifier,
   });
 
   /// Icon of the button.
@@ -68,13 +69,15 @@ class ImageViewAction {
   /// [onPress] is called when the button gets pressed,
   /// if [showOnlyWhenSingle] is true then this is guranteed to be called
   /// with [selected] elements zero or one.
-  final void Function(Contentable selected) onPress;
+  final void Function(Contentable selected)? onPress;
 
   final Color? color;
 
   final bool animate;
   final bool play;
   final List<Effect<dynamic>> animation;
+
+  final ValueNotifier<Future<void>?>? longLoadingNotifier;
 
   ImageViewAction copy(
     IconData? icon,

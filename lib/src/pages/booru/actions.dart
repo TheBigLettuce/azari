@@ -66,12 +66,12 @@ GridAction<T> download<T extends Post>(
   );
 }
 
-GridAction<T> favorites<T extends Post>(
+GridAction<T> favorites<T extends PostImpl>(
   BuildContext context,
   FavoritePostSourceService favoritePost, {
   bool showDeleteSnackbar = false,
 }) {
-  return GridAction(
+  return GridAction<T>(
     Icons.favorite_border_rounded,
     (selected) {
       final ret = favoritePost.addRemove(selected);

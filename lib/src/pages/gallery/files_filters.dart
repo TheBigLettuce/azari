@@ -67,11 +67,13 @@ class SameFilterAccumulator {
 
 (Iterable<GalleryFile>, dynamic) favorite(
   Iterable<GalleryFile> cells,
-  FavoriteFileService favoriteFile,
+  FavoritePostSourceService favoritePosts,
 ) {
   return (
     cells.where(
-      (element) => favoriteFile.cachedValues.containsKey(element.id),
+      (element) =>
+          element.res != null &&
+          favoritePosts.contains(element.res!.$1, element.res!.$2),
     ),
     null
   );

@@ -146,3 +146,82 @@ class _EmptyWidgetState extends State<EmptyWidget> {
     );
   }
 }
+
+class EmptyWidgetWithButton extends StatelessWidget {
+  const EmptyWidgetWithButton({
+    super.key,
+    this.overrideText,
+    required this.error,
+    required this.onPressed,
+    required this.buttonText,
+  });
+
+  final String? overrideText;
+  final Object? error;
+  final void Function() onPressed;
+  final String buttonText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        EmptyWidget(
+          gridSeed: 0,
+          overrideEmpty: overrideText,
+          error: error == null
+              ? null
+              : EmptyWidget.unwrapDioError(
+                  error,
+                ),
+        ),
+        const Padding(padding: EdgeInsets.only(top: 4)),
+        FilledButton.tonal(onPressed: onPressed, child: Text(buttonText)),
+      ],
+    );
+  }
+}
+
+class EmptyWidgetBackground extends StatelessWidget {
+  const EmptyWidgetBackground({
+    super.key,
+    required this.subtitle,
+  });
+
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "空",
+              style: TextStyle(
+                fontSize: 120,
+                color: theme.colorScheme.onSurface.withOpacity(0.9),
+              ),
+            ),
+            Text(
+              "Empty", // TODO: change
+              style: theme.textTheme.headlineMedium,
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 12)),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

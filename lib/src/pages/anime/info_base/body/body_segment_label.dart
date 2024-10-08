@@ -10,9 +10,13 @@ class BodySegmentLabel extends StatelessWidget {
     super.key,
     required this.text,
     this.sliver = false,
+    this.onLongPress,
   });
+
   final String text;
   final bool sliver;
+
+  final void Function()? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +33,19 @@ class BodySegmentLabel extends StatelessWidget {
 
     const padding = EdgeInsets.only(bottom: 8, top: 12);
 
-    return sliver
-        ? SliverPadding(
-            padding: padding,
-            sliver: SliverToBoxAdapter(
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: sliver
+          ? SliverPadding(
+              padding: padding,
+              sliver: SliverToBoxAdapter(
+                child: child,
+              ),
+            )
+          : Padding(
+              padding: padding,
               child: child,
             ),
-          )
-        : Padding(
-            padding: padding,
-            child: child,
-          );
+    );
   }
 }

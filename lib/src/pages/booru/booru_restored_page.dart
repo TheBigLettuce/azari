@@ -16,22 +16,20 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/booru/tags/tag_suggestions.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:azari/src/widgets/search/launching_search_widget.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -86,9 +84,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> hiddenPostWatcher;
-
-  late final SearchLaunchGridData search;
-  final searchController = SearchController();
 
   late final RestoredBooruPageState pagingState;
 
@@ -166,44 +161,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       );
     }
 
-    search = SearchLaunchGridData(
-      completeTag: api.searchTag,
-      header: Padding(
-        padding: const EdgeInsets.only(top: 8, left: 8),
-        child: TagSuggestions(
-          tagging: tagManager.latest,
-          onPress: (tag, safeMode) {
-            if (tag.isEmpty) {
-              return;
-            }
-
-            pagingState.source.tags = tag;
-            pagingState.source.clearRefresh();
-            gridBookmarks.get(name)!.copy(tags: tag).save();
-            _textKey.currentState?.setState(() {});
-            pagingState.tagManager.latest.add(tag);
-
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      searchText: pagingState.source.tags,
-      addItems: (_) => const [],
-      onSubmit: (context, tag) {
-        if (tag.isEmpty) {
-          return;
-        }
-
-        pagingState.source.tags = tag;
-        pagingState.source.clearRefresh();
-        gridBookmarks.get(name)!.copy(tags: tag).save();
-        _textKey.currentState?.setState(() {});
-        pagingState.tagManager.latest.add(tag);
-
-        Navigator.pop(context);
-      },
-    );
-
     settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
 
@@ -221,7 +178,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
@@ -329,12 +285,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 child: GridFrame<Post>(
                   key: state.gridKey,
                   slivers: [
-                    PopularRandomButtons(
-                      api: api,
-                      db: widget.db,
-                      safeMode: () => pagingState.safeMode,
-                      tags: pagingState.source.tags,
-                    ),
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,
@@ -396,11 +346,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                               setState(() {});
                             },
                           ),
-                          LaunchingSearchWidget(
-                            state: search,
-                            searchController: searchController,
-                            hint: pagingState.api.booru.name,
-                          ),
+                          // LaunchingSearchWidget(
+                          //   state: search,
+                          //   searchController: searchController,
+                          //   hint: pagingState.api.booru.name,
+                          // ),
                           if (settingsButton != null) settingsButton,
                         ],
                       ),

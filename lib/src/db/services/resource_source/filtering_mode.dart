@@ -13,7 +13,7 @@ import "package:flutter_gen/gen_l10n/app_localizations.dart";
 /// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
 enum FilteringMode {
   /// Filter by the favorite.
-  favorite(Icons.star_border_rounded),
+  favorite(Icons.favorite_border_outlined),
 
   /// Filter by the  "original" tag.
   original(Icons.circle_outlined),
