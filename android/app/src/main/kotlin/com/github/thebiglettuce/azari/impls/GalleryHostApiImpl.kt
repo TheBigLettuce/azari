@@ -14,14 +14,14 @@ import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
 internal class GalleryHostApiImpl(
     private val context: Context,
-    private val mediaLoaderAndMover: MediaLoaderAndMover
+    private val mediaLoaderAndMover: MediaLoaderAndMover,
 ) :
     GalleryHostApi {
     override fun getPicturesDirectly(
         dir: String?,
         limit: Long,
         onlyLatest: Boolean,
-        callback: (Result<List<DirectoryFile>>) -> Unit
+        callback: (Result<List<DirectoryFile>>) -> Unit,
     ) {
 
         mediaLoaderAndMover.refreshFilesDirectly(
@@ -35,9 +35,19 @@ internal class GalleryHostApiImpl(
         }
     }
 
+    override fun latestFilesByName(
+        name: String,
+        limit: Long,
+        callback: (Result<List<DirectoryFile>>) -> Unit,
+    ) {
+        mediaLoaderAndMover.filesSearchByNameDirectly(name, limit) { list ->
+            callback(Result.success(list))
+        }
+    }
+
     override fun getPicturesOnlyDirectly(
         ids: List<Long>,
-        callback: (Result<List<DirectoryFile>>) -> Unit
+        callback: (Result<List<DirectoryFile>>) -> Unit,
     ) {
         mediaLoaderAndMover.filesDirectly(ids) { list, notFound, empty, inRefresh ->
             callback(Result.success(list))
@@ -46,7 +56,7 @@ internal class GalleryHostApiImpl(
 
     override fun getUriPicturesDirectly(
         uris: List<String>,
-        callback: (Result<List<UriFile>>) -> Unit
+        callback: (Result<List<UriFile>>) -> Unit,
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             val ret = mutableListOf<UriFile>()

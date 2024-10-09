@@ -21,6 +21,7 @@ class IsarDirectoryMetadata implements DirectoryMetadata {
 
   final Id? isarId;
 
+  @Index()
   @override
   final bool blur;
 
@@ -31,6 +32,7 @@ class IsarDirectoryMetadata implements DirectoryMetadata {
   @override
   final bool requireAuth;
 
+  @Index()
   @override
   final bool sticky;
 

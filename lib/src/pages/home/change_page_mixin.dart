@@ -316,7 +316,7 @@ mixin ChangePageMixin on State<Home> {
       restartStart();
     }
 
-    icons.pageRiseAnimation.reset();
+    // icons.pageRiseAnimation.reset();
 
     icons.pageFadeAnimation.animateTo(1).then((value) {
       _routeNotifier.value = to;
@@ -326,7 +326,7 @@ mixin ChangePageMixin on State<Home> {
 
       animateIcons(icons);
 
-      icons.pageRiseAnimation.forward();
+      // icons.pageRiseAnimation.forward();
     });
   }
 
@@ -417,72 +417,38 @@ class _CurrentPageWidget extends StatelessWidget {
     }
 
     return Animate(
-      controller: icons.pageRiseAnimation,
+      target: 0,
       effects: [
-        FadeEffect(
-          delay: const Duration(milliseconds: 50),
-          end: 1,
-          begin: 0,
-          duration: 220.ms,
-          curve: Easing.emphasizedAccelerate,
-        ),
-        SlideEffect(
-          delay: const Duration(milliseconds: 50),
-          begin: const Offset(0, 0.25),
-          end: Offset.zero,
-          duration: 280.ms,
-          curve: Easing.standard,
-        ),
+        FadeEffect(duration: 50.ms, begin: 1, end: 0),
+        const ThenEffect(delay: Duration(milliseconds: 50)),
       ],
-      child: Animate(
-        target: 0,
-        effects: [
-          FadeEffect(duration: 50.ms, begin: 1, end: 0),
-          const ThenEffect(delay: Duration(milliseconds: 50)),
-        ],
-        controller: icons.pageFadeAnimation,
-        child: switch (changePage._routeNotifier.value) {
-          CurrentRoute.booru => _NavigatorShell(
-              navigatorKey: changePage.mainKey,
-              child: BooruPage(
-                pagingRegistry: changePage.pagingRegistry,
-                procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-                db: DatabaseConnectionNotifier.of(context),
-              ),
-            ),
-          CurrentRoute.gallery => _NavigatorShell(
-              navigatorKey: changePage.galleryKey,
-              child: GalleryDirectories(
-                procPop: (pop) => changePage._procPop(
-                  galleryPage,
-                  icons,
-                  pop,
-                ),
-                db: DatabaseConnectionNotifier.of(context),
-                l10n: AppLocalizations.of(context)!,
-              ),
-            ),
-          CurrentRoute.anime => AnimePage(
-              procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
+      controller: icons.pageFadeAnimation,
+      child: switch (changePage._routeNotifier.value) {
+        CurrentRoute.booru => _NavigatorShell(
+            navigatorKey: changePage.mainKey,
+            child: BooruPage(
+              pagingRegistry: changePage.pagingRegistry,
+              procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
               db: DatabaseConnectionNotifier.of(context),
             ),
-          // CurrentRoute.downloads => Downloads(
-          //     generateGlue: GlueProvider.generateOf(context),
-          //     downloadManager: DownloadManager.of(context),
-          //     db: DatabaseConnectionNotifier.of(context),
-          //   ),
-          // CurrentRoute.settings => _NavigatorShell(
-          //     navigatorKey: changePage.settingsKey,
-          //     child: AccountsPage(
-          //       popScope: (pop) => changePage._procPop(
-          //         galleryPage,
-          //         icons,
-          //         pop,
-          //       ),
-          //     ),
-          //   ),
-        },
-      ),
+          ),
+        CurrentRoute.gallery => _NavigatorShell(
+            navigatorKey: changePage.galleryKey,
+            child: GalleryDirectories(
+              procPop: (pop) => changePage._procPop(
+                galleryPage,
+                icons,
+                pop,
+              ),
+              db: DatabaseConnectionNotifier.of(context),
+              l10n: AppLocalizations.of(context)!,
+            ),
+          ),
+        CurrentRoute.anime => AnimePage(
+            procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
+            db: DatabaseConnectionNotifier.of(context),
+          ),
+      },
     );
   }
 }

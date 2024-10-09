@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/app_info.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
@@ -130,8 +131,10 @@ Future<void> joinedDirectoriesFnc(
   DirectoryTagService directoryTags,
   FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
-  AppLocalizations l10n,
-) {
+  AppLocalizations l10n, {
+  String tag = "",
+  FilteringMode? filteringMode,
+}) {
   bool requireAuth = false;
 
   for (final e in dirs) {
@@ -168,6 +171,8 @@ Future<void> joinedDirectoriesFnc(
             callback: callback,
             directory: null,
             dirName: label,
+            presetFilteringValue: tag,
+            filteringMode: filteringMode,
             bucketId: "joinedDir",
             db: DatabaseConnectionNotifier.of(context),
             tagManager: TagManager.of(context),

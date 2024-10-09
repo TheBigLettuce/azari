@@ -269,7 +269,9 @@ class _AnimePageState extends State<AnimePage> {
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1),
           ),
-          leading: Center(
+          leading: const SizedBox.shrink(),
+          centerTitle: true,
+          title: Center(
             child: IconButton(
               onPressed: () {
                 SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
@@ -277,8 +279,6 @@ class _AnimePageState extends State<AnimePage> {
               icon: const Icon(Icons.search_rounded),
             ),
           ),
-          centerTitle: true,
-          title: Text(l10n.animePage),
           actions: [
             IconButton(
               icon: const Icon(Icons.keyboard_arrow_down_rounded),

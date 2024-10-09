@@ -19,6 +19,7 @@ import "package:azari/src/pages/gallery/blacklisted_directories.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/gallery/search_page.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
@@ -126,7 +127,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   bool isThumbsLoading = false;
 
   final searchTextController = TextEditingController();
-  final searchFocus = FocusNode();
+  final searchFocus = FocusNode(canRequestFocus: false);
 
   @override
   void initState() {
@@ -237,20 +238,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       caps: directoryMetadata.caps(widget.l10n.segmentsSpecial),
       segment: _segmentCell,
       injectedSegments: [
-        // if (favoritePosts.isNotEmpty())
-        //   SyncCell(
-        //     galleryPlug.makeGalleryDirectory(
-        //       bucketId: "favorites",
-        //       name: widget.l10n.galleryDirectoriesFavorites,
-        //       tag: "",
-        //       volumeName: "",
-        //       relativeLoc: "",
-        //       lastModified: 0,
-        //       thumbFileId: miscSettings.favoritesThumbId != 0
-        //           ? miscSettings.favoritesThumbId
-        //           : favoritePosts.thumbnail,
-        //     ),
-        //   ),
         api.trashCell,
       ],
       onLabelPressed: widget.callback != null && !widget.callback!.joinable
@@ -394,6 +381,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   Widget child(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return GridPopScope(
       filter: filter,
@@ -435,45 +423,154 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             add: _add,
             watch: gridSettings.watch,
           ),
-          search: BarSearchWidget.fromFilter(
-            filter,
-            textEditingController: searchTextController,
-            complete: _completeDirectoryNameTag,
-            focus: searchFocus,
-            trailingItems: [
-              if (widget.callback != null)
-                IconButton(
-                  onPressed: () => GalleryManagementApi.current()
-                      .chooseDirectory(l10n, temporary: true)
-                      .then((value) {
-                    widget.callback!(
-                      chosen: value!.$2,
-                      volumeName: "",
-                      bucketId: "",
-                      newDir: true,
-                    );
-                  }).onError((e, trace) {
-                    Logger.root
-                        .severe("new folder in android_directories", e, trace);
-                  }).whenComplete(() {
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                    }
-                  }),
-                  icon: const Icon(Icons.create_new_folder_outlined),
+          search: widget.callback != null
+              ? BarSearchWidget.fromFilter(
+                  filter,
+                  textEditingController: searchTextController,
+                  complete: _completeDirectoryNameTag,
+                  focus: searchFocus,
+                  trailingItems: [
+                    if (widget.callback != null)
+                      IconButton(
+                        onPressed: () => GalleryManagementApi.current()
+                            .chooseDirectory(l10n, temporary: true)
+                            .then((value) {
+                          widget.callback!(
+                            chosen: value!.$2,
+                            volumeName: "",
+                            bucketId: "",
+                            newDir: true,
+                          );
+                        }).onError((e, trace) {
+                          Logger.root.severe(
+                            "new folder in android_directories",
+                            e,
+                            trace,
+                          );
+                        }).whenComplete(() {
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        }),
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                      )
+                    else
+                      IconButton(
+                        onPressed: () {
+                          GallerySubPage.selectOf(
+                            context,
+                            GallerySubPage.blacklisted,
+                          );
+                        },
+                        icon: const Icon(Icons.folder_off_outlined),
+                      ),
+                  ],
                 )
-              else
-                IconButton(
-                  onPressed: () {
-                    GallerySubPage.selectOf(
-                      context,
-                      GallerySubPage.blacklisted,
-                    );
-                  },
-                  icon: const Icon(Icons.folder_off_outlined),
+              : RawSearchWidget(
+                  (settingsButton, bottomWidget) => SliverAppBar(
+                    leading: const SizedBox.shrink(),
+                    floating: true,
+                    pinned: true,
+                    snap: true,
+                    stretch: true,
+                    backgroundColor:
+                        theme.colorScheme.surface.withOpacity(0.95),
+                    bottom: bottomWidget ??
+                        const PreferredSize(
+                          preferredSize: Size.zero,
+                          child: SizedBox.shrink(),
+                        ),
+                    centerTitle: true,
+                    title: Builder(
+                      builder: (context) => IconButton(
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).push<void>(
+                            MaterialPageRoute(
+                              builder: (context_) => DirectoriesSearchPage(
+                                db: widget.db,
+                                source: api.source,
+                                directoryComplete: _completeDirectoryNameTag,
+                                onDirectoryPressed: (directory) {
+                                  final gridExtra =
+                                      GridExtrasNotifier.of<GalleryDirectory>(
+                                    context,
+                                  );
+
+                                  directory.onPress(
+                                    context,
+                                    gridExtra.functionality,
+                                    directory,
+                                    0,
+                                  );
+                                },
+                                joinedDirectories: (
+                                  label,
+                                  children, {
+                                  String tag = "",
+                                  FilteringMode? filteringMode,
+                                }) =>
+                                    actions.joinedDirectoriesFnc(
+                                  context,
+                                  label,
+                                  children,
+                                  api,
+                                  widget.nestedCallback,
+                                  GlueProvider.generateOf(context),
+                                  _segmentCell,
+                                  directoryMetadata,
+                                  directoryTags,
+                                  favoritePosts,
+                                  widget.db.localTags,
+                                  widget.l10n,
+                                  tag: tag,
+                                  filteringMode: filteringMode,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.search_rounded),
+                      ),
+                    ),
+                    actions: [
+                      if (widget.callback != null)
+                        IconButton(
+                          onPressed: () => GalleryManagementApi.current()
+                              .chooseDirectory(l10n, temporary: true)
+                              .then((value) {
+                            widget.callback!(
+                              chosen: value!.$2,
+                              volumeName: "",
+                              bucketId: "",
+                              newDir: true,
+                            );
+                          }).onError((e, trace) {
+                            Logger.root.severe(
+                              "new folder in android_directories",
+                              e,
+                              trace,
+                            );
+                          }).whenComplete(() {
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          }),
+                          icon: const Icon(Icons.create_new_folder_outlined),
+                        )
+                      else
+                        IconButton(
+                          onPressed: () {
+                            GallerySubPage.selectOf(
+                              context,
+                              GallerySubPage.blacklisted,
+                            );
+                          },
+                          icon: const Icon(Icons.folder_off_outlined),
+                        ),
+                      if (settingsButton != null) settingsButton,
+                    ],
+                  ),
                 ),
-            ],
-          ),
         ),
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null

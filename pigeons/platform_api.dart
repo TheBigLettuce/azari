@@ -100,6 +100,9 @@ abstract class GalleryHostApi {
   );
 
   @async
+  List<DirectoryFile> latestFilesByName(String name, int limit);
+
+  @async
   List<DirectoryFile> getPicturesOnlyDirectly(List<int> ids);
 
   @async

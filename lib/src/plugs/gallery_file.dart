@@ -48,13 +48,89 @@ mixin GalleryFile
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
-    final (api, callback) = FilesDataNotifier.of(context);
+    final data = FilesDataNotifier.maybeOf(context);
     final db = DatabaseConnectionNotifier.of(context);
     final tagManager = TagManager.of(context);
-    final toShowDelete = DeleteDialogShowNotifier.of(context);
 
     final buttonProgress =
         GlobalProgressTab.maybeOf(context)?.favoritePostButton();
+
+    final favoriteAction = ImageViewAction(
+      Icons.favorite_border_rounded,
+      res == null || buttonProgress == null
+          ? null
+          : (selected) {
+              if (db.favoritePosts.contains(res!.$1, res!.$2)) {
+                db.favoritePosts.backingStorage.removeAll([res!]);
+
+                return;
+              }
+
+              if (buttonProgress.value != null) {
+                return;
+              }
+
+              buttonProgress.value = () async {
+                final client = BooruAPI.defaultClientForBooru(res!.$2);
+                final api = BooruAPI.fromEnum(
+                  res!.$2,
+                  client,
+                  PageSaver.noPersist(),
+                );
+
+                try {
+                  final ret = await api.singlePost(res!.$1);
+
+                  db.favoritePosts.backingStorage.add(
+                    FavoritePost(
+                      id: ret.id,
+                      md5: ret.md5,
+                      tags: ret.tags,
+                      width: ret.width,
+                      height: ret.height,
+                      fileUrl: ret.fileUrl,
+                      previewUrl: ret.previewUrl,
+                      sampleUrl: ret.sampleUrl,
+                      sourceUrl: ret.sourceUrl,
+                      rating: ret.rating,
+                      score: ret.score,
+                      createdAt: ret.createdAt,
+                      booru: ret.booru,
+                      type: ret.type,
+                    ),
+                  );
+                } catch (e, trace) {
+                  Logger.root.warning("favoritePostButton", e, trace);
+                } finally {
+                  buttonProgress.value = null;
+                  client.close(force: true);
+                }
+              }();
+            },
+      longLoadingNotifier: buttonProgress,
+      watch: res == null
+          ? null
+          : (f, [bool fire = false]) {
+              return db.favoritePosts
+                  .streamSingle(res!.$1, res!.$2, fire)
+                  .map<(IconData?, Color?, bool?)>((e) {
+                return (
+                  e ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  e ? Colors.red.shade900 : null,
+                  !e
+                );
+              }).listen(f);
+            },
+    );
+
+    if (data == null) {
+      return <ImageViewAction>[
+        favoriteAction,
+      ];
+    }
+
+    final (api, callback) = data;
+    final toShowDelete = DeleteDialogShowNotifier.of(context);
 
     return callback != null
         ? <ImageViewAction>[
@@ -83,77 +159,7 @@ mixin GalleryFile
                 ),
               ]
             : <ImageViewAction>[
-                ImageViewAction(
-                  Icons.favorite_border_rounded,
-                  res == null || buttonProgress == null
-                      ? null
-                      : (selected) {
-                          if (db.favoritePosts.contains(res!.$1, res!.$2)) {
-                            db.favoritePosts.backingStorage.removeAll([res!]);
-
-                            return;
-                          }
-
-                          if (buttonProgress.value != null) {
-                            return;
-                          }
-
-                          buttonProgress.value = () async {
-                            final client =
-                                BooruAPI.defaultClientForBooru(res!.$2);
-                            final api = BooruAPI.fromEnum(
-                              res!.$2,
-                              client,
-                              PageSaver.noPersist(),
-                            );
-
-                            try {
-                              final ret = await api.singlePost(res!.$1);
-
-                              db.favoritePosts.backingStorage.add(
-                                FavoritePost(
-                                  id: ret.id,
-                                  md5: ret.md5,
-                                  tags: ret.tags,
-                                  width: ret.width,
-                                  height: ret.height,
-                                  fileUrl: ret.fileUrl,
-                                  previewUrl: ret.previewUrl,
-                                  sampleUrl: ret.sampleUrl,
-                                  sourceUrl: ret.sourceUrl,
-                                  rating: ret.rating,
-                                  score: ret.score,
-                                  createdAt: ret.createdAt,
-                                  booru: ret.booru,
-                                  type: ret.type,
-                                ),
-                              );
-                            } catch (e, trace) {
-                              Logger.root
-                                  .warning("favoritePostButton", e, trace);
-                            } finally {
-                              buttonProgress.value = null;
-                              client.close(force: true);
-                            }
-                          }();
-                        },
-                  longLoadingNotifier: buttonProgress,
-                  watch: res == null
-                      ? null
-                      : (f, [bool fire = false]) {
-                          return db.favoritePosts
-                              .streamSingle(res!.$1, res!.$2, fire)
-                              .map<(IconData?, Color?, bool?)>((e) {
-                            return (
-                              e
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              e ? Colors.red.shade900 : null,
-                              !e
-                            );
-                          }).listen(f);
-                        },
-                ),
+                favoriteAction,
                 ImageViewAction(
                   Icons.delete,
                   (selected) {
@@ -281,13 +287,13 @@ mixin GalleryFile
         statistics: StatisticsGalleryService.asImageViewStatistics(),
       ),
       idx,
-      (c) => _tags(c, db.localTags, tagManager),
-      (c, f) => _watchTags(c, f, db.localTags, tagManager),
+      (c) => imageTags(c, db.localTags, tagManager),
+      (c, f) => watchTags(c, f, db.localTags, tagManager),
       null,
     );
   }
 
-  List<ImageTag> _tags(
+  static List<ImageTag> imageTags(
     Contentable c,
     LocalTagsService localTags,
     TagManager tagManager,
@@ -308,7 +314,7 @@ mixin GalleryFile
         .toList();
   }
 
-  StreamSubscription<List<ImageTag>> _watchTags(
+  static StreamSubscription<List<ImageTag>> watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
     LocalTagsService localTags,

@@ -1665,6 +1665,20 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
   const IsarDirectoryMetadataService();
 
   @override
+  List<DirectoryMetadata> get toPinAll =>
+      _Dbs.g.blacklisted.isarDirectoryMetadatas
+          .where()
+          .stickyEqualTo(true)
+          .findAllSync();
+
+  @override
+  List<DirectoryMetadata> get toBlurAll =>
+      _Dbs.g.blacklisted.isarDirectoryMetadatas
+          .where()
+          .blurEqualTo(true)
+          .findAllSync();
+
+  @override
   SegmentCapability caps(String specialLabel) =>
       _DirectoryMetadataCap(specialLabel, this);
 

@@ -29,6 +29,7 @@ import "package:azari/src/plugs/generated/platform_api.g.dart";
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
@@ -66,6 +67,8 @@ class GalleryFiles extends StatefulWidget {
     required this.db,
     required this.tagManager,
     required this.directory,
+    this.presetFilteringValue = "",
+    this.filteringMode,
   });
 
   final GalleryDirectory? directory;
@@ -78,6 +81,9 @@ class GalleryFiles extends StatefulWidget {
 
   final DbConn db;
   final TagManager tagManager;
+
+  final String presetFilteringValue;
+  final FilteringMode? filteringMode;
 
   @override
   State<GalleryFiles> createState() => _GalleryFilesState();
@@ -109,7 +115,8 @@ class _GalleryFilesState extends State<GalleryFiles> {
 
   late final GridSkeletonState<GalleryFile> state = GridSkeletonState();
 
-  final searchTextController = TextEditingController();
+  late final searchTextController =
+      TextEditingController(text: widget.presetFilteringValue);
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
@@ -192,7 +199,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
         SortingMode.none,
         SortingMode.size,
       },
-      initialFilteringMode: FilteringMode.noFilter,
+      initialFilteringMode: widget.filteringMode ?? FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
 
@@ -455,6 +462,9 @@ class _GalleryFilesState extends State<GalleryFiles> {
                 ),
               ],
               functionality: GridFunctionality(
+                onEmptySource: const EmptyWidgetBackground(
+                  subtitle: "No media found...",
+                ), // TODO: change
                 settingsButton: GridSettingsButton.fromWatchable(gridSettings),
                 registerNotifiers: (child) {
                   return FilesDataNotifier(
@@ -982,19 +992,6 @@ class BarIconState extends State<BarIcon> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // return IconButton.filled(
-    //   isSelected: _toggled,
-    //   onPressed: () {
-    //     final ret = widget.onPressed();
-    //     if (ret != null) {
-    //       setState(() {
-    //         _toggled = ret;
-    //       });
-    //     }
-    //   },
-    //   icon: Icon(widget.icon),
-    // );
-
     return Padding(
       padding: const EdgeInsets.all(4),
       child: GestureDetector(
@@ -1224,14 +1221,16 @@ class FilesDataNotifier extends InheritedWidget {
   static (
     GalleryAPIFiles,
     CallbackDescriptionNested?,
-  ) of(BuildContext context) {
+  )? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
 
-    return (
-      widget!.api,
-      widget.nestedCallback,
-    );
+    return widget == null
+        ? null
+        : (
+            widget.api,
+            widget.nestedCallback,
+          );
   }
 
   @override

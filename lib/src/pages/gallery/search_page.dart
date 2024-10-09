@@ -6,81 +6,83 @@
 import "dart:async";
 
 import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:azari/src/db/services/resource_source/chained_filter.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/anime/anime.dart";
-import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/booru/booru_restored_page.dart";
-import "package:azari/src/pages/booru/popular_random_buttons.dart";
+import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
+import "package:azari/src/plugs/generated/platform_api.g.dart";
+import "package:azari/src/plugs/platform_functions.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
-import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:cached_network_image/cached_network_image.dart";
-import "package:dio/dio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-part "search_panels/pinned_tags.dart";
+part "search_panels/directory_names.dart";
 part "search_panels/chips_panel_body.dart";
-part "search_panels/bookmarks_panel_body.dart";
-part "search_panels/tag_list.dart";
-part "search_panels/excluded_tags.dart";
-part "search_panels/bookmarks.dart";
-part "search_panels/recently_searched_tags.dart";
-part "search_panels/add_tag_button.dart";
+part "search_panels/files_list.dart";
+part "search_panels/search_in_booru_button.dart";
+part "search_panels/local_tags.dart";
+part "search_panels/directory_list.dart";
+part "search_panels/search_in_directories_buttons.dart";
 
-class BooruSearchPage extends StatefulWidget {
-  const BooruSearchPage({
+class DirectoriesSearchPage extends StatefulWidget {
+  const DirectoriesSearchPage({
     super.key,
     required this.db,
-    required this.onTagPressed,
+    required this.source,
+    required this.onDirectoryPressed,
+    required this.directoryComplete,
+    required this.joinedDirectories,
   });
+
+  final ResourceSource<int, GalleryDirectory> source;
+
+  final void Function(GalleryDirectory) onDirectoryPressed;
+  final void Function(
+    String str,
+    List<GalleryDirectory> list, {
+    required String tag,
+    required FilteringMode? filteringMode,
+  }) joinedDirectories;
+
+  final Future<List<BooruTag>> Function(String str) directoryComplete;
 
   final DbConn db;
 
-  final OnBooruTagPressedFunc onTagPressed;
-
   @override
-  State<BooruSearchPage> createState() => _BooruSearchPageState();
+  State<DirectoriesSearchPage> createState() => _DirectoriesSearchPageState();
 }
 
-class _BooruSearchPageState extends State<BooruSearchPage> {
-  SettingsData settings = SettingsService.db().current;
-
-  late final Dio client;
-  late final BooruAPI api;
-
-  late final StreamSubscription<SettingsData?> settingsSubsc;
-
+class _DirectoriesSearchPageState extends State<DirectoriesSearchPage> {
   final searchController = TextEditingController();
   final focusNode = FocusNode();
 
   final _filteringEvents = StreamController<String>.broadcast();
 
+  late final Map<String, bool> blurMap;
+
   @override
   void initState() {
     super.initState();
 
-    client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-    settingsSubsc = settings.s.watch((newSettings) {
-      setState(() {
-        settings = newSettings!;
-      });
-    });
+    blurMap = widget.db.directoryMetadata.toBlurAll.fold({}, (map, e) {
+      map[e.categoryName] = e.blur;
 
-    api = BooruAPI.fromEnum(
-      settings.selectedBooru,
-      client,
-      PageSaver.noPersist(),
-    );
+      return map;
+    });
   }
 
   @override
   void dispose() {
-    client.close(force: true);
-    settingsSubsc.cancel();
     _filteringEvents.close();
 
     focusNode.dispose();
@@ -91,12 +93,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   void _search(String str) {
     _filteringEvents.add(str.trim());
-  }
-
-  void _onTagPressed(String str) {
-    Navigator.pop(context);
-
-    widget.onTagPressed(context, api.booru, str, null);
   }
 
   @override
@@ -125,13 +121,15 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                 if (searchController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("Search text is empty")), // TODO: change
+                      content: Text("Search text is empty"),
+                    ), // TODO: change
                   );
 
                   return;
                 }
 
-                _onTagPressed(searchController.text.trim());
+                _search(searchController.text.trim());
+                // _onTagPressed(searchController.text.trim());
               },
               icon: const Icon(Icons.search_rounded),
             ),
@@ -144,47 +142,37 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
             slivers: [
               StreamBuilder(
                 stream: _filteringEvents.stream,
-                builder: (context, snapshot) => PopularRandomButtons(
-                  listPadding: _ChipsPanelBody.listPadding,
+                builder: (context, snapshot) => _SearchInDirectoriesButtons(
                   db: widget.db,
-                  booru: api.booru,
-                  onTagPressed: widget.onTagPressed,
-                  tags: snapshot.data ?? "",
-                  safeMode: () => settings.safeMode,
+                  listPadding: _ChipsPanelBody.listPadding,
+                  filteringValue: snapshot.data ?? "",
+                  joinedDirectories: widget.joinedDirectories,
+                  source: widget.source,
                 ),
               ),
-              _RecentlySearchedTagsPanel(
+              _DirectoryNamesPanel(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
-                tagManager: widget.db.tagManager,
-                onTagPressed: _onTagPressed,
+                directoryComplete: widget.directoryComplete,
               ),
-              _PinnedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-                onTagPressed: (str_) {
-                  final str = str_.isEmpty
-                      ? ""
-                      : str_.trim().split(" ").lastOrNull?.trim() ?? "";
-
-                  searchController.text = "${searchController.text}$str ";
-                  _filteringEvents.add(searchController.text.trim());
-                },
-              ),
-              _ExcludedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-              ),
-              _BookmarksPanel(
+              _LocalTagsPanel(
+                filteringEvents: _filteringEvents,
+                searchController: searchController,
+                joinedDirectories: widget.joinedDirectories,
+                source: widget.source,
                 db: widget.db,
-                filteringEvents: _filteringEvents.stream,
               ),
-              _TagList(
+              _FilesList(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
-                api: api,
+                db: widget.db,
+              ),
+              _DirectoryList(
+                filteringEvents: _filteringEvents,
+                source: widget.source,
+                searchController: searchController,
+                onDirectoryPressed: widget.onDirectoryPressed,
+                blurMap: blurMap,
               ),
               Builder(
                 builder: (context) => SliverPadding(

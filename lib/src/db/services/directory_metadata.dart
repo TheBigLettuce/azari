@@ -10,6 +10,9 @@ extension DirectoryMetadataDataExt on DirectoryMetadata {
 }
 
 abstract interface class DirectoryMetadataService implements ServiceMarker {
+  List<DirectoryMetadata> get toBlurAll;
+  List<DirectoryMetadata> get toPinAll;
+
   SegmentCapability caps(String specialLabel);
 
   DirectoryMetadata? get(String id);

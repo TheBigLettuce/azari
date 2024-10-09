@@ -20,6 +20,7 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -41,6 +42,7 @@ class PopularRandomButtons extends StatelessWidget {
     this.tags = "",
     required this.booru,
     required this.onTagPressed,
+    required this.listPadding,
   });
 
   final Booru booru;
@@ -48,6 +50,8 @@ class PopularRandomButtons extends StatelessWidget {
 
   final OnBooruTagPressedFunc onTagPressed;
   final SafeMode Function() safeMode;
+
+  final EdgeInsets listPadding;
 
   final DbConn db;
 
@@ -352,6 +356,7 @@ class PopularRandomButtons extends StatelessWidget {
         child: Align(
           alignment: Alignment.centerLeft,
           child: SingleChildScrollView(
+            padding: listPadding,
             scrollDirection: Axis.horizontal,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -383,14 +388,14 @@ class PopularRandomButtons extends StatelessWidget {
                         .whenComplete(() => client.close(force: true));
                   },
                   label: Text(
-                    "${l10n.popularPosts}${tags.isEmpty ? '' : " '$tags'"}",
+                    "${l10n.popularPosts}${tags.isEmpty ? '' : " #$tags"}",
                   ),
                   icon: const Icon(Icons.whatshot_outlined),
                 ),
                 TextButton.icon(
                   onPressed: () => launchRandom(gridContext, l10n, theme),
                   label: Text(
-                    "${l10n.randomPosts}${tags.isEmpty ? '' : " '$tags'"}",
+                    "${l10n.randomPosts}${tags.isEmpty ? '' : " #$tags"}",
                   ),
                   icon: const Icon(Icons.shuffle_outlined),
                 ),
@@ -411,7 +416,7 @@ class PopularRandomButtons extends StatelessWidget {
                           );
                         },
                   label: Text(
-                    "${l10n.videosLabel}${tags.isEmpty ? '' : " '$tags'"}",
+                    "${l10n.videosLabel}${tags.isEmpty ? '' : " #$tags"}",
                   ),
                   icon: const Icon(Icons.video_collection_outlined),
                 ),
@@ -674,15 +679,7 @@ class _PopularPageState extends State<PopularPage> {
                       progress: source.progress,
                       gridSeed: state.gridSeed,
                       unselectOnUpdate: false,
-                      // buildEmpty: (e) => EmptyWidgetWithButton(
-                      //   error: e,
-                      //   buttonText: l10n.openInBrowser,
-                      //   onPressed: () {
-                      //     launchUrl(
-                      //       Uri.https(widget.api.booru.url),
-                      //       mode: LaunchMode.externalApplication,
-                      //     );
-                      //   },
+
                       // ),
                     ),
                     GridConfigPlaceholders(
@@ -692,6 +689,7 @@ class _PopularPageState extends State<PopularPage> {
                     GridFooter<void>(storage: source.backingStorage),
                   ],
                   functionality: GridFunctionality(
+                    onEmptySource: _EmptyWidget(progress: source.progress),
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
                     ),
@@ -711,7 +709,7 @@ class _PopularPageState extends State<PopularPage> {
                         // centerTitle: true,
                         title: Text(
                           widget.tags.isNotEmpty
-                              ? "${l10n.popularPosts} '${widget.tags}'"
+                              ? "${l10n.popularPosts} #${widget.tags}"
                               : l10n.popularPosts,
                         ),
                         actions: [if (settingsButton != null) settingsButton],
@@ -753,5 +751,50 @@ class _PopularPageState extends State<PopularPage> {
         ),
       ),
     );
+  }
+}
+
+class _EmptyWidget extends StatefulWidget {
+  const _EmptyWidget({
+    // super.key,
+    required this.progress,
+  });
+
+  final RefreshingProgress progress;
+
+  @override
+  State<_EmptyWidget> createState() => __EmptyWidgetState();
+}
+
+class __EmptyWidgetState extends State<_EmptyWidget> {
+  late final StreamSubscription<void> subscr;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscr = widget.progress.watch(
+      (t) {
+        setState(() {});
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    subscr.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.progress.inRefreshing) {
+      return const SizedBox.shrink();
+    }
+
+    return const EmptyWidgetBackground(
+      subtitle: "No posts found...",
+    ); // TODO: change
   }
 }

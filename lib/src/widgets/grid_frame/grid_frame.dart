@@ -874,6 +874,13 @@ class GridScrollNotifier extends InheritedWidget {
     return widget!.controller;
   }
 
+  static ScrollController? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridScrollNotifier>();
+
+    return widget?.controller;
+  }
+
   static ValueNotifier<bool> notifierOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<GridScrollNotifier>();
@@ -881,10 +888,10 @@ class GridScrollNotifier extends InheritedWidget {
     return widget!.scrollNotifier;
   }
 
-  static void scrollToOf<T extends CellBase>(BuildContext context, int i) {
-    final controller = of(context);
+  static void maybeScrollToOf<T extends CellBase>(BuildContext context, int i) {
+    final controller = maybeOf(context);
 
-    if (!controller.hasClients) {
+    if (controller == null || !controller.hasClients) {
       return;
     }
 

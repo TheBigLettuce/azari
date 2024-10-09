@@ -139,24 +139,43 @@ class ImageView extends StatefulWidget {
     Contentable Function(int) cell, {
     int startingCell = 0,
     void Function(int)? download,
+    List<ImageTag> Function(Contentable)? tags,
+    ImageViewDescription? imageDesctipion,
+    StreamSubscription<List<ImageTag>> Function(
+      Contentable,
+      void Function(List<ImageTag> l),
+    )? watchTags,
+    Widget Function(Widget child)? wrapNotifiers,
+    void Function(Contentable)? addToVisited,
     Key? key,
   }) {
+    addToVisited?.call(cell(startingCell));
+
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) {
-          return GlueProvider.empty(
+          final c = GlueProvider.empty(
             context,
             child: ImageView(
               key: key,
+              statistics: imageDesctipion?.statistics,
               cellCount: cellCount,
               download: download,
               scrollUntill: (_) {},
+              pageChange: (state) {
+                imageDesctipion?.pageChange?.call(state);
+                addToVisited?.call(cell(state.currentPage));
+              },
               startingCell: startingCell,
-              onExit: () {},
+              onExit: imageDesctipion?.onExit,
               getCell: cell,
+              watchTags: watchTags,
+              tags: tags,
               onNearEnd: null,
             ),
           );
+
+          return wrapNotifiers != null ? wrapNotifiers(c) : c;
         },
       ),
     );
@@ -230,7 +249,7 @@ class ImageView extends StatefulWidget {
             gridContext: gridContext,
             statistics: imageDesctipion.statistics,
             scrollUntill: (i) =>
-                GridScrollNotifier.scrollToOf<T>(gridContext, i),
+                GridScrollNotifier.maybeScrollToOf<T>(gridContext, i),
             pageChange: (state) {
               imageDesctipion.pageChange?.call(state);
               addToVisited?.call(getCell(state.currentPage));

@@ -57,6 +57,7 @@ class BarSearchWidget extends GridSearchWidget {
     super.leading,
     super.trailingItems,
     this.enableCount = false,
+    this.onPressed,
   });
 
   factory BarSearchWidget.fromFilter(
@@ -67,6 +68,7 @@ class BarSearchWidget extends GridSearchWidget {
     Future<List<BooruTag>> Function(String string)? complete,
     Widget? leading,
     List<Widget>? trailingItems,
+    void Function(BuildContext context)? onPressed,
   }) {
     return BarSearchWidget(
       textEditingController: textEditingController,
@@ -75,6 +77,7 @@ class BarSearchWidget extends GridSearchWidget {
       leading: leading,
       enableCount: true,
       trailingItems: trailingItems,
+      onPressed: onPressed,
       onChange: (str) => filter.clearRefresh(),
       filterWidget: filter.allowedFilteringModes.isNotEmpty
           ? ChainedFilterIcon(
@@ -93,6 +96,7 @@ class BarSearchWidget extends GridSearchWidget {
   final Future<List<BooruTag>> Function(String string)? complete;
   final void Function(String? str)? onChange;
   final void Function(String? str)? onSubmitted;
+  final void Function(BuildContext context)? onPressed;
 }
 
 class ChainedFilterIcon extends StatelessWidget {

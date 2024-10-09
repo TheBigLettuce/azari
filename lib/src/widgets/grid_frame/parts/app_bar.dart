@@ -71,6 +71,9 @@ class _AppBar extends StatelessWidget {
                       onFieldSubmitted,
                     ) =>
                         SearchBar(
+                      onTap: search.onPressed == null
+                          ? null
+                          : () => search.onPressed!(context),
                       onTapOutside: (_) => focusNode.unfocus(),
                       onChanged: search.onChange,
                       focusNode: focusNode,
@@ -96,6 +99,9 @@ class _AppBar extends StatelessWidget {
                     ),
                   )
                 : SearchBar(
+                    onTap: search.onPressed == null
+                        ? null
+                        : () => search.onPressed!(context),
                     elevation: const WidgetStatePropertyAll(0),
                     onSubmitted: search.onSubmitted,
                     onChanged: search.onChange,

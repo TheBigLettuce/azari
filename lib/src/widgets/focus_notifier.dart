@@ -17,7 +17,7 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
 
     return FocusNotifierData(
       hasFocus: widget.notifier?.hasFocus ?? false,
-      unfocus: widget.notifier?.unfocus ?? () {},
+      unfocus: widget.notifier?.previousFocus ?? () {},
     );
   }
 }

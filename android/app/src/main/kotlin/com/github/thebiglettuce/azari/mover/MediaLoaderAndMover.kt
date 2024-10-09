@@ -300,6 +300,29 @@ class MediaLoaderAndMover(private val context: Context) {
         }
     }
 
+    fun filesSearchByNameDirectly(
+        name: String,
+        limit: Long,
+        closure: (List<DirectoryFile>) -> Unit,
+    ) {
+//        val time = Calendar.getInstance().time.time
+
+        scope.launch {
+//            isLockedFilesMux.lock()
+
+            filterMedia(
+                context,
+                name,
+                limit,
+                sortingMode = FilesSortingMode.None
+            ) { content, notFound, empty, inRefresh ->
+                closure(content)
+            }
+
+//            isLockedFilesMux.unlock()
+        }
+    }
+
     fun refreshFiles(
         dirId: String,
         inRefreshAtEnd: Boolean,
@@ -461,6 +484,143 @@ class MediaLoaderAndMover(private val context: Context) {
         return if (result == null) Pair(listOf(), listOf()) else result!!
     }
 
+    private suspend fun filterMedia(
+        context: Context,
+        name: String,
+        limit: Long,
+        sortingMode: FilesSortingMode,
+        closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit,
+    ) {
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns.BUCKET_ID,
+            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.HEIGHT,
+            MediaStore.Files.FileColumns.SIZE,
+            MediaStore.Files.FileColumns.WIDTH
+        )
+
+        val selection =
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ? AND ${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
+
+        val bundle = Bundle().apply {
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+            putStringArray(
+                ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+                arrayOf("image/vnd.djvu", "$name%"),
+            )
+            putString(
+                ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
+                if (sortingMode == FilesSortingMode.None) "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC" else "${MediaStore.Files.FileColumns.SIZE} DESC"
+            )
+            if (limit != 0L) {
+                putInt(ContentResolver.QUERY_ARG_LIMIT, limit.toInt())
+            }
+        }
+
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+            projection,
+            bundle,
+            null
+        )?.use { cursor ->
+            val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
+            val bucket_name =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
+            val b_display_name =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val date_modified =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val media_type = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+            val size = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+
+            val media_height = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+            val media_width = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+            val media_mime = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+
+            if (!cursor.moveToFirst()) {
+                closure(listOf(), listOf(), true, false)
+                return@use
+            }
+
+            try {
+                val list = mutableListOf<DirectoryFile>()
+
+                do {
+                    val uri =
+                        if (cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                            ContentUris.withAppendedId(
+                                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                cursor.getLong(id)
+                            )
+                        } else {
+                            ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                cursor.getLong(id)
+                            )
+                        }
+
+                    val id = cursor.getLong(id)
+
+                    list.add(
+                        DirectoryFile(
+                            id = id,
+                            bucketId = cursor.getString(bucket_id),
+                            name = cursor.getString(b_display_name),
+                            originalUri = uri.toString(),
+                            lastModified = cursor.getLong(date_modified),
+                            isVideo = cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO,
+                            isGif = cursor.getString(media_mime) == "image/gif",
+                            height = cursor.getLong(media_height),
+                            width = cursor.getLong(media_width),
+                            size = cursor.getInt(size).toLong(),
+                            bucketName = cursor.getString(bucket_name) ?: "",
+                        )
+                    )
+
+                    if (limit == 0L && list.count() == 40) {
+                        closure(
+                            list.toList(),
+                            listOf(),
+                            false, true
+                        )
+                        list.clear()
+                    }
+                } while (
+                    cursor.moveToNext()
+                )
+
+                if (limit == 0L) {
+                    closure(
+                        list,
+                        listOf(),
+                        false,
+                        list.isNotEmpty()
+                    )
+                    if (list.isNotEmpty()) {
+                        closure(
+                            listOf(),
+                            listOf(),
+                            false, false
+                        )
+                    }
+                } else {
+                    closure(
+                        list,
+                        listOf(),
+                        list.isEmpty(), false,
+                    )
+                }
+            } catch (e: java.lang.Exception) {
+                Log.e("filterMedia", "cursor block fail", e)
+            }
+        }
+    }
 
     private suspend fun loadMedia(
         dirs: List<String>,
