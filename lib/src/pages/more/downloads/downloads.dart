@@ -137,8 +137,8 @@ class _DownloadsState extends State<Downloads> {
             ),
           ],
           functionality: GridFunctionality(
-            onEmptySource: const EmptyWidgetBackground(
-              subtitle: "Download progress will appear here...", // TODO: change
+            onEmptySource: EmptyWidgetBackground(
+              subtitle: l10n.emptyDownloadProgress,
             ),
             search: PageNameSearchWidget(
               leading: IconButton(
@@ -168,7 +168,7 @@ class _DownloadsState extends State<Downloads> {
                 false,
               ),
             ],
-            keybindsDescription: l10n.downloadsPageName,
+            pageName: l10n.downloadsPageName,
             gridSeed: state.gridSeed,
           ),
         ),

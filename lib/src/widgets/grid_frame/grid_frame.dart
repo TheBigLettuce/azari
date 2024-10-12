@@ -392,7 +392,7 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
 
 class _EmptyWidget extends StatefulWidget {
   const _EmptyWidget({
-    super.key,
+    // super.key,
     required this.source,
     required this.onEmpty,
   });
@@ -817,7 +817,7 @@ class GridExtrasData<T extends CellBase> {
         searchFocus: searchFocus,
         bottomWidget: bottomWidget,
         searchWidget: functionality.search,
-        pageName: description.pageName ?? description.keybindsDescription,
+        pageName: description.pageName ?? "",
         description: description,
       );
     }

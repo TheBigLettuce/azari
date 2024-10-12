@@ -17,6 +17,7 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -32,6 +33,7 @@ import "package:url_launcher/url_launcher.dart";
 final _transparent = MemoryImage(kTransparentImage);
 
 abstract class PostImpl
+    with DefaultBuildCellImpl
     implements
         PostBase,
         ContentableCell,

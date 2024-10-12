@@ -11,7 +11,6 @@ class GridDescription<T extends CellBase> {
     this.pullToRefresh = true,
     required this.actions,
     required this.gridSeed,
-    required this.keybindsDescription,
     this.showAppBar = true,
     this.bottomWidget,
     this.asSliver = false,
@@ -21,9 +20,6 @@ class GridDescription<T extends CellBase> {
     this.animationsOnSourceWatch = true,
     this.showLoadingIndicator = true,
   });
-
-  /// Displayed in the keybinds info page name.
-  final String keybindsDescription;
 
   /// If [pageName] is not null, and [GridFrame.searchWidget] is null,
   /// then a Text widget will be displayed in the app bar with this value.

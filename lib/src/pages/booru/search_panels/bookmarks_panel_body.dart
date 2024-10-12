@@ -138,60 +138,57 @@ class _MiniBookmark extends StatelessWidget {
         onTap: onPressed == null ? null : () => onPressed!(bookmark),
         onLongPress:
             onLongPressed == null ? null : () => onLongPressed!(bookmark),
-        child: DecoratedBox(
-          decoration: BoxDecoration(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (bookmark.thumbnails.isEmpty)
-                Expanded(
-                  flex: 3,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLow,
-                    ),
-                    child: SizedBox.expand(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (bookmark.thumbnails.isEmpty)
+              Expanded(
+                flex: 3,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
                   ),
-                )
-              else
-                Expanded(
-                  flex: 3,
-                  child: SizedBox.expand(
-                    child: Image(
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      image: CachedNetworkImageProvider(
-                        bookmark.thumbnails.first.url,
-                      ),
+                  child: const SizedBox.expand(),
+                ),
+              )
+            else
+              Expanded(
+                flex: 3,
+                child: SizedBox.expand(
+                  child: Image(
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    image: CachedNetworkImageProvider(
+                      bookmark.thumbnails.first.url,
                     ),
                   ),
                 ),
-              Expanded(
-                child: SizedBox.expand(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHigh,
+              ),
+            Expanded(
+              child: SizedBox.expand(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: Align(
-                        child: Text(
-                          bookmark.tags,
-                          overflow: TextOverflow.fade,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                    child: Align(
+                      child: Text(
+                        bookmark.tags,
+                        overflow: TextOverflow.fade,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

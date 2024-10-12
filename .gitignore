@@ -60,3 +60,5 @@ app.*.map.json
 
 /debug_info
 libisar.so
+
+untranslated_strings.txt

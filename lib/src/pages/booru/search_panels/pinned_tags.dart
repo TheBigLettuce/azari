@@ -68,7 +68,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
       slivers: [
         SliverToBoxAdapter(
           child: FadingPanel(
-            label: "Pinned Tags", // TODO: change
+            label: l10n.pinnedTags,
             source: source,
             enableHide: false,
             trailing: (
@@ -79,7 +79,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text("Pin tag"), // TODO: change
+                        title: Text(l10n.pinTag),
                         content: AutocompleteWidget(
                           null,
                           (s) {},
@@ -110,7 +110,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
                 DialogRoute<void>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text("Remove '$str'?"), // TODO: change
+                    title: Text(l10n.removeTag(str)),
                     actions: [
                       TextButton(
                         onPressed: () {
@@ -143,8 +143,8 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
           backgroundColor: theme.colorScheme.primary,
           buildTitle: (context) => Text(
             filteringValue.isNotEmpty
-                ? "Add '$filteringValue' to pinned"
-                : "Add pinned tag", // TODO: change
+                ? l10n.addTagToPinned(filteringValue)
+                : l10n.addPinnedTag,
           ),
           onPressed: () {
             if (filteringValue.isNotEmpty) {

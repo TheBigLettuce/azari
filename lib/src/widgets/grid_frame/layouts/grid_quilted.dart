@@ -90,7 +90,7 @@ class _GridQuiltedLayoutState<T extends CellBase>
             onPressed: cell.tryAsPressable(context, extras.functionality, idx),
             functionality: extras.functionality,
             selectFrom: null,
-            child: GridCell.frameDefault(
+            child: cell.buildCell<T>(
               context,
               idx,
               cell,

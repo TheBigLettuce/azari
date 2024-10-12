@@ -6,7 +6,7 @@
 part of "manga_dex_entries.dart";
 
 @JsonSerializable()
-class _MangaEntry with MangaEntry {
+class _MangaEntry with MangaEntry, DefaultBuildCellImpl {
   const _MangaEntry({
     required this.id,
     required this.relationships,

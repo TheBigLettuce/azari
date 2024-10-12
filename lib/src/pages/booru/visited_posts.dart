@@ -136,8 +136,8 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
             ),
           ],
           functionality: GridFunctionality(
-            onEmptySource: const EmptyWidgetBackground(
-              subtitle: "Posts you visited will appear here...", // TODO: change
+            onEmptySource: EmptyWidgetBackground(
+              subtitle: l10n.emptyPostsVisited,
             ),
             selectionGlue: widget.generateGlue(),
             registerNotifiers: (child) => OnBooruTagPressed(
@@ -169,7 +169,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
                 true,
               ),
             ],
-            keybindsDescription: l10n.visitedPage,
+            pageName: l10n.visitedPage,
             gridSeed: state.gridSeed,
           ),
         ),

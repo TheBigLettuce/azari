@@ -9,6 +9,7 @@ import "package:azari/src/net/anime/impl/jikan.dart";
 import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -66,6 +67,7 @@ enum AnimeSafeMode {
 }
 
 class AnimePicture
+    with DefaultBuildCellImpl
     implements AnimeCell, ContentWidgets, Thumbnailable, Downloadable {
   const AnimePicture({
     required this.imageUrl,
@@ -96,7 +98,9 @@ class AnimePicture
   String fileDownloadUrl() => imageUrl;
 }
 
-class AnimeRecommendations implements CellBase, Thumbnailable, Downloadable {
+class AnimeRecommendations
+    with DefaultBuildCellImpl
+    implements CellBase, Thumbnailable, Downloadable {
   const AnimeRecommendations({
     required this.id,
     required this.thumbUrl,

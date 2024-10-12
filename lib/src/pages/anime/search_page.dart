@@ -6,81 +6,85 @@
 import "dart:async";
 
 import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/anime/anime_api.dart";
+import "package:azari/src/net/anime/anime_entry.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/booru/booru_restored_page.dart";
-import "package:azari/src/pages/booru/popular_random_buttons.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
-import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:cached_network_image/cached_network_image.dart";
-import "package:dio/dio.dart";
+import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-part "search_panels/pinned_tags.dart";
-part "search_panels/chips_panel_body.dart";
-part "search_panels/bookmarks_panel_body.dart";
-part "search_panels/tag_list.dart";
-part "search_panels/excluded_tags.dart";
-part "search_panels/bookmarks.dart";
-part "search_panels/recently_searched_tags.dart";
-part "search_panels/add_tag_button.dart";
+// part "search_panels/directory_names.dart";
+// part "search_panels/chips_panel_body.dart";
+// part "search_panels/files_list.dart";
+// part "search_panels/search_in_booru_button.dart";
+// part "search_panels/local_tags.dart";
+part "search_panels/most_rated.dart";
+// part "search_panels/search_in_directories_buttons.dart";
 
-class BooruSearchPage extends StatefulWidget {
-  const BooruSearchPage({
+class AnimeSearchPage extends StatefulWidget {
+  const AnimeSearchPage({
     super.key,
     required this.db,
-    required this.onTagPressed,
+    required this.api,
+    // required this.source,
+    // required this.onDirectoryPressed,
+    // required this.directoryComplete,
+    // required this.joinedDirectories,
   });
+
+  final AnimeAPI api;
+  // final ResourceSource<int, GalleryDirectory> source;
+
+  // final void Function(GalleryDirectory) onDirectoryPressed;
+  // final void Function(
+  //   String str,
+  //   List<GalleryDirectory> list, {
+  //   required String tag,
+  //   required FilteringMode? filteringMode,
+  // }) joinedDirectories;
+
+  // final Future<List<BooruTag>> Function(String str) directoryComplete;
 
   final DbConn db;
 
-  final OnBooruTagPressedFunc onTagPressed;
-
   @override
-  State<BooruSearchPage> createState() => _BooruSearchPageState();
+  State<AnimeSearchPage> createState() => _AnimeSearchPageState();
 }
 
-class _BooruSearchPageState extends State<BooruSearchPage> {
-  SettingsData settings = SettingsService.db().current;
-
-  late final Dio client;
-  late final BooruAPI api;
-
-  late final StreamSubscription<SettingsData?> settingsSubsc;
-
+class _AnimeSearchPageState extends State<AnimeSearchPage> {
   final searchController = TextEditingController();
   final focusNode = FocusNode();
 
   final _filteringEvents = StreamController<String>.broadcast();
 
+  late final Map<String, bool> blurMap;
+
   @override
   void initState() {
     super.initState();
 
-    client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-    settingsSubsc = settings.s.watch((newSettings) {
-      setState(() {
-        settings = newSettings!;
-      });
-    });
+    blurMap = widget.db.directoryMetadata.toBlurAll.fold({}, (map, e) {
+      map[e.categoryName] = e.blur;
 
-    api = BooruAPI.fromEnum(
-      settings.selectedBooru,
-      client,
-      PageSaver.noPersist(),
-    );
+      return map;
+    });
   }
 
   @override
   void dispose() {
-    client.close(force: true);
-    settingsSubsc.cancel();
     _filteringEvents.close();
 
     focusNode.dispose();
@@ -91,12 +95,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   void _search(String str) {
     _filteringEvents.add(str.trim());
-  }
-
-  void _onTagPressed(String str) {
-    Navigator.pop(context);
-
-    widget.onTagPressed(context, api.booru, str, null);
   }
 
   @override
@@ -132,7 +130,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   return;
                 }
 
-                _onTagPressed(searchController.text.trim());
+                _search(searchController.text.trim());
+                // _onTagPressed(searchController.text.trim());
               },
               icon: const Icon(Icons.search_rounded),
             ),
@@ -143,50 +142,45 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
           right: true,
           child: CustomScrollView(
             slivers: [
-              StreamBuilder(
-                stream: _filteringEvents.stream,
-                builder: (context, snapshot) => PopularRandomButtons(
-                  listPadding: _ChipsPanelBody.listPadding,
-                  db: widget.db,
-                  booru: api.booru,
-                  onTagPressed: widget.onTagPressed,
-                  tags: snapshot.data ?? "",
-                  safeMode: () => settings.safeMode,
-                ),
-              ),
-              _RecentlySearchedTagsPanel(
+              // StreamBuilder(
+              //   stream: _filteringEvents.stream,
+              //   builder: (context, snapshot) => _SearchInDirectoriesButtons(
+              //     db: widget.db,
+              //     listPadding: _ChipsPanelBody.listPadding,
+              //     filteringValue: snapshot.data ?? "",
+              //     joinedDirectories: widget.joinedDirectories,
+              //     source: widget.source,
+              //   ),
+              // ),
+              _MostRatedList(
                 filteringEvents: _filteringEvents,
+                api: widget.api,
                 searchController: searchController,
-                tagManager: widget.db.tagManager,
-                onTagPressed: _onTagPressed,
               ),
-              _PinnedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-                onTagPressed: (str_) {
-                  final str = str_.isEmpty
-                      ? ""
-                      : str_.trim().split(" ").lastOrNull?.trim() ?? "";
-
-                  searchController.text = "${searchController.text}$str ";
-                  _filteringEvents.add(searchController.text.trim());
-                },
-              ),
-              _ExcludedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-              ),
-              _BookmarksPanel(
-                db: widget.db,
-                filteringEvents: _filteringEvents.stream,
-              ),
-              _TagList(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                api: api,
-              ),
+              // _DirectoryNamesPanel(
+              //   filteringEvents: _filteringEvents,
+              //   searchController: searchController,
+              //   directoryComplete: widget.directoryComplete,
+              // ),
+              // _LocalTagsPanel(
+              //   filteringEvents: _filteringEvents,
+              //   searchController: searchController,
+              //   joinedDirectories: widget.joinedDirectories,
+              //   source: widget.source,
+              //   db: widget.db,
+              // ),
+              // _FilesList(
+              //   filteringEvents: _filteringEvents,
+              //   searchController: searchController,
+              //   db: widget.db,
+              // ),
+              // _DirectoryList(
+              //   filteringEvents: _filteringEvents,
+              //   source: widget.source,
+              //   searchController: searchController,
+              //   onDirectoryPressed: widget.onDirectoryPressed,
+              //   blurMap: blurMap,
+              // ),
               Builder(
                 builder: (context) => SliverPadding(
                   padding: EdgeInsets.only(

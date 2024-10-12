@@ -29,8 +29,7 @@ extension DirectoryFileToAndroidFile on DirectoryFile {
   }
 }
 
-class AndroidGalleryDirectory extends GalleryDirectoryBase
-    with GalleryDirectory {
+class AndroidGalleryDirectory extends GalleryDirectory {
   const AndroidGalleryDirectory({
     required super.bucketId,
     required super.name,
@@ -42,7 +41,7 @@ class AndroidGalleryDirectory extends GalleryDirectoryBase
   });
 }
 
-class AndroidGalleryFile extends FileBase with GalleryFile {
+class AndroidGalleryFile extends GalleryFile {
   const AndroidGalleryFile({
     required super.id,
     required super.bucketId,

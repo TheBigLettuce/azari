@@ -245,8 +245,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         ),
       ],
       functionality: GridFunctionality(
-        onEmptySource: const EmptyWidgetBackground(
-          subtitle: "Favorited posts will appear here...", // TODO: change
+        onEmptySource: EmptyWidgetBackground(
+          subtitle: l10n.emptyFavoritedPosts,
         ),
         search: PageNameSearchWidget(
           leading: IconButton(
@@ -279,7 +279,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         showAppBar: !widget.asSliver,
         asSliver: widget.asSliver,
         pullToRefresh: false,
-        keybindsDescription: l10n.favoritesLabel,
         pageName: l10n.favoritesLabel,
         gridSeed: state.gridSeed,
       ),

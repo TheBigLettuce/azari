@@ -83,7 +83,7 @@ class __TagListState extends State<_TagList> {
         SliverToBoxAdapter(
           child: FadingPanelLabel(
             horizontalPadding: const EdgeInsets.symmetric(horizontal: 18),
-            label: l10n.buddhaModeTags, // TODO: change
+            label: l10n.tagsLabel,
           ),
         ),
         if (search.f != null)
@@ -106,7 +106,7 @@ class __TagListState extends State<_TagList> {
                       const EdgeInsets.only(left: 8),
                   sliver: SliverToBoxAdapter(
                     child: Text(
-                      "Start inputing text...", // TODO: change
+                      l10n.startInputingText,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),

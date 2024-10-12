@@ -85,6 +85,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return GridConfiguration(
       watch: gridConfiguration.watch,
       child: WrapGridPage(
@@ -118,9 +120,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
             ),
           ],
           functionality: GridFunctionality(
-            onEmptySource: const EmptyWidgetBackground(
-              subtitle:
-                  "Hidden directories will appear here...", // TODO: change
+            onEmptySource: EmptyWidgetBackground(
+              subtitle: l10n.emptyHiddenDirectories,
             ),
             search: PageNameSearchWidget(
               leading: IconButton(
@@ -151,8 +152,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                 true,
               ),
             ],
-            keybindsDescription:
-                AppLocalizations.of(context)!.blacklistedFoldersPage,
+            pageName: AppLocalizations.of(context)!.blacklistedFoldersPage,
             gridSeed: state.gridSeed,
           ),
         ),

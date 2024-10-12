@@ -15,7 +15,7 @@ abstract interface class DownloadHandle implements CellBase, Thumbnailable {
   StreamSubscription<int> watchProgress(void Function(int c) f);
 }
 
-class _DownloadEntry implements DownloadHandle {
+class _DownloadEntry with DefaultBuildCellImpl implements DownloadHandle {
   _DownloadEntry({
     required this.data,
     required this.token,

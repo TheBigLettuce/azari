@@ -5,9 +5,11 @@
 
 part of "gallery.dart";
 
-mixin GalleryFile
+abstract class GalleryFile
+    with
+        DefaultBuildCellImpl
     implements
-        FileBase,
+        // FileBase,
         ContentableCell,
         ContentWidgets,
         Pressable<GalleryFile>,
@@ -16,6 +18,43 @@ mixin GalleryFile
         ImageViewActionable,
         AppBarButtonable,
         Stickerable {
+  const GalleryFile({
+    required this.tags,
+    required this.id,
+    required this.bucketId,
+    required this.name,
+    required this.isVideo,
+    required this.isGif,
+    required this.size,
+    required this.height,
+    required this.isDuplicate,
+    required this.width,
+    required this.lastModified,
+    required this.originalUri,
+    required this.res,
+  });
+
+  final int id;
+  final String bucketId;
+
+  final String name;
+
+  final int lastModified;
+  final String originalUri;
+
+  final int height;
+  final int width;
+
+  final int size;
+
+  final bool isVideo;
+  final bool isGif;
+
+  final Map<String, void> tags;
+  final bool isDuplicate;
+
+  final (int, Booru)? res;
+
   @override
   CellStaticData description() => const CellStaticData(
         tightMode: true,
@@ -48,7 +87,7 @@ mixin GalleryFile
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
-    final data = FilesDataNotifier.maybeOf(context);
+    final api = FilesDataNotifier.maybeOf(context);
     final db = DatabaseConnectionNotifier.of(context);
     final tagManager = TagManager.of(context);
 
@@ -123,88 +162,92 @@ mixin GalleryFile
             },
     );
 
-    if (data == null) {
+    final callback = NestedCallbackNotifier.maybeOf(context);
+
+    if (callback != null) {
+      return <ImageViewAction>[
+        ImageViewAction(
+          Icons.check,
+          (selected) {
+            callback(this);
+            if (callback.returnBack) {
+              Navigator.of(context)
+                ..pop(context)
+                ..pop(context)
+                ..pop(context);
+            }
+          },
+        ),
+      ];
+    }
+
+    if (api == null) {
       return <ImageViewAction>[
         favoriteAction,
       ];
     }
 
-    final (api, callback) = data;
-    final toShowDelete = DeleteDialogShowNotifier.of(context);
+    final toShowDelete =
+        DeleteDialogShowNotifier.maybeOf(context) ?? DeleteDialogShow();
 
-    return callback != null
+    return api.type.isTrash()
         ? <ImageViewAction>[
             ImageViewAction(
-              Icons.check,
+              Icons.restore_from_trash,
               (selected) {
-                callback(this);
-                if (callback.returnBack) {
-                  Navigator.of(context)
-                    ..pop(context)
-                    ..pop(context)
-                    ..pop(context);
-                }
+                GalleryManagementApi.current().trash.removeAll(
+                  [originalUri],
+                );
               },
             ),
           ]
-        : api.type.isTrash()
-            ? <ImageViewAction>[
-                ImageViewAction(
-                  Icons.restore_from_trash,
-                  (selected) {
-                    GalleryManagementApi.current().trash.removeAll(
-                      [originalUri],
-                    );
-                  },
-                ),
-              ]
-            : <ImageViewAction>[
-                favoriteAction,
-                ImageViewAction(
-                  Icons.delete,
-                  (selected) {
-                    deleteFilesDialog(
-                      context,
-                      [this],
-                      toShowDelete,
-                    );
-                  },
-                ),
-                ImageViewAction(
-                  Icons.copy,
-                  (selected) {
-                    moveOrCopyFnc(
-                      context,
-                      api.directories.length == 1
-                          ? api.directories.first.bucketId
-                          : "",
-                      [this],
-                      false,
-                      tagManager,
-                      db.localTags,
-                      api.parent,
-                      toShowDelete,
-                    );
-                  },
-                ),
-                ImageViewAction(
-                  Icons.forward_rounded,
-                  (selected) async {
-                    return moveOrCopyFnc(
-                      context,
-                      api.directories.length == 1
-                          ? api.directories.first.bucketId
-                          : "",
-                      [this],
-                      true,
-                      tagManager,
-                      db.localTags,
-                      api.parent,
-                      toShowDelete,
-                    );
-                  },
-                ),
-              ];
+        : <ImageViewAction>[
+            favoriteAction,
+            ImageViewAction(
+              Icons.delete,
+              (selected) {
+                deleteFilesDialog(
+                  context,
+                  [this],
+                  toShowDelete,
+                );
+              },
+            ),
+            ImageViewAction(
+              Icons.copy,
+              (selected) {
+                moveOrCopyFnc(
+                  context,
+                  api.directories.length == 1
+                      ? api.directories.first.bucketId
+                      : "",
+                  [this],
+                  false,
+                  tagManager,
+                  db.localTags,
+                  api.parent,
+                  toShowDelete,
+                );
+              },
+            ),
+            ImageViewAction(
+              Icons.forward_rounded,
+              (selected) async {
+                return moveOrCopyFnc(
+                  context,
+                  api.directories.length == 1
+                      ? api.directories.first.bucketId
+                      : "",
+                  [this],
+                  true,
+                  tagManager,
+                  db.localTags,
+                  api.parent,
+                  toShowDelete,
+                );
+              },
+            ),
+          ];
   }
 
   @override
@@ -329,44 +372,44 @@ extension FavoritePostsGlobalProgress on GlobalProgressTab {
       get("favoritePostButton", () => ValueNotifier(null));
 }
 
-class FileBase {
-  const FileBase({
-    required this.tags,
-    required this.id,
-    required this.bucketId,
-    required this.name,
-    required this.isVideo,
-    required this.isGif,
-    required this.size,
-    required this.height,
-    required this.isDuplicate,
-    required this.width,
-    required this.lastModified,
-    required this.originalUri,
-    required this.res,
-  });
+// class FileBase {
+//   const FileBase({
+//     required this.tags,
+//     required this.id,
+//     required this.bucketId,
+//     required this.name,
+//     required this.isVideo,
+//     required this.isGif,
+//     required this.size,
+//     required this.height,
+//     required this.isDuplicate,
+//     required this.width,
+//     required this.lastModified,
+//     required this.originalUri,
+//     required this.res,
+//   });
 
-  final int id;
-  final String bucketId;
+//   final int id;
+//   final String bucketId;
 
-  final String name;
+//   final String name;
 
-  final int lastModified;
-  final String originalUri;
+//   final int lastModified;
+//   final String originalUri;
 
-  final int height;
-  final int width;
+//   final int height;
+//   final int width;
 
-  final int size;
+//   final int size;
 
-  final bool isVideo;
-  final bool isGif;
+//   final bool isVideo;
+//   final bool isGif;
 
-  final Map<String, void> tags;
-  final bool isDuplicate;
+//   final Map<String, void> tags;
+//   final bool isDuplicate;
 
-  final (int, Booru)? res;
-}
+//   final (int, Booru)? res;
+// }
 
 class GalleryFileInfo extends StatefulWidget {
   const GalleryFileInfo({super.key, required this.file});

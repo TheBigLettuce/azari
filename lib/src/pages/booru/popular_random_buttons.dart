@@ -741,7 +741,6 @@ class _PopularPageState extends State<PopularPage> {
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruLabel,
-                    keybindsDescription: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),
                 ),
@@ -789,12 +788,14 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (widget.progress.inRefreshing) {
       return const SizedBox.shrink();
     }
 
-    return const EmptyWidgetBackground(
-      subtitle: "No posts found...",
-    ); // TODO: change
+    return EmptyWidgetBackground(
+      subtitle: l10n.emptyNoPosts,
+    );
   }
 }

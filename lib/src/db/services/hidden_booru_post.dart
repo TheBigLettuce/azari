@@ -35,7 +35,9 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
 }
 
 @immutable
-abstract class HiddenBooruPostDataImpl implements HiddenBooruPostData {
+abstract class HiddenBooruPostDataImpl
+    with DefaultBuildCellImpl
+    implements HiddenBooruPostData {
   const HiddenBooruPostDataImpl();
 
   @override

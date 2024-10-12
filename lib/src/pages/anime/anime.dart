@@ -13,7 +13,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/anime/impl/jikan.dart";
-import "package:azari/src/pages/anime/search_anime.dart";
+import "package:azari/src/pages/anime/search_page.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -274,7 +274,13 @@ class _AnimePageState extends State<AnimePage> {
           title: Center(
             child: IconButton(
               onPressed: () {
-                SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
+                Navigator.of(context, rootNavigator: true).push<void>(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AnimeSearchPage(db: widget.db, api: api),
+                  ),
+                );
+                // SearchAnimePage.launchAnimeApi(context, (c) => Jikan(c));
               },
               icon: const Icon(Icons.search_rounded),
             ),
@@ -300,7 +306,7 @@ class _AnimePageState extends State<AnimePage> {
               ),
             if (refreshingStatusCurrentSeason != null)
               _AnimeListHolder(
-                label: "Current Season",
+                label: l10n.currentSeason,
                 current: () => animeLists.currentSeason.$2,
                 childSize: _CurrentSeasonAnime.size,
                 notifier: refreshingStatusCurrentSeason!,
@@ -570,6 +576,7 @@ class __WatchingGridState extends State<_WatchingGrid> {
   @override
   Widget build(BuildContext context) {
     final source = showWatching ? widget.source : widget.sourceBacklog;
+    final l10n = AppLocalizations.of(context)!;
 
     return GridConfiguration(
       sliver: true,
@@ -581,7 +588,6 @@ class __WatchingGridState extends State<_WatchingGrid> {
           const GridDescription(
             actions: [],
             gridSeed: 0,
-            keybindsDescription: "",
           ),
           focusNode,
         ),
@@ -590,10 +596,11 @@ class __WatchingGridState extends State<_WatchingGrid> {
           child: GridLayout(
             progress: source.progress,
             source: source.backingStorage,
-            buildEmpty: (error) => const Padding(
-              padding: EdgeInsets.only(left: 8, right: 8, bottom: 4, top: 2),
-              child: Text("Empty..."),
-            ), // TODO: change
+            buildEmpty: (error) => Padding(
+              padding:
+                  const EdgeInsets.only(left: 8, right: 8, bottom: 4, top: 2),
+              child: Text(l10n.emptyValue),
+            ),
           ),
         ),
       ),
@@ -897,13 +904,13 @@ class ShimmerPlaceholdersChips extends StatelessWidget {
           height: 42,
           child: Padding(
             padding: childPadding,
-            child: ActionChip(
+            child: const ActionChip(
               labelPadding: EdgeInsets.zero,
               // padding: EdgeInsets.zero,
               label: SizedBox(
                 height: 42 / 2,
                 width: 58,
-                child: const ShimmerLoadingIndicator(
+                child: ShimmerLoadingIndicator(
                   delay: Duration(milliseconds: 900),
                 ),
               ),

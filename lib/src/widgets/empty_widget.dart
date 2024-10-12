@@ -192,6 +192,7 @@ class EmptyWidgetBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Center(
@@ -208,7 +209,7 @@ class EmptyWidgetBackground extends StatelessWidget {
               ),
             ),
             Text(
-              "Empty", // TODO: change
+              l10n.emptyValue,
               style: theme.textTheme.headlineMedium,
             ),
             const Padding(padding: EdgeInsets.only(bottom: 12)),

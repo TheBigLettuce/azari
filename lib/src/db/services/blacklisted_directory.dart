@@ -24,6 +24,7 @@ abstract class BlacklistedDirectoryData
 
 @immutable
 abstract class BlacklistedDirectoryDataImpl
+    with DefaultBuildCellImpl
     implements BlacklistedDirectoryData {
   const BlacklistedDirectoryDataImpl();
 

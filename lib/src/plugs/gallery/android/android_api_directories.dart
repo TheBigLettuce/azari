@@ -78,7 +78,11 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
     return bindFiles = _AndroidGalleryFiles(
       source: _AndroidFileSourceJoined(
-          [directory], type, favoritePosts, sourceTags),
+        [directory],
+        type,
+        favoritePosts,
+        sourceTags,
+      ),
       sourceTags: sourceTags,
       directories: [directory],
       target: name,

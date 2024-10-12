@@ -75,9 +75,11 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: "Bookmarks", // TODO: change
+        label: l10n.bookmarksPageName,
         source: source,
         enableHide: false,
         childSize: _BookmarksPanelBody.size,

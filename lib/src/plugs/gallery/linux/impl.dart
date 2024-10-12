@@ -244,7 +244,7 @@ class _LinuxResourceSource implements ResourceSource<int, GalleryDirectory> {
   }
 }
 
-class LinuxGalleryDirectory extends GalleryDirectoryBase with GalleryDirectory {
+class LinuxGalleryDirectory extends GalleryDirectory {
   const LinuxGalleryDirectory({
     required super.bucketId,
     required super.name,
@@ -397,7 +397,7 @@ class _LinuxFilesSource implements SortingResourceSource<int, GalleryFile> {
   Future<int> clearRefreshSilent() => clearRefresh();
 }
 
-class LinuxGalleryFile extends FileBase with GalleryFile {
+class LinuxGalleryFile extends GalleryFile {
   const LinuxGalleryFile({
     required super.tags,
     required super.id,

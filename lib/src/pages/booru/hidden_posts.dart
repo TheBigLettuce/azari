@@ -72,6 +72,8 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return _HideBlacklistedImagesHolder(
       key: _hideKey,
       child: GridConfiguration(
@@ -109,8 +111,8 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
               ),
             ],
             functionality: GridFunctionality(
-              onEmptySource: const EmptyWidgetBackground(
-                subtitle: "Hidden posts will appear here...", // TODO: change
+              onEmptySource: EmptyWidgetBackground(
+                subtitle: l10n.emptyHiddenPosts,
               ),
               selectionGlue: widget.generateGlue(),
               search: PageNameSearchWidget(
@@ -152,8 +154,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
                   true,
                 ),
               ],
-              keybindsDescription:
-                  AppLocalizations.of(context)!.hiddenPostsPageName,
+              pageName: AppLocalizations.of(context)!.hiddenPostsPageName,
               gridSeed: state.gridSeed,
             ),
           ),

@@ -6,6 +6,7 @@
 import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/manga/impl/conventers/manga_dex.dart";
 import "package:azari/src/net/manga/manga_api.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:json_annotation/json_annotation.dart";
 
 part "_manga_entry.dart";

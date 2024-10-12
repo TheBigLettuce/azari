@@ -365,7 +365,6 @@ class _BooruPageState extends State<BooruPage> {
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruLabel,
-                    keybindsDescription: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),
                   initalScrollPosition: pagingState.offset,

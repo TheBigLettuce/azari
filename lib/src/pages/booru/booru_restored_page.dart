@@ -372,7 +372,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ],
                     showLoadingIndicator: false,
                     animationsOnSourceWatch: false,
-                    keybindsDescription: l10n.booruGridPageName,
+                    pageName: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
                   ),
                 ),

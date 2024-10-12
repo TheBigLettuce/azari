@@ -64,7 +64,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
       slivers: [
         SliverToBoxAdapter(
           child: FadingPanel(
-            label: "Excluded Tags", // TODO: change
+            label: l10n.excludedTagsLabel,
             source: source,
             enableHide: false,
             trailing: (
@@ -108,7 +108,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
                   DialogRoute<void>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text("Remove '$str'?"), // TODO: change
+                      title: Text(l10n.removeTag(str)),
                       actions: [
                         TextButton(
                           onPressed: () {
@@ -142,8 +142,8 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
           backgroundColor: Colors.pink.shade300,
           buildTitle: (context) => Text(
             filteringValue.isNotEmpty
-                ? "Add '$filteringValue' to excluded"
-                : "Add excluded tag", // TODO: change
+                ? l10n.addTagToExcluded(filteringValue)
+                : l10n.addToExcluded,
           ),
           onPressed: () {
             if (filteringValue.isNotEmpty) {

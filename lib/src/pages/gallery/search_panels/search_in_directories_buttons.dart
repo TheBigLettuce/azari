@@ -29,31 +29,40 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
 
   final DbConn db;
 
-  void _launch(BuildContext context, bool asTag) {
+  void _launch(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required bool asTag,
+    required bool onlyPinned,
+  }) {
     final l10n = AppLocalizations.of(context)!;
 
-    final toPin =
-        db.directoryMetadata.toPinAll.fold(<String, bool>{}, (map, e1) {
-      map[e1.categoryName] = e1.sticky;
+    final List<GalleryDirectory> directories = [];
 
-      return map;
-    });
+    if (onlyPinned) {
+      final toPin =
+          db.directoryMetadata.toPinAll.fold(<String, bool>{}, (map, e1) {
+        map[e1.categoryName] = e1.sticky;
 
-    final List<GalleryDirectory> pinned = [];
+        return map;
+      });
 
-    for (final e in source.backingStorage) {
-      final segment = _segment(e);
+      for (final e in source.backingStorage) {
+        final segment = _segment(e);
 
-      if (toPin.containsKey(segment)) {
-        pinned.add(e);
+        if (toPin.containsKey(segment)) {
+          directories.add(e);
+        }
       }
+    } else {
+      directories.addAll(source.backingStorage);
     }
 
-    if (pinned.isEmpty) {
+    if (directories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No pinned directories found"),
-        ), // TODO: change
+        SnackBar(
+          content: Text(l10n.noPinnedDirectories),
+        ),
       );
 
       return;
@@ -62,10 +71,10 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     Navigator.pop(context);
 
     joinedDirectories(
-      pinned.length == 1
-          ? pinned.first.name
-          : "${pinned.length} ${l10n.directoriesPlural}",
-      pinned,
+      directories.length == 1
+          ? directories.first.name
+          : "${directories.length} ${l10n.directoriesPlural}",
+      directories,
       tag: filteringValue,
       filteringMode: asTag ? FilteringMode.tag : null,
     );
@@ -87,6 +96,8 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SliverPadding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       sliver: SliverToBoxAdapter(
@@ -106,17 +117,58 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                       children: [
                         TextButton.icon(
                           onPressed: () {
-                            _launch(context, true);
+                            _launch(
+                              context,
+                              l10n,
+                              asTag: true,
+                              onlyPinned: true,
+                            );
                           },
-                          label: Text("#$filteringValue in pinned directories"),
+                          label: Text(
+                            l10n.tagInPinnedDirectories(filteringValue),
+                          ),
                           icon: const Icon(Icons.search_outlined),
                         ),
                         TextButton.icon(
                           onPressed: () {
-                            _launch(context, false);
+                            _launch(
+                              context,
+                              l10n,
+                              asTag: false,
+                              onlyPinned: true,
+                            );
                           },
-                          label:
-                              Text("'$filteringValue' in pinned directories"),
+                          label: Text(
+                            l10n.namesInPinnedDirectories(filteringValue),
+                          ),
+                          icon: const Icon(Icons.search_outlined),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            _launch(
+                              context,
+                              l10n,
+                              asTag: true,
+                              onlyPinned: false,
+                            );
+                          },
+                          label: Text(
+                            l10n.tagInEverywhere(filteringValue),
+                          ),
+                          icon: const Icon(Icons.search_outlined),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            _launch(
+                              context,
+                              l10n,
+                              asTag: false,
+                              onlyPinned: false,
+                            );
+                          },
+                          label: Text(
+                            l10n.nameInEverywhere(filteringValue),
+                          ),
                           icon: const Icon(Icons.search_outlined),
                         ),
                       ],

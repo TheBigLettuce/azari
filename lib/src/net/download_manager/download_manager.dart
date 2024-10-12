@@ -15,6 +15,7 @@ import "package:azari/src/plugs/gallery_management_api.dart";
 import "package:azari/src/plugs/generated/platform_api.g.dart" as platform_api;
 import "package:azari/src/plugs/notifications.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";

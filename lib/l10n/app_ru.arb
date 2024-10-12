@@ -219,7 +219,7 @@
     "pinGroupLabel": "Закрепить",
     "showExcludedTags": "Показать исключенные",
     "searchSinglePost": "Искать одиночный пост",
-    "searchTextIsEmpty": "Текст поиска пустой",
+    "searchTextIsEmpty": "Текст поиска пуст",
     "cardStatus": "Статус",
     "cardVolumes": "Том",
     "cardDemographics": "Демография",
@@ -300,10 +300,9 @@
     "chooseValidDirectory": "Неправильная папка",
     "pickDirectory": "Папка для загрузок",
     "openWelcomePageSetting": "Открыть странницу приветствия",
-    "buddhaModeSetting": "Будда-режим",
     "deletedFromWatched": "Удаленно из просмотренного",
     "deletedFromBacklog": "Удаленно из беклога",
-    "buddhaModeTags": "Теги",
+    "tagsLabel": "Теги",
     "bookmarksPageName": "Закладки",
     "welcomePermissions": "Разрешения",
     "welcomePermissionsExplanation": "Без Фото и видео галерея не будет работать",
@@ -413,5 +412,92 @@
     "videosLabel": "Видео",
     "addTagsSearch": "Дополнительные теги",
     "linkLabel": "Ссылка",
-    "imageDimensions": "Размер"
+    "imageDimensions": "Размер",
+    "startInputingText": "Введите текст...",
+    "recentlySearched": "Недавние Теги",
+    "directoryNames": "Названия Папок",
+    "filesLabel": "Файлы",
+    "noBooruDirectories": "Booru папки не найдены",
+    "tagInBooru": "#{tag} в Booru",
+    "@tagInBooru": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "noPinnedDirectories": "Прикрепленные папки не найдены",
+    "tagInPinnedDirectories": "#{tag} в прикрепленных папках",
+    "@tagInPinnedDirectories": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "namesInPinnedDirectories": "'{name}' в прикрепленных папках",
+    "@namesInPinnedDirectories": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "tagInEverywhere": "#{tag} во всех папках",
+    "@tagInEverywhere": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "nameInEverywhere": "'{tag}' во всех папках",
+    "@nameInEverywhere": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "mostRatedLabel": "Высокий Рейтинг",
+    "excludedTagsLabel": "Исключенные Теги",
+    "removeTag": "Удалить #{tag}?",
+    "@removeTag": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addTagToExcluded": "Добавить #{tag} в исключенное",
+    "@addTagToExcluded": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addExcludedTag": "Добавить исключенный тег",
+    "pinnedTags": "Прикрепленные Теги",
+    "addTagToPinned": "Добавить #{tag} в прикрепленное",
+    "@addTagToPinned": {
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addPinnedTag": "Добавить прикрепленный тег",
+    "collapse": "Свернуть",
+    "emptyBookmarkedSearches": "Закладки появятся здесь...",
+    "emptyFavoritedPosts": "Фавориты появятся здесь...",
+    "emptyHiddenPosts": "Скрытые посты будут здесь...",
+    "emptyNoPosts": "Нет постов...",
+    "emptyPostsVisited": "Просмотренные посты появятся здесь...",
+    "emptyHiddenDirectories": "Скрытые папки появятся здесь...",
+    "emptyDevicePictures": "Сохраненные медия появятся здесь...",
+    "yesHide": "да, убрать",
+    "emptyNoMedia": "Нет медия...",
+    "emptyDownloadProgress": "Загрузки появятся здесь...",
+    "currentSeason": "Текущий Сезон"
 }

@@ -11,10 +11,13 @@ class _FilesList extends StatefulWidget {
     required this.filteringEvents,
     required this.searchController,
     required this.db,
+    required this.callback,
   });
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
+
+  final CallbackDescriptionNested? callback;
 
   final DbConn db;
 
@@ -87,7 +90,7 @@ class __FilesListState extends State<_FilesList> {
 
   @override
   Widget build(BuildContext context) {
-    // final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
 
     if ((search.f == null || search.f != null) && search.files.isEmpty) {
       return const SliverPadding(padding: EdgeInsets.zero);
@@ -95,20 +98,12 @@ class __FilesListState extends State<_FilesList> {
 
     return SliverMainAxisGroup(
       slivers: [
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: FadingPanelLabel(
-            horizontalPadding: EdgeInsets.symmetric(horizontal: 18),
-            label: "Files", // TODO: change
+            horizontalPadding: const EdgeInsets.symmetric(horizontal: 18),
+            label: l10n.filesLabel,
           ),
         ),
-        // if (search.f != null)
-        //   const SliverToBoxAdapter(
-        //     child: ShimmerPlaceholdersHorizontal(
-        //       childSize: _FilesList.size,
-        //       padding: _FilesList.listPadding,
-        //     ),
-        //   )
-        // else
         SliverToBoxAdapter(
           child: SizedBox(
             height: _FilesList.size.height,
@@ -130,6 +125,10 @@ class __FilesListState extends State<_FilesList> {
                             StatisticsGalleryService.asImageViewStatistics(),
                       ),
                       startingCell: i,
+                      wrapNotifiers: (child) => NestedCallbackNotifier(
+                        callback: widget.callback,
+                        child: child,
+                      ),
                       tags: (c) => GalleryFile.imageTags(
                         c,
                         widget.db.localTags,

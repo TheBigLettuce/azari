@@ -38,7 +38,9 @@ abstract class AnimeCharacter
 }
 
 @immutable
-abstract class AnimeCharacterImpl implements AnimeCharacter {
+abstract class AnimeCharacterImpl
+    with DefaultBuildCellImpl
+    implements AnimeCharacter {
   const AnimeCharacterImpl();
 
   @override

@@ -10,20 +10,14 @@ class _ChipsPanelBody extends StatefulWidget {
     // super.key,
     required this.source,
     required this.onTagPressed,
-    this.onTagLongPressed,
     required this.icon,
-    this.backgroundColor,
-    this.foregroundColor,
   });
 
   final GenericListSource<BooruTag> source;
 
   final void Function(String)? onTagPressed;
-  final void Function(String)? onTagLongPressed;
 
   final Icon? icon;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
 
   static const size = Size(0, 42);
   static const listPadding = EdgeInsets.symmetric(horizontal: 18 + 4);
@@ -71,29 +65,15 @@ class __ChipsPanelBodyState extends State<_ChipsPanelBody> {
 
                 return Padding(
                   padding: const EdgeInsets.all(4),
-                  child: GestureDetector(
-                    onLongPress: widget.onTagLongPressed == null
+                  child: ActionChip(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: widget.onTagPressed == null
                         ? null
                         : () {
-                            widget.onTagLongPressed!(cell.tag);
+                            widget.onTagPressed!(cell.tag);
                           },
-                    child: ActionChip(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: widget.onTagPressed == null
-                          ? null
-                          : () {
-                              widget.onTagPressed!(cell.tag);
-                            },
-                      label: Text(
-                        cell.tag,
-                        style: TextStyle(color: widget.foregroundColor),
-                      ),
-                      iconTheme: widget.foregroundColor != null
-                          ? IconThemeData(color: widget.foregroundColor)
-                          : null,
-                      backgroundColor: widget.backgroundColor,
-                      avatar: widget.icon,
-                    ),
+                    label: Text(cell.tag),
+                    avatar: widget.icon,
                   ),
                 );
               },

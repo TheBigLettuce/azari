@@ -84,7 +84,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
             description: cell.description(),
             functionality: extras.functionality,
             selectFrom: null,
-            child: GridCell.frameDefault(
+            child: cell.buildCell<T>(
               context,
               idx,
               cell,

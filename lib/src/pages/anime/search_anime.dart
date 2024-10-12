@@ -308,7 +308,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                     description: GridDescription(
                       animationsOnSourceWatch: false,
                       actions: widget.actions,
-                      keybindsDescription: l10n.searchAnimePage,
+                      pageName: l10n.searchAnimePage,
                       gridSeed: state.gridSeed,
                     ),
                   ),

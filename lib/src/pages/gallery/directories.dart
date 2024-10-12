@@ -487,6 +487,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                           Navigator.of(context, rootNavigator: true).push<void>(
                             MaterialPageRoute(
                               builder: (context_) => DirectoriesSearchPage(
+                                callback: widget.nestedCallback,
                                 db: widget.db,
                                 source: api.source,
                                 directoryComplete: _completeDirectoryNameTag,
@@ -627,7 +628,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   ),
                 ],
           footer: widget.callback?.preview ?? widget.nestedCallback?.preview,
-          keybindsDescription: widget.l10n.galleryLabel,
+          pageName: widget.l10n.galleryLabel,
           gridSeed: state.gridSeed,
         ),
       ),
@@ -740,14 +741,15 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
         const GridDescription<GalleryFile>(
           actions: [],
           gridSeed: 0,
-          keybindsDescription: "",
         ),
         focus,
       ),
-      child: FilesDataNotifier(
-        api: filesApi,
-        nestedCallback: widget.callback,
-        child: child,
+      child: NestedCallbackNotifier(
+        callback: widget.callback,
+        child: FilesDataNotifier(
+          api: filesApi,
+          child: child,
+        ),
       ),
     ),
     source: filesApi.source,
@@ -814,7 +816,6 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
         const GridDescription<GalleryFile>(
           actions: [],
           gridSeed: 0,
-          keybindsDescription: "",
         ),
         focus,
       ),
@@ -1100,12 +1101,14 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (haveTrashCell) {
       return const SizedBox.shrink();
     }
 
-    return const EmptyWidgetBackground(
-      subtitle: "On-device pictures will appear here...",
-    ); // TODO: change
+    return EmptyWidgetBackground(
+      subtitle: l10n.emptyDevicePictures,
+    );
   }
 }

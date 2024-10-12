@@ -91,15 +91,15 @@ class __DirectoryListState extends State<_DirectoryList> {
 
   @override
   Widget build(BuildContext context) {
-    // final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return SliverMainAxisGroup(
       slivers: [
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: FadingPanelLabel(
-            horizontalPadding: EdgeInsets.symmetric(horizontal: 18),
-            label: "Directories", // TODO: change
+            horizontalPadding: const EdgeInsets.symmetric(horizontal: 18),
+            label: l10n.directoriesHint,
           ),
         ),
         if (filter.count == 0)
@@ -108,7 +108,7 @@ class __DirectoryListState extends State<_DirectoryList> {
                 const EdgeInsets.only(left: 8),
             sliver: SliverToBoxAdapter(
               child: Text(
-                "Start inputing text...", // TODO: change
+                l10n.startInputingText,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.6),
                 ),

@@ -32,6 +32,7 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dar
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -287,7 +288,9 @@ abstract class TagData implements CellBase {
   TagData copy({String? tag, TagType? type});
 }
 
-abstract class TagDataImpl implements TagData, CellBase {
+abstract class TagDataImpl
+    with DefaultBuildCellImpl
+    implements TagData, CellBase {
   const TagDataImpl();
 
   @override
@@ -388,7 +391,9 @@ abstract class GridBookmark implements CellBase {
 }
 
 @immutable
-abstract class GridBookmarkImpl implements CellBase, GridBookmark {
+abstract class GridBookmarkImpl
+    with DefaultBuildCellImpl
+    implements CellBase, GridBookmark {
   const GridBookmarkImpl();
 
   @override

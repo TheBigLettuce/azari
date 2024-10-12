@@ -44,6 +44,8 @@ class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return filteringValue.isEmpty
         ? const SliverPadding(padding: EdgeInsets.zero)
         : SliverToBoxAdapter(
@@ -54,7 +56,7 @@ class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
                     const EdgeInsets.only(top: 12, bottom: 8),
                 child: FilledButton.tonalIcon(
                   onPressed: widget.onPressed,
-                  label: Text("#$filteringValue in Booru"),
+                  label: Text(l10n.tagInBooru(filteringValue)),
                   icon: const Icon(Icons.search_rounded),
                 ),
               ),

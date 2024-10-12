@@ -15,7 +15,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dar
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:flutter/material.dart";
@@ -538,7 +537,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
             functionality: widget.gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
-            child: GridCell.frameDefault<T>(
+            child: cell.value.buildCell<T>(
               context,
               -1,
               cell.value,
@@ -591,7 +590,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
         onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
         functionality: gridFunctionality,
         selection: selection,
-        child: GridCell.frameDefault(
+        child: cell.buildCell<T>(
           context,
           idx,
           cell,

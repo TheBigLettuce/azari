@@ -136,9 +136,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
               ),
             ],
             functionality: GridFunctionality(
-              onEmptySource: const EmptyWidgetBackground(
-                subtitle:
-                    "Bookmarked searches will appear here...", // TODO: change
+              onEmptySource: EmptyWidgetBackground(
+                subtitle: l10n.emptyBookmarkedSearches,
               ),
               source: source,
               search: PageNameSearchWidget(
@@ -155,7 +154,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               actions: const [],
               pullToRefresh: false,
               gridSeed: state.gridSeed,
-              keybindsDescription: l10n.bookmarksPageName,
+              pageName: l10n.bookmarksPageName,
             ),
           ),
         ),

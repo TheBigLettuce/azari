@@ -54,9 +54,11 @@ class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: "Directory Names", // TODO: change
+        label: l10n.directoryNames,
         source: source,
         enableHide: false,
         childSize: _ChipsPanelBody.size,

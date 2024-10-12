@@ -13,6 +13,8 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/anime/anime.dart";
+import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/plugs/gallery.dart";
 import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
 import "package:azari/src/plugs/generated/platform_api.g.dart";
@@ -42,6 +44,7 @@ class DirectoriesSearchPage extends StatefulWidget {
     required this.onDirectoryPressed,
     required this.directoryComplete,
     required this.joinedDirectories,
+    required this.callback,
   });
 
   final ResourceSource<int, GalleryDirectory> source;
@@ -55,6 +58,8 @@ class DirectoriesSearchPage extends StatefulWidget {
   }) joinedDirectories;
 
   final Future<List<BooruTag>> Function(String str) directoryComplete;
+
+  final CallbackDescriptionNested? callback;
 
   final DbConn db;
 
@@ -120,9 +125,9 @@ class _DirectoriesSearchPageState extends State<DirectoriesSearchPage> {
               onPressed: () {
                 if (searchController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Search text is empty"),
-                    ), // TODO: change
+                    SnackBar(
+                      content: Text(l10n.searchTextIsEmpty),
+                    ),
                   );
 
                   return;
@@ -165,6 +170,7 @@ class _DirectoriesSearchPageState extends State<DirectoriesSearchPage> {
               _FilesList(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
+                callback: widget.callback,
                 db: widget.db,
               ),
               _DirectoryList(

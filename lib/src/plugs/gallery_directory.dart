@@ -5,12 +5,37 @@
 
 part of "gallery.dart";
 
-mixin GalleryDirectory
+abstract class GalleryDirectory
+    with
+        DefaultBuildCellImpl
     implements
-        GalleryDirectoryBase,
+        // GalleryDirectoryBase,
         CellBase,
         Pressable<GalleryDirectory>,
         Thumbnailable {
+  const GalleryDirectory({
+    required this.bucketId,
+    required this.name,
+    required this.tag,
+    required this.volumeName,
+    required this.relativeLoc,
+    required this.lastModified,
+    required this.thumbFileId,
+  });
+
+  final int thumbFileId;
+
+  final String bucketId;
+
+  final String name;
+
+  final String relativeLoc;
+  final String volumeName;
+
+  final int lastModified;
+
+  final String tag;
+
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -154,31 +179,6 @@ mixin GalleryDirectory
       }
     }
   }
-}
-
-class GalleryDirectoryBase {
-  const GalleryDirectoryBase({
-    required this.bucketId,
-    required this.name,
-    required this.tag,
-    required this.volumeName,
-    required this.relativeLoc,
-    required this.lastModified,
-    required this.thumbFileId,
-  });
-
-  final int thumbFileId;
-
-  final String bucketId;
-
-  final String name;
-
-  final String relativeLoc;
-  final String volumeName;
-
-  final int lastModified;
-
-  final String tag;
 }
 
 class TrashCell implements AsyncCell<GalleryDirectory> {

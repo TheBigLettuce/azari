@@ -63,7 +63,9 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
 }
 
 @immutable
-abstract class DownloadFileDataImpl implements DownloadFileData {
+abstract class DownloadFileDataImpl
+    with DefaultBuildCellImpl
+    implements DownloadFileData {
   const DownloadFileDataImpl();
 
   @override

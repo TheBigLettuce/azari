@@ -75,17 +75,18 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(
           child: FadingPanel(
-            label: "Tags", // TODO: change
+            label: l10n.tagsLabel,
             source: source,
             enableHide: false,
             childSize: _ChipsPanelBody.size,
             child: _ChipsPanelBody(
               source: source,
-              // onTagLongPressed: widget.onTagPressed,
               onTagPressed: (str) {
                 widget.searchController.text = str;
                 widget.filteringEvents.add(str.trim());
@@ -106,9 +107,9 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel> {
 
             if (booru.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("No Booru directories found"),
-                ), // TODO: change
+                SnackBar(
+                  content: Text(l10n.noBooruDirectories),
+                ),
               );
 
               return;

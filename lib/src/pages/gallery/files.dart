@@ -462,21 +462,23 @@ class _GalleryFilesState extends State<GalleryFiles> {
                 ),
               ],
               functionality: GridFunctionality(
-                onEmptySource: const EmptyWidgetBackground(
-                  subtitle: "No media found...",
-                ), // TODO: change
+                onEmptySource: EmptyWidgetBackground(
+                  subtitle: l10n.emptyNoMedia,
+                ),
                 settingsButton: GridSettingsButton.fromWatchable(gridSettings),
                 registerNotifiers: (child) {
-                  return FilesDataNotifier(
-                    api: widget.api,
-                    nestedCallback: widget.callback,
-                    child: DeleteDialogShowNotifier(
-                      toShow: toShowDelete,
-                      child: OnBooruTagPressed(
-                        onPressed: _onBooruTagPressed,
-                        child: FilteringDataHolder(
-                          source: filter,
-                          child: child,
+                  return NestedCallbackNotifier(
+                    callback: widget.callback,
+                    child: FilesDataNotifier(
+                      api: widget.api,
+                      child: DeleteDialogShowNotifier(
+                        toShow: toShowDelete,
+                        child: OnBooruTagPressed(
+                          onPressed: _onBooruTagPressed,
+                          child: FilteringDataHolder(
+                            source: filter,
+                            child: child,
+                          ),
                         ),
                       ),
                     ),
@@ -637,7 +639,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                               toShowDelete,
                             ),
                           ],
-                keybindsDescription: widget.dirName,
+                pageName: widget.dirName,
                 gridSeed: state.gridSeed,
               ),
             ),
@@ -1211,31 +1213,41 @@ class FilesDataNotifier extends InheritedWidget {
   const FilesDataNotifier({
     super.key,
     required this.api,
-    required this.nestedCallback,
     required super.child,
   });
 
   final GalleryAPIFiles api;
-  final CallbackDescriptionNested? nestedCallback;
 
-  static (
-    GalleryAPIFiles,
-    CallbackDescriptionNested?,
-  )? maybeOf(BuildContext context) {
+  static GalleryAPIFiles? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
 
-    return widget == null
-        ? null
-        : (
-            widget.api,
-            widget.nestedCallback,
-          );
+    return widget?.api;
   }
 
   @override
-  bool updateShouldNotify(FilesDataNotifier oldWidget) =>
-      api != oldWidget.api || nestedCallback != oldWidget.nestedCallback;
+  bool updateShouldNotify(FilesDataNotifier oldWidget) => api != oldWidget.api;
+}
+
+class NestedCallbackNotifier extends InheritedWidget {
+  const NestedCallbackNotifier({
+    super.key,
+    required this.callback,
+    required super.child,
+  });
+
+  final CallbackDescriptionNested? callback;
+
+  static CallbackDescriptionNested? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<NestedCallbackNotifier>();
+
+    return widget?.callback;
+  }
+
+  @override
+  bool updateShouldNotify(NestedCallbackNotifier oldWidget) =>
+      callback != oldWidget.callback;
 }
 
 class GridFooter<T> extends StatefulWidget {

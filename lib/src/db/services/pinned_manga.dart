@@ -32,7 +32,9 @@ abstract class PinnedManga
   }) = $PinnedManga;
 }
 
-abstract class PinnedMangaImpl implements PinnedManga {
+abstract class PinnedMangaImpl
+    with DefaultBuildCellImpl
+    implements PinnedManga {
   const PinnedMangaImpl();
 
   @override

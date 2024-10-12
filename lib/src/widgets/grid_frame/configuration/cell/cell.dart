@@ -6,6 +6,7 @@
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:flutter/material.dart";
 import "package:flutter/widgets.dart";
 
@@ -49,6 +50,17 @@ abstract interface class CellBase implements UniqueKeyable, Aliasable {
   const CellBase();
 
   CellStaticData description();
+
+  Widget buildCell<T extends CellBase>(
+    BuildContext context,
+    int idx,
+    T cell, {
+    required bool isList,
+    required bool hideTitle,
+    bool animated = false,
+    bool blur = false,
+    required Alignment imageAlign,
+  });
 }
 
 abstract interface class Aliasable {

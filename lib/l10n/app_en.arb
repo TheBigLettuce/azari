@@ -969,17 +969,13 @@
     "@openWelcomePageSetting": {
         "description": "Settings, open welcome page"
     },
-    "buddhaModeSetting": "Buddha Mode",
-    "@buddhaModeSetting": {
-        "description": "Settings, buddha mode"
-    },
     "deletedFromWatched": "Deleted from watched",
     "@deletedFromWatched": {
         "description": "Anime page, showed when anime deleted from watched"
     },
-    "buddhaModeTags": "Tags",
-    "@buddhaModeTags": {
-        "description": "Buddha mode replacement of end drawer app bar title"
+    "tagsLabel": "Tags",
+    "@tagsLabel": {
+        "description": "Tags panel title"
     },
     "bookmarksPageName": "Bookmarks",
     "@bookmarksPageName": {
@@ -1264,5 +1260,169 @@
     "imageDimensions": "Dimensions",
     "@imageDimensions": {
         "description": "Image dimensions"
+    },
+    "startInputingText": "Start inputing text...",
+    "@startInputingText": {
+        "description": "Panel body text on empty"
+    },
+    "recentlySearched": "Recently Searched",
+    "@recentlySearched": {
+        "description": "Panel title of recently searched tags"
+    },
+    "directoryNames": "Directory Names",
+    "@directoryNames": {
+        "description": "Panel title of directory name chips"
+    },
+    "filesLabel": "Files",
+    "@filesLabel": {
+        "description": "Panel title of gallery files"
+    },
+    "noBooruDirectories": "No Booru directories found",
+    "@noBooruDirectories": {
+        "description": "Snackbar text on Booru directories not found in gallery"
+    },
+    "tagInBooru": "#{tag} in Booru",
+    "@tagInBooru": {
+        "description": "Search page button label to search only in Booru directories",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "noPinnedDirectories": "No pinned directories found",
+    "@noPinnedDirectories": {
+        "description": "Snackbar text pinned directories not found in gallery"
+    },
+    "tagInPinnedDirectories": "#{tag} in pinned directories",
+    "@tagInPinnedDirectories": {
+        "description": "Search page button label to search only in pinned directories directories",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "namesInPinnedDirectories": "'{name}' in pinned directories",
+    "@namesInPinnedDirectories": {
+        "description": "Search page button label to search only in pinned directories directories",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "tagInEverywhere": "#{tag} everywhere",
+    "@tagInEverywhere": {
+        "description": "Search page button label to search every directory",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "nameInEverywhere": "'{tag}' everywhere",
+    "@nameInEverywhere": {
+        "description": "Search page button label to search every directory",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "mostRatedLabel": "Most Rated",
+    "@mostRatedLabel": {
+        "description": "Search panel label of most rated anime"
+    },
+    "excludedTagsLabel": "Excluded Tags",
+    "@excludedTagsLabel": {
+        "description": "Search panel label of excluded tags"
+    },
+    "removeTag": "Remove #{tag}?",
+    "@removeTag": {
+        "description": "Dialog title on removing tags from excluded or pinned",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addTagToExcluded": "Add #{tag} to excluded",
+    "@addTagToExcluded": {
+        "description": "Search panel button label to add tag to excluded",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addExcludedTag": "Add excluded tag",
+    "@addExcludedTag": {
+        "description": "Search panel button label to add tag to excluded"
+    },
+    "pinnedTags": "Pinned Tags",
+    "@pinnedTags": {
+        "description": "Search panel label of pinned tags"
+    },
+    "addTagToPinned": "Add #{tag} to pinned",
+    "@addTagToPinned": {
+        "description": "Search panel button label to add tag to pinned",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addPinnedTag": "Add pinned tag",
+    "@addPinnedTag": {
+        "description": "Search panel button label to add tag to pinned"
+    },
+    "collapse": "Collapse",
+    "@collapse": {
+        "description": "Collapse text in anime info page"
+    },
+    "emptyBookmarkedSearches": "Bookmarked searches will appear here...",
+    "@emptyBookmarkedSearches": {
+        "description": "Empty widget body text"
+    },
+    "emptyFavoritedPosts": "Favorited posts will appear here...",
+    "@emptyFavoritedPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyHiddenPosts": "Hidden posts will appear here...",
+    "@emptyHiddenPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyNoPosts": "No posts found...",
+    "@emptyNoPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyPostsVisited": "Posts you visited will appear here...",
+    "@emptyPostsVisited": {
+        "description": "Empty widget body text"
+    },
+    "emptyHiddenDirectories": "Hidden directories will appear here...",
+    "@emptyHiddenDirectories": {
+        "description": "Empty widget body text"
+    },
+    "emptyDevicePictures": "On-device pictures will appear here...",
+    "@emptyDevicePictures": {
+        "description": "Empty widget body text"
+    },
+    "yesHide": "yes, hide",
+    "@yesHide": {
+        "description": "Button label"
+    },
+    "emptyNoMedia": "No media found...",
+    "@emptyNoMedia": {
+        "description": "Empty widget body text"
+    },
+    "emptyDownloadProgress": "Download progress will appear here...",
+    "@emptyDownloadProgress": {
+        "description": "Empty widget body text"
+    },
+    "currentSeason": "Current Season",
+    "@currentSeason": {
+        "description": "Panel title of current season anime"
     }
 }

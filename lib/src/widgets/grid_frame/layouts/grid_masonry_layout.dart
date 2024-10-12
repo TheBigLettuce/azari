@@ -10,7 +10,6 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
@@ -101,7 +100,7 @@ class _GridMasonryLayoutState<T extends CellBase>
               description: cell.description(),
               functionality: extras.functionality,
               selectFrom: null,
-              child: GridCell.frameDefault(
+              child: cell.buildCell<T>(
                 context,
                 idx,
                 cell,

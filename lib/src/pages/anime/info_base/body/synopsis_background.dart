@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:math";
+import "dart:math" as math;
 
 import "package:azari/src/pages/anime/info_base/body/anime_body_text_selection_toolbar.dart";
 import "package:azari/src/pages/anime/info_base/body/body_segment_label.dart";
@@ -68,7 +68,8 @@ class SynopsisBackground extends StatelessWidget {
                     data: synopsis,
                     bulletBuilder: (parameters) {
                       return Transform.rotate(
-                        angle: -pi / Random(parameters.index).nextInt(100),
+                        angle: -math.pi /
+                            math.Random(parameters.index).nextInt(100),
                         child: Icon(
                           const IconData(0x2726),
                           size: 12,
@@ -157,6 +158,7 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     final child = SelectableText(
@@ -184,7 +186,7 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
                           collapse = !collapse;
                         });
                       },
-                      child: const Text("Collapse"), // TODO: change
+                      child: Text(l10n.collapse),
                     ),
                   ],
                 )
@@ -215,7 +217,7 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
                                 collapse = !collapse;
                               });
                             },
-                            child: const Text("More"), // TODO: change
+                            child: Text(l10n.more),
                           ),
                         ),
                       ),

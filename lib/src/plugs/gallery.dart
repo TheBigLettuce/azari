@@ -38,6 +38,7 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:azari/src/widgets/load_tags.dart";
@@ -99,7 +100,7 @@ abstract class GalleryAPIDirectories {
   void close();
 }
 
-class PlainGalleryDirectory extends GalleryDirectoryBase with GalleryDirectory {
+class PlainGalleryDirectory extends GalleryDirectory {
   const PlainGalleryDirectory({
     required super.bucketId,
     required super.name,

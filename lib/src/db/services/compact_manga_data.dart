@@ -31,7 +31,9 @@ abstract class CompactMangaData
   }) = $CompactMangaData;
 }
 
-abstract class CompactMangaDataImpl implements CompactMangaData {
+abstract class CompactMangaDataImpl
+    with DefaultBuildCellImpl
+    implements CompactMangaData {
   const CompactMangaDataImpl();
 
   @override

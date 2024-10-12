@@ -11,6 +11,7 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 
@@ -164,7 +165,9 @@ class AnimeSearchEntry extends AnimeEntryDataImpl implements AnimeEntryData {
 }
 
 @immutable
-abstract class AnimeEntryDataImpl implements AnimeEntryData {
+abstract class AnimeEntryDataImpl
+    with DefaultBuildCellImpl
+    implements AnimeEntryData {
   const AnimeEntryDataImpl();
 
   @override
@@ -193,6 +196,11 @@ abstract class AnimeEntryDataImpl implements AnimeEntryData {
     final db = DatabaseConnectionNotifier.of(context);
 
     return [
+      // if (score != 0.0)
+      //   Sticker(
+      //     Icons.thumb_up_alt_outlined,
+      //     subtitle: score.toStringAsFixed(2),
+      //   ),
       // if (inBacklog) const Sticker(Icons.library_add_check),
       // if (watching) const Sticker(Icons.play_arrow_rounded),
       if (db.savedAnimeEntries.watched.forIdx((id, site)) != null)

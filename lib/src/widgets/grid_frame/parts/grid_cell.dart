@@ -13,6 +13,28 @@ import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
+mixin DefaultBuildCellImpl implements CellBase {
+  @override
+  Widget buildCell<T extends CellBase>(
+    BuildContext context,
+    int idx,
+    T cell, {
+    required bool isList,
+    required bool hideTitle,
+    bool animated = false,
+    bool blur = false,
+    required Alignment imageAlign,
+  }) =>
+      GridCell(
+        cell: cell,
+        longTitle: isList,
+        hideTitle: hideTitle,
+        animate: animated,
+        blur: blur,
+        imageAlign: imageAlign,
+      );
+}
+
 /// The cell of [GridFrame].
 class GridCell<T extends CellBase> extends StatefulWidget {
   const GridCell({
@@ -26,6 +48,27 @@ class GridCell<T extends CellBase> extends StatefulWidget {
     this.blur = false,
     this.imageAlign = Alignment.center,
   }) : _data = cell;
+
+  // factory GridCell.frameDefault(
+  //   BuildContext _,
+  //   int __,
+  //   T cell, {
+  //   required bool isList,
+  //   required bool hideTitle,
+  //   bool animated = false,
+  //   bool blur = false,
+  //   required Alignment imageAlign,
+  // }) {
+  //   return GridCell(
+  //     cell: cell,
+  //     longTitle: isList,
+  //     hideTitle: hideTitle,
+  //     animate: animated,
+  //     blur: blur,
+  //     imageAlign: imageAlign,
+  //   );
+  // }
+
   final T _data;
 
   final bool longTitle;
@@ -37,26 +80,6 @@ class GridCell<T extends CellBase> extends StatefulWidget {
   final String? secondaryTitle;
 
   final CellStaticData? overrideDescription;
-
-  static GridCell<T> frameDefault<T extends CellBase>(
-    BuildContext context,
-    int idx,
-    T cell, {
-    required bool isList,
-    required bool hideTitle,
-    bool animated = false,
-    bool blur = false,
-    required Alignment imageAlign,
-  }) {
-    return GridCell(
-      cell: cell,
-      longTitle: isList,
-      hideTitle: hideTitle,
-      animate: animated,
-      blur: blur,
-      imageAlign: imageAlign,
-    );
-  }
 
   @override
   State<GridCell> createState() => _GridCellState();

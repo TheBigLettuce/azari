@@ -18,11 +18,11 @@ class DeleteDialogShowNotifier extends InheritedWidget {
 
   final DeleteDialogShow toShow;
 
-  static DeleteDialogShow of(BuildContext context) {
+  static DeleteDialogShow? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<DeleteDialogShowNotifier>();
 
-    return widget!.toShow;
+    return widget?.toShow;
   }
 
   @override
@@ -70,7 +70,7 @@ Future<void> deleteFilesDialog(
                 toShow.show = false;
                 Navigator.pop(context);
               },
-              child: Text("yes, hide"),
+              child: Text(l10n.yesHide),
             ),
             TextButton(
               onPressed: () {
