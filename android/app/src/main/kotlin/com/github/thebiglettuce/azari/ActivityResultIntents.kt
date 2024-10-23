@@ -16,6 +16,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import kotlinx.coroutines.launch
 import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
@@ -42,16 +43,20 @@ class ActivityResultIntents(
         onOpenDocument(data, activityContextChannel)
     }
 
-    val manageMedia = context.registerForActivityResult(ManageMedia()) { data ->
-        val engineBindings = getActivityContextChannel()
+    val manageMedia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        context.registerForActivityResult(ManageMedia()) { data ->
+            val engineBindings = getActivityContextChannel()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
-        } else {
-            engineBindings.manageMediaCallback!!(false);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
+            } else {
+                engineBindings.manageMediaCallback!!(false);
+            }
+            engineBindings.manageMediaCallback = null
+            engineBindings.manageMediaMux.unlock()
         }
-        engineBindings.manageMediaCallback = null
-        engineBindings.manageMediaMux.unlock()
+    } else {
+        null
     }
 
     val writeRequest =
@@ -209,7 +214,7 @@ class ActivityResultIntents(
         writeRequestInternal.unregister()
         writeRequestCopyMove.unregister()
         writeRequest.unregister()
-        manageMedia.unregister()
+        manageMedia?.unregister()
         pickFileAndOpen.unregister()
         chooseDirectory.unregister()
     }
@@ -237,6 +242,7 @@ class ActivityResultIntents(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 class ManageMedia : ActivityResultContract<String, Unit>() {
     override fun createIntent(context: Context, input: String): Intent {
         val intent =

@@ -3,6 +3,7 @@ package com.github.thebiglettuce.azari.impls
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.system.Os
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +65,13 @@ internal class GalleryHostApiImpl(
             for (uri in uris) {
                 val parsedUri = Uri.parse(uri)
 
-                context.contentResolver.openFile(parsedUri, "r", null)?.use {
+
+
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.contentResolver.openFile(
+                    parsedUri,
+                    "r",
+                    null
+                ) else context.contentResolver.openFileDescriptor(parsedUri, "r"))?.use {
                     val options = BitmapFactory.Options().apply {
                         inJustDecodeBounds = true
                     }

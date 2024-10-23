@@ -9,12 +9,15 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.webkit.MimeTypeMap
+import androidx.core.graphics.get
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
 import com.bumptech.glide.Glide
@@ -154,9 +157,13 @@ class MediaLoaderAndMover(private val context: Context) {
                             dir.createFile(mimeType, Path(op.source).fileName!!.toString())
                                 ?: throw Exception("could not create the destination file")
 
-
-                        val docFd = context.contentResolver.openFile(docDest.uri, "w", null)
-                            ?: throw Exception("could not get an output stream")
+                        val docFd =
+                            (context.contentResolver.openFile(
+                                docDest.uri,
+                                "w",
+                                null
+                            ))
+                                ?: throw Exception("could not get an output stream")
                         docFd.use { fd ->
                             FileSystem.SYSTEM.openReadOnly(op.source.toPath()).use { fileSrc ->
                                 FileOutputStream(fd.fileDescriptor).use { docStream ->
@@ -416,6 +423,10 @@ class MediaLoaderAndMover(private val context: Context) {
         separate: Boolean = false,
         isFavorites: Boolean = false,
     ): Pair<List<Long>, List<Long>> {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            return Pair(listOf(), listOf())
+        }
+
         val projection = if (separate) arrayOf(
             MediaStore.Files.FileColumns._ID,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
@@ -632,6 +643,13 @@ class MediaLoaderAndMover(private val context: Context) {
         sortingMode: FilesSortingMode,
         closure: suspend (content: List<DirectoryFile>, notFound: List<Long>, empty: Boolean, inRefresh: Boolean) -> Unit,
     ) {
+        if (type == LoadMediaType.Trashed) {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                closure(listOf(), listOf(), true, false)
+                return
+            }
+        }
+
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
@@ -851,15 +869,23 @@ class MediaLoaderAndMover(private val context: Context) {
             return Pair("", 0)
         }
 
-        val thumb = if (network) Glide.with(context).asBitmap().load(uri).submit()
-            .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+        val thumb =
+            if (network) Glide.with(context)
+                .asBitmap().disallowHardwareConfig().load(uri).submit()
+                .get() else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) Glide.with(context)
+                .asBitmap().disallowHardwareConfig().load(uri).override(320, 320).submit()
+                .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()
 
         val scaled = thumb.scale(9, 8)
 
         val hash = diffHashFromThumb(scaled)
 
-        thumb.compress(Bitmap.CompressFormat.WEBP_LOSSY, 80, stream)
+        thumb.compress(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Bitmap.CompressFormat.WEBP_LOSSY else Bitmap.CompressFormat.JPEG,
+            80,
+            stream
+        )
 
         val path = locker.put(stream, id, saveToPinned)
 
@@ -874,19 +900,25 @@ class MediaLoaderAndMover(private val context: Context) {
     }
 
     private suspend fun refreshDirectories(context: Context, sendCallback: SendDirectories) {
-        val projection = arrayOf(
+        val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
             MediaStore.Files.FileColumns.RELATIVE_PATH,
             MediaStore.Files.FileColumns.VOLUME_NAME,
             MediaStore.Files.FileColumns._ID
+        ) else arrayOf(
+            MediaStore.Files.FileColumns.BUCKET_ID,
+            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns.DATA,
+            MediaStore.Files.FileColumns._ID
         )
 
         context.contentResolver.query(
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
             projection,
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ? AND ${MediaStore.Files.FileColumns.IS_TRASHED} = 0",
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ? ${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "AND ${MediaStore.Files.FileColumns.IS_TRASHED} = 0" else ""}",
             arrayOf("image/vnd.djvu"),
             "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
         )?.use { cursor ->
@@ -895,10 +927,13 @@ class MediaLoaderAndMover(private val context: Context) {
             val b_display_name =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
             val relative_path =
-                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.RELATIVE_PATH)
+                cursor.getColumnIndexOrThrow(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA)
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
-            val volume_name = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
+            val volume_name =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cursor.getColumnIndexOrThrow(
+                    MediaStore.Files.FileColumns.VOLUME_NAME
+                ) else null
 
             val map = HashMap<String, Unit>()
             val resMap = mutableMapOf<String, Directory>()
@@ -922,7 +957,7 @@ class MediaLoaderAndMover(private val context: Context) {
                         lastModified = cursor.getLong(date_modified),
                         bucketId = bucketId,
                         name = cursor.getString(b_display_name) ?: "Internal",
-                        volumeName = cursor.getString(volume_name),
+                        volumeName = if (volume_name == null) "" else cursor.getString(volume_name),
                         relativeLoc = cursor.getString(relative_path)
                     )
 

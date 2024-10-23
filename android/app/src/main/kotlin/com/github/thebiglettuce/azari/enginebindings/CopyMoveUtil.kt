@@ -8,12 +8,16 @@ package com.github.thebiglettuce.azari.enginebindings
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
 import io.flutter.embedding.android.FlutterFragmentActivity
 import okio.use
 import java.io.File
+import java.io.InputStream
 
 fun copyFileInternal(
     contentResolver: ContentResolver,
@@ -71,6 +75,7 @@ fun copyFileInternal(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.R)
 fun copyOrMove(
     context: FlutterFragmentActivity,
     uris: List<Uri>,
@@ -143,7 +148,7 @@ internal fun copyFile(
     newDirIsLocal: Boolean = false,
     isImage: Boolean,
     deleteAfter: Boolean,
-    dest: String
+    dest: String,
 ) {
     val mimeType = contentResolver.getType(e)!!
 
@@ -169,82 +174,135 @@ internal fun copyFile(
             }
 
             if (newDir) {
-                if (newDirIsLocal) {
-                    val file = File(dest, it.getString(0))
-                    if (!file.createNewFile()) {
-                        throw Exception("file exists")
-                    }
-
-                    file.outputStream().use { out ->
-                        stream.transferTo(out)
-                        out.flush()
-                        out.fd.sync()
-                    }
-
-                    file.setLastModified(it.getLong(1))
-
-                    return
-                }
-
-                DocumentFile.fromTreeUri(context, Uri.parse(dest))
-                    ?.run {
-                        if (this.isFile || !this.canWrite()) {
-                            return@use
-                        }
-
-                        val file = this.createFile(mimeType, it.getString(0)) ?: return@use
-                        contentResolver.openOutputStream(file.uri)?.use { out ->
-                            stream.transferTo(out)
-                            if (deleteAfter) {
-                                contentResolver.delete(e, null)
-                            }
-                        }
-
-                    }
+                newDirCopyFile(
+                    context,
+                    e,
+                    newDirIsLocal,
+                    deleteAfter,
+                    stream,
+                    it.getString(0),
+                    it.getLong(1),
+                    mimeType,
+                    dest
+                )
 
                 return
             }
 
-            val details = ContentValues().apply {
-                put(
-                    MediaStore.MediaColumns.DISPLAY_NAME,
-                    it.getString(0)
-                )
-                put(
-                    MediaStore.MediaColumns.RELATIVE_PATH,
-                    dest
-                )
-                put(MediaStore.MediaColumns.IS_PENDING, 1)
-            }
-
-            val resultUri =
-                if (isImage) {
-                    contentResolver.insert(
-                        MediaStore.Images.Media.getContentUri(
-                            volumeName!!
-                        ), details
-                    )
-                } else {
-                    contentResolver.insert(
-                        MediaStore.Video.Media.getContentUri(
-                            volumeName!!
-                        ), details
-                    )
-                }
-
-            if (resultUri == null) {
-                return@use
-            }
-
-            contentResolver.openOutputStream(resultUri)?.use { out ->
-                stream.transferTo(out)
-            }
-
-            details.clear()
-            details.put(MediaStore.MediaColumns.IS_PENDING, 0)
-            contentResolver.update(resultUri, details, null, null)
+            insertCopiedFile(context, stream, it.getString(0), isImage, volumeName, dest)
         }
     }
+}
+
+private fun insertCopiedFile(
+    context: Context,
+    stream: InputStream,
+    displayName: String,
+    isImage: Boolean,
+    volumeName: String?,
+    dest: String,
+) {
+    val contentResolver = context.contentResolver
+    val details = ContentValues().apply {
+        put(
+            MediaStore.MediaColumns.DISPLAY_NAME,
+            displayName
+        )
+        put(
+            MediaStore.MediaColumns.RELATIVE_PATH,
+            dest
+        )
+        put(MediaStore.MediaColumns.IS_PENDING, 1)
+    }
+
+    val resultUri =
+        if (isImage) {
+            contentResolver.insert(
+                MediaStore.Images.Media.getContentUri(
+                    volumeName!!
+                ), details
+            )
+        } else {
+            contentResolver.insert(
+                MediaStore.Video.Media.getContentUri(
+                    volumeName!!
+                ), details
+            )
+        }
+
+    if (resultUri == null) {
+        return
+    }
+
+    contentResolver.openOutputStream(resultUri)?.use { out ->
+        stream.transferTo(out)
+    }
+
+    details.clear()
+    details.put(MediaStore.MediaColumns.IS_PENDING, 0)
+    contentResolver.update(resultUri, details, null, null)
+}
+
+fun newDirCopyFile(
+    context: Context,
+    e: Uri,
+    newDirIsLocal: Boolean,
+    deleteAfter: Boolean,
+    stream: InputStream,
+    displayName: String,
+    dateModified: Long,
+    mimeType: String,
+    dest: String,
+) {
+    if (newDirIsLocal) {
+        val file = File(dest, displayName)
+        if (!file.createNewFile()) {
+            throw Exception("file exists")
+        }
+
+        file.outputStream().use { out ->
+            stream.transferTo(out)
+            out.flush()
+            out.fd.sync()
+        }
+
+        file.setLastModified(dateModified)
+
+        return
+    }
+
+    DocumentFile.fromTreeUri(context, Uri.parse(dest))
+        ?.run {
+            if (this.isFile || !this.canWrite()) {
+                return
+            }
+
+            val file = this.createFile(mimeType, displayName) ?: return
+            context.contentResolver.openOutputStream(file.uri)?.use { out ->
+                stream.transferTo(out)
+                if (deleteAfter) {
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        val (type, id) = ActivityContextChannel.typeIdFromUri(listOf(e.toString())).entries.first();
+
+                        if (type == "images") {
+                            context.contentResolver.delete(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                "_id = ?",
+                                arrayOf(id.toString()),
+                            )
+                        } else if (type == "videos") {
+                            context.contentResolver.delete(
+                                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                "_id = ?",
+                                arrayOf(id.toString()),
+                            )
+                        }
+                    } else {
+                        context.contentResolver.delete(e, null)
+                    }
+                }
+            }
+        }
 }
 
 private fun constructRelPath(uri: Uri, isImage: Boolean): String? {

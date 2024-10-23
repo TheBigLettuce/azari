@@ -7,8 +7,11 @@ package com.github.thebiglettuce.azari
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import io.flutter.embedding.android.FlutterFragmentActivity

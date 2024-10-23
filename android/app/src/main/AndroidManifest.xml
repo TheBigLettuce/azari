@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!--
    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -8,6 +9,9 @@
  Required only if your app needs to access images or photos
      that other apps created.
     -->
+
+    <uses-sdk tools:overrideLibrary="dev.isar.isar_flutter_libs" />
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -23,6 +27,9 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
@@ -33,7 +40,8 @@
         android:name=".App"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher_2"
-        android:label="${applicationLabel}">
+        android:label="${applicationLabel}"
+        android:requestLegacyExternalStorage="true">
         <receiver
             android:name=".LocaleBroadcastReceiver"
             android:exported="false">
@@ -77,7 +85,7 @@
                 <category android:name="android.intent.category.OPENABLE" />
 
                 <data android:mimeType="image/*" />
-     w           <data android:mimeType="video/*" />
+                <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
 

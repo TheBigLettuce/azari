@@ -10,6 +10,7 @@ import android.R
 import android.app.Activity
 import android.app.WallpaperManager
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -22,7 +23,12 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.WindowManager
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
+import androidx.annotation.RequiresApi
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.Glide
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -44,8 +50,10 @@ import com.github.thebiglettuce.azari.mover.MoveInternalOp
 import com.github.thebiglettuce.azari.mover.MoveOp
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 import com.github.thebiglettuce.azari.mover.RenameOp
+import io.flutter.plugin.common.MethodCall
 import okio.use
 import java.io.File
+import java.nio.file.Path
 
 class AppContextChannel(
     val engine: FlutterEngine,
@@ -149,6 +157,11 @@ class AppContextChannel(
                 }
 
                 "currentMediastoreVersion" -> {
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        result.success(0L)
+                        return@setMethodCallHandler
+                    }
+
                     result.success(MediaStore.getGeneration(context, MediaStore.VOLUME_EXTERNAL))
                 }
 
@@ -160,7 +173,6 @@ class AppContextChannel(
                 }
 
                 "preloadImage" -> {
-                    Log.i("preload", "s")
                     Glide.with(context).load(Uri.parse(call.arguments as String)).preload()
                 }
 
@@ -275,7 +287,7 @@ class AppContextChannel(
 
                         result.success(value.data)
                     } catch (e: Exception) {
-                        result.success(0xFF448AFF)
+                        result.success(0xffffdadb)
                         Log.i("accent", e.toString())
                     }
 
@@ -390,28 +402,11 @@ class ActivityContextChannel(
                 }
 
                 "returnUri" -> {
-                    val uri = call.arguments as String
-                    result.success(null)
-                    val intent = Intent()
-                    intent.setData(Uri.parse(uri))
-                    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                    context.setResult(Activity.RESULT_OK, intent)
-                    context.finish()
+                    returnUri(context, call, result)
                 }
 
                 "hideRecents" -> {
-                    val hide = call.arguments as Boolean;
-
-                    context.runOnUiThread {
-                        if (hide) {
-                            context.window.addFlags(
-                                WindowManager.LayoutParams.FLAG_SECURE
-                            );
-                        } else {
-                            context.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                        }
-                    }
+                    hideRecents(context, call)
                 }
 
                 "getQuickViewUris" -> {
@@ -420,22 +415,16 @@ class ActivityContextChannel(
                     result.success(listOf(data!!.toString()))
                 }
 
-                "deleteFiles" -> {
-                    try {
-                        val deleteItems = (call.arguments as List<String>).map { Uri.parse(it) }
+                "setFullscreen" -> {
+                    setFullscreen(mediaLoaderAndMover, context, call)
+                }
 
-                        intents.deleteRequest.launch(
-                            IntentSenderRequest.Builder(
-                                MediaStore.createDeleteRequest(
-                                    context.contentResolver,
-                                    deleteItems
-                                )
-                            ).build()
-                        )
-                    } catch (e: java.lang.Exception) {
-                        Log.e("deleteFiles", e.toString())
+                "deleteFiles" -> {
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        androidQDeleteFiles(mediaLoaderAndMover, context, call, result)
+                    } else {
+                        deleteFiles(context, call, result, intents)
                     }
-                    result.success(null)
                 }
 
                 "version" -> {
@@ -448,397 +437,982 @@ class ActivityContextChannel(
                 }
 
                 "emptyTrash" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        mediaLoaderAndMover.trashDeleteMux.lock()
-                        val (images, videos) = mediaLoaderAndMover.trashThumbIds(
-                            context,
-                            lastOnly = false,
-                            separate = true
-                        )
-                        if (images.isNotEmpty() || videos.isNotEmpty()) {
-                            val imagesUris = images.map {
-                                ContentUris.withAppendedId(
-                                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                    it
-                                )
-                            }
-
-                            val videosUris = videos.map {
-                                ContentUris.withAppendedId(
-                                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                    it
-                                )
-                            }
-
-                            try {
-                                intents.deleteRequest.launch(
-                                    IntentSenderRequest.Builder(
-                                        MediaStore.createDeleteRequest(
-                                            context.contentResolver, imagesUris.plus(videosUris)
-                                        )
-                                    ).build()
-                                )
-                            } catch (e: Exception) {
-                                Log.e("emptyTrash", e.toString())
-                            }
-                        }
-
-                        mediaLoaderAndMover.trashDeleteMux.unlock()
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        result.success(null)
+                    } else {
+                        emptyTrash(mediaLoaderAndMover, context, intents)
                     }
                 }
 
                 "moveInternal" -> {
-                    val dir = call.argument<String>("dir") ?: throw Exception("dir is empty")
-                    val uris =
-                        call.argument<List<String>>("uris") ?: throw Exception("uris is empty")
-
-                    val urisParsed = uris.map { Uri.parse(it) }
-
-                    mediaLoaderAndMover.scope.launch {
-                        moveInternalMux.lock()
-
-                        try {
-                            moveInternal = MoveInternalOp(dir, urisParsed) {
-                                result.success(it)
-                            }
-
-                            intents.writeRequestInternal.launch(
-                                IntentSenderRequest.Builder(
-                                    MediaStore.createWriteRequest(
-                                        context.contentResolver,
-                                        urisParsed
-                                    )
-                                ).build()
-                            )
-                        } catch (e: Exception) {
-                            result.error(e.toString(), "", "")
-                            moveInternalMux.unlock()
-                        }
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        oldAndroidMoveInternal(mediaLoaderAndMover, context, call, result)
+                    } else {
+                        moveInternal(mediaLoaderAndMover, context, call, result, intents)
                     }
                 }
 
                 "pickFileAndCopy" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        callbackMux.lock()
-                        val outputDir = call.arguments as String
-                        callback = {
-                            if (it == null) {
-                                callbackMux.unlock()
-                                result.error("", "", "")
-                            } else {
-                                try {
-                                    val uri = Uri.parse(it.first)
-                                    var outputFile: String? = null
-
-                                    val file = File(outputDir, uri.toString().split("/").last())
-
-                                    if (file.exists()) {
-                                        file.delete()
-                                    }
-
-                                    if (!file.createNewFile()) {
-                                        throw Exception("exist")
-                                    }
-
-                                    context.contentResolver.openInputStream(uri)?.use { input ->
-                                        file.outputStream().use { output ->
-                                            input.transferTo(output)
-                                            output.flush()
-                                            output.fd.sync()
-                                        }
-
-                                        outputFile = file.absolutePath
-                                    }
-
-                                    if (outputFile == null) {
-                                        throw Exception("file haven't been moved")
-                                    }
-
-                                    result.success(outputFile)
-                                } catch (e: Exception) {
-                                    Log.e("pickFileAndCopy", e.toString())
-                                    result.error(e.toString(), null, null)
-                                }
-
-                                callbackMux.unlock()
-                            }
-                        }
-
-                        intents.pickFileAndOpen.launch(arrayOf())
-                    }
+                    pickFileCopy(mediaLoaderAndMover, context, call, result, intents)
                 }
 
                 "requestManageMedia" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        manageMediaMux.lock()
-
-                        try {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                if (!MediaStore.canManageMedia(context)) {
-                                    val intent =
-                                        Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
-                                    intent.data = Uri.parse("package:${context.packageName}")
-
-                                    manageMediaCallback = {
-                                        result.success(it)
-                                    }
-
-                                    intents.manageMedia.launch(context.packageName)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("requestManageMedia", e.toString())
-                            result.success(false)
-                            manageMediaMux.unlock()
-                        }
+                    if (intents.manageMedia == null) {
+                        result.success(false)
+                        return@setMethodCallHandler
                     }
+
+                    requestManageMedia(mediaLoaderAndMover, context, result, intents.manageMedia)
                 }
 
                 "chooseDirectory" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        callbackMux.lock()
-                        val temporary = call.arguments as Boolean
-
-
-                        callback = {
-                            if (it == null) {
-                                callbackMux.unlock()
-                                result.error("", "", "")
-                            } else {
-                                if (!temporary) {
-                                    context.contentResolver.takePersistableUriPermission(
-                                        Uri.parse(it.first),
-                                        (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                                    )
-                                }
-
-                                callbackMux.unlock()
-                                result.success(
-                                    mapOf<String, String>(
-                                        Pair("path", it.first),
-                                        Pair("pathDisplay", it.second),
-                                    )
-                                )
-                            }
-                        }
-
-                        intents.chooseDirectory.launch(Pair(true, null))
-                    }
+                    chooseDirectory(mediaLoaderAndMover, context, call, result, intents)
                 }
 
                 "setWallpaper" -> {
-                    val idv = call.arguments
-                    val id =
-                        if (idv is Int) idv.toLong() else idv as Long
-
-                    val intent = WallpaperManager.getInstance(context).getCropAndSetWallpaperIntent(
-                        MediaStore.Images.Media.getContentUri(
-                            MediaStore.VOLUME_EXTERNAL,
-                            id
-                        )
-                    )
-
-                    context.startActivity(intent)
-
-                    result.success(null)
+                    setWallpaper(context, call, result)
                 }
 
                 "shareMedia" -> {
-                    val media = call.argument<String>("uri")!!
-                    val isUrl = call.argument<Boolean>("isUrl")!!
-
-                    val intent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        if (isUrl) putExtra(Intent.EXTRA_TEXT, media) else putExtra(
-                            Intent.EXTRA_STREAM,
-                            Uri.parse(media)
-                        )
-                        type = if (isUrl) "text/plain" else context.contentResolver.getType(
-                            Uri.parse(media)
-                        )
-                    }
-                    context.startActivity(Intent.createChooser(intent, null))
-                    result.success(null)
+                    shareMedia(context, call, result)
                 }
 
                 "rename" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        renameMux.lock()
-                        try {
-                            val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
-                            val newName =
-                                call.argument<String>("newName") ?: throw Exception("empty name")
-                            val notify =
-                                call.argument<Boolean>("notify") ?: throw Exception("empty notify")
-
-                            val parsedUri = Uri.parse(uri)
-
-                            rename = RenameOp(parsedUri, newName, notify)
-
-                            intents.writeRequest.launch(
-                                IntentSenderRequest.Builder(
-                                    MediaStore.createWriteRequest(
-                                        context.contentResolver,
-                                        listOf(parsedUri)
-                                    )
-                                ).build()
-                            )
-
-                            result.success(null)
-                        } catch (e: java.lang.Exception) {
-                            renameMux.unlock()
-                            Log.e("rename", e.toString())
-                        }
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        oldAndroidRename(mediaLoaderAndMover, context, call, result)
+                    } else {
+                        rename(mediaLoaderAndMover, context, call, result, intents)
                     }
                 }
 
                 "addToTrash" -> {
-                    val uris = (call.arguments as List<String>).map { Uri.parse(it) }
-
-                    intents.trashRequest.launch(
-                        IntentSenderRequest.Builder(
-                            MediaStore.createTrashRequest(
-                                context.contentResolver,
-                                uris,
-                                true
-                            )
-                        ).build()
-                    )
-
-                    result.success(null)
-                }
-
-                "removeFromTrash" -> {
-                    val uri = (call.arguments as List<String>).map { Uri.parse(it) }
-
-                    intents.trashRequest.launch(
-                        IntentSenderRequest.Builder(
-                            MediaStore.createTrashRequest(
-                                context.contentResolver,
-                                uri,
-                                false
-                            )
-                        ).build()
-                    )
-
-                    result.success(null)
-                }
-
-                "copyMoveInternal" -> {
-                    val relativePath = call.argument<String>("relativePath")!!
-                    val volume = call.argument<String>("volume")!!
-                    val dirName = call.argument<String>("dirName")!!
-                    val images = call.argument<List<String>>("images")!!
-                    val videos = call.argument<List<String>>("videos")!!
-
-                    mediaLoaderAndMover.scope.launch {
-                        try {
-                            for (e in videos) {
-                                copyFileInternal(
-                                    contentResolver = context.contentResolver,
-                                    internalFile = e,
-                                    volumeName = volume,
-                                    deleteAfter = true,
-                                    dest = relativePath,
-                                    isImage = false,
-                                )
-                            }
-
-                            for (e in images) {
-                                copyFileInternal(
-                                    contentResolver = context.contentResolver,
-                                    internalFile = e,
-                                    volumeName = volume,
-                                    deleteAfter = true,
-                                    dest = relativePath,
-                                    isImage = true,
-                                )
-                            }
-
-                            context.runOnUiThread {
-                                galleryApi.notify(dirName) {
-
-                                }
-                            }
-                            result.success(null)
-                        } catch (e: Exception) {
-                            Log.i("copyMoveInternal", e.toString())
-                            result.error(e.toString(), null, null)
-                        }
-
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        androidQDeleteFiles(mediaLoaderAndMover, context, call, result)
+                    } else {
+                        addToTrash(context, call, result, intents)
                     }
                 }
 
+                "removeFromTrash" -> {
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        result.success(null)
+                    } else {
+                        removeFromTrash(context, call, result, intents)
+                    }
+                }
+
+                "copyMoveInternal" -> {
+                    copyMoveInternal(mediaLoaderAndMover, context, call, result)
+                }
+
                 "copyMoveFiles" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        copyFilesMux.lock()
-                        val dest = call.argument<String>("dest")
-                        val images = call.argument<List<Long>>("images")
-                        val videos = call.argument<List<Long>>("videos")
-                        val move = call.argument<Boolean>("move")
-                        val newDir = call.argument<Boolean>("newDir")
-                        val volumeName = call.argument<String?>("volumeName")
-
-                        if (dest == null) {
-                            copyFilesMux.unlock()
-                            result.error("dest is empty", "", "")
-                        } else if (images == null || videos == null || move == null || newDir == null) {
-                            copyFilesMux.unlock()
-                            result.error("media or move or newDir or videos is empty", "", "")
-                        } else if (newDir == false && volumeName == null) {
-                            copyFilesMux.unlock()
-                            result.error(
-                                "if newDir is false, volumeName should be supplied",
-                                "",
-                                ""
-                            )
-                        } else {
-                            try {
-                                val imageUris = images.map {
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                        it
-                                    )
-                                }
-                                val videoUris = videos.map {
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                        it
-                                    )
-                                }
-
-                                copyFiles = FilesDest(
-                                    dest,
-                                    images = imageUris,
-                                    videos = videoUris,
-                                    move = move,
-                                    volumeName = volumeName,
-                                    newDir = newDir,
-                                    callback = {
-                                        if (it == null) {
-                                            result.success(null)
-                                        } else {
-                                            result.error(it, null, null)
-                                        }
-                                    }
-                                )
-
-                                intents.writeRequestCopyMove.launch(
-                                    IntentSenderRequest.Builder(
-                                        MediaStore.createWriteRequest(
-                                            context.contentResolver,
-                                            imageUris + videoUris
-                                        )
-                                    ).build()
-                                )
-                            } catch (e: java.lang.Exception) {
-                                copyFilesMux.unlock()
-                            }
-                        }
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                        oldAndroidCopyMoveFiles(mediaLoaderAndMover, context, call, result, intents)
+                    } else {
+                        copyMoveFiles(mediaLoaderAndMover, context, call, result, intents)
                     }
                 }
             }
         }
+    }
+
+    private fun returnUri(
+        context: FlutterFragmentActivity,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val uri = call.arguments as String
+        result.success(null)
+        val intent = Intent()
+        intent.setData(Uri.parse(uri))
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        context.setResult(Activity.RESULT_OK, intent)
+        context.finish()
+    }
+
+    private fun hideRecents(
+        context: FlutterFragmentActivity,
+        call: MethodCall,
+    ) {
+        val hide = call.arguments as Boolean;
+
+        context.runOnUiThread {
+            if (hide) {
+                context.window.addFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE
+                );
+            } else {
+                context.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
+    }
+
+    private fun setFullscreen(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: FlutterFragmentActivity,
+        call: MethodCall,
+    ) {
+        val data = call.arguments as Boolean
+
+        mediaLoaderAndMover.uiScope.launch {
+            val windowInsets = WindowCompat.getInsetsController(
+                context.window,
+                context.window.decorView
+            )
+
+            windowInsets.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+            if (data) {
+                windowInsets.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                windowInsets.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun deleteFiles(
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        try {
+            val deleteItems = (call.arguments as List<String>).map { Uri.parse(it) }
+            intents.deleteRequest.launch(
+                IntentSenderRequest.Builder(
+                    MediaStore.createDeleteRequest(
+                        context.contentResolver,
+                        deleteItems
+                    )
+                ).build()
+            )
+        } catch (e: java.lang.Exception) {
+            Log.e("deleteFiles", e.toString())
+        }
+
+        result.success(null)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun emptyTrash(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            mediaLoaderAndMover.trashDeleteMux.lock()
+            val (images, videos) = mediaLoaderAndMover.trashThumbIds(
+                context,
+                lastOnly = false,
+                separate = true
+            )
+            if (images.isNotEmpty() || videos.isNotEmpty()) {
+                val imagesUris = images.map {
+                    ContentUris.withAppendedId(
+                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                        it
+                    )
+                }
+
+                val videosUris = videos.map {
+                    ContentUris.withAppendedId(
+                        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                        it
+                    )
+                }
+
+                try {
+                    intents.deleteRequest.launch(
+                        IntentSenderRequest.Builder(
+                            MediaStore.createDeleteRequest(
+                                context.contentResolver, imagesUris.plus(videosUris)
+                            )
+                        ).build()
+                    )
+                } catch (e: Exception) {
+                    Log.e("emptyTrash", e.toString())
+                }
+            }
+
+            mediaLoaderAndMover.trashDeleteMux.unlock()
+        }
+    }
+
+    private fun oldAndroidMoveInternal(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val dir = call.argument<String>("dir") ?: throw Exception("dir is empty")
+        val uris =
+            call.argument<List<String>>("uris") ?: throw Exception("uris is empty")
+
+        val urisParsed = uris.map { Uri.parse(it) }
+
+        val contentResolver = context.contentResolver;
+
+        mediaLoaderAndMover.scope.launch {
+            try {
+                for (e in urisParsed) {
+                    val mimeType = contentResolver.getType(e)!!
+
+                    contentResolver.openInputStream(e)?.use { stream ->
+                        contentResolver.query(
+                            e,
+                            arrayOf(
+                                MediaStore.MediaColumns.DISPLAY_NAME,
+                            ),
+                            null,
+                            null,
+                            null
+                        )?.use {
+                            if (!it.moveToFirst()) {
+                                return@use
+                            }
+
+                            newDirCopyFile(
+                                context,
+                                e,
+                                newDirIsLocal = true,
+                                deleteAfter = true,
+                                stream = stream,
+                                displayName = it.getString(0),
+                                dateModified = it.getLong(1),
+                                mimeType = mimeType,
+                                dest = dir
+                            )
+                        }
+                    }
+                }
+
+                result.success(null)
+            } catch (e: Exception) {
+                result.error(e.toString(), "", "")
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun moveInternal(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        val dir = call.argument<String>("dir") ?: throw Exception("dir is empty")
+        val uris =
+            call.argument<List<String>>("uris") ?: throw Exception("uris is empty")
+
+        val urisParsed = uris.map { Uri.parse(it) }
+
+        mediaLoaderAndMover.scope.launch {
+            moveInternalMux.lock()
+
+            try {
+                moveInternal = MoveInternalOp(dir, urisParsed) {
+                    result.success(it)
+                }
+
+                intents.writeRequestInternal.launch(
+                    IntentSenderRequest.Builder(
+                        MediaStore.createWriteRequest(
+                            context.contentResolver,
+                            urisParsed
+                        )
+                    ).build()
+                )
+            } catch (e: Exception) {
+                result.error(e.toString(), "", "")
+                moveInternalMux.unlock()
+            }
+        }
+    }
+
+    private fun pickFileCopy(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            callbackMux.lock()
+            val outputDir = call.arguments as String
+            callback = {
+                if (it == null) {
+                    callbackMux.unlock()
+                    result.error("", "", "")
+                } else {
+                    try {
+                        val uri = Uri.parse(it.first)
+                        var outputFile: String? = null
+
+                        val file = File(outputDir, uri.toString().split("/").last())
+
+                        if (file.exists()) {
+                            file.delete()
+                        }
+
+                        if (!file.createNewFile()) {
+                            throw Exception("exist")
+                        }
+
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            file.outputStream().use { output ->
+                                input.transferTo(output)
+                                output.flush()
+                                output.fd.sync()
+                            }
+
+                            outputFile = file.absolutePath
+                        }
+
+                        if (outputFile == null) {
+                            throw Exception("file haven't been moved")
+                        }
+
+                        result.success(outputFile)
+                    } catch (e: Exception) {
+                        Log.e("pickFileAndCopy", e.toString())
+                        result.error(e.toString(), null, null)
+                    }
+
+                    callbackMux.unlock()
+                }
+            }
+
+            intents.pickFileAndOpen.launch(arrayOf())
+        }
+    }
+
+    private fun requestManageMedia(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        result: MethodChannel.Result,
+        manageMedia: ActivityResultLauncher<String>,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            manageMediaMux.lock()
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (!MediaStore.canManageMedia(context)) {
+                        val intent =
+                            Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
+                        intent.data = Uri.parse("package:${context.packageName}")
+
+                        manageMediaCallback = {
+                            result.success(it)
+                        }
+
+                        manageMedia.launch(context.packageName)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("requestManageMedia", e.toString())
+                result.success(false)
+                manageMediaMux.unlock()
+            }
+        }
+    }
+
+    private fun setWallpaper(
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val idv = call.arguments
+        val id =
+            if (idv is Int) idv.toLong() else idv as Long
+
+        val intent =
+            WallpaperManager.getInstance(context).getCropAndSetWallpaperIntent(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    MediaStore.Images.Media.getContentUri(
+                        MediaStore.VOLUME_EXTERNAL,
+                        id
+                    ) else
+                    ContentUris.appendId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI.buildUpon(),
+                        id
+                    ).build()
+            )
+
+        context.startActivity(intent)
+
+        result.success(null)
+    }
+
+    private fun chooseDirectory(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            callbackMux.lock()
+            val temporary = call.arguments as Boolean
+
+
+            callback = {
+                if (it == null) {
+                    callbackMux.unlock()
+                    result.error("", "", "")
+                } else {
+                    if (!temporary) {
+                        context.contentResolver.takePersistableUriPermission(
+                            Uri.parse(it.first),
+                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        )
+                    }
+
+                    callbackMux.unlock()
+                    result.success(
+                        mapOf<String, String>(
+                            Pair("path", it.first),
+                            Pair("pathDisplay", it.second),
+                        )
+                    )
+                }
+            }
+
+            intents.chooseDirectory.launch(Pair(true, null))
+        }
+    }
+
+    private fun shareMedia(
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val media = call.argument<String>("uri")!!
+        val isUrl = call.argument<Boolean>("isUrl")!!
+
+        val intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            if (isUrl) putExtra(Intent.EXTRA_TEXT, media) else putExtra(
+                Intent.EXTRA_STREAM,
+                Uri.parse(media)
+            )
+            type = if (isUrl) "text/plain" else context.contentResolver.getType(
+                Uri.parse(media)
+            )
+        }
+        context.startActivity(Intent.createChooser(intent, null))
+        result.success(null)
+    }
+
+    private fun oldAndroidRename(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: FlutterFragmentActivity,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            try {
+                val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
+                val newName =
+                    call.argument<String>("newName") ?: throw Exception("empty name")
+                val notify =
+                    call.argument<Boolean>("notify") ?: throw Exception("empty notify")
+
+                val (type, id) = typeIdFromUri(listOf(uri)).entries.first()
+
+                val details = ContentValues().apply {
+                    put(MediaStore.Files.FileColumns.DISPLAY_NAME, newName)
+                }
+
+                if (type == "images") {
+                    context.contentResolver.update(
+                        ContentUris.withAppendedId(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            id.first()
+                        ),
+                        details,
+                        null,
+                        null,
+                    )
+                } else if (type == "videos") {
+                    context.contentResolver.update(
+                        ContentUris.withAppendedId(
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            id.first()
+                        ),
+                        details,
+                        null,
+                        null,
+                    )
+                }
+
+                if (notify) {
+                    context.runOnUiThread {
+                        galleryApi.notify(null) {
+
+                        }
+                    }
+                }
+
+                result.success(null)
+            } catch (e: java.lang.Exception) {
+                Log.e("rename", e.toString())
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun rename(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            renameMux.lock()
+            try {
+                val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
+                val newName =
+                    call.argument<String>("newName") ?: throw Exception("empty name")
+                val notify =
+                    call.argument<Boolean>("notify") ?: throw Exception("empty notify")
+
+                val parsedUri = Uri.parse(uri)
+
+                rename = RenameOp(parsedUri, newName, notify)
+
+                intents.writeRequest.launch(
+                    IntentSenderRequest.Builder(
+                        MediaStore.createWriteRequest(
+                            context.contentResolver,
+                            listOf(parsedUri)
+                        )
+                    ).build()
+                )
+
+                result.success(null)
+            } catch (e: java.lang.Exception) {
+                renameMux.unlock()
+                Log.e("rename", e.toString())
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun addToTrash(
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        val uris = (call.arguments as List<String>).map { Uri.parse(it) }
+
+        intents.trashRequest.launch(
+            IntentSenderRequest.Builder(
+                MediaStore.createTrashRequest(
+                    context.contentResolver,
+                    uris,
+                    true
+                )
+            ).build()
+        )
+
+        result.success(null)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun removeFromTrash(
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        val uri = (call.arguments as List<String>).map { Uri.parse(it) }
+
+        intents.trashRequest.launch(
+            IntentSenderRequest.Builder(
+                MediaStore.createTrashRequest(
+                    context.contentResolver,
+                    uri,
+                    false
+                )
+            ).build()
+        )
+
+        result.success(null)
+    }
+
+    private fun copyMoveInternal(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: FlutterFragmentActivity,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val relativePath = call.argument<String>("relativePath")!!
+        val volume = call.argument<String>("volume")!!
+        val dirName = call.argument<String>("dirName")!!
+        val images = call.argument<List<String>>("images")!!
+        val videos = call.argument<List<String>>("videos")!!
+
+        mediaLoaderAndMover.scope.launch {
+            try {
+                for (e in videos) {
+                    copyFileInternal(
+                        contentResolver = context.contentResolver,
+                        internalFile = e,
+                        volumeName = volume,
+                        deleteAfter = true,
+                        dest = relativePath,
+                        isImage = false,
+                    )
+                }
+
+                for (e in images) {
+                    copyFileInternal(
+                        contentResolver = context.contentResolver,
+                        internalFile = e,
+                        volumeName = volume,
+                        deleteAfter = true,
+                        dest = relativePath,
+                        isImage = true,
+                    )
+                }
+
+                context.runOnUiThread {
+                    galleryApi.notify(dirName) {
+
+                    }
+                }
+                result.success(null)
+            } catch (e: Exception) {
+                Log.i("copyMoveInternal", e.toString())
+                result.error(e.toString(), null, null)
+            }
+        }
+    }
+
+    private fun oldAndroidCopyMoveFiles(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            val dest = call.argument<String>("dest")
+            val images = call.argument<List<Long>>("images")
+            val videos = call.argument<List<Long>>("videos")
+            val move = call.argument<Boolean>("move")
+            val newDir = call.argument<Boolean>("newDir")
+            val volumeName = call.argument<String?>("volumeName")
+
+            if (dest == null) {
+                result.error("dest is empty", "", "")
+            } else if (images == null || videos == null || move == null || newDir == null) {
+                result.error("media or move or newDir or videos is empty", "", "")
+            } else if (newDir == false && volumeName == null) {
+                result.error(
+                    "if newDir is false, volumeName should be supplied",
+                    "",
+                    ""
+                )
+            } else {
+                try {
+                    if (move) {
+                        oldAndroidMoveFiles(context, dest, images, videos)
+                    } else {
+                        oldAndroidCopyFiles(context, dest, images, videos)
+                    }
+                } catch (e: java.lang.Exception) {
+                    Log.i("oldAndroidCopyMoveFiles", e.toString())
+                }
+            }
+        }
+    }
+
+    private fun oldAndroidCopyFiles(
+        context: Context,
+        dest: String,
+        imageIds: List<Long>,
+        videoIds: List<Long>,
+    ) {
+        val data = Path.of(dest).parent.toString()
+
+        val imageUris = imageIds.map {
+            ContentUris.withAppendedId(
+                MediaStore.Images.Media.getContentUri("external"),
+                it
+            )
+        }
+        val videoUris = videoIds.map {
+            ContentUris.withAppendedId(
+                MediaStore.Video.Media.getContentUri("external"),
+                it
+            )
+        }
+
+        val values = ContentValues().apply {
+            put(MediaStore.Images.ImageColumns.DATA, data)
+        }
+
+//        context.contentResolver.query(
+//            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//            null, null, null,
+//        )?.use {
+//
+//        }
+
+
+//        if (imageUris.isNotEmpty()) {
+//            for (e in imageIds) {
+//                val whereBuilder = StringBuilder()
+//                whereBuilder.append("_id = ?")
+//                if (imageUris.size > 1) {
+//                    for (v in imageUris.slice(1..<imageUris.size)) {
+//                        whereBuilder.append(" OR _id = ?")
+//                    }
+//                }
+//
+//                context.contentResolver.update(
+//                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//                    values,
+//                    "_id = ? AND ${MediaStore.Files.FileColumns.VOLUME_NAME}",
+//                    imageIds.map { it.toString() }.toTypedArray(),
+//                )
+//            }
+//        }
+//
+//        if (videoUris.isNotEmpty()) {
+//            val whereBuilder = StringBuilder()
+//            whereBuilder.append("_id = ?")
+//            if (videoUris.size > 1) {
+//                for (v in videoUris.slice(1..<videoUris.size)) {
+//                    whereBuilder.append(" OR _id = ?")
+//                }
+//            }
+//
+//            context.contentResolver.update(
+//                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+//                values,
+//                whereBuilder.toString(),
+//                videoIds.map { it.toString() }.toTypedArray(),
+//            )
+//        }
+    }
+
+    private fun oldAndroidMoveFiles(
+        context: Context,
+        dest: String,
+        imageIds: List<Long>,
+        videoIds: List<Long>,
+    ) {
+        val data = Path.of(dest).parent.toString()
+
+        val imageUris = imageIds.map {
+            ContentUris.withAppendedId(
+                MediaStore.Images.Media.getContentUri("external"),
+                it
+            )
+        }
+        val videoUris = videoIds.map {
+            ContentUris.withAppendedId(
+                MediaStore.Video.Media.getContentUri("external"),
+                it
+            )
+        }
+
+        val values = ContentValues().apply {
+            put(MediaStore.Images.ImageColumns.DATA, data)
+        }
+
+//        context.contentResolver.query(
+//            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//            null, null, null,
+//        )?.use {
+//
+//        }
+
+
+//        if (imageUris.isNotEmpty()) {
+//            for (e in imageIds) {
+//                val whereBuilder = StringBuilder()
+//                whereBuilder.append("_id = ?")
+//                if (imageUris.size > 1) {
+//                    for (v in imageUris.slice(1..<imageUris.size)) {
+//                        whereBuilder.append(" OR _id = ?")
+//                    }
+//                }
+//
+//                context.contentResolver.update(
+//                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//                    values,
+//                    "_id = ? AND ${MediaStore.Files.FileColumns.VOLUME_NAME}",
+//                    imageIds.map { it.toString() }.toTypedArray(),
+//                )
+//            }
+//        }
+//
+//        if (videoUris.isNotEmpty()) {
+//            val whereBuilder = StringBuilder()
+//            whereBuilder.append("_id = ?")
+//            if (videoUris.size > 1) {
+//                for (v in videoUris.slice(1..<videoUris.size)) {
+//                    whereBuilder.append(" OR _id = ?")
+//                }
+//            }
+//
+//            context.contentResolver.update(
+//                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+//                values,
+//                whereBuilder.toString(),
+//                videoIds.map { it.toString() }.toTypedArray(),
+//            )
+//        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun copyMoveFiles(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+        intents: ActivityResultIntents,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            copyFilesMux.lock()
+            val dest = call.argument<String>("dest")
+            val images = call.argument<List<Long>>("images")
+            val videos = call.argument<List<Long>>("videos")
+            val move = call.argument<Boolean>("move")
+            val newDir = call.argument<Boolean>("newDir")
+            val volumeName = call.argument<String?>("volumeName")
+
+            if (dest == null) {
+                copyFilesMux.unlock()
+                result.error("dest is empty", "", "")
+            } else if (images == null || videos == null || move == null || newDir == null) {
+                copyFilesMux.unlock()
+                result.error("media or move or newDir or videos is empty", "", "")
+            } else if (newDir == false && volumeName == null) {
+                copyFilesMux.unlock()
+                result.error(
+                    "if newDir is false, volumeName should be supplied",
+                    "",
+                    ""
+                )
+            } else {
+                try {
+                    val imageUris = images.map {
+                        ContentUris.withAppendedId(
+                            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                            it
+                        )
+                    }
+                    val videoUris = videos.map {
+                        ContentUris.withAppendedId(
+                            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                            it
+                        )
+                    }
+
+                    copyFiles = FilesDest(
+                        dest,
+                        images = imageUris,
+                        videos = videoUris,
+                        move = move,
+                        volumeName = volumeName,
+                        newDir = newDir,
+                        callback = {
+                            if (it == null) {
+                                result.success(null)
+                            } else {
+                                result.error(it, null, null)
+                            }
+                        }
+                    )
+
+                    intents.writeRequestCopyMove.launch(
+                        IntentSenderRequest.Builder(
+                            MediaStore.createWriteRequest(
+                                context.contentResolver,
+                                imageUris + videoUris
+                            )
+                        ).build()
+                    )
+                } catch (e: java.lang.Exception) {
+                    copyFilesMux.unlock()
+                }
+            }
+        }
+    }
+
+    private fun androidQDeleteFiles(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: Context,
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        mediaLoaderAndMover.scope.launch {
+            val uris = typeIdFromUri(call.arguments as List<String>)
+
+            try {
+                for (e in uris) {
+                    for (id in e.value) {
+                        if (e.key == "images") {
+                            context.contentResolver.delete(
+                                ContentUris.withAppendedId(
+                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    id
+                                ),
+                                null,
+                                null,
+                            )
+                        } else if (e.key == "videos") {
+                            context.contentResolver.delete(
+                                ContentUris.withAppendedId(
+                                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                    id
+                                ),
+                                null,
+                                null,
+                            )
+                        }
+                    }
+//                    val whereBuilder = StringBuilder()
+//                    whereBuilder.append("_id = ?")
+//                    if (e.value.size > 1) {
+//                        for (v in e.value.slice(1..<e.value.size)) {
+//                            whereBuilder.append(" OR _id = ?")
+//                        }
+//                    }
+//
+//                    if (e.key == "images") {
+//                        context.contentResolver.delete(
+//                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//                            whereBuilder.toString(),
+//                            e.value.map { it.toString() }.toTypedArray(),
+//                        )
+//                    } else if (e.key == "videos") {
+//                        context.contentResolver.delete(
+//                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+//                            whereBuilder.toString(),
+//                            e.value.map { it.toString() }.toTypedArray(),
+//                        )
+//                    }
+                }
+
+                notifyGallery(mediaLoaderAndMover.uiScope, null)
+            } catch (e: Exception) {
+                Log.i("addToTrash", e.toString())
+            }
+        }
+
+        result.success(null)
     }
 
     fun notifyGallery(uiScope: CoroutineScope, target: String?) {
@@ -854,5 +1428,23 @@ class ActivityContextChannel(
 
     companion object {
         const val CHANNEL_NAME = "com.github.thebiglettuce.azari.activity_context"
+
+        fun typeIdFromUri(uris: List<String>): MutableMap<String, MutableList<Long>> {
+            return uris.map {
+                val uri = Uri.parse(it)
+                val id = ContentUris.parseId(uri)
+                val type = uri.pathSegments.takeLast(3).first()
+
+                Pair(type, id)
+            }.fold(mutableMapOf<String, MutableList<Long>>()) { m, e ->
+                var list = m[e.first]
+                if (list == null) {
+                    m[e.first] = mutableListOf()
+                    list = m[e.first]!!
+                }
+                list.add(e.second);
+                m
+            }
+        }
     }
 }
