@@ -14,7 +14,7 @@ Future<void> mainPickfile() async {
 
   await initMain(true, notificationStream);
 
-  final accentColor = await PlatformApi.current().accentColor();
+  final accentColor = await PlatformApi().accentColor;
 
   runApp(
     DatabaseConnectionNotifier.current(
@@ -34,7 +34,8 @@ Future<void> mainPickfile() async {
               l10n: AppLocalizations.of(context)!,
               nestedCallback: CallbackDescriptionNested(
                 (chosen) {
-                  const AndroidApiFunctions().returnUri(chosen.originalUri);
+                  PlatformApi().closeApp(chosen.originalUri);
+                  // const AndroidApiFunctions().returnUri(chosen.originalUri);
                 },
                 preview: PreferredSize(
                   preferredSize:

@@ -15,14 +15,14 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     required this.listPadding,
   });
 
-  final ResourceSource<int, GalleryDirectory> source;
+  final ResourceSource<int, Directory> source;
 
   final EdgeInsets listPadding;
   final String filteringValue;
 
   final void Function(
     String str,
-    List<GalleryDirectory> list, {
+    List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
   }) joinedDirectories;
@@ -37,7 +37,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   }) {
     final l10n = AppLocalizations.of(context)!;
 
-    final List<GalleryDirectory> directories = [];
+    final List<Directory> directories = [];
 
     if (onlyPinned) {
       final toPin =
@@ -80,7 +80,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     );
   }
 
-  String _segment(GalleryDirectory directory) {
+  String _segment(Directory directory) {
     for (final booru in Booru.values) {
       if (booru.url == directory.name) {
         return "Booru";

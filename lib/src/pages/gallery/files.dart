@@ -23,11 +23,9 @@ import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files_filters.dart" as filters;
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart";
-import "package:azari/src/plugs/notifications.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
@@ -71,10 +69,10 @@ class GalleryFiles extends StatefulWidget {
     this.filteringMode,
   });
 
-  final GalleryDirectory? directory;
+  final Directory? directory;
   final String dirName;
   final String bucketId;
-  final GalleryAPIFiles api;
+  final Files api;
   final CallbackDescriptionNested? callback;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final bool secure;
@@ -98,7 +96,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
   final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
 
-  GalleryAPIFiles get api => widget.api;
+  Files get api => widget.api;
 
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
@@ -107,13 +105,11 @@ class _GalleryFilesState extends State<GalleryFiles> {
 
   late final postTags = PostTags(localTags, widget.db.localTagDictionary);
 
-  final plug = chooseGalleryPlug();
-
   late final StreamSubscription<SettingsData?> settingsWatcher;
 
-  late final ChainedFilterResourceSource<int, GalleryFile> filter;
+  late final ChainedFilterResourceSource<int, File> filter;
 
-  late final GridSkeletonState<GalleryFile> state = GridSkeletonState();
+  late final GridSkeletonState<File> state = GridSkeletonState();
 
   late final searchTextController =
       TextEditingController(text: widget.presetFilteringValue);
@@ -231,7 +227,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
         },
       );
 
-      PlatformApi.current().hideRecents(true);
+      PlatformApi().window.setProtected(true);
     }
 
     api.source.clearRefreshSilent();
@@ -250,7 +246,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
     api.close();
     state.dispose();
 
-    PlatformApi.current().hideRecents(false);
+    PlatformApi().window.setProtected(false);
 
     super.dispose();
   }
@@ -320,7 +316,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
           searchTextController: searchTextController,
           filter: filter,
           child: Builder(
-            builder: (context) => GridFrame<GalleryFile>(
+            builder: (context) => GridFrame<File>(
               key: state.gridKey,
               slivers: [
                 _TagsNotifier(
@@ -455,7 +451,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                     );
                   },
                 ),
-                CurrentGridSettingsLayout<GalleryFile>(
+                CurrentGridSettingsLayout<File>(
                   source: filter.backingStorage,
                   progress: filter.progress,
                   gridSeed: state.gridSeed,
@@ -522,9 +518,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                   actions: [
                                     TextButton(
                                       onPressed: () {
-                                        GalleryManagementApi.current()
-                                            .trash
-                                            .empty();
+                                        GalleryApi().trash.empty();
                                         Navigator.pop(context);
                                       },
                                       child: Text(l10n.yes),
@@ -589,12 +583,12 @@ class _GalleryFilesState extends State<GalleryFiles> {
                 overrideEmptyWidgetNotice:
                     api.type.isFavorites() ? l10n.someFilesShownNotice : null,
                 actions: widget.callback != null
-                    ? const <GridAction<GalleryFile>>[]
+                    ? const <GridAction<File>>[]
                     : api.type.isTrash()
-                        ? <GridAction<GalleryFile>>[
+                        ? <GridAction<File>>[
                             _restoreFromTrashAction(),
                           ]
-                        : <GridAction<GalleryFile>>[
+                        : <GridAction<File>>[
                             if (api.type.isFavorites())
                               _setFavoritesThumbnailAction(
                                 widget.db.miscSettings,
@@ -609,7 +603,6 @@ class _GalleryFilesState extends State<GalleryFiles> {
                               ),
                               _saveTagsAction(
                                 context,
-                                plug,
                                 postTags,
                                 localTags,
                                 widget.db.localTagDictionary,
@@ -1073,8 +1066,7 @@ class IconBarGridHeader extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.select_all_rounded),
                     onPressed: () {
-                      final gridExtras =
-                          GridExtrasNotifier.of<GalleryFile>(context);
+                      final gridExtras = GridExtrasNotifier.of<File>(context);
 
                       if (gridExtras.selection.count ==
                           gridExtras.functionality.source.count) {
@@ -1216,9 +1208,9 @@ class FilesDataNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final GalleryAPIFiles api;
+  final Files api;
 
-  static GalleryAPIFiles? maybeOf(BuildContext context) {
+  static Files? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
 

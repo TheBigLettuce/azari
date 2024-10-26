@@ -9,10 +9,10 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import io.flutter.embedding.android.FlutterFragmentActivity
-import com.github.thebiglettuce.azari.generated.GalleryApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 
 class NetworkCallbackImpl(
-    private val galleryApi: GalleryApi,
+    private val galleryApi: PlatformGalleryApi,
     private val context: FlutterFragmentActivity,
 ) : ConnectivityManager.NetworkCallback() {
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {

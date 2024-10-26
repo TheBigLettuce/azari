@@ -3,30 +3,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:local_auth/local_auth.dart";
-
-late final AppInfo _instance;
 
 Future<void> initAppInfo() async {
   final bool canUseAuth;
-  if (PlatformApi.current().requiresPermissions) {
-    final auth = LocalAuthentication();
+  // if (PlatformApi().requiredPermissions) {
+  final auth = LocalAuthentication();
 
-    canUseAuth = await auth.isDeviceSupported() &&
-        await auth.canCheckBiometrics &&
-        (await auth.getAvailableBiometrics()).isNotEmpty;
-  } else {
-    canUseAuth = false;
-  }
+  canUseAuth = await auth.isDeviceSupported() &&
+      await auth.canCheckBiometrics &&
+      (await auth.getAvailableBiometrics()).isNotEmpty;
+  // } else {
+  // canUseAuth = false;
+  // }
 
-  _instance = AppInfo._(canUseAuth, await PlatformApi.current().version());
+  AppInfo._instance = AppInfo._(canUseAuth, await PlatformApi().version);
 }
 
 final class AppInfo {
   factory AppInfo() => _instance;
 
   const AppInfo._(this.canAuthBiometric, this.version);
+
+  static late final AppInfo _instance;
 
   final bool canAuthBiometric;
   final String version;

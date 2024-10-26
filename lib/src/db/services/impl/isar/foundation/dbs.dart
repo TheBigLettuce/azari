@@ -49,7 +49,7 @@ class _Dbs {
   String get appStorageDir => directory;
 
   void clearTemporaryImages() {
-    Directory(temporaryImagesDir)
+    io.Directory(temporaryImagesDir)
       ..createSync()
       ..deleteSync(recursive: true)
       ..createSync();
@@ -74,7 +74,7 @@ Isar _openPrimaryGrid(Booru booru) {
 
 Isar _openSecondaryGridName(String name, bool create) {
   if (!create &&
-      !File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
+      !io.File(path.join(_dbs.secondaryGridDbDir, "$name.isar")).existsSync()) {
     throw "$name doesn't exist on disk";
   }
 

@@ -18,11 +18,11 @@ class _LocalTagsPanel extends StatefulWidget {
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
 
-  final ResourceSource<int, GalleryDirectory> source;
+  final ResourceSource<int, Directory> source;
 
   final void Function(
     String str,
-    List<GalleryDirectory> list, {
+    List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
   }) joinedDirectories;
@@ -63,7 +63,7 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel> {
     super.dispose();
   }
 
-  bool _isBooruGroup(GalleryDirectory directory) {
+  bool _isBooruGroup(Directory directory) {
     for (final booru in Booru.values) {
       if (booru.url == directory.name) {
         return true;
@@ -97,7 +97,7 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel> {
         ),
         _SearchInBooruButton(
           onPressed: () {
-            final List<GalleryDirectory> booru = [];
+            final List<Directory> booru = [];
 
             for (final e in widget.source.backingStorage) {
               if (_isBooruGroup(e)) {

@@ -5,9 +5,8 @@
 
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
@@ -17,12 +16,12 @@ class SameFilterAccumulator {
       : data = {},
         skipped = 0;
 
-  final Map<int, Map<int, GalleryFile>> data;
+  final Map<int, Map<int, File>> data;
   int skipped;
 }
 
-(Iterable<GalleryFile>, dynamic) tag(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) tag(
+  Iterable<File> cells,
   String searchText,
 ) {
   if (searchText.isEmpty) {
@@ -45,8 +44,8 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<GalleryFile>, dynamic) tagReversed(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) tagReversed(
+  Iterable<File> cells,
   String searchText,
 ) {
   return (
@@ -65,8 +64,8 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<GalleryFile>, dynamic) favorite(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) favorite(
+  Iterable<File> cells,
   FavoritePostSourceService favoritePosts,
 ) {
   return (
@@ -79,8 +78,8 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<GalleryFile>, dynamic) untagged(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) untagged(
+  Iterable<File> cells,
 ) {
   return (
     cells.where(
@@ -90,26 +89,26 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<GalleryFile>, dynamic) video(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) video(
+  Iterable<File> cells,
 ) {
   return (cells.where((element) => element.isVideo), null);
 }
 
-(Iterable<GalleryFile>, dynamic) gif(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) gif(
+  Iterable<File> cells,
 ) {
   return (cells.where((element) => element.isGif), null);
 }
 
-(Iterable<GalleryFile>, dynamic) duplicate(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) duplicate(
+  Iterable<File> cells,
 ) {
   return (cells.where((element) => element.isDuplicate), null);
 }
 
-(Iterable<GalleryFile>, dynamic) original(
-  Iterable<GalleryFile> cells,
+(Iterable<File>, dynamic) original(
+  Iterable<File> cells,
 ) {
   return (
     cells.where(
@@ -119,21 +118,21 @@ class SameFilterAccumulator {
   );
 }
 
-Iterable<(GalleryFile f, int? h)> _getDifferenceHash(
-  Iterable<GalleryFile> cells,
+Iterable<(File f, int? h)> _getDifferenceHash(
+  Iterable<File> cells,
 ) sync* {
   for (final cell in cells) {
     yield (cell, ThumbnailService.db().get(cell.id)?.differenceHash);
   }
 }
 
-(Iterable<GalleryFile>, dynamic) same(
+(Iterable<File>, dynamic) same(
   BuildContext context,
-  Iterable<GalleryFile> cells,
+  Iterable<File> cells,
   dynamic data, {
   required bool end,
   required void Function() performSearch,
-  required ResourceSource<int, GalleryFile> source,
+  required ResourceSource<int, File> source,
 }) {
   final accu =
       (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
@@ -196,7 +195,7 @@ Iterable<(GalleryFile f, int? h)> _getDifferenceHash(
 }
 
 Future<void> _loadNextThumbnails(
-  ResourceSource<int, GalleryFile> source,
+  ResourceSource<int, File> source,
   void Function() callback,
 ) async {
   final thumbnailService = ThumbnailService.db();
@@ -217,7 +216,7 @@ Future<void> _loadNextThumbnails(
       if (thumbnailService.get(file.id) == null) {
         count++;
 
-        thumbnails.add(GalleryManagementApi.current().thumbs.get(file.id));
+        thumbnails.add(GalleryApi().thumbs.get(file.id));
 
         if (thumbnails.length > 8) {
           thumbnailService.addAll(await thumbnails.wait);

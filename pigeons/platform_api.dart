@@ -7,7 +7,7 @@ import "package:pigeon/pigeon.dart";
 
 @ConfigurePigeon(
   PigeonOptions(
-    dartOut: "lib/src/plugs/generated/platform_api.g.dart",
+    dartOut: "lib/src/platform/generated/platform_api.g.dart",
     dartTestOut: "test/platform_api.g.dart",
     kotlinOut:
         "android/app/src/main/kotlin/com/github/thebiglettuce/azari/generated/Generated.kt",
@@ -93,11 +93,7 @@ class UriFile {
 @HostApi()
 abstract class GalleryHostApi {
   @async
-  List<DirectoryFile> getPicturesDirectly(
-    String? dir,
-    int limit,
-    bool onlyLatest,
-  );
+  int mediaVersion();
 
   @async
   List<DirectoryFile> latestFilesByName(String name, int limit);
@@ -110,7 +106,7 @@ abstract class GalleryHostApi {
 }
 
 @FlutterApi()
-abstract class GalleryApi {
+abstract class PlatformGalleryApi {
   bool updateDirectories(Map<String, Directory> d, bool inRefresh, bool empty);
   bool updatePictures(
     List<DirectoryFile?> f,

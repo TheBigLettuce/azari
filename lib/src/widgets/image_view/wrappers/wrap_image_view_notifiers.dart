@@ -6,8 +6,8 @@
 import "dart:async";
 
 import "package:azari/src/db/services/post_tags.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
@@ -194,8 +194,8 @@ class _ImageViewTagWatcherState extends State<ImageViewTagWatcher> {
     super.initState();
 
     res = ParsedFilenameResult.fromFilename(
-            widget.currentCell.widgets.alias(true))
-        .maybeValue();
+      widget.currentCell.widgets.alias(true),
+    ).maybeValue();
 
     tagWatcher = widget.watchTags?.call(widget.currentCell, (t) {
       final newTags = <ImageTag>[];
@@ -320,7 +320,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
   bool _isAppbarShown = true;
 
   void toggle() {
-    final platformApi = PlatformApi.current();
+    final platformApi = PlatformApi();
 
     setState(() => _isAppbarShown = !_isAppbarShown);
 
@@ -337,7 +337,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
   @override
   void initState() {
     super.initState();
-    subscription = chooseGalleryPlug().galleryTapDownEvents?.listen((_) {
+    subscription = GalleryApi().events.tapDown?.listen((_) {
       toggle();
     });
 

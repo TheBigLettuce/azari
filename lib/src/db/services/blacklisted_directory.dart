@@ -48,7 +48,7 @@ abstract class BlacklistedDirectoryDataImpl
     final db = DatabaseConnectionNotifier.of(context);
 
     final filesApi = api.files(
-      PlainGalleryDirectory(
+      PlainDirectory(
         bucketId: bucketId,
         name: name,
         tag: "",

@@ -113,7 +113,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
         body: !showRail
             ? AnnotatedRegion(
                 value: SystemUiOverlayStyle(
-                  statusBarColor: colorScheme.surface.withOpacity(0.1),
+                  statusBarColor: colorScheme.surface.withOpacity(0.4),
                   statusBarIconBrightness:
                       colorScheme.brightness == Brightness.dark
                           ? Brightness.light
@@ -123,7 +123,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                           ? Brightness.light
                           : Brightness.dark,
                   systemNavigationBarColor:
-                      colorScheme.surface.withOpacity(0.1),
+                      colorScheme.surface.withOpacity(0.4),
                 ),
                 child: Stack(
                   alignment: Alignment.bottomCenter,

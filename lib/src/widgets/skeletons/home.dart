@@ -14,7 +14,7 @@ import "package:azari/src/pages/glue_bottom_app_bar.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/dashboard/dashboard.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
-import "package:azari/src/plugs/network_status.dart";
+import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";

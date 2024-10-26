@@ -7,23 +7,19 @@ package com.github.thebiglettuce.azari.impls
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
-import android.view.GestureDetector
-import android.view.MotionEvent
 import android.view.View
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.GlideImageViewFactory
-import com.github.thebiglettuce.azari.generated.GalleryApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 
-
 internal class ImageView(
     context: Context,
     id: Int,
-    galleryApi: GalleryApi,
+    galleryApi: PlatformGalleryApi,
     params: Map<String, String>,
 ) : PlatformView {
     private var imageView: View
@@ -60,7 +56,7 @@ internal class ImageView(
     }
 }
 
-class NativeViewFactory(private val galleryApi: GalleryApi) :
+class NativeViewFactory(private val galleryApi: PlatformGalleryApi) :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         return ImageView(

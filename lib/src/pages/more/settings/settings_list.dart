@@ -12,7 +12,7 @@ import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/pages/more/settings/settings_label.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
@@ -42,10 +42,9 @@ class _SettingsListState extends State<SettingsList> {
   SettingsData _settings = SettingsService.db().current;
   MiscSettingsData _miscSettings = MiscSettingsService.db().current;
 
-  Future<int> thumbnailCount = GalleryManagementApi.current().thumbs.size();
+  Future<int> thumbnailCount = GalleryApi().thumbs.size();
 
-  Future<int> pinnedThumbnailCount =
-      GalleryManagementApi.current().thumbs.size(true);
+  Future<int> pinnedThumbnailCount = GalleryApi().thumbs.size(true);
 
   @override
   void initState() {
@@ -185,9 +184,7 @@ class _SettingsListState extends State<SettingsList> {
                                       onPressed: () {
                                         db.thumbnails.clear();
 
-                                        GalleryManagementApi.current()
-                                            .thumbs
-                                            .clear();
+                                        GalleryApi().thumbs.clear();
 
                                         thumbnailCount = Future.value(0);
 
@@ -245,14 +242,10 @@ class _SettingsListState extends State<SettingsList> {
                                       onPressed: () {
                                         db.pinnedThumbnails.clear();
 
-                                        GalleryManagementApi.current()
-                                            .thumbs
-                                            .clear(true);
+                                        GalleryApi().thumbs.clear(true);
 
                                         thumbnailCount =
-                                            GalleryManagementApi.current()
-                                                .thumbs
-                                                .size(true);
+                                            GalleryApi().thumbs.size(true);
 
                                         setState(() {});
                                         Navigator.pop(context);

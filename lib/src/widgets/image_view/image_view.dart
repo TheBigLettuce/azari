@@ -9,9 +9,8 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -333,7 +332,7 @@ class ImageViewState extends State<ImageView>
     slideAnimationLeft = AnimationController(vsync: this);
     slideAnimationRight = AnimationController(vsync: this);
 
-    _pageChangeEvent = chooseGalleryPlug().galleryPageChangeEvents?.listen((e) {
+    _pageChangeEvent = GalleryApi().events.pageChange?.listen((e) {
       switch (e) {
         case GalleryPageChangeEvent.left:
           _onPressedLeft();
@@ -386,12 +385,12 @@ class ImageViewState extends State<ImageView>
     loadCells(currentPage, cellCount);
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      PlatformApi.current()
-          .setTitle(drawCell(currentPage).widgets.alias(false));
+      PlatformApi().window.setTitle(drawCell(currentPage).widgets.alias(false));
       _loadNext(widget.startingCell);
     });
 
     refreshPalette();
+    PlatformApi().setWakelock(true);
   }
 
   @override
@@ -418,7 +417,9 @@ class ImageViewState extends State<ImageView>
 
     videoControls.dispose();
 
-    PlatformApi.current().setFullscreen(false);
+    PlatformApi()
+      ..setFullscreen(false)
+      ..setWakelock(false);
 
     controller.dispose();
 
@@ -506,7 +507,7 @@ class ImageViewState extends State<ImageView>
 
     final c = drawCell(index);
 
-    PlatformApi.current().setTitle(c.widgets.alias(false));
+    PlatformApi().window.setTitle(c.widgets.alias(false));
 
     refreshPalette();
 

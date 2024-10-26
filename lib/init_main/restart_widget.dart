@@ -17,6 +17,7 @@ class RestartWidget extends StatefulWidget {
     required this.accentColor,
     required this.child,
   });
+
   final Color accentColor;
   final Widget Function(ThemeData dark, ThemeData light, SettingsData settings)
       child;

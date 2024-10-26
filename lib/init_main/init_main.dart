@@ -9,10 +9,9 @@ import "dart:ui" as ui;
 
 import "package:azari/init_main/app_info.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart";
-import "package:azari/src/plugs/network_status.dart";
-import "package:azari/src/plugs/notifications.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/network_status.dart";
+import "package:azari/src/platform/notification_api.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
@@ -29,12 +28,12 @@ Future<void> initMain(
 
   _changeExceptionErrorColors();
 
-  OnNotificationPressed.setUp(await initNotifications(stream));
+  await initNotifications(stream);
 
   await initServices(temporary);
   await initAppInfo();
   await initNetworkStatus();
-  initGalleryPlug(temporary);
+  initGalleryPlug();
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }

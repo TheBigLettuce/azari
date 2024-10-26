@@ -15,10 +15,9 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/gallery/android/android_gallery.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -47,12 +46,12 @@ class DirectoriesSearchPage extends StatefulWidget {
     required this.callback,
   });
 
-  final ResourceSource<int, GalleryDirectory> source;
+  final ResourceSource<int, Directory> source;
 
-  final void Function(GalleryDirectory) onDirectoryPressed;
+  final void Function(Directory) onDirectoryPressed;
   final void Function(
     String str,
-    List<GalleryDirectory> list, {
+    List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
   }) joinedDirectories;

@@ -32,13 +32,13 @@ class DeleteDialogShowNotifier extends InheritedWidget {
 
 Future<void> deleteFilesDialog(
   BuildContext context,
-  List<GalleryFile> selected,
+  List<File> selected,
   DeleteDialogShow toShow,
 ) {
   final l10n = AppLocalizations.of(context)!;
 
   void delete() {
-    GalleryManagementApi.current().trash.addAll(
+    GalleryApi().trash.addAll(
           selected.map((e) => e.originalUri).toList(),
         );
 
@@ -92,11 +92,11 @@ Future<void> deleteFilesDialog(
   );
 }
 
-GridAction<GalleryFile> _restoreFromTrashAction() {
+GridAction<File> _restoreFromTrashAction() {
   return GridAction(
     Icons.restore_from_trash,
     (selected) {
-      GalleryManagementApi.current().trash.removeAll(
+      GalleryApi().trash.removeAll(
             selected.map((e) => e.originalUri).toList(),
           );
     },
@@ -104,9 +104,8 @@ GridAction<GalleryFile> _restoreFromTrashAction() {
   );
 }
 
-GridAction<GalleryFile> _saveTagsAction(
+GridAction<File> _saveTagsAction(
   BuildContext context,
-  GalleryPlug plug,
   PostTags postTags,
   LocalTagsService localTags,
   LocalTagDictionaryService localTagDictionary,
@@ -117,7 +116,6 @@ GridAction<GalleryFile> _saveTagsAction(
       _saveTags(
         context,
         selected,
-        plug,
         postTags,
         localTags,
         localTagDictionary,
@@ -128,7 +126,7 @@ GridAction<GalleryFile> _saveTagsAction(
   );
 }
 
-GridAction<GalleryFile> _addTagAction(
+GridAction<File> _addTagAction(
   BuildContext context,
   void Function() refresh,
   LocalTagsService localTags,
@@ -174,7 +172,7 @@ GridAction<GalleryFile> _addTagAction(
 //   );
 // }
 
-GridAction<GalleryFile> _setFavoritesThumbnailAction(
+GridAction<File> _setFavoritesThumbnailAction(
   MiscSettingsService miscSettings,
 ) {
   return GridAction(
@@ -187,7 +185,7 @@ GridAction<GalleryFile> _setFavoritesThumbnailAction(
   );
 }
 
-GridAction<GalleryFile> _deleteAction(
+GridAction<File> _deleteAction(
   BuildContext context,
   DeleteDialogShow toShow,
 ) {
@@ -204,12 +202,12 @@ GridAction<GalleryFile> _deleteAction(
   );
 }
 
-GridAction<GalleryFile> _copyAction(
+GridAction<File> _copyAction(
   BuildContext context,
   String bucketId,
   TagManager tagManager,
   LocalTagsService localTags,
-  GalleryAPIDirectories providedApi,
+  Directories providedApi,
   DeleteDialogShow toShow,
 ) {
   return GridAction(
@@ -230,12 +228,12 @@ GridAction<GalleryFile> _copyAction(
   );
 }
 
-GridAction<GalleryFile> _moveAction(
+GridAction<File> _moveAction(
   BuildContext context,
   String bucketId,
   TagManager tagManager,
   LocalTagsService localTags,
-  GalleryAPIDirectories providedApi,
+  Directories providedApi,
   DeleteDialogShow toShow,
 ) {
   return GridAction(
@@ -259,12 +257,12 @@ GridAction<GalleryFile> _moveAction(
 void moveOrCopyFnc(
   BuildContext topContext,
   String originalBucketId,
-  List<GalleryFile> selected,
+  List<File> selected,
   bool move,
   TagManager tagManager,
   // FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
-  GalleryAPIDirectories providedApi,
+  Directories providedApi,
   DeleteDialogShow toShow,
 ) {
   PauseVideoNotifier.maybePauseOf(topContext, true);
@@ -322,7 +320,7 @@ void moveOrCopyFnc(
                   toShow,
                 );
               } else {
-                GalleryManagementApi.current()
+                GalleryApi()
                     .files
                     .copyMove(
                       chosen,
@@ -429,8 +427,7 @@ extension SaveTagsGlobalNotifier on GlobalProgressTab {
 
 Future<void> _saveTags(
   BuildContext context,
-  List<GalleryFile> selected,
-  GalleryPlug plug,
+  List<File> selected,
   PostTags postTags,
   LocalTagsService localTags,
   LocalTagDictionaryService localTagDictionary,
@@ -449,9 +446,9 @@ Future<void> _saveTags(
     return;
   }
 
-  final notifi = await chooseNotificationPlug().newProgress(
+  final notifi = await NotificationApi().show(
     title: l10n.savingTags,
-    id: NotificationPlug.savingTagsId,
+    id: NotificationApi.savingTagsId,
     group: NotificationGroup.misc,
     channel: NotificationChannel.misc,
     body: "${l10n.savingTagsSaving}"
@@ -473,7 +470,7 @@ Future<void> _saveTags(
     return null;
   }).whenComplete(() {
     notifi.done();
-    plug.notify(null);
+    GalleryApi().notify(null);
 
     return notifier.value = null;
   });

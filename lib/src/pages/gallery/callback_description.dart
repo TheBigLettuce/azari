@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:flutter/widgets.dart";
 
 class CallbackDescription {
@@ -46,12 +46,12 @@ class CallbackDescriptionNested {
     required this.preview,
   });
 
-  final void Function(GalleryFile chosen) c;
+  final void Function(File chosen) c;
   final bool returnBack;
 
   final PreferredSizeWidget preview;
 
-  void call(GalleryFile chosen) {
+  void call(File chosen) {
     c(chosen);
   }
 }

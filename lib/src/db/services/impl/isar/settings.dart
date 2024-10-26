@@ -31,7 +31,7 @@ class IsarSettingsService implements SettingsService {
     late final SettingsPath resp;
 
     try {
-      resp = await GalleryManagementApi.current()
+      resp = await gallery.GalleryApi()
           .chooseDirectory(l10n)
           .then((e) => IsarSettingsPath(path: e!.$2, pathDisplay: e.$1));
     } catch (e, trace) {

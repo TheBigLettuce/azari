@@ -8,7 +8,7 @@ import "dart:async";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
@@ -66,7 +66,7 @@ class LoadTags extends StatelessWidget {
 
                               postTags.addTagsPost(filename, tags, true);
 
-                              chooseGalleryPlug().notify(null);
+                              GalleryApi().notify(null);
                             }).onError((e, _) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

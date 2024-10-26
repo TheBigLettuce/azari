@@ -21,7 +21,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   final directoryPath = appSupportDir;
 
-  final d = Directory(path.joinAll([directoryPath, "temporary"]));
+  final d = io.Directory(path.joinAll([directoryPath, "temporary"]));
   d.createSync();
   if (!temporary) {
     d.deleteSync(recursive: true);
@@ -29,7 +29,7 @@ Future<DownloadManager> initalizeIsarDb(
   }
   final temporaryDbPath = d.path;
 
-  final dimages = Directory(path.joinAll([directoryPath, "temp_images"]));
+  final dimages = io.Directory(path.joinAll([directoryPath, "temp_images"]));
   dimages.createSync();
   if (!temporary) {
     dimages.deleteSync(recursive: true);
@@ -40,7 +40,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   final secondaryDir = path.join(directoryPath, "secondaryGrid");
   {
-    Directory(secondaryDir).createSync();
+    io.Directory(secondaryDir).createSync();
   }
 
   final anime = Isar.openSync(
@@ -113,7 +113,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   Isar? thumbnailIsar;
 
-  if (Platform.isAndroid) {
+  if (io.Platform.isAndroid) {
     thumbnailIsar = Isar.openSync(
       const [
         IsarThumbnailSchema,
@@ -161,7 +161,7 @@ Future<DownloadManager> initalizeIsarDb(
 
   if (temporary) {
     final tempDownloaderPath =
-        Directory(path.join(temporaryDir, "temporaryDownloads"))
+        io.Directory(path.join(temporaryDir, "temporaryDownloads"))
           ..createSync()
           ..deleteSync(recursive: true)
           ..createSync();
@@ -189,7 +189,7 @@ Future<DownloadManager> initalizeIsarDb(
 
 Future<void> _removeTempContentsDownloads(String dir) async {
   try {
-    final downld = Directory(path.join(dir, "downloads"));
+    final downld = io.Directory(path.join(dir, "downloads"));
     if (!downld.existsSync()) {
       return;
     }

@@ -9,7 +9,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -19,9 +19,9 @@ import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:local_auth/local_auth.dart";
 
-GridAction<GalleryDirectory> blacklist(
+GridAction<Directory> blacklist(
   BuildContext context,
-  String Function(GalleryDirectory) segment,
+  String Function(Directory) segment,
   DirectoryMetadataService directoryMetadata,
   BlacklistedDirectoryService blacklistedDirectory,
   AppLocalizations l10n,
@@ -83,12 +83,12 @@ GridAction<GalleryDirectory> blacklist(
   );
 }
 
-GridAction<GalleryDirectory> joinedDirectories(
+GridAction<Directory> joinedDirectories(
   BuildContext context,
-  GalleryAPIDirectories api,
+  Directories api,
   CallbackDescriptionNested? callback,
   SelectionGlue Function([Set<GluePreferences>])? generate,
-  String Function(GalleryDirectory) segment,
+  String Function(Directory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
   FavoritePostSourceService favoritePosts,
@@ -122,11 +122,11 @@ GridAction<GalleryDirectory> joinedDirectories(
 Future<void> joinedDirectoriesFnc(
   BuildContext context,
   String label,
-  List<GalleryDirectory> dirs,
-  GalleryAPIDirectories api,
+  List<Directory> dirs,
+  Directories api,
   CallbackDescriptionNested? callback,
   SelectionGlue Function([Set<GluePreferences>])? generate,
-  String Function(GalleryDirectory) segment,
+  String Function(Directory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
   FavoritePostSourceService favoritePosts,

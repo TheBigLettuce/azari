@@ -43,8 +43,8 @@ import com.github.thebiglettuce.azari.ActivityResultIntents
 import com.github.thebiglettuce.azari.App
 import com.github.thebiglettuce.azari.generated.Directory
 import com.github.thebiglettuce.azari.generated.DirectoryFile
-import com.github.thebiglettuce.azari.generated.GalleryApi
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.mover.FilesDest
 import com.github.thebiglettuce.azari.mover.MoveInternalOp
 import com.github.thebiglettuce.azari.mover.MoveOp
@@ -57,7 +57,7 @@ import java.nio.file.Path
 
 class AppContextChannel(
     val engine: FlutterEngine,
-    private val galleryApi: GalleryApi,
+    private val galleryApi: PlatformGalleryApi,
 ) {
     private val channel = MethodChannel(
         engine.dartExecutor.binaryMessenger,
@@ -112,6 +112,10 @@ class AppContextChannel(
                         )
                         result.success(null)
                     }
+                }
+
+                "requiresStoragePermission" -> {
+                    result.success(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q)
                 }
 
                 "manageMediaSupported" -> {
@@ -370,7 +374,7 @@ class AppContextChannel(
 
 class ActivityContextChannel(
     dartExecutor: DartExecutor,
-    private val galleryApi: GalleryApi,
+    private val galleryApi: PlatformGalleryApi,
 ) {
     private val channel = MethodChannel(
         dartExecutor.binaryMessenger,
@@ -399,6 +403,20 @@ class ActivityContextChannel(
             when (call.method) {
                 "closeActivity" -> {
                     context.finish()
+                }
+
+                "setWakelock" -> {
+                    val lockWake = call.arguments as Boolean
+
+                    mediaLoaderAndMover.uiScope.launch {
+                        if (lockWake) {
+                            context.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        } else {
+                            context.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+
+                        result.success(null)
+                    }
                 }
 
                 "returnUri" -> {

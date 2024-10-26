@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import android.system.Os
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,23 +19,30 @@ internal class GalleryHostApiImpl(
     private val mediaLoaderAndMover: MediaLoaderAndMover,
 ) :
     GalleryHostApi {
-    override fun getPicturesDirectly(
-        dir: String?,
-        limit: Long,
-        onlyLatest: Boolean,
-        callback: (Result<List<DirectoryFile>>) -> Unit,
-    ) {
-
-        mediaLoaderAndMover.refreshFilesDirectly(
-            dir = dir
-                ?: "",
-            limit = limit,
-            type = if (onlyLatest) MediaLoaderAndMover.Enums.LoadMediaType.Latest else MediaLoaderAndMover.Enums.LoadMediaType.Normal,
-            sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.None,
-        ) { list, notFound, empty, inRefresh ->
-            callback(Result.success(list))
+    override fun mediaVersion(callback: (Result<Long>) -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            callback(Result.success(MediaStore.getGeneration(context, MediaStore.VOLUME_EXTERNAL)))
+        } else {
+            callback(Result.success(0))
         }
     }
+//    override fun getPicturesDirectly(
+//        dir: String?,
+//        limit: Long,
+//        onlyLatest: Boolean,
+//        callback: (Result<List<DirectoryFile>>) -> Unit,
+//    ) {
+//
+//        mediaLoaderAndMover.refreshFilesDirectly(
+//            dir = dir
+//                ?: "",
+//            limit = limit,
+//            type = if (onlyLatest) MediaLoaderAndMover.Enums.LoadMediaType.Latest else MediaLoaderAndMover.Enums.LoadMediaType.Normal,
+//            sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.None,
+//        ) { list, notFound, empty, inRefresh ->
+//            callback(Result.success(list))
+//        }
+//    }
 
     override fun latestFilesByName(
         name: String,
@@ -67,11 +75,11 @@ internal class GalleryHostApiImpl(
 
 
 
-                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.contentResolver.openFile(
+                (context.contentResolver.openFile(
                     parsedUri,
                     "r",
                     null
-                ) else context.contentResolver.openFileDescriptor(parsedUri, "r"))?.use {
+                ))?.use {
                     val options = BitmapFactory.Options().apply {
                         inJustDecodeBounds = true
                     }

@@ -12,12 +12,11 @@ import android.os.Bundle
 import android.util.Log
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.FlutterEngineCache
 import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
 import com.github.thebiglettuce.azari.enginebindings.AppContextChannel
-import com.github.thebiglettuce.azari.generated.GalleryApi
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.NotificationsApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 
@@ -28,7 +27,7 @@ class QuickViewActivity : FlutterFragmentActivity() {
         val engine = makeEngine(app, "mainQuickView")
 
         AppContextChannel(
-            engine, GalleryApi(engine.dartExecutor.binaryMessenger),
+            engine, PlatformGalleryApi(engine.dartExecutor.binaryMessenger),
         )
     }
 
@@ -68,7 +67,7 @@ class QuickViewActivity : FlutterFragmentActivity() {
 
         activityContextChannel = ActivityContextChannel(
             appContextChannel.engine.dartExecutor,
-            GalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
+            PlatformGalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
         )
 
         activityContextChannel!!.attach(this, intents, mediaLoaderAndMover)

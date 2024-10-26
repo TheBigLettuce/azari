@@ -4,16 +4,15 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
+import "dart:io" as io;
 
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart" as platform_api;
-import "package:azari/src/plugs/notifications.dart";
+import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -177,8 +176,6 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
 
   int _inWork = 0;
 
-  final NotificationPlug notificationPlug = chooseNotificationPlug();
-
   @override
   void clear([bool silent = false]) {
     if (this is DownloadManagerHasPersistence) {
@@ -341,7 +338,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
 
   void _downloadProgress(
     String url,
-    NotificationProgress notif, {
+    NotificationHandle notif, {
     required int count,
     required int total,
   }) {
@@ -397,17 +394,17 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
         await _ensureDownloadDirExists(dir: downloadDir, site: entry.data.site);
     final filePath = path.joinAll([dir, entry.data.name]);
 
-    if (await GalleryManagementApi.current().files.exists(filePath)) {
+    if (await GalleryApi().files.exists(filePath)) {
       _failed(entry);
       _tryAddNew();
       return;
     }
 
-    final progress = await notificationPlug.newProgress(
+    final progress = await NotificationApi().show(
       id: _notificationId += 1,
       title: entry.data.name,
-      channel: platform_api.NotificationChannel.downloader,
-      group: platform_api.NotificationGroup.downloader,
+      channel: NotificationChannel.downloader,
+      group: NotificationGroup.downloader,
       body: entry.data.site,
       payload: "downloads",
     );
@@ -455,14 +452,14 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
     final settings = SettingsService.db().current;
 
     if (entry.data.thenMoveTo != null) {
-      await GalleryManagementApi.current().files.copyMoveInternal(
+      await GalleryApi().files.copyMoveInternal(
         relativePath: entry.data.thenMoveTo!.path,
         volume: entry.data.thenMoveTo!.volume,
         dirName: entry.data.thenMoveTo!.dirName,
         internalPaths: [filePath],
       );
     } else {
-      await GalleryManagementApi.current().files.moveSingle(
+      await GalleryApi().files.moveSingle(
             source: filePath,
             rootDir: settings.path.path,
             targetDir: entry.data.site,
@@ -474,12 +471,12 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
     required String dir,
     required String site,
   }) async {
-    final downloadtd = Directory(joinAll([dir, "downloads"]));
+    final downloadtd = io.Directory(joinAll([dir, "downloads"]));
 
     final dirpath = joinAll([downloadtd.path, site]);
     await downloadtd.create();
 
-    await Directory(dirpath).create();
+    await io.Directory(dirpath).create();
 
     return dirpath;
   }

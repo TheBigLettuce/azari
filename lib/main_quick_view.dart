@@ -14,12 +14,23 @@ Future<void> mainQuickView() async {
 
   await initMain(true, notificationStream);
 
-  final accentColor = await PlatformApi.current().accentColor();
+  final accentColor = await PlatformApi().accentColor;
 
-  final uris = await const AndroidApiFunctions().getQuickViewUris();
+  final uris = await const MethodChannel(
+    "com.github.thebiglettuce.azari.activity_context",
+  ).invokeListMethod<String>("getQuickViewUris").then((e) => e!);
 
-  final files = (await GalleryHostApi().getUriPicturesDirectly(uris))
-      .map((e) => AndroidUriFile.fromUriFile(e))
+  final files = (await platform.GalleryHostApi().getUriPicturesDirectly(uris))
+      .map(
+        (e) => AndroidUriFile(
+          width: e.width,
+          height: e.height,
+          uri: e.uri,
+          name: e.name,
+          lastModified: e.lastModified,
+          size: e.size,
+        ),
+      )
       .toList();
 
   runApp(
@@ -37,7 +48,7 @@ Future<void> mainQuickView() async {
           child: PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
-              const AndroidApiFunctions().closeActivity();
+              PlatformApi().closeApp();
             },
             child: ImageView(
               cellCount: files.length,

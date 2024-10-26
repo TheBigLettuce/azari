@@ -11,64 +11,49 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:permission_handler/permission_handler.dart";
 
-class AndroidPermissionsPage extends StatefulWidget {
-  const AndroidPermissionsPage({
+class PermissionsPage extends StatefulWidget {
+  const PermissionsPage({
     super.key,
     required this.onEnd,
+    required this.permissions,
   });
 
+  final List<PermissionController> permissions;
   final void Function(BuildContext context)? onEnd;
 
   @override
-  State<AndroidPermissionsPage> createState() => _AndroidPermissionsPageState();
+  State<PermissionsPage> createState() => _PermissionsPageState();
 }
 
-class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
-  bool photoAndVideos = false;
-  bool notifications = false;
-  bool mediaLocation = false;
-  bool storage = false;
-  bool manageMedia = false;
-
-  bool? manageMediaSupported;
-  bool storagePermissionGranted = false;
-
-  static const _androidApi = AndroidApiFunctions();
+class _PermissionsPageState extends State<PermissionsPage> {
+  final _handlers = <Object, (bool, bool)>{};
 
   @override
   void initState() {
     super.initState();
 
-    _androidApi.manageMediaSupported().then(
-          (value) => setState(() {
-            manageMediaSupported = value;
+    _refreshPermissions();
+  }
 
-            if (value) {
-              _androidApi.manageMediaStatus().then(
-                    (value) => setState(() {
-                      manageMedia = value;
-                    }),
-                  );
-            }
-          }),
-        );
+  Future<void> _refreshPermissions() async {
+    for (final e in widget.permissions) {
+      final enabled = await e.enabled;
 
-    Permission.notification.status.then((value) async {
-      notifications = value.isGranted;
-      photoAndVideos = await Permission.photos.isGranted &&
-          await Permission.videos.isGranted;
-      mediaLocation = await Permission.accessMediaLocation.isGranted;
-      storage = await Permission.storage.isGranted;
-      storagePermissionGranted = (await Permission.storage.request()).isGranted;
+      if (enabled) {
+        _handlers[e.token] = (await e.granted, true);
+      } else {
+        _handlers[e.token] = (false, false);
+      }
+    }
 
+    if (context.mounted) {
       setState(() {});
-    });
+    }
   }
 
   @override
@@ -77,93 +62,53 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 
     return _WrapPadding(
       title: l10n.welcomePermissions,
-      explanation: l10n.welcomePermissionsExplanation,
+      // explanation: l10n.welcomePermissionsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ButtonWithPadding(
-                icon: const Icon(Icons.photo),
-                onPressed: () async {
-                  final resultPhotos = await Permission.photos.request();
-                  final resultVideos = await Permission.videos.request();
+            children: widget.permissions.map(
+              (e) {
+                final (label, icon) = e.translatedNameIcon(l10n);
+                final handle = _handlers[e.token]; //(granted, enabled)
 
-                  setState(() {
-                    photoAndVideos =
-                        resultVideos.isGranted && resultPhotos.isGranted;
-                  });
-                },
-                label: l10n.permissionsPhotosVideos,
-                variant: photoAndVideos || storagePermissionGranted
-                    ? ButtonVariant.selected
-                    : ButtonVariant.normal,
-              ),
-              _ButtonWithPadding(
-                icon: const Icon(Icons.folder_copy),
-                onPressed: () async {
-                  final result = await Permission.accessMediaLocation.request();
+                return _ButtonWithPadding(
+                  icon: Icon(icon),
+                  onPressed: handle == null || !handle.$2
+                      ? null
+                      : () async {
+                          _handlers[e.token] = (await e.request(), true);
 
-                  setState(() {
-                    mediaLocation = result.isGranted;
-                  });
-                },
-                label: l10n.permissionsMediaLocation,
-                variant: mediaLocation
-                    ? ButtonVariant.selected
-                    : ButtonVariant.secondary,
-              ),
-              if (manageMediaSupported != null && manageMediaSupported!)
-                _ButtonWithPadding(
-                  icon: const Icon(Icons.perm_media),
-                  onPressed: () async {
-                    final result = await _androidApi.requestManageMedia();
-
-                    setState(() {
-                      manageMedia = result;
-                    });
-                  },
-                  label: l10n.permissionsManageMedia,
-                  variant: manageMedia
+                          if (context.mounted) {
+                            setState(() {});
+                          }
+                        },
+                  label: label,
+                  variant: handle?.$1 ?? false
                       ? ButtonVariant.selected
-                      : ButtonVariant.secondary,
-                ),
-              _ButtonWithPadding(
-                icon: const Icon(Icons.notifications_rounded),
-                onPressed: () async {
-                  final result = await Permission.notification.request();
-
-                  setState(() {
-                    notifications = result.isGranted;
-                  });
-                },
-                label: l10n.permissionsNotifications,
-                variant: notifications
-                    ? ButtonVariant.selected
-                    : ButtonVariant.secondary,
-              ),
-            ],
+                      : ButtonVariant.normal,
+                );
+              },
+            ).toList(),
           ),
         ),
       ),
       buttons: [
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
-          onPressed: !photoAndVideos && !storagePermissionGranted
-              ? null
-              : () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) {
-                        return CongratulationPage(
-                          onEnd: widget.onEnd,
-                        );
-                      },
-                    ),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) {
+                  return CongratulationPage(
+                    onEnd: widget.onEnd,
                   );
                 },
+              ),
+            );
+          },
           label: Text(l10n.welcomeNextLabel),
         ),
       ],
@@ -306,12 +251,15 @@ class _InitalSettingsState extends State<InitalSettings> {
   }
 
   void _nextPage() {
+    final permissions = PlatformApi().requiredPermissions;
+
     Navigator.pushReplacement(
       context,
-      PlatformApi.current().requiresPermissions
+      permissions.isNotEmpty
           ? MaterialPageRoute<void>(
               builder: (context) {
-                return AndroidPermissionsPage(
+                return PermissionsPage(
+                  permissions: permissions,
                   onEnd: widget.onEnd,
                 );
               },
@@ -566,7 +514,7 @@ class _ButtonWithPadding extends StatelessWidget {
   });
 
   final Icon icon;
-  final void Function() onPressed;
+  final void Function()? onPressed;
   final String label;
   final ButtonVariant variant;
 

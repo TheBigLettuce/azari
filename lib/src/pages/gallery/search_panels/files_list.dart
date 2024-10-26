@@ -38,10 +38,6 @@ class __FilesListState extends State<_FilesList> {
     super.initState();
 
     subscr = widget.filteringEvents.stream.listen((str) {
-      if (PlatformApi.current() is! AndroidApiFunctions) {
-        return;
-      }
-
       setState(() {
         if (search.str == str) {
           return;
@@ -56,18 +52,19 @@ class __FilesListState extends State<_FilesList> {
         }
 
         final newSearch = _FilesLoadingStatus()..str = str;
-        newSearch.f = GalleryHostApi().latestFilesByName(str, 30)
+        newSearch.f = GalleryApi().search.filesByName(str, 30)
           ..then(
             (e) => newSearch.files = e
-                .map(
-                  (e) => e.toAndroidFile(
-                    widget.db.localTags.get(e.name).fold({}, (map, e) {
-                      map[e] = null;
-                      return map;
-                    }),
-                  ),
-                )
-                .toList(),
+            // .map(
+            //   (e) => e.toAndroidFile(
+            //     widget.db.localTags.get(e.name).fold({}, (map, e) {
+            //       map[e] = null;
+            //       return map;
+            //     }),
+            //   ),
+            // )
+            // .toList()
+            ,
           ).whenComplete(
             () => setState(() {
               newSearch.f = null;
@@ -129,12 +126,12 @@ class __FilesListState extends State<_FilesList> {
                         callback: widget.callback,
                         child: child,
                       ),
-                      tags: (c) => GalleryFile.imageTags(
+                      tags: (c) => File.imageTags(
                         c,
                         widget.db.localTags,
                         widget.db.tagManager,
                       ),
-                      watchTags: (c, f) => GalleryFile.watchTags(
+                      watchTags: (c, f) => File.watchTags(
                         c,
                         f,
                         widget.db.localTags,
@@ -168,6 +165,6 @@ class _FilesLoadingStatus {
   _FilesLoadingStatus();
 
   Future<void>? f;
-  List<GalleryFile> files = const [];
+  List<File> files = const [];
   String str = "";
 }

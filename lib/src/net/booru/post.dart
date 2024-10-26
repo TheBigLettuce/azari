@@ -11,7 +11,7 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post_functions.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -70,7 +70,7 @@ abstract class PostImpl
       NavigationAction(
         Icons.share,
         () {
-          PlatformApi.current().shareMedia(fileUrl, url: true);
+          PlatformApi().shareMedia(fileUrl, url: true);
         },
       ),
     ];

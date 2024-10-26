@@ -13,22 +13,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.StrictMode
-import android.util.Log
 import androidx.core.content.getSystemService
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.glide.GlideImageLoader
-import io.flutter.FlutterInjector
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.FlutterEngineCache
-import io.flutter.embedding.engine.FlutterEngineGroup
-import io.flutter.embedding.engine.dart.DartExecutor
-import com.github.thebiglettuce.azari.generated.GalleryApi
-import com.github.thebiglettuce.azari.generated.Notification
-import com.github.thebiglettuce.azari.generated.NotificationGroup
-import com.github.thebiglettuce.azari.generated.NotificationsApi
-import com.github.thebiglettuce.azari.generated.NotificationChannel as NotificationChannelApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.impls.NativeViewFactory
 import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import io.flutter.FlutterInjector
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineGroup
+import io.flutter.embedding.engine.dart.DartExecutor
+import com.github.thebiglettuce.azari.generated.NotificationChannel as NotificationChannelApi
 
 class App : Application() {
     internal lateinit var engines: FlutterEngineGroup
@@ -83,7 +78,7 @@ fun makeEngine(app: App, entrypoint: String): FlutterEngine {
     val engine = app.engines.createAndRunEngine(app, dartEntrypoint)
     engine.platformViewsController.registry.registerViewFactory(
         "imageview",
-        NativeViewFactory(GalleryApi(engine.dartExecutor.binaryMessenger))
+        NativeViewFactory(PlatformGalleryApi(engine.dartExecutor.binaryMessenger))
     )
 
     return engine

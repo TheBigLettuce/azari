@@ -4,7 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:io";
+import "dart:io" as io;
 
 import "package:async/async.dart";
 import "package:azari/init_main/app_info.dart";
@@ -67,8 +67,8 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/net/manga/manga_api.dart";
 import "package:azari/src/pages/home.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart" as gallery;
+import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -2065,7 +2065,7 @@ class IsarThumbnailService implements ThumbnailService {
         return toDelete;
       });
 
-      GalleryManagementApi.current().thumbs.removeAll(toDelete);
+      gallery.GalleryApi().thumbs.removeAll(toDelete);
     }
 
     _Dbs.g.thumbnail!.writeTxnSync(() {
@@ -2462,7 +2462,7 @@ class IsarFilesGridSettingsData implements WatchableGridSettingsData {
       _Dbs.g.main.isarGridSettingsFiles.getSync(0) ??
       IsarGridSettingsFiles(
         aspectRatio: GridAspectRatio.one,
-        columns: Platform.isAndroid ? GridColumn.three : GridColumn.six,
+        columns: io.Platform.isAndroid ? GridColumn.three : GridColumn.six,
         layoutType: GridLayoutType.grid,
         hideName: true,
       );
@@ -2528,7 +2528,7 @@ class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
       _Dbs.g.main.isarGridSettingsDirectories.getSync(0) ??
       IsarGridSettingsDirectories(
         aspectRatio: GridAspectRatio.oneTwo,
-        columns: Platform.isAndroid ? GridColumn.three : GridColumn.six,
+        columns: io.Platform.isAndroid ? GridColumn.three : GridColumn.six,
         layoutType: GridLayoutType.grid,
         hideName: false,
       );
@@ -2560,7 +2560,7 @@ class IsarBooruGridSettingsData implements WatchableGridSettingsData {
       _Dbs.g.main.isarGridSettingsBoorus.getSync(0) ??
       IsarGridSettingsBooru(
         aspectRatio: GridAspectRatio.one,
-        columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
+        columns: io.Platform.isAndroid ? GridColumn.two : GridColumn.six,
         layoutType: GridLayoutType.gridQuilted,
         hideName: true,
       );
@@ -2592,7 +2592,7 @@ class IsarAnimeDiscoveryGridSettingsData implements WatchableGridSettingsData {
       _Dbs.g.main.isarGridSettingsAnimeDiscoverys.getSync(0) ??
       IsarGridSettingsAnimeDiscovery(
         aspectRatio: GridAspectRatio.one,
-        columns: Platform.isAndroid ? GridColumn.three : GridColumn.six,
+        columns: io.Platform.isAndroid ? GridColumn.three : GridColumn.six,
         layoutType: GridLayoutType.grid,
         hideName: true,
       );

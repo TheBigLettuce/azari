@@ -10,7 +10,7 @@ import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:azari/src/widgets/translation_notes.dart";
@@ -55,7 +55,7 @@ class ShareButton extends StatelessWidget {
       onLongPress: onLongPress,
       child: IconButton(
         onPressed: () {
-          PlatformApi.current().shareMedia(url, url: true);
+          PlatformApi().shareMedia(url, url: true);
         },
         icon: const Icon(Icons.share),
       ),

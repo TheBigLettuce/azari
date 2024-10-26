@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/plugs/gallery.dart";
+import "package:azari/src/platform/gallery_api.dart" as gallery;
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:flutter/material.dart";
@@ -16,7 +16,7 @@ class CopyMovePreview extends StatefulWidget {
     required this.icon,
   });
 
-  final List<GalleryFile>? files;
+  final List<gallery.File>? files;
   final String title;
   final IconData icon;
 

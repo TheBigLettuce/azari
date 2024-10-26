@@ -3,12 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
+import "dart:io" as io;
 import "dart:ui";
 
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/platform_functions.dart";
+import "package:azari/src/platform/gallery_api.dart" as gallery;
+import "package:azari/src/platform/gallery_api.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:transparent_image/transparent_image.dart";
@@ -70,7 +70,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
     GalleryThumbnailProvider key,
     ImageDecoderCallback decode,
   ) async {
-    Future<File?> setFile() async {
+    Future<io.File?> setFile() async {
       final future = _thumbLoadingStatus[id];
       if (future != null) {
         final cachedThumb = await future;
@@ -79,7 +79,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
           return null;
         }
 
-        return File(cachedThumb.path);
+        return io.File(cachedThumb.path);
       }
 
       final thumb = thumbnails.get(id);
@@ -88,7 +88,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
           return null;
         }
 
-        return File(thumb.path);
+        return io.File(thumb.path);
       }
 
       if (tryPinned) {
@@ -96,7 +96,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
         if (thumb != null &&
             thumb.differenceHash != 0 &&
             thumb.path.isNotEmpty) {
-          return File(thumb.path);
+          return io.File(thumb.path);
         }
       }
 
@@ -108,11 +108,11 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
           return null;
         }
 
-        return File(cachedThumb.path);
+        return io.File(cachedThumb.path);
       }
 
       _thumbLoadingStatus[id] =
-          GalleryManagementApi.current().thumbs.get(id).whenComplete(() {
+          gallery.GalleryApi().thumbs.get(id).whenComplete(() {
         _thumbLoadingStatus.remove(id);
       });
 
@@ -123,7 +123,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
         return null;
       }
 
-      return File(cachedThumb.path);
+      return io.File(cachedThumb.path);
     }
 
     final file = await setFile();
@@ -139,7 +139,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
       PaintingBinding.instance.imageCache.evict(key);
       throw StateError("$file is empty and cannot be loaded as an image.");
     }
-    return (file.runtimeType == File)
+    return (file.runtimeType == io.File)
         ? decode(await ImmutableBuffer.fromFilePath(file.path))
         : decode(await ImmutableBuffer.fromUint8List(await file.readAsBytes()));
   }

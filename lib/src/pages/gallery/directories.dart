@@ -21,10 +21,7 @@ import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/search_page.dart";
 import "package:azari/src/pages/home.dart";
-import "package:azari/src/plugs/gallery.dart";
-import "package:azari/src/plugs/gallery/android/android_api_directories.dart";
-import "package:azari/src/plugs/gallery_management_api.dart";
-import "package:azari/src/plugs/generated/platform_api.g.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -62,7 +59,7 @@ class GalleryDirectories extends StatefulWidget {
   final void Function(bool)? procPop;
   final bool wrapGridPage;
 
-  final GalleryAPIDirectories? providedApi;
+  final Directories? providedApi;
   final AppLocalizations l10n;
 
   final DbConn db;
@@ -111,14 +108,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   int galleryVersion = 0;
 
-  late final ChainedFilterResourceSource<int, GalleryDirectory> filter;
+  late final ChainedFilterResourceSource<int, Directory> filter;
 
-  late final GridSkeletonState<GalleryDirectory> state = GridSkeletonState();
-
-  final galleryPlug = chooseGalleryPlug();
+  late final GridSkeletonState<Directory> state = GridSkeletonState();
 
   late final api = widget.providedApi ??
-      galleryPlug.galleryApi(
+      GalleryApi().openDirectory(
         widget.db.blacklistedDirectories,
         widget.db.directoryTags,
         l10n: widget.l10n,
@@ -133,11 +128,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   void initState() {
     super.initState();
 
-    galleryPlug.version.then((value) => galleryVersion = value);
+    GalleryApi().version.then((value) => galleryVersion = value);
 
     lifecycleListener = AppLifecycleListener(
       onShow: () {
-        galleryPlug.version.then((value) {
+        GalleryApi().version.then((value) {
           if (value != galleryVersion) {
             galleryVersion = value;
             _refresh();
@@ -218,16 +213,16 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   void _refresh() {
     api.trashCell.refresh();
     api.source.clearRefresh();
-    galleryPlug.version.then((value) => galleryVersion = value);
+    GalleryApi().version.then((value) => galleryVersion = value);
   }
 
-  String _segmentCell(GalleryDirectory cell) => GalleryDirectories.segmentCell(
+  String _segmentCell(Directory cell) => GalleryDirectories.segmentCell(
         cell.name,
         cell.bucketId,
         directoryTags,
       );
 
-  Segments<GalleryDirectory> _makeSegments(BuildContext context) {
+  Segments<Directory> _makeSegments(BuildContext context) {
     return Segments(
       widget.l10n.segmentsUncategorized,
       injectedLabel: widget.callback != null || widget.nestedCallback != null
@@ -261,13 +256,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   Future<void Function(BuildContext)?> _addToGroup(
     BuildContext context,
-    List<GalleryDirectory> selected,
+    List<Directory> selected,
     String value,
     bool toPin,
     AppLocalizations l10n,
   ) async {
-    final requireAuth = <GalleryDirectory>[];
-    final noAuth = <GalleryDirectory>[];
+    final requireAuth = <Directory>[];
+    final noAuth = <Directory>[];
 
     for (final e in selected) {
       final m = directoryMetadata.get(_segmentCell(e));
@@ -388,7 +383,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       rootNavigatorPopCond: widget.nestedCallback != null,
       searchTextController: searchTextController,
       rootNavigatorPop: widget.procPop,
-      child: GridFrame<GalleryDirectory>(
+      child: GridFrame<Directory>(
         key: state.gridKey,
         slivers: [
           if (widget.nestedCallback != null)
@@ -432,7 +427,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   trailingItems: [
                     if (widget.callback != null)
                       IconButton(
-                        onPressed: () => GalleryManagementApi.current()
+                        onPressed: () => GalleryApi()
                             .chooseDirectory(l10n, temporary: true)
                             .then((value) {
                           widget.callback!(
@@ -493,7 +488,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                                 directoryComplete: _completeDirectoryNameTag,
                                 onDirectoryPressed: (directory) {
                                   final gridExtra =
-                                      GridExtrasNotifier.of<GalleryDirectory>(
+                                      GridExtrasNotifier.of<Directory>(
                                     context,
                                   );
 
@@ -536,7 +531,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     actions: [
                       if (widget.callback != null)
                         IconButton(
-                          onPressed: () => GalleryManagementApi.current()
+                          onPressed: () => GalleryApi()
                               .chooseDirectory(l10n, temporary: true)
                               .then((value) {
                             widget.callback!(
@@ -575,7 +570,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null
-              ? <GridAction<GalleryDirectory>>[
+              ? <GridAction<Directory>>[
                   if (widget.callback == null || widget.callback!.joinable)
                     actions.joinedDirectories(
                       context,
@@ -590,7 +585,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       widget.l10n,
                     ),
                 ]
-              : <GridAction<GalleryDirectory>>[
+              : <GridAction<Directory>>[
                   actions.addToGroup(
                     context,
                     (selected) {
@@ -694,7 +689,7 @@ class _LatestImagesWidget extends StatefulWidget {
   });
 
   final DbConn db;
-  final GalleryAPIDirectories parent;
+  final Directories parent;
   final CallbackDescriptionNested callback;
 
   @override
@@ -704,17 +699,18 @@ class _LatestImagesWidget extends StatefulWidget {
 class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   late final StreamSubscription<void> _directoryCapsChanged;
 
-  late final filesApi = GalleryAPIFiles.fake(
+  late final filesApi = Files.fake(
     widget.db,
     clearRefresh: () {
       final c = <String, DirectoryMetadata>{};
 
-      return GalleryHostApi().getPicturesDirectly(null, 20, true).then((l) {
+      return GalleryApi().search.filesByName("", 20).then((l) {
         final ll = _fromDirectoryFileFiltered(l, c);
 
         if (ll.length < 10) {
-          return GalleryHostApi()
-              .getPicturesDirectly(null, 20, true)
+          return GalleryApi()
+              .search
+              .filesByName("", 20)
               .then((e) => ll + _fromDirectoryFileFiltered(l, c));
         }
 
@@ -724,7 +720,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
     parent: widget.parent,
   );
 
-  late final gridSelection = GridSelection<GalleryFile>(
+  late final gridSelection = GridSelection<File>(
     const [],
     SelectionGlue.empty(context),
     noAppBar: true,
@@ -733,12 +729,12 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
 
   final focus = FocusNode();
 
-  late final GridFunctionality<GalleryFile> functionality = GridFunctionality(
+  late final GridFunctionality<File> functionality = GridFunctionality(
     registerNotifiers: (child) => GridExtrasNotifier(
       data: GridExtrasData(
         gridSelection,
         functionality,
-        const GridDescription<GalleryFile>(
+        const GridDescription<File>(
           actions: [],
           gridSeed: 0,
         ),
@@ -759,29 +755,31 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
   final controller = ScrollController();
 
-  List<GalleryFile> _fromDirectoryFileFiltered(
-    List<DirectoryFile?> l,
+  List<File> _fromDirectoryFileFiltered(
+    List<File> l,
     Map<String, DirectoryMetadata> c,
   ) {
     return l
-        .where(
-          (e) => GalleryFilesPageType.filterAuthBlur(
-            c,
-            e,
-            widget.db.directoryTags,
-            widget.db.directoryMetadata,
-          ),
-        )
-        .map(
-          (e) => e!.toAndroidFile(
-            widget.db.localTags.get(e.name).fold({}, (map, e) {
-              map[e] = null;
+            .where(
+              (e) => GalleryFilesPageType.filterAuthBlur(
+                c,
+                e,
+                widget.db.directoryTags,
+                widget.db.directoryMetadata,
+              ),
+            )
+            .toList()
+        // .map(
+        //   (e) => e!.toAndroidFile(
+        //     widget.db.localTags.get(e.name).fold({}, (map, e) {
+        //       map[e] = null;
 
-              return map;
-            }),
-          ),
-        )
-        .toList();
+        //       return map;
+        //     }),
+        //   ),
+        // )
+        // .toList()
+        ;
   }
 
   @override
@@ -813,7 +811,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
       data: GridExtrasData(
         gridSelection,
         functionality,
-        const GridDescription<GalleryFile>(
+        const GridDescription<File>(
           actions: [],
           gridSeed: 0,
         ),
@@ -854,8 +852,8 @@ class _LatestList extends StatefulWidget {
     required this.functionality,
   });
 
-  final ResourceSource<int, GalleryFile> source;
-  final GridFunctionality<GalleryFile> functionality;
+  final ResourceSource<int, File> source;
+  final GridFunctionality<File> functionality;
 
   static const size = Size(140 / 1.5, 140 + 16);
   static const listPadding = EdgeInsets.symmetric(horizontal: 12);
@@ -865,7 +863,7 @@ class _LatestList extends StatefulWidget {
 }
 
 class __LatestListState extends State<_LatestList> {
-  ResourceSource<int, GalleryFile> get source => widget.source;
+  ResourceSource<int, File> get source => widget.source;
 
   late final StreamSubscription<void> subscription;
 
@@ -887,7 +885,7 @@ class __LatestListState extends State<_LatestList> {
 
   @override
   Widget build(BuildContext context) {
-    return CellProvider<GalleryFile>(
+    return CellProvider<File>(
       getCell: source.forIdxUnsafe,
       child: SizedBox(
         width: double.infinity,
@@ -1031,16 +1029,16 @@ class DirectoriesDataNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final GalleryAPIDirectories api;
+  final Directories api;
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;
-  final String Function(GalleryDirectory cell) segmentFnc;
+  final String Function(Directory cell) segmentFnc;
 
   static (
-    GalleryAPIDirectories,
+    Directories,
     CallbackDescription?,
     CallbackDescriptionNested?,
-    String Function(GalleryDirectory cell),
+    String Function(Directory cell),
   ) of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<DirectoriesDataNotifier>();

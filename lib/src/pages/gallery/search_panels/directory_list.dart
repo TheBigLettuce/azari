@@ -18,9 +18,9 @@ class _DirectoryList extends StatefulWidget {
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
 
-  final ResourceSource<int, GalleryDirectory> source;
+  final ResourceSource<int, Directory> source;
 
-  final void Function(GalleryDirectory) onDirectoryPressed;
+  final void Function(Directory) onDirectoryPressed;
 
   final Map<String, bool> blurMap;
 
@@ -31,7 +31,7 @@ class _DirectoryList extends StatefulWidget {
 class __DirectoryListState extends State<_DirectoryList> {
   String filteringValue = "";
 
-  late final ChainedFilterResourceSource<int, GalleryDirectory> filter;
+  late final ChainedFilterResourceSource<int, Directory> filter;
 
   late final StreamSubscription<String> subscr;
 
@@ -75,7 +75,7 @@ class __DirectoryListState extends State<_DirectoryList> {
     super.dispose();
   }
 
-  bool _toBlur(GalleryDirectory cell) {
+  bool _toBlur(Directory cell) {
     for (final booru in Booru.values) {
       if (booru.url == cell.name) {
         return false;

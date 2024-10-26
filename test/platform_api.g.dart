@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart' show ReadBuffer, WriteBuffer;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:azari/src/plugs/generated/platform_api.g.dart';
+import 'package:azari/src/platform/generated/platform_api.g.dart';
 
 
 class _PigeonCodec extends StandardMessageCodec {

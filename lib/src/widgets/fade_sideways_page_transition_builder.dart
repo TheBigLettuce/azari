@@ -5,8 +5,9 @@
 
 import "package:flutter/material.dart";
 
-class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
+class FadeSidewaysPageTransitionBuilder extends PageTransitionsBuilder {
   const FadeSidewaysPageTransitionBuilder();
+
   static final Tween<Offset> _bottomUpTween = Tween<Offset>(
     begin: const Offset(0.25, 0),
     end: Offset.zero,
