@@ -162,7 +162,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
     final child = newValues.isEmpty
         ? Center(
             child: Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               child: Text(
                 AppLocalizations.of(context)!.emptyValue,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -176,7 +176,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                 controller: controller,
                 scrollDirection: Axis.horizontal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: SegmentedButton<T>(
                     emptySelectionAllowed:
                         widget.selected == null || widget.allowUnselect,
@@ -203,6 +203,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                 child: ListView.builder(
                   controller: controller,
                   shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemCount: newValues.length,
                   scrollDirection: Axis.horizontal,
                   itemBuilder: (context, index) {
@@ -210,8 +211,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
                     return Padding(
                       padding: EdgeInsets.only(
-                        left: index == 0 ? 8 : 0,
-                        right: index == newValues.length - 1 ? 8 : 4,
+                        right: index == newValues.length - 1 ? 0 : 4,
                       ),
                       child: ChoiceChip(
                         showCheckmark: false,
@@ -241,13 +241,13 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
           };
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding:
-                const EdgeInsets.only(bottom: 8, top: 4, left: 8, right: 8),
+                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -476,16 +476,14 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     BuildContext context,
     bool hideName,
     void Function(bool) select,
+    EdgeInsets contentPadding,
     AppLocalizations l10n,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(l10n.hideNames),
-        value: hideName,
-        onChanged: (_) => select(!hideName),
-      ),
+    return SwitchListTile(
+      contentPadding: contentPadding,
+      title: Text(l10n.hideNames),
+      value: hideName,
+      onChanged: (_) => select(!hideName),
     );
   }
 
@@ -518,13 +516,14 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 style: theme.textTheme.titleLarge,
               ),
             ),
-            if (widget.header != null) widget.header!,
             _hideName(
               context,
               _gridSettings!.hideName,
               (n) => add(_gridSettings!.copy(hideName: n)),
+              EdgeInsets.symmetric(horizontal: 12),
               l10n,
             ),
+            if (widget.header != null) widget.header!,
             _gridLayout(
               context,
               _gridSettings!.layoutType,

@@ -17,7 +17,8 @@ class AnimeDestinationIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final isSelected = CurrentRoute.of(context) == CurrentRoute.anime;
+    final isSelected = false;
+    // CurrentRoute.of(context) == CurrentRoute.anime;
 
     return Animate(
       controller: controller,

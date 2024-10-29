@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post_functions.dart";
@@ -203,13 +204,22 @@ abstract class PostImpl
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     if (this is FavoritePost) {
-      return defaultStickersPost(
-        type,
-        context,
-        tags,
-        id,
-        booru,
-      );
+      return [
+        if (type == PostContentType.video)
+          Sticker(
+            FilteringMode.video.icon,
+            subtitle: "",
+          ),
+        if (type == PostContentType.gif)
+          Sticker(
+            FilteringMode.gif.icon,
+            subtitle: "",
+          ),
+        if (excludeDuplicate && tags.contains("original"))
+          Sticker(FilteringMode.original.icon),
+        if (excludeDuplicate && tags.contains("translated"))
+          const Sticker(Icons.translate_outlined),
+      ];
     }
 
     if (excludeDuplicate) {

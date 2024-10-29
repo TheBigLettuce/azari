@@ -107,6 +107,15 @@ class _VideoControlsState extends State<VideoControls>
         controller: controls,
       ),
       IconButton(
+        style: const ButtonStyle(
+          shape: WidgetStateProperty.fromMap({
+            WidgetState.selected: CircleBorder(),
+            WidgetState.any: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+          }),
+        ),
+        isSelected: videoSettings.volume != 0,
         onPressed: () {
           controls._events.add(const VolumeButton());
         },
@@ -115,23 +124,35 @@ class _VideoControlsState extends State<VideoControls>
             : const Icon(Icons.volume_up_outlined),
       ),
       IconButton(
+        isSelected: videoSettings.looping,
+        // isSelectd: videoSettings.looping,
+        // color: videoSettings.looping
+        //     ? null
+        //     : Colors.blue.harmonizeWith(
+        //         theme.colorScheme.primary,
+        //       ),
         onPressed: () {
           controls._events.add(const LoopingButton());
         },
-        icon: Icon(
-          Icons.loop_outlined,
-          color: videoSettings.looping
-              ? Colors.blue.harmonizeWith(
-                  theme.colorScheme.primary,
-                )
-              : null,
-        ),
+        icon: const Icon(Icons.loop_outlined),
       ),
       _VideoTime(
         key: videoTimeKey,
         controller: controls,
       ),
-      IconButton(
+      IconButton.filledTonal(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            theme.colorScheme.surfaceContainerHigh.withValues(
+              alpha: 0.6,
+            ),
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+          ),
+        ),
         onPressed: () {
           controls._events.add(const FullscreenButton());
         },
@@ -191,13 +212,19 @@ class _VideoControlsState extends State<VideoControls>
                     widget.seekTimeAnchor.currentState?.finishUpdating();
                   },
                   child: widget.vertical
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: children,
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: children,
+                          ),
                         )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: children,
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: children,
+                          ),
                         ),
                 ),
               ),
@@ -312,7 +339,25 @@ class __PlayButtonState extends State<_PlayButton> {
 
     final playState = widget.controller.playState;
 
-    return IconButton(
+    return IconButton.filled(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateColor.fromMap({
+          WidgetState.selected: theme.colorScheme.primary.withValues(
+            alpha: 0.8,
+          ),
+          WidgetState.any: theme.colorScheme.surfaceContainerLow.withValues(
+            alpha: 0.6,
+          ),
+        }),
+        shape: const WidgetStateProperty.fromMap({
+          WidgetState.selected: CircleBorder(),
+          WidgetState.any: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(15)),
+          ),
+        }),
+      ),
+      isSelected:
+          playState == PlayState.isPlaying || playState == PlayState.buffering,
       onPressed: playState == null
           ? null
           : () {

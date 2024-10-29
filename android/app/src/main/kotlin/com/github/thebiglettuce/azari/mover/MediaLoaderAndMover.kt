@@ -900,18 +900,12 @@ class MediaLoaderAndMover(private val context: Context) {
     }
 
     private suspend fun refreshDirectories(context: Context, sendCallback: SendDirectories) {
-        val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arrayOf(
+        val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
             MediaStore.Files.FileColumns.RELATIVE_PATH,
             MediaStore.Files.FileColumns.VOLUME_NAME,
-            MediaStore.Files.FileColumns._ID
-        ) else arrayOf(
-            MediaStore.Files.FileColumns.BUCKET_ID,
-            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
-            MediaStore.Files.FileColumns.DATE_MODIFIED,
-            MediaStore.Files.FileColumns.DATA,
             MediaStore.Files.FileColumns._ID
         )
 
@@ -927,13 +921,12 @@ class MediaLoaderAndMover(private val context: Context) {
             val b_display_name =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
             val relative_path =
-                cursor.getColumnIndexOrThrow(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA)
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.RELATIVE_PATH)
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
-            val volume_name =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cursor.getColumnIndexOrThrow(
-                    MediaStore.Files.FileColumns.VOLUME_NAME
-                ) else null
+            val volume_name = cursor.getColumnIndexOrThrow(
+                MediaStore.Files.FileColumns.VOLUME_NAME
+            )
 
             val map = HashMap<String, Unit>()
             val resMap = mutableMapOf<String, Directory>()

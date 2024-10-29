@@ -75,7 +75,6 @@ fun copyFileInternal(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.R)
 fun copyOrMove(
     context: FlutterFragmentActivity,
     uris: List<Uri>,
@@ -139,7 +138,7 @@ fun copyOrMove(
     }
 }
 
-internal fun copyFile(
+fun copyFile(
     context: Context,
     contentResolver: ContentResolver,
     e: Uri,
@@ -305,7 +304,7 @@ fun newDirCopyFile(
         }
 }
 
-private fun constructRelPath(uri: Uri, isImage: Boolean): String? {
+fun constructRelPath(uri: Uri, isImage: Boolean): String? {
     val treePrimary = "/tree/primary:"
     if (uri.path!!.startsWith(treePrimary)) {
         val noTree = uri.path!!.substring(treePrimary.length)

@@ -19,6 +19,8 @@ class _WrapPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SelectionCountNotifier.maybeCountOf(context);
+
     final insets = EdgeInsets.only(
       bottom: (kFloatingActionButtonMargin * 2 + 24 + 8 + 8 + 4) +
           (selectionGlue.keyboardVisible()

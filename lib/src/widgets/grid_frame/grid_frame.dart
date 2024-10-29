@@ -317,7 +317,6 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
     final description = extras.description;
     final functionality = extras.functionality;
 
-    final viewPadding = MediaQuery.viewPaddingOf(context);
     final bottomPadding = GridBottomPaddingProvider.of(context);
 
     return Stack(
@@ -348,7 +347,7 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
             alignment: Alignment.bottomLeft,
             child: Padding(
               padding: EdgeInsets.only(
-                bottom: viewPadding.bottom,
+                bottom: GridBottomPaddingProvider.of(context, true) + 4,
               ),
               child: description.footer,
             ),
@@ -741,19 +740,15 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   double _bottomPadding(BuildContext context) {
     final functionality = widget.functionality;
     final selectionGlue = widget.selection.glue;
-    final description = widget.description;
 
     return (functionality.selectionGlue.keyboardVisible()
-            ? 0
-            : MediaQuery.viewPaddingOf(context).bottom +
-                (selectionGlue.isOpen()
+        ? 0
+        : MediaQuery.viewPaddingOf(context).bottom +
+            (selectionGlue.isOpen()
+                ? selectionGlue.barHeight()
+                : selectionGlue.persistentBarHeight
                     ? selectionGlue.barHeight()
-                    : selectionGlue.persistentBarHeight
-                        ? selectionGlue.barHeight()
-                        : 0)) +
-        (description.footer != null
-            ? description.footer!.preferredSize.height
-            : 0);
+                    : 0));
   }
 
   @override

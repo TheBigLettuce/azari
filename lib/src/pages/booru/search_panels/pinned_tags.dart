@@ -158,7 +158,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: Text(l10n.addToExcluded),
+                    title: Text(l10n.addPinnedTag),
                     content: AutocompleteWidget(
                       null,
                       (s) {},

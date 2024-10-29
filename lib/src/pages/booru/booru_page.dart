@@ -16,6 +16,7 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
 import "package:azari/src/pages/booru/bookmark_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
@@ -421,6 +422,10 @@ class _BooruPageState extends State<BooruPage> {
             generateGlue: GlueProvider.generateOf(context),
             db: widget.db.visitedPosts,
           ),
+        ),
+      BooruSubPage.anime => AnimePage(
+          procPop: widget.procPop,
+          db: widget.db,
         ),
     };
   }

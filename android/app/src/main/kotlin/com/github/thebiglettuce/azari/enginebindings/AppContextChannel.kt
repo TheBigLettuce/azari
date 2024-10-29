@@ -17,6 +17,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
@@ -30,15 +31,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.Glide
-import io.flutter.embedding.android.FlutterFragmentActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.StandardMethodCodec
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import com.github.thebiglettuce.azari.ActivityResultIntents
 import com.github.thebiglettuce.azari.App
 import com.github.thebiglettuce.azari.generated.Directory
@@ -46,14 +38,25 @@ import com.github.thebiglettuce.azari.generated.DirectoryFile
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.mover.FilesDest
+import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 import com.github.thebiglettuce.azari.mover.MoveInternalOp
 import com.github.thebiglettuce.azari.mover.MoveOp
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
 import com.github.thebiglettuce.azari.mover.RenameOp
+import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import okio.use
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.name
+
 
 class AppContextChannel(
     val engine: FlutterEngine,
@@ -524,10 +527,10 @@ class ActivityContextChannel(
                 }
 
                 "copyMoveFiles" -> {
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                        oldAndroidCopyMoveFiles(mediaLoaderAndMover, context, call, result, intents)
-                    } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         copyMoveFiles(mediaLoaderAndMover, context, call, result, intents)
+                    } else {
+                        copyMoveFilesDirect(mediaLoaderAndMover, context, call, result)
                     }
                 }
             }
@@ -1114,12 +1117,214 @@ class ActivityContextChannel(
         }
     }
 
-    private fun oldAndroidCopyMoveFiles(
+//    private fun androidQCopyMoveFiles(
+//        mediaLoaderAndMover: MediaLoaderAndMover,
+//        context: Context,
+//        call: MethodCall,
+//        result: MethodChannel.Result,
+//        intents: ActivityResultIntents,
+//    ) {
+//        mediaLoaderAndMover.scope.launch {
+//            val dest = call.argument<String>("dest")
+//            val images = call.argument<List<Long>>("images")
+//            val videos = call.argument<List<Long>>("videos")
+//            val move = call.argument<Boolean>("move")
+//            val newDir = call.argument<Boolean>("newDir")
+//            val volumeName = call.argument<String?>("volumeName")
+//
+//            if (dest == null) {
+//                result.error("dest is empty", "", "")
+//            } else if (images == null || videos == null || move == null || newDir == null) {
+//                result.error("media or move or newDir or videos is empty", "", "")
+//            } else if (newDir == false && volumeName == null) {
+//                result.error(
+//                    "if newDir is false, volumeName should be supplied",
+//                    "",
+//                    ""
+//                )
+//            } else {
+//                try {
+//                    if (move) {
+//                        if (newDir) {
+//
+//                        } else {
+//                            oldAndroidMoveFiles(
+//                                mediaLoaderAndMover,
+//                                context,
+//                                if (newDir) convertDocUriToRelpath(dest) else pathToRelpath(
+//                                    Path.of(
+//                                        dest
+//                                    ).parent.toString()
+//                                ),
+//                                images,
+//                                videos,
+//                                result
+//                            )
+//                        }
+//                    } else {
+////                        oldAndroidCopyFiles(context, dest, images, videos)
+//                    }
+//                } catch (e: Exception) {
+////                    e.
+//                    Log.e("oldAndroidCopyMoveFiles", e.message, e)
+//                }
+//            }
+//        }
+//    }
+
+//    private fun convertDocUriToRelpath(dest: String): String {
+//        if (dest.isBlank()) {
+//            return ""
+//        }
+//
+//        val uri = Uri.parse(dest)
+//
+//        val tree = "/tree/"
+//
+//        val path = uri.path!!.substring(tree.length)
+//
+//        val ret = if (path.startsWith("primary:")) {
+//            path.substring("primary:".length)
+//        } else {
+//            path.dropWhile { it != ':' }.removePrefix(":")
+//        }
+//
+//        return if (ret.last() != '/') {
+//            "$ret/"
+//        } else {
+//            ret
+//        }
+//    }
+//
+//    private fun pathToRelpath(dest: String): String {
+//        if (dest.isBlank()) {
+//            return ""
+//        }
+//
+//        val ret = if (dest.startsWith("/storage/emulated/0/")) {
+//            dest.removePrefix("/storage/emulated/0/")
+//        } else if (dest.startsWith("/storage/")) {
+//            dest.removePrefix("/storage/").dropWhile { it != '/' }.removePrefix("/")
+//        } else {
+//            dest
+//        }
+//
+//        return if (ret.last() != '/') {
+//            "$ret/"
+//        } else {
+//            ret
+//        }
+//    }
+
+    private fun oldAndroidMoveFiles(
         mediaLoaderAndMover: MediaLoaderAndMover,
         context: Context,
+        dest: String,
+        imageIds: List<Long>,
+        videoIds: List<Long>,
+        result: MethodChannel.Result,
+    ) {
+        val imageNames = if (imageIds.isNotEmpty()) getDataOfIds(
+            context,
+            imageIds,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        ) else null
+
+        val videoNames = if (videoIds.isNotEmpty()) getDataOfIds(
+            context,
+            videoIds,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ) else null
+
+        if (imageNames != null) {
+            updateDataAll(
+                context,
+                dest,
+                imageNames,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            )
+        }
+
+        if (videoNames != null) {
+            updateDataAll(
+                context,
+                dest,
+                videoNames,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            )
+
+        }
+
+        notifyGallery(mediaLoaderAndMover.uiScope, null)
+
+        result.success(null)
+    }
+
+    private fun updateDataAll(
+        context: Context,
+        relParent: String,
+        idNames: List<Pair<Long, String>>,
+        uri: Uri,
+    ) {
+        for (e in idNames) {
+            val values = ContentValues().apply {
+                put(
+                    "relative_path",
+                    relParent
+                )
+            }
+
+            context.contentResolver.update(
+                ContentUris.withAppendedId(uri, e.first),
+                values,
+                null,
+                null,
+            )
+        }
+    }
+
+    private fun getDataOfIds(
+        context: Context,
+        ids: List<Long>,
+        uri: Uri,
+    ): List<Pair<Long, String>> {
+        val ret = mutableListOf<Pair<Long, String>>()
+
+        val whereBuilder = StringBuilder()
+        whereBuilder.append("_id = ?")
+        if (ids.size > 1) {
+            for (v in ids.slice(1..<ids.size)) {
+                whereBuilder.append(" OR _id = ?")
+            }
+        }
+
+        context.contentResolver.query(
+            uri,
+            arrayOf("_data", "_id"),
+            whereBuilder.toString(), ids.map { it.toString() }.toTypedArray(), null,
+        )?.use {
+            val dataColumn = it.getColumnIndexOrThrow("_data")
+            val idColumn = it.getColumnIndexOrThrow("_id")
+
+            if (!it.moveToFirst()) {
+                return@use
+            }
+
+            do {
+                ret.add(Pair(it.getLong(idColumn), Path.of(it.getString(dataColumn)).name))
+            } while (
+                it.moveToNext()
+            )
+        }
+
+        return ret
+    }
+
+    private fun copyMoveFilesDirect(
+        mediaLoaderAndMover: MediaLoaderAndMover,
+        context: FlutterFragmentActivity,
         call: MethodCall,
         result: MethodChannel.Result,
-        intents: ActivityResultIntents,
     ) {
         mediaLoaderAndMover.scope.launch {
             val dest = call.argument<String>("dest")
@@ -1141,156 +1346,56 @@ class ActivityContextChannel(
                 )
             } else {
                 try {
-                    if (move) {
-                        oldAndroidMoveFiles(context, dest, images, videos)
-                    } else {
-                        oldAndroidCopyFiles(context, dest, images, videos)
+                    copyFilesMux.lock()
+
+                    val imageUris = images.map {
+                        ContentUris.withAppendedId(
+                            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                            it
+                        )
                     }
+                    val videoUris = videos.map {
+                        ContentUris.withAppendedId(
+                            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                            it
+                        )
+                    }
+
+                    if (imageUris.isNotEmpty()) {
+                        copyOrMove(
+                            context,
+                            imageUris,
+                            isImage = true,
+                            newDir = newDir,
+                            volumeName = volumeName,
+                            move = move,
+                            dest = dest,
+                        )
+                    }
+
+                    if (videoUris.isNotEmpty()) {
+                        copyOrMove(
+                            context,
+                            videoUris,
+                            isImage = false,
+                            newDir = newDir,
+                            volumeName = volumeName,
+                            move = move,
+                            dest = dest,
+                        )
+                    }
+
+                    result.success(null)
                 } catch (e: java.lang.Exception) {
-                    Log.i("oldAndroidCopyMoveFiles", e.toString())
+                    result.error(e.toString(), null, null)
+                    Log.e("copy files old", e.toString())
+                } finally {
+                    copyFilesMux.unlock()
                 }
+
+                notifyGallery(mediaLoaderAndMover.uiScope, null)
             }
         }
-    }
-
-    private fun oldAndroidCopyFiles(
-        context: Context,
-        dest: String,
-        imageIds: List<Long>,
-        videoIds: List<Long>,
-    ) {
-        val data = Path.of(dest).parent.toString()
-
-        val imageUris = imageIds.map {
-            ContentUris.withAppendedId(
-                MediaStore.Images.Media.getContentUri("external"),
-                it
-            )
-        }
-        val videoUris = videoIds.map {
-            ContentUris.withAppendedId(
-                MediaStore.Video.Media.getContentUri("external"),
-                it
-            )
-        }
-
-        val values = ContentValues().apply {
-            put(MediaStore.Images.ImageColumns.DATA, data)
-        }
-
-//        context.contentResolver.query(
-//            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//            null, null, null,
-//        )?.use {
-//
-//        }
-
-
-//        if (imageUris.isNotEmpty()) {
-//            for (e in imageIds) {
-//                val whereBuilder = StringBuilder()
-//                whereBuilder.append("_id = ?")
-//                if (imageUris.size > 1) {
-//                    for (v in imageUris.slice(1..<imageUris.size)) {
-//                        whereBuilder.append(" OR _id = ?")
-//                    }
-//                }
-//
-//                context.contentResolver.update(
-//                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//                    values,
-//                    "_id = ? AND ${MediaStore.Files.FileColumns.VOLUME_NAME}",
-//                    imageIds.map { it.toString() }.toTypedArray(),
-//                )
-//            }
-//        }
-//
-//        if (videoUris.isNotEmpty()) {
-//            val whereBuilder = StringBuilder()
-//            whereBuilder.append("_id = ?")
-//            if (videoUris.size > 1) {
-//                for (v in videoUris.slice(1..<videoUris.size)) {
-//                    whereBuilder.append(" OR _id = ?")
-//                }
-//            }
-//
-//            context.contentResolver.update(
-//                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-//                values,
-//                whereBuilder.toString(),
-//                videoIds.map { it.toString() }.toTypedArray(),
-//            )
-//        }
-    }
-
-    private fun oldAndroidMoveFiles(
-        context: Context,
-        dest: String,
-        imageIds: List<Long>,
-        videoIds: List<Long>,
-    ) {
-        val data = Path.of(dest).parent.toString()
-
-        val imageUris = imageIds.map {
-            ContentUris.withAppendedId(
-                MediaStore.Images.Media.getContentUri("external"),
-                it
-            )
-        }
-        val videoUris = videoIds.map {
-            ContentUris.withAppendedId(
-                MediaStore.Video.Media.getContentUri("external"),
-                it
-            )
-        }
-
-        val values = ContentValues().apply {
-            put(MediaStore.Images.ImageColumns.DATA, data)
-        }
-
-//        context.contentResolver.query(
-//            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//            null, null, null,
-//        )?.use {
-//
-//        }
-
-
-//        if (imageUris.isNotEmpty()) {
-//            for (e in imageIds) {
-//                val whereBuilder = StringBuilder()
-//                whereBuilder.append("_id = ?")
-//                if (imageUris.size > 1) {
-//                    for (v in imageUris.slice(1..<imageUris.size)) {
-//                        whereBuilder.append(" OR _id = ?")
-//                    }
-//                }
-//
-//                context.contentResolver.update(
-//                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//                    values,
-//                    "_id = ? AND ${MediaStore.Files.FileColumns.VOLUME_NAME}",
-//                    imageIds.map { it.toString() }.toTypedArray(),
-//                )
-//            }
-//        }
-//
-//        if (videoUris.isNotEmpty()) {
-//            val whereBuilder = StringBuilder()
-//            whereBuilder.append("_id = ?")
-//            if (videoUris.size > 1) {
-//                for (v in videoUris.slice(1..<videoUris.size)) {
-//                    whereBuilder.append(" OR _id = ?")
-//                }
-//            }
-//
-//            context.contentResolver.update(
-//                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-//                values,
-//                whereBuilder.toString(),
-//                videoIds.map { it.toString() }.toTypedArray(),
-//            )
-//        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

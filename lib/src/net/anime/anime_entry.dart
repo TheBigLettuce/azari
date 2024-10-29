@@ -93,8 +93,7 @@ class AnimeSearchEntry extends AnimeEntryDataImpl implements AnimeEntryData {
     AnimeEntryData cell,
     int idx,
   ) {
-    Navigator.push<void>(
-      context,
+    Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) {
           return AnimeInfoPage(
@@ -210,8 +209,7 @@ abstract class AnimeEntryDataImpl
 
   @override
   void openInfoPage(BuildContext context) {
-    Navigator.push<void>(
-      context,
+    Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) {
           return AnimeInfoPage(

@@ -88,6 +88,8 @@ class _TranslationNotesState extends State<TranslationNotes> {
                     .toList(),
               ),
             );
+          } else if (snapshot.hasError) {
+            return Text(snapshot.error!.toString());
           }
 
           return SizedBox.fromSize(

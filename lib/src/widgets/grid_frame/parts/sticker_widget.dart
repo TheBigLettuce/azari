@@ -36,25 +36,35 @@ class StickerWidget extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withOpacity(0.8),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: Row(
-              children: [
-                Icon(
-                  e.icon,
-                  size: 14,
-                  color: e.important
-                      ? colorScheme.primary.withOpacity(0.9)
-                      : colorScheme.onSurfaceVariant.withOpacity(0.8),
-                ),
-                const Padding(padding: EdgeInsets.only(right: 6)),
-                Text(
-                  e.subtitle!,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+            padding: e.subtitle!.isEmpty
+                ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
+                : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: e.subtitle!.isEmpty
+                ? Icon(
+                    e.icon,
+                    size: 14,
+                    color: e.important
+                        ? colorScheme.primary.withOpacity(0.9)
+                        : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  )
+                : Row(
+                    children: [
+                      Icon(
+                        e.icon,
+                        size: 14,
+                        color: e.important
+                            ? colorScheme.primary.withOpacity(0.9)
+                            : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                      ),
+                      const Padding(padding: EdgeInsets.only(right: 6)),
+                      Text(
+                        e.subtitle!,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       );

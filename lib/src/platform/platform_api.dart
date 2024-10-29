@@ -23,6 +23,7 @@ abstract interface class PlatformApi {
 
   Future<Color> get accentColor;
   Future<String> get version;
+  bool get authSupported;
 
   WindowApi get window;
 
@@ -94,4 +95,7 @@ class _DummyPlatformApi implements PlatformApi {
 
   @override
   void closeApp([Object? _]) {}
+
+  @override
+  bool get authSupported => false;
 }

@@ -9,6 +9,8 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
 import com.github.thebiglettuce.azari.generated.Notification
 import com.github.thebiglettuce.azari.generated.NotificationChannel
 import com.github.thebiglettuce.azari.generated.NotificationGroup
@@ -64,9 +66,11 @@ class NotificationsApiImpl(
         notif: Notification,
         callback: (Result<Unit>) -> Unit,
     ) {
-        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            callback(Result.success(Unit))
-            return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                callback(Result.success(Unit))
+                return
+            }
         }
 
         var n = android.app.Notification.Builder(context, channel.id())

@@ -48,14 +48,14 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<Iterable<String>> notes(int postId) async {
-    final resp = await client.getUriLog<List<Map<String, dynamic>>>(
+    final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/notes.json", {
         "search[post_id]": postId.toString(),
       }),
       LogReq(LogReq.notes(postId), _log),
     );
 
-    return (resp.data!).map((e) => stripHtml(e["body"] as String));
+    return (resp.data!).map((e) => stripHtml((e as Map)["body"] as String));
   }
 
   @override

@@ -24,7 +24,6 @@ import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";

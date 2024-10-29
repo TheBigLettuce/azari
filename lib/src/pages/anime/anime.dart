@@ -265,11 +265,13 @@ class _AnimePageState extends State<AnimePage> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          bottom: const PreferredSize(
-            preferredSize: Size.fromHeight(1),
-            child: Divider(height: 1),
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: const Icon(Icons.menu_rounded),
           ),
-          leading: const SizedBox.shrink(),
+          // leading: const SizedBox.shrink(),
           centerTitle: true,
           title: Center(
             child: IconButton(
@@ -289,7 +291,7 @@ class _AnimePageState extends State<AnimePage> {
             IconButton(
               icon: const Icon(Icons.keyboard_arrow_down_rounded),
               onPressed: () {
-                Overlay.of(context).insert(overlayEntry);
+                Overlay.of(context, rootOverlay: true).insert(overlayEntry);
               },
             ),
           ],

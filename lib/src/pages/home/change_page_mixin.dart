@@ -7,15 +7,16 @@ part of "../home.dart";
 
 enum CurrentRoute {
   booru,
-  gallery,
-  anime;
+  gallery
+  // anime
+  ;
   // downloads,
   // settings;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
         0 => booru,
         1 => gallery,
-        2 => anime,
+        // 2 => anime,
         // 3 => downloads,
         // 3 => settings,
         int() => throw "no route",
@@ -28,9 +29,9 @@ enum CurrentRoute {
         gallery => GalleryDestinationIcon(
             controller: mixin.galleryIconController,
           ),
-        anime => AnimeDestinationIcon(
-            controller: mixin.animeIconController,
-          ),
+        // anime => AnimeDestinationIcon(
+        //     controller: mixin.animeIconController,
+        //   ),
         // downloads => Icon(Icons.download_rounded),
         // settings => SettingsDestinationIcon(
         //     controller: mixin.downloadsIconController,
@@ -48,7 +49,7 @@ enum CurrentRoute {
         CurrentRoute.booru =>
           _booruDestinationLabel(context, l10n, booru.string),
         gallery => GallerySubPage.of(context).translatedString(l10n),
-        anime => l10n.animePage,
+        // anime => l10n.animePage,
         // downloads => l10n.downloadsPageName,
         // settings => SettingsSubPage.of(context).translatedString(l10n),
       };
@@ -104,6 +105,10 @@ enum BooruSubPage {
   visited(
     icon: Icons.schedule_outlined,
     selectedIcon: Icons.schedule_rounded,
+  ),
+  anime(
+    icon: Icons.video_collection_outlined,
+    selectedIcon: Icons.video_collection_rounded,
   );
 
   const BooruSubPage({
@@ -118,6 +123,7 @@ enum BooruSubPage {
         3 => hiddenPosts,
         4 => downloads,
         5 => visited,
+        6 => anime,
         int() => booru,
       };
 
@@ -131,6 +137,7 @@ enum BooruSubPage {
         hiddenPosts => l10n.hiddenPostsPageName,
         downloads => l10n.downloadsPageName,
         visited => l10n.visitedPage,
+        anime => l10n.animePage,
       };
 
   static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>
@@ -377,9 +384,9 @@ mixin ChangePageMixin on State<Home> {
       CurrentRoute.gallery => icons.galleryIconController
           .reverse()
           .then((value) => icons.galleryIconController.forward()),
-      CurrentRoute.anime => icons.animeIconController
-          .reverse()
-          .then((value) => icons.animeIconController.forward()),
+      // CurrentRoute.anime => icons.animeIconController
+      //     .reverse()
+      //     .then((value) => icons.animeIconController.forward()),
       // CurrentRoute.settings => icons.downloadsIconController
       //     .reverse()
       //     .then((value) => icons.downloadsIconController.forward()),
@@ -444,10 +451,10 @@ class _CurrentPageWidget extends StatelessWidget {
               l10n: AppLocalizations.of(context)!,
             ),
           ),
-        CurrentRoute.anime => AnimePage(
-            procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
-            db: DatabaseConnectionNotifier.of(context),
-          ),
+        // CurrentRoute.anime => AnimePage(
+        //     procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
+        //     db: DatabaseConnectionNotifier.of(context),
+        //   ),
       },
     );
   }

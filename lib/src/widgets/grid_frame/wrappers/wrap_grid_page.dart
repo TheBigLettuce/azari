@@ -20,6 +20,7 @@ class WrapGridPage extends StatefulWidget {
     this.navBarHeight = 80,
     required this.child,
   });
+
   final SelectionGlue Function([Set<GluePreferences>])? provided;
   final int navBarHeight;
   final bool addScaffold;
@@ -57,6 +58,7 @@ class _WrapGridPageState extends State<WrapGridPage>
     },
     hideNavBar: (hide) {},
   );
+
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
     return widget.provided?.call(set) ??
         glueState.glue(

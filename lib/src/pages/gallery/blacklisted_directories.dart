@@ -130,29 +130,30 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                 },
                 icon: const Icon(Icons.arrow_back),
               ),
-              trailingItems: [
-                IconButton(
-                  onPressed: blacklistedDirectory.backingStorage.clear,
-                  icon: const Icon(Icons.delete),
-                ),
-              ],
+              // trailingItems: [
+              //   IconButton(
+              //     onPressed: blacklistedDirectory.backingStorage.clear,
+              //     icon: const Icon(Icons.delete),
+              //   ),
+              // ],
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
           description: GridDescription(
-            actions: [
-              GridAction(
-                Icons.restore_page_rounded,
-                (selected) {
-                  blacklistedDirectory.backingStorage.removeAll(
-                    selected.map((e) => e.bucketId).toList(),
-                  );
-                },
-                true,
-              ),
+            actions: const [
+              // GridAction(
+              //   Icons.restore_page_rounded,
+              //   (selected) {
+              //     blacklistedDirectory.backingStorage.removeAll(
+              //       selected.map((e) => e.bucketId).toList(),
+              //     );
+              //   },
+              //   true,
+              // ),
             ],
-            pageName: AppLocalizations.of(context)!.blacklistedFoldersPage,
+            animationsOnSourceWatch: false,
+            pageName: l10n.blacklistedFoldersPage,
             gridSeed: state.gridSeed,
           ),
         ),

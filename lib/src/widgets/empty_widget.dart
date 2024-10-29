@@ -56,7 +56,7 @@ class _EmptyWidgetState extends State<EmptyWidget> {
 
     gestureRecognizer = TapGestureRecognizer()
       ..onTap = () {
-        Navigator.of(context).push<void>(
+        Navigator.of(context, rootNavigator: true).push<void>(
           DialogRoute(
             context: context,
             builder: (context) {

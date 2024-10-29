@@ -852,74 +852,77 @@ class _TagsRibbonState extends State<TagsRibbon> {
                         ),
                       )
                     else
-                      ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 8) +
-                            (widget.showPin
-                                ? EdgeInsets.only(
-                                    right: 40 + gestureRight * 0.5,
-                                  )
-                                : EdgeInsets.zero),
-                        shrinkWrap: true,
-                        scrollDirection: Axis.horizontal,
-                        itemCount: fromList.length,
-                        itemBuilder: (context, i) {
-                          final elem = fromList[i];
-
-                          final child = GestureDetector(
-                            onDoubleTap: () {
-                              if (widget.tagManager.pinned.exists(elem.tag)) {
-                                widget.tagManager.pinned.delete(elem.tag);
-                              } else {
-                                widget.tagManager.pinned.add(elem.tag);
-                              }
-
-                              scrollController.animateTo(
-                                0,
-                                duration: Durations.medium1,
-                                curve: Easing.standard,
-                              );
-                            },
-                            onLongPress: widget.onLongPress == null
-                                ? null
-                                : () {
-                                    widget.onLongPress!(
-                                      elem.tag,
-                                      scrollController,
-                                    );
-                                  },
-                            child: ActionChip(
-                              labelStyle: elem.excluded
-                                  ? TextStyle(
-                                      color: theme.disabledColor,
-                                      decoration: TextDecoration.lineThrough,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 12) +
+                              (widget.showPin
+                                  ? EdgeInsets.only(
+                                      right: 40 + gestureRight * 0.5,
                                     )
-                                  : null,
-                              avatar: elem.favorite
-                                  ? const Icon(Icons.push_pin_rounded)
-                                  : null,
-                              onPressed: () =>
-                                  widget.selectTag(elem.tag, scrollController),
-                              label: Text(elem.tag),
-                            ),
-                          );
+                                  : EdgeInsets.zero),
+                          shrinkWrap: true,
+                          scrollDirection: Axis.horizontal,
+                          itemCount: fromList.length,
+                          itemBuilder: (context, i) {
+                            final elem = fromList[i];
 
-                          return Padding(
-                            padding: i != fromList.length - 1
-                                ? const EdgeInsets.only(right: 6)
-                                : EdgeInsets.zero,
-                            child: widget.items == null
-                                ? child
-                                : MenuWrapper(
-                                    title: elem.tag,
-                                    items: widget.items!(
-                                      elem.tag,
-                                      scrollController,
+                            final child = GestureDetector(
+                              onDoubleTap: () {
+                                if (widget.tagManager.pinned.exists(elem.tag)) {
+                                  widget.tagManager.pinned.delete(elem.tag);
+                                } else {
+                                  widget.tagManager.pinned.add(elem.tag);
+                                }
+
+                                scrollController.animateTo(
+                                  0,
+                                  duration: Durations.medium1,
+                                  curve: Easing.standard,
+                                );
+                              },
+                              onLongPress: widget.onLongPress == null
+                                  ? null
+                                  : () {
+                                      widget.onLongPress!(
+                                        elem.tag,
+                                        scrollController,
+                                      );
+                                    },
+                              child: ActionChip(
+                                labelStyle: elem.excluded
+                                    ? TextStyle(
+                                        color: theme.disabledColor,
+                                        decoration: TextDecoration.lineThrough,
+                                      )
+                                    : null,
+                                avatar: elem.favorite
+                                    ? const Icon(Icons.push_pin_rounded)
+                                    : null,
+                                onPressed: () => widget.selectTag(
+                                    elem.tag, scrollController),
+                                label: Text(elem.tag),
+                              ),
+                            );
+
+                            return Padding(
+                              padding: i != fromList.length - 1
+                                  ? const EdgeInsets.only(right: 6)
+                                  : EdgeInsets.zero,
+                              child: widget.items == null
+                                  ? child
+                                  : MenuWrapper(
+                                      title: elem.tag,
+                                      items: widget.items!(
+                                        elem.tag,
+                                        scrollController,
+                                      ),
+                                      child: child,
                                     ),
-                                    child: child,
-                                  ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     if (widget.showPin)
                       Align(
@@ -997,19 +1000,24 @@ class BarIconState extends State<BarIcon> {
           width: 36,
           height: 36,
           child: TweenAnimationBuilder(
-            tween: ColorTween(
+            tween: DecorationTween(
               end: _toggled
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.surfaceContainer,
+                  ? ShapeDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: const CircleBorder(),
+                    )
+                  : ShapeDecoration(
+                      color: theme.colorScheme.surfaceContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
             ),
             duration: Durations.medium3,
             curve: Easing.standard,
             builder: (context, value, child) => DecoratedBox(
-              decoration: BoxDecoration(
-                color: value,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: child,
+              decoration: value,
+              child: child ?? const SizedBox.shrink(),
             ),
             child: Center(
               child: TweenAnimationBuilder(

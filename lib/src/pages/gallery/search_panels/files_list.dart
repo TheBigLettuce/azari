@@ -54,17 +54,7 @@ class __FilesListState extends State<_FilesList> {
         final newSearch = _FilesLoadingStatus()..str = str;
         newSearch.f = GalleryApi().search.filesByName(str, 30)
           ..then(
-            (e) => newSearch.files = e
-            // .map(
-            //   (e) => e.toAndroidFile(
-            //     widget.db.localTags.get(e.name).fold({}, (map, e) {
-            //       map[e] = null;
-            //       return map;
-            //     }),
-            //   ),
-            // )
-            // .toList()
-            ,
+            (e) => newSearch.files = e,
           ).whenComplete(
             () => setState(() {
               newSearch.f = null;

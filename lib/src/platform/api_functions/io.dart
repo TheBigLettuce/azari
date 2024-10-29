@@ -29,6 +29,9 @@ class _LinuxImpl implements PlatformApi {
   @override
   WindowApi get window => const WindowApi.dummy();
 
+  @override
+  bool get authSupported => false;
+
   // @override
   // Future<void> setTitle(String windowTitle) {
   //   return _channel.invokeMethod("set_title", windowTitle);
@@ -96,6 +99,9 @@ class _AndroidImpl implements PlatformApi {
 
   static const activityContext =
       MethodChannel("com.github.thebiglettuce.azari.activity_context");
+
+  @override
+  bool get authSupported => true;
 
   @override
   WindowApi get window => const _AndroidWindowApi();

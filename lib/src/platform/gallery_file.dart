@@ -616,6 +616,23 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                     ),
                   if (!file.isVideo && !file.isGif)
                     SetWallpaperButton(id: file.id),
+                  if (res != null)
+                    Builder(
+                      builder: (context) {
+                        final tags = ImageTagsNotifier.of(context);
+
+                        if (tags.indexWhere((e) => e.tag == "translated") ==
+                            -1) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return TranslationNotes.button(
+                          context,
+                          res.id,
+                          res.booru,
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

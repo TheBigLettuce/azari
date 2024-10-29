@@ -8,15 +8,15 @@ import "package:local_auth/local_auth.dart";
 
 Future<void> initAppInfo() async {
   final bool canUseAuth;
-  // if (PlatformApi().requiredPermissions) {
-  final auth = LocalAuthentication();
+  if (PlatformApi().authSupported) {
+    final auth = LocalAuthentication();
 
-  canUseAuth = await auth.isDeviceSupported() &&
-      await auth.canCheckBiometrics &&
-      (await auth.getAvailableBiometrics()).isNotEmpty;
-  // } else {
-  // canUseAuth = false;
-  // }
+    canUseAuth = await auth.isDeviceSupported() &&
+        await auth.canCheckBiometrics &&
+        (await auth.getAvailableBiometrics()).isNotEmpty;
+  } else {
+    canUseAuth = false;
+  }
 
   AppInfo._instance = AppInfo._(canUseAuth, await PlatformApi().version);
 }

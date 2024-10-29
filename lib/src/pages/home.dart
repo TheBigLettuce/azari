@@ -9,7 +9,6 @@ import "dart:math";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";

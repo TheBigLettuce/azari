@@ -16,8 +16,6 @@ import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/gallery/android/android_gallery.dart";
-import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -27,12 +25,12 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-part "search_panels/directory_names.dart";
 part "search_panels/chips_panel_body.dart";
-part "search_panels/files_list.dart";
-part "search_panels/search_in_booru_button.dart";
-part "search_panels/local_tags.dart";
 part "search_panels/directory_list.dart";
+part "search_panels/directory_names.dart";
+part "search_panels/files_list.dart";
+part "search_panels/local_tags.dart";
+part "search_panels/search_in_booru_button.dart";
 part "search_panels/search_in_directories_buttons.dart";
 
 class DirectoriesSearchPage extends StatefulWidget {
