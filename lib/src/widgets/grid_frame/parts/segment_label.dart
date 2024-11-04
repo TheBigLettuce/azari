@@ -58,21 +58,22 @@ class SegmentLabel extends StatelessWidget {
                     : ShapeDecoration(
                         shape: const StadiumBorder(),
                         color: theme.colorScheme.surfaceContainerHighest
-                            .withOpacity(0.4),
+                            .withValues(alpha: 0.4),
                       ),
                 child: Text.rich(
                   TextSpan(
                     text: text,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       overflow: TextOverflow.ellipsis,
-                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                     children: [
                       TextSpan(
                         text: " $count",
                         style: theme.textTheme.titleMedium?.copyWith(
                           overflow: TextOverflow.ellipsis,
-                          color: theme.colorScheme.onSurface.withOpacity(0.65),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.65),
                         ),
                       ),
                     ],
@@ -194,7 +195,7 @@ class MediumSegmentLabel extends StatelessWidget {
           Text(
             text,
             style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
           if (trailingWidget != null) trailingWidget!,

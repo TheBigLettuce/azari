@@ -98,7 +98,7 @@ class BaseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: DefaultTextStyle.of(context).style.color ??
-                            colorScheme.secondary.withOpacity(0.8),
+                            colorScheme.secondary.withValues(alpha: 0.8),
                         letterSpacing: 0.8,
                       ),
                       child: Padding(
@@ -117,7 +117,7 @@ class BaseCard extends StatelessWidget {
                       DefaultTextStyle.merge(
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         child: Padding(
                           padding: EdgeInsets.only(
@@ -146,11 +146,11 @@ class BaseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           onTap: onPressed,
           onLongPress: onLongPressed,
-          splashColor: colorScheme.onSurface.withOpacity(0.6),
+          splashColor: colorScheme.onSurface.withValues(alpha: 0.6),
           child: Card.filled(
             clipBehavior: Clip.antiAlias,
             color: transparentBackground || backgroundImage != null
-                ? colorScheme.onSurface.withOpacity(0)
+                ? colorScheme.onSurface.withValues(alpha: 0)
                 : null,
             child: SizedBox(
               width: width,

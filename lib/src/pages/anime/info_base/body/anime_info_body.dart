@@ -108,7 +108,7 @@ class AnimeStaff extends StatelessWidget {
             child: Text(
               entry.staff.map((e) => e.title).join(", "),
               style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ),
           );

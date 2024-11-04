@@ -96,7 +96,7 @@ class _EmptyWidgetState extends State<EmptyWidget> {
       style: TextStyle(
         fontSize: error == null ? 24 : 14 * 2,
         color: error == null
-            ? colorScheme.secondary.withOpacity(0.8)
+            ? colorScheme.secondary.withValues(alpha: 0.8)
             : colorScheme.error,
       ),
     );
@@ -121,9 +121,8 @@ class _EmptyWidgetState extends State<EmptyWidget> {
       style: TextStyle(
         overflow: TextOverflow.ellipsis,
         color: error == null
-            ? colorScheme.secondary.withOpacity(0.5)
-            : colorScheme.error.withOpacity(0.6),
-        // fontStyle: error != null ? null : FontStyle.italic,
+            ? colorScheme.secondary.withValues(alpha: 0.5)
+            : colorScheme.error.withValues(alpha: 0.6),
         fontSize: 14 * 2,
       ),
     );
@@ -205,7 +204,7 @@ class EmptyWidgetBackground extends StatelessWidget {
               "空",
               style: TextStyle(
                 fontSize: 120,
-                color: theme.colorScheme.onSurface.withOpacity(0.9),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
               ),
             ),
             Text(
@@ -217,7 +216,7 @@ class EmptyWidgetBackground extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],

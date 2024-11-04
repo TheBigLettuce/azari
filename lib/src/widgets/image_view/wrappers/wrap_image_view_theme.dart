@@ -77,14 +77,14 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
     return Theme(
       data: themeData.copyWith(
         appBarTheme: themeData.appBarTheme.copyWith(
-          backgroundColor: colorScheme.surfaceDim.withOpacity(0.95),
+          backgroundColor: colorScheme.surfaceDim.withValues(alpha: 0.95),
         ),
         bottomAppBarTheme: BottomAppBarTheme(
-          color: colorScheme.surfaceContainer.withOpacity(0.95),
+          color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
         ),
         searchBarTheme: SearchBarThemeData(
           backgroundColor: WidgetStatePropertyAll(
-            colorScheme.surfaceContainerHighest.withOpacity(0.8),
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           ),
         ),
       ),

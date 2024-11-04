@@ -469,7 +469,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     snap: true,
                     stretch: true,
                     backgroundColor:
-                        theme.colorScheme.surface.withOpacity(0.95),
+                        theme.colorScheme.surface.withValues(alpha: 0.95),
                     bottom: bottomWidget ??
                         const PreferredSize(
                           preferredSize: Size.zero,
@@ -825,7 +825,8 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
-              color: theme.colorScheme.surfaceContainerLow.withOpacity(0.8),
+              color:
+                  theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
             ),
             child: FadingPanel(
               label: l10n.lastAdded,

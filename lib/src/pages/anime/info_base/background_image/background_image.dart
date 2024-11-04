@@ -51,9 +51,9 @@ class BackgroundImageBase extends StatelessWidget {
           colors: gradient ??
               [
                 colorScheme.surface,
-                colorScheme.surface.withOpacity(0.8),
-                colorScheme.surface.withOpacity(0.6),
-                colorScheme.surface.withOpacity(0.4),
+                colorScheme.surface.withValues(alpha: 0.8),
+                colorScheme.surface.withValues(alpha: 0.6),
+                colorScheme.surface.withValues(alpha: 0.4),
               ],
         ),
       ),

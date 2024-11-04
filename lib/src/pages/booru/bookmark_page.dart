@@ -326,7 +326,8 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
           children: [
             DecoratedBox(
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.25),
+                color:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(25),
                   bottomRight: Radius.circular(25),
@@ -373,7 +374,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
                                   },
                                   colorBlendMode: BlendMode.color,
                                   color: colorScheme.primaryContainer
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                   image: CachedNetworkImageProvider(e.url),
                                   fit: BoxFit.cover,
                                 ),
@@ -397,15 +398,15 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
                           Text(
                             widget.title,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.primary.withOpacity(0.9),
+                              color: colorScheme.primary.withValues(alpha: 0.9),
                               letterSpacing: -0.4,
                             ),
                           ),
                           Text(
                             widget.subtitle,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  colorScheme.onSurfaceVariant.withOpacity(0.8),
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.8),
                               letterSpacing: 0.8,
                             ),
                           ),

@@ -431,7 +431,7 @@ class _WrapPadding extends StatelessWidget {
                     child: Icon(
                       const IconData(0x963F),
                       size: 78,
-                      color: theme.colorScheme.onSurface.withOpacity(0.2),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                       applyTextScaling: true,
                     ),
                   ),
@@ -466,7 +466,8 @@ class _WrapPadding extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.info_outline_rounded,
-                          color: theme.colorScheme.secondary.withOpacity(0.8),
+                          color: theme.colorScheme.secondary
+                              .withValues(alpha: 0.8),
                           applyTextScaling: true,
                         ),
                         const Padding(padding: EdgeInsets.only(left: 8)),
@@ -474,8 +475,8 @@ class _WrapPadding extends StatelessWidget {
                           child: Text(
                             explanation!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.8),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.8),
                             ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,

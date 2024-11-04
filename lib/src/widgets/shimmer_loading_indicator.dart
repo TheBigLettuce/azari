@@ -31,16 +31,16 @@ class ShimmerLoadingIndicator extends StatelessWidget {
           angle: reverse ? pi + (pi / 12) : null,
           // curve: Easing.emphasizedDecelerate,
           colors: [
-            colorScheme.primary.withOpacity(0.1),
-            colorScheme.onSurfaceVariant.withOpacity(0.5),
-            colorScheme.primary.withOpacity(0.1),
+            colorScheme.primary.withValues(alpha: 0.1),
+            colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            colorScheme.primary.withValues(alpha: 0.1),
           ],
           delay: delay,
           duration: duration,
         ),
       ],
       child: Container(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       ),
     );
   }

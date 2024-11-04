@@ -60,21 +60,22 @@ class _ButtonsThemes extends StatelessWidget {
         scaffoldBackgroundColor: theme.colorScheme.surface,
         chipTheme: mode == AnimeSafeMode.h
             ? ChipThemeData(
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.8),
-                disabledColor: theme.colorScheme.primary.withOpacity(0.4),
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.8),
+                disabledColor: theme.colorScheme.primary.withValues(alpha: 0.4),
                 labelStyle: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                 ),
               )
             : null,
         filledButtonTheme: FilledButtonThemeData(
           style: ButtonStyle(
             foregroundColor: WidgetStatePropertyAll(
-              theme.colorScheme.onPrimary.withOpacity(0.8),
+              theme.colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
             visualDensity: VisualDensity.compact,
             backgroundColor: WidgetStatePropertyAll(
-              theme.colorScheme.primary.withOpacity(0.8),
+              theme.colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -84,7 +85,7 @@ class _ButtonsThemes extends StatelessWidget {
               theme.textTheme.bodyMedium,
             ),
             foregroundColor: WidgetStatePropertyAll(
-              theme.colorScheme.primary.withOpacity(0.8),
+              theme.colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ),

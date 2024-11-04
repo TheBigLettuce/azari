@@ -42,7 +42,7 @@ class GlueBottomAppBar extends StatelessWidget {
             ),
           ),
           BottomAppBar(
-            color: theme.colorScheme.surface.withOpacity(0.95),
+            color: theme.colorScheme.surface.withValues(alpha: 0.95),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -91,7 +91,8 @@ class GlueBottomAppBar extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.primary.withOpacity(0.8),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.8),
                         ),
                         child: Center(
                           child: Padding(
@@ -101,7 +102,7 @@ class GlueBottomAppBar extends StatelessWidget {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.colorScheme.onPrimary
-                                    .withOpacity(0.8),
+                                    .withValues(alpha: 0.8),
                               ),
                             ),
                           ),

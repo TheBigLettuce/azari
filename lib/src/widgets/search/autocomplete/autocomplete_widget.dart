@@ -232,40 +232,43 @@ class AutocompleteSearchBar extends StatelessWidget {
     return AbsorbPointer(
       absorbing: disable,
       child: DefaultSelectionStyle(
-        cursorColor: onPrimary.withOpacity(0.8),
+        cursorColor: onPrimary.withValues(alpha: 0.8),
         child: Theme(
           data: theme.copyWith(
             searchBarTheme: SearchBarThemeData(
-              overlayColor: WidgetStatePropertyAll(onPrimary.withOpacity(0.05)),
+              overlayColor:
+                  WidgetStatePropertyAll(onPrimary.withValues(alpha: 0.05)),
               textStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: disable ? onSurface.withOpacity(0.4) : onPrimary,
+                  color: disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
                 ),
               ),
               elevation: const WidgetStatePropertyAll(0),
               backgroundColor: WidgetStatePropertyAll(
                 disable
-                    ? surface.withOpacity(0.4)
-                    : surfaceTint.withOpacity(0.8),
+                    ? surface.withValues(alpha: 0.4)
+                    : surfaceTint.withValues(alpha: 0.8),
               ),
               hintStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: onPrimary.withOpacity(0.5),
+                  color: onPrimary.withValues(alpha: 0.5),
                 ),
               ),
             ),
             badgeTheme: BadgeThemeData(
               backgroundColor: primaryContainer,
-              textColor: onPrimaryContainer.withOpacity(0.8),
+              textColor: onPrimaryContainer.withValues(alpha: 0.8),
             ),
             inputDecorationTheme: InputDecorationTheme(
-              iconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
-              prefixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
-              suffixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+              iconColor: disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
+              prefixIconColor:
+                  disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
+              suffixIconColor:
+                  disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
             ),
             iconTheme: IconThemeData(
               size: 18,
-              color: disable ? onSurface.withOpacity(0.4) : onPrimary,
+              color: disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
             ),
             iconButtonTheme: IconButtonThemeData(
               style: ButtonStyle(
@@ -275,7 +278,7 @@ class AutocompleteSearchBar extends StatelessWidget {
                 iconColor: WidgetStatePropertyAll(onPrimary),
               ),
             ),
-            hintColor: onPrimary.withOpacity(0.5),
+            hintColor: onPrimary.withValues(alpha: 0.5),
           ),
           child: SearchBar(
             elevation: const WidgetStatePropertyAll(0),

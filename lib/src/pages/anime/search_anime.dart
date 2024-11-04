@@ -408,7 +408,7 @@ class SafetyButton extends StatelessWidget {
               : mode == AnimeSafeMode.ecchi
                   ? Colors.red
                       .harmonizeWith(colorScheme.primary)
-                      .withOpacity(0.5)
+                      .withValues(alpha: 0.5)
                   : null,
         ),
       ),
@@ -509,13 +509,14 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
                   children: [
                     Icon(
                       Icons.info_outline_rounded,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                     const Padding(padding: EdgeInsets.only(right: 4)),
                     Text(
                       l10n.usingApi(widget.info),
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                   ],

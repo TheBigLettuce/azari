@@ -41,7 +41,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
-            color: colorScheme.surfaceContainer.withOpacity(0.95),
+            color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
           ),
           child: SizedBox(
             height: 60,
@@ -88,7 +88,8 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        color:
+                            colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                       ),
                     ),
                     DecoratedBox(
@@ -102,7 +103,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                         child: Icon(
                           widget.icon,
                           size: 20,
-                          color: colorScheme.primary.withOpacity(0.8),
+                          color: colorScheme.primary.withValues(alpha: 0.8),
                         ),
                       ),
                     ),

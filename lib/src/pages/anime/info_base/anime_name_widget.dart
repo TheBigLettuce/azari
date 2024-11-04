@@ -41,8 +41,8 @@ class AnimeNameWidget extends StatelessWidget {
                 style: theme.textTheme.headlineMedium?.copyWith(
                   color: safeMode == AnimeSafeMode.h ||
                           safeMode == AnimeSafeMode.ecchi
-                      ? Colors.pink.withOpacity(0.8)
-                      : colorScheme.onSurface.withOpacity(0.8),
+                      ? Colors.pink.withValues(alpha: 0.8)
+                      : colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
               ),
             ),
@@ -53,7 +53,7 @@ class AnimeNameWidget extends StatelessWidget {
               style: theme.textTheme.titleMedium?.copyWith(
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w300,
-                color: colorScheme.onSurface.withOpacity(0.8),
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -67,13 +67,13 @@ class AnimeNameWidget extends StatelessWidget {
               textStyle:
                   safeMode == AnimeSafeMode.h || safeMode == AnimeSafeMode.ecchi
                       ? TextStyle(
-                          color: colorScheme.onPrimary.withOpacity(0.8),
+                          color: colorScheme.onPrimary.withValues(alpha: 0.8),
                         )
                       : null,
               decoration: safeMode == AnimeSafeMode.h ||
                       safeMode == AnimeSafeMode.ecchi
                   ? BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.8),
+                      color: colorScheme.primary.withValues(alpha: 0.8),
                       borderRadius: const BorderRadius.all(Radius.circular(4)),
                     )
                   : null,

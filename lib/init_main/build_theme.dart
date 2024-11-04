@@ -60,7 +60,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
     radius: const ui.Radius.circular(15),
     mainAxisMargin: 0.75,
     thumbColor: WidgetStatePropertyAll(
-      baseTheme.colorScheme.onSurface.withOpacity(0.75),
+      baseTheme.colorScheme.onSurface.withValues(alpha: 0.75),
     ),
   );
 
@@ -83,11 +83,11 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
         filledButtonTheme: FilledButtonThemeData(
           style: ButtonStyle(
             foregroundColor: WidgetStatePropertyAll(
-              baseTheme.colorScheme.onPrimary.withOpacity(0.8),
+              baseTheme.colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
             visualDensity: VisualDensity.compact,
             backgroundColor: WidgetStatePropertyAll(
-              baseTheme.colorScheme.primary.withOpacity(0.8),
+              baseTheme.colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -97,7 +97,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
               baseTheme.textTheme.bodyMedium,
             ),
             foregroundColor: WidgetStatePropertyAll(
-              baseTheme.colorScheme.primary.withOpacity(0.8),
+              baseTheme.colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -118,11 +118,11 @@ SystemUiOverlayStyle navBarStyleForTheme(
           : ui.Brightness.dark,
       // statusBarColor:
       //     (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
-      //         .withOpacity(0.8),
+      //         .withValues(alpha: 0.8),
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
       systemNavigationBarColor:
           (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
-              .withOpacity(transparent ? 0.0 : 0.8),
+              .withValues(alpha: transparent ? 0.0 : 0.8),
     );

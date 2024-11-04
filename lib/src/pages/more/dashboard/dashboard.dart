@@ -45,7 +45,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface.withOpacity(0.8);
+    final color = theme.colorScheme.onSurface.withValues(alpha: 0.8);
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -81,7 +81,7 @@ class _DashboardState extends State<Dashboard> {
                   child: Text(
                     "${l10n.date(timeNow)} $emoji",
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.9),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -116,7 +116,7 @@ class _DashboardState extends State<Dashboard> {
                               l10n.cardPicturesSeenToday,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: color.withOpacity(0.7),
+                                color: color.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -290,7 +290,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface.withOpacity(0.8);
+    final color = theme.colorScheme.onSurface.withValues(alpha: 0.8);
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -308,7 +308,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
           l10n.cardTimeSpentToday,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: color.withOpacity(0.7),
+            color: color.withValues(alpha: 0.7),
           ),
         ),
       ],

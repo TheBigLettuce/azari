@@ -41,7 +41,7 @@ class _AppBar extends StatelessWidget {
 
     return switch (search) {
       PageNameSearchWidget() => SliverAppBar.medium(
-          backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
+          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
           title: Text(pageName),
           leading: search.leading ?? b,
           actions: [
@@ -54,10 +54,10 @@ class _AppBar extends StatelessWidget {
         ),
       BarSearchWidget() => SliverAppBar(
           systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: theme.colorScheme.surface.withOpacity(0.95),
+            statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
           ),
           toolbarHeight: 80,
-          backgroundColor: theme.colorScheme.surface.withOpacity(0),
+          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
           centerTitle: true,
           title: Center(
             child: search.complete != null

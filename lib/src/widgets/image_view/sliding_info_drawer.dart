@@ -147,8 +147,10 @@ class _ImageViewFabState extends State<ImageViewFab>
       elevation: 0,
       heroTag: null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-      backgroundColor: theme.colorScheme.surfaceContainerHigh.withOpacity(0.9),
-      foregroundColor: theme.colorScheme.onSurfaceVariant.withOpacity(0.95),
+      backgroundColor:
+          theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.9),
+      foregroundColor:
+          theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.95),
       onPressed: () {
         // showModalBottomSheet(context: context, builder: builder)
         // Navigator.push<void>(

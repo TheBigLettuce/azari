@@ -183,9 +183,9 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
               color: isSelected
                   ? null
                   : index.isOdd
-                      ? theme.colorScheme.secondary.withOpacity(0.1)
+                      ? theme.colorScheme.secondary.withValues(alpha: 0.1)
                       : theme.colorScheme.surfaceContainerHighest
-                          .withOpacity(0.1),
+                          .withValues(alpha: 0.1),
             ),
             child: DecoratedBox(
               decoration: const ShapeDecoration(shape: StadiumBorder()),
@@ -194,7 +194,7 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
                 leading: !hideThumbnails && thumbnail != null
                     ? CircleAvatar(
                         backgroundColor:
-                            theme.colorScheme.surface.withOpacity(0),
+                            theme.colorScheme.surface.withValues(alpha: 0),
                         backgroundImage: thumbnail,
                       )
                     : null,
@@ -205,10 +205,11 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
                   softWrap: false,
                   style: TextStyle(
                     color: isSelected
-                        ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                        ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
                         : index.isOdd
-                            ? theme.colorScheme.onSurface.withOpacity(0.8)
-                            : theme.colorScheme.onSurface.withOpacity(0.9),
+                            ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+                            : theme.colorScheme.onSurface
+                                .withValues(alpha: 0.9),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -268,8 +269,9 @@ class DefaultListTilePlaceholder extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: index.isOdd
-              ? theme.colorScheme.secondary.withOpacity(0.1)
-              : theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
+              ? theme.colorScheme.secondary.withValues(alpha: 0.1)
+              : theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.1),
         ),
         child: ListTile(
           minVerticalPadding: 1,

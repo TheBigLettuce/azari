@@ -199,7 +199,7 @@ class _NoNetworkIndicator extends StatelessWidget {
         child: AnimatedContainer(
           duration: 200.ms,
           curve: Easing.standard,
-          color: colorScheme.surfaceContainerHighest.withOpacity(0.8),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           child: Padding(
             padding: EdgeInsets.only(
               top: MediaQuery.viewPaddingOf(context).top,
@@ -214,7 +214,7 @@ class _NoNetworkIndicator extends StatelessWidget {
                     Icon(
                       Icons.signal_wifi_off_outlined,
                       size: 14,
-                      color: colorScheme.onSurface.withOpacity(0.8),
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(right: 4),
@@ -222,7 +222,7 @@ class _NoNetworkIndicator extends StatelessWidget {
                     Text(
                       l10n.noInternet,
                       style: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.8),
+                        color: colorScheme.onSurface.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -320,7 +320,8 @@ class _BottomNavigationBar extends StatelessWidget {
             ? const SizedBox.shrink()
             : NavigationBar(
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-                backgroundColor: colorScheme.surfaceContainer.withOpacity(0.95),
+                backgroundColor:
+                    colorScheme.surfaceContainer.withValues(alpha: 0.95),
                 selectedIndex: currentRoute.index,
                 onDestinationSelected: (i) =>
                     onDestinationSelected(context, CurrentRoute.fromIndex(i)),
@@ -580,8 +581,8 @@ class __DrawerState extends State<_Drawer> {
                   Text(
                     l10n.noBookmarks,
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color:
-                          theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.8),
                     ),
                   ),
                 ],

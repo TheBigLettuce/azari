@@ -230,8 +230,8 @@ class _PostInfoState extends State<PostInfo> {
                         child: Icon(
                           Icons.thumb_up_alt_rounded,
                           size: 14,
-                          color: theme.colorScheme.onSurface.withOpacity(
-                            0.7,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
                           ),
                         ),
                       ),
@@ -240,8 +240,8 @@ class _PostInfoState extends State<PostInfo> {
                     TextSpan(text: "\n${l10n.date(post.createdAt)}"),
                   ],
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(
-                      0.7,
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: 0.7,
                     ),
                   ),
                 ),
@@ -337,9 +337,9 @@ class _ColoredRectangle extends StatelessWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: primaryColor
                           ? theme.colorScheme.onPrimaryContainer
-                              .withOpacity(0.8)
+                              .withValues(alpha: 0.8)
                           : theme.colorScheme.onSecondaryContainer
-                              .withOpacity(0.8),
+                              .withValues(alpha: 0.8),
                     ),
                   ),
                 ),

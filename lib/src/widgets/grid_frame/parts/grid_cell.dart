@@ -118,7 +118,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                 overflow: TextOverflow.ellipsis,
                 maxLines: description.titleLines,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -139,11 +139,11 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.38),
-              Colors.black.withOpacity(0.3),
-              Colors.black.withOpacity(0.2),
-              Colors.black.withOpacity(0.05),
-              Colors.black.withOpacity(0),
+              Colors.black.withValues(alpha: 0.38),
+              Colors.black.withValues(alpha: 0.3),
+              Colors.black.withValues(alpha: 0.2),
+              Colors.black.withValues(alpha: 0.05),
+              Colors.black.withValues(alpha: 0),
             ],
           ),
         ),
@@ -156,7 +156,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
             maxLines:
                 widget.secondaryTitle != null ? 1 : description.titleLines,
             style: theme.textTheme.titleSmall?.copyWith(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -186,7 +186,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
     final card = Card(
       margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
       elevation: 0,
-      color: theme.cardColor.withOpacity(0),
+      color: theme.cardColor.withValues(alpha: 0),
       child: ClipPath(
         clipper: ShapeBorderClipper(
           shape: description.circle
@@ -237,7 +237,8 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                             isAntiAlias: true,
                             alignment: widget.imageAlign,
                             color: widget.blur
-                                ? theme.colorScheme.surface.withOpacity(0.2)
+                                ? theme.colorScheme.surface
+                                    .withValues(alpha: 0.2)
                                 : null,
                             colorBlendMode: widget.blur
                                 ? BlendMode.darken
@@ -316,7 +317,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                 alias,
                 maxLines: description.titleLines,
                 style: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   overflow: TextOverflow.fade,
                 ),
               ),

@@ -27,7 +27,7 @@ class BodySegmentLabel extends StatelessWidget {
       style: theme.textTheme.titleLarge!.copyWith(
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,
-        color: theme.colorScheme.onSurface.withOpacity(0.75),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
       ),
     );
 

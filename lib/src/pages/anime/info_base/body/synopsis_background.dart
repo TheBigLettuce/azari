@@ -46,7 +46,7 @@ class SynopsisBackground extends StatelessWidget {
       textTheme: theme.textTheme.copyWith(
         bodyMedium: theme.textTheme.bodyMedium?.copyWith(
           overflow: TextOverflow.fade,
-          color: colorScheme.onSurface.withOpacity(0.8),
+          color: colorScheme.onSurface.withValues(alpha: 0.8),
         ),
       ),
     );
@@ -73,7 +73,7 @@ class SynopsisBackground extends StatelessWidget {
                         child: Icon(
                           const IconData(0x2726),
                           size: 12,
-                          color: colorScheme.onSurface.withOpacity(0.8),
+                          color: colorScheme.onSurface.withValues(alpha: 0.8),
                           applyTextScaling: true,
                         ),
                       );
@@ -200,10 +200,10 @@ class __BodyTextCollapsibleState extends State<_BodyTextCollapsible> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            theme.colorScheme.surface.withOpacity(0.2),
-                            theme.colorScheme.surface.withOpacity(0.4),
-                            theme.colorScheme.surface.withOpacity(0.6),
-                            theme.colorScheme.surface.withOpacity(0.8),
+                            theme.colorScheme.surface.withValues(alpha: 0.2),
+                            theme.colorScheme.surface.withValues(alpha: 0.4),
+                            theme.colorScheme.surface.withValues(alpha: 0.6),
+                            theme.colorScheme.surface.withValues(alpha: 0.8),
                           ],
                         ),
                       ),

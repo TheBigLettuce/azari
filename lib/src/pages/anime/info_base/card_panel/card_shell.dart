@@ -114,7 +114,7 @@ class _CardShellState extends State<CardShell> {
         Theme(
           data: theme.copyWith(
             iconTheme: IconThemeData(
-              color: theme.iconTheme.color?.withOpacity(0.8),
+              color: theme.iconTheme.color?.withValues(alpha: 0.8),
             ),
           ),
           child: SizedBox(
@@ -143,8 +143,8 @@ class _CardShellState extends State<CardShell> {
       style: TextStyle(
         color: widget.safeMode == AnimeSafeMode.h ||
                 widget.safeMode == AnimeSafeMode.ecchi
-            ? Colors.pink.withOpacity(0.8)
-            : theme.colorScheme.secondary.withOpacity(0.8),
+            ? Colors.pink.withValues(alpha: 0.8)
+            : theme.colorScheme.secondary.withValues(alpha: 0.8),
       ),
       child: widget._sliver
           ? SliverPadding(

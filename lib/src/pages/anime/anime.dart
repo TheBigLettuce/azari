@@ -664,7 +664,7 @@ class _FadingPanelState extends State<FadingPanel>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textStyle = theme.textTheme.titleLarge?.copyWith(
-      color: theme.colorScheme.onSurface.withOpacity(0.8),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
     );
 
     final textSize =
@@ -753,7 +753,7 @@ class FadingPanelLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textStyle = theme.textTheme.titleLarge?.copyWith(
-      color: theme.colorScheme.onSurface.withOpacity(0.8),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
     );
 
     final t = tween ?? Tween<double>(begin: -1.570796, end: 0);
@@ -787,7 +787,8 @@ class FadingPanelLabel extends StatelessWidget {
                               ? Icon(
                                   icon,
                                   size: 24,
-                                  color: textStyle?.color?.withOpacity(0.9),
+                                  color:
+                                      textStyle?.color?.withValues(alpha: 0.9),
                                 )
                               : AnimatedBuilder(
                                   animation: controller!.view,
@@ -800,8 +801,8 @@ class FadingPanelLabel extends StatelessWidget {
                                       child: Icon(
                                         icon,
                                         size: 24,
-                                        color:
-                                            textStyle?.color?.withOpacity(0.9),
+                                        color: textStyle?.color
+                                            ?.withValues(alpha: 0.9),
                                       ),
                                     );
                                   },
@@ -823,7 +824,7 @@ class FadingPanelLabel extends StatelessWidget {
                     child: Icon(
                       trailing!.$1,
                       size: 24,
-                      color: textStyle?.color?.withOpacity(0.9),
+                      color: textStyle?.color?.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -1310,7 +1311,7 @@ class _MoreOverlayBody extends StatelessWidget {
                 Text(
                   l10n.cardWatched,
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.9),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                   ),
                 ),
                 IconButton(
@@ -1326,7 +1327,8 @@ class _MoreOverlayBody extends StatelessWidget {
                     child: Text(
                       l10n.emptyValue,
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   )
@@ -1383,8 +1385,8 @@ class _ColorDecoration extends StatefulWidget {
 
 class __ColorDecorationState extends State<_ColorDecoration> {
   late final _colorTween = ColorTween(
-    begin: widget.theme.colorScheme.scrim.withOpacity(0),
-    end: widget.theme.colorScheme.scrim.withOpacity(0.5),
+    begin: widget.theme.colorScheme.scrim.withValues(alpha: 0),
+    end: widget.theme.colorScheme.scrim.withValues(alpha: 0.5),
   );
 
   @override

@@ -113,7 +113,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
         body: !showRail
             ? AnnotatedRegion(
                 value: SystemUiOverlayStyle(
-                  statusBarColor: colorScheme.surface.withOpacity(0.4),
+                  statusBarColor: colorScheme.surface.withValues(alpha: 0.4),
                   statusBarIconBrightness:
                       colorScheme.brightness == Brightness.dark
                           ? Brightness.light
@@ -123,7 +123,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                           ? Brightness.light
                           : Brightness.dark,
                   systemNavigationBarColor:
-                      colorScheme.surface.withOpacity(0.4),
+                      colorScheme.surface.withValues(alpha: 0.4),
                 ),
                 child: Stack(
                   alignment: Alignment.bottomCenter,
@@ -141,7 +141,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                                   color: theme.colorScheme.onSurfaceVariant,
                                   backgroundColor: theme
                                       .colorScheme.surfaceContainer
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                   value: status,
                                 ),
                               );
@@ -250,8 +250,8 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
                             ),
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surface.withOpacity(0.9),
+                                color: theme.colorScheme.surface
+                                    .withValues(alpha: 0.9),
                               ),
                               child: ImageViewSlidingInfoDrawer(
                                 widgets: widgets,
@@ -273,7 +273,7 @@ class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
               )
             : AnnotatedRegion(
                 value: SystemUiOverlayStyle(
-                  statusBarColor: colorScheme.surface.withOpacity(0.8),
+                  statusBarColor: colorScheme.surface.withValues(alpha: 0.8),
                 ),
                 child: Stack(
                   children: [
@@ -494,8 +494,8 @@ class _BottomRibbon extends StatelessWidget {
                                       size: 10,
                                       color: e.important
                                           ? colorScheme.secondary
-                                          : colorScheme.onSurface.withOpacity(
-                                              0.6,
+                                          : colorScheme.onSurface.withValues(
+                                              alpha: 0.6,
                                             ),
                                     ),
                                     const Padding(
@@ -507,8 +507,8 @@ class _BottomRibbon extends StatelessWidget {
                                           theme.textTheme.labelSmall?.copyWith(
                                         color: e.important
                                             ? colorScheme.secondary
-                                            : colorScheme.onSurface.withOpacity(
-                                                0.6,
+                                            : colorScheme.onSurface.withValues(
+                                                alpha: 0.6,
                                               ),
                                       ),
                                     ),
@@ -519,8 +519,8 @@ class _BottomRibbon extends StatelessWidget {
                                   size: 16,
                                   color: e.important
                                       ? colorScheme.secondary
-                                      : colorScheme.onSurface.withOpacity(
-                                          0.6,
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
                                         ),
                                 ),
                         ),
@@ -592,7 +592,7 @@ class _PinnedTagsRow extends StatelessWidget {
                 child: Text(
                   "#${e.tag.length > 10 ? "${e.tag.substring(0, 10 - 3)}..." : e.tag}",
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.secondary.withOpacity(0.65),
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.65),
                   ),
                 ),
               ),
@@ -737,7 +737,7 @@ class _InlineDrawer extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           color: theme.colorScheme.surfaceContainer
-                              .withOpacity(0.9),
+                              .withValues(alpha: 0.9),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -787,7 +787,7 @@ class _Drawer extends StatelessWidget {
 
     return Drawer(
       shape: const RoundedRectangleBorder(),
-      backgroundColor: colorScheme.surface.withOpacity(0.9),
+      backgroundColor: colorScheme.surface.withValues(alpha: 0.9),
       child: CustomScrollView(
         slivers: [
           Builder(
@@ -873,7 +873,7 @@ class _NavigationRail extends StatelessWidget {
         height: double.infinity,
         width: 72,
         child: NavigationRail(
-          backgroundColor: colorScheme.surface.withOpacity(0.9),
+          backgroundColor: colorScheme.surface.withValues(alpha: 0.9),
           leading: IconButton(
             onPressed: () {
               Navigator.pop(context);

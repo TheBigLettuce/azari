@@ -360,7 +360,7 @@ class _ActionButton extends StatelessWidget {
     final background = (onPress == null
             ? theme.colorScheme.surfaceContainerLow
             : theme.colorScheme.tertiaryContainer)
-        .withOpacity(isSelected ? 0.8 : 0.2);
+        .withValues(alpha: isSelected ? 0.8 : 0.2);
     final colorIcon = onPress == null
         ? theme.colorScheme.onSurfaceVariant
         : theme.colorScheme.tertiary;
@@ -395,8 +395,9 @@ class _ActionButton extends StatelessWidget {
                         message: label,
                         child: Icon(
                           icon,
-                          color:
-                              colorIcon.withOpacity(onPress == null ? 0.4 : 1),
+                          color: colorIcon.withValues(
+                            alpha: onPress == null ? 0.4 : 1,
+                          ),
                         ),
                       ),
                     );
@@ -407,7 +408,9 @@ class _ActionButton extends StatelessWidget {
                     children: [
                       Icon(
                         icon,
-                        color: colorIcon.withOpacity(onPress == null ? 0.4 : 1),
+                        color: colorIcon.withValues(
+                          alpha: onPress == null ? 0.4 : 1,
+                        ),
                       ),
                       AnimatedSize(
                         duration: Durations.medium3,
@@ -416,8 +419,9 @@ class _ActionButton extends StatelessWidget {
                           label,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: foreground
-                                .withOpacity(onPress == null ? 0.4 : 0.9),
+                            color: foreground.withValues(
+                              alpha: onPress == null ? 0.4 : 0.9,
+                            ),
                           ),
                         ),
                       ),

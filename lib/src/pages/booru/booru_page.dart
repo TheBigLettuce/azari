@@ -319,7 +319,7 @@ class _BooruPageState extends State<BooruPage> {
                         snap: true,
                         stretch: true,
                         backgroundColor:
-                            theme.colorScheme.surface.withOpacity(0.95),
+                            theme.colorScheme.surface.withValues(alpha: 0.95),
                         bottom: bottomWidget ??
                             const PreferredSize(
                               preferredSize: Size.zero,
@@ -871,7 +871,7 @@ class HottestTagWidget extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Image(
-          color: Colors.black.withOpacity(0.15),
+          color: Colors.black.withValues(alpha: 0.15),
           colorBlendMode: BlendMode.darken,
           image: CachedNetworkImageProvider(tag.thumbUrl),
           frameBuilder: (

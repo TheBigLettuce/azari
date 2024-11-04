@@ -203,7 +203,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
                 shape: widget.shape,
                 color: selection.isSelected(thisIndx)
                     ? colorScheme.primary
-                    : colorScheme.primary.withOpacity(0),
+                    : colorScheme.primary.withValues(alpha: 0),
               ),
               duration: const Duration(milliseconds: 160),
               curve: Easing.emphasizedAccelerate,
@@ -244,7 +244,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
             child: DecoratedBox(
               decoration: ShapeDecoration(
                 shape: widget.shape,
-                color: colorScheme.primaryContainer.withOpacity(0.15),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.15),
               ),
               child: const SizedBox.expand(),
             ),
@@ -259,7 +259,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
                   height: theme.iconTheme.size,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: Padding(

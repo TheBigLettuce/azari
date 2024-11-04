@@ -81,13 +81,15 @@ class _TagSuggestionsState extends State<TagSuggestions> {
                       Icon(
                         Icons.label_off_rounded,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       const Padding(padding: EdgeInsets.only(right: 4)),
                       Text(
                         l10n.noBooruTags,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                       const Padding(padding: EdgeInsets.only(right: 4)),
@@ -193,7 +195,7 @@ class SingleTagWidget extends StatelessWidget {
       child: FilledButton.tonalIcon(
         icon: Icon(
           Icons.tag_rounded,
-          color: redBackground ? Colors.black.withOpacity(0.8) : null,
+          color: redBackground ? Colors.black.withValues(alpha: 0.8) : null,
         ),
         style: ButtonStyle(
           visualDensity: VisualDensity.comfortable,
@@ -209,7 +211,7 @@ class SingleTagWidget extends StatelessWidget {
         label: Text(
           tag.tag,
           style: redBackground
-              ? TextStyle(color: Colors.black.withOpacity(0.8))
+              ? TextStyle(color: Colors.black.withValues(alpha: 0.8))
               : null,
         ),
       ),

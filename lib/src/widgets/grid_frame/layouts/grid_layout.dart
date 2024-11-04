@@ -179,7 +179,7 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
         ? SliverToBoxAdapter(
             child: DefaultTextStyle(
               style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ) ??
                   const TextStyle(),
               child:

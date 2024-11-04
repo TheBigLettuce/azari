@@ -845,8 +845,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
                           child: Text(
                             l10n.noBooruTags,
                             style: theme.textTheme.labelLarge?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.5),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -901,7 +901,9 @@ class _TagsRibbonState extends State<TagsRibbon> {
                                     ? const Icon(Icons.push_pin_rounded)
                                     : null,
                                 onPressed: () => widget.selectTag(
-                                    elem.tag, scrollController),
+                                  elem.tag,
+                                  scrollController,
+                                ),
                                 label: Text(elem.tag),
                               ),
                             );
@@ -934,10 +936,14 @@ class _TagsRibbonState extends State<TagsRibbon> {
                               end: Alignment.centerLeft,
                               colors: [
                                 theme.colorScheme.surface,
-                                theme.colorScheme.surface.withOpacity(0.8),
-                                theme.colorScheme.surface.withOpacity(0.65),
-                                theme.colorScheme.surface.withOpacity(0.5),
-                                theme.colorScheme.surface.withOpacity(0.35),
+                                theme.colorScheme.surface
+                                    .withValues(alpha: 0.8),
+                                theme.colorScheme.surface
+                                    .withValues(alpha: 0.65),
+                                theme.colorScheme.surface
+                                    .withValues(alpha: 0.5),
+                                theme.colorScheme.surface
+                                    .withValues(alpha: 0.35),
                               ],
                             ),
                           ),
@@ -1023,8 +1029,8 @@ class BarIconState extends State<BarIcon> {
               child: TweenAnimationBuilder(
                 tween: ColorTween(
                   end: _toggled
-                      ? theme.colorScheme.onPrimary.withOpacity(0.9)
-                      : theme.colorScheme.primary.withOpacity(0.9),
+                      ? theme.colorScheme.onPrimary.withValues(alpha: 0.9)
+                      : theme.colorScheme.primary.withValues(alpha: 0.9),
                 ),
                 duration: Durations.medium3,
                 curve: Easing.standard,
@@ -1148,7 +1154,7 @@ class __CountWatcherState extends State<_CountWatcher> {
     return Text(
       count.toString(),
       style: theme.textTheme.labelLarge?.copyWith(
-        color: theme.colorScheme.onSurface.withOpacity(0.4),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
       ),
     );
   }
@@ -1307,14 +1313,16 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
                       TextSpan(
                         text: "${widget.name}\n",
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                     TextSpan(
                       text:
                           "${widget.storage.count} ${widget.storage.count == 1 ? l10n.elementSingular : l10n.elementPlural}",
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -1326,7 +1334,7 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
                   child: Text(
                     "~",
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -1402,7 +1410,7 @@ class __StatisticsPanelState<T> extends State<_StatisticsPanel<T>> {
                 child: Text(
                   "・",
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.15),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
                   ),
                 ),
               ),
@@ -1437,13 +1445,13 @@ class StatisticsCard extends StatelessWidget {
           TextSpan(
             text: "$subtitle\n",
             style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
             ),
           ),
           TextSpan(
             text: title,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ),
         ],

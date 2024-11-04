@@ -196,7 +196,8 @@ class _VideoControlsState extends State<VideoControls>
               width: widget.vertical ? null : 60,
               height: widget.vertical ? 60 : null,
               child: Card.filled(
-                color: theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
+                color: theme.colorScheme.surfaceContainerHigh
+                    .withValues(alpha: 0.8),
                 child: GestureDetector(
                   onPanStart: (details) {
                     widget.seekTimeAnchor.currentState
@@ -427,13 +428,13 @@ class __VideoTimeState extends State<_VideoTime> {
                       TextSpan(
                         text: _minutesSeconds(progress),
                         style: TextStyle(
-                          color: theme.iconTheme.color?.withOpacity(0.6),
+                          color: theme.iconTheme.color?.withValues(alpha: 0.6),
                         ),
                       ),
                       TextSpan(
                         text: "\n${_minutesSeconds(duration)}",
                         style: TextStyle(
-                          color: theme.iconTheme.color?.withOpacity(0.2),
+                          color: theme.iconTheme.color?.withValues(alpha: 0.2),
                         ),
                       ),
                     ],

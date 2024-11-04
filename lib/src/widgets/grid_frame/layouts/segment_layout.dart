@@ -651,9 +651,10 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                           color: isSelected
                               ? null
                               : idx.isOdd
-                                  ? theme.colorScheme.secondary.withOpacity(0.1)
+                                  ? theme.colorScheme.secondary
+                                      .withValues(alpha: 0.1)
                                   : theme.colorScheme.surfaceContainerHighest
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                         ),
                         child: ListTile(
                           textColor: isSelected
@@ -675,15 +676,15 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                                     ),
                                     child: CircleAvatar(
                                       backgroundColor: theme.colorScheme.surface
-                                          .withOpacity(0),
+                                          .withValues(alpha: 0),
                                       backgroundImage:
                                           cell.tryAsThumbnailable(),
                                     ),
                                   ),
                                 )
                               : CircleAvatar(
-                                  backgroundColor:
-                                      theme.colorScheme.surface.withOpacity(0),
+                                  backgroundColor: theme.colorScheme.surface
+                                      .withValues(alpha: 0),
                                   backgroundImage: cell.tryAsThumbnailable(),
                                 ),
                           title: Text(
@@ -691,12 +692,13 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                             softWrap: false,
                             style: TextStyle(
                               color: isSelected
-                                  ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                                  ? theme.colorScheme.onPrimary
+                                      .withValues(alpha: 0.8)
                                   : idx.isOdd
                                       ? theme.colorScheme.onSurface
-                                          .withOpacity(0.8)
+                                          .withValues(alpha: 0.8)
                                       : theme.colorScheme.onSurface
-                                          .withOpacity(0.9),
+                                          .withValues(alpha: 0.9),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),

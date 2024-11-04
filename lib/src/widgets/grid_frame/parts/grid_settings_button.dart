@@ -47,7 +47,7 @@ class GridSettingsButton extends StatelessWidget {
       onPressed: () {
         showModalBottomSheet<void>(
           context: context,
-          backgroundColor: theme.colorScheme.surface.withOpacity(0.95),
+          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
           isScrollControlled: true,
           showDragHandle: true,
           useRootNavigator: true,
@@ -166,7 +166,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
               child: Text(
                 AppLocalizations.of(context)!.emptyValue,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -520,7 +520,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
               context,
               _gridSettings!.hideName,
               (n) => add(_gridSettings!.copy(hideName: n)),
-              EdgeInsets.symmetric(horizontal: 12),
+              const EdgeInsets.symmetric(horizontal: 12),
               l10n,
             ),
             if (widget.header != null) widget.header!,

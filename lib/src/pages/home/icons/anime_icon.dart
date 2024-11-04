@@ -29,7 +29,7 @@ class AnimeDestinationIcon extends StatelessWidget {
           angle: pi / -5,
           duration: 440.ms,
           colors: [
-            colorScheme.primary.withOpacity(isSelected ? 1 : 0),
+            colorScheme.primary.withValues(alpha: isSelected ? 1 : 0),
             Colors.red,
             Colors.orange,
             Colors.yellow,

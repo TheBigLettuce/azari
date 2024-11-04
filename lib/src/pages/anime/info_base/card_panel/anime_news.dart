@@ -71,7 +71,7 @@ class _AnimeNewsState extends State<AnimeNews> {
                                   AppLocalizations.of(context)!.date(e.$2.date),
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),

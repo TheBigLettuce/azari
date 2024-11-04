@@ -130,7 +130,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
               },
               icon: const Icon(Icons.tag_rounded),
               backgroundColor: Colors.pink.shade300,
-              foregroundColor: Colors.black.withOpacity(0.8),
+              foregroundColor: Colors.black.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -138,7 +138,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
           tagManager: widget.tagManager,
           storage: source.backingStorage,
           api: widget.api,
-          foregroundColor: Colors.black.withOpacity(0.8),
+          foregroundColor: Colors.black.withValues(alpha: 0.8),
           backgroundColor: Colors.pink.shade300,
           buildTitle: (context) => Text(
             filteringValue.isNotEmpty

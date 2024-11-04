@@ -113,7 +113,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
               return Icon(
                 data.$1,
                 color: widget.onPressed == null || widget.onPressed == null
-                    ? theme.disabledColor.withOpacity(0.5)
+                    ? theme.disabledColor.withValues(alpha: 0.5)
                     : color,
               );
             },
@@ -152,7 +152,8 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
               ? null
               : ButtonStyle(
                   backgroundColor: WidgetStatePropertyAll(
-                    theme.colorScheme.surfaceContainerLow.withOpacity(0.9),
+                    theme.colorScheme.surfaceContainerLow
+                        .withValues(alpha: 0.9),
                   ),
                   shape: const WidgetStatePropertyAll(
                     RoundedRectangleBorder(

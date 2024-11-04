@@ -8,7 +8,7 @@ import "dart:io";
 import "package:flutter/services.dart";
 
 Future<bool> register() async => Platform.isAndroid
-    ? await MethodChannel("com.github.thebiglettuce.azari.app_context")
+    ? await const MethodChannel("com.github.thebiglettuce.azari.app_context")
         .invokeMethod("currentNetworkStatus")
         .then((value) => value as bool)
     : true;

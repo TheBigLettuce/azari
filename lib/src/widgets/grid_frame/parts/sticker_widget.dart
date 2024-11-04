@@ -32,8 +32,8 @@ class StickerWidget extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             color: e.important
-                ? colorScheme.onPrimary.withOpacity(0.9)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                ? colorScheme.onPrimary.withValues(alpha: 0.9)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           ),
           child: Padding(
             padding: e.subtitle!.isEmpty
@@ -44,8 +44,8 @@ class StickerWidget extends StatelessWidget {
                     e.icon,
                     size: 14,
                     color: e.important
-                        ? colorScheme.primary.withOpacity(0.9)
-                        : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        ? colorScheme.primary.withValues(alpha: 0.9)
+                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   )
                 : Row(
                     children: [
@@ -53,8 +53,9 @@ class StickerWidget extends StatelessWidget {
                         e.icon,
                         size: 14,
                         color: e.important
-                            ? colorScheme.primary.withOpacity(0.9)
-                            : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                            ? colorScheme.primary.withValues(alpha: 0.9)
+                            : colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.8),
                       ),
                       const Padding(padding: EdgeInsets.only(right: 6)),
                       Text(
@@ -80,15 +81,15 @@ class StickerWidget extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: e.important
-                ? colorScheme.onPrimary.withOpacity(0.9)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                ? colorScheme.onPrimary.withValues(alpha: 0.9)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           ),
           child: Icon(
             e.icon,
             size: iconSize,
             color: e.important
-                ? colorScheme.primary.withOpacity(0.9)
-                : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                ? colorScheme.primary.withValues(alpha: 0.9)
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
           ),
         ),
       ),
