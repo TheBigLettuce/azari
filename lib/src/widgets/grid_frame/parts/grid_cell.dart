@@ -25,14 +25,17 @@ mixin DefaultBuildCellImpl implements CellBase {
     bool animated = false,
     bool blur = false,
     required Alignment imageAlign,
+    required Widget Function(Widget child) wrapSelection,
   }) =>
-      GridCell(
-        data: cell,
-        longTitle: isList,
-        hideTitle: hideTitle,
-        animate: animated,
-        blur: blur,
-        imageAlign: imageAlign,
+      wrapSelection(
+        GridCell(
+          data: cell,
+          longTitle: isList,
+          hideTitle: hideTitle,
+          animate: animated,
+          blur: blur,
+          imageAlign: imageAlign,
+        ),
       );
 }
 

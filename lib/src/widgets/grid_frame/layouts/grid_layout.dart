@@ -65,8 +65,6 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
     final extras = GridExtrasNotifier.of<T>(context);
     final config = GridConfiguration.of(context);
 
-    // SelectionActions.of(context);
-
     return EmptyWidgetOrContent(
       source: source,
       progress: widget.progress,
@@ -80,7 +78,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
         itemBuilder: (context, idx) {
           final cell = getCell(idx);
 
-          final child = cell.buildCell<T>(
+          return cell.buildCell<T>(
             context,
             idx,
             cell,
@@ -88,16 +86,27 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
             isList: false,
             imageAlign: Alignment.center,
             animated: PlayAnimations.maybeOf(context) ?? false,
-          );
-
-          return WrapSelection<T>(
-            selection: extras.selection,
-            thisIndx: idx,
-            onPressed: cell.tryAsPressable(context, extras.functionality, idx),
-            description: cell.description(),
-            functionality: extras.functionality,
-            selectFrom: null,
-            child: child,
+            wrapSelection: (child) =>
+                cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                      selection: extras.selection,
+                      thisIndx: idx,
+                      onPressed: cell.tryAsPressable(
+                          context, extras.functionality, idx),
+                      description: cell.description(),
+                      functionality: extras.functionality,
+                      selectFrom: null,
+                      child: child,
+                    ) ??
+                WrapSelection<T>(
+                  selection: extras.selection,
+                  thisIndx: idx,
+                  onPressed:
+                      cell.tryAsPressable(context, extras.functionality, idx),
+                  description: cell.description(),
+                  functionality: extras.functionality,
+                  selectFrom: null,
+                  child: child,
+                ),
           );
         },
       ),

@@ -38,6 +38,14 @@ extension CellsExt on CellBase {
 
     return null;
   }
+
+  SelectionWrapperBuilder? tryAsSelectionWrapperable() {
+    if (this is SelectionWrapperBuilder) {
+      return this as SelectionWrapperBuilder;
+    }
+
+    return null;
+  }
 }
 
 /// Cells on a grid.
@@ -59,6 +67,7 @@ abstract interface class CellBase implements UniqueKeyable, Aliasable {
     bool animated = false,
     bool blur = false,
     required Alignment imageAlign,
+    required Widget Function(Widget child) wrapSelection,
   });
 }
 
@@ -71,6 +80,18 @@ abstract interface class Aliasable {
 
 abstract interface class UniqueKeyable {
   Key uniqueKey();
+}
+
+abstract interface class SelectionWrapperBuilder {
+  Widget buildSelectionWrapper<T extends CellBase>({
+    required int thisIndx,
+    required List<int>? selectFrom,
+    required GridSelection<T>? selection,
+    required CellStaticData description,
+    required GridFunctionality<T> functionality,
+    required VoidCallback? onPressed,
+    required Widget child,
+  });
 }
 
 @immutable

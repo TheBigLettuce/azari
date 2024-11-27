@@ -91,26 +91,39 @@ class _GridMasonryLayoutState<T extends CellBase>
                           (0.037 + (config.columns.number / 100) - rem * 0.01)))
                   .toInt();
 
-          final child = cell.buildCell<T>(
-            context,
-            idx,
-            cell,
-            imageAlign: Alignment.center,
-            hideTitle: config.hideName,
-            isList: false,
-          );
-
           return ConstrainedBox(
             constraints: BoxConstraints(maxHeight: maxHeight),
-            child: WrapSelection(
-              selection: extras.selection,
-              thisIndx: idx,
-              onPressed:
-                  cell.tryAsPressable(context, extras.functionality, idx),
-              description: cell.description(),
-              functionality: extras.functionality,
-              selectFrom: null,
-              child: child,
+            child: cell.buildCell<T>(
+              context,
+              idx,
+              cell,
+              imageAlign: Alignment.center,
+              hideTitle: config.hideName,
+              isList: false,
+              wrapSelection: (child) =>
+                  cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                        selection: extras.selection,
+                        thisIndx: idx,
+                        onPressed: cell.tryAsPressable(
+                          context,
+                          extras.functionality,
+                          idx,
+                        ),
+                        description: cell.description(),
+                        functionality: extras.functionality,
+                        selectFrom: null,
+                        child: child,
+                      ) ??
+                  WrapSelection(
+                    selection: extras.selection,
+                    thisIndx: idx,
+                    onPressed:
+                        cell.tryAsPressable(context, extras.functionality, idx),
+                    description: cell.description(),
+                    functionality: extras.functionality,
+                    selectFrom: null,
+                    child: child,
+                  ),
             ),
           );
         }),

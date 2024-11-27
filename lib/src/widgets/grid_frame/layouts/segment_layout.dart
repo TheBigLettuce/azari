@@ -530,7 +530,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
         itemBuilder: (context, idx) {
           final (cell, blur) = items[idx];
 
-          final child = cell.value.buildCell<T>(
+          return cell.value.buildCell<T>(
             context,
             -1,
             cell.value,
@@ -539,17 +539,32 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
             imageAlign: Alignment.topCenter,
             hideTitle: false,
             animated: PlayAnimations.maybeOf(context) ?? false,
-          );
-
-          return WrapSelection<T>(
-            selection: widget.selection,
-            description: cell.value.description(),
-            onPressed: cell.value
-                .tryAsPressable<T>(context, widget.gridFunctionality, idx),
-            functionality: widget.gridFunctionality,
-            selectFrom: null,
-            thisIndx: -1,
-            child: child,
+            wrapSelection: (child) =>
+                cell.value
+                    .tryAsSelectionWrapperable()
+                    ?.buildSelectionWrapper<T>(
+                      selection: widget.selection,
+                      description: cell.value.description(),
+                      onPressed: cell.value.tryAsPressable<T>(
+                        context,
+                        widget.gridFunctionality,
+                        idx,
+                      ),
+                      functionality: widget.gridFunctionality,
+                      selectFrom: null,
+                      thisIndx: -1,
+                      child: child,
+                    ) ??
+                WrapSelection<T>(
+                  selection: widget.selection,
+                  description: cell.value.description(),
+                  onPressed: cell.value.tryAsPressable<T>(
+                      context, widget.gridFunctionality, idx),
+                  functionality: widget.gridFunctionality,
+                  selectFrom: null,
+                  thisIndx: -1,
+                  child: child,
+                ),
           );
         },
       ),
@@ -587,7 +602,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       final realIdx = val.list[idx];
       final cell = getCell(realIdx);
 
-      final child = cell.buildCell<T>(
+      return cell.buildCell<T>(
         context,
         idx,
         cell,
@@ -596,16 +611,26 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
         imageAlign: Alignment.topCenter,
         hideTitle: config.hideName,
         animated: PlayAnimations.maybeOf(context) ?? false,
-      );
-
-      return WrapSelection<T>(
-        selection: selection,
-        thisIndx: realIdx,
-        description: cell.description(),
-        selectFrom: predefined,
-        onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
-        functionality: gridFunctionality,
-        child: child,
+        wrapSelection: (child) =>
+            cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                  selection: selection,
+                  thisIndx: realIdx,
+                  description: cell.description(),
+                  selectFrom: predefined,
+                  onPressed:
+                      cell.tryAsPressable(context, gridFunctionality, idx),
+                  functionality: gridFunctionality,
+                  child: child,
+                ) ??
+            WrapSelection<T>(
+              selection: selection,
+              thisIndx: realIdx,
+              description: cell.description(),
+              selectFrom: predefined,
+              onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
+              functionality: gridFunctionality,
+              child: child,
+            ),
       );
     }
 

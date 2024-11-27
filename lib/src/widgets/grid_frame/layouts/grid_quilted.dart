@@ -84,7 +84,7 @@ class _GridQuiltedLayoutState<T extends CellBase>
         itemBuilder: (context, idx) {
           final cell = getCell(idx);
 
-          final child = cell.buildCell<T>(
+          return cell.buildCell<T>(
             context,
             idx,
             cell,
@@ -92,16 +92,27 @@ class _GridQuiltedLayoutState<T extends CellBase>
             hideTitle: config.hideName,
             isList: false,
             animated: PlayAnimations.maybeOf(context) ?? false,
-          );
-
-          return WrapSelection(
-            selection: extras.selection,
-            thisIndx: idx,
-            description: cell.description(),
-            onPressed: cell.tryAsPressable(context, extras.functionality, idx),
-            functionality: extras.functionality,
-            selectFrom: null,
-            child: child,
+            wrapSelection: (child) =>
+                cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                      selection: extras.selection,
+                      thisIndx: idx,
+                      onPressed: cell.tryAsPressable(
+                          context, extras.functionality, idx),
+                      description: cell.description(),
+                      functionality: extras.functionality,
+                      selectFrom: null,
+                      child: child,
+                    ) ??
+                WrapSelection(
+                  selection: extras.selection,
+                  thisIndx: idx,
+                  description: cell.description(),
+                  onPressed:
+                      cell.tryAsPressable(context, extras.functionality, idx),
+                  functionality: extras.functionality,
+                  selectFrom: null,
+                  child: child,
+                ),
           );
         },
       ),
