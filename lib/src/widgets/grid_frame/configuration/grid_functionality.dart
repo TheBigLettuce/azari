@@ -25,7 +25,7 @@ class GridFunctionality<T extends CellBase> {
     this.download,
     this.updatesAvailable,
     this.settingsButton,
-    this.fab = const DefaultGridFab(),
+    this.fab = const NoGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
     this.search = const PageNameSearchWidget(),
     this.onEmptySource,

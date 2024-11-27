@@ -34,7 +34,6 @@ import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -305,7 +304,6 @@ class _BooruPageState extends State<BooruPage> {
                       SafeModeButton(settingsWatcher: state.settings.s.watch),
                     ),
                     source: source,
-                    fab: const NoGridFab(),
                     search: RawSearchWidget(
                       (settingsButton, bottomWidget) => SliverAppBar(
                         leading: Center(

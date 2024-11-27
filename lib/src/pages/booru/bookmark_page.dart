@@ -15,7 +15,6 @@ import "package:azari/src/pages/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -131,7 +130,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
               ),
             ],
             functionality: GridFunctionality(
-              fab: const NoGridFab(),
               scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
               onEmptySource: EmptyWidgetBackground(
                 subtitle: l10n.emptyBookmarkedSearches,
