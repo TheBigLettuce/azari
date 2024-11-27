@@ -210,7 +210,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
     String t,
     SafeMode? safeMode,
   ) {
-    Navigator.pop(context);
+    // Navigator.pop(context);
 
     searchTextController.text = t;
     filter.filteringMode = FilteringMode.tag;
@@ -219,17 +219,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
   void download(int i) => filter
       .forIdxUnsafe(i)
       .download(DownloadManager.of(context), PostTags.fromContext(context));
-
-  List<GridAction<FavoritePost>> gridActions() {
-    return [
-      booru_actions.download(context, state.settings.selectedBooru, null),
-      booru_actions.favorites<FavoritePost>(
-        context,
-        favoritePosts,
-        showDeleteSnackbar: true,
-      ),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -245,8 +234,10 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         ),
       ],
       functionality: GridFunctionality(
+        scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
         selectionActions: SelectionActions.of(context),
         scrollingSink: ScrollingSinkProvider.maybeOf(context),
+        // playAnimationOn: ,
         onEmptySource: EmptyWidgetBackground(
           subtitle: l10n.emptyFavoritedPosts,
         ),
@@ -276,7 +267,14 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         source: filter,
       ),
       description: GridDescription(
-        actions: gridActions(),
+        actions: [
+          booru_actions.download(context, state.settings.selectedBooru, null),
+          booru_actions.favorites<FavoritePost>(
+            context,
+            favoritePosts,
+            showDeleteSnackbar: true,
+          ),
+        ],
         pullToRefresh: false,
         pageName: l10n.favoritesLabel,
         gridSeed: state.gridSeed,

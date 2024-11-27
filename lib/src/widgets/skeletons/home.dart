@@ -294,7 +294,7 @@ class __NavigationRailState extends State<_NavigationRail> {
     super.initState();
 
     _actionEvents = widget.selectionActions
-        .connect(const SelectionAreaSize(base: 48.5, expanded: 80.5))
+        .connect(const SelectionAreaSize(base: 0, expanded: 0))
         .listen((newActions) {
       if (_prevFunc == newActions) {
         return;

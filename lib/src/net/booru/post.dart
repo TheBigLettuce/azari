@@ -13,6 +13,7 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post_functions.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -39,6 +40,7 @@ final _transparent = MemoryImage(kTransparentImage);
 abstract class PostImpl
     implements
         PostBase,
+        // SelectionWrapperBuilder,
         ContentableCell,
         Thumbnailable,
         ContentWidgets,
@@ -68,8 +70,15 @@ abstract class PostImpl
     bool animated = false,
     bool blur = false,
     required Alignment imageAlign,
+    required Widget Function(Widget child) wrapSelection,
   }) =>
-      _CellWidget(post: this);
+      this is FavoritePost
+          ? _FavoriteCellWidget(
+              key: uniqueKey(),
+              wrapSelection: wrapSelection,
+              post: this as FavoritePost,
+            )
+          : wrapSelection(_CellWidget(post: this));
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
@@ -472,7 +481,9 @@ class _CellWidget extends StatelessWidget {
     final thumbnail = post.thumbnail();
     final downloader = DownloadManager.of(context);
 
-    return Card(
+    final animate = PlayAnimations.maybeOf(context) ?? false;
+
+    final child = Card(
       elevation: 0,
       color: theme.cardColor.withValues(alpha: 0),
       child: ClipPath(
@@ -492,6 +503,7 @@ class _CellWidget extends StatelessWidget {
                 ),
                 if (constraints.maxHeight > 80 &&
                     constraints.maxWidth > 80) ...[
+                  // if (post is! FavoritePost)
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
@@ -500,15 +512,12 @@ class _CellWidget extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (post is FavoritePost)
-                            const SizedBox.shrink()
-                          else
-                            _FavoriteButton(
-                              post: post,
-                              favoritePosts:
-                                  DatabaseConnectionNotifier.of(context)
-                                      .favoritePosts,
-                            ),
+                          _FavoriteButton(
+                            post: post,
+                            favoritePosts:
+                                DatabaseConnectionNotifier.of(context)
+                                    .favoritePosts,
+                          ),
                           if (post.score > 10)
                             StickerWidget(
                               Sticker(
@@ -529,7 +538,9 @@ class _CellWidget extends StatelessWidget {
                       padding: const EdgeInsets.all(2),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: post is FavoritePost
+                            ? CrossAxisAlignment.center
+                            : CrossAxisAlignment.end,
                         children: [
                           Expanded(
                             child: Padding(
@@ -540,6 +551,7 @@ class _CellWidget extends StatelessWidget {
                               ),
                               child: _TagsWrap(
                                 post: post,
+                                verySmall: constraints.maxWidth < 100,
                                 letterCount: calculateTagsChipLetterCount(
                                   constraints.biggest,
                                 ),
@@ -561,18 +573,182 @@ class _CellWidget extends StatelessWidget {
         ),
       ),
     );
+
+    return animate ? child.animate(key: post.uniqueKey()).fadeIn() : child;
+  }
+}
+
+class _FavoriteCellWidget extends StatefulWidget {
+  const _FavoriteCellWidget({
+    super.key,
+    required this.post,
+    required this.wrapSelection,
+  });
+
+  final FavoritePost post;
+
+  final Widget Function(Widget child) wrapSelection;
+
+  @override
+  State<_FavoriteCellWidget> createState() => __FavoriteCellWidgetState();
+}
+
+class __FavoriteCellWidgetState extends State<_FavoriteCellWidget> {
+  FavoritePost get post => widget.post;
+
+  List<({String tag, bool pinned})> _tags = [];
+  bool hasVideo = false;
+  bool hasGif = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final tags = PinnedTagsProvider.of(context);
+    final postTags = widget.post.tags.toList();
+    final pinnedTags = <String>[];
+    postTags.removeWhere((e) {
+      if (hasGif || e == "gif") {
+        hasGif = true;
+      }
+
+      if (hasVideo || e == "video") {
+        hasVideo = true;
+      }
+
+      if (tags.$1.containsKey(e)) {
+        pinnedTags.add(e);
+
+        return true;
+      }
+
+      return false;
+    });
+
+    _tags = pinnedTags
+        .map((e) => (tag: e, pinned: true))
+        .followedBy(postTags.map((e) => (tag: e, pinned: false)))
+        .toList();
+
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final thumbnail = post.thumbnail();
+
+    final animate = PlayAnimations.maybeOf(context) ?? false;
+
+    final child = LayoutBuilder(
+      builder: (context, constraints) {
+        final verySmall =
+            constraints.maxWidth < 100 || constraints.maxHeight < 100;
+
+        final card = widget.wrapSelection(
+          Card(
+            elevation: 0,
+            clipBehavior: Clip.antiAlias,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+            color: theme.cardColor.withValues(alpha: 0),
+            child: Stack(
+              children: [
+                GridCellImage(
+                  imageAlign: Alignment.topCenter,
+                  thumbnail: thumbnail,
+                  blur: false,
+                ),
+                if (hasGif)
+                  const Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: EdgeInsets.all(6),
+                      child: _VideoGifIcon(
+                        icon: Icons.gif_rounded,
+                      ),
+                    ),
+                  ),
+                if (hasVideo)
+                  const Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: EdgeInsets.all(6),
+                      child: _VideoGifIcon(
+                        icon: Icons.play_arrow_rounded,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+
+        if (_tags.isEmpty) {
+          return card;
+        }
+
+        return Column(
+          children: [
+            Expanded(child: card),
+            SizedBox(
+              height: verySmall ? 42 / 2 : 42 / 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Wrap(
+                  clipBehavior: Clip.antiAlias,
+                  runSpacing: 2,
+                  spacing: 2,
+                  children: [
+                    ..._tags.take(10).map(
+                          (e) => OutlinedTagChip(
+                            tag: e.tag,
+                            letterCount: 8,
+                            isPinned: e.pinned,
+                            onPressed: () => OnBooruTagPressed.pressOf(
+                              context,
+                              e.tag,
+                              widget.post.booru,
+                            ),
+                          ),
+                        ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return animate ? child.animate(key: post.uniqueKey()).fadeIn() : child;
   }
 }
 
 class _TagsWrap extends StatefulWidget {
   const _TagsWrap({
-    // super.key,
+    super.key,
     required this.post,
     required this.letterCount,
+    required this.verySmall,
   });
 
-  final PostImpl post;
+  final bool verySmall;
+
   final int letterCount;
+
+  final PostImpl post;
 
   @override
   State<_TagsWrap> createState() => __TagsWrapState();
@@ -599,11 +775,11 @@ class __TagsWrapState extends State<_TagsWrap> {
 
     final tags = PinnedTagsProvider.of(context);
     pinnedTags = widget.post.tags.where((e) {
-      if ((!hasGif || !hasVideo) && e == "gif") {
+      if (hasGif || e == "gif") {
         hasGif = true;
       }
 
-      if ((!hasVideo || !hasGif) && e == "video") {
+      if (hasVideo || e == "video") {
         hasVideo = true;
       }
 
@@ -616,7 +792,7 @@ class __TagsWrapState extends State<_TagsWrap> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 42,
+      height: widget.verySmall ? 42 / 2 : 42,
       child: Wrap(
         clipBehavior: Clip.antiAlias,
         verticalDirection: VerticalDirection.up,

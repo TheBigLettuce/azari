@@ -540,10 +540,12 @@ class PinnedTagChip extends StatelessWidget {
     this.tight = false,
     this.letterCount = 10,
     this.mildlyTransculent = false,
+    this.addPinnedIcon = false,
   });
 
   final bool tight;
   final bool mildlyTransculent;
+  final bool addPinnedIcon;
 
   final int letterCount;
 
@@ -560,6 +562,15 @@ class PinnedTagChip extends StatelessWidget {
     final boxColor = mildlyTransculent
         ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8)
         : theme.colorScheme.surfaceContainerHigh;
+
+    final text = Text(
+      "#${tag.length > letterCount ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
+      style: (tight ? theme.textTheme.labelSmall : theme.textTheme.labelMedium)
+          ?.copyWith(
+        color: textColor,
+        overflow: TextOverflow.fade,
+      ),
+    );
 
     return GestureDetector(
       onTap: onPressed,
@@ -578,13 +589,68 @@ class PinnedTagChip extends StatelessWidget {
           padding: tight
               ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
               : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: addPinnedIcon
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.push_pin_rounded, size: 8),
+                    text,
+                  ],
+                )
+              : text,
+        ),
+      ),
+    );
+  }
+}
+
+class OutlinedTagChip extends StatelessWidget {
+  const OutlinedTagChip({
+    super.key,
+    this.onPressed,
+    this.onLongPressed,
+    required this.tag,
+    required this.isPinned,
+    this.letterCount = 10,
+  });
+
+  final bool isPinned;
+
+  final int letterCount;
+
+  final String tag;
+
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final textColor = isPinned
+        ? theme.colorScheme.primary
+        : theme.colorScheme.secondary.withValues(alpha: 0.8);
+
+    return GestureDetector(
+      onTap: onPressed,
+      onLongPress: onLongPressed,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          // shadows: kElevationToShadow[1],
+
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(5),
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           child: Text(
             "#${tag.length > letterCount ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
-            style: (tight
-                    ? theme.textTheme.labelSmall
-                    : theme.textTheme.labelMedium)
-                ?.copyWith(
+            style: theme.textTheme.labelSmall?.copyWith(
               color: textColor,
+              overflow: TextOverflow.fade,
             ),
           ),
         ),
