@@ -7,6 +7,98 @@ part of "../impl.dart";
 
 bool _initalized = false;
 
+const mainSchemas = [
+  IsarVisitedPostSchema,
+  IsarSettingsSchema,
+  IsarFavoritePostSchema,
+  IsarLocalTagDictionarySchema,
+  IsarBookmarkSchema,
+  IsarDownloadFileSchema,
+  IsarHiddenBooruPostSchema,
+  IsarStatisticsGallerySchema,
+  IsarStatisticsGeneralSchema,
+  IsarStatisticsBooruSchema,
+  IsarDailyStatisticsSchema,
+  IsarVideoSettingsSchema,
+  IsarMiscSettingsSchema,
+  IsarGridSettingsBooruSchema,
+  IsarGridSettingsDirectoriesSchema,
+  IsarGridSettingsFavoritesSchema,
+  IsarGridSettingsFilesSchema,
+  IsarGridSettingsAnimeDiscoverySchema,
+];
+
+Future<void> _runIsolate((String, SendPort) value) async {
+  final (directory, port) = value;
+
+  try {
+    final mainDb = Isar.openSync(
+      mainSchemas,
+      directory: directory,
+      inspector: false,
+    );
+
+    List<IsarFavoritePost> list = [];
+
+    try {
+      for (final e in _IsarCollectionReverseIterable(
+        _IsarCollectionIterator(
+          mainDb.isarFavoritePosts,
+          reversed: false,
+          bufferLen: 100,
+        ),
+      )) {
+        list.add(e);
+        if (list.length == 100) {
+          port.send(list);
+          list = [];
+        }
+      }
+
+      if (list.isNotEmpty) {
+        port.send(list);
+        list = const [];
+      }
+      port.send(const []);
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+
+    await mainDb.close();
+  } catch (e) {
+    if (kDebugMode) {
+      print(e);
+    }
+  }
+}
+
+Future<void> _favoritesLoop(
+  ServicesImplTable db,
+  String directoryPath,
+) async {
+  final port = ReceivePort();
+
+  final isolate = await Isolate.spawn(
+    _runIsolate,
+    (directoryPath, port.sendPort),
+    errorsAreFatal: false,
+  );
+
+  await for (final e in port) {
+    final list = e as List<dynamic>;
+    db.favoritePosts.backingStorage.addAll(list.cast<IsarFavoritePost>(), true);
+
+    if (e.isEmpty) {
+      db.favoritePosts.backingStorage.addAll(<IsarFavoritePost>[]);
+      break;
+    }
+  }
+
+  isolate.kill();
+}
+
 Future<DownloadManager> initalizeIsarDb(
   bool temporary,
   ServicesImplTable db,
@@ -43,26 +135,6 @@ Future<DownloadManager> initalizeIsarDb(
     io.Directory(secondaryDir).createSync();
   }
 
-  final anime = Isar.openSync(
-    const [
-      IsarNewestAnimeSchema,
-      IsarVisitedPostSchema,
-      IsarWatchedAnimeEntrySchema,
-      IsarWatchingAnimeEntrySchema,
-      IsarBacklogAnimeEntrySchema,
-      IsarSavedAnimeCharactersSchema,
-      IsarReadMangaChapterSchema,
-      IsarCompactMangaDataSchema,
-      IsarSavedMangaChaptersSchema,
-      IsarChapterSettingsSchema,
-      IsarPinnedMangaSchema,
-      IsarCurrentSeasonAnimeSchema,
-    ],
-    name: "anime",
-    directory: directoryPath,
-    inspector: false,
-  );
-
   final localTags = Isar.openSync(
     const [
       IsarTagSchema,
@@ -78,25 +150,7 @@ Future<DownloadManager> initalizeIsarDb(
   );
 
   final main = Isar.openSync(
-    const [
-      IsarSettingsSchema,
-      IsarFavoritePostSchema,
-      IsarLocalTagDictionarySchema,
-      IsarBookmarkSchema,
-      IsarDownloadFileSchema,
-      IsarHiddenBooruPostSchema,
-      IsarStatisticsGallerySchema,
-      IsarStatisticsGeneralSchema,
-      IsarStatisticsBooruSchema,
-      IsarDailyStatisticsSchema,
-      IsarVideoSettingsSchema,
-      IsarMiscSettingsSchema,
-      IsarGridSettingsBooruSchema,
-      IsarGridSettingsDirectoriesSchema,
-      IsarGridSettingsFavoritesSchema,
-      IsarGridSettingsFilesSchema,
-      IsarGridSettingsAnimeDiscoverySchema,
-    ],
+    mainSchemas,
     directory: directoryPath,
     inspector: false,
   );
@@ -136,7 +190,6 @@ Future<DownloadManager> initalizeIsarDb(
   _dbs = _Dbs._(
     directory: directoryPath,
     main: main,
-    anime: anime,
     temporaryDbDir: temporaryDbPath,
     temporaryImagesDir: temporaryImagesPath,
     secondaryGridDbDir: secondaryDir,
@@ -145,11 +198,7 @@ Future<DownloadManager> initalizeIsarDb(
     localTags: localTags,
   );
 
-  for (final e in _IsarCollectionReverseIterable(
-    _IsarCollectionIterator(_Dbs.g.main.isarFavoritePosts, reversed: false),
-  )) {
-    db.favoritePosts.backingStorage.add(e, true);
-  }
+  unawaited(_favoritesLoop(db, directoryPath));
 
   for (final e in _IsarCollectionReverseIterable(
     _IsarCollectionIterator(_Dbs.g.main.isarHiddenBooruPosts, reversed: false),

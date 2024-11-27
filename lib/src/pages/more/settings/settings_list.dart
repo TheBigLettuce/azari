@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
@@ -16,7 +17,6 @@ import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class SettingsList extends StatefulWidget {
   const SettingsList({

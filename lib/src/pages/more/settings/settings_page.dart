@@ -4,13 +4,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/pages/more/settings/settings_list.dart";
 import "package:azari/src/widgets/skeletons/settings.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 part "is_restart.dart";
 part "select_booru.dart";

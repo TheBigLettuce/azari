@@ -18,15 +18,13 @@ const Duration _defaultTimeout = Duration(seconds: 30);
 
 class Gelbooru implements BooruAPI {
   const Gelbooru(
-    this.client,
-    this.pageSaver, {
+    this.client, {
     this.booru = Booru.gelbooru,
   });
 
   static final _log = Logger("Gelbooru API");
 
   final Dio client;
-  final PageSaver pageSaver;
 
   @override
   final Booru booru;
@@ -112,6 +110,7 @@ class Gelbooru implements BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   }) {
     return _commonPosts(
       tags,
@@ -224,6 +223,7 @@ class Gelbooru implements BooruAPI {
           BooruPostsOrder.latest,
         RandomPostsOrder.rating => BooruPostsOrder.score,
       },
+      pageSaver: PageSaver.noPersist(),
     );
 
     return p.$1;
@@ -237,6 +237,7 @@ class Gelbooru implements BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   }) {
     final f = _commonPosts(
       tags,

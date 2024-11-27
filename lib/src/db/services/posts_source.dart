@@ -67,7 +67,13 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     try {
       final settings = SettingsService.db().current;
 
-      final list = await api.page(0, tags, excluded, safeMode);
+      final list = await api.page(
+        0,
+        tags,
+        excluded,
+        safeMode,
+        pageSaver: entry,
+      );
       if (list.$1.isNotEmpty) {
         updatesAvailable.setCount(list.$1.first.id);
       }
@@ -120,6 +126,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
           tags,
           excluded,
           safeMode,
+          pageSaver: entry,
         );
       } else {
         list = await api.fromPostId(
@@ -129,6 +136,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
           tags,
           excluded,
           safeMode,
+          pageSaver: entry,
         );
       }
 

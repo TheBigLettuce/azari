@@ -4,10 +4,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/build_theme.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class WrapFutureRestartable<T> extends StatefulWidget {
   const WrapFutureRestartable({

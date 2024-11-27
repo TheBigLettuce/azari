@@ -5,18 +5,18 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart";
 
 /// Post tags saved locally.
 /// This is used for offline tag viewing in the gallery.
 class PostTags {
-  PostTags(this._db, this._freq);
+  const PostTags(this._db, this._freq);
 
   factory PostTags.fromContext(BuildContext context) {
     final db = DatabaseConnectionNotifier.of(context);
@@ -35,8 +35,7 @@ class PostTags {
     LocalTagDictionaryService localTagDictionary,
   ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
-    final api =
-        BooruAPI.fromEnum(dissassembled.booru, client, PageSaver.noPersist());
+    final api = BooruAPI.fromEnum(dissassembled.booru, client);
 
     try {
       final post = await api.singlePost(dissassembled.id);

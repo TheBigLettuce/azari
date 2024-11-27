@@ -6,36 +6,32 @@
 part of "../home.dart";
 
 enum CurrentRoute {
-  booru,
-  gallery
-  // anime
-  ;
-  // downloads,
-  // settings;
+  home,
+  search,
+  discover,
+  gallery;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
-        0 => booru,
-        1 => gallery,
-        // 2 => anime,
-        // 3 => downloads,
-        // 3 => settings,
+        0 => home,
+        1 => search,
+        2 => discover,
+        3 => gallery,
         int() => throw "no route",
       };
 
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
-        booru => BooruDestinationIcon(
-            controller: mixin.booruIconController,
+        home => HomeDestinationIcon(
+            controller: mixin.homeIconController,
+          ),
+        search => SearchDestinationIcon(
+            controller: mixin.searchIconController,
+          ),
+        discover => DiscoverDestinationIcon(
+            controller: mixin.discoverIconController,
           ),
         gallery => GalleryDestinationIcon(
             controller: mixin.galleryIconController,
           ),
-        // anime => AnimeDestinationIcon(
-        //     controller: mixin.animeIconController,
-        //   ),
-        // downloads => Icon(Icons.download_rounded),
-        // settings => SettingsDestinationIcon(
-        //     controller: mixin.downloadsIconController,
-        //   ),
       };
 
   static Widget wrap(ValueNotifier<CurrentRoute> notifier, Widget child) =>
@@ -46,12 +42,10 @@ enum CurrentRoute {
 
   String label(BuildContext context, AppLocalizations l10n, Booru booru) =>
       switch (this) {
-        CurrentRoute.booru =>
-          _booruDestinationLabel(context, l10n, booru.string),
+        home => _booruDestinationLabel(context, l10n, booru.string),
         gallery => GallerySubPage.of(context).translatedString(l10n),
-        // anime => l10n.animePage,
-        // downloads => l10n.downloadsPageName,
-        // settings => SettingsSubPage.of(context).translatedString(l10n),
+        search => l10n.searchHint, // TODO: change
+        discover => "Discover", // TODO: change
       };
 
   static CurrentRoute of(BuildContext context) {
@@ -83,8 +77,8 @@ String _booruDestinationLabel(
 
 enum BooruSubPage {
   booru(
-    icon: Icons.photo_outlined,
-    selectedIcon: Icons.photo_rounded,
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home_rounded,
   ),
   favorites(
     icon: Icons.favorite_outline_rounded,
@@ -105,10 +99,6 @@ enum BooruSubPage {
   visited(
     icon: Icons.schedule_outlined,
     selectedIcon: Icons.schedule_rounded,
-  ),
-  anime(
-    icon: Icons.video_collection_outlined,
-    selectedIcon: Icons.video_collection_rounded,
   );
 
   const BooruSubPage({
@@ -123,7 +113,6 @@ enum BooruSubPage {
         3 => hiddenPosts,
         4 => downloads,
         5 => visited,
-        6 => anime,
         int() => booru,
       };
 
@@ -137,7 +126,6 @@ enum BooruSubPage {
         hiddenPosts => l10n.hiddenPostsPageName,
         downloads => l10n.downloadsPageName,
         visited => l10n.visitedPage,
-        anime => l10n.animePage,
       };
 
   static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>
@@ -151,7 +139,7 @@ enum BooruSubPage {
   }
 
   static void selectOf(BuildContext context, BooruSubPage page) {
-    GlueProvider.generateOf(context)().updateCount(0);
+    SelectionActions.controllerOf(context).setCount(0);
 
     final widget =
         context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
@@ -200,7 +188,7 @@ enum GallerySubPage {
   }
 
   static void selectOf(BuildContext context, GallerySubPage page) {
-    GlueProvider.generateOf(context)().updateCount(0);
+    SelectionActions.controllerOf(context).setCount(0);
 
     final widget =
         context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
@@ -209,55 +197,6 @@ enum GallerySubPage {
   }
 }
 
-// enum SettingsSubPage {
-//   settings(
-//     icon: Icons.account_circle_outlined,
-//     selectedIcon: Icons.account_circle_rounded,
-//   ),
-//   dashboard(
-//     icon: Icons.dashboard_outlined,
-//     selectedIcon: Icons.dashboard_rounded,
-//   );
-
-//   const SettingsSubPage({
-//     required this.icon,
-//     required this.selectedIcon,
-//   });
-
-//   factory SettingsSubPage.fromIdx(int idx) => switch (idx) {
-//         0 => settings,
-//         1 => dashboard,
-//         int() => settings,
-//       };
-
-//   final IconData icon;
-//   final IconData selectedIcon;
-
-//   String translatedString(AppLocalizations l10n) => switch (this) {
-//         SettingsSubPage.settings => l10n.settingsLabel,
-//         SettingsSubPage.dashboard => l10n.dashboardPage,
-//       };
-
-//   static Widget wrap(ValueNotifier<SettingsSubPage> notifier, Widget child) =>
-//       _SelectedMorePage(notifier: notifier, child: child);
-
-//   static SettingsSubPage of(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
-
-//     return widget!.notifier!.value;
-//   }
-
-//   static void selectOf(BuildContext context, SettingsSubPage page) {
-//     GlueProvider.generateOf(context)().updateCount(0);
-
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<_SelectedMorePage>();
-
-//     widget!.notifier!.value = page;
-//   }
-// }
-
 mixin ChangePageMixin on State<Home> {
   final pagingRegistry = PagingStateRegistry();
 
@@ -265,33 +204,20 @@ mixin ChangePageMixin on State<Home> {
   final galleryKey = GlobalKey<NavigatorState>();
   final settingsKey = GlobalKey<NavigatorState>();
 
-  final _routeNotifier = ValueNotifier<CurrentRoute>(CurrentRoute.booru);
+  final _routeNotifier = ValueNotifier<CurrentRoute>(CurrentRoute.home);
 
   final _booruPageNotifier = ValueNotifier<BooruSubPage>(BooruSubPage.booru);
   final _galleryPageNotifier =
       ValueNotifier<GallerySubPage>(GallerySubPage.gallery);
-  // final _settingsPageNotifier =
-  // ValueNotifier<SettingsSubPage>(SettingsSubPage.settings);
 
   String? restoreBookmarksPage;
 
   void _procPopAll(
     ValueNotifier<GallerySubPage> galleryPage,
-    // ValueNotifier<SettingsSubPage> morePage,
     AnimatedIconsMixin icons,
     bool _,
   ) {
-    final f = mainKey.currentState?.maybePop();
-    if (widget.callback != null) {
-      f?.then((value) {
-        if (!value) {
-          if (context.mounted) {
-            // ignore: use_build_context_synchronously
-            Navigator.of(context);
-          }
-        }
-      });
-    }
+    mainKey.currentState?.maybePop();
 
     galleryKey.currentState?.maybePop();
     settingsKey.currentState?.maybePop().then((value) {
@@ -306,7 +232,7 @@ mixin ChangePageMixin on State<Home> {
   void disposeChangePage() {
     if (!themeIsChanging) {
       _routeNotifier.dispose();
-      pagingRegistry.dispose();
+      pagingRegistry.recycle();
     } else {
       themeChangeOver();
     }
@@ -317,13 +243,11 @@ mixin ChangePageMixin on State<Home> {
       return;
     }
 
-    if (to == CurrentRoute.booru) {
+    if (to == CurrentRoute.home) {
       restartOver();
     } else {
       restartStart();
     }
-
-    // icons.pageRiseAnimation.reset();
 
     icons.pageFadeAnimation.animateTo(1).then((value) {
       _routeNotifier.value = to;
@@ -332,14 +256,11 @@ mixin ChangePageMixin on State<Home> {
       setState(() {});
 
       animateIcons(icons);
-
-      // icons.pageRiseAnimation.forward();
     });
   }
 
   void _procPop(
     ValueNotifier<GallerySubPage> galleryPage,
-    // ValueNotifier<SettingsSubPage> morePage,
     AnimatedIconsMixin icons,
     bool pop,
   ) {
@@ -348,14 +269,8 @@ mixin ChangePageMixin on State<Home> {
           galleryPage.value != GallerySubPage.gallery) {
         galleryPage.value = GallerySubPage.gallery;
         animateIcons(icons);
-      }
-      // else if (_routeNotifier.value == CurrentRoute.gallery &&
-      //     morePage.value != SettingsSubPage.settings) {
-      //   morePage.value = SettingsSubPage.settings;
-      //   animateIcons(icons);
-      // }
-      else {
-        switchPage(icons, CurrentRoute.booru);
+      } else {
+        switchPage(icons, CurrentRoute.home);
       }
     }
   }
@@ -366,7 +281,7 @@ mixin ChangePageMixin on State<Home> {
     bool pop,
   ) {
     if (!pop) {
-      if (_routeNotifier.value == CurrentRoute.booru &&
+      if (_routeNotifier.value == CurrentRoute.home &&
           booruPage.value != BooruSubPage.booru) {
         booruPage.value = BooruSubPage.booru;
         animateIcons(icons);
@@ -378,19 +293,18 @@ mixin ChangePageMixin on State<Home> {
 
   Future<void> animateIcons(AnimatedIconsMixin icons) {
     return switch (_routeNotifier.value) {
-      CurrentRoute.booru => icons.booruIconController
+      CurrentRoute.home => icons.homeIconController
           .reverse()
-          .then((value) => icons.booruIconController.forward()),
+          .then((value) => icons.homeIconController.forward()),
       CurrentRoute.gallery => icons.galleryIconController
           .reverse()
           .then((value) => icons.galleryIconController.forward()),
-      // CurrentRoute.anime => icons.animeIconController
-      //     .reverse()
-      //     .then((value) => icons.animeIconController.forward()),
-      // CurrentRoute.settings => icons.downloadsIconController
-      //     .reverse()
-      //     .then((value) => icons.downloadsIconController.forward()),
-      // CurrentRoute.downloads => Future.value(),
+      CurrentRoute.search => icons.searchIconController
+          .reverse()
+          .then((value) => icons.searchIconController.forward()),
+      CurrentRoute.discover => icons.discoverIconController
+          .reverse()
+          .then((value) => icons.discoverIconController.forward()),
     };
   }
 }
@@ -400,28 +314,15 @@ class _CurrentPageWidget extends StatelessWidget {
     // super.key,
     required this.icons,
     required this.changePage,
-    required this.callback,
   });
 
   final AnimatedIconsMixin icons;
   final ChangePageMixin changePage;
 
-  final CallbackDescriptionNested? callback;
-
   @override
   Widget build(BuildContext context) {
     final galleryPage = changePage._galleryPageNotifier;
-    // final morePage = changePage._settingsPageNotifier;
     final booruPage = changePage._booruPageNotifier;
-
-    if (callback != null) {
-      return GalleryDirectories(
-        nestedCallback: callback,
-        procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
-        db: DatabaseConnectionNotifier.of(context),
-        l10n: AppLocalizations.of(context)!,
-      );
-    }
 
     return Animate(
       target: 0,
@@ -431,7 +332,7 @@ class _CurrentPageWidget extends StatelessWidget {
       ],
       controller: icons.pageFadeAnimation,
       child: switch (changePage._routeNotifier.value) {
-        CurrentRoute.booru => _NavigatorShell(
+        CurrentRoute.home => _NavigatorShell(
             navigatorKey: changePage.mainKey,
             child: BooruPage(
               pagingRegistry: changePage.pagingRegistry,
@@ -441,7 +342,7 @@ class _CurrentPageWidget extends StatelessWidget {
           ),
         CurrentRoute.gallery => _NavigatorShell(
             navigatorKey: changePage.galleryKey,
-            child: GalleryDirectories(
+            child: DirectoriesPage(
               procPop: (pop) => changePage._procPop(
                 galleryPage,
                 icons,
@@ -451,12 +352,92 @@ class _CurrentPageWidget extends StatelessWidget {
               l10n: AppLocalizations.of(context)!,
             ),
           ),
-        // CurrentRoute.anime => AnimePage(
-        //     procPop: (pop) => changePage._procPop(galleryPage, icons, pop),
-        //     db: DatabaseConnectionNotifier.of(context),
-        //   ),
+        CurrentRoute.search => const SearchPage(),
+        CurrentRoute.discover => const DiscoverPage(),
       },
     );
+  }
+}
+
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController tabController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: TabBar(
+        padding: EdgeInsets.only(
+          top: MediaQuery.paddingOf(context).top + 8,
+          left: 12,
+          right: 12,
+        ),
+        splashBorderRadius: const BorderRadius.all(Radius.circular(10)),
+        controller: tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        indicator: const BoxDecoration(),
+        labelStyle: theme.textTheme.titleMedium
+            ?.copyWith(color: theme.colorScheme.primary),
+        unselectedLabelStyle: theme.textTheme.titleSmall,
+        dividerHeight: 0,
+        tabs: const [
+          Tab(
+            text: "Booru",
+            height: 32,
+          ),
+          Tab(
+            text: "Gallery",
+            height: 32,
+          ),
+          Tab(
+            text: "Tab 3",
+            height: 32,
+          ),
+        ],
+      ),
+      body: BooruSearchPage(
+        db: DatabaseConnectionNotifier.of(context),
+        onTagPressed: (context, booru, tag, overrideSafeMode) {},
+      ),
+    );
+  }
+}
+
+class DiscoverPage extends StatefulWidget {
+  const DiscoverPage({super.key});
+
+  @override
+  State<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends State<DiscoverPage> {
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
   }
 }
 
@@ -476,14 +457,41 @@ class PagingStateRegistry {
 
   PagingEntry? remove(String key) => _map.remove(key);
 
-  void dispose() {
+  void recycle() {
     for (final e in _map.entries) {
       e.value.dispose();
     }
+    clear();
   }
 
   void clear() {
     _map.clear();
+  }
+
+  Widget inject(Widget child) => _PagingStateProvider(
+        registry: this,
+        child: child,
+      );
+
+  static PagingStateRegistry of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_PagingStateProvider>();
+
+    return widget!.registry;
+  }
+}
+
+class _PagingStateProvider extends InheritedWidget {
+  const _PagingStateProvider({
+    required this.registry,
+    required super.child,
+  });
+
+  final PagingStateRegistry registry;
+
+  @override
+  bool updateShouldNotify(_PagingStateProvider oldWidget) {
+    return registry != oldWidget.registry;
   }
 }
 
@@ -521,11 +529,3 @@ class _SelectedGalleryPage
     required super.child,
   }) : super(notifier: notifier);
 }
-
-// class _SelectedMorePage
-//     extends InheritedNotifier<ValueNotifier<SettingsSubPage>> {
-//   const _SelectedMorePage({
-//     required ValueNotifier<SettingsSubPage> notifier,
-//     required super.child,
-//   }) : super(notifier: notifier);
-// }

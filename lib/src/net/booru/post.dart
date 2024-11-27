@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
@@ -12,6 +13,7 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post_functions.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -19,13 +21,14 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:mime/mime.dart" as mime;
 import "package:path/path.dart" as path_util;
 import "package:transparent_image/transparent_image.dart";
@@ -34,7 +37,6 @@ import "package:url_launcher/url_launcher.dart";
 final _transparent = MemoryImage(kTransparentImage);
 
 abstract class PostImpl
-    with DefaultBuildCellImpl
     implements
         PostBase,
         ContentableCell,
@@ -55,6 +57,19 @@ abstract class PostImpl
 
   @override
   Widget info(BuildContext context) => PostInfo(post: this);
+
+  @override
+  Widget buildCell<T extends CellBase>(
+    BuildContext context,
+    int idx,
+    T cell, {
+    required bool isList,
+    required bool hideTitle,
+    bool animated = false,
+    bool blur = false,
+    required Alignment imageAlign,
+  }) =>
+      _CellWidget(post: this);
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
@@ -247,15 +262,7 @@ abstract class PostImpl
     final isHidden = db.hiddenBooruPost.isHidden(id, booru);
 
     return [
-      if (score > 10)
-        Sticker(
-          score > 80 ? Icons.whatshot_rounded : Icons.thumb_up_rounded,
-          subtitle: score.toString(),
-          important: score > 80,
-        ),
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (db.favoritePosts.isFavorite(id, booru))
-        const Sticker(Icons.favorite_rounded, important: true),
       ...defaultStickersPost(
         type,
         context,
@@ -339,7 +346,6 @@ mixin DefaultPostPressable<T extends PostImpl> implements Pressable<T> {
   void onPress(
     BuildContext context,
     GridFunctionality<T> functionality,
-    T cell,
     int idx,
   ) {
     final db = DatabaseConnectionNotifier.of(context);
@@ -439,6 +445,455 @@ extension PostDownloadExt on PostImpl {
       ],
       SettingsService.db().current,
       postTags,
+    );
+  }
+}
+
+class _CellWidget extends StatelessWidget {
+  const _CellWidget({
+    // super.key,
+    required this.post,
+  });
+
+  final PostImpl post;
+
+  int calculateTagsChipLetterCount(Size biggest) {
+    return switch (biggest) {
+      Size(height: > 190, width: > 190) => 10,
+      Size(height: > 180, width: > 180) => 8,
+      Size(height: > 90, width: > 90) => 7,
+      Size() => 10,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final thumbnail = post.thumbnail();
+    final downloader = DownloadManager.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.cardColor.withValues(alpha: 0),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                GridCellImage(
+                  imageAlign: Alignment.topCenter,
+                  thumbnail: thumbnail,
+                  blur: false,
+                ),
+                if (constraints.maxHeight > 80 &&
+                    constraints.maxWidth > 80) ...[
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (post is FavoritePost)
+                            const SizedBox.shrink()
+                          else
+                            _FavoriteButton(
+                              post: post,
+                              favoritePosts:
+                                  DatabaseConnectionNotifier.of(context)
+                                      .favoritePosts,
+                            ),
+                          if (post.score > 10)
+                            StickerWidget(
+                              Sticker(
+                                post.score > 80
+                                    ? Icons.whatshot_rounded
+                                    : Icons.thumb_up_rounded,
+                                subtitle: post.score.toString(),
+                                important: post.score > 80,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: 6,
+                                bottom: 6,
+                                left: 6,
+                              ),
+                              child: _TagsWrap(
+                                post: post,
+                                letterCount: calculateTagsChipLetterCount(
+                                  constraints.biggest,
+                                ),
+                              ),
+                            ),
+                          ),
+                          _DownloadIcon(
+                            downloadManager: downloader,
+                            post: post,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _TagsWrap extends StatefulWidget {
+  const _TagsWrap({
+    // super.key,
+    required this.post,
+    required this.letterCount,
+  });
+
+  final PostImpl post;
+  final int letterCount;
+
+  @override
+  State<_TagsWrap> createState() => __TagsWrapState();
+}
+
+class __TagsWrapState extends State<_TagsWrap> {
+  List<String> pinnedTags = [];
+  bool hasVideo = false;
+  bool hasGif = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final tags = PinnedTagsProvider.of(context);
+    pinnedTags = widget.post.tags.where((e) {
+      if ((!hasGif || !hasVideo) && e == "gif") {
+        hasGif = true;
+      }
+
+      if ((!hasVideo || !hasGif) && e == "video") {
+        hasVideo = true;
+      }
+
+      return tags.$1.containsKey(e);
+    }).toList();
+
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 42,
+      child: Wrap(
+        clipBehavior: Clip.antiAlias,
+        verticalDirection: VerticalDirection.up,
+        runSpacing: 2,
+        spacing: 2,
+        children: [
+          if (hasGif)
+            const _VideoGifIcon(
+              icon: Icons.gif_box_rounded,
+            ),
+          if (hasVideo)
+            const _VideoGifIcon(
+              icon: Icons.play_arrow_rounded,
+            ),
+          ...pinnedTags.map(
+            (e) => PinnedTagChip(
+              tag: e,
+              tight: true,
+              letterCount: widget.letterCount,
+              mildlyTransculent: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoGifIcon extends StatelessWidget {
+  const _VideoGifIcon({
+    // super.key,
+    required this.icon,
+  });
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: theme.colorScheme.secondary.withValues(alpha: 0.8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          icon,
+          size: 16,
+          color: theme.colorScheme.onSecondary.withValues(alpha: 0.9),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatefulWidget {
+  const _FavoriteButton({
+    // super.key,
+    required this.post,
+    required this.favoritePosts,
+  });
+
+  final PostImpl post;
+  final FavoritePostSourceService favoritePosts;
+
+  @override
+  State<_FavoriteButton> createState() => __FavoriteButtonState();
+}
+
+class __FavoriteButtonState extends State<_FavoriteButton> {
+  late final StreamSubscription<void> events;
+
+  bool favorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    favorite =
+        widget.favoritePosts.isFavorite(widget.post.id, widget.post.booru);
+
+    events = widget.favoritePosts
+        .streamSingle(widget.post.id, widget.post.booru)
+        .listen((newFavorite) {
+      setState(() {
+        favorite = newFavorite;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return TweenAnimationBuilder(
+      curve: Easing.linear,
+      tween: ColorTween(
+        end: favorite ? Colors.pink : theme.colorScheme.surfaceContainer,
+      ),
+      duration: Durations.short3,
+      builder: (context, value, child) => IconButton(
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(
+            value,
+          ),
+          backgroundColor: WidgetStatePropertyAll(
+            theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+          ),
+        ),
+        onPressed: () {
+          widget.favoritePosts.addRemove([widget.post]);
+        },
+        icon: Icon(
+          favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        ),
+      ),
+    );
+  }
+}
+
+class _DownloadIcon extends StatefulWidget {
+  const _DownloadIcon({
+    // super.key,
+    required this.downloadManager,
+    required this.post,
+  });
+
+  final DownloadManager downloadManager;
+  final PostImpl post;
+
+  @override
+  State<_DownloadIcon> createState() => __DownloadIconState();
+}
+
+class __DownloadIconState extends State<_DownloadIcon> {
+  late final StreamSubscription<void> events;
+  DownloadHandle? status;
+
+  @override
+  void initState() {
+    events = widget.downloadManager.watch(
+      (_) {
+        setState(() {
+          status =
+              widget.downloadManager.statusFor(widget.post.fileDownloadUrl());
+        });
+      },
+      true,
+    );
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final downloadStatus = status?.data.status;
+
+    final icon = switch (downloadStatus) {
+      null => const Icon(Icons.download_rounded),
+      DownloadStatus.onHold => const Icon(Icons.download_rounded),
+      DownloadStatus.failed => const Icon(Icons.file_download_off_rounded),
+      DownloadStatus.inProgress => const Icon(Icons.downloading_rounded),
+    };
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          onPressed: downloadStatus == DownloadStatus.onHold ||
+                  downloadStatus == DownloadStatus.inProgress
+              ? null
+              : () {
+                  if (downloadStatus == DownloadStatus.failed) {
+                    widget.downloadManager
+                        .restartAll([status!], SettingsService.db().current);
+                  } else {
+                    widget.post.download(
+                      widget.downloadManager,
+                      PostTags.fromContext(context),
+                    );
+                    WrapperSelectionAnimation.tryPlayOf(context);
+                  }
+                },
+          style: ButtonStyle(
+            shape: WidgetStatePropertyAll(
+              downloadStatus == DownloadStatus.inProgress ||
+                      downloadStatus == DownloadStatus.onHold
+                  ? const CircleBorder()
+                  : const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15)),
+                    ),
+            ),
+            foregroundColor: WidgetStateProperty.fromMap(
+              {
+                WidgetState.disabled: theme.disabledColor,
+                WidgetState.any:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.9),
+              },
+            ),
+            backgroundColor: WidgetStateProperty.fromMap({
+              WidgetState.disabled:
+                  theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
+              WidgetState.any:
+                  theme.colorScheme.surfaceContainer.withValues(alpha: 0.8),
+            }),
+          ),
+          icon: icon,
+        ),
+        if (status != null && downloadStatus == DownloadStatus.inProgress)
+          _Progress(
+            handle: status!,
+          ),
+      ],
+    );
+  }
+}
+
+class _Progress extends StatefulWidget {
+  const _Progress({
+    // super.key,
+    required this.handle,
+  });
+
+  final DownloadHandle handle;
+
+  @override
+  State<_Progress> createState() => __ProgressState();
+}
+
+class __ProgressState extends State<_Progress> {
+  late final StreamSubscription<void> subscription;
+
+  double? progress;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = widget.handle.watchProgress((i) {
+      setState(() {
+        progress = i;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 38,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        value: progress,
+      ),
     );
   }
 }

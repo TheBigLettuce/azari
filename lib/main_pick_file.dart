@@ -28,13 +28,15 @@ Future<void> mainPickfile() async {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => WrapGridPage(
-            addScaffold: true,
-            child: GalleryDirectories(
+            addScaffoldAndBar: true,
+            child: DirectoriesPage(
               db: DatabaseConnectionNotifier.of(context),
               l10n: AppLocalizations.of(context)!,
-              nestedCallback: CallbackDescriptionNested(
-                (chosen) {
+              callback: ReturnFileCallback(
+                choose: (chosen, [_]) {
                   PlatformApi().closeApp(chosen.originalUri);
+
+                  return Future.value();
                   // const AndroidApiFunctions().returnUri(chosen.originalUri);
                 },
                 preview: PreferredSize(

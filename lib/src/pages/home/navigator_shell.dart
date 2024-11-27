@@ -12,6 +12,7 @@ class _NavigatorShell extends StatefulWidget {
   });
 
   final GlobalKey<NavigatorState> navigatorKey;
+
   final Widget child;
 
   @override

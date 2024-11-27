@@ -10,6 +10,7 @@ import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:azari/src/widgets/image_view/video_controls_controller.dart";
 import "package:flutter/material.dart";
@@ -27,6 +28,8 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.bottomSheetController,
     required this.gridContext,
     required this.videoControls,
+    required this.wrapNotifiers,
+    required this.pauseVideoState,
     required this.child,
   });
 
@@ -44,6 +47,9 @@ class WrapImageViewNotifiers extends StatefulWidget {
   )? watchTags;
 
   final VideoControlsController videoControls;
+  final NotifierWrapper? wrapNotifiers;
+  final PauseVideoState pauseVideoState;
+
   final Widget child;
 
   @override
@@ -53,17 +59,21 @@ class WrapImageViewNotifiers extends StatefulWidget {
 class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   final _bottomSheetKey = GlobalKey<__BottomSheetPopScopeState>();
 
+  StreamSubscription<List<ImageTag>>? tagWatcher;
+  final tags = ImageViewTags();
+
   late final StreamSubscription<int> subscr;
   late Contentable content;
   late int currentCell;
 
-  bool _isPaused = false;
+  late final _cellStream = StreamController<Contentable>.broadcast();
+
   double? _loadingProgress = 1;
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
 
-  void toggle() => _bottomSheetKey.currentState?.toggle();
+  void toggle() => _bottomSheetKey.currentState?.toggle(null);
 
   @override
   void initState() {
@@ -72,10 +82,15 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     content = c;
     currentCell = cc;
 
+    _watchTags(content);
+
     subscr = widget.currentPage.listen((i) {
       final (c, cc) = widget.page.currentCell();
       content = c;
       currentCell = cc;
+
+      _cellStream.add(c);
+      _watchTags(content);
 
       setState(() {});
     });
@@ -83,22 +98,36 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
 
   @override
   void dispose() {
+    _cellStream.close();
+    tags.dispose();
+    tagWatcher?.cancel();
     subscr.cancel();
     _searchData.dispose();
 
     super.dispose();
   }
 
-  void pauseVideo() {
-    _isPaused = true;
+  void _watchTags(Contentable content) {
+    tagWatcher?.cancel();
+    tagWatcher = widget.watchTags?.call(content, (t) {
+      final newTags = <ImageTag>[];
 
-    setState(() {});
-  }
+      newTags.addAll(t.where((element) => element.favorite));
+      newTags.addAll(t.where((element) => !element.favorite));
 
-  void unpauseVideo() {
-    _isPaused = false;
+      tags.update(newTags, null);
+    });
 
-    setState(() {});
+    final t = widget.tags?.call(content);
+    tags.update(
+      t == null
+          ? const []
+          : t
+              .where((element) => element.favorite)
+              .followedBy(t.where((element) => !element.favorite))
+              .toList(),
+      content.widgets.alias(true),
+    );
   }
 
   void setLoadingProgress(double? progress) {
@@ -109,26 +138,16 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     });
   }
 
-  void _setPause(bool pause) {
-    _isPaused = pause;
-
-    setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
-    return OriginalGridContext(
+    final child = OriginalGridContext(
       gridContext: widget.gridContext ?? context,
-      child: ImageViewTagWatcher(
-        key: ValueKey((currentCell, content.widgets.uniqueKey())),
-        tags: widget.tags,
-        watchTags: widget.watchTags,
-        currentCell: content,
+      child: ImageTagsNotifier(
+        tags: tags,
         child: ReloadImageNotifier(
           reload: widget.hardRefresh,
-          child: PauseVideoNotifier(
-            pause: _isPaused,
-            setPause: _setPause,
+          child: PauseVideoNotifierHolder(
+            state: widget.pauseVideoState,
             child: VideoControlsNotifier(
               controller: widget.videoControls,
               child: TagFilterValueNotifier(
@@ -138,6 +157,7 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
                   child: FocusNotifier(
                     notifier: _searchData.searchFocus,
                     child: CurrentContentNotifier(
+                      stream: _cellStream.stream,
                       content: content,
                       child: LoadingProgressNotifier(
                         progress: _loadingProgress,
@@ -157,76 +177,55 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
         ),
       ),
     );
+
+    if (widget.wrapNotifiers != null) {
+      return widget.wrapNotifiers!(child);
+    }
+
+    return child;
   }
 }
 
-class ImageViewTagWatcher extends StatefulWidget {
-  const ImageViewTagWatcher({
+class PauseVideoNotifierHolder extends StatefulWidget {
+  const PauseVideoNotifierHolder({
     super.key,
-    required this.tags,
-    required this.watchTags,
-    required this.currentCell,
+    required this.state,
     required this.child,
   });
 
-  final List<ImageTag> Function(Contentable)? tags;
-  final StreamSubscription<List<ImageTag>> Function(
-    Contentable,
-    void Function(List<ImageTag> l),
-  )? watchTags;
-
-  final Contentable currentCell;
+  final PauseVideoState state;
 
   final Widget child;
 
   @override
-  State<ImageViewTagWatcher> createState() => _ImageViewTagWatcherState();
+  State<PauseVideoNotifierHolder> createState() =>
+      _PauseVideoNotifierHolderState();
 }
 
-class _ImageViewTagWatcherState extends State<ImageViewTagWatcher> {
-  late final StreamSubscription<List<ImageTag>>? tagWatcher;
-  late final ParsedFilenameResult? res;
-
-  List<ImageTag> tags = [];
+class _PauseVideoNotifierHolderState extends State<PauseVideoNotifierHolder> {
+  late final StreamSubscription<void> _events;
 
   @override
   void initState() {
     super.initState();
 
-    res = ParsedFilenameResult.fromFilename(
-      widget.currentCell.widgets.alias(true),
-    ).maybeValue();
-
-    tagWatcher = widget.watchTags?.call(widget.currentCell, (t) {
-      final newTags = <ImageTag>[];
-
-      newTags.addAll(t.where((element) => element.favorite));
-      newTags.addAll(t.where((element) => !element.favorite));
-
-      setState(() {
-        tags = newTags;
-      });
+    _events = widget.state.events.listen((_) {
+      setState(() {});
     });
-
-    final t = widget.tags?.call(widget.currentCell);
-    if (t != null) {
-      tags.addAll(t.where((element) => element.favorite));
-      tags.addAll(t.where((element) => !element.favorite));
-    }
   }
 
   @override
   void dispose() {
-    tagWatcher?.cancel();
+    _events.cancel();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ImageTagsNotifier(
-      tags: tags,
-      res: res,
+    return PauseVideoNotifier(
+      pause: widget.state.isPaused,
+      setPause: widget.state.setIsPaused,
       child: widget.child,
     );
   }
@@ -253,34 +252,49 @@ class OriginalGridContext extends InheritedWidget {
       oldWidget.gridContext != gridContext;
 }
 
+class ImageViewTags {
+  ImageViewTags();
+
+  List<ImageTag> _list = const [];
+  ParsedFilenameResult? _res;
+
+  final _stream = StreamController<void>.broadcast();
+  Stream<void> get stream => _stream.stream;
+
+  List<ImageTag> get list => _list;
+  ParsedFilenameResult? get res => _res;
+
+  void update(List<ImageTag> list, String? filename) {
+    if (filename != null) {
+      _res = ParsedFilenameResult.fromFilename(filename).maybeValue();
+    }
+    _list = list;
+
+    _stream.add(null);
+  }
+
+  void dispose() => _stream.close();
+}
+
 class ImageTagsNotifier extends InheritedWidget {
   const ImageTagsNotifier({
     super.key,
     required this.tags,
-    required this.res,
     required super.child,
   });
 
-  final List<ImageTag> tags;
-  final ParsedFilenameResult? res;
+  final ImageViewTags tags;
 
-  static List<ImageTag> of(BuildContext context) {
+  static ImageViewTags of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
 
     return widget!.tags;
   }
 
-  static ParsedFilenameResult? resOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
-
-    return widget!.res;
-  }
-
   @override
   bool updateShouldNotify(ImageTagsNotifier oldWidget) =>
-      tags != oldWidget.tags || res != oldWidget.res;
+      tags != oldWidget.tags;
 }
 
 class ImageTag {
@@ -305,6 +319,7 @@ class _BottomSheetPopScope extends StatefulWidget {
 
   final AnimationController animationController;
   final DraggableScrollableController controller;
+
   final Widget child;
 
   @override
@@ -319,10 +334,10 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
 
   bool _isAppbarShown = true;
 
-  void toggle() {
+  void toggle(bool? setTo) {
     final platformApi = PlatformApi();
 
-    setState(() => _isAppbarShown = !_isAppbarShown);
+    setState(() => _isAppbarShown = setTo ?? !_isAppbarShown);
 
     if (_isAppbarShown) {
       platformApi.setFullscreen(false);
@@ -338,7 +353,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
   void initState() {
     super.initState();
     subscription = GalleryApi().events.tapDown?.listen((_) {
-      toggle();
+      toggle(null);
     });
 
     widget.controller.addListener(listener);
@@ -368,7 +383,7 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
 
   void tryScroll(bool _, Object? __) {
     if (!_isAppbarShown) {
-      toggle();
+      toggle(null);
       return;
     }
 
@@ -422,6 +437,7 @@ class ReloadImageNotifier extends InheritedWidget {
     required this.reload,
     required super.child,
   });
+
   final void Function([bool refreshPalette]) reload;
 
   @override
@@ -444,8 +460,10 @@ class PauseVideoNotifier extends InheritedWidget {
     required this.setPause,
     required super.child,
   });
-  final void Function(bool) setPause;
+
   final bool pause;
+
+  final void Function(bool) setPause;
 
   static bool of(BuildContext context) {
     final widget =
@@ -474,8 +492,9 @@ class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final void Function() incr;
   final int count;
+
+  final VoidCallback incr;
 
   static void refreshOf(BuildContext context) {
     final widget = context.dependOnInheritedWidgetOfExactType<
@@ -502,6 +521,7 @@ class LoadingProgressNotifier extends InheritedWidget {
     required this.progress,
     required super.child,
   });
+
   final double? progress;
 
   static double? of(BuildContext context) {
@@ -522,6 +542,7 @@ class TagFilterNotifier extends InheritedWidget {
     required this.data,
     required super.child,
   });
+
   final FilterNotifierData data;
 
   static FilterNotifierData? maybeOf(BuildContext context) {
@@ -537,7 +558,11 @@ class TagFilterNotifier extends InheritedWidget {
 }
 
 class FilterNotifierData {
-  const FilterNotifierData(this.searchController, this.searchFocus);
+  const FilterNotifierData(
+    this.searchController,
+    this.searchFocus,
+  );
+
   final TextEditingController searchController;
   final FocusNode searchFocus;
 
@@ -564,17 +589,26 @@ class TagFilterValueNotifier extends InheritedNotifier<TextEditingController> {
 class CurrentContentNotifier extends InheritedWidget {
   const CurrentContentNotifier({
     super.key,
+    required this.stream,
     required this.content,
     required super.child,
   });
 
   final Contentable content;
+  final Stream<Contentable> stream;
 
   static Contentable of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
 
     return widget!.content;
+  }
+
+  static Stream<Contentable> streamOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
+
+    return widget!.stream;
   }
 
   @override
@@ -591,13 +625,14 @@ class AppBarVisibilityNotifier extends InheritedWidget {
   });
 
   final bool isShown;
-  final void Function() toggle;
 
-  static void toggleOf(BuildContext context) {
+  final void Function(bool? setTo) toggle;
+
+  static void toggleOf(BuildContext context, [bool? setTo]) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
 
-    widget!.toggle();
+    widget!.toggle(setTo);
   }
 
   static bool of(BuildContext context) {

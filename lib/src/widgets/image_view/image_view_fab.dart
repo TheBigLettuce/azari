@@ -3,82 +3,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/widgets/focus_notifier.dart";
-import "package:azari/src/widgets/gesture_dead_zones.dart";
+import "dart:async";
+
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:flutter/material.dart";
-
-class ImageViewSlidingInfoDrawer extends StatefulWidget {
-  const ImageViewSlidingInfoDrawer({
-    super.key,
-    required this.widgets,
-    required this.bottomSheetController,
-    required this.viewPadding,
-  });
-
-  final ContentWidgets widgets;
-  final DraggableScrollableController bottomSheetController;
-  final EdgeInsets viewPadding;
-
-  @override
-  State<ImageViewSlidingInfoDrawer> createState() =>
-      _ImageViewSlidingInfoDrawerState();
-}
-
-class _ImageViewSlidingInfoDrawerState
-    extends State<ImageViewSlidingInfoDrawer> {
-  ContentWidgets get widgets => widget.widgets;
-  DraggableScrollableController get bottomSheetController =>
-      widget.bottomSheetController;
-
-  @override
-  Widget build(BuildContext context) {
-    final min = MediaQuery.sizeOf(context);
-
-    return DraggableScrollableSheet(
-      controller: bottomSheetController,
-      expand: false,
-      snap: true,
-      shouldCloseOnMinExtent: false,
-      maxChildSize: 0.5 - ((widget.viewPadding.top + 8) / min.height),
-      minChildSize: 0,
-      initialChildSize: 0,
-      builder: (context, scrollController) {
-        return GestureDeadZones(
-          left: true,
-          right: true,
-          child: CustomScrollView(
-            key: ValueKey((widget.viewPadding.bottom, min)),
-            controller: scrollController,
-            slivers: [
-              Builder(
-                builder: (context) {
-                  FocusNotifier.of(context);
-                  ImageViewInfoTilesRefreshNotifier.of(
-                    context,
-                  );
-
-                  return _IgnoringPointer(
-                    bottomSheetController: bottomSheetController,
-                    viewPadding: widget.viewPadding,
-                    widgets: widget.widgets,
-                    child: widgets.tryAsInfoable(context)!,
-                  );
-                },
-              ),
-              SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom + 80,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 class ImageViewFab extends StatefulWidget {
   const ImageViewFab({
@@ -87,12 +18,16 @@ class ImageViewFab extends StatefulWidget {
     required this.bottomSheetController,
     required this.viewPadding,
     required this.visibilityController,
+    required this.wrapNotifiers,
+    required this.pauseVideoState,
   });
 
   final ContentWidgets widgets;
   final DraggableScrollableController bottomSheetController;
   final EdgeInsets viewPadding;
   final AnimationController visibilityController;
+  final NotifierWrapper? wrapNotifiers;
+  final PauseVideoState pauseVideoState;
 
   @override
   State<ImageViewFab> createState() => _ImageViewFabState();
@@ -142,6 +77,7 @@ class _ImageViewFabState extends State<ImageViewFab>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cellStream = CurrentContentNotifier.streamOf(context);
 
     return FloatingActionButton(
       elevation: 0,
@@ -152,46 +88,94 @@ class _ImageViewFabState extends State<ImageViewFab>
       foregroundColor:
           theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.95),
       onPressed: () {
-        // showModalBottomSheet(context: context, builder: builder)
-        // Navigator.push<void>(
-        //   context,
-        //   ModalBottomSheetRoute(
-        //     isScrollControlled: false,
-        //     builder: (sheetContext) => BottomSheet(
-        //       enableDrag: false,
-        //       showDragHandle: false,
-        //       onClosing: () {},
-        //       builder: (sheetContext) => CustomScrollView(
-        //         slivers: [
-        //           ImageTagsNotifier(
-        //             tags: ImageTagsNotifier.of(context),
-        //             res: ImageTagsNotifier.resOf(context),
-        //             child: widget.widgets.tryAsInfoable(context)!,
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   ),
-        // );
-        if (widget.bottomSheetController.size > 0) {
-          widget.bottomSheetController.animateTo(
-            0,
-            duration: Durations.medium2,
-            curve: Easing.standard,
-          );
-        } else {
-          widget.bottomSheetController.animateTo(
-            1,
-            duration: Durations.medium2,
-            curve: Easing.standard,
-          );
-        }
+        showModalBottomSheet<void>(
+          context: context,
+          builder: (sheetContext) {
+            final child = ExitOnPressRoute(
+              exit: () {
+                Navigator.of(sheetContext)
+                  ..pop()
+                  ..pop();
+              },
+              child: PauseVideoNotifierHolder(
+                state: widget.pauseVideoState,
+                child: ImageTagsNotifier(
+                  tags: ImageTagsNotifier.of(context),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: 8,
+                      bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+                    ),
+                    child: SizedBox(
+                      width: MediaQuery.sizeOf(sheetContext).width,
+                      child: _CellContent(
+                        firstContent: CurrentContentNotifier.of(context),
+                        stream: cellStream,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+            if (widget.wrapNotifiers != null) {
+              return widget.wrapNotifiers!(child);
+            }
+
+            return child;
+          },
+        );
       },
       child: AnimatedIcon(
         icon: AnimatedIcons.menu_close,
         progress: controller.view,
       ),
     );
+  }
+}
+
+class _CellContent extends StatefulWidget {
+  const _CellContent({
+    // super.key,
+    required this.stream,
+    required this.firstContent,
+  });
+
+  final Contentable firstContent;
+  final Stream<Contentable> stream;
+
+  @override
+  State<_CellContent> createState() => __CellContentState();
+}
+
+class __CellContentState extends State<_CellContent> {
+  late final StreamSubscription<Contentable> events;
+
+  late Contentable content;
+
+  @override
+  void initState() {
+    super.initState();
+
+    content = widget.firstContent;
+
+    events = widget.stream.listen((newContent) {
+      setState(() {
+        content = newContent;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink();
   }
 }
 

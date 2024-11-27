@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _RecentlySearchedTagsPanel extends StatefulWidget {
   const _RecentlySearchedTagsPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.tagManager,
     required this.onTagPressed,
@@ -18,7 +18,7 @@ class _RecentlySearchedTagsPanel extends StatefulWidget {
   final TextEditingController searchController;
   final TagManager tagManager;
 
-  final void Function(String) onTagPressed;
+  final StringCallback onTagPressed;
 
   @override
   State<_RecentlySearchedTagsPanel> createState() =>

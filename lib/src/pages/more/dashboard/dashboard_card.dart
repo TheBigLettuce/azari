@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/pages/anime/info_base/background_image/background_image.dart";
+// import "package:azari/src/pages/anime/info_base/background_image/background_image.dart";
 import "package:flutter/material.dart";
 
 class UnsizedCard extends StatelessWidget {
@@ -11,21 +11,26 @@ class UnsizedCard extends StatelessWidget {
     super.key,
     required this.subtitle,
     required this.title,
-    this.backgroundImage,
+    // this.backgroundImage,
     required this.tooltip,
     this.transparentBackground = false,
     this.onPressed,
     this.leanToLeft = true,
     this.onLongPressed,
   });
+
+  final bool leanToLeft;
+  final bool transparentBackground;
+
+  final String tooltip;
+
   final Widget title;
   final Widget subtitle;
-  final String tooltip;
-  final ImageProvider? backgroundImage;
-  final bool transparentBackground;
-  final void Function()? onPressed;
-  final void Function()? onLongPressed;
-  final bool leanToLeft;
+
+  // final ImageProvider? backgroundImage;
+
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,7 @@ class UnsizedCard extends StatelessWidget {
       onLongPressed: onLongPressed,
       subtitle: subtitle,
       title: title,
-      backgroundImage: backgroundImage,
+      // backgroundImage: backgroundImage,
       tooltip: tooltip,
       transparentBackground: transparentBackground,
       onPressed: onPressed,
@@ -47,7 +52,7 @@ class UnsizedCard extends StatelessWidget {
 class BaseCard extends StatelessWidget {
   const BaseCard({
     super.key,
-    this.backgroundImage,
+    // this.backgroundImage,
     required this.subtitle,
     required this.title,
     required this.tooltip,
@@ -60,18 +65,24 @@ class BaseCard extends StatelessWidget {
     this.footer,
     this.leanLeft = false,
   });
-  final Widget title;
-  final Widget subtitle;
-  final ImageProvider? backgroundImage;
-  final String tooltip;
+
+  final bool expandTitle;
+  final bool leanLeft;
   final bool transparentBackground;
-  final void Function()? onPressed;
+
   final double? width;
   final double? height;
-  final bool expandTitle;
-  final void Function()? onLongPressed;
-  final bool leanLeft;
+
+  final String tooltip;
+
+  final Widget title;
+  final Widget subtitle;
   final Widget? footer;
+
+  // final ImageProvider? backgroundImage;
+
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +160,8 @@ class BaseCard extends StatelessWidget {
           splashColor: colorScheme.onSurface.withValues(alpha: 0.6),
           child: Card.filled(
             clipBehavior: Clip.antiAlias,
-            color: transparentBackground || backgroundImage != null
+            color: transparentBackground
+                // || backgroundImage != null
                 ? colorScheme.onSurface.withValues(alpha: 0)
                 : null,
             child: SizedBox(
@@ -157,8 +169,8 @@ class BaseCard extends StatelessWidget {
               height: height,
               child: Stack(
                 children: [
-                  if (backgroundImage != null)
-                    BackgroundImageBase(image: backgroundImage!),
+                  // if (backgroundImage != null)
+                  // BackgroundImageBase(image: backgroundImage!),
                   body,
                 ],
               ),
@@ -178,7 +190,12 @@ class BaseCard extends StatelessWidget {
 }
 
 class DashboardCard extends StatelessWidget {
-  const DashboardCard({super.key, required this.subtitle, required this.title});
+  const DashboardCard({
+    super.key,
+    required this.subtitle,
+    required this.title,
+  });
+
   final String title;
   final String subtitle;
 

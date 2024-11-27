@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -14,14 +15,13 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -31,8 +31,8 @@ import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
+import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class PopularRandomButtons extends StatelessWidget {
   const PopularRandomButtons({
@@ -45,13 +45,15 @@ class PopularRandomButtons extends StatelessWidget {
     required this.listPadding,
   });
 
-  final Booru booru;
   final String tags;
 
-  final OnBooruTagPressedFunc onTagPressed;
-  final SafeMode Function() safeMode;
+  final Booru booru;
 
   final EdgeInsets listPadding;
+
+  final OnBooruTagPressedFunc onTagPressed;
+
+  final SafeMode Function() safeMode;
 
   final DbConn db;
 
@@ -68,7 +70,7 @@ class PopularRandomButtons extends StatelessWidget {
     }
 
     final client = BooruAPI.defaultClientForBooru(booru);
-    final api = BooruAPI.fromEnum(booru, client, PageSaver.noPersist());
+    final api = BooruAPI.fromEnum(booru, client);
 
     final value = <Post>[];
     int page = 0;
@@ -113,7 +115,7 @@ class PopularRandomButtons extends StatelessWidget {
                   cellCount: value.length,
                   scrollUntill: (_) {},
                   startingCell: 0,
-                  getCell: (i) => value[i].content(),
+                  getContent: (i) => value[i].content(),
                   onNearEnd: () async {
                     if (!canLoadMore) {
                       return value.length;
@@ -234,7 +236,7 @@ class PopularRandomButtons extends StatelessWidget {
     }
 
     final client = BooruAPI.defaultClientForBooru(booru);
-    final api = BooruAPI.fromEnum(booru, client, PageSaver.noPersist());
+    final api = BooruAPI.fromEnum(booru, client);
 
     final value = <Post>[];
     int page = 0;
@@ -266,7 +268,7 @@ class PopularRandomButtons extends StatelessWidget {
                   cellCount: value.length,
                   scrollUntill: (_) {},
                   startingCell: 0,
-                  getCell: (i) => value[i].content(),
+                  getContent: (i) => value[i].content(),
                   onNearEnd: () async {
                     if (!canLoadMore) {
                       return value.length;
@@ -371,8 +373,7 @@ class PopularRandomButtons extends StatelessWidget {
                     }
 
                     final client = BooruAPI.defaultClientForBooru(booru);
-                    final api =
-                        BooruAPI.fromEnum(booru, client, PageSaver.noPersist());
+                    final api = BooruAPI.fromEnum(booru, client);
 
                     Navigator.of(gridContext, rootNavigator: true)
                         .push<void>(
@@ -455,7 +456,7 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
   void initState() {
     super.initState();
 
-    api = BooruAPI.fromEnum(widget.booru, client, PageSaver.noPersist());
+    api = BooruAPI.fromEnum(widget.booru, client);
 
     textController =
         TextEditingController(text: miscSettings.randomVideosAddTags);
@@ -548,7 +549,6 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
             ),
             controller: controller,
             focusNode: focus,
-            // onSubmitted: onSubmit,
           ),
         ),
       ),
@@ -565,8 +565,9 @@ class PopularPage extends StatefulWidget {
     required this.safeMode,
   });
 
-  final BooruAPI api;
   final String tags;
+
+  final BooruAPI api;
 
   final SafeMode Function() safeMode;
 
@@ -582,32 +583,32 @@ class _PopularPageState extends State<PopularPage> {
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
 
-  int page = 0;
+  final pageSaver = PageSaver.noPersist();
 
   late final GenericListSource<Post> source = GenericListSource<Post>(
     () async {
-      page = 0;
+      pageSaver.page = 0;
 
       final ret = await widget.api.page(
-        page,
+        pageSaver.page,
         widget.tags,
         widget.db.tagManager.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
+        pageSaver: pageSaver,
       );
 
       return ret.$1;
     },
     next: () async {
       final ret = await widget.api.page(
-        page + 1,
+        pageSaver.page + 1,
         widget.tags,
         widget.db.tagManager.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
+        pageSaver: pageSaver,
       );
-
-      page += 1;
 
       return ret.$1;
     },
@@ -644,7 +645,6 @@ class _PopularPageState extends State<PopularPage> {
             db: widget.db,
             wrapScaffold: true,
             saveSelectedPage: (_) {},
-            // pagingRegistry: widget.pagingRegistry,
           );
         },
       ),
@@ -656,7 +656,7 @@ class _PopularPageState extends State<PopularPage> {
     final l10n = AppLocalizations.of(context)!;
 
     return WrapGridPage(
-      addScaffold: true,
+      addScaffoldAndBar: true,
       child: Builder(
         builder: (context) => GridPopScope(
           searchTextController: null,
@@ -679,8 +679,6 @@ class _PopularPageState extends State<PopularPage> {
                       progress: source.progress,
                       gridSeed: state.gridSeed,
                       unselectOnUpdate: false,
-
-                      // ),
                     ),
                     GridConfigPlaceholders(
                       progress: source.progress,
@@ -693,7 +691,6 @@ class _PopularPageState extends State<PopularPage> {
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
                     ),
-                    selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
                     search: RawSearchWidget(
                       (settingsButton, bottomWidget) => SliverAppBar(
@@ -706,7 +703,6 @@ class _PopularPageState extends State<PopularPage> {
                               preferredSize: Size.zero,
                               child: SizedBox.shrink(),
                             ),
-                        // centerTitle: true,
                         title: Text(
                           widget.tags.isNotEmpty
                               ? "${l10n.popularPosts} #${widget.tags}"
@@ -729,7 +725,6 @@ class _PopularPageState extends State<PopularPage> {
                     ),
                   ),
                   description: GridDescription(
-                    showLoadingIndicator: false,
                     actions: [
                       actions.download(context, widget.api.booru, null),
                       actions.favorites(

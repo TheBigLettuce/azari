@@ -16,6 +16,13 @@ sealed class GridFabType {
   Widget widget(BuildContext context);
 }
 
+class NoGridFab implements GridFabType {
+  const NoGridFab();
+
+  @override
+  Widget widget(BuildContext context) => const SizedBox.shrink();
+}
+
 class DefaultGridFab implements GridFabType {
   const DefaultGridFab();
 

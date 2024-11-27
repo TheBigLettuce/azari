@@ -3,26 +3,32 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:flutter/material.dart";
+part of "../../home.dart";
 
-class PaddingBackgroundImage extends StatelessWidget {
-  const PaddingBackgroundImage({
+class HomeDestinationIcon extends StatelessWidget {
+  const HomeDestinationIcon({
     super.key,
-    required this.viewPadding,
-    required this.child,
+    required this.controller,
   });
-  final Widget child;
-  final EdgeInsets viewPadding;
+
+  final AnimationController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        top: 2 + kToolbarHeight + viewPadding.top,
-        left: 22,
-        right: 22,
+    final theme = Theme.of(context);
+
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.home;
+
+    final selectedBooruPage = BooruSubPage.of(context);
+
+    return Animate(
+      autoPlay: true,
+      controller: controller,
+      effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
+      child: Icon(
+        isSelected ? selectedBooruPage.selectedIcon : selectedBooruPage.icon,
+        color: isSelected ? theme.colorScheme.primary : null,
       ),
-      child: child,
     );
   }
 }

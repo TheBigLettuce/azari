@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _LocalTagsPanel extends StatefulWidget {
   const _LocalTagsPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.searchController,
     required this.db,

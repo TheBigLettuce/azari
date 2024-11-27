@@ -20,14 +20,14 @@ abstract class Directory
 
   final int thumbFileId;
 
+  final int lastModified;
+
   final String bucketId;
 
   final String name;
 
   final String relativeLoc;
   final String volumeName;
-
-  final int lastModified;
 
   final String tag;
 
@@ -49,128 +49,85 @@ abstract class Directory
   String alias(bool isList) => name;
 
   @override
-  Future<void> onPress(
+  void onPress(
     BuildContext context,
     GridFunctionality<Directory> functionality,
-    Directory cell,
     int idx,
   ) {
     final l10n = AppLocalizations.of(context)!;
 
-    final (api, callback, nestedCallback, segmentFnc) =
-        DirectoriesDataNotifier.of(context);
+    final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
 
-    if (callback != null) {
+    if (callback?.isDirectory ?? false) {
       Navigator.pop(context);
-      callback(
-        chosen: cell.relativeLoc,
-        volumeName: cell.volumeName,
-        newDir: false,
-        bucketId: cell.bucketId,
-      );
 
-      return Future.value();
+      (callback! as ReturnDirectoryCallback)(
+        (bucketId: bucketId, path: relativeLoc, volumeName: volumeName),
+        false,
+      );
     } else {
       bool requireAuth = false;
 
-      Future<void> onSuccess(bool success) {
+      void onSuccess(bool success) {
         if (!success || !context.mounted) {
-          return Future.value();
+          return;
         }
 
         StatisticsGalleryService.db().current.add(viewedDirectories: 1).save();
-        final d = cell;
+        final d = this;
 
         final db = DatabaseConnectionNotifier.of(context);
 
-        final apiFiles = switch (cell.bucketId) {
-          "trash" => api.files(
-              d,
-              d.name,
-              GalleryFilesPageType.trash,
-              db.directoryTags,
-              db.directoryMetadata,
-              db.favoritePosts,
-              db.localTags,
-            ),
-          "favorites" => api.files(
-              d,
-              d.name,
-              GalleryFilesPageType.favorites,
-              db.directoryTags,
-              db.directoryMetadata,
-              db.favoritePosts,
-              db.localTags,
-            ),
-          String() => api.files(
-              d,
-              d.name,
-              GalleryFilesPageType.normal,
-              db.directoryTags,
-              db.directoryMetadata,
-              db.favoritePosts,
-              db.localTags,
-            ),
-        };
+        final apiFiles = api.files(
+          d,
+          switch (bucketId) {
+            "favorites" => GalleryFilesPageType.favorites,
+            "trash" => GalleryFilesPageType.trash,
+            String() => GalleryFilesPageType.normal,
+          },
+          db.directoryTags,
+          db.directoryMetadata,
+          db.favoritePosts,
+          db.localTags,
+          name: d.name,
+          bucketId: bucketId,
+        );
 
-        final glue = GlueProvider.generateOf(context);
-
-        return Navigator.push<void>(
+        Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
-            builder: (context) => switch (cell.bucketId) {
-              "favorites" => GalleryFiles(
-                  generateGlue: glue,
-                  api: apiFiles,
-                  directory: this,
-                  secure: requireAuth,
-                  callback: nestedCallback,
-                  dirName: l10n.galleryDirectoriesFavorites,
-                  bucketId: "favorites",
-                  db: DatabaseConnectionNotifier.of(context),
-                  tagManager: TagManager.of(context),
-                ),
-              "trash" => GalleryFiles(
-                  api: apiFiles,
-                  directory: this,
-                  generateGlue: glue,
-                  secure: requireAuth,
-                  callback: nestedCallback,
-                  dirName: l10n.galleryDirectoryTrash,
-                  bucketId: "trash",
-                  db: DatabaseConnectionNotifier.of(context),
-                  tagManager: TagManager.of(context),
-                ),
-              String() => GalleryFiles(
-                  generateGlue: glue,
-                  api: apiFiles,
-                  directory: this,
-                  secure: requireAuth,
-                  dirName: d.name,
-                  callback: nestedCallback,
-                  bucketId: d.bucketId,
-                  db: DatabaseConnectionNotifier.of(context),
-                  tagManager: TagManager.of(context),
-                )
-            },
+            builder: (context) => FilesPage(
+              api: apiFiles,
+              directory: this,
+              secure: requireAuth,
+              callback: callback?.toFileOrNull,
+              dirName: switch (bucketId) {
+                "favorites" => l10n.galleryDirectoriesFavorites,
+                "trash" => l10n.galleryDirectoryTrash,
+                String() => d.name,
+              },
+              db: DatabaseConnectionNotifier.of(context),
+              scrollingSink: ScrollingSinkProvider.maybeOf(context),
+              navBarEvents: NavigationButtonEvents.maybeOf(context),
+            ),
           ),
         );
       }
 
       requireAuth = DatabaseConnectionNotifier.of(context)
               .directoryMetadata
-              .get(segmentFnc(cell))
+              .get(segmentFnc(this))
               ?.requireAuth ??
           false;
 
       if (AppInfo().canAuthBiometric && requireAuth) {
-        return LocalAuthentication()
+        LocalAuthentication()
             .authenticate(
               localizedReason: l10n.openDirectory,
             )
             .then(onSuccess);
       } else {
-        return onSuccess(true);
+        onSuccess(true);
       }
     }
   }

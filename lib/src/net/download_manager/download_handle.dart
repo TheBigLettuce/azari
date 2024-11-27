@@ -12,7 +12,7 @@ abstract interface class DownloadHandle implements CellBase, Thumbnailable {
 
   void cancel();
 
-  StreamSubscription<int> watchProgress(void Function(int c) f);
+  StreamSubscription<double> watchProgress(PercentageCallback f);
 }
 
 class _DownloadEntry with DefaultBuildCellImpl implements DownloadHandle {
@@ -22,11 +22,11 @@ class _DownloadEntry with DefaultBuildCellImpl implements DownloadHandle {
     this.watcher,
   });
 
-  StreamController<int>? watcher;
+  StreamController<double>? watcher;
 
-  int _downloadProgress = 0;
-  int get downloadProgress => _downloadProgress;
-  set downloadProgress(int i) {
+  double _downloadProgress = 0;
+  double get downloadProgress => _downloadProgress;
+  set downloadProgress(double i) {
     _downloadProgress = i;
 
     watcher?.sink.add(i);
@@ -57,8 +57,8 @@ class _DownloadEntry with DefaultBuildCellImpl implements DownloadHandle {
   Key uniqueKey() => ValueKey(data.url);
 
   @override
-  StreamSubscription<int> watchProgress(void Function(int c) f) {
-    watcher ??= StreamController();
+  StreamSubscription<double> watchProgress(PercentageCallback f) {
+    watcher ??= StreamController.broadcast();
 
     return watcher!.stream.listen(f);
   }

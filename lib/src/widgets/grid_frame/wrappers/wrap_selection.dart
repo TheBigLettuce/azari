@@ -21,24 +21,38 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     required this.child,
   });
 
-  final GridSelection<T> selection;
-  final List<int>? selectFrom;
+  final bool limitedSize;
+
   final int thisIndx;
+
+  final List<int>? selectFrom;
+
+  final GridSelection<T>? selection;
   final CellStaticData description;
 
-  final void Function()? onPressed;
-
   final GridFunctionality<T> functionality;
-  final bool limitedSize;
   final ShapeBorder shape;
+
+  final VoidCallback? onPressed;
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    SelectionCountNotifier.countOf(context);
+    SelectionCountNotifier.maybeCountOf(context);
 
-    if (selection.addActions.isEmpty) {
+    if (selection == null) {
+      return _WrappedSelectionCore(
+        thisIndx: thisIndx,
+        selectFrom: selectFrom,
+        shape: shape,
+        selection: null,
+        onPressed: onPressed,
+        functionality: functionality,
+        limitedSize: limitedSize,
+        child: child,
+      );
+    } else if (selection!.actions.isEmpty) {
       return _WrappedSelectionCore(
         thisIndx: thisIndx,
         selectFrom: selectFrom,
@@ -51,70 +65,74 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       );
     }
 
-    return thisIndx.isNegative || description.ignoreSwipeSelectGesture
-        ? _WrappedSelectionCore<T>(
-            selection: selection,
+    if (thisIndx.isNegative || description.ignoreSwipeSelectGesture) {
+      return _WrappedSelectionCore<T>(
+        selection: selection,
+        functionality: functionality,
+        selectFrom: selectFrom,
+        shape: shape,
+        onPressed: onPressed,
+        thisIndx: thisIndx,
+        limitedSize: limitedSize,
+        child: child,
+      );
+    }
+
+    return DragTarget(
+      onAcceptWithDetails: (data) {
+        selection!.selectOrUnselect(
+          thisIndx,
+        );
+      },
+      onLeave: (data) {
+        final c = GridScrollNotifier.of(context);
+        if (!c.hasClients) {
+          return;
+        }
+
+        if (c.position.isScrollingNotifier.value &&
+            selection!.isSelected(thisIndx)) {
+          return;
+        }
+
+        selection!.selectOrUnselect(thisIndx);
+      },
+      onWillAcceptWithDetails: (data) => true,
+      builder: (context, _, __) {
+        if (selection!.isNotEmpty) {
+          return Draggable(
+            data: 1,
+            affinity: Axis.horizontal,
+            feedback: const SizedBox(),
+            child: _WrappedSelectionCore(
+              functionality: functionality,
+              thisIndx: thisIndx,
+              shape: shape,
+              onPressed: onPressed,
+              selectFrom: selectFrom,
+              selection: selection,
+              limitedSize: limitedSize,
+              child: child,
+            ),
+          );
+        }
+
+        return LongPressDraggable(
+          data: 1,
+          feedback: const SizedBox(),
+          child: _WrappedSelectionCore(
             functionality: functionality,
-            selectFrom: selectFrom,
+            thisIndx: thisIndx,
             shape: shape,
             onPressed: onPressed,
-            thisIndx: thisIndx,
+            selectFrom: selectFrom,
+            selection: selection,
             limitedSize: limitedSize,
             child: child,
-          )
-        : DragTarget(
-            onAcceptWithDetails: (data) {
-              selection.selectOrUnselect(context, thisIndx);
-            },
-            onLeave: (data) {
-              final c = GridScrollNotifier.of(context);
-              if (!c.hasClients) {
-                return;
-              }
-
-              if (c.position.isScrollingNotifier.value &&
-                  selection.isSelected(thisIndx)) {
-                return;
-              }
-
-              selection.selectOrUnselect(context, thisIndx);
-            },
-            onWillAcceptWithDetails: (data) => true,
-            builder: (context, _, __) {
-              if (selection.isNotEmpty) {
-                return Draggable(
-                  data: 1,
-                  affinity: Axis.horizontal,
-                  feedback: const SizedBox(),
-                  child: _WrappedSelectionCore(
-                    functionality: functionality,
-                    thisIndx: thisIndx,
-                    shape: shape,
-                    onPressed: onPressed,
-                    selectFrom: selectFrom,
-                    selection: selection,
-                    limitedSize: limitedSize,
-                    child: child,
-                  ),
-                );
-              }
-
-              return LongPressDraggable(
-                data: 1,
-                feedback: const SizedBox(),
-                child: _WrappedSelectionCore(
-                  functionality: functionality,
-                  thisIndx: thisIndx,
-                  shape: shape,
-                  onPressed: onPressed,
-                  selectFrom: selectFrom,
-                  selection: selection,
-                  limitedSize: limitedSize,
-                  child: child,
-                ),
-              );
-            },
-          );
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -129,13 +147,17 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
     required this.shape,
     required this.child,
   });
-  final int thisIndx;
-  final GridSelection<T>? selection;
-  final List<int>? selectFrom;
-  final GridFunctionality<T> functionality;
+
   final bool limitedSize;
 
-  final void Function()? onPressed;
+  final int thisIndx;
+
+  final List<int>? selectFrom;
+
+  final GridSelection<T>? selection;
+  final GridFunctionality<T> functionality;
+
+  final VoidCallback? onPressed;
 
   final ShapeBorder shape;
 
@@ -169,19 +191,17 @@ class __WrappedSelectionCoreState<T extends CellBase>
     super.dispose();
   }
 
+  void _playAnimation() {
+    controller.reset();
+    controller.forward().then((value) => controller.reverse());
+    HapticFeedback.selectionClick();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.selection == null) {
       return InkWell(
         customBorder: widget.shape,
-        onDoubleTap: widget.functionality.download != null
-            ? () {
-                controller.reset();
-                controller.forward().then((value) => controller.reverse());
-                HapticFeedback.selectionClick();
-                widget.functionality.download!(thisIndx);
-              }
-            : null,
         onTap: thisIndx.isNegative && widget.onPressed == null
             ? null
             : widget.onPressed,
@@ -214,23 +234,12 @@ class __WrappedSelectionCoreState<T extends CellBase>
                 child: GestureDetector(
                   child: InkWell(
                     customBorder: widget.shape,
-                    onDoubleTap: widget.functionality.download != null &&
-                            widget.selection!.isEmpty
-                        ? () {
-                            controller.reset();
-                            controller
-                                .forward()
-                                .then((value) => controller.reverse());
-                            HapticFeedback.selectionClick();
-                            widget.functionality.download!(thisIndx);
-                          }
-                        : null,
                     onTap: selection.isEmpty
                         ? thisIndx.isNegative && widget.onPressed == null
                             ? null
                             : widget.onPressed
                         : () {
-                            selection.selectOrUnselect(context, thisIndx);
+                            selection.selectOrUnselect(thisIndx);
                           },
                     child: widget.child,
                   ),
@@ -284,25 +293,28 @@ class __WrappedSelectionCoreState<T extends CellBase>
       ],
     );
 
-    return Animate(
-      autoPlay: false,
-      controller: controller,
-      effects: [
-        MoveEffect(
-          duration: 220.ms,
-          curve: Easing.emphasizedAccelerate,
-          begin: Offset.zero,
-          end: const Offset(0, -10),
-        ),
-        TintEffect(
-          duration: 220.ms,
-          begin: 0,
-          end: 0.1,
-          curve: Easing.standardAccelerate,
-          color: colorScheme.primary,
-        ),
-      ],
-      child: child,
+    return WrapperSelectionAnimation(
+      play: _playAnimation,
+      child: Animate(
+        autoPlay: false,
+        controller: controller,
+        effects: [
+          MoveEffect(
+            duration: 220.ms,
+            curve: Easing.emphasizedAccelerate,
+            begin: Offset.zero,
+            end: const Offset(0, -10),
+          ),
+          TintEffect(
+            duration: 220.ms,
+            begin: 0,
+            end: 0.1,
+            curve: Easing.standardAccelerate,
+            color: colorScheme.primary,
+          ),
+        ],
+        child: child,
+      ),
     );
   }
 }
@@ -315,8 +327,10 @@ class _LongPressMoveGesture<T extends CellBase> extends StatefulWidget {
     required this.selectFrom,
     required this.child,
   });
-  final GridSelection<T> selection;
+
   final int thisIndx;
+
+  final GridSelection<T> selection;
   final List<int>? selectFrom;
 
   final Widget child;
@@ -330,38 +344,60 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
   Widget build(BuildContext context) {
     final selection = widget.selection;
 
-    return widget.selection.isEmpty
-        ? widget.child
-        : RawGestureDetector(
-            gestures: {
-              LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<
-                      LongPressGestureRecognizer>(
-                  () => LongPressGestureRecognizer(
-                        debugOwner: this,
-                        postAcceptSlopTolerance: 30,
-                      ), (LongPressGestureRecognizer instance) {
-                instance
-                  ..onLongPress = selection.isEmpty
-                      ? widget.thisIndx.isNegative ||
-                              selection.addActions.isEmpty
-                          ? null
-                          : null
-                      : () {
-                          selection.selectUnselectUntil(
-                            context,
-                            widget.thisIndx,
-                            selectFrom: widget.selectFrom,
-                          );
-                          HapticFeedback.vibrate();
-                        }
-                  ..onLongPressMoveUpdate = (details) {
-                    if (details.offsetFromOrigin.dy >= 18) {
-                      widget.selection.selectAll(context);
-                    }
-                  };
-              }),
-            },
-            child: widget.child,
-          );
+    if (widget.selection.isEmpty) {
+      return widget.child;
+    }
+
+    final gestures = <Type, GestureRecognizerFactory>{
+      LongPressGestureRecognizer:
+          GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+              () => LongPressGestureRecognizer(
+                    debugOwner: this,
+                    postAcceptSlopTolerance: 30,
+                  ), (LongPressGestureRecognizer instance) {
+        instance
+          ..onLongPress = selection.isEmpty
+              ? null
+              : () {
+                  selection.selectUnselectUntil(
+                    widget.thisIndx,
+                    selectFrom: widget.selectFrom,
+                  );
+                  HapticFeedback.vibrate();
+                }
+          ..onLongPressMoveUpdate = (details) {
+            if (details.offsetFromOrigin.dy >= 18) {
+              widget.selection.selectAll();
+            }
+          };
+      }),
+    };
+
+    return RawGestureDetector(
+      gestures: gestures,
+      child: widget.child,
+    );
+  }
+}
+
+class WrapperSelectionAnimation extends InheritedWidget {
+  const WrapperSelectionAnimation({
+    super.key,
+    required this.play,
+    required super.child,
+  });
+
+  final VoidCallback play;
+
+  static void tryPlayOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<WrapperSelectionAnimation>();
+
+    widget?.play();
+  }
+
+  @override
+  bool updateShouldNotify(WrapperSelectionAnimation oldWidget) {
+    return play != oldWidget.play;
   }
 }

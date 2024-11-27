@@ -16,8 +16,10 @@ class GridConfiguration extends StatefulWidget {
     required this.child,
   });
 
-  final GridSettingsWatcher watch;
   final bool sliver;
+
+  final GridSettingsWatcher watch;
+
   final Widget child;
 
   static GridSettingsData of(BuildContext context) {

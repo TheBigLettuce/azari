@@ -16,8 +16,9 @@ class CopyMovePreview extends StatefulWidget {
     required this.icon,
   });
 
-  final List<gallery.File>? files;
   final String title;
+
+  final List<gallery.File>? files;
   final IconData icon;
 
   static const int size = 60 + 16;
@@ -70,7 +71,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                                   bottom: 4,
                                 ),
                                 child: GridCell(
-                                  cell: widget.files!.first,
+                                  data: widget.files!.first,
                                   imageAlign: Alignment.topCenter,
                                   hideTitle: true,
                                   overrideDescription: const CellStaticData(

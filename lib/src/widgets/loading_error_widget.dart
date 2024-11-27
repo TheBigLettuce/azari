@@ -14,9 +14,11 @@ class LoadingErrorWidget extends StatefulWidget {
     this.short = true,
   });
 
-  final String error;
   final bool short;
-  final void Function() refresh;
+
+  final String error;
+
+  final VoidCallback refresh;
 
   @override
   State<LoadingErrorWidget> createState() => _LoadingErrorWidgetState();

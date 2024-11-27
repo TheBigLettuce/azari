@@ -14,10 +14,10 @@ class VideoControls extends StatefulWidget {
     required this.vertical,
   });
 
+  final bool vertical;
+
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
-
-  final bool vertical;
 
   final VideoSettingsService db;
 
@@ -125,12 +125,6 @@ class _VideoControlsState extends State<VideoControls>
       ),
       IconButton(
         isSelected: videoSettings.looping,
-        // isSelectd: videoSettings.looping,
-        // color: videoSettings.looping
-        //     ? null
-        //     : Colors.blue.harmonizeWith(
-        //         theme.colorScheme.primary,
-        //       ),
         onPressed: () {
           controls._events.add(const LoopingButton());
         },
@@ -244,9 +238,9 @@ class SeekTimeAnchor extends StatefulWidget {
     required this.videoControls,
   });
 
-  final VideoControlsControllerImpl videoControls;
-
   final double bottomPadding;
+
+  final VideoControlsControllerImpl videoControls;
 
   @override
   State<SeekTimeAnchor> createState() => SeekTimeAnchorState();

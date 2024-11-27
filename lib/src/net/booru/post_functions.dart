@@ -3,6 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
@@ -16,7 +17,6 @@ import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.
 import "package:azari/src/widgets/translation_notes.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class OpenInBrowserButton extends StatelessWidget {
@@ -27,7 +27,7 @@ class OpenInBrowserButton extends StatelessWidget {
   });
 
   final Uri uri;
-  final void Function()? overrideOnPressed;
+  final VoidCallback? overrideOnPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +46,9 @@ class ShareButton extends StatelessWidget {
     this.onLongPress,
   });
 
-  final void Function()? onLongPress;
   final String url;
+
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -115,11 +116,15 @@ class _PostInfoState extends State<PostInfo> {
     final theme = Theme.of(context);
     final tagManager = TagManager.of(context);
 
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverPadding(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
           padding: const EdgeInsets.only(top: 10, bottom: 4),
-          sliver: TagsRibbon(
+          child: TagsRibbon(
+            tagNotifier: ImageTagsNotifier.of(context),
+            emptyWidget: const Padding(padding: EdgeInsets.zero),
+            sliver: false,
             selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
 
@@ -171,7 +176,7 @@ class _PostInfoState extends State<PostInfo> {
             ],
           ),
         ),
-        SliverList.list(
+        ListBody(
           children: [
             DimensionsRow(
               l10n: l10n,
@@ -210,7 +215,10 @@ class _PostInfoState extends State<PostInfo> {
                     ),
                   ),
                   if (post.tags.contains("translated"))
-                    TranslationNotes.button(context, post.id, post.booru),
+                    TranslationNotesButton(
+                      postId: post.id,
+                      booru: post.booru,
+                    ),
                 ],
               ),
             ),
@@ -263,10 +271,10 @@ class DimensionsRow extends StatelessWidget {
     required this.height,
   });
 
-  final AppLocalizations l10n;
-
   final int width;
   final int height;
+
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -298,10 +306,10 @@ class _ColoredRectangle extends StatelessWidget {
     required this.primaryColor,
   });
 
+  final bool primaryColor;
+
   final String title;
   final String subtitle;
-
-  final bool primaryColor;
 
   @override
   Widget build(BuildContext context) {

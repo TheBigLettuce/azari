@@ -44,18 +44,15 @@ Future<void> mainQuickView() async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WrapGridPage(
-          addScaffold: true,
+          addScaffoldAndBar: true,
           child: PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
               PlatformApi().closeApp();
             },
-            child: ImageView(
+            child: ImageView.simple(
               cellCount: files.length,
-              scrollUntill: (_) {},
-              startingCell: 0,
-              getCell: (i) => files[i].content(),
-              onNearEnd: null,
+              getContent: (i) => files[i].content(),
             ),
           ),
         ),

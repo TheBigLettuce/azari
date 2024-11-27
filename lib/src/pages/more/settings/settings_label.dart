@@ -12,9 +12,11 @@ class SettingsLabel extends StatelessWidget {
     super.key,
     this.removePadding = false,
   });
+
+  final bool removePadding;
+
   final String string;
   final TextStyle style;
-  final bool removePadding;
 
   static TextStyle defaultStyle(BuildContext context, ThemeData theme) =>
       theme.textTheme.titleSmall!.copyWith(color: theme.colorScheme.secondary);

@@ -6,39 +6,37 @@
 import "dart:async";
 import "dart:math";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/gallery/callback_description.dart";
+import "package:azari/src/pages/booru/search_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
-import "package:azari/src/widgets/glue_provider.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/home.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 part "home/animated_icons_mixin.dart";
 part "home/before_you_continue_dialog_mixin.dart";
 part "home/change_page_mixin.dart";
-part "home/icons/anime_icon.dart";
-part "home/icons/booru_icon.dart";
-part "home/icons/gallery_icon.dart";
+part "home/icons/discover.dart";
+part "home/icons/gallery.dart";
+part "home/icons/home.dart";
+part "home/icons/search.dart";
 part "home/navigator_shell.dart";
 
 class Home extends StatefulWidget {
   const Home({
     super.key,
-    this.callback,
     required this.stream,
   });
 
-  final CallbackDescriptionNested? callback;
   final Stream<NotificationRouteEvent> stream;
 
   @override
@@ -55,6 +53,8 @@ class _HomeState extends State<Home>
   final settings = SettingsService.db().current;
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
+  final navBarEvents = StreamController<void>.broadcast();
+  final scrollingEvents = StreamController<bool>.broadcast();
 
   bool isRefreshing = false;
 
@@ -67,8 +67,8 @@ class _HomeState extends State<Home>
 
       switch (route) {
         case NotificationRouteEvent.downloads:
-          if (currentRoute != CurrentRoute.booru) {
-            switchPage(this, CurrentRoute.booru);
+          if (currentRoute != CurrentRoute.home) {
+            switchPage(this, CurrentRoute.home);
           }
 
           _booruPageNotifier.value = BooruSubPage.downloads;
@@ -93,6 +93,8 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
+    scrollingEvents.close();
+    navBarEvents.close();
     notificationEvents.cancel();
 
     _galleryPageNotifier.dispose();
@@ -107,59 +109,71 @@ class _HomeState extends State<Home>
     super.dispose();
   }
 
+  void onDestinationSelected(BuildContext context, CurrentRoute route) {
+    if (route == _routeNotifier.value) {
+      navBarEvents.add(null);
+      return;
+    }
+
+    SelectionActions.controllerOf(context).setCount(0);
+
+    final currentRoute = _routeNotifier.value;
+
+    if (route == CurrentRoute.home && currentRoute == CurrentRoute.home) {
+      Scaffold.of(context).openDrawer();
+    } else if (route == CurrentRoute.gallery &&
+        currentRoute == CurrentRoute.gallery) {
+      final nav = galleryKey.currentState;
+      if (nav != null) {
+        while (nav.canPop()) {
+          nav.pop();
+        }
+      }
+
+      _galleryPageNotifier.value =
+          _galleryPageNotifier.value == GallerySubPage.gallery
+              ? GallerySubPage.blacklisted
+              : GallerySubPage.gallery;
+
+      animateIcons(this);
+    } else {
+      switchPage(this, route);
+    }
+
+    scrollingEvents.add(false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CurrentRoute.wrap(
-      _routeNotifier,
-      GallerySubPage.wrap(
-        _galleryPageNotifier,
-        BooruSubPage.wrap(
-          _booruPageNotifier,
-          PopScope(
-            canPop: widget.callback != null,
-            onPopInvokedWithResult: (pop, _) => _procPopAll(
-              _galleryPageNotifier,
-              this,
-              pop,
-            ),
-            child: HomeSkeleton(
-              _CurrentPageWidget(
-                icons: this,
-                changePage: this,
-                callback: widget.callback,
+    return ScrollingSinkProvider(
+      sink: scrollingEvents.sink,
+      child: NavigationButtonEvents(
+        events: navBarEvents.stream,
+        child: CurrentRoute.wrap(
+          _routeNotifier,
+          GallerySubPage.wrap(
+            _galleryPageNotifier,
+            BooruSubPage.wrap(
+              _booruPageNotifier,
+              PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (pop, _) => _procPopAll(
+                  _galleryPageNotifier,
+                  this,
+                  pop,
+                ),
+                child: HomeSkeleton(
+                  animatedIcons: this,
+                  onDestinationSelected: onDestinationSelected,
+                  changePage: this,
+                  booru: settings.selectedBooru,
+                  scrollingEvents: scrollingEvents.stream,
+                  child: _CurrentPageWidget(
+                    icons: this,
+                    changePage: this,
+                  ),
+                ),
               ),
-              noNavBar: widget.callback != null,
-              animatedIcons: this,
-              onDestinationSelected: (context, route) {
-                GlueProvider.generateOf(context)().updateCount(0);
-
-                final currentRoute = _routeNotifier.value;
-
-                if (route == CurrentRoute.booru &&
-                    currentRoute == CurrentRoute.booru) {
-                  Scaffold.of(context).openDrawer();
-                } else if (route == CurrentRoute.gallery &&
-                    currentRoute == CurrentRoute.gallery) {
-                  final nav = galleryKey.currentState;
-                  if (nav != null) {
-                    while (nav.canPop()) {
-                      nav.pop();
-                    }
-                  }
-
-                  _galleryPageNotifier.value =
-                      _galleryPageNotifier.value == GallerySubPage.gallery
-                          ? GallerySubPage.blacklisted
-                          : GallerySubPage.gallery;
-
-                  animateIcons(this);
-                } else {
-                  switchPage(this, route);
-                }
-              },
-              changePage: this,
-              booru: settings.selectedBooru,
-              callback: widget.callback,
             ),
           ),
         ),
@@ -168,23 +182,65 @@ class _HomeState extends State<Home>
   }
 }
 
-class GlueStateProvider extends InheritedWidget {
-  const GlueStateProvider({
-    required this.state,
+class ScrollingSinkProvider extends InheritedWidget {
+  const ScrollingSinkProvider({
+    required this.sink,
     required super.child,
   });
 
-  final SelectionGlueState state;
+  final StreamSink<bool> sink;
 
-  static SelectionGlueState of(BuildContext context) {
+  static StreamSink<bool>? maybeOf(BuildContext context) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<GlueStateProvider>();
+        context.dependOnInheritedWidgetOfExactType<ScrollingSinkProvider>();
 
-    return widget!.state;
+    return widget?.sink;
   }
 
   @override
-  bool updateShouldNotify(GlueStateProvider oldWidget) {
-    return state != oldWidget.state;
+  bool updateShouldNotify(ScrollingSinkProvider oldWidget) {
+    return sink != oldWidget.sink;
+  }
+}
+
+class NavigationButtonEvents extends InheritedWidget {
+  const NavigationButtonEvents({
+    required this.events,
+    required super.child,
+  });
+
+  final Stream<void> events;
+
+  static Stream<void>? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<NavigationButtonEvents>();
+
+    return widget?.events;
+  }
+
+  @override
+  bool updateShouldNotify(NavigationButtonEvents oldWidget) {
+    return events != oldWidget.events;
+  }
+}
+
+class PinnedTagsProvider extends InheritedWidget {
+  const PinnedTagsProvider({
+    required this.pinnedTags,
+    required super.child,
+  });
+
+  final (Map<String, void> map, int count) pinnedTags;
+
+  static (Map<String, void> map, int count) of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PinnedTagsProvider>();
+
+    return widget!.pinnedTags;
+  }
+
+  @override
+  bool updateShouldNotify(PinnedTagsProvider oldWidget) {
+    return pinnedTags != oldWidget.pinnedTags;
   }
 }

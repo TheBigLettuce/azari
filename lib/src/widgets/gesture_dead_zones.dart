@@ -18,8 +18,8 @@ class GestureDeadZones extends StatelessWidget {
   final bool left;
   final bool right;
 
-  final void Function()? onPressedLeft;
-  final void Function()? onPressedRight;
+  final VoidCallback? onPressedLeft;
+  final VoidCallback? onPressedRight;
 
   final Widget child;
 

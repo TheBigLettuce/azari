@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _BookmarksPanel extends StatefulWidget {
   const _BookmarksPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.db,
   });
@@ -26,7 +26,6 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
     () => filteringValue.isEmpty
         ? Future.value(const [])
         : Future.value(widget.db.gridBookmarks.complete(filteringValue)),
-    // watchCount: widget.tagManager.latest.watchCount,
   );
 
   late final StreamSubscription<String> filteringSubscr;

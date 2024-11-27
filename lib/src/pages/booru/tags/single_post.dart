@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
@@ -16,7 +17,6 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 
 class SinglePost extends StatefulWidget {
@@ -54,7 +54,7 @@ class _SinglePostState extends State<SinglePost> {
 
     final booru = SettingsService.db().current.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
-    booruApi = BooruAPI.fromEnum(booru, client, PageSaver.noPersist());
+    booruApi = BooruAPI.fromEnum(booru, client);
   }
 
   @override
@@ -81,15 +81,15 @@ class _SinglePostState extends State<SinglePost> {
 
     BooruAPI booru;
     if (replaceBooru != null) {
-      booru = BooruAPI.fromEnum(replaceBooru, client, PageSaver.noPersist());
+      booru = BooruAPI.fromEnum(replaceBooru, client);
     } else {
       booru = booruApi;
     }
 
     unawaited(arrowSpinningController?.repeat());
 
-    Future<void> onThen(Post p) {
-      return ImageView.launchWrapped(
+    void onThen(Post p) {
+      ImageView.launchWrapped(
         context,
         1,
         (__) => p.content(),

@@ -7,6 +7,8 @@ import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/home.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -44,6 +46,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   Duration currentDuration = Duration.zero;
   DateTime timeNow = DateTime.now();
   final progressTab = GlobalProgressTab();
+  final selectionEvents = SelectionActions();
 
   @override
   void initState() {
@@ -114,6 +117,7 @@ class _RestartWidgetState extends State<RestartWidget> {
 
   @override
   void dispose() {
+    selectionEvents.dispose();
     timeListener.close();
     timeTicker.cancel();
     listener.dispose();
@@ -134,21 +138,29 @@ class _RestartWidgetState extends State<RestartWidget> {
     final d = buildTheme(Brightness.dark, widget.accentColor);
     final l = buildTheme(Brightness.light, widget.accentColor);
 
-    return progressTab.wrapWidget(
-      DatabaseConnectionNotifier.current(
-        TimeSpentNotifier(
-          timeNow,
-          ticker: timeListener.stream,
-          current: _c,
-          child: KeyedSubtree(
-            key: key,
-            child: ColoredBox(
-              color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                  ? d.colorScheme.surface
-                  : l.colorScheme.surface,
-              child: widget
-                  .child(d, l, SettingsService.db().current)
-                  .animate(effects: [const FadeEffect()]),
+    return selectionEvents.inject(
+      progressTab.inject(
+        DatabaseConnectionNotifier.current(
+          Builder(
+            builder: (context) => _PinnedTagsHolder(
+              tagManager: TagManager.of(context),
+              child: TimeSpentNotifier(
+                timeNow,
+                ticker: timeListener.stream,
+                current: _c,
+                child: KeyedSubtree(
+                  key: key,
+                  child: ColoredBox(
+                    color: MediaQuery.platformBrightnessOf(context) ==
+                            Brightness.dark
+                        ? d.colorScheme.surface
+                        : l.colorScheme.surface,
+                    child: widget
+                        .child(d, l, SettingsService.db().current)
+                        .animate(effects: [const FadeEffect()]),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -166,7 +178,7 @@ class GlobalProgressTab {
 
   final Map<String, ValueNotifier<dynamic>> _notifiers = {};
 
-  Widget wrapWidget(Widget child) => _ProgressTab(tab: this, child: child);
+  Widget inject(Widget child) => _ProgressTab(tab: this, child: child);
 
   ValueNotifier<T> get<T>(String key, ValueNotifier<T> Function() factory) {
     return _notifiers.putIfAbsent(key, factory) as ValueNotifier<T>;
@@ -210,4 +222,63 @@ class TimeSpentNotifier extends InheritedWidget {
       ticker != oldWidget.ticker ||
       current != oldWidget.current ||
       _time != oldWidget._time;
+}
+
+class _PinnedTagsHolder extends StatefulWidget {
+  const _PinnedTagsHolder({
+    // super.key,
+    required this.tagManager,
+    required this.child,
+  });
+
+  final TagManager tagManager;
+
+  final Widget child;
+
+  @override
+  State<_PinnedTagsHolder> createState() => __PinnedTagsHolderState();
+}
+
+class __PinnedTagsHolderState extends State<_PinnedTagsHolder> {
+  late final StreamSubscription<int> countEvents;
+
+  Map<String, void> pinnedTags = {};
+  int count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    countEvents = widget.tagManager.pinned.watchCount(
+      (newCount) {
+        if (newCount != count) {
+          count = newCount;
+
+          pinnedTags = widget.tagManager.pinned.get(-1).fold({}, (map, e) {
+            map[e.tag] = null;
+
+            return map;
+          });
+
+          setState(() {});
+        }
+      },
+      true,
+    );
+  }
+
+  @override
+  void dispose() {
+    countEvents.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PinnedTagsProvider(
+      pinnedTags: (pinnedTags, count),
+      child: widget.child,
+    );
+  }
 }

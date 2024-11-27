@@ -6,10 +6,8 @@
 part of "gallery_api.dart";
 
 abstract class File
-    with
-        DefaultBuildCellImpl
+    with DefaultBuildCellImpl
     implements
-        // FileBase,
         ContentableCell,
         ContentWidgets,
         Pressable<File>,
@@ -83,7 +81,11 @@ abstract class File
   }
 
   @override
-  Widget info(BuildContext context) => GalleryFileInfo(file: this);
+  Widget info(BuildContext context) => GalleryFileInfo(
+        key: uniqueKey(),
+        file: this,
+        tags: ImageTagsNotifier.of(context),
+      );
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
@@ -114,7 +116,6 @@ abstract class File
                 final api = BooruAPI.fromEnum(
                   res!.$2,
                   client,
-                  PageSaver.noPersist(),
                 );
 
                 try {
@@ -162,7 +163,7 @@ abstract class File
             },
     );
 
-    final callback = NestedCallbackNotifier.maybeOf(context);
+    final callback = ReturnFileCallbackNotifier.maybeOf(context);
 
     if (callback != null) {
       return <ImageViewAction>[
@@ -216,7 +217,9 @@ abstract class File
             ImageViewAction(
               Icons.copy,
               (selected) {
-                moveOrCopyFnc(
+                AppBarVisibilityNotifier.toggleOf(context, true);
+
+                return moveOrCopyFnc(
                   context,
                   api.directories.length == 1
                       ? api.directories.first.bucketId
@@ -233,6 +236,8 @@ abstract class File
             ImageViewAction(
               Icons.forward_rounded,
               (selected) async {
+                AppBarVisibilityNotifier.toggleOf(context, true);
+
                 return moveOrCopyFnc(
                   context,
                   api.directories.length == 1
@@ -320,7 +325,6 @@ abstract class File
   void onPress(
     BuildContext context,
     GridFunctionality<File> functionality,
-    File cell,
     int idx,
   ) {
     final db = DatabaseConnectionNotifier.of(context);
@@ -375,49 +379,15 @@ extension FavoritePostsGlobalProgress on GlobalProgressTab {
       get("favoritePostButton", () => ValueNotifier(null));
 }
 
-// class FileBase {
-//   const FileBase({
-//     required this.tags,
-//     required this.id,
-//     required this.bucketId,
-//     required this.name,
-//     required this.isVideo,
-//     required this.isGif,
-//     required this.size,
-//     required this.height,
-//     required this.isDuplicate,
-//     required this.width,
-//     required this.lastModified,
-//     required this.originalUri,
-//     required this.res,
-//   });
-
-//   final int id;
-//   final String bucketId;
-
-//   final String name;
-
-//   final int lastModified;
-//   final String originalUri;
-
-//   final int height;
-//   final int width;
-
-//   final int size;
-
-//   final bool isVideo;
-//   final bool isGif;
-
-//   final Map<String, void> tags;
-//   final bool isDuplicate;
-
-//   final (int, Booru)? res;
-// }
-
 class GalleryFileInfo extends StatefulWidget {
-  const GalleryFileInfo({super.key, required this.file});
+  const GalleryFileInfo({
+    super.key,
+    required this.file,
+    required this.tags,
+  });
 
   final File file;
+  final ImageViewTags tags;
 
   @override
   State<GalleryFileInfo> createState() => _GalleryFileInfoState();
@@ -425,16 +395,35 @@ class GalleryFileInfo extends StatefulWidget {
 
 class _GalleryFileInfoState extends State<GalleryFileInfo> {
   File get file => widget.file;
+  ImageViewTags get tags => widget.tags;
+
+  late final StreamSubscription<void> events;
+
+  bool hasTranslation = false;
 
   final filesExtended = MiscSettingsService.db().current.filesExtendedActions;
 
   @override
   void initState() {
     super.initState();
+
+    if (tags.list.indexWhere((e) => e.tag == "translated") == -1) {
+      hasTranslation = true;
+    }
+
+    events = widget.tags.stream.listen((_) {
+      if (tags.list.indexWhere((e) => e.tag == "translated") == -1) {
+        hasTranslation = true;
+      }
+
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    events.cancel();
+
     super.dispose();
   }
 
@@ -442,7 +431,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     OnBooruTagPressed.pressOf(
       context,
       t,
-      ImageTagsNotifier.resOf(context)!.booru,
+      tags.res!.booru,
       overrideSafeMode: safeMode,
     );
   }
@@ -450,23 +439,25 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
   @override
   Widget build(BuildContext context) {
     final filename = file.name;
-    final res = ImageTagsNotifier.resOf(context);
 
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final tagManager = TagManager.of(context);
     final settings = SettingsService.db().current;
 
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverPadding(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
           padding: const EdgeInsets.only(top: 10, bottom: 4),
-          sliver: TagsRibbon(
-            emptyWidget: res == null
-                ? const SliverPadding(padding: EdgeInsets.zero)
+          child: TagsRibbon(
+            tagNotifier: ImageTagsNotifier.of(context),
+            sliver: false,
+            emptyWidget: tags.res == null
+                ? const Padding(padding: EdgeInsets.zero)
                 : LoadTags(
                     filename: filename,
-                    res: res,
+                    res: tags.res!,
                   ),
             selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
@@ -546,7 +537,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
             ],
           ),
         ),
-        SliverList.list(
+        ListBody(
           children: [
             MenuWrapper(
               title: filename,
@@ -608,30 +599,18 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                 runSpacing: 4,
                 alignment: WrapAlignment.center,
                 children: [
-                  if (res != null)
+                  if (tags.res != null)
                     RedownloadButton(
                       key: file.uniqueKey(),
                       file: file,
-                      res: res,
+                      res: tags.res,
                     ),
                   if (!file.isVideo && !file.isGif)
                     SetWallpaperButton(id: file.id),
-                  if (res != null)
-                    Builder(
-                      builder: (context) {
-                        final tags = ImageTagsNotifier.of(context);
-
-                        if (tags.indexWhere((e) => e.tag == "translated") ==
-                            -1) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return TranslationNotes.button(
-                          context,
-                          res.id,
-                          res.booru,
-                        );
-                      },
+                  if (tags.res != null && hasTranslation)
+                    TranslationNotesButton(
+                      postId: tags.res!.id,
+                      booru: tags.res!.booru,
                     ),
                 ],
               ),
@@ -789,7 +768,7 @@ Future<void> redownloadFiles(BuildContext context, List<File> files) {
       );
       final api = apis.putIfAbsent(
         res.booru,
-        () => BooruAPI.fromEnum(res.booru, dio, PageSaver.noPersist()),
+        () => BooruAPI.fromEnum(res.booru, dio),
       );
 
       try {

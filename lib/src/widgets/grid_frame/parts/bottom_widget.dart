@@ -7,11 +7,12 @@ part of "../grid_frame.dart";
 
 class _BottomWidget extends StatefulWidget {
   const _BottomWidget({
-    required this.child,
     required this.progress,
+    required this.child,
   });
 
   final RefreshingProgress progress;
+
   final Widget child;
 
   @override

@@ -15,10 +15,12 @@ class StickerWidget extends StatelessWidget {
     this.iconSize = 20,
   });
 
-  final Sticker e;
-  final void Function()? onPressed;
   final double size;
   final double iconSize;
+
+  final Sticker e;
+
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +50,7 @@ class StickerWidget extends StatelessWidget {
                         : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   )
                 : Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         e.icon,

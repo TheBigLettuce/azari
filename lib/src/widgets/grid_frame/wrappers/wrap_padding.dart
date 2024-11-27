@@ -8,29 +8,22 @@ part of "../grid_frame.dart";
 class _WrapPadding extends StatelessWidget {
   const _WrapPadding({
     required this.footer,
-    required this.selectionGlue,
+    required this.includeFabPadding,
     required this.child,
   });
 
+  final bool includeFabPadding;
+
   final PreferredSizeWidget? footer;
-  final SelectionGlue selectionGlue;
 
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    SelectionCountNotifier.maybeCountOf(context);
+    // SelectionCountNotifier.maybeCountOf(context);
 
     final insets = EdgeInsets.only(
-      bottom: (kFloatingActionButtonMargin * 2 + 24 + 8 + 8 + 4) +
-          (selectionGlue.keyboardVisible()
-              ? 0
-              : MediaQuery.viewPaddingOf(context).bottom +
-                  (selectionGlue.isOpen()
-                      ? selectionGlue.barHeight()
-                      : selectionGlue.persistentBarHeight
-                          ? selectionGlue.barHeight()
-                          : 0)) +
+      bottom: GridBottomPaddingProvider.of(context, includeFabPadding) +
           (footer != null ? footer!.preferredSize.height : 0),
     );
 

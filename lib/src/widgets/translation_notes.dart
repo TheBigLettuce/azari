@@ -3,11 +3,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class TranslationNotes extends StatefulWidget {
   const TranslationNotes({
@@ -15,34 +15,9 @@ class TranslationNotes extends StatefulWidget {
     required this.booru,
     required this.postId,
   });
+
   final int postId;
   final Booru booru;
-
-  static Widget button(BuildContext context, int postId, Booru booru) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return TextButton.icon(
-      onPressed: () {
-        Navigator.push(
-          context,
-          DialogRoute<void>(
-            context: context,
-            builder: (context) {
-              return TranslationNotes(
-                postId: postId,
-                booru: booru,
-              );
-            },
-          ),
-        );
-      },
-      label: Text(l10n.hasTranslations),
-      icon: const Icon(
-        Icons.open_in_new_rounded,
-        size: 18,
-      ),
-    );
-  }
 
   @override
   State<TranslationNotes> createState() => _TranslationNotesState();
@@ -57,8 +32,7 @@ class _TranslationNotesState extends State<TranslationNotes> {
     super.initState();
 
     dio = BooruAPI.defaultClientForBooru(widget.booru);
-    f = BooruAPI.fromEnum(widget.booru, dio, PageSaver.noPersist())
-        .notes(widget.postId);
+    f = BooruAPI.fromEnum(widget.booru, dio).notes(widget.postId);
   }
 
   @override
@@ -97,6 +71,38 @@ class _TranslationNotesState extends State<TranslationNotes> {
             child: const Center(child: CircularProgressIndicator()),
           );
         },
+      ),
+    );
+  }
+}
+
+class TranslationNotesButton extends StatelessWidget {
+  const TranslationNotesButton({
+    super.key,
+    required this.postId,
+    required this.booru,
+  });
+
+  final int postId;
+  final Booru booru;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return TextButton.icon(
+      onPressed: () => Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) => TranslationNotes(
+            postId: postId,
+            booru: booru,
+          ),
+        ),
+      ),
+      label: Text(l10n.hasTranslations),
+      icon: const Icon(
+        Icons.open_in_new_rounded,
+        size: 18,
       ),
     );
   }

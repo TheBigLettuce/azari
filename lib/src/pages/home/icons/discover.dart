@@ -5,8 +5,8 @@
 
 part of "../../home.dart";
 
-class BooruDestinationIcon extends StatelessWidget {
-  const BooruDestinationIcon({
+class DiscoverDestinationIcon extends StatelessWidget {
+  const DiscoverDestinationIcon({
     super.key,
     required this.controller,
   });
@@ -15,19 +15,34 @@ class BooruDestinationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final isSelected = CurrentRoute.of(context) == CurrentRoute.booru;
-
-    final selectedBooruPage = BooruSubPage.of(context);
+    final isSelected = CurrentRoute.of(context) == CurrentRoute.discover;
 
     return Animate(
-      autoPlay: true,
       controller: controller,
-      effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
+      autoPlay: false,
+      target: 1,
+      effects: [
+        ShimmerEffect(
+          angle: pi / -5,
+          duration: 440.ms,
+          colors: [
+            colorScheme.primary.withValues(alpha: isSelected ? 1 : 0),
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+            Colors.indigo,
+            Colors.purple,
+            Colors.red,
+          ],
+        ),
+      ],
       child: Icon(
-        isSelected ? selectedBooruPage.selectedIcon : selectedBooruPage.icon,
-        color: isSelected ? theme.colorScheme.primary : null,
+        isSelected ? Icons.public_rounded : Icons.public_outlined,
+        color: isSelected ? colorScheme.primary : null,
       ),
     );
   }

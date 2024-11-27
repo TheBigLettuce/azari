@@ -5,6 +5,7 @@
 
 import "dart:io" as io;
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -14,7 +15,6 @@ import "package:azari/src/platform/gallery/io.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:file_picker/file_picker.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:mime/mime.dart";
 import "package:path/path.dart" as path;
 
@@ -41,13 +41,13 @@ class LinuxGalleryApi implements GalleryApi {
   void notify(String? target) {}
 
   @override
-  Future<(String, String)?> chooseDirectory(
+  Future<({String path, String formattedPath})?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
   }) {
     return FilePicker.platform
         .getDirectoryPath(dialogTitle: l10n.pickDirectory)
-        .then((e) => e == null ? null : (e, e));
+        .then((e) => e == null ? null : (path: e, formattedPath: e));
   }
 
   @override
@@ -86,13 +86,14 @@ class _Directories implements Directories {
   @override
   Files files(
     Directory directory,
-    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
-  ) {
+    LocalTagsService localTags, {
+    required String name,
+    required String bucketId,
+  }) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
@@ -100,6 +101,7 @@ class _Directories implements Directories {
     return bindFiles = _Files(
       directories: [directory],
       parent: this,
+      bucketId: bucketId,
       type: type,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
@@ -123,6 +125,7 @@ class _Directories implements Directories {
     return bindFiles = _Files(
       directories: directories,
       parent: this,
+      bucketId: "joinedDir",
       type: GalleryFilesPageType.normal,
       directoryMetadata: directoryMetadata,
       directoryTag: directoryTag,
@@ -222,6 +225,7 @@ class LinuxDirectory extends Directory {
 
 class _Files implements Files {
   _Files({
+    required this.bucketId,
     required this.directories,
     required this.parent,
     required this.type,
@@ -251,6 +255,9 @@ class _Files implements Files {
 
   @override
   final _Directories parent;
+
+  @override
+  final String bucketId;
 
   @override
   late final SortingResourceSource<int, File> source =

@@ -116,9 +116,9 @@ SystemUiOverlayStyle navBarStyleForTheme(
       statusBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
-      // statusBarColor:
-      //     (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
-      //         .withValues(alpha: 0.8),
+      statusBarColor:
+          (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
+              .withValues(alpha: 0.8),
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,

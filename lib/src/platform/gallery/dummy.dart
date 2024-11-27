@@ -3,11 +3,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class DummyGalleryApi implements GalleryApi {
   @override
@@ -31,7 +31,7 @@ class DummyGalleryApi implements GalleryApi {
   Events get events => const Events.none();
 
   @override
-  Future<(String, String)?> chooseDirectory(
+  Future<({String path, String formattedPath})?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
   }) {
@@ -72,13 +72,14 @@ class _DummyDirectories implements Directories {
   @override
   Files files(
     Directory directory,
-    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
-  ) {
+    LocalTagsService localTags, {
+    required String name,
+    required String bucketId,
+  }) {
     throw UnimplementedError();
   }
 

@@ -17,7 +17,6 @@ class WrapGridActionButton extends StatefulWidget {
     super.key,
     this.color,
     required this.onLongPress,
-    required this.whenSingleContext,
     required this.play,
     required this.animate,
     this.watch,
@@ -27,22 +26,22 @@ class WrapGridActionButton extends StatefulWidget {
     required this.notifier,
   });
 
-  final IconData icon;
-  final void Function()? onPressed;
-  final void Function()? onLongPress;
-  final Color? color;
+  final bool addBorder;
   final bool animate;
+  final bool iconOnly;
   final bool play;
-  final BuildContext? whenSingleContext;
+
+  final IconData icon;
+  final ValueNotifier<Future<void>?>? notifier;
+
+  final Color? color;
+
   final List<Effect<dynamic>> animation;
 
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+
   final WatchFire<(IconData?, Color?, bool?)>? watch;
-
-  final bool iconOnly;
-
-  final bool addBorder;
-
-  final ValueNotifier<Future<void>?>? notifier;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -121,12 +120,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
 
     if (widget.iconOnly) {
       return GestureDetector(
-        onTap: widget.whenSingleContext != null &&
-                SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
-            ? null
-            : widget.onPressed == null
-                ? null
-                : onPressed,
+        onTap: widget.onPressed == null ? null : onPressed,
         child: widget.animate
             ? Animate(
                 effects: widget.animation,
@@ -161,12 +155,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
                     ),
                   ),
                 ),
-          onPressed: widget.whenSingleContext != null &&
-                  SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
-              ? null
-              : widget.onPressed == null
-                  ? null
-                  : onPressed,
+          onPressed: widget.onPressed == null ? null : onPressed,
           icon: widget.animate
               ? Animate(
                   effects: widget.animation,

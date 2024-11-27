@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _PinnedTagsPanel extends StatefulWidget {
   const _PinnedTagsPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.tagManager,
     required this.onTagPressed,
@@ -19,7 +19,7 @@ class _PinnedTagsPanel extends StatefulWidget {
 
   final BooruAPI api;
 
-  final void Function(String) onTagPressed;
+  final StringCallback onTagPressed;
 
   @override
   State<_PinnedTagsPanel> createState() => __PinnedTagsPanelState();

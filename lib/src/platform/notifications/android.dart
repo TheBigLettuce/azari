@@ -19,11 +19,13 @@ class AndroidProgress implements NotificationHandle {
   });
 
   final int id;
+
   final String title;
-  final NotificationChannel channel;
-  final NotificationGroup group;
   final String? body;
   final String? payload;
+
+  final NotificationChannel channel;
+  final NotificationGroup group;
 
   int total = 0;
   int _step = 0;
@@ -45,24 +47,6 @@ class AndroidProgress implements NotificationHandle {
         payload: payload,
       ),
     );
-    // FlutterLocalNotificationsPlugin().show(
-    //   id,
-    //   name,
-    //   body,
-    //   NotificationDetails(
-    //     android: AndroidNotificationDetails(
-    //       channelName.toLowerCase(),
-    //       channelName,
-    //       groupKey: group,
-    //       playSound: false,
-    //       enableVibration: false,
-    //       importance: Importance.low,
-    //       category: AndroidNotificationCategory.progress,
-    //       showProgress: true,
-    //     ),
-    //   ),
-    //   payload: payload,
-    // );
   }
 
   @override

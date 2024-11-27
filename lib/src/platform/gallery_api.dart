@@ -7,6 +7,7 @@ import "dart:async";
 
 import "package:azari/init_main/app_info.dart";
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/gallery_thumbnail_provider.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
@@ -24,6 +25,8 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery/io.dart"
     if (dart.library.html) "package:azari/src/platform/gallery/web.dart";
@@ -31,7 +34,6 @@ import "package:azari/src/platform/gallery_file_functions.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -46,7 +48,6 @@ import "package:azari/src/widgets/translation_notes.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -81,7 +82,7 @@ abstract interface class GalleryApi {
   FilesManagement get files;
   Search get search;
 
-  Future<(String formattedPath, String path)?> chooseDirectory(
+  Future<({String formattedPath, String path})?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
   });
@@ -135,13 +136,14 @@ abstract class Directories {
 
   Files files(
     Directory directory,
-    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
-  );
+    LocalTagsService localTags, {
+    required String bucketId,
+    required String name,
+  });
 
   Files joinedFiles(
     List<Directory> directories,
@@ -217,6 +219,9 @@ class _FakeFiles implements Files {
 
   @override
   FilesSourceTags get sourceTags => const _FakeSourceTags();
+
+  @override
+  String get bucketId => "latest";
 }
 
 class _FakeSourceTags implements FilesSourceTags {
@@ -273,6 +278,7 @@ abstract class Files {
   Directories get parent;
 
   List<Directory> get directories;
+  String get bucketId;
 
   void close();
 }
@@ -357,7 +363,7 @@ enum GalleryFilesPageType {
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
   ) {
-    final segment = GalleryDirectories.segmentCell(
+    final segment = DirectoriesPage.segmentCell(
       dir!.name,
       dir.bucketId,
       directoryTag,
@@ -501,8 +507,9 @@ class ThumbId {
   });
 
   final int id;
-  final String path;
   final int differenceHash;
+
+  final String path;
 }
 
 class _DummyCachedThumbs implements CachedThumbs {

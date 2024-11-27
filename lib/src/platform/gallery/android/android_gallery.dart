@@ -6,6 +6,7 @@
 import "dart:async";
 import "dart:io" as io;
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -20,10 +21,9 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-part "android_api_files.dart";
 part "android_api_directories.dart";
+part "android_api_files.dart";
 part "gallery_impl.dart";
 part "management.dart";
 
@@ -97,14 +97,14 @@ class AndroidGalleryApi implements GalleryApi {
   Search get search => const AndroidSearch();
 
   @override
-  Future<(String, String)?> chooseDirectory(
+  Future<({String path, String formattedPath})?> chooseDirectory(
     AppLocalizations _, {
     bool temporary = false,
   }) async {
     return activityContext.invokeMethod("chooseDirectory", temporary).then(
           (value) => (
-            (value as Map)["pathDisplay"] as String,
-            value["path"] as String,
+            formattedPath: (value as Map)["pathDisplay"] as String,
+            path: value["path"] as String,
           ),
         );
   }

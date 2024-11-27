@@ -44,12 +44,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   bool disposed = false;
   Object? error;
 
-  // double? overrideAspectRatio;
-
   late controls.VideoControlsController playerControls;
-
-  // ImageStream? _imageStream;
-  // ImageInfo? _imageInfo;
 
   @override
   void initState() {
@@ -60,46 +55,9 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     _initController();
   }
 
-  // @override
-  // void didUpdateWidget(PhotoGalleryPageVideo oldWidget) {
-  //   super.didUpdateWidget(oldWidget);
-
-  //   if (widget.networkThumb != oldWidget.networkThumb) {
-  //     _getImage();
-  //   }
-  // }
-
-  // void _updateImage(ImageInfo imageInfo, bool synchronousCall) {
-  //   // setState(() {
-  //   // Trigger a build whenever the image changes.
-  //   _imageInfo?.dispose();
-  //   _imageInfo = imageInfo;
-  //   // });
-  // }
-
-  // void _getImage() {
-  //   if (widget.networkThumb == null) {
-  //     return;
-  //   }
-
-  //   final ImageStream? oldImageStream = _imageStream;
-  //   _imageStream =
-  //       widget.networkThumb!.resolve(createLocalImageConfiguration(context));
-  //   if (_imageStream!.key != oldImageStream?.key) {
-  //     // If the keys are the same, then we got the same image back, and so we don't
-  //     // need to update the listeners. If the key changed, though, we must make sure
-  //     // to switch our listeners to the new image stream.
-  //     final ImageStreamListener listener = ImageStreamListener(_updateImage);
-  //     oldImageStream?.removeListener(listener);
-  //     _imageStream!.addListener(listener);
-  //   }
-  // }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // _getImage();
 
     playerControls = VideoControlsNotifier.of(context);
     eventsSubscr ??= playerControls.events.listen((event) {
@@ -218,32 +176,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void _listener() {
     final value = controller.value;
 
-    // if (overrideAspectRatio == null && value.size.isEmpty) {
-    //   if (_imageInfo != null) {
-    //     overrideAspectRatio =
-    //         _imageInfo!.image.height / _imageInfo!.image.width;
-
-    //     final videoSettings = widget.db.current;
-
-    //     chewieController?.dispose();
-    //     chewieController = ChewieController(
-    //       videoPlayerController: controller,
-    //       aspectRatio: overrideAspectRatio,
-    //       looping: videoSettings.looping,
-    //       allowPlaybackSpeedChanging: false,
-    //       showOptions: false,
-    //       showControls: false,
-    //       allowMuting: false,
-    //       zoomAndPan: true,
-    //       showControlsOnInitialize: false,
-    //     );
-
-    //     print(overrideAspectRatio);
-
-    //     setState(() {});
-    //   }
-    // }
-
     final newPlayState = value.isBuffering
         ? controls.PlayState.buffering
         : value.isPlaying
@@ -269,13 +201,8 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void dispose() {
     eventsSubscr?.cancel();
     disposed = true;
-    // controller.pause();
     controller.dispose();
     chewieController?.dispose();
-
-    // _imageStream?.removeListener(ImageStreamListener(_updateImage));
-    // _imageInfo?.dispose();
-    // _imageInfo = null;
 
     super.dispose();
   }

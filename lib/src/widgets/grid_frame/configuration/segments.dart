@@ -40,6 +40,11 @@ class Segments<T> {
     required this.injectedLabel,
   }) : assert(prebuiltSegments == null || segment == null);
 
+  final bool hidePinnedIcon;
+  final bool displayFirstCellInSpecial;
+
+  final int? limitLabelChildren;
+
   /// Under [unsegmentedLabel] appear cells on which [segment] returns null,
   /// or are single standing.
   final String unsegmentedLabel;
@@ -55,17 +60,14 @@ class Segments<T> {
   /// Segmentation function.
   /// If [sticky] is true, then even if the cell is single standing it will appear
   /// as a single element segment on the grid.
-  final String? Function(T cell)? segment;
 
   final Map<SegmentKey, int>? prebuiltSegments;
-  final int? limitLabelChildren;
-
-  final void Function(String label, List<T> children)? onLabelPressed;
-
-  final bool hidePinnedIcon;
-  final bool displayFirstCellInSpecial;
 
   final SegmentCapability caps;
+
+  final String? Function(T cell)? segment;
+
+  final void Function(String label, List<T> children)? onLabelPressed;
 }
 
 enum SegmentModifier {

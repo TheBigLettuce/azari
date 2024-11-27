@@ -18,11 +18,14 @@ class SegmentLabel extends StatelessWidget {
   });
 
   final String text;
-  final List<PopupMenuItem<void>> menuItems;
-  final void Function()? onPress;
-  final bool sticky;
-  final List<Widget> icons;
   final int count;
+
+  final bool sticky;
+
+  final List<Widget> icons;
+  final List<PopupMenuItem<void>> menuItems;
+
+  final VoidCallback? onPress;
 
   @override
   Widget build(BuildContext context) {

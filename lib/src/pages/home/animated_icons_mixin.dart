@@ -5,17 +5,17 @@
 
 part of "../home.dart";
 
-mixin AnimatedIconsMixin on State<Home> {
+mixin AnimatedIconsMixin {
   late final AnimationController controllerNavBar;
 
   late final AnimationController selectionBarController;
 
   late final AnimationController pageFadeAnimation;
 
-  late final AnimationController booruIconController;
+  late final AnimationController homeIconController;
+  late final AnimationController searchIconController;
+  late final AnimationController discoverIconController;
   late final AnimationController galleryIconController;
-  late final AnimationController animeIconController;
-  late final AnimationController settingsIconController;
 
   void hideNavBar(bool hide) {
     if (hide) {
@@ -58,10 +58,10 @@ mixin AnimatedIconsMixin on State<Home> {
       duration: const Duration(milliseconds: 200),
     );
 
-    booruIconController = AnimationController(vsync: ticker);
+    homeIconController = AnimationController(vsync: ticker);
     galleryIconController = AnimationController(vsync: ticker);
-    animeIconController = AnimationController(vsync: ticker);
-    settingsIconController = AnimationController(vsync: ticker);
+    searchIconController = AnimationController(vsync: ticker);
+    discoverIconController = AnimationController(vsync: ticker);
   }
 
   void disposeIcons() {
@@ -69,15 +69,16 @@ mixin AnimatedIconsMixin on State<Home> {
     controllerNavBar.dispose();
     pageFadeAnimation.dispose();
 
-    booruIconController.dispose();
+    homeIconController.dispose();
     galleryIconController.dispose();
-    animeIconController.dispose();
-    settingsIconController.dispose();
+    searchIconController.dispose();
+    discoverIconController.dispose();
   }
 
-  List<NavigationRailDestination> railIcons(Booru selectedBooru) {
-    final l10n = AppLocalizations.of(context)!;
-
+  List<NavigationRailDestination> railIcons(
+    AppLocalizations l10n,
+    Booru selectedBooru,
+  ) {
     NavigationRailDestination item(CurrentRoute e) => NavigationRailDestination(
           icon: e.icon(this),
           label: Builder(
@@ -90,20 +91,60 @@ mixin AnimatedIconsMixin on State<Home> {
     return CurrentRoute.values.map(item).toList();
   }
 
-  List<Widget> icons(BuildContext context, Booru selectedBooru) {
+  List<Widget> icons(
+    BuildContext context,
+    Booru selectedBooru,
+    void Function(BuildContext, CurrentRoute) onDestinationSelected,
+  ) {
     final l10n = AppLocalizations.of(context)!;
 
     return CurrentRoute.values
         .map(
           (e) => Builder(
             builder: (context) {
-              return NavigationDestination(
+              return _NavigationDestination(
                 icon: e.icon(this),
                 label: e.label(context, l10n, selectedBooru),
+                onSelected: () => onDestinationSelected(context, e),
               );
             },
           ),
         )
         .toList();
+  }
+}
+
+class _NavigationDestination extends StatelessWidget {
+  const _NavigationDestination({
+    // super.key,
+    required this.icon,
+    required this.label,
+    required this.onSelected,
+  });
+
+  final String label;
+  final Widget icon;
+
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentRoute = CurrentRoute.of(context);
+
+    return Center(
+      child: SizedBox.square(
+        dimension: 38,
+        child: InkWell(
+          onLongPress: currentRoute == CurrentRoute.home
+              ? () {
+                  Scaffold.maybeOf(context)?.openDrawer();
+                }
+              : null,
+          borderRadius: const BorderRadius.all(Radius.circular(15)),
+          onTap: onSelected,
+          child: icon,
+        ),
+      ),
+    );
   }
 }

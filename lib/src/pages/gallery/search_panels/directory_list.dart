@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _DirectoryList extends StatefulWidget {
   const _DirectoryList({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.source,
     required this.searchController,
@@ -20,9 +20,9 @@ class _DirectoryList extends StatefulWidget {
 
   final ResourceSource<int, Directory> source;
 
-  final void Function(Directory) onDirectoryPressed;
-
   final Map<String, bool> blurMap;
+
+  final void Function(Directory) onDirectoryPressed;
 
   @override
   State<_DirectoryList> createState() => __DirectoryListState();
@@ -134,7 +134,7 @@ class __DirectoryListState extends State<_DirectoryList> {
                     widget.onDirectoryPressed(cell);
                   },
                   child: GridCell(
-                    cell: cell,
+                    data: cell,
                     blur: _toBlur(cell),
                     hideTitle: false,
                     imageAlign: Alignment.topCenter,

@@ -17,8 +17,7 @@ extension CellsExt on CellBase {
     int idx,
   ) {
     if (this is Pressable<T>) {
-      return () => (this as Pressable<T>)
-          .onPress(context, functionality, this as T, idx);
+      return () => (this as Pressable<T>).onPress(context, functionality, idx);
     }
 
     return null;
@@ -107,7 +106,6 @@ abstract interface class Pressable<T extends CellBase> {
   void onPress(
     BuildContext context,
     GridFunctionality<T> functionality,
-    T cell,
     int idx,
   );
 }

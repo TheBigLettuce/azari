@@ -5,6 +5,7 @@
 
 import "dart:ui";
 
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
@@ -26,7 +27,7 @@ mixin DefaultBuildCellImpl implements CellBase {
     required Alignment imageAlign,
   }) =>
       GridCell(
-        cell: cell,
+        data: cell,
         longTitle: isList,
         hideTitle: hideTitle,
         animate: animated,
@@ -35,102 +36,64 @@ mixin DefaultBuildCellImpl implements CellBase {
       );
 }
 
-/// The cell of [GridFrame].
-class GridCell<T extends CellBase> extends StatefulWidget {
-  const GridCell({
-    super.key,
-    required T cell,
-    this.secondaryTitle,
-    required this.hideTitle,
-    this.overrideDescription,
-    this.animate = false,
-    this.longTitle = false,
-    this.blur = false,
-    this.imageAlign = Alignment.center,
-  }) : _data = cell;
+class _Alias extends StatelessWidget {
+  const _Alias({
+    // super.key,
+    required this.title,
+    required this.lines,
+  });
 
-  // factory GridCell.frameDefault(
-  //   BuildContext _,
-  //   int __,
-  //   T cell, {
-  //   required bool isList,
-  //   required bool hideTitle,
-  //   bool animated = false,
-  //   bool blur = false,
-  //   required Alignment imageAlign,
-  // }) {
-  //   return GridCell(
-  //     cell: cell,
-  //     longTitle: isList,
-  //     hideTitle: hideTitle,
-  //     animate: animated,
-  //     blur: blur,
-  //     imageAlign: imageAlign,
-  //   );
-  // }
-
-  final T _data;
-
-  final bool longTitle;
-  final bool hideTitle;
-  final bool animate;
-  final bool blur;
-  final Alignment imageAlign;
-
-  final String? secondaryTitle;
-
-  final CellStaticData? overrideDescription;
+  final String title;
+  final int lines;
 
   @override
-  State<GridCell> createState() => _GridCellState();
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.bottomCenter,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withAlpha(50),
+            Colors.black12,
+            Colors.black45,
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Text(
+          title,
+          softWrap: false,
+          textAlign: TextAlign.left,
+          overflow: TextOverflow.ellipsis,
+          maxLines: lines,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
-  int _tries = 0;
+class _TopAlias extends StatelessWidget {
+  const _TopAlias({
+    // super.key,
+    required this.title,
+    required this.secondaryTitle,
+    required this.lines,
+  });
 
-  Widget aliasWidget(
-    BuildContext context,
-    CellStaticData description,
-    String alias,
-    ThemeData theme,
-  ) {
-    return description.alignTitleToTopLeft
-        ? topAlignAlias(context, description, alias, theme)
-        : Container(
-            alignment: Alignment.bottomCenter,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withAlpha(50),
-                  Colors.black12,
-                  Colors.black45,
-                ],
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Text(
-                alias,
-                softWrap: false,
-                textAlign: TextAlign.left,
-                overflow: TextOverflow.ellipsis,
-                maxLines: description.titleLines,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          );
-  }
+  final String title;
+  final String? secondaryTitle;
+  final int lines;
 
-  Widget topAlignAlias(
-    BuildContext context,
-    CellStaticData description,
-    String alias,
-    ThemeData theme,
-  ) {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
       child: Container(
@@ -150,11 +113,10 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
         child: Padding(
           padding: const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
           child: Text(
-            widget.secondaryTitle ?? alias,
+            secondaryTitle ?? title,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            maxLines:
-                widget.secondaryTitle != null ? 1 : description.titleLines,
+            maxLines: secondaryTitle != null ? 1 : lines,
             style: theme.textTheme.titleSmall?.copyWith(
               color: Colors.white.withValues(alpha: 0.8),
             ),
@@ -163,12 +125,128 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
       ),
     );
   }
+}
+
+class GridCellImage extends StatefulWidget {
+  const GridCellImage({
+    super.key,
+    required this.blur,
+    required this.imageAlign,
+    required this.thumbnail,
+  });
+
+  final bool blur;
+  final Alignment imageAlign;
+
+  final ImageProvider<Object> thumbnail;
+
+  @override
+  State<GridCellImage> createState() => _GridCellImageState();
+}
+
+class _GridCellImageState extends State<GridCellImage> {
+  int _tries = 0;
 
   @override
   Widget build(BuildContext context) {
-    final data = widget._data;
-    final description = widget.overrideDescription ?? data.description();
-    final alias = widget.hideTitle ? "" : data.alias(widget.longTitle);
+    final theme = Theme.of(context);
+
+    return Center(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final blurSigma = constraints.biggest.longestSide * 0.069;
+
+          final image = Image(
+            key: ValueKey((widget.thumbnail.hashCode, _tries)),
+            errorBuilder: (context, error, stackTrace) => LoadingErrorWidget(
+              error: error.toString(),
+              refresh: () {
+                _tries += 1;
+
+                setState(() {});
+              },
+            ),
+            frameBuilder: (
+              context,
+              child,
+              frame,
+              wasSynchronouslyLoaded,
+            ) {
+              if (wasSynchronouslyLoaded) {
+                return child;
+              }
+
+              return frame == null
+                  ? const ShimmerLoadingIndicator()
+                  : child.animate().fadeIn();
+            },
+            image: widget.thumbnail,
+            isAntiAlias: true,
+            alignment: widget.imageAlign,
+            color: widget.blur
+                ? theme.colorScheme.surface.withValues(alpha: 0.2)
+                : null,
+            colorBlendMode: widget.blur ? BlendMode.darken : BlendMode.darken,
+            fit: BoxFit.cover,
+            filterQuality:
+                widget.blur ? FilterQuality.none : FilterQuality.medium,
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+          );
+
+          return widget.blur
+              ? ImageFiltered(
+                  imageFilter: ImageFilter.compose(
+                    outer: ImageFilter.blur(
+                      sigmaX: blurSigma,
+                      sigmaY: blurSigma,
+                      tileMode: TileMode.mirror,
+                    ),
+                    inner: ImageFilter.dilate(
+                      radiusX: 0.5,
+                      radiusY: 0.5,
+                    ),
+                  ),
+                  child: image,
+                )
+              : image;
+        },
+      ),
+    );
+  }
+}
+
+/// The cell of [GridFrame].
+class GridCell extends StatelessWidget {
+  const GridCell({
+    super.key,
+    required this.data,
+    this.secondaryTitle,
+    required this.hideTitle,
+    this.overrideDescription,
+    this.animate = false,
+    this.longTitle = false,
+    this.blur = false,
+    this.imageAlign = Alignment.center,
+  });
+
+  final CellBase data;
+
+  final bool longTitle;
+  final bool hideTitle;
+  final bool animate;
+  final bool blur;
+
+  final Alignment imageAlign;
+
+  final String? secondaryTitle;
+
+  final CellStaticData? overrideDescription;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = overrideDescription ?? data.description();
+    final alias = hideTitle ? "" : data.alias(longTitle);
 
     final stickers = description.ignoreStickers
         ? null
@@ -183,7 +261,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
 
     final theme = Theme.of(context);
 
-    final card = Card(
+    Widget card = Card(
       margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
       elevation: 0,
       color: theme.cardColor.withValues(alpha: 0),
@@ -202,75 +280,12 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
             : Stack(
                 children: [
                   if (thumbnail != null)
-                    Center(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final blurSigma =
-                              constraints.biggest.longestSide * 0.069;
-
-                          final image = Image(
-                            key: ValueKey((thumbnail.hashCode, _tries)),
-                            errorBuilder: (context, error, stackTrace) =>
-                                LoadingErrorWidget(
-                              error: error.toString(),
-                              refresh: () {
-                                _tries += 1;
-
-                                setState(() {});
-                              },
-                            ),
-                            frameBuilder: (
-                              context,
-                              child,
-                              frame,
-                              wasSynchronouslyLoaded,
-                            ) {
-                              if (wasSynchronouslyLoaded) {
-                                return child;
-                              }
-
-                              return frame == null
-                                  ? const ShimmerLoadingIndicator()
-                                  : child.animate().fadeIn();
-                            },
-                            image: thumbnail,
-                            isAntiAlias: true,
-                            alignment: widget.imageAlign,
-                            color: widget.blur
-                                ? theme.colorScheme.surface
-                                    .withValues(alpha: 0.2)
-                                : null,
-                            colorBlendMode: widget.blur
-                                ? BlendMode.darken
-                                : BlendMode.darken,
-                            fit: BoxFit.cover,
-                            filterQuality: widget.blur
-                                ? FilterQuality.none
-                                : FilterQuality.medium,
-                            width: constraints.maxWidth,
-                            height: constraints.maxHeight,
-                          );
-
-                          return widget.blur
-                              ? ImageFiltered(
-                                  imageFilter: ImageFilter.compose(
-                                    outer: ImageFilter.blur(
-                                      sigmaX: blurSigma,
-                                      sigmaY: blurSigma,
-                                      tileMode: TileMode.mirror,
-                                    ),
-                                    inner: ImageFilter.dilate(
-                                      radiusX: 0.5,
-                                      radiusY: 0.5,
-                                    ),
-                                  ),
-                                  child: image,
-                                )
-                              : image;
-                        },
-                      ),
+                    GridCellImage(
+                      imageAlign: imageAlign,
+                      thumbnail: thumbnail,
+                      blur: blur,
                     ),
-                  if (stickers != null && stickers.isNotEmpty) ...[
+                  if (stickers != null && stickers.isNotEmpty)
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
@@ -283,19 +298,29 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                         ),
                       ),
                     ),
-                  ],
                   if ((alias.isNotEmpty && !description.titleAtBottom) ||
-                      widget.secondaryTitle != null)
-                    aliasWidget(
-                      context,
-                      description,
-                      alias,
-                      theme,
-                    ),
+                      secondaryTitle != null)
+                    description.alignTitleToTopLeft
+                        ? _TopAlias(
+                            title: alias,
+                            secondaryTitle: secondaryTitle,
+                            lines: description.titleLines,
+                          )
+                        : _Alias(
+                            title: alias,
+                            lines: description.titleLines,
+                          ),
                 ],
               ),
       ),
     );
+    if (animate) {
+      card = card.animate(key: data.uniqueKey()).fadeIn();
+    }
+
+    if (!description.titleAtBottom || alias.isEmpty) {
+      return card;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,26 +328,23 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
       children: [
         Expanded(
           flex: 2,
-          child: widget.animate
-              ? card.animate(key: widget._data.uniqueKey()).fadeIn()
-              : card,
+          child: card,
         ),
-        if (description.titleAtBottom && alias.isNotEmpty)
-          Expanded(
-            child: Padding(
-              padding: description.tightMode
-                  ? const EdgeInsets.only(left: 0.5, right: 0.5)
-                  : const EdgeInsets.only(right: 4, left: 4),
-              child: Text(
-                alias,
-                maxLines: description.titleLines,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                  overflow: TextOverflow.fade,
-                ),
+        Expanded(
+          child: Padding(
+            padding: description.tightMode
+                ? const EdgeInsets.only(left: 0.5, right: 0.5)
+                : const EdgeInsets.only(right: 4, left: 4),
+            child: Text(
+              alias,
+              maxLines: description.titleLines,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                overflow: TextOverflow.fade,
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -362,8 +384,10 @@ class CustomGridCellWrapper extends StatelessWidget {
     required this.onPressed,
     required this.child,
   });
-  final void Function(BuildContext) onPressed;
-  final void Function(BuildContext)? onLongPress;
+
+  final ContextCallback onPressed;
+  final ContextCallback? onLongPress;
+
   final Widget child;
 
   @override

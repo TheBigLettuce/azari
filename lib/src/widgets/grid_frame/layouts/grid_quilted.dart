@@ -25,11 +25,12 @@ class GridQuiltedLayout<T extends CellBase> extends StatefulWidget {
     this.unselectOnUpdate = true,
   });
 
+  final bool unselectOnUpdate;
+
   final int randomNumber;
+
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
-
-  final bool unselectOnUpdate;
 
   final Widget Function(Object? error)? buildEmpty;
 
@@ -47,7 +48,7 @@ class _GridQuiltedLayoutState<T extends CellBase>
   void initState() {
     _watcher = source.watch((_) {
       if (widget.unselectOnUpdate) {
-        GridExtrasNotifier.of<T>(context).selection.reset();
+        GridExtrasNotifier.of<T>(context).selection?.reset();
       }
 
       setState(() {});
@@ -83,22 +84,24 @@ class _GridQuiltedLayoutState<T extends CellBase>
         itemBuilder: (context, idx) {
           final cell = getCell(idx);
 
+          final child = cell.buildCell<T>(
+            context,
+            idx,
+            cell,
+            imageAlign: Alignment.topCenter,
+            hideTitle: config.hideName,
+            isList: false,
+            animated: PlayAnimations.maybeOf(context) ?? false,
+          );
+
           return WrapSelection(
+            selection: extras.selection,
             thisIndx: idx,
             description: cell.description(),
-            selection: extras.selection,
             onPressed: cell.tryAsPressable(context, extras.functionality, idx),
             functionality: extras.functionality,
             selectFrom: null,
-            child: cell.buildCell<T>(
-              context,
-              idx,
-              cell,
-              imageAlign: Alignment.topCenter,
-              hideTitle: config.hideName,
-              isList: false,
-              animated: PlayAnimations.maybeOf(context) ?? false,
-            ),
+            child: child,
           );
         },
       ),
@@ -113,8 +116,9 @@ class GridQuiltedLayoutPlaceholder extends StatelessWidget {
     required this.randomNumber,
   });
 
-  final CellStaticData description;
   final int randomNumber;
+
+  final CellStaticData description;
 
   @override
   Widget build(BuildContext context) {

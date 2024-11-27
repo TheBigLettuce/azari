@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _AddTagButton extends StatefulWidget {
   const _AddTagButton({
-    super.key,
+    // super.key,
     required this.tagManager,
     required this.api,
     required this.storage,
@@ -24,10 +24,10 @@ class _AddTagButton extends StatefulWidget {
   final Color backgroundColor;
   final Color foregroundColor;
 
-  final Widget Function(BuildContext context) buildTitle;
-  final void Function() onPressed;
-
   final BooruAPI api;
+
+  final VoidCallback onPressed;
+  final BuilderCallback buildTitle;
 
   @override
   State<_AddTagButton> createState() => __AddTagStateTagButton();

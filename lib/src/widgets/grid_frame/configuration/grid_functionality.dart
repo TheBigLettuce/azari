@@ -11,16 +11,15 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/material.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({
-    this.playAnimationOn = const [],
     required this.source,
-    required this.selectionGlue,
+    this.playAnimationOn = const [],
+    this.selectionActions,
     this.registerNotifiers,
     this.updateScrollPosition,
     this.download,
@@ -30,7 +29,11 @@ class GridFunctionality<T extends CellBase> {
     this.backButton = const EmptyGridBackButton(inherit: true),
     this.search = const PageNameSearchWidget(),
     this.onEmptySource,
+    this.scrollUpOn = const [],
+    this.scrollingSink,
   });
+
+  final SelectionActions? selectionActions;
 
   final ResourceSource<int, T> source;
 
@@ -48,14 +51,15 @@ class GridFunctionality<T extends CellBase> {
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
   final List<WatchFire<dynamic>> playAnimationOn;
-
-  final GridSettingsButton? settingsButton;
+  final List<(Stream<void> stream, bool Function()? conditional)> scrollUpOn;
+  final StreamSink<bool>? scrollingSink;
 
   final GridFabType fab;
-  final SelectionGlue selectionGlue;
   final GridBackButtonBehaviour backButton;
   final GridSearchWidget search;
   final UpdatesAvailable? updatesAvailable;
+
+  final Widget? settingsButton;
   final Widget? onEmptySource;
 }
 
@@ -98,5 +102,5 @@ class RetainedGridRefresh implements GridRefreshType {
   @override
   final bool pullToRefresh;
 
-  final void Function() refresh;
+  final VoidCallback refresh;
 }

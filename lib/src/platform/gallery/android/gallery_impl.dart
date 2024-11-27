@@ -54,8 +54,6 @@ class _GalleryImpl implements platform.PlatformGalleryApi {
 
   _AndroidGallery? _currentApi;
 
-  // static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
-
   @override
   bool updatePictures(
     List<platform.DirectoryFile?> f,
@@ -69,10 +67,6 @@ class _GalleryImpl implements platform.PlatformGalleryApi {
     if (api == null || api.startTime > startTime || !api.isBucketId(bucketId)) {
       return false;
     }
-
-    // if (notFound.isNotEmpty && api.type.isFavorites()) {
-    //   api.favoritePosts.deleteAll(notFound.cast());
-    // }
 
     if (empty) {
       api.source.progress.inRefreshing = false;

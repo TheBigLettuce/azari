@@ -5,31 +5,32 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
-import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/booru/popular_random_buttons.dart";
+import "package:azari/src/typedefs.dart";
+import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-part "search_panels/pinned_tags.dart";
-part "search_panels/chips_panel_body.dart";
-part "search_panels/bookmarks_panel_body.dart";
-part "search_panels/tag_list.dart";
-part "search_panels/excluded_tags.dart";
-part "search_panels/bookmarks.dart";
-part "search_panels/recently_searched_tags.dart";
 part "search_panels/add_tag_button.dart";
+part "search_panels/bookmarks.dart";
+part "search_panels/bookmarks_panel_body.dart";
+part "search_panels/chips_panel_body.dart";
+part "search_panels/excluded_tags.dart";
+part "search_panels/pinned_tags.dart";
+part "search_panels/recently_searched_tags.dart";
+part "search_panels/tag_list.dart";
 
 class BooruSearchPage extends StatefulWidget {
   const BooruSearchPage({
@@ -38,9 +39,9 @@ class BooruSearchPage extends StatefulWidget {
     required this.onTagPressed,
   });
 
-  final DbConn db;
-
   final OnBooruTagPressedFunc onTagPressed;
+
+  final DbConn db;
 
   @override
   State<BooruSearchPage> createState() => _BooruSearchPageState();
@@ -70,11 +71,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       });
     });
 
-    api = BooruAPI.fromEnum(
-      settings.selectedBooru,
-      client,
-      PageSaver.noPersist(),
-    );
+    api = BooruAPI.fromEnum(settings.selectedBooru, client);
   }
 
   @override

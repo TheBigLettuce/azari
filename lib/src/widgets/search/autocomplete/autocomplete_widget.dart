@@ -3,11 +3,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/search/autocomplete/autocomplete_tag.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 
 class AutocompleteWidget extends StatelessWidget {
@@ -35,26 +35,34 @@ class AutocompleteWidget extends StatelessWidget {
     this.addItems,
   });
 
-  final TextEditingController? controller;
-  final void Function(String) highlightChanged;
-  final void Function(String) onSubmit;
-  final void Function() focusMain;
-  final Future<List<BooruTag>> Function(String) complF;
-  final FocusNode? focus;
-  final ScrollController? scrollHack;
   final bool noSticky;
   final bool submitOnPress;
   final bool roundBorders;
-  final String? customHint;
   final bool showSearch;
-  final int? searchCount;
-  final bool noUnfocus;
-  final void Function()? onChanged;
-  final List<Widget>? addItems;
-  final String? searchTextOverride;
   final bool plainSearchBar;
   final bool swapSearchIcon;
+  final bool noUnfocus;
   final bool disable;
+
+  final int? searchCount;
+
+  final String? searchTextOverride;
+  final String? customHint;
+
+  final TextEditingController? controller;
+
+  final FocusNode? focus;
+  final ScrollController? scrollHack;
+
+  final List<Widget>? addItems;
+
+  final VoidCallback? onChanged;
+  final VoidCallback focusMain;
+
+  final StringCallback highlightChanged;
+  final StringCallback onSubmit;
+
+  final CompleteBooruTagFunc complF;
 
   @override
   Widget build(BuildContext context) {
@@ -201,18 +209,23 @@ class AutocompleteSearchBar extends StatelessWidget {
     this.maxWidth = double.infinity,
   });
 
-  final String? searchTextOverride;
-  final String? customHint;
-  final int? count;
-  final FocusNode focusNode;
-  final List<Widget>? addItems;
-  final TextEditingController textController;
-  final void Function()? onChanged;
-  final void Function(String) onSubmit;
   final bool swapSearchIcon;
   final bool disable;
   final bool darkenColors;
+
+  final int? count;
+
   final double maxWidth;
+
+  final String? searchTextOverride;
+  final String? customHint;
+
+  final FocusNode focusNode;
+  final List<Widget>? addItems;
+  final TextEditingController textController;
+
+  final VoidCallback? onChanged;
+  final StringCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {

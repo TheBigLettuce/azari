@@ -4,19 +4,18 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/app_info.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:local_auth/local_auth.dart";
 
 GridAction<Directory> blacklist(
@@ -86,8 +85,7 @@ GridAction<Directory> blacklist(
 GridAction<Directory> joinedDirectories(
   BuildContext context,
   Directories api,
-  CallbackDescriptionNested? callback,
-  SelectionGlue Function([Set<GluePreferences>])? generate,
+  ReturnFileCallback? callback,
   String Function(Directory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
@@ -106,7 +104,6 @@ GridAction<Directory> joinedDirectories(
         selected,
         api,
         callback,
-        generate,
         segment,
         directoryMetadata,
         directoryTags,
@@ -124,8 +121,7 @@ Future<void> joinedDirectoriesFnc(
   String label,
   List<Directory> dirs,
   Directories api,
-  CallbackDescriptionNested? callback,
-  SelectionGlue Function([Set<GluePreferences>])? generate,
+  ReturnFileCallback? callback,
   String Function(Directory) segment,
   DirectoryMetadataService directoryMetadata,
   DirectoryTagService directoryTags,
@@ -164,18 +160,17 @@ Future<void> joinedDirectoriesFnc(
       context,
       MaterialPageRoute(
         builder: (context) {
-          return GalleryFiles(
+          return FilesPage(
             secure: requireAuth,
-            generateGlue: generate,
             api: joined,
             callback: callback,
             directory: null,
             dirName: label,
             presetFilteringValue: tag,
             filteringMode: filteringMode,
-            bucketId: "joinedDir",
             db: DatabaseConnectionNotifier.of(context),
-            tagManager: TagManager.of(context),
+            navBarEvents: NavigationButtonEvents.maybeOf(context),
+            scrollingSink: ScrollingSinkProvider.maybeOf(context),
           );
         },
       ),

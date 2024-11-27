@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
@@ -12,28 +13,24 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class VisitedPostsPage extends StatefulWidget {
   const VisitedPostsPage({
     super.key,
-    required this.generateGlue,
     required this.db,
   });
-
-  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
 
   final VisitedPostsService db;
 
@@ -108,7 +105,6 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
           return BooruRestoredPage(
             booru: booru,
             tags: tag,
-            generateGlue: widget.generateGlue,
             overrideSafeMode: safeMode,
             db: DatabaseConnectionNotifier.of(context),
             saveSelectedPage: (_) {},
@@ -124,54 +120,52 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
 
     return GridConfiguration(
       watch: gridSettings.watch,
-      child: GlueProvider(
-        generate: widget.generateGlue,
-        child: GridFrame<VisitedPost>(
-          key: state.gridKey,
-          slivers: [
-            CurrentGridSettingsLayout<VisitedPost>(
-              source: source.backingStorage,
-              gridSeed: state.gridSeed,
-              progress: source.progress,
-            ),
-          ],
-          functionality: GridFunctionality(
-            onEmptySource: EmptyWidgetBackground(
-              subtitle: l10n.emptyPostsVisited,
-            ),
-            selectionGlue: widget.generateGlue(),
-            registerNotifiers: (child) => OnBooruTagPressed(
-              onPressed: _onBooruTagPressed,
-              child: child,
-            ),
-            search: PageNameSearchWidget(
-              leading: IconButton(
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-                icon: const Icon(Icons.menu_rounded),
-              ),
-              trailingItems: [
-                IconButton(
-                  onPressed: visitedPosts.clear,
-                  icon: const Icon(Icons.clear_all_rounded),
-                ),
-              ],
-            ),
-            source: source,
+      child: GridFrame<VisitedPost>(
+        key: state.gridKey,
+        slivers: [
+          CurrentGridSettingsLayout<VisitedPost>(
+            source: source.backingStorage,
+            gridSeed: state.gridSeed,
+            progress: source.progress,
           ),
-          description: GridDescription(
-            pullToRefresh: false,
-            actions: [
-              GridAction(
-                Icons.remove_rounded,
-                visitedPosts.removeAll,
-                true,
+        ],
+        functionality: GridFunctionality(
+          selectionActions: SelectionActions.of(context),
+          scrollingSink: ScrollingSinkProvider.maybeOf(context),
+          onEmptySource: EmptyWidgetBackground(
+            subtitle: l10n.emptyPostsVisited,
+          ),
+          registerNotifiers: (child) => OnBooruTagPressed(
+            onPressed: _onBooruTagPressed,
+            child: child,
+          ),
+          search: PageNameSearchWidget(
+            leading: IconButton(
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              icon: const Icon(Icons.menu_rounded),
+            ),
+            trailingItems: [
+              IconButton(
+                onPressed: visitedPosts.clear,
+                icon: const Icon(Icons.clear_all_rounded),
               ),
             ],
-            pageName: l10n.visitedPage,
-            gridSeed: state.gridSeed,
           ),
+          source: source,
+        ),
+        description: GridDescription(
+          pullToRefresh: false,
+          actions: [
+            GridAction(
+              Icons.remove_rounded,
+              visitedPosts.removeAll,
+              true,
+            ),
+          ],
+          pageName: l10n.visitedPage,
+          gridSeed: state.gridSeed,
         ),
       ),
     );

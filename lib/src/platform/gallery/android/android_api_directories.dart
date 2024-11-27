@@ -40,13 +40,14 @@ class _AndroidGallery implements Directories {
   @override
   Files files(
     Directory directory,
-    String name,
     GalleryFilesPageType type,
     DirectoryTagService directoryTag,
     DirectoryMetadataService directoryMetadata,
     FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
-  ) {
+    LocalTagsService localTags, {
+    required String bucketId,
+    required String name,
+  }) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
@@ -69,6 +70,7 @@ class _AndroidGallery implements Directories {
       directoryTag: directoryTag,
       favoritePosts: favoritePosts,
       localTags: localTags,
+      bucketId: bucketId,
     );
   }
 

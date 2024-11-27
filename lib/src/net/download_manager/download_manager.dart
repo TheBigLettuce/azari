@@ -6,6 +6,7 @@
 import "dart:async";
 import "dart:io" as io;
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -13,13 +14,13 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 import "package:path/path.dart";
@@ -48,6 +49,8 @@ abstract class DownloadManager
 
   void restartAll(Iterable<DownloadHandle> d, SettingsData settings);
   void putAll(Iterable<DownloadEntry> downloads, SettingsData settings);
+
+  DownloadHandle? statusFor(String url);
 }
 
 class MemoryOnlyDownloadManager extends MapStorage<String, _DownloadEntry>
@@ -257,6 +260,9 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
   }
 
   @override
+  DownloadHandle? statusFor(String d) => map_[d];
+
+  @override
   void putAll(Iterable<DownloadEntry> downloads, SettingsData settings) {
     if (settings.path.isEmpty) {
       return;
@@ -338,7 +344,8 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
 
   void _downloadProgress(
     String url,
-    NotificationHandle notif, {
+    NotificationHandle notif,
+    _DownloadEntry handle, {
     required int count,
     required int total,
   }) {
@@ -349,6 +356,10 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
 
     notif.setTotal(total);
     notif.update(count);
+    if (count != 0 && total.isFinite) {
+      handle._downloadProgress = count / total;
+      handle.watcher?.add(handle._downloadProgress);
+    }
   }
 
   void _remove(String url) {
@@ -419,6 +430,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
         onReceiveProgress: (count, total) => _downloadProgress(
           url,
           progress,
+          entry,
           count: count,
           total: total,
         ),

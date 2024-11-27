@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _ExcludedTagsPanel extends StatefulWidget {
   const _ExcludedTagsPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.tagManager,
     required this.api,

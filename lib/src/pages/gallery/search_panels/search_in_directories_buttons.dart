@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _SearchInDirectoriesButtons extends StatelessWidget {
   const _SearchInDirectoriesButtons({
-    super.key,
+    // super.key,
     required this.db,
     required this.filteringValue,
     required this.joinedDirectories,
@@ -15,10 +15,11 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     required this.listPadding,
   });
 
+  final String filteringValue;
+
   final ResourceSource<int, Directory> source;
 
   final EdgeInsets listPadding;
-  final String filteringValue;
 
   final void Function(
     String str,

@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _DirectoryNamesPanel extends StatefulWidget {
   const _DirectoryNamesPanel({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.searchController,
     required this.directoryComplete,

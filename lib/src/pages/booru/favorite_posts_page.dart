@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
@@ -20,31 +21,24 @@ import "package:azari/src/pages/booru/actions.dart" as booru_actions;
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class FavoritePostsPage extends StatefulWidget with DbConnHandle<DbConn> {
   const FavoritePostsPage({
     super.key,
-    this.asSliver = true,
-    this.wrapGridPage = false,
     required this.db,
-    required this.api,
     required this.rootNavigatorPop,
   });
 
-  final bool asSliver;
-  final bool wrapGridPage;
-  final BooruAPI api;
   final void Function(bool)? rootNavigatorPop;
 
   @override
@@ -65,12 +59,17 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
   final searchFocus = FocusNode();
 
   late final state = GridSkeletonState<FavoritePost>();
+  late final client =
+      BooruAPI.defaultClientForBooru(state.settings.selectedBooru);
+  late final BooruAPI api;
 
   late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
 
   @override
   void initState() {
     super.initState();
+
+    api = BooruAPI.fromEnum(state.settings.selectedBooru, client);
 
     filter = ChainedFilterResourceSource(
       favoritePosts,
@@ -150,6 +149,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
 
   @override
   void dispose() {
+    client.close(force: true);
     settingsWatcher.cancel();
     filter.destroy();
 
@@ -245,6 +245,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         ),
       ],
       functionality: GridFunctionality(
+        selectionActions: SelectionActions.of(context),
+        scrollingSink: ScrollingSinkProvider.maybeOf(context),
         onEmptySource: EmptyWidgetBackground(
           subtitle: l10n.emptyFavoritedPosts,
         ),
@@ -259,7 +261,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
             ChainedFilterIcon(
               filter: filter,
               controller: searchTextController,
-              complete: widget.api.searchTag,
+              complete: api.searchTag,
               onChange: (str) => filter.clearRefresh(),
               focusNode: searchFocus,
             ),
@@ -270,14 +272,11 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
           onPressed: _onPressed,
           child: child,
         ),
-        selectionGlue: GlueProvider.generateOf(context)(),
         download: download,
         source: filter,
       ),
       description: GridDescription(
         actions: gridActions(),
-        showAppBar: !widget.asSliver,
-        asSliver: widget.asSliver,
         pullToRefresh: false,
         pageName: l10n.favoritesLabel,
         gridSeed: state.gridSeed,
@@ -289,9 +288,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
       filter: filter,
       rootNavigatorPop: widget.rootNavigatorPop,
       child: GridConfiguration(
-        sliver: widget.asSliver,
         watch: gridSettings.watch,
-        child: widget.wrapGridPage ? WrapGridPage(child: child) : child,
+        child: child,
       ),
     );
   }

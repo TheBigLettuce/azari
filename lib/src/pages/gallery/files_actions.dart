@@ -152,26 +152,6 @@ GridAction<File> _addTagAction(
   );
 }
 
-// GridAction<GalleryFile> _addToFavoritesAction(
-//   BuildContext context,
-//   GalleryFile? f,
-//   FavoritePostSourceService favoritePosts,
-// ) {
-//   final isFavorites =
-//       f != null && (favoritePosts.cachedValues.containsKey(f.id));
-
-//   return GridAction(
-//     isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
-//     (selected) {
-//       favoriteOrUnfavorite(context, selected, favoritePosts);
-//     },
-//     false,
-//     color: isFavorites ? Colors.yellow.shade900 : null,
-//     animate: f != null,
-//     play: !isFavorites,
-//   );
-// }
-
 GridAction<File> _setFavoritesThumbnailAction(
   MiscSettingsService miscSettings,
 ) {
@@ -260,7 +240,6 @@ void moveOrCopyFnc(
   List<File> selected,
   bool move,
   TagManager tagManager,
-  // FavoritePostSourceService favoritePosts,
   LocalTagsService localTags,
   Directories providedApi,
   DeleteDialogShow toShow,
@@ -279,14 +258,14 @@ void moveOrCopyFnc(
   Navigator.of(topContext, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (context) {
-        return GalleryDirectories(
+        return DirectoriesPage(
           showBackButton: true,
           wrapGridPage: true,
           providedApi: providedApi,
           db: DatabaseConnectionNotifier.of(context),
-          callback: CallbackDescription(
-            (chosen, volumeName, bucketId, newDir) {
-              if (!newDir && bucketId == originalBucketId) {
+          callback: ReturnDirectoryCallback(
+            choose: (value, newDir) {
+              if (!newDir && value.bucketId == originalBucketId) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     behavior: SnackBarBehavior.floating,
@@ -298,10 +277,7 @@ void moveOrCopyFnc(
                 return Future.value();
               }
 
-              // if (bucketId == "favorites") {
-              //   favoriteOrUnfavorite(context, selected, favoritePosts);
-              // } else
-              if (bucketId == "trash") {
+              if (value.bucketId == "trash") {
                 if (!move) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -323,8 +299,8 @@ void moveOrCopyFnc(
                 GalleryApi()
                     .files
                     .copyMove(
-                      chosen,
-                      volumeName,
+                      value.path,
+                      value.volumeName,
                       selected,
                       move: move,
                       newDir: newDir,
@@ -378,46 +354,6 @@ void moveOrCopyFnc(
     }
   });
 }
-
-// void favoriteOrUnfavorite(
-//   BuildContext context,
-//   List<GalleryFile> selected,
-//   FavoritePostSourceService favoritePosts, [
-//   bool showSnackbar = true,
-// ]) {
-//   final l10n = AppLocalizations.of(context)!;
-
-//   final toDelete = <int>[];
-//   final toAdd = <int>[];
-
-//   for (final fav in selected) {
-//     if (favoritePosts.cachedValues.containsKey(fav.id)) {
-//       toDelete.add(fav.id);
-//     } else {
-//       toAdd.add(fav.id);
-//     }
-//   }
-
-//   if (toAdd.isNotEmpty) {
-//     favoritePosts.addAll(toAdd);
-//   }
-
-//   favoritePosts.deleteAll(toDelete);
-
-//   if (toDelete.isNotEmpty && showSnackbar) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: Text(l10n.deletedFromFavorites),
-//         action: SnackBarAction(
-//           label: l10n.undoLabel,
-//           onPressed: () {
-//             favoritePosts.backingStorage.addAll(toDelete);
-//           },
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 extension SaveTagsGlobalNotifier on GlobalProgressTab {
   ValueNotifier<Future<void>?> saveTags() {

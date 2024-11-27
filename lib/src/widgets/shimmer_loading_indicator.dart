@@ -16,9 +16,10 @@ class ShimmerLoadingIndicator extends StatelessWidget {
     this.reverse = false,
   });
 
+  final bool reverse;
+
   final Duration delay;
   final Duration duration;
-  final bool reverse;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,6 @@ class ShimmerLoadingIndicator extends StatelessWidget {
       effects: [
         ShimmerEffect(
           angle: reverse ? pi + (pi / 12) : null,
-          // curve: Easing.emphasizedDecelerate,
           colors: [
             colorScheme.primary.withValues(alpha: 0.1),
             colorScheme.onSurfaceVariant.withValues(alpha: 0.5),

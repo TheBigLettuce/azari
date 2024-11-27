@@ -9,8 +9,8 @@ part of "../grid_frame.dart";
 class GridDescription<T extends CellBase> {
   const GridDescription({
     this.pullToRefresh = true,
-    required this.actions,
-    required this.gridSeed,
+    this.actions = const [],
+    this.gridSeed = 0,
     this.showAppBar = true,
     this.bottomWidget,
     this.asSliver = false,
@@ -18,29 +18,27 @@ class GridDescription<T extends CellBase> {
     this.pageName,
     this.overrideEmptyWidgetNotice,
     this.animationsOnSourceWatch = true,
-    this.showLoadingIndicator = true,
   });
+
+  final bool showAppBar;
+  final bool pullToRefresh;
+  final bool animationsOnSourceWatch;
+  final bool asSliver;
+
+  final int gridSeed;
 
   /// If [pageName] is not null, and [GridFrame.searchWidget] is null,
   /// then a Text widget will be displayed in the app bar with this value.
   /// If null and [GridFrame.searchWidget] is null, then [keybindsDescription] is used as the value.
   final String? pageName;
 
+  final String? overrideEmptyWidgetNotice;
+
   /// Actions of the grid on selected cells.
   final List<GridAction<T>> actions;
 
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
-
-  final bool showAppBar;
-  final bool pullToRefresh;
-  final bool animationsOnSourceWatch;
-  final bool showLoadingIndicator;
-  final bool asSliver;
-
-  final int gridSeed;
-
-  final String? overrideEmptyWidgetNotice;
 
   final PreferredSizeWidget? footer;
 }

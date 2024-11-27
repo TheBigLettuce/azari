@@ -18,6 +18,7 @@ class WrapImageViewTheme extends StatefulWidget {
 
   final PaletteGenerator? currentPalette;
   final PaletteGenerator? previousPallete;
+
   final Widget child;
 
   @override

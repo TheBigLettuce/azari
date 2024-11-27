@@ -116,7 +116,7 @@ class ShimmerPlaceholdersMiniBookmark extends StatelessWidget {
 
 class _MiniBookmark extends StatelessWidget {
   const _MiniBookmark({
-    super.key,
+    // super.key,
     required this.bookmark,
     required this.onPressed,
     required this.onLongPressed,

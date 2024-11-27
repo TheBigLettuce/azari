@@ -11,7 +11,8 @@ class CellProvider<T extends CellBase> extends InheritedWidget {
     required this.getCell,
     required super.child,
   });
-  final T Function(int i) getCell;
+
+  final GetCellCallback<T> getCell;
 
   static T getOf<T extends CellBase>(BuildContext context, int i) {
     final widget =
@@ -20,7 +21,7 @@ class CellProvider<T extends CellBase> extends InheritedWidget {
     return widget!.getCell(i);
   }
 
-  static T Function(int) of<T extends CellBase>(BuildContext context) {
+  static GetCellCallback<T> of<T extends CellBase>(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<CellProvider<T>>();
 

@@ -7,6 +7,7 @@ import "dart:async";
 import "dart:math";
 
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -16,13 +17,11 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
 import "package:azari/src/pages/booru/bookmark_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/booru/favorite_posts_page.dart";
 import "package:azari/src/pages/booru/hidden_posts.dart";
-import "package:azari/src/pages/booru/search_page.dart";
 import "package:azari/src/pages/booru/visited_posts.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
@@ -30,10 +29,12 @@ import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/downloads/downloads.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -43,29 +44,22 @@ import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
-
-typedef OnBooruTagPressedFunc = void Function(
-  BuildContext context,
-  Booru booru,
-  String tag,
-  SafeMode? overrideSafeMode,
-);
 
 class BooruPage extends StatefulWidget {
   const BooruPage({
     super.key,
-    required this.procPop,
     required this.pagingRegistry,
     required this.db,
+    required this.procPop,
   });
 
   final PagingStateRegistry pagingRegistry;
@@ -82,7 +76,12 @@ class _BooruPageState extends State<BooruPage> {
   GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
-  WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+    hideName: true,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.two,
+    layoutType: GridLayoutType.gridQuilted,
+  );
 
   GridPostSource get source => pagingState.source;
 
@@ -180,7 +179,6 @@ class _BooruPageState extends State<BooruPage> {
             builder: (context) {
               return BooruRestoredPage(
                 pagingRegistry: widget.pagingRegistry,
-                generateGlue: GlueProvider.generateOf(context),
                 db: DatabaseConnectionNotifier.of(context),
                 booru: e.booru,
                 tags: e.tags,
@@ -196,6 +194,7 @@ class _BooruPageState extends State<BooruPage> {
 
   @override
   void dispose() {
+    gridSettings.cancel();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
     settingsWatcher.cancel();
@@ -236,7 +235,6 @@ class _BooruPageState extends State<BooruPage> {
           return BooruRestoredPage(
             booru: booru,
             tags: tag,
-            generateGlue: GlueProvider.generateOf(context),
             overrideSafeMode: safeMode,
             db: widget.db,
             saveSelectedPage: _setSecondaryName,
@@ -255,7 +253,7 @@ class _BooruPageState extends State<BooruPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     return switch (BooruSubPage.of(context)) {
       BooruSubPage.booru => GridPopScope(
@@ -298,12 +296,16 @@ class _BooruPageState extends State<BooruPage> {
                     GridFooter<void>(storage: source.backingStorage),
                   ],
                   functionality: GridFunctionality(
-                    settingsButton: GridSettingsButton.fromWatchable(
-                      gridSettings,
+                    selectionActions: SelectionActions.of(context),
+                    scrollingSink: ScrollingSinkProvider.maybeOf(context),
+                    scrollUpOn: navBarEvents == null
+                        ? const []
+                        : [(navBarEvents, null)],
+                    settingsButton: GridSettingsButton.onlyHeader(
                       SafeModeButton(settingsWatcher: state.settings.s.watch),
                     ),
-                    selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
+                    fab: const NoGridFab(),
                     search: RawSearchWidget(
                       (settingsButton, bottomWidget) => SliverAppBar(
                         leading: Center(
@@ -314,33 +316,29 @@ class _BooruPageState extends State<BooruPage> {
                             icon: const Icon(Icons.menu_rounded),
                           ),
                         ),
-                        floating: true,
-                        pinned: true,
-                        snap: true,
-                        stretch: true,
-                        backgroundColor:
-                            theme.colorScheme.surface.withValues(alpha: 0.95),
                         bottom: bottomWidget ??
                             const PreferredSize(
                               preferredSize: Size.zero,
                               child: SizedBox.shrink(),
                             ),
-                        centerTitle: true,
-                        title: IconButton(
-                          onPressed: () {
-                            Navigator.of(context, rootNavigator: true)
-                                .push<void>(
-                              MaterialPageRoute(
-                                builder: (context) => BooruSearchPage(
-                                  db: widget.db,
-                                  onTagPressed: _onBooruTagPressed,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.search_rounded),
-                        ),
-                        actions: [if (settingsButton != null) settingsButton],
+                        // centerTitle: true,
+                        // title: IconButton(
+                        //   onPressed: () {
+                        //     Navigator.of(context, rootNavigator: true)
+                        //         .push<void>(
+                        //       MaterialPageRoute(
+                        //         builder: (context) => BooruSearchPage(
+                        //           db: widget.db,
+                        //           onTagPressed: _onBooruTagPressed,
+                        //         ),
+                        //       ),
+                        //     );
+                        //   },
+                        //   icon: const Icon(Icons.search_rounded),
+                        // ),
+                        actions: [
+                          if (settingsButton != null) settingsButton,
+                        ],
                       ),
                     ),
                     download: _download,
@@ -354,7 +352,6 @@ class _BooruPageState extends State<BooruPage> {
                     ),
                   ),
                   description: GridDescription(
-                    showLoadingIndicator: false,
                     actions: [
                       actions.download(context, pagingState.api.booru, null),
                       actions.favorites(
@@ -374,15 +371,9 @@ class _BooruPageState extends State<BooruPage> {
             ),
           ),
         ),
-      BooruSubPage.favorites => GlueProvider(
-          generate: GlueProvider.generateOf(context),
-          child: FavoritePostsPage(
-            wrapGridPage: true,
-            asSliver: false,
-            rootNavigatorPop: widget.procPop,
-            api: pagingState.api,
-            db: widget.db,
-          ),
+      BooruSubPage.favorites => FavoritePostsPage(
+          rootNavigatorPop: widget.procPop,
+          db: widget.db,
         ),
       BooruSubPage.bookmarks => GridPopScope(
           searchTextController: null,
@@ -390,7 +381,6 @@ class _BooruPageState extends State<BooruPage> {
           rootNavigatorPop: widget.procPop,
           child: BookmarkPage(
             pagingRegistry: widget.pagingRegistry,
-            generateGlue: GlueProvider.generateOf(context),
             saveSelectedPage: _setSecondaryName,
             db: widget.db,
           ),
@@ -400,7 +390,6 @@ class _BooruPageState extends State<BooruPage> {
           filter: null,
           rootNavigatorPop: widget.procPop,
           child: HiddenPostsPage(
-            generateGlue: GlueProvider.generateOf(context),
             db: widget.db.hiddenBooruPost,
           ),
         ),
@@ -408,8 +397,7 @@ class _BooruPageState extends State<BooruPage> {
           searchTextController: null,
           filter: null,
           rootNavigatorPop: widget.procPop,
-          child: Downloads(
-            generateGlue: GlueProvider.generateOf(context),
+          child: DownloadsPage(
             downloadManager: DownloadManager.of(context),
             db: widget.db,
           ),
@@ -419,13 +407,8 @@ class _BooruPageState extends State<BooruPage> {
           filter: null,
           rootNavigatorPop: widget.procPop,
           child: VisitedPostsPage(
-            generateGlue: GlueProvider.generateOf(context),
             db: widget.db.visitedPosts,
           ),
-        ),
-      BooruSubPage.anime => AnimePage(
-          procPop: widget.procPop,
-          db: widget.db,
         ),
     };
   }
@@ -520,7 +503,7 @@ class _MainGridPagingState implements PagingEntry {
   @override
   bool reachedEnd = false;
 
-  late final BooruAPI api = BooruAPI.fromEnum(booru, client, this);
+  late final BooruAPI api = BooruAPI.fromEnum(booru, client);
   final TagManager tagManager;
   final Dio client;
   late final GridPostSource source;
@@ -601,10 +584,12 @@ class OpenMenuButton extends StatelessWidget {
     required this.launchGrid,
     required this.context,
   });
-  final void Function(BuildContext, String, [SafeMode?]) launchGrid;
+
   final TextEditingController controller;
   final Booru booru;
   final BuildContext context;
+
+  final OpenSearchCallback launchGrid;
 
   @override
   Widget build(BuildContext context) {
@@ -628,7 +613,7 @@ class OpenMenuButton extends StatelessWidget {
 PopupMenuItem<void> launchGridSafeModeItem(
   BuildContext context,
   String tag,
-  void Function(BuildContext, String, [SafeMode?]) launchGrid,
+  OpenSearchCallback launchGrid,
   AppLocalizations l10n,
 ) =>
     PopupMenuItem(
@@ -684,12 +669,13 @@ class HottestTagsCarousel extends StatefulWidget {
     required this.randomNumber,
   });
 
+  final int randomNumber;
+
   final ValueNotifier<Future<void>?> notifier;
 
-  final DbConn db;
   final BooruAPI api;
 
-  final int randomNumber;
+  final DbConn db;
 
   @override
   State<HottestTagsCarousel> createState() => _HottestTagsCarouselState();
@@ -806,6 +792,8 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
       );
     }
 
+    final theme = Theme.of(context);
+
     return SliverPadding(
       padding: EdgeInsets.zero,
       sliver: SliverToBoxAdapter(
@@ -813,21 +801,51 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
           constraints:
               BoxConstraints(maxHeight: 160 * GridAspectRatio.oneFive.value),
           child: CarouselView.weighted(
+            enableSplash: false,
             itemSnapping: true,
             flexWeights: const [3, 2, 1],
             shrinkExtent: 200,
-            onTap: (i) {
-              OnBooruTagPressed.maybePressOf(
-                context,
-                list[i].tag,
-                widget.api.booru,
-                overrideSafeMode: SettingsService.db().current.safeMode,
-              );
-            },
             children: list.map<Widget>((tag) {
-              return HottestTagWidget(
-                tag: tag,
-                booru: widget.api.booru,
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  HottestTagWidget(
+                    tag: tag,
+                    booru: widget.api.booru,
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => OnBooruTagPressed.maybePressOf(
+                        context,
+                        tag.tag,
+                        widget.api.booru,
+                        overrideSafeMode: SettingsService.db().current.safeMode,
+                      ),
+                      onLongPress: () => Post.imageViewSingle(
+                        context,
+                        widget.api.booru,
+                        tag.postId,
+                      ),
+                      overlayColor: WidgetStateProperty.resolveWith(
+                          (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.pressed)) {
+                          return theme.colorScheme.onSurface
+                              .withValues(alpha: 0.1);
+                        }
+                        if (states.contains(WidgetState.hovered)) {
+                          return theme.colorScheme.onSurface
+                              .withValues(alpha: 0.08);
+                        }
+                        if (states.contains(WidgetState.focused)) {
+                          return theme.colorScheme.onSurface
+                              .withValues(alpha: 0.1);
+                        }
+                        return null;
+                      }),
+                    ),
+                  ),
+                ],
               );
             }).toList(),
           ),
@@ -846,9 +864,9 @@ class _HottestTagData {
   });
 
   final int postId;
+  final int count;
 
   final String tag;
-  final int count;
   final String thumbUrl;
 }
 
@@ -903,7 +921,6 @@ class HottestTagWidget extends StatelessWidget {
               maxLines: 1,
               style: theme.textTheme.headlineLarge?.copyWith(
                 color: Colors.white,
-                // shadows: kElevationToShadow[1],
               ),
             ),
           ),
@@ -971,6 +988,7 @@ Future<void> _loadHottestTags(
           db.tagManager.excluded,
           SafeMode.normal,
           limit: 15,
+          pageSaver: PageSaver.noPersist(),
         );
 
         res.add(
@@ -1005,6 +1023,7 @@ class BooruAPINotifier extends InheritedWidget {
     required this.api,
     required super.child,
   });
+
   final BooruAPI api;
 
   static BooruAPI of(BuildContext context) {

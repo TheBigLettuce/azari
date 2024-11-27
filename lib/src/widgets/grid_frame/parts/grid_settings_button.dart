@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
@@ -13,7 +14,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class GridSettingsButton extends StatelessWidget {
   const GridSettingsButton({
@@ -30,6 +30,15 @@ class GridSettingsButton extends StatelessWidget {
         add: (d) => w.current = d,
         watch: w.watch,
         header: header,
+      );
+
+  static Widget onlyHeader(
+    Widget header, [
+    ButtonStyle? style,
+  ]) =>
+      _GridSettingsButtonHeader(
+        header: header,
+        style: style,
       );
 
   final void Function(GridSettingsData) add;
@@ -56,6 +65,45 @@ class GridSettingsButton extends StatelessWidget {
               child: _BottomSheetContent(
                 add: add,
                 watch: watch,
+                header: header,
+              ),
+            );
+          },
+        );
+      },
+      icon: const Icon(Icons.more_horiz_outlined),
+    );
+  }
+}
+
+class _GridSettingsButtonHeader extends StatelessWidget {
+  const _GridSettingsButtonHeader({
+    // super.key,
+    required this.header,
+    required this.style,
+  });
+
+  final Widget header;
+  final ButtonStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return IconButton(
+      style: style,
+      onPressed: () {
+        showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
+          isScrollControlled: true,
+          showDragHandle: true,
+          useRootNavigator: true,
+          builder: (context) {
+            return SafeArea(
+              child: _BottomSheetContent(
+                add: null,
+                watch: null,
                 header: header,
               ),
             );
@@ -96,14 +144,18 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     this.enableFilter = false,
   });
 
-  final Iterable<SegmentedButtonValue<T>> values;
-  final T? selected;
-  final void Function(T?) select;
-  final String title;
   final bool allowUnselect;
   final bool enableFilter;
 
+  final String title;
+
+  final T? selected;
+
+  final Iterable<SegmentedButtonValue<T>> values;
+
   final SegmentedButtonVariant variant;
+
+  final void Function(T?) select;
 
   @override
   State<SegmentedButtonGroup<T>> createState() => _SegmentedButtonGroupState();
@@ -385,21 +437,21 @@ class _BottomSheetContent extends StatefulWidget {
     required this.header,
   });
 
-  final void Function(GridSettingsData) add;
-
   final Widget? header;
 
+  final void Function(GridSettingsData)? add;
+
   final StreamSubscription<GridSettingsData>
-      Function(void Function(GridSettingsData) f, [bool fire]) watch;
+      Function(void Function(GridSettingsData) f, [bool fire])? watch;
 
   @override
   State<_BottomSheetContent> createState() => __BottomSheetContentState();
 }
 
 class __BottomSheetContentState extends State<_BottomSheetContent> {
-  void Function(GridSettingsData) get add => widget.add;
+  void Function(GridSettingsData)? get add => widget.add;
 
-  late final StreamSubscription<GridSettingsData> watcher;
+  late final StreamSubscription<GridSettingsData>? watcher;
 
   GridSettingsData? _gridSettings;
 
@@ -407,7 +459,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
   void initState() {
     super.initState();
 
-    watcher = widget.watch(
+    watcher = widget.watch?.call(
       (newSettings) {
         _gridSettings = newSettings;
 
@@ -419,7 +471,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
 
   @override
   void dispose() {
-    watcher.cancel();
+    watcher?.cancel();
 
     super.dispose();
   }
@@ -489,7 +541,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
 
   @override
   Widget build(BuildContext context) {
-    if (_gridSettings == null) {
+    if (_gridSettings == null && widget.watch != null) {
       return const SizedBox(
         width: double.infinity,
         child: Padding(
@@ -516,32 +568,35 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 style: theme.textTheme.titleLarge,
               ),
             ),
-            _hideName(
-              context,
-              _gridSettings!.hideName,
-              (n) => add(_gridSettings!.copy(hideName: n)),
-              const EdgeInsets.symmetric(horizontal: 12),
-              l10n,
-            ),
-            if (widget.header != null) widget.header!,
-            _gridLayout(
-              context,
-              _gridSettings!.layoutType,
-              (t) => add(_gridSettings!.copy(layoutType: t)),
-              l10n,
-            ),
-            _ratio(
-              context,
-              _gridSettings!.aspectRatio,
-              (r) => add(_gridSettings!.copy(aspectRatio: r)),
-              l10n,
-            ),
-            _columns(
-              context,
-              _gridSettings!.columns,
-              (c) => add(_gridSettings!.copy(columns: c)),
-              l10n,
-            ),
+            if (widget.add != null) ...[
+              _hideName(
+                context,
+                _gridSettings!.hideName,
+                (n) => add!(_gridSettings!.copy(hideName: n)),
+                const EdgeInsets.symmetric(horizontal: 12),
+                l10n,
+              ),
+              if (widget.header != null) widget.header!,
+              _gridLayout(
+                context,
+                _gridSettings!.layoutType,
+                (t) => add!(_gridSettings!.copy(layoutType: t)),
+                l10n,
+              ),
+              _ratio(
+                context,
+                _gridSettings!.aspectRatio,
+                (r) => add!(_gridSettings!.copy(aspectRatio: r)),
+                l10n,
+              ),
+              _columns(
+                context,
+                _gridSettings!.columns,
+                (c) => add!(_gridSettings!.copy(columns: c)),
+                l10n,
+              ),
+            ] else if (widget.header != null)
+              widget.header!,
             const Padding(padding: EdgeInsets.only(bottom: 8)),
           ],
         ),

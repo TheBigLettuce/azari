@@ -19,8 +19,22 @@ class GridAction<T extends CellBase> {
     this.play = true,
   });
 
+  /// If [showOnlyWhenSingle] is true, then this button will be only active if only a single
+  /// element is currently selected.
+  final bool showOnlyWhenSingle;
+
+  /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
+  /// button has been pressed.
+  final bool closeOnPress;
+
+  final bool animate;
+  final bool play;
+
   /// Icon of the button.
   final IconData icon;
+
+  final Color? backgroundColor;
+  final Color? color;
 
   /// [onPress] is called when the button gets pressed,
   /// if [showOnlyWhenSingle] is true then this is guranteed to be called
@@ -28,19 +42,6 @@ class GridAction<T extends CellBase> {
   final void Function(List<T> selected) onPress;
 
   final void Function(List<T> selected)? onLongPress;
-
-  /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
-  /// button has been pressed.
-  final bool closeOnPress;
-
-  /// If [showOnlyWhenSingle] is true, then this button will be only active if only a single
-  /// element is currently selected.
-  final bool showOnlyWhenSingle;
-
-  final Color? backgroundColor;
-  final Color? color;
-  final bool animate;
-  final bool play;
 }
 
 class ImageViewAction {
@@ -63,6 +64,9 @@ class ImageViewAction {
     this.longLoadingNotifier,
   });
 
+  final bool animate;
+  final bool play;
+
   /// Icon of the button.
   final IconData icon;
 
@@ -72,12 +76,11 @@ class ImageViewAction {
   final void Function(Contentable selected)? onPress;
 
   final Color? color;
-
-  final bool animate;
-  final bool play;
   final List<Effect<dynamic>> animation;
 
   final ValueNotifier<Future<void>?>? longLoadingNotifier;
+
+  final WatchFire<(IconData?, Color?, bool?)>? watch;
 
   ImageViewAction copy(
     IconData? icon,
@@ -92,6 +95,4 @@ class ImageViewAction {
         animate: animate ?? this.animate,
         play: play ?? this.play,
       );
-
-  final WatchFire<(IconData?, Color?, bool?)>? watch;
 }

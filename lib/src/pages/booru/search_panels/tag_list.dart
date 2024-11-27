@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _TagList extends StatefulWidget {
   const _TagList({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.api,
     required this.searchController,

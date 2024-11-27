@@ -57,7 +57,6 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.name
 
-
 class AppContextChannel(
     val engine: FlutterEngine,
     private val galleryApi: PlatformGalleryApi,

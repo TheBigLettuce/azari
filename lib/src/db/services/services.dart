@@ -5,28 +5,23 @@
 
 import "dart:async";
 
-import "package:azari/src/db/gallery_thumbnail_provider.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/impl_table/io.dart"
     if (dart.library.html) "package:azari/src/db/services/impl_table/web.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
-import "package:azari/src/net/anime/anime_api.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/net/manga/manga_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -36,24 +31,15 @@ import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 part "blacklisted_directory.dart";
-part "chapters_settings.dart";
-part "compact_manga_data.dart";
 part "directory_metadata.dart";
 part "download_file.dart";
-part "favorite_file.dart";
 part "favorite_post.dart";
 part "grid_settings.dart";
 part "hidden_booru_post.dart";
 part "misc_settings.dart";
-part "pinned_manga.dart";
 part "pinned_thumbnail.dart";
-part "read_manga_chapters.dart";
-part "saved_anime_characters.dart";
-part "saved_anime_entry.dart";
-part "saved_manga_chapters.dart";
 part "settings.dart";
 part "statistics_booru.dart";
 part "statistics_daily.dart";
@@ -61,7 +47,6 @@ part "statistics_gallery.dart";
 part "statistics_general.dart";
 part "thumbnail.dart";
 part "video_settings.dart";
-part "watched_anime_entry.dart";
 
 Future<void> initServices(bool temporary) async {
   _downloadManager ??= await init(_currentDb, temporary);
@@ -78,8 +63,6 @@ DownloadManager? _downloadManager;
 abstract interface class ServicesImplTable implements ServiceMarker {
   SettingsService get settings;
   MiscSettingsService get miscSettings;
-  SavedAnimeEntriesService get savedAnimeEntries;
-  SavedAnimeCharactersService get savedAnimeCharacters;
   VideoSettingsService get videoSettings;
   HiddenBooruPostService get hiddenBooruPost;
   DownloadFileService get downloads;
@@ -89,21 +72,15 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   StatisticsBooruService get statisticsBooru;
   StatisticsDailyService get statisticsDaily;
   DirectoryMetadataService get directoryMetadata;
-  ChaptersSettingsService get chaptersSettings;
-  SavedMangaChaptersService get savedMangaChapters;
-  ReadMangaChaptersService get readMangaChapters;
-  PinnedMangaService get pinnedManga;
   ThumbnailService get thumbnails;
   PinnedThumbnailService get pinnedThumbnails;
   LocalTagsService get localTags;
   LocalTagDictionaryService get localTagDictionary;
-  CompactMangaDataService get compactManga;
   GridBookmarkService get gridBookmarks;
   DirectoryTagService get directoryTags;
   BlacklistedDirectoryService get blacklistedDirectories;
   GridSettingsService get gridSettings;
   VisitedPostsService get visitedPosts;
-  AnimeListsService get animeLists;
   HottestTagsService get hottestTags;
 
   TagManager get tagManager;
@@ -155,7 +132,6 @@ mixin VisitedPostImpl implements VisitedPost {
   void onPress(
     BuildContext context,
     GridFunctionality<VisitedPost> functionality,
-    VisitedPost cell,
     int idx,
   ) =>
       Post.imageViewSingle(
@@ -530,7 +506,10 @@ abstract interface class SecondaryGridService {
 }
 
 class BufferedStorage<T> {
+  BufferedStorage(this.bufferLen);
+
   final List<T> _buffer = [];
+  final int bufferLen;
   int _offset = 0;
   int _cursor = -1;
   bool _done = false;
@@ -547,7 +526,7 @@ class BufferedStorage<T> {
       return true;
     }
 
-    final ret = nextItems(_offset, 40);
+    final ret = nextItems(_offset, bufferLen);
     if (ret.isEmpty) {
       _cursor = -1;
       _buffer.clear();
@@ -610,144 +589,6 @@ abstract interface class HottestTagsService {
 }
 
 @immutable
-abstract class AnimeGenre {
-  const factory AnimeGenre({
-    required int id,
-    required String title,
-    required bool unpressable,
-    required bool explicit,
-  }) = $AnimeGenre;
-
-  String get title;
-  int get id;
-  bool get unpressable;
-  bool get explicit;
-}
-
-@immutable
-abstract class AnimeRelation {
-  const factory AnimeRelation({
-    required int id,
-    required String thumbUrl,
-    required String title,
-    required String type,
-  }) = $AnimeRelation;
-
-  int get id;
-  String get thumbUrl;
-  String get title;
-  String get type;
-
-  static bool idIsValid(AnimeRelation e) => e.id != 0 && e.type != "manga";
-
-  @override
-  String toString() => title;
-}
-
-@immutable
-abstract class AnimeEntryData
-    implements
-        AnimeCell,
-        ContentWidgets,
-        Thumbnailable,
-        Downloadable,
-        Pressable<AnimeEntryData>,
-        Stickerable {
-  const factory AnimeEntryData({
-    required DateTime? airedFrom,
-    required DateTime? airedTo,
-    required AnimeMetadata site,
-    required String type,
-    required String thumbUrl,
-    required String imageUrl,
-    required String title,
-    required String titleJapanese,
-    required String titleEnglish,
-    required double score,
-    required String synopsis,
-    required int id,
-    required String siteUrl,
-    required bool isAiring,
-    required List<String> titleSynonyms,
-    required String trailerUrl,
-    required int episodes,
-    required String background,
-    required AnimeSafeMode explicit,
-  }) = $AnimeEntryData;
-
-  int get id;
-
-  String get thumbUrl;
-  String get imageUrl;
-  String get siteUrl;
-  String get trailerUrl;
-  String get title;
-  String get titleJapanese;
-  String get titleEnglish;
-  String get synopsis;
-  String get background;
-  String get type;
-
-  List<String> get titleSynonyms;
-  List<AnimeGenre> get genres;
-
-  List<AnimeRelation> get relations;
-  List<AnimeRelation> get staff;
-
-  double get score;
-
-  DateTime? get airedFrom;
-  DateTime? get airedTo;
-
-  int get episodes;
-
-  bool get isAiring;
-  AnimeSafeMode get explicit;
-  AnimeMetadata get site;
-
-  void openInfoPage(BuildContext context);
-  dynamic properties();
-
-  AnimeEntryData copy({
-    AnimeMetadata? site,
-    int? episodes,
-    String? trailerUrl,
-    String? siteUrl,
-    String? imageUrl,
-    String? title,
-    String? titleJapanese,
-    String? titleEnglish,
-    String? background,
-    int? id,
-    List<AnimeGenre>? genres,
-    List<String>? titleSynonyms,
-    List<AnimeRelation>? relations,
-    bool? isAiring,
-    double? score,
-    String? thumbUrl,
-    String? synopsis,
-    String? type,
-    AnimeSafeMode? explicit,
-    List<AnimeRelation>? staff,
-    DateTime? airedFrom,
-    DateTime? airedTo,
-  });
-}
-
-mixin DefaultAnimeEntryPressable
-    implements Pressable<AnimeEntryData>, AnimeEntryData {
-  @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<AnimeEntryData> functionality,
-    AnimeEntryData cell,
-    int idx,
-  ) {
-    openInfoPage(context);
-  }
-}
-
-@immutable
 abstract class Post implements PostBase, PostImpl, Pressable<Post> {
   const factory Post({
     required int id,
@@ -800,7 +641,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
       context,
       () async {
         final dio = BooruAPI.defaultClientForBooru(booru);
-        final api = BooruAPI.fromEnum(booru, dio, PageSaver.noPersist());
+        final api = BooruAPI.fromEnum(booru, dio);
 
         final Post post;
         try {
@@ -828,25 +669,4 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
       watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, db.tagManager),
     );
   }
-}
-
-abstract interface class AnimeListsService implements ServiceMarker {
-  (DateTime, List<AnimeEntryData>) get upcoming;
-  (DateTime, List<AnimeEntryData>) get currentSeason;
-
-  void setUpcoming(List<AnimeEntryData> l);
-  void clearUpcoming();
-
-  void setCurrentSeason(List<AnimeEntryData> l);
-  void clearCurrentSeason();
-
-  StreamSubscription<void> watchAllUpcoming(
-    void Function(void) f, [
-    bool fire = false,
-  ]);
-
-  StreamSubscription<void> watchAllCurrentSeason(
-    void Function(void) f, [
-    bool fire = false,
-  ]);
 }

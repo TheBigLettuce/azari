@@ -7,7 +7,7 @@ part of "../search_page.dart";
 
 class _FilesList extends StatefulWidget {
   const _FilesList({
-    super.key,
+    // super.key,
     required this.filteringEvents,
     required this.searchController,
     required this.db,
@@ -17,7 +17,7 @@ class _FilesList extends StatefulWidget {
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
 
-  final CallbackDescriptionNested? callback;
+  final ReturnFileCallback? callback;
 
   final DbConn db;
 
@@ -112,7 +112,7 @@ class __FilesListState extends State<_FilesList> {
                             StatisticsGalleryService.asImageViewStatistics(),
                       ),
                       startingCell: i,
-                      wrapNotifiers: (child) => NestedCallbackNotifier(
+                      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
                         callback: widget.callback,
                         child: child,
                       ),
@@ -132,7 +132,7 @@ class __FilesListState extends State<_FilesList> {
                   child: SizedBox(
                     width: _FilesList.size.width,
                     child: GridCell(
-                      cell: cell,
+                      data: cell,
                       imageAlign: Alignment.topCenter,
                       hideTitle: false,
                       overrideDescription: const CellStaticData(

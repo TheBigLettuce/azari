@@ -53,6 +53,7 @@ abstract class BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   });
 
   /// Get the post's notes.
@@ -67,6 +68,7 @@ abstract class BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   });
 
   Future<List<BooruTag>> searchTag(
@@ -90,11 +92,10 @@ abstract class BooruAPI {
   /// Some booru have no way to retreive posts down a certain post number,
   /// in such a case the implementation is likely to use paging,
   /// and should use provided [pageSaver] for this purpose.
-  static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
+  static BooruAPI fromSettings(Dio client) {
     return BooruAPI.fromEnum(
       SettingsService.db().current.selectedBooru,
       client,
-      pageSaver,
     );
   }
 
@@ -107,10 +108,10 @@ abstract class BooruAPI {
 
   /// Sometimes, it is needed to constuct [BooruAPI] instance which isn't the
   /// current selected/used one.
-  static BooruAPI fromEnum(Booru booru, Dio client, PageSaver pageSaver) {
+  static BooruAPI fromEnum(Booru booru, Dio client) {
     return switch (booru) {
-      Booru.danbooru => Danbooru(client, pageSaver),
-      Booru.gelbooru => Gelbooru(client, pageSaver),
+      Booru.danbooru => Danbooru(client),
+      Booru.gelbooru => Gelbooru(client),
     };
   }
 }

@@ -88,10 +88,14 @@ abstract interface class Infoable {
 }
 
 class NavigationAction {
-  const NavigationAction(this.icon, this.onPressed);
+  const NavigationAction(
+    this.icon,
+    this.onPressed,
+  );
 
   final IconData icon;
-  final void Function() onPressed;
+
+  final VoidCallback onPressed;
 }
 
 /// Displays an error page in the image view.
@@ -103,7 +107,11 @@ class EmptyContent extends Contentable {
 }
 
 class AndroidGif extends Contentable {
-  const AndroidGif(this.widgets, {required this.uri, required this.size});
+  const AndroidGif(
+    this.widgets, {
+    required this.uri,
+    required this.size,
+  });
 
   final String uri;
   final Size size;
@@ -113,7 +121,12 @@ class AndroidGif extends Contentable {
 }
 
 class AndroidVideo extends Contentable {
-  const AndroidVideo(this.widgets, {required this.uri, required this.size});
+  const AndroidVideo(
+    this.widgets, {
+    required this.uri,
+    required this.size,
+  });
+
   final String uri;
   final Size size;
 
@@ -122,7 +135,11 @@ class AndroidVideo extends Contentable {
 }
 
 class AndroidImage extends Contentable {
-  const AndroidImage(this.widgets, {required this.uri, required this.size});
+  const AndroidImage(
+    this.widgets, {
+    required this.uri,
+    required this.size,
+  });
 
   final String uri;
   final Size size;
@@ -132,7 +149,10 @@ class AndroidImage extends Contentable {
 }
 
 class NetImage extends Contentable {
-  const NetImage(this.widgets, this.provider);
+  const NetImage(
+    this.widgets,
+    this.provider,
+  );
 
   final ImageProvider provider;
 
@@ -141,7 +161,10 @@ class NetImage extends Contentable {
 }
 
 class NetGif extends Contentable {
-  const NetGif(this.widgets, this.provider);
+  const NetGif(
+    this.widgets,
+    this.provider,
+  );
 
   final ImageProvider provider;
 
@@ -150,7 +173,10 @@ class NetGif extends Contentable {
 }
 
 class NetVideo extends Contentable {
-  const NetVideo(this.widgets, this.uri);
+  const NetVideo(
+    this.widgets,
+    this.uri,
+  );
 
   final String uri;
 

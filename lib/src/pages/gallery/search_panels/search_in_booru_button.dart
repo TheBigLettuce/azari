@@ -7,14 +7,14 @@ part of "../search_page.dart";
 
 class _SearchInBooruButton extends StatefulWidget {
   const _SearchInBooruButton({
-    super.key,
+    // super.key,
     required this.onPressed,
     required this.filteringEvents,
   });
 
   final Stream<String> filteringEvents;
 
-  final void Function() onPressed;
+  final VoidCallback onPressed;
 
   @override
   State<_SearchInBooruButton> createState() => __SearchInBooruButtonState();

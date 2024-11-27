@@ -12,6 +12,7 @@ class GridBottomPaddingProvider extends InheritedWidget {
     required this.fab,
     required super.child,
   });
+
   final double padding;
   final double fab;
 

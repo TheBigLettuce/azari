@@ -6,13 +6,13 @@
 import "dart:async";
 
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -25,21 +25,30 @@ import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
 import "package:azari/src/widgets/load_tags.dart";
+import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 import "package:photo_view/photo_view_gallery.dart";
 
 part "body.dart";
 part "video_controls.dart";
 
+typedef NotifierWrapper = Widget Function(Widget child);
+typedef ContentGetter = Contentable? Function(int i);
+typedef ContentIdxCallback = void Function(int i);
+
 class ImageViewStatistics {
-  const ImageViewStatistics({required this.swiped, required this.viewed});
-  final void Function() swiped;
-  final void Function() viewed;
+  const ImageViewStatistics({
+    required this.swiped,
+    required this.viewed,
+  });
+
+  final VoidCallback swiped;
+  final VoidCallback viewed;
 
   ImageViewStatistics operator +(ImageViewStatistics other) {
     return ImageViewStatistics(
@@ -71,11 +80,10 @@ class ImageViewDescription<T extends ContentableCell> {
 
   final bool ignoreOnNearEnd;
 
-  final void Function()? onExit;
-
-  final void Function()? beforeRestore;
-
   final ImageViewStatistics? statistics;
+
+  final VoidCallback? onExit;
+  final VoidCallback? beforeRestore;
 
   final void Function(ImageViewState state)? pageChange;
 }
@@ -86,7 +94,6 @@ abstract interface class ContentableCell
 class ImageView extends StatefulWidget {
   const ImageView({
     super.key,
-    required this.cellCount,
     required this.scrollUntill,
     required this.startingCell,
     this.onExit,
@@ -95,7 +102,7 @@ class ImageView extends StatefulWidget {
     this.updates,
     this.watchTags,
     this.ignoreLoadingBuilder = false,
-    required this.getCell,
+    required this.getContent,
     required this.onNearEnd,
     this.pageChange,
     this.download,
@@ -103,79 +110,99 @@ class ImageView extends StatefulWidget {
     this.onLeftSwitchPageEnd,
     this.gridContext,
     this.preloadNextPictures = false,
+    this.wrapNotifiers,
+    required this.cellCount,
   });
 
-  final int startingCell;
-  final Contentable? Function(int i) getCell;
-  final int cellCount;
-  final void Function(int post) scrollUntill;
-  final Future<int> Function()? onNearEnd;
-  final void Function(int i)? download;
-  final void Function(ImageViewState state)? pageChange;
-  final void Function()? onExit;
-
-  final ImageViewStatistics? statistics;
-
-  final BuildContext? gridContext;
+  const ImageView.simple({
+    super.key,
+    required this.getContent,
+    required this.cellCount,
+    this.ignoreLoadingBuilder = false,
+    this.preloadNextPictures = false,
+    this.startingCell = 0,
+    this.scrollUntill = _nothingScroll,
+    this.onExit,
+    this.statistics,
+    this.tags,
+    this.updates,
+    this.watchTags,
+    this.onNearEnd,
+    this.pageChange,
+    this.download,
+    this.onRightSwitchPageEnd,
+    this.onLeftSwitchPageEnd,
+    this.gridContext,
+    this.wrapNotifiers,
+  });
 
   final bool ignoreLoadingBuilder;
   final bool preloadNextPictures;
 
-  final void Function()? onRightSwitchPageEnd;
-  final void Function()? onLeftSwitchPageEnd;
+  final int startingCell;
+  final int cellCount;
+
+  final BuildContext? gridContext;
+
+  final ContentGetter getContent;
+
+  final ContentIdxCallback scrollUntill;
+  final ContentIdxCallback? download;
+
+  final ImageViewStatistics? statistics;
+
+  final VoidCallback? onExit;
+
+  final VoidCallback? onRightSwitchPageEnd;
+  final VoidCallback? onLeftSwitchPageEnd;
+
+  final NotifierWrapper? wrapNotifiers;
+
+  final void Function(ImageViewState state)? pageChange;
+  final Future<int> Function()? onNearEnd;
+  final List<ImageTag> Function(Contentable)? tags;
 
   final StreamSubscription<int> Function(void Function(int) f)? updates;
 
-  final List<ImageTag> Function(Contentable)? tags;
-  final StreamSubscription<List<ImageTag>> Function(
-    Contentable,
-    void Function(List<ImageTag> l),
-  )? watchTags;
+  final WatchTagsCallback? watchTags;
+
+  static void _nothingScroll(int _) {}
 
   static Future<void> launchWrapped(
     BuildContext context,
     int cellCount,
-    Contentable Function(int) cell, {
+    ContentGetter getContent, {
     int startingCell = 0,
-    void Function(int)? download,
+    ContentIdxCallback? download,
+    void Function(Contentable)? addToVisited,
     List<ImageTag> Function(Contentable)? tags,
     ImageViewDescription? imageDesctipion,
-    StreamSubscription<List<ImageTag>> Function(
-      Contentable,
-      void Function(List<ImageTag> l),
-    )? watchTags,
-    Widget Function(Widget child)? wrapNotifiers,
-    void Function(Contentable)? addToVisited,
+    WatchTagsCallback? watchTags,
+    NotifierWrapper? wrapNotifiers,
     Key? key,
   }) {
-    addToVisited?.call(cell(startingCell));
+    addToVisited?.call(getContent(startingCell)!);
 
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
-        builder: (context) {
-          final c = GlueProvider.empty(
-            context,
-            child: ImageView(
-              key: key,
-              statistics: imageDesctipion?.statistics,
-              cellCount: cellCount,
-              download: download,
-              scrollUntill: (_) {},
-              pageChange: (state) {
-                imageDesctipion?.pageChange?.call(state);
-                addToVisited?.call(cell(state.currentPage));
-              },
-              startingCell: startingCell,
-              onExit: imageDesctipion?.onExit,
-              getCell: cell,
-              watchTags: watchTags,
-              tags: tags,
-              onNearEnd: null,
-            ),
-          );
-
-          return wrapNotifiers != null ? wrapNotifiers(c) : c;
-        },
+        builder: (context) => ImageView(
+          key: key,
+          statistics: imageDesctipion?.statistics,
+          cellCount: cellCount,
+          download: download,
+          scrollUntill: (_) {},
+          pageChange: (state) {
+            imageDesctipion?.pageChange?.call(state);
+            addToVisited?.call(getContent(state.currentPage)!);
+          },
+          startingCell: startingCell,
+          onExit: imageDesctipion?.onExit,
+          getContent: getContent,
+          watchTags: watchTags,
+          tags: tags,
+          onNearEnd: null,
+          wrapNotifiers: wrapNotifiers,
+        ),
       ),
     );
   }
@@ -183,39 +210,30 @@ class ImageView extends StatefulWidget {
   static Future<void> launchWrappedAsyncSingle(
     BuildContext context,
     Future<Contentable Function()> Function() cell, {
-    void Function(int)? download,
+    ContentIdxCallback? download,
     Key? key,
     List<ImageTag> Function(Contentable)? tags,
-    StreamSubscription<List<ImageTag>> Function(
-      Contentable,
-      void Function(List<ImageTag> l),
-    )? watchTags,
-    Widget Function(Widget child)? wrapNotifiers,
+    WatchTagsCallback? watchTags,
+    NotifierWrapper? wrapNotifiers,
   }) {
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
-        builder: (context) {
-          final c = WrapFutureRestartable(
-            newStatus: cell,
-            builder: (context, value) => GlueProvider.empty(
-              context,
-              child: ImageView(
-                key: key,
-                cellCount: 1,
-                download: download,
-                tags: tags,
-                watchTags: watchTags,
-                scrollUntill: (_) {},
-                startingCell: 0,
-                onExit: () {},
-                getCell: (_) => value(),
-                onNearEnd: null,
-              ),
-            ),
-          );
-
-          return wrapNotifiers != null ? wrapNotifiers(c) : c;
-        },
+        builder: (context) => WrapFutureRestartable(
+          newStatus: cell,
+          builder: (context, value) => ImageView(
+            key: key,
+            cellCount: 1,
+            download: download,
+            tags: tags,
+            watchTags: watchTags,
+            scrollUntill: (_) {},
+            startingCell: 0,
+            onExit: () {},
+            getContent: (_) => value(),
+            onNearEnd: null,
+            wrapNotifiers: wrapNotifiers,
+          ),
+        ),
       ),
     );
   }
@@ -226,51 +244,46 @@ class ImageView extends StatefulWidget {
     ImageViewDescription<T> imageDesctipion,
     int startingCell,
     List<ImageTag> Function(Contentable)? tags,
-    StreamSubscription<List<ImageTag>> Function(
-      Contentable,
-      void Function(List<ImageTag> l),
-    )? watchTags,
+    WatchTagsCallback? watchTags,
     void Function(T)? addToVisited,
   ) {
-    functionality.selectionGlue.hideNavBar(true);
+    final selection = SelectionActions.of(gridContext);
+    selection.controller.setVisibility(false);
 
     final getCell = CellProvider.of<T>(gridContext);
 
     addToVisited?.call(getCell(startingCell));
 
-    return Navigator.of(gridContext, rootNavigator: true).push(
+    return Navigator.of(gridContext, rootNavigator: true)
+        .push(
       MaterialPageRoute<void>(
-        builder: (context) {
-          final r = functionality.registerNotifiers;
-
-          final c = ImageView(
-            updates: functionality.source.backingStorage.watch,
-            gridContext: gridContext,
-            statistics: imageDesctipion.statistics,
-            scrollUntill: (i) =>
-                GridScrollNotifier.maybeScrollToOf<T>(gridContext, i),
-            pageChange: (state) {
-              imageDesctipion.pageChange?.call(state);
-              addToVisited?.call(getCell(state.currentPage));
-            },
-            watchTags: watchTags,
-            onExit: imageDesctipion.onExit,
-            getCell: (idx) => getCell(idx).content(),
-            cellCount: functionality.source.count,
-            download: functionality.download,
-            startingCell: startingCell,
-            tags: tags,
-            onNearEnd:
-                imageDesctipion.ignoreOnNearEnd || !functionality.source.hasNext
-                    ? null
-                    : functionality.source.next,
-          );
-
-          return r != null ? r(c) : c;
-        },
+        builder: (context) => ImageView(
+          updates: functionality.source.backingStorage.watch,
+          gridContext: gridContext,
+          statistics: imageDesctipion.statistics,
+          scrollUntill: (i) =>
+              GridScrollNotifier.maybeScrollToOf<T>(gridContext, i),
+          pageChange: (state) {
+            imageDesctipion.pageChange?.call(state);
+            addToVisited?.call(getCell(state.currentPage));
+          },
+          watchTags: watchTags,
+          onExit: imageDesctipion.onExit,
+          getContent: (idx) => getCell(idx).content(),
+          cellCount: functionality.source.count,
+          download: functionality.download,
+          startingCell: startingCell,
+          tags: tags,
+          onNearEnd:
+              imageDesctipion.ignoreOnNearEnd || !functionality.source.hasNext
+                  ? null
+                  : functionality.source.next,
+          wrapNotifiers: functionality.registerNotifiers,
+        ),
       ),
-    ).then((value) {
-      functionality.selectionGlue.hideNavBar(false);
+    )
+        .then((value) {
+      selection.controller.setVisibility(true);
 
       return value;
     });
@@ -300,6 +313,7 @@ class ImageViewState extends State<ImageView>
 
   final scrollController = ScrollController();
   final mainFocus = FocusNode();
+  final pauseVideoState = PauseVideoState();
 
   final videoControls = VideoControlsControllerImpl();
 
@@ -407,6 +421,7 @@ class ImageViewState extends State<ImageView>
   void dispose() {
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
 
+    pauseVideoState.dispose();
     _pageChangeEvent?.cancel();
     currentPageStream.close();
     animationController.dispose();
@@ -564,6 +579,7 @@ class ImageViewState extends State<ImageView>
       incr: _incrTiles,
       child: WrapImageViewNotifiers(
         hardRefresh: refreshImage,
+        wrapNotifiers: widget.wrapNotifiers,
         tags: widget.tags,
         watchTags: widget.watchTags,
         bottomSheetController: bottomSheetController,
@@ -574,6 +590,7 @@ class ImageViewState extends State<ImageView>
         page: this,
         currentPage: currentPageStream.stream,
         videoControls: videoControls,
+        pauseVideoState: pauseVideoState,
         child: WrapImageViewTheme(
           key: wrapThemeKey,
           currentPalette: currentPalette,
@@ -585,6 +602,8 @@ class ImageViewState extends State<ImageView>
             controller: animationController,
             next: _onPressedRight,
             prev: _onPressedLeft,
+            pauseVideoState: pauseVideoState,
+            wrapNotifiers: widget.wrapNotifiers,
             child: Animate(
               controller: slideAnimationLeft,
               autoPlay: false,
@@ -690,5 +709,25 @@ class VideoControlsControllerImpl implements VideoControlsController {
       progress = p;
       _playerEvents.add(ProgressUpdate(p));
     }
+  }
+}
+
+class PauseVideoState {
+  PauseVideoState();
+
+  bool _isPaused = false;
+
+  bool get isPaused => _isPaused;
+  void setIsPaused(bool p) {
+    _isPaused = p;
+    _events.add(p);
+  }
+
+  final _events = StreamController<bool>.broadcast();
+
+  Stream<bool> get events => _events.stream;
+
+  void dispose() {
+    _events.close();
   }
 }

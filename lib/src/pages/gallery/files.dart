@@ -7,6 +7,7 @@ import "dart:async";
 import "dart:math" as math;
 
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
@@ -19,21 +20,20 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
-import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files_filters.dart" as filters;
+import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_masonry_layout.dart";
@@ -44,50 +44,52 @@ import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 
 part "files_actions.dart";
 
-class GalleryFiles extends StatefulWidget {
-  const GalleryFiles({
+class FilesPage extends StatefulWidget {
+  const FilesPage({
     super.key,
     required this.api,
     this.callback,
     required this.dirName,
-    required this.bucketId,
     required this.secure,
-    required this.generateGlue,
     required this.db,
-    required this.tagManager,
     required this.directory,
     this.presetFilteringValue = "",
     this.filteringMode,
+    required this.navBarEvents,
+    required this.scrollingSink,
   });
 
-  final Directory? directory;
-  final String dirName;
-  final String bucketId;
-  final Files api;
-  final CallbackDescriptionNested? callback;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final bool secure;
 
-  final DbConn db;
-  final TagManager tagManager;
-
+  final String dirName;
   final String presetFilteringValue;
+
+  final Directory? directory;
+  final Files api;
+
+  final Stream<void>? navBarEvents;
+  final StreamSink<bool>? scrollingSink;
+
+  final ReturnFileCallback? callback;
+
   final FilteringMode? filteringMode;
 
+  final DbConn db;
+
   @override
-  State<GalleryFiles> createState() => _GalleryFilesState();
+  State<FilesPage> createState() => _FilesPageState();
 }
 
-class _GalleryFilesState extends State<GalleryFiles> {
+class _FilesPageState extends State<FilesPage> {
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   LocalTagsService get localTags => widget.db.localTags;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
@@ -310,8 +312,7 @@ class _GalleryFilesState extends State<GalleryFiles> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
-        addScaffold: widget.callback != null,
-        provided: widget.generateGlue,
+        addScaffoldAndBar: widget.callback != null,
         child: GridPopScope(
           searchTextController: searchTextController,
           filter: filter,
@@ -322,70 +323,69 @@ class _GalleryFilesState extends State<GalleryFiles> {
                 _TagsNotifier(
                   tagSource: api.sourceTags,
                   tagManager: TagManager.of(context),
-                  child: TagsRibbon(
-                    onLongPress: (tag, controller) {
-                      final settings = SettingsService.db().current;
-                      final generateGlue = GlueProvider.generateOf(context);
+                  child: Builder(
+                    builder: (context) => TagsRibbon(
+                      tagNotifier: ImageTagsNotifier.of(context),
+                      onLongPress: (tag, controller) {
+                        final settings = SettingsService.db().current;
 
-                      void launchGrid(SafeMode? s) {
-                        Navigator.push(
+                        void launchGrid(SafeMode? s) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (context) {
+                                return BooruRestoredPage(
+                                  booru: settings.selectedBooru,
+                                  thenMoveTo: ((widget.directory == null
+                                              ? api.directories.length == 1
+                                              : true)
+                                          ? () {
+                                              final dir = widget.directory ??
+                                                  api.directories.first;
+
+                                              return PathVolume(
+                                                dir.relativeLoc,
+                                                dir.volumeName,
+                                                widget.dirName,
+                                              );
+                                            }
+                                          : null)
+                                      ?.call(),
+                                  tags: tag,
+                                  wrapScaffold: widget.callback != null,
+                                  trySearchBookmarkByTags: true,
+                                  saveSelectedPage: (e) {},
+                                  overrideSafeMode: s ?? settings.safeMode,
+                                  db: widget.db,
+                                );
+                              },
+                            ),
+                          );
+                        }
+
+                        final bookmark = widget.db.gridBookmarks
+                            .getFirstByTags(tag.trim(), settings.selectedBooru);
+                        if (bookmark != null) {
+                          launchGrid(null);
+                          return;
+                        }
+
+                        HapticFeedback.mediumImpact();
+
+                        radioDialog<SafeMode>(
                           context,
-                          MaterialPageRoute<void>(
-                            builder: (context) {
-                              return BooruRestoredPage(
-                                generateGlue: widget.callback != null
-                                    ? null
-                                    : generateGlue,
-                                booru: settings.selectedBooru,
-                                thenMoveTo: ((widget.directory == null
-                                            ? api.directories.length == 1
-                                            : true)
-                                        ? () {
-                                            final dir = widget.directory ??
-                                                api.directories.first;
-
-                                            return PathVolume(
-                                              dir.relativeLoc,
-                                              dir.volumeName,
-                                              widget.dirName,
-                                            );
-                                          }
-                                        : null)
-                                    ?.call(),
-                                tags: tag,
-                                wrapScaffold: widget.callback != null,
-                                trySearchBookmarkByTags: true,
-                                saveSelectedPage: (e) {},
-                                overrideSafeMode: s ?? settings.safeMode,
-                                db: widget.db,
-                              );
-                            },
+                          SafeMode.values.map(
+                            (e) => (e, e.translatedString(l10n)),
                           ),
+                          settings.safeMode,
+                          launchGrid,
+                          title: l10n.chooseSafeMode,
+                          allowSingle: true,
                         );
-                      }
-
-                      final bookmark = widget.db.gridBookmarks
-                          .getFirstByTags(tag.trim(), settings.selectedBooru);
-                      if (bookmark != null) {
-                        launchGrid(null);
-                        return;
-                      }
-
-                      HapticFeedback.mediumImpact();
-
-                      radioDialog<SafeMode>(
-                        context,
-                        SafeMode.values.map(
-                          (e) => (e, e.translatedString(l10n)),
-                        ),
-                        settings.safeMode,
-                        launchGrid,
-                        title: l10n.chooseSafeMode,
-                        allowSingle: true,
-                      );
-                    },
-                    selectTag: _filterTag,
-                    tagManager: widget.tagManager,
+                      },
+                      selectTag: _filterTag,
+                      tagManager: widget.db.tagManager,
+                    ),
                   ),
                 ),
                 Builder(
@@ -458,12 +458,20 @@ class _GalleryFilesState extends State<GalleryFiles> {
                 ),
               ],
               functionality: GridFunctionality(
+                selectionActions: SelectionActions.of(context),
+                scrollingSink: widget.scrollingSink,
+                scrollUpOn: widget.navBarEvents == null
+                    ? const []
+                    : [(widget.navBarEvents!, null)],
+                fab: widget.callback == null
+                    ? const NoGridFab()
+                    : const DefaultGridFab(),
                 onEmptySource: EmptyWidgetBackground(
                   subtitle: l10n.emptyNoMedia,
                 ),
                 settingsButton: GridSettingsButton.fromWatchable(gridSettings),
                 registerNotifiers: (child) {
-                  return NestedCallbackNotifier(
+                  return ReturnFileCallbackNotifier(
                     callback: widget.callback,
                     child: FilesDataNotifier(
                       api: widget.api,
@@ -489,7 +497,6 @@ class _GalleryFilesState extends State<GalleryFiles> {
                     Navigator.pop(context);
                   },
                 ),
-                selectionGlue: GlueProvider.generateOf(context)(),
                 source: filter,
                 search: BarSearchWidget.fromFilter(
                   filter,
@@ -556,7 +563,6 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                 cell.onPress(
                                   context,
                                   gridState.widget.functionality,
-                                  cell,
                                   n,
                                 );
                               }
@@ -613,20 +619,19 @@ class _GalleryFilesState extends State<GalleryFiles> {
                                 localTags,
                               ),
                             ],
-                            // _addToFavoritesAction(context, null, favoritePosts),
                             _deleteAction(context, toShowDelete),
                             _copyAction(
                               context,
-                              widget.bucketId,
-                              widget.tagManager,
+                              api.bucketId,
+                              widget.db.tagManager,
                               localTags,
                               api.parent,
                               toShowDelete,
                             ),
                             _moveAction(
                               context,
-                              widget.bucketId,
-                              widget.tagManager,
+                              api.bucketId,
+                              widget.db.tagManager,
                               localTags,
                               api.parent,
                               toShowDelete,
@@ -661,21 +666,27 @@ class _TagsNotifier extends StatefulWidget {
 }
 
 class __TagsNotifierState extends State<_TagsNotifier> {
-  late List<ImageTag> _list = widget.tagSource.current
-      .map(
-        (e) => ImageTag(
-          e,
-          favorite: widget.tagManager.pinned.exists(e),
-          excluded: widget.tagManager.excluded.exists(e),
-        ),
-      )
-      .toList();
   late final StreamSubscription<List<String>> subscription;
   late final StreamSubscription<void> subscr;
+
+  final _tags = ImageViewTags();
 
   @override
   void initState() {
     super.initState();
+
+    _tags.update(
+      widget.tagSource.current
+          .map(
+            (e) => ImageTag(
+              e,
+              favorite: widget.tagManager.pinned.exists(e),
+              excluded: widget.tagManager.excluded.exists(e),
+            ),
+          )
+          .toList(),
+      null,
+    );
 
     subscription = widget.tagSource.watch((list) {
       _refresh();
@@ -688,20 +699,24 @@ class __TagsNotifierState extends State<_TagsNotifier> {
 
   void _refresh() {
     setState(() {
-      _list = widget.tagSource.current
-          .map(
-            (e) => ImageTag(
-              e,
-              favorite: widget.tagManager.pinned.exists(e),
-              excluded: widget.tagManager.excluded.exists(e),
-            ),
-          )
-          .toList();
+      _tags.update(
+        widget.tagSource.current
+            .map(
+              (e) => ImageTag(
+                e,
+                favorite: widget.tagManager.pinned.exists(e),
+                excluded: widget.tagManager.excluded.exists(e),
+              ),
+            )
+            .toList(),
+        null,
+      );
     });
   }
 
   @override
   void dispose() {
+    _tags.dispose();
     subscription.cancel();
     subscr.cancel();
 
@@ -711,8 +726,7 @@ class __TagsNotifierState extends State<_TagsNotifier> {
   @override
   Widget build(BuildContext context) {
     return ImageTagsNotifier(
-      tags: _list,
-      res: null,
+      tags: _tags,
       child: widget.child,
     );
   }
@@ -727,18 +741,24 @@ class TagsRibbon extends StatefulWidget {
     this.items,
     this.showPin = true,
     this.emptyWidget = const SliverPadding(padding: EdgeInsets.zero),
+    this.sliver = true,
+    required this.tagNotifier,
   });
+
+  final bool showPin;
+  final bool sliver;
+
+  final TagManager tagManager;
+  final ImageViewTags tagNotifier;
+
+  final Widget emptyWidget;
 
   final void Function(String tag, ScrollController controller)? onLongPress;
   final void Function(String tag, ScrollController controller) selectTag;
-  final TagManager tagManager;
   final List<PopupMenuItem<void>> Function(
     String tag,
     ScrollController controller,
   )? items;
-  final bool showPin;
-
-  final Widget emptyWidget;
 
   @override
   State<TagsRibbon> createState() => _TagsRibbonState();
@@ -746,6 +766,7 @@ class TagsRibbon extends StatefulWidget {
 
 class _TagsRibbonState extends State<TagsRibbon> {
   late final StreamSubscription<void>? pinnedSubscription;
+  late final StreamSubscription<void> _events;
 
   final scrollController = ScrollController();
 
@@ -768,6 +789,14 @@ class _TagsRibbonState extends State<TagsRibbon> {
   @override
   void initState() {
     super.initState();
+
+    _events = widget.tagNotifier.stream.listen((_) {
+      _list = _sortPinned(widget.tagNotifier.list);
+
+      setState(() {});
+    });
+
+    _list = _sortPinned(widget.tagNotifier.list);
 
     pinnedSubscription = !widget.showPin
         ? null
@@ -803,14 +832,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    _list = _sortPinned(ImageTagsNotifier.of(context));
-  }
-
-  @override
   void dispose() {
+    _events.cancel();
     pinnedSubscription?.cancel();
     scrollController.dispose();
 
@@ -827,147 +850,149 @@ class _TagsRibbonState extends State<TagsRibbon> {
         ? _pinnedList!
         : _list;
 
-    return _list.isEmpty && (_pinnedList == null || _pinnedList!.isEmpty)
-        ? widget.emptyWidget
-        : SliverPadding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
-            sliver: SliverToBoxAdapter(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 40),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (fromList.isEmpty)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            l10n.noBooruTags,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: ListView.builder(
-                          controller: scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 12) +
-                              (widget.showPin
-                                  ? EdgeInsets.only(
-                                      right: 40 + gestureRight * 0.5,
-                                    )
-                                  : EdgeInsets.zero),
-                          shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-                          itemCount: fromList.length,
-                          itemBuilder: (context, i) {
-                            final elem = fromList[i];
+    final child = ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 40),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (fromList.isEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  l10n.noBooruTags,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 12) +
+                    (widget.showPin
+                        ? EdgeInsets.only(
+                            right: 40 + gestureRight * 0.5,
+                          )
+                        : EdgeInsets.zero),
+                shrinkWrap: true,
+                scrollDirection: Axis.horizontal,
+                itemCount: fromList.length,
+                itemBuilder: (context, i) {
+                  final elem = fromList[i];
 
-                            final child = GestureDetector(
-                              onDoubleTap: () {
-                                if (widget.tagManager.pinned.exists(elem.tag)) {
-                                  widget.tagManager.pinned.delete(elem.tag);
-                                } else {
-                                  widget.tagManager.pinned.add(elem.tag);
-                                }
+                  final child = GestureDetector(
+                    onDoubleTap: () {
+                      if (widget.tagManager.pinned.exists(elem.tag)) {
+                        widget.tagManager.pinned.delete(elem.tag);
+                      } else {
+                        widget.tagManager.pinned.add(elem.tag);
+                      }
 
-                                scrollController.animateTo(
-                                  0,
-                                  duration: Durations.medium1,
-                                  curve: Easing.standard,
-                                );
-                              },
-                              onLongPress: widget.onLongPress == null
-                                  ? null
-                                  : () {
-                                      widget.onLongPress!(
-                                        elem.tag,
-                                        scrollController,
-                                      );
-                                    },
-                              child: ActionChip(
-                                labelStyle: elem.excluded
-                                    ? TextStyle(
-                                        color: theme.disabledColor,
-                                        decoration: TextDecoration.lineThrough,
-                                      )
-                                    : null,
-                                avatar: elem.favorite
-                                    ? const Icon(Icons.push_pin_rounded)
-                                    : null,
-                                onPressed: () => widget.selectTag(
-                                  elem.tag,
-                                  scrollController,
-                                ),
-                                label: Text(elem.tag),
-                              ),
-                            );
-
-                            return Padding(
-                              padding: i != fromList.length - 1
-                                  ? const EdgeInsets.only(right: 6)
-                                  : EdgeInsets.zero,
-                              child: widget.items == null
-                                  ? child
-                                  : MenuWrapper(
-                                      title: elem.tag,
-                                      items: widget.items!(
-                                        elem.tag,
-                                        scrollController,
-                                      ),
-                                      child: child,
-                                    ),
+                      scrollController.animateTo(
+                        0,
+                        duration: Durations.medium1,
+                        curve: Easing.standard,
+                      );
+                    },
+                    onLongPress: widget.onLongPress == null
+                        ? null
+                        : () {
+                            widget.onLongPress!(
+                              elem.tag,
+                              scrollController,
                             );
                           },
-                        ),
+                    child: ActionChip(
+                      labelStyle: elem.excluded
+                          ? TextStyle(
+                              color: theme.disabledColor,
+                              decoration: TextDecoration.lineThrough,
+                            )
+                          : null,
+                      avatar: elem.favorite
+                          ? const Icon(Icons.push_pin_rounded)
+                          : null,
+                      onPressed: () => widget.selectTag(
+                        elem.tag,
+                        scrollController,
                       ),
-                    if (widget.showPin)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerRight,
-                              end: Alignment.centerLeft,
-                              colors: [
-                                theme.colorScheme.surface,
-                                theme.colorScheme.surface
-                                    .withValues(alpha: 0.8),
-                                theme.colorScheme.surface
-                                    .withValues(alpha: 0.65),
-                                theme.colorScheme.surface
-                                    .withValues(alpha: 0.5),
-                                theme.colorScheme.surface
-                                    .withValues(alpha: 0.35),
-                              ],
+                      label: Text(elem.tag),
+                    ),
+                  );
+
+                  return Padding(
+                    padding: i != fromList.length - 1
+                        ? const EdgeInsets.only(right: 6)
+                        : EdgeInsets.zero,
+                    child: widget.items == null
+                        ? child
+                        : MenuWrapper(
+                            title: elem.tag,
+                            items: widget.items!(
+                              elem.tag,
+                              scrollController,
                             ),
+                            child: child,
                           ),
-                          child: Padding(
-                            padding: EdgeInsets.only(right: gestureRight * 0.5),
-                            child: IconButton(
-                              onPressed: _list.isEmpty
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        showOnlyPinned = !showOnlyPinned;
-                                      });
-                                    },
-                              icon: const Icon(Icons.push_pin_rounded),
-                              isSelected: showOnlyPinned,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  );
+                },
+              ),
+            ),
+          if (widget.showPin)
+            Align(
+              alignment: Alignment.centerRight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
+                    colors: [
+                      theme.colorScheme.surface,
+                      theme.colorScheme.surface.withValues(alpha: 0.8),
+                      theme.colorScheme.surface.withValues(alpha: 0.65),
+                      theme.colorScheme.surface.withValues(alpha: 0.5),
+                      theme.colorScheme.surface.withValues(alpha: 0.35),
+                    ],
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(right: gestureRight * 0.5),
+                  child: IconButton(
+                    onPressed: _list.isEmpty
+                        ? null
+                        : () {
+                            setState(() {
+                              showOnlyPinned = !showOnlyPinned;
+                            });
+                          },
+                    icon: const Icon(Icons.push_pin_rounded),
+                    isSelected: showOnlyPinned,
+                  ),
                 ),
               ),
             ),
-          );
+        ],
+      ),
+    );
+
+    return _list.isEmpty && (_pinnedList == null || _pinnedList!.isEmpty)
+        ? widget.emptyWidget
+        : !widget.sliver
+            ? Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: child,
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                sliver: SliverToBoxAdapter(
+                  child: child,
+                ),
+              );
   }
 }
 
@@ -1081,12 +1106,15 @@ class IconBarGridHeader extends StatelessWidget {
                     icon: const Icon(Icons.select_all_rounded),
                     onPressed: () {
                       final gridExtras = GridExtrasNotifier.of<File>(context);
+                      if (gridExtras.selection == null) {
+                        return;
+                      }
 
-                      if (gridExtras.selection.count ==
+                      if (gridExtras.selection!.count ==
                           gridExtras.functionality.source.count) {
-                        gridExtras.selection.reset(true);
+                        gridExtras.selection!.reset(true);
                       } else {
-                        gridExtras.selection.selectAll(context);
+                        gridExtras.selection!.selectAll();
                       }
                     },
                   ),
@@ -1171,13 +1199,14 @@ class CurrentGridSettingsLayout<T extends CellBase> extends StatelessWidget {
     this.unselectOnUpdate = true,
   });
 
-  final SourceStorage<int, T> source;
   final bool hideThumbnails;
+  final bool unselectOnUpdate;
+
   final int gridSeed;
+
+  final SourceStorage<int, T> source;
   final Widget Function(Object?)? buildEmpty;
   final RefreshingProgress progress;
-
-  final bool unselectOnUpdate;
 
   @override
   Widget build(BuildContext context) {
@@ -1235,24 +1264,24 @@ class FilesDataNotifier extends InheritedWidget {
   bool updateShouldNotify(FilesDataNotifier oldWidget) => api != oldWidget.api;
 }
 
-class NestedCallbackNotifier extends InheritedWidget {
-  const NestedCallbackNotifier({
+class ReturnFileCallbackNotifier extends InheritedWidget {
+  const ReturnFileCallbackNotifier({
     super.key,
     required this.callback,
     required super.child,
   });
 
-  final CallbackDescriptionNested? callback;
+  final ReturnFileCallback? callback;
 
-  static CallbackDescriptionNested? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<NestedCallbackNotifier>();
+  static ReturnFileCallback? maybeOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ReturnFileCallbackNotifier>();
 
     return widget?.callback;
   }
 
   @override
-  bool updateShouldNotify(NestedCallbackNotifier oldWidget) =>
+  bool updateShouldNotify(ReturnFileCallbackNotifier oldWidget) =>
       callback != oldWidget.callback;
 }
 
@@ -1264,8 +1293,9 @@ class GridFooter<T> extends StatefulWidget {
     this.statistics,
   });
 
-  final ReadOnlyStorage<dynamic, dynamic> storage;
   final String? name;
+
+  final ReadOnlyStorage<dynamic, dynamic> storage;
 
   final (List<Widget> Function(T), WatchFire<T>)? statistics;
 

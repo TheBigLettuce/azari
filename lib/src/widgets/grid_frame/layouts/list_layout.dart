@@ -27,11 +27,10 @@ class ListLayout<T extends CellBase> extends StatefulWidget {
   });
 
   final bool hideThumbnails;
+  final bool unselectOnUpdate;
 
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
-
-  final bool unselectOnUpdate;
 
   final Widget Function(Object? error)? buildEmpty;
 
@@ -50,7 +49,7 @@ class _ListLayoutState<T extends CellBase> extends State<ListLayout<T>> {
   void initState() {
     _watcher = source.watch((_) {
       if (widget.unselectOnUpdate) {
-        GridExtrasNotifier.of<T>(context).selection.reset();
+        GridExtrasNotifier.of<T>(context).selection?.reset();
       }
 
       setState(() {});
@@ -115,13 +114,9 @@ class ListLayoutPlaceholder extends StatelessWidget {
       padding: const EdgeInsets.only(right: 8, left: 8),
       sliver: SliverList.builder(
         itemCount: 20,
-        itemBuilder: (context, index) {
-          // final cell = getCell(index);
-
-          return DefaultListTilePlaceholder(
-            index: index,
-          );
-        },
+        itemBuilder: (context, index) => DefaultListTilePlaceholder(
+          index: index,
+        ),
       ),
     );
   }
@@ -130,8 +125,9 @@ class ListLayoutPlaceholder extends StatelessWidget {
 class TileDismiss {
   const TileDismiss(this.onDismissed, this.icon);
 
-  final void Function() onDismissed;
   final IconData icon;
+
+  final VoidCallback onDismissed;
 }
 
 class DefaultListTile<T extends CellBase> extends StatelessWidget {
@@ -148,20 +144,104 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
     this.dismiss,
   });
 
-  final GridFunctionality<T> functionality;
-  final GridSelection<T> selection;
+  final bool hideThumbnails;
+
   final int index;
   final int? selectionIndex;
-  final T cell;
+
   final String? subtitle;
+
+  final T cell;
+
+  final GridFunctionality<T> functionality;
+  final GridSelection<T>? selection;
   final Widget? trailing;
-  final bool hideThumbnails;
 
   final TileDismiss? dismiss;
 
   @override
   Widget build(BuildContext context) {
     final thumbnail = cell.tryAsThumbnailable();
+
+    final child = Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        SelectionCountNotifier.maybeCountOf(context);
+        final isSelected =
+            selection?.isSelected(selectionIndex ?? index) ?? false;
+
+        final child = DecoratedBox(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? null
+                : index.isOdd
+                    ? theme.colorScheme.secondary.withValues(alpha: 0.1)
+                    : theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.1),
+          ),
+          child: DecoratedBox(
+            decoration: const ShapeDecoration(shape: StadiumBorder()),
+            child: ListTile(
+              textColor: isSelected ? theme.colorScheme.inversePrimary : null,
+              leading: !hideThumbnails && thumbnail != null
+                  ? CircleAvatar(
+                      backgroundColor:
+                          theme.colorScheme.surface.withValues(alpha: 0),
+                      backgroundImage: thumbnail,
+                    )
+                  : null,
+              subtitle: subtitle == null ? null : Text(subtitle!),
+              trailing: trailing,
+              title: Text(
+                cell.alias(true),
+                softWrap: false,
+                style: TextStyle(
+                  color: isSelected
+                      ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
+                      : index.isOdd
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.9),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+
+        return ClipPath(
+          clipper: const ShapeBorderClipper(shape: StadiumBorder()),
+          child: dismiss != null
+              ? Dismissible(
+                  key: cell.uniqueKey(),
+                  direction: DismissDirection.endToStart,
+                  background: SizedBox.expand(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: Icon(
+                            dismiss!.icon,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  onDismissed: (direction) {
+                    dismiss!.onDismissed();
+                  },
+                  dismissThresholds: const {DismissDirection.horizontal: 0.5},
+                  child: child,
+                )
+              : child,
+        );
+      },
+    );
 
     return WrapSelection(
       selection: selection,
@@ -172,85 +252,7 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
       onPressed: cell.tryAsPressable(context, functionality, index),
       functionality: functionality,
       thisIndx: selectionIndex ?? index,
-      child: Builder(
-        builder: (context) {
-          final theme = Theme.of(context);
-          SelectionCountNotifier.countOf(context);
-          final isSelected = selection.isSelected(selectionIndex ?? index);
-
-          final child = DecoratedBox(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? null
-                  : index.isOdd
-                      ? theme.colorScheme.secondary.withValues(alpha: 0.1)
-                      : theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.1),
-            ),
-            child: DecoratedBox(
-              decoration: const ShapeDecoration(shape: StadiumBorder()),
-              child: ListTile(
-                textColor: isSelected ? theme.colorScheme.inversePrimary : null,
-                leading: !hideThumbnails && thumbnail != null
-                    ? CircleAvatar(
-                        backgroundColor:
-                            theme.colorScheme.surface.withValues(alpha: 0),
-                        backgroundImage: thumbnail,
-                      )
-                    : null,
-                subtitle: subtitle == null ? null : Text(subtitle!),
-                trailing: trailing,
-                title: Text(
-                  cell.alias(true),
-                  softWrap: false,
-                  style: TextStyle(
-                    color: isSelected
-                        ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
-                        : index.isOdd
-                            ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
-                            : theme.colorScheme.onSurface
-                                .withValues(alpha: 0.9),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          );
-
-          return ClipPath(
-            clipper: const ShapeBorderClipper(shape: StadiumBorder()),
-            child: dismiss != null
-                ? Dismissible(
-                    key: cell.uniqueKey(),
-                    direction: DismissDirection.endToStart,
-                    background: SizedBox.expand(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 16),
-                            child: Icon(
-                              dismiss!.icon,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    onDismissed: (direction) {
-                      dismiss!.onDismissed();
-                    },
-                    dismissThresholds: const {DismissDirection.horizontal: 0.5},
-                    child: child,
-                  )
-                : child,
-          );
-        },
-      ),
+      child: child,
     ).animate(key: cell.uniqueKey()).fadeIn();
   }
 }

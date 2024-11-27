@@ -22,7 +22,7 @@ class CallbackGridBackButton implements GridBackButtonBehaviour {
 
   static void _doNothing() {}
 
-  final void Function() onPressed;
+  final VoidCallback onPressed;
 }
 
 class OverrideGridBackButton implements GridBackButtonBehaviour {

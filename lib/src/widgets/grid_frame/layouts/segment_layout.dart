@@ -7,6 +7,7 @@ import "dart:async";
 import "dart:ui";
 
 import "package:azari/init_main/app_info.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
@@ -19,7 +20,6 @@ import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/segment_label.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 import "package:local_auth/local_auth.dart";
 
@@ -35,15 +35,15 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
     this.unselectOnUpdate = true,
   });
 
+  final bool unselectOnUpdate;
+
+  final int gridSeed;
+
   final Segments<T> segments;
   final List<String> suggestionPrefix;
   final ReadOnlyStorage<int, T> storage;
   final RefreshingProgress progress;
   final AppLocalizations localizations;
-
-  final bool unselectOnUpdate;
-
-  final int gridSeed;
 
   @override
   State<SegmentLayout<T>> createState() => _SegmentLayoutState();
@@ -67,7 +67,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>> {
 
     _watcher = storage.watch((_) {
       if (widget.unselectOnUpdate) {
-        GridExtrasNotifier.of<T>(context).selection.reset();
+        GridExtrasNotifier.of<T>(context).selection?.reset();
       }
 
       _makeSegments();
@@ -399,9 +399,10 @@ class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
     required this.config,
   });
 
-  final List<_SegmentType> data;
   final int gridSeed;
-  final GridSelection<T> selection;
+
+  final List<_SegmentType> data;
+  final GridSelection<T>? selection;
   final List<int>? predefined;
   final Segments<T> segments;
   final GridFunctionality<T> gridFunctionality;
@@ -447,7 +448,7 @@ class _SegRowHCell<T extends CellBase> extends StatefulWidget {
     required this.segments,
   });
 
-  final GridSelection<T> selection;
+  final GridSelection<T>? selection;
   final _HeaderWithCells<T> val;
   final GridFunctionality<T> gridFunctionality;
   final Segments<T> segments;
@@ -529,6 +530,17 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
         itemBuilder: (context, idx) {
           final (cell, blur) = items[idx];
 
+          final child = cell.value.buildCell<T>(
+            context,
+            -1,
+            cell.value,
+            blur: blur,
+            isList: false,
+            imageAlign: Alignment.topCenter,
+            hideTitle: false,
+            animated: PlayAnimations.maybeOf(context) ?? false,
+          );
+
           return WrapSelection<T>(
             selection: widget.selection,
             description: cell.value.description(),
@@ -537,16 +549,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
             functionality: widget.gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
-            child: cell.value.buildCell<T>(
-              context,
-              -1,
-              cell.value,
-              blur: blur,
-              isList: false,
-              imageAlign: Alignment.topCenter,
-              hideTitle: false,
-              animated: PlayAnimations.maybeOf(context) ?? false,
-            ),
+            child: child,
           );
         },
       ),
@@ -566,12 +569,13 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
     required this.config,
   });
 
-  final GridSelection<T> selection;
+  final int gridSeed;
+
+  final GridSelection<T>? selection;
   final _HeaderWithIdx val;
   final List<int>? predefined;
   final GridFunctionality<T> gridFunctionality;
   final Segments<T> segments;
-  final int gridSeed;
   final GridSettingsData config;
 
   @override
@@ -583,23 +587,25 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       final realIdx = val.list[idx];
       final cell = getCell(realIdx);
 
+      final child = cell.buildCell<T>(
+        context,
+        idx,
+        cell,
+        isList: false,
+        blur: toBlur,
+        imageAlign: Alignment.topCenter,
+        hideTitle: config.hideName,
+        animated: PlayAnimations.maybeOf(context) ?? false,
+      );
+
       return WrapSelection<T>(
+        selection: selection,
         thisIndx: realIdx,
         description: cell.description(),
         selectFrom: predefined,
         onPressed: cell.tryAsPressable(context, gridFunctionality, idx),
         functionality: gridFunctionality,
-        selection: selection,
-        child: cell.buildCell<T>(
-          context,
-          idx,
-          cell,
-          isList: false,
-          blur: toBlur,
-          imageAlign: Alignment.topCenter,
-          hideTitle: config.hideName,
-          animated: PlayAnimations.maybeOf(context) ?? false,
-        ),
+        child: child,
       );
     }
 
@@ -629,6 +635,73 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                 final realIdx = val.list[idx];
                 final cell = getCell(realIdx);
 
+                final child = Builder(
+                  builder: (context) {
+                    final theme = Theme.of(context);
+                    SelectionCountNotifier.maybeCountOf(context);
+                    final isSelected = selection?.isSelected(realIdx) ?? false;
+
+                    return DecoratedBox(
+                      decoration: ShapeDecoration(
+                        shape: const StadiumBorder(),
+                        color: isSelected
+                            ? null
+                            : idx.isOdd
+                                ? theme.colorScheme.secondary
+                                    .withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.1),
+                      ),
+                      child: ListTile(
+                        textColor: isSelected
+                            ? theme.colorScheme.inversePrimary
+                            : null,
+                        leading: toBlur
+                            ? ClipOval(
+                                child: ImageFiltered(
+                                  imageFilter: ImageFilter.compose(
+                                    outer: ImageFilter.blur(
+                                      sigmaX: 3.59,
+                                      sigmaY: 3.59,
+                                      tileMode: TileMode.mirror,
+                                    ),
+                                    inner: ImageFilter.dilate(
+                                      radiusX: 0.7,
+                                      radiusY: 0.7,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    backgroundColor: theme.colorScheme.surface
+                                        .withValues(alpha: 0),
+                                    backgroundImage: cell.tryAsThumbnailable(),
+                                  ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                backgroundColor: theme.colorScheme.surface
+                                    .withValues(alpha: 0),
+                                backgroundImage: cell.tryAsThumbnailable(),
+                              ),
+                        title: Text(
+                          cell.alias(true),
+                          softWrap: false,
+                          style: TextStyle(
+                            color: isSelected
+                                ? theme.colorScheme.onPrimary
+                                    .withValues(alpha: 0.8)
+                                : idx.isOdd
+                                    ? theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.8)
+                                    : theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.9),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    );
+                  },
+                );
+
                 return WrapSelection(
                   selection: selection,
                   selectFrom: null,
@@ -639,73 +712,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                       cell.tryAsPressable(context, gridFunctionality, idx),
                   functionality: gridFunctionality,
                   thisIndx: realIdx,
-                  child: Builder(
-                    builder: (context) {
-                      final theme = Theme.of(context);
-                      SelectionCountNotifier.countOf(context);
-                      final isSelected = selection.isSelected(realIdx);
-
-                      return DecoratedBox(
-                        decoration: ShapeDecoration(
-                          shape: const StadiumBorder(),
-                          color: isSelected
-                              ? null
-                              : idx.isOdd
-                                  ? theme.colorScheme.secondary
-                                      .withValues(alpha: 0.1)
-                                  : theme.colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.1),
-                        ),
-                        child: ListTile(
-                          textColor: isSelected
-                              ? theme.colorScheme.inversePrimary
-                              : null,
-                          leading: toBlur
-                              ? ClipOval(
-                                  child: ImageFiltered(
-                                    imageFilter: ImageFilter.compose(
-                                      outer: ImageFilter.blur(
-                                        sigmaX: 3.59,
-                                        sigmaY: 3.59,
-                                        tileMode: TileMode.mirror,
-                                      ),
-                                      inner: ImageFilter.dilate(
-                                        radiusX: 0.7,
-                                        radiusY: 0.7,
-                                      ),
-                                    ),
-                                    child: CircleAvatar(
-                                      backgroundColor: theme.colorScheme.surface
-                                          .withValues(alpha: 0),
-                                      backgroundImage:
-                                          cell.tryAsThumbnailable(),
-                                    ),
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  backgroundColor: theme.colorScheme.surface
-                                      .withValues(alpha: 0),
-                                  backgroundImage: cell.tryAsThumbnailable(),
-                                ),
-                          title: Text(
-                            cell.alias(true),
-                            softWrap: false,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? theme.colorScheme.onPrimary
-                                      .withValues(alpha: 0.8)
-                                  : idx.isOdd
-                                      ? theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.8)
-                                      : theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.9),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  child: child,
                 );
               },
             ),
@@ -738,15 +745,16 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     required this.sliver,
   });
 
-  final GridSelection<T> selection;
-  final GridColumn columns;
+  final int count;
+
   final double aspectRatio;
+
+  final GridSelection<T>? selection;
+  final GridColumn columns;
   final GridFunctionality<T> gridFunctionality;
   final Segments<T> segments;
   final _SegSticky segmentLabel;
   final Set<SegmentModifier> modifiers;
-
-  final int count;
 
   final Widget sliver;
 
@@ -899,10 +907,12 @@ class _SegSticky {
     this.firstIsSpecial = false,
     this.unstickable = true,
   });
+
   final String seg;
-  final void Function()? onLabelPressed;
   final bool unstickable;
   final bool firstIsSpecial;
+
+  final VoidCallback? onLabelPressed;
 }
 
 sealed class _SegmentType {

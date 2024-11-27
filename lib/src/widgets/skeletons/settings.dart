@@ -22,14 +22,16 @@ class SettingsSkeleton extends StatelessWidget {
     required this.child,
   });
 
-  final String pageDescription;
-  final SkeletonState state;
-  final PreferredSizeWidget? appBar;
-  final Widget? bottomAppBar;
-  final Widget? fab;
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool expectSliverBody;
+
+  final String pageDescription;
+  final SkeletonState state;
+  final PreferredSizeWidget? appBar;
+
+  final Widget? bottomAppBar;
+  final Widget? fab;
 
   final Widget child;
 

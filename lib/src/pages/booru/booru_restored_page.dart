@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -21,25 +22,22 @@ import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/pages/more/settings/settings_page.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
     super.key,
-    this.generateGlue,
     this.pagingRegistry,
     this.overrideSafeMode,
     required this.db,
@@ -58,7 +56,6 @@ class BooruRestoredPage extends StatefulWidget {
   final PagingStateRegistry? pagingRegistry;
   final SafeMode? overrideSafeMode;
   final void Function(String? e) saveSelectedPage;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final bool wrapScaffold;
 
   final PathVolume? thenMoveTo;
@@ -273,8 +270,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
-        addScaffold: widget.wrapScaffold,
-        provided: widget.generateGlue,
+        addScaffoldAndBar: widget.wrapScaffold,
         child: Builder(
           builder: (context) {
             return BooruAPINotifier(
@@ -312,6 +308,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   ],
                   initalScrollPosition: pagingState.offset,
                   functionality: GridFunctionality(
+                    selectionActions: SelectionActions.of(context),
+                    scrollingSink: ScrollingSinkProvider.maybeOf(context),
                     updatesAvailable: source.updatesAvailable,
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
@@ -319,7 +317,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ),
                     updateScrollPosition: pagingState.setOffset,
                     download: _download,
-                    selectionGlue: GlueProvider.generateOf(context)(),
                     source: source,
                     search: RawSearchWidget(
                       (settingsButton, bottomWidget) => SliverAppBar(
@@ -370,7 +367,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       ),
                       actions.hide(context, hiddenBooruPost),
                     ],
-                    showLoadingIndicator: false,
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruGridPageName,
                     gridSeed: state.gridSeed,
@@ -395,7 +391,7 @@ class RestoredBooruPageState implements PagingEntry {
     this.gridBookmarks,
     this.addToBookmarks,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
-    api = BooruAPI.fromEnum(booru, client, this);
+    api = BooruAPI.fromEnum(booru, client);
 
     source = secondaryGrid.makeSource(
       api,

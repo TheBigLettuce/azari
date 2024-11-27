@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/init_main/app_info.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -13,51 +14,51 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
-import "package:azari/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:azari/src/pages/gallery/blacklisted_directories.dart";
-import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/pages/gallery/search_page.dart";
+import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
+import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
+import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:flutter/services.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 
-class GalleryDirectories extends StatefulWidget {
-  const GalleryDirectories({
+class DirectoriesPage extends StatefulWidget {
+  const DirectoriesPage({
     super.key,
     this.callback,
-    this.nestedCallback,
-    this.procPop,
     this.wrapGridPage = false,
     this.showBackButton = false,
     this.providedApi,
     required this.db,
     required this.l10n,
-  }) : assert(!(callback != null && nestedCallback != null));
+    this.procPop,
+  });
 
-  final CallbackDescription? callback;
-  final CallbackDescriptionNested? nestedCallback;
   final bool showBackButton;
-  final void Function(bool)? procPop;
   final bool wrapGridPage;
+
+  final void Function(bool)? procPop;
+
+  final GalleryReturnCallback? callback;
 
   final Directories? providedApi;
   final AppLocalizations l10n;
@@ -84,10 +85,10 @@ class GalleryDirectories extends StatefulWidget {
   }
 
   @override
-  State<GalleryDirectories> createState() => _GalleryDirectoriesState();
+  State<DirectoriesPage> createState() => _DirectoriesPageState();
 }
 
-class _GalleryDirectoriesState extends State<GalleryDirectories> {
+class _DirectoriesPageState extends State<DirectoriesPage> {
   WatchableGridSettingsData get gridSettings =>
       widget.db.gridSettings.directories;
   DirectoryMetadataService get directoryMetadata => widget.db.directoryMetadata;
@@ -216,7 +217,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     GalleryApi().version.then((value) => galleryVersion = value);
   }
 
-  String _segmentCell(Directory cell) => GalleryDirectories.segmentCell(
+  String _segmentCell(Directory cell) => DirectoriesPage.segmentCell(
         cell.name,
         cell.bucketId,
         directoryTags,
@@ -225,32 +226,30 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   Segments<Directory> _makeSegments(BuildContext context) {
     return Segments(
       widget.l10n.segmentsUncategorized,
-      injectedLabel: widget.callback != null || widget.nestedCallback != null
+      injectedLabel: widget.callback != null
           ? widget.l10n.suggestionsLabel
           : widget.l10n.segmentsSpecial,
-      displayFirstCellInSpecial:
-          widget.callback != null || widget.nestedCallback != null,
+      displayFirstCellInSpecial: widget.callback != null,
       caps: directoryMetadata.caps(widget.l10n.segmentsSpecial),
       segment: _segmentCell,
       injectedSegments: [
         api.trashCell,
       ],
-      onLabelPressed: widget.callback != null && !widget.callback!.joinable
-          ? null
-          : (label, children) => actions.joinedDirectoriesFnc(
+      onLabelPressed: widget.callback == null || widget.callback!.isFile
+          ? (label, children) => actions.joinedDirectoriesFnc(
                 context,
                 label,
                 children,
                 api,
-                widget.nestedCallback,
-                GlueProvider.generateOf(context),
+                widget.callback?.toFile,
                 _segmentCell,
                 directoryMetadata,
                 directoryTags,
                 favoritePosts,
                 widget.db.localTags,
                 widget.l10n,
-              ),
+              )
+          : null,
     );
   }
 
@@ -377,43 +376,53 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   Widget child(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     return GridPopScope(
       filter: filter,
-      rootNavigatorPopCond: widget.nestedCallback != null,
+      rootNavigatorPopCond: widget.callback?.isFile ?? false,
       searchTextController: searchTextController,
       rootNavigatorPop: widget.procPop,
       child: GridFrame<Directory>(
         key: state.gridKey,
         slivers: [
-          if (widget.nestedCallback != null)
+          if (widget.callback?.isFile ?? false)
             SliverToBoxAdapter(
               child: _LatestImagesWidget(
+                selectionActions: SelectionActions.of(context),
                 db: widget.db,
                 parent: api,
-                callback: widget.nestedCallback!,
+                callback: widget.callback!.toFile,
               ),
             ),
           SegmentLayout(
             segments: _makeSegments(context),
             gridSeed: 1,
-            suggestionPrefix: widget.callback?.suggestFor ?? const [],
+            suggestionPrefix: (widget.callback?.isDirectory ?? false)
+                ? widget.callback!.toDirectory.suggestFor
+                : const [],
             storage: filter.backingStorage,
             progress: filter.progress,
             localizations: widget.l10n,
           ),
         ],
         functionality: GridFunctionality(
-          selectionGlue: GlueProvider.generateOf(context)(),
+          selectionActions: SelectionActions.of(context),
+          scrollingSink: ScrollingSinkProvider.maybeOf(context),
+          scrollUpOn: navBarEvents == null
+              ? const []
+              : [(navBarEvents, () => api.bindFiles == null)],
           registerNotifiers: (child) => DirectoriesDataNotifier(
             api: api,
-            nestedCallback: widget.nestedCallback,
             callback: widget.callback,
             segmentFnc: _segmentCell,
             child: child,
           ),
           onEmptySource: _EmptyWidget(trashCell: api.trashCell),
           source: filter,
+          fab: widget.callback == null
+              ? const NoGridFab()
+              : const DefaultGridFab(),
           settingsButton: GridSettingsButton(
             add: _add,
             watch: gridSettings.watch,
@@ -425,16 +434,18 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   complete: _completeDirectoryNameTag,
                   focus: searchFocus,
                   trailingItems: [
-                    if (widget.callback != null)
+                    if (widget.callback!.isDirectory)
                       IconButton(
                         onPressed: () => GalleryApi()
                             .chooseDirectory(l10n, temporary: true)
                             .then((value) {
-                          widget.callback!(
-                            chosen: value!.$2,
-                            volumeName: "",
-                            bucketId: "",
-                            newDir: true,
+                          widget.callback!.toDirectory(
+                            (
+                              bucketId: "",
+                              path: value!.path,
+                              volumeName: "",
+                            ),
+                            true,
                           );
                         }).onError((e, trace) {
                           Logger.root.severe(
@@ -464,119 +475,119 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
               : RawSearchWidget(
                   (settingsButton, bottomWidget) => SliverAppBar(
                     leading: const SizedBox.shrink(),
-                    floating: true,
-                    pinned: true,
-                    snap: true,
-                    stretch: true,
-                    backgroundColor:
-                        theme.colorScheme.surface.withValues(alpha: 0.95),
+                    systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarBrightness: theme.brightness == Brightness.light
+                          ? Brightness.dark
+                          : Brightness.light,
+                      statusBarColor:
+                          theme.colorScheme.surface.withValues(alpha: 0.95),
+                    ),
                     bottom: bottomWidget ??
                         const PreferredSize(
                           preferredSize: Size.zero,
                           child: SizedBox.shrink(),
                         ),
                     centerTitle: true,
-                    title: Builder(
-                      builder: (context) => IconButton(
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).push<void>(
-                            MaterialPageRoute(
-                              builder: (context_) => DirectoriesSearchPage(
-                                callback: widget.nestedCallback,
-                                db: widget.db,
-                                source: api.source,
-                                directoryComplete: _completeDirectoryNameTag,
-                                onDirectoryPressed: (directory) {
-                                  final gridExtra =
-                                      GridExtrasNotifier.of<Directory>(
-                                    context,
-                                  );
+                    // title: Builder(
+                    //   builder: (context) => IconButton(
+                    //     onPressed: () {
+                    //       Navigator.of(context, rootNavigator: true).push<void>(
+                    //         MaterialPageRoute(
+                    //           builder: (context_) => DirectoriesSearchPage(
+                    //             callback: widget.nestedCallback,
+                    //             db: widget.db,
+                    //             source: api.source,
+                    //             directoryComplete: _completeDirectoryNameTag,
+                    //             onDirectoryPressed: (directory) {
+                    //               final gridExtra =
+                    //                   GridExtrasNotifier.of<Directory>(
+                    //                 context,
+                    //               );
 
-                                  directory.onPress(
-                                    context,
-                                    gridExtra.functionality,
-                                    directory,
-                                    0,
-                                  );
-                                },
-                                joinedDirectories: (
-                                  label,
-                                  children, {
-                                  String tag = "",
-                                  FilteringMode? filteringMode,
-                                }) =>
-                                    actions.joinedDirectoriesFnc(
-                                  context,
-                                  label,
-                                  children,
-                                  api,
-                                  widget.nestedCallback,
-                                  GlueProvider.generateOf(context),
-                                  _segmentCell,
-                                  directoryMetadata,
-                                  directoryTags,
-                                  favoritePosts,
-                                  widget.db.localTags,
-                                  widget.l10n,
-                                  tag: tag,
-                                  filteringMode: filteringMode,
-                                ),
-                              ),
-                            ),
+                    //               directory.onPress(
+                    //                 context,
+                    //                 gridExtra.functionality,
+                    //                 directory,
+                    //                 0,
+                    //               );
+                    //             },
+                    //             joinedDirectories: (
+                    //               label,
+                    //               children, {
+                    //               String tag = "",
+                    //               FilteringMode? filteringMode,
+                    //             }) =>
+                    //                 actions.joinedDirectoriesFnc(
+                    //               context,
+                    //               label,
+                    //               children,
+                    //               api,
+                    //               widget.nestedCallback,
+                    //               GlueProvider.generateOf(context),
+                    //               _segmentCell,
+                    //               directoryMetadata,
+                    //               directoryTags,
+                    //               favoritePosts,
+                    //               widget.db.localTags,
+                    //               widget.l10n,
+                    //               tag: tag,
+                    //               filteringMode: filteringMode,
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       );
+                    //     },
+                    //     icon: const Icon(Icons.search_rounded),
+                    //   ),
+                    // ),
+                    actions: [
+                      // if (widget.callback != null)
+                      //   IconButton(
+                      //     onPressed: () => GalleryApi()
+                      //         .chooseDirectory(l10n, temporary: true)
+                      //         .then((value) {
+                      //       widget.callback!(
+                      //         chosen: value!.path,
+                      //         volumeName: "",
+                      //         bucketId: "",
+                      //         newDir: true,
+                      //       );
+                      //     }).onError((e, trace) {
+                      //       Logger.root.severe(
+                      //         "new folder in android_directories",
+                      //         e,
+                      //         trace,
+                      //       );
+                      //     }).whenComplete(() {
+                      //       if (context.mounted) {
+                      //         Navigator.pop(context);
+                      //       }
+                      //     }),
+                      //     icon: const Icon(Icons.create_new_folder_outlined),
+                      //   )
+                      // else
+                      IconButton(
+                        onPressed: () {
+                          GallerySubPage.selectOf(
+                            context,
+                            GallerySubPage.blacklisted,
                           );
                         },
-                        icon: const Icon(Icons.search_rounded),
+                        icon: const Icon(Icons.folder_off_outlined),
                       ),
-                    ),
-                    actions: [
-                      if (widget.callback != null)
-                        IconButton(
-                          onPressed: () => GalleryApi()
-                              .chooseDirectory(l10n, temporary: true)
-                              .then((value) {
-                            widget.callback!(
-                              chosen: value!.$2,
-                              volumeName: "",
-                              bucketId: "",
-                              newDir: true,
-                            );
-                          }).onError((e, trace) {
-                            Logger.root.severe(
-                              "new folder in android_directories",
-                              e,
-                              trace,
-                            );
-                          }).whenComplete(() {
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                            }
-                          }),
-                          icon: const Icon(Icons.create_new_folder_outlined),
-                        )
-                      else
-                        IconButton(
-                          onPressed: () {
-                            GallerySubPage.selectOf(
-                              context,
-                              GallerySubPage.blacklisted,
-                            );
-                          },
-                          icon: const Icon(Icons.folder_off_outlined),
-                        ),
                       if (settingsButton != null) settingsButton,
                     ],
                   ),
                 ),
         ),
         description: GridDescription(
-          actions: widget.callback != null || widget.nestedCallback != null
+          actions: widget.callback != null
               ? <GridAction<Directory>>[
-                  if (widget.callback == null || widget.callback!.joinable)
+                  if (widget.callback?.isFile ?? false)
                     actions.joinedDirectories(
                       context,
                       api,
-                      widget.nestedCallback,
-                      GlueProvider.generateOf(context),
+                      widget.callback?.toFileOrNull,
                       _segmentCell,
                       directoryMetadata,
                       directoryTags,
@@ -612,8 +623,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   actions.joinedDirectories(
                     context,
                     api,
-                    widget.nestedCallback,
-                    GlueProvider.generateOf(context),
+                    widget.callback?.toFileOrNull,
                     _segmentCell,
                     directoryMetadata,
                     directoryTags,
@@ -622,7 +632,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     widget.l10n,
                   ),
                 ],
-          footer: widget.callback?.preview ?? widget.nestedCallback?.preview,
+          footer: widget.callback?.preview,
           pageName: widget.l10n.galleryLabel,
           gridSeed: state.gridSeed,
         ),
@@ -632,15 +642,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.callback != null || widget.nestedCallback != null) {
+    if (widget.callback != null) {
       return GridConfiguration(
         watch: gridSettings.watch,
         child: widget.wrapGridPage
             ? WrapGridPage(
-                addScaffold: widget.callback != null,
-                child: Builder(
-                  builder: child,
-                ),
+                addScaffoldAndBar: true,
+                child: Builder(builder: child),
               )
             : child(context),
       );
@@ -651,7 +659,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           watch: gridSettings.watch,
           child: widget.wrapGridPage
               ? WrapGridPage(
-                  addScaffold: widget.callback != null,
                   child: Builder(
                     builder: child,
                   ),
@@ -660,18 +667,16 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
       GallerySubPage.blacklisted => DirectoriesDataNotifier(
           api: api,
-          nestedCallback: widget.nestedCallback,
           callback: widget.callback,
           segmentFnc: _segmentCell,
           child: GridPopScope(
             searchTextController: null,
             filter: null,
             rootNavigatorPop: widget.procPop,
-            child: BlacklistedDirectories(
+            child: BlacklistedDirectoriesPage(
               popScope: widget.procPop ??
                   (_) =>
                       GallerySubPage.selectOf(context, GallerySubPage.gallery),
-              generate: GlueProvider.generateOf(context),
               db: widget.db,
             ),
           ),
@@ -683,14 +688,18 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 class _LatestImagesWidget extends StatefulWidget {
   const _LatestImagesWidget({
     // super.key,
-    required this.db,
     required this.parent,
     required this.callback,
+    required this.selectionActions,
+    required this.db,
   });
 
-  final DbConn db;
   final Directories parent;
-  final CallbackDescriptionNested callback;
+  final ReturnFileCallback callback;
+
+  final SelectionActions selectionActions;
+
+  final DbConn db;
 
   @override
   State<_LatestImagesWidget> createState() => __LatestImagesWidgetState();
@@ -721,8 +730,8 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   );
 
   late final gridSelection = GridSelection<File>(
+    widget.selectionActions.controller,
     const [],
-    SelectionGlue.empty(context),
     noAppBar: true,
     source: filesApi.source.backingStorage,
   );
@@ -734,13 +743,10 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
       data: GridExtrasData(
         gridSelection,
         functionality,
-        const GridDescription<File>(
-          actions: [],
-          gridSeed: 0,
-        ),
+        const GridDescription<File>(),
         focus,
       ),
-      child: NestedCallbackNotifier(
+      child: ReturnFileCallbackNotifier(
         callback: widget.callback,
         child: FilesDataNotifier(
           api: filesApi,
@@ -749,7 +755,6 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
       ),
     ),
     source: filesApi.source,
-    selectionGlue: SelectionGlue.empty(context),
   );
 
   final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
@@ -760,26 +765,15 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
     Map<String, DirectoryMetadata> c,
   ) {
     return l
-            .where(
-              (e) => GalleryFilesPageType.filterAuthBlur(
-                c,
-                e,
-                widget.db.directoryTags,
-                widget.db.directoryMetadata,
-              ),
-            )
-            .toList()
-        // .map(
-        //   (e) => e!.toAndroidFile(
-        //     widget.db.localTags.get(e.name).fold({}, (map, e) {
-        //       map[e] = null;
-
-        //       return map;
-        //     }),
-        //   ),
-        // )
-        // .toList()
-        ;
+        .where(
+          (e) => GalleryFilesPageType.filterAuthBlur(
+            c,
+            e,
+            widget.db.directoryTags,
+            widget.db.directoryMetadata,
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -811,10 +805,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
       data: GridExtrasData(
         gridSelection,
         functionality,
-        const GridDescription<File>(
-          actions: [],
-          gridSeed: 0,
-        ),
+        const GridDescription<File>(),
         focus,
       ),
       child: GridScrollNotifier(
@@ -913,14 +904,12 @@ class __LatestListState extends State<_LatestList> {
                 final cell = source.backingStorage[i];
 
                 return InkWell(
-                  onTap: () {
-                    cell.onPress(context, widget.functionality, cell, i);
-                  },
+                  onTap: () => cell.onPress(context, widget.functionality, i),
                   borderRadius: BorderRadius.circular(15),
                   child: SizedBox(
                     width: _LatestList.size.width,
                     child: GridCell(
-                      cell: cell,
+                      data: cell,
                       hideTitle: false,
                       imageAlign: Alignment.topCenter,
                       overrideDescription: const CellStaticData(
@@ -945,14 +934,17 @@ class GridPopScope extends StatefulWidget {
     this.rootNavigatorPop,
     required this.searchTextController,
     required this.filter,
-    required this.child,
     this.rootNavigatorPopCond = false,
+    required this.child,
   });
 
-  final TextEditingController? searchTextController;
-  final void Function(bool)? rootNavigatorPop;
   final bool rootNavigatorPopCond;
+
+  final TextEditingController? searchTextController;
   final ChainedFilterResourceSource<dynamic, dynamic>? filter;
+
+  final void Function(bool)? rootNavigatorPop;
+
   final Widget child;
 
   @override
@@ -980,13 +972,13 @@ class _GridPopScopeState extends State<GridPopScope> {
 
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.generateOf(context)();
+    final controller = SelectionActions.controllerOf(context);
 
     return PopScope(
       canPop: widget.rootNavigatorPop != null
           ? widget.rootNavigatorPopCond
           : false ||
-              !glue.isOpen() &&
+              !controller.isExpanded &&
                   (widget.searchTextController == null ||
                       widget.searchTextController!.text.isEmpty) &&
                   (widget.filter == null ||
@@ -996,8 +988,8 @@ class _GridPopScopeState extends State<GridPopScope> {
                           widget.filter!.filteringMode ==
                               FilteringMode.noFilter)),
       onPopInvokedWithResult: (didPop, _) {
-        if (glue.isOpen()) {
-          glue.updateCount(0);
+        if (controller.isExpanded) {
+          controller.setCount(0);
 
           return;
         } else if (widget.searchTextController != null &&
@@ -1024,21 +1016,18 @@ class DirectoriesDataNotifier extends InheritedWidget {
   const DirectoriesDataNotifier({
     super.key,
     required this.api,
-    required this.nestedCallback,
     required this.callback,
     required this.segmentFnc,
     required super.child,
   });
 
   final Directories api;
-  final CallbackDescription? callback;
-  final CallbackDescriptionNested? nestedCallback;
+  final GalleryReturnCallback? callback;
   final String Function(Directory cell) segmentFnc;
 
   static (
     Directories,
-    CallbackDescription?,
-    CallbackDescriptionNested?,
+    GalleryReturnCallback?,
     String Function(Directory cell),
   ) of(BuildContext context) {
     final widget =
@@ -1047,7 +1036,6 @@ class DirectoriesDataNotifier extends InheritedWidget {
     return (
       widget!.api,
       widget.callback,
-      widget.nestedCallback,
       widget.segmentFnc,
     );
   }
@@ -1056,7 +1044,6 @@ class DirectoriesDataNotifier extends InheritedWidget {
   bool updateShouldNotify(DirectoriesDataNotifier oldWidget) =>
       api != oldWidget.api ||
       callback != oldWidget.callback ||
-      nestedCallback != oldWidget.nestedCallback ||
       segmentFnc != oldWidget.segmentFnc;
 }
 

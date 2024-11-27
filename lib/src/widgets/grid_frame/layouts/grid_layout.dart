@@ -23,11 +23,12 @@ class GridLayout<T extends CellBase> extends StatefulWidget {
     this.unselectOnUpdate = true,
   });
 
+  final bool unselectOnUpdate;
+
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
 
   final Widget Function(Object? error)? buildEmpty;
-  final bool unselectOnUpdate;
 
   @override
   State<GridLayout<T>> createState() => _GridLayoutState();
@@ -42,7 +43,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
   void initState() {
     _watcher = source.watch((_) {
       if (widget.unselectOnUpdate) {
-        GridExtrasNotifier.of<T>(context).selection.reset();
+        GridExtrasNotifier.of<T>(context).selection?.reset();
       }
 
       setState(() {});
@@ -64,6 +65,8 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
     final extras = GridExtrasNotifier.of<T>(context);
     final config = GridConfiguration.of(context);
 
+    // SelectionActions.of(context);
+
     return EmptyWidgetOrContent(
       source: source,
       progress: widget.progress,
@@ -77,6 +80,16 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
         itemBuilder: (context, idx) {
           final cell = getCell(idx);
 
+          final child = cell.buildCell<T>(
+            context,
+            idx,
+            cell,
+            hideTitle: config.hideName,
+            isList: false,
+            imageAlign: Alignment.center,
+            animated: PlayAnimations.maybeOf(context) ?? false,
+          );
+
           return WrapSelection<T>(
             selection: extras.selection,
             thisIndx: idx,
@@ -84,15 +97,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
             description: cell.description(),
             functionality: extras.functionality,
             selectFrom: null,
-            child: cell.buildCell<T>(
-              context,
-              idx,
-              cell,
-              hideTitle: config.hideName,
-              isList: false,
-              imageAlign: Alignment.center,
-              animated: PlayAnimations.maybeOf(context) ?? false,
-            ),
+            child: child,
           );
         },
       ),

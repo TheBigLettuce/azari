@@ -41,10 +41,9 @@ abstract class BlacklistedDirectoryDataImpl
   void onPress(
     BuildContext context,
     GridFunctionality<BlacklistedDirectoryData> functionality,
-    BlacklistedDirectoryData cell,
     int idx,
   ) {
-    final (api, _, _, _) = DirectoriesDataNotifier.of(context);
+    final (api, _, _) = DirectoriesDataNotifier.of(context);
     final db = DatabaseConnectionNotifier.of(context);
 
     final filesApi = api.files(
@@ -57,29 +56,27 @@ abstract class BlacklistedDirectoryDataImpl
         lastModified: 0,
         thumbFileId: 0,
       ),
-      name,
       GalleryFilesPageType.normal,
       db.directoryTags,
       db.directoryMetadata,
       db.favoritePosts,
       db.localTags,
+      name: name,
+      bucketId: bucketId,
     );
-
-    final glue = GlueProvider.generateOf(context);
 
     Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (context) {
-          return GalleryFiles(
+          return FilesPage(
             api: filesApi,
             dirName: name,
             directory: null,
-            bucketId: bucketId,
             secure: true,
-            generateGlue: glue,
             db: db,
-            tagManager: TagManager.of(context),
+            navBarEvents: NavigationButtonEvents.maybeOf(context),
+            scrollingSink: ScrollingSinkProvider.maybeOf(context),
           );
         },
       ),

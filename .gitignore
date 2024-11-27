@@ -48,6 +48,7 @@ app.*.map.json
 
 # generated code
 /lib/src/**/*.g.dart
+/lib/l10n/generated/*.dart
 
 /test/test_api.g.dart
 

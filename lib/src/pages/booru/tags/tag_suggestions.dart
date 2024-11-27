@@ -5,27 +5,45 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
+
+const slideFadeEffects = <Effect<dynamic>>[
+  SlideEffect(
+    curve: Easing.emphasizedDecelerate,
+    duration: Durations.medium4,
+    begin: Offset(0.2, 0),
+    end: Offset.zero,
+  ),
+  FadeEffect(
+    delay: Duration(milliseconds: 80),
+    curve: Easing.standard,
+    duration: Durations.medium4,
+    begin: 0,
+    end: 1,
+  ),
+];
 
 class TagSuggestions extends StatefulWidget {
   const TagSuggestions({
     super.key,
     this.redBackground = false,
     required this.tagging,
-    required this.onPress,
+    required this.onPressed,
     this.leading,
   });
 
-  final void Function(String tag, SafeMode? safeMode)? onPress;
   final bool redBackground;
+
   final BooruTagging tagging;
   final Widget? leading;
+
+  final void Function(String tag, SafeMode? safeMode)? onPressed;
 
   @override
   State<TagSuggestions> createState() => _TagSuggestionsState();
@@ -123,7 +141,7 @@ class _TagSuggestionsState extends State<TagSuggestions> {
                               child: SingleTagWidget(
                                 tag: _tags[index],
                                 tagging: widget.tagging,
-                                onPress: widget.onPress,
+                                onPressed: widget.onPressed,
                                 redBackground: widget.redBackground,
                               ),
                             );
@@ -139,35 +157,21 @@ class _TagSuggestionsState extends State<TagSuggestions> {
   }
 }
 
-const slideFadeEffects = <Effect<dynamic>>[
-  SlideEffect(
-    curve: Easing.emphasizedDecelerate,
-    duration: Durations.medium4,
-    begin: Offset(0.2, 0),
-    end: Offset.zero,
-  ),
-  FadeEffect(
-    delay: Duration(milliseconds: 80),
-    curve: Easing.standard,
-    duration: Durations.medium4,
-    begin: 0,
-    end: 1,
-  ),
-];
-
 class SingleTagWidget extends StatelessWidget {
   const SingleTagWidget({
     super.key,
     required this.tag,
-    required this.onPress,
+    required this.onPressed,
     required this.tagging,
     required this.redBackground,
   });
 
+  final bool redBackground;
+
   final TagData tag;
   final BooruTagging tagging;
-  final bool redBackground;
-  final void Function(String tag, SafeMode? safeMode)? onPress;
+
+  final void Function(String tag, SafeMode? safeMode)? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -176,12 +180,12 @@ class SingleTagWidget extends StatelessWidget {
     return MenuWrapper(
       title: tag.tag,
       items: [
-        if (onPress != null)
+        if (onPressed != null)
           launchGridSafeModeItem(
             context,
             tag.tag,
             (context, _, [safeMode]) {
-              onPress!(tag.tag, safeMode);
+              onPressed!(tag.tag, safeMode);
             },
             l10n,
           ),
@@ -203,10 +207,10 @@ class SingleTagWidget extends StatelessWidget {
             redBackground ? Colors.pink.shade300 : null,
           ),
         ),
-        onPressed: onPress == null
+        onPressed: onPressed == null
             ? null
             : () {
-                onPress!(tag.tag, null);
+                onPressed!(tag.tag, null);
               },
         label: Text(
           tag.tag,

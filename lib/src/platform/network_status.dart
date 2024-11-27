@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:ui";
+
 import "package:azari/src/platform/network_status/io.dart"
     if (dart.library.html) "package:azari/src/platform/network_status/web.dart";
 
@@ -12,7 +14,7 @@ class NetworkStatus {
   NetworkStatus(this.hasInternet);
 
   bool hasInternet;
-  void Function()? notify;
+  VoidCallback? notify;
 
   static NetworkStatus get g => _status;
 }

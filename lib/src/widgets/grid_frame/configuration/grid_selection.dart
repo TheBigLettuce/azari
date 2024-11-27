@@ -7,17 +7,24 @@ part of "../grid_frame.dart";
 
 class GridSelection<T extends CellBase> {
   GridSelection(
-    this.addActions,
-    this.glue, {
+    this.controller,
+    this.actions, {
     required this.noAppBar,
     required this.source,
-  });
+  }) {
+    _countEvents = controller.countEvents.listen((_) {
+      if (controller.count == 0 && count != 0) {
+        _selected.clear();
+      }
+    });
+  }
+  late final StreamSubscription<void> _countEvents;
 
-  final SelectionGlue glue;
+  final SelectionController controller;
   final ReadOnlyStorage<int, T> source;
 
   final _selected = <int, T>{};
-  final List<GridAction<T>> addActions;
+  final List<GridAction<T>> actions;
   final bool noAppBar;
 
   int? lastSelected;
@@ -27,75 +34,90 @@ class GridSelection<T extends CellBase> {
 
   int get count => _selected.length;
 
-  void use(void Function(List<T> l) f, bool closeOnPress) {
+  void _use(
+    void Function(List<T> l) f,
+    bool closeOnPress,
+  ) {
     f(_selected.values.toList());
     if (closeOnPress) {
       reset();
     }
   }
 
+  List<SelectionButton> _factory() {
+    return actions
+        .map(
+          (e) => SelectionButton(
+            e.icon,
+            () => _use(e.onPress, e.closeOnPress),
+            e.closeOnPress,
+            animate: e.animate,
+            play: e.play,
+          ),
+        )
+        .toList();
+  }
+
   void reset([bool force = false]) {
     if (_selected.isNotEmpty) {
       _selected.clear();
       lastSelected = null;
-      glue.updateCount(0);
+      controller.setCount(0, _factory);
     } else if (force) {
-      glue.updateCount(0);
+      controller.setCount(0, _factory);
     }
   }
 
-  void selectAll(BuildContext context) {
+  void selectAll() {
     final m = source.count;
 
     if (m <= _selected.length) {
       return;
     }
 
-    if (!glue.isOpen()) {
-      glue.open<T>(context, addActions, this);
+    if (!controller.isExpanded) {
+      controller.setExpanded(true);
     }
 
     _selected.clear();
-    final getCell = CellProvider.of<T>(context);
 
     for (var i = 0; i != m; i++) {
-      _selected[i] = getCell(i);
+      _selected[i] = source[i];
     }
 
-    glue.updateCount(_selected.length);
+    controller.setCount(_selected.length, _factory);
   }
 
   bool isSelected(int indx) => _selected.containsKey(indx) && !indx.isNegative;
 
-  void _add(BuildContext context, int id, T selection) {
+  void _add(int id, T selection) {
     if (id.isNegative) {
       return;
     }
 
-    if (_selected.isEmpty || !glue.isOpen()) {
-      glue.open<T>(context, addActions, this);
+    if (_selected.isEmpty || !controller.isExpanded) {
+      controller.setExpanded(true);
     }
 
     _selected[id] = selection;
     lastSelected = id;
 
-    glue.updateCount(_selected.length);
+    controller.setCount(_selected.length, _factory);
   }
 
-  void _remove(BuildContext context, int id) {
+  void _remove(int id) {
     _selected.remove(id);
     if (_selected.isEmpty) {
       _selected.clear();
       lastSelected = null;
-    } else if (_selected.isNotEmpty && !glue.isOpen()) {
-      glue.open<T>(context, addActions, this);
+    } else if (_selected.isNotEmpty && !controller.isExpanded) {
+      controller.setExpanded(true);
     }
 
-    glue.updateCount(_selected.length);
+    controller.setCount(_selected.length, _factory);
   }
 
   void selectUnselectUntil(
-    BuildContext context,
     int indx_, {
     List<int>? selectFrom,
   }) {
@@ -109,49 +131,49 @@ class GridSelection<T extends CellBase> {
       }
 
       final selection = !isSelected(indx);
-      final getCell = CellProvider.of<T>(context);
 
       if (indx < last) {
         for (var i = last; i >= indx; i--) {
           if (selection) {
-            _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = source[selectFrom?[i] ?? i];
           } else {
-            _remove(context, selectFrom?[i] ?? i);
+            _remove(selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
       } else if (indx > last) {
         for (var i = last; i <= indx; i++) {
           if (selection) {
-            _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = source[selectFrom?[i] ?? i];
           } else {
-            _remove(context, selectFrom?[i] ?? i);
+            _remove(selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
       }
 
-      glue.updateCount(_selected.length);
+      controller.setCount(_selected.length, _factory);
     }
   }
 
-  void selectOrUnselect(BuildContext context, int index) {
-    if (addActions.isEmpty) {
-      return;
-    }
-
-    if (glue.isOpen() && _selected.isEmpty) {
+  void selectOrUnselect(int index) {
+    if (controller.isExpanded && _selected.isEmpty) {
       return;
     }
 
     if (!isSelected(index)) {
-      final cell = CellProvider.getOf<T>(context, index);
+      final cell = source[index];
 
-      _add(context, index, cell);
+      _add(index, cell);
     } else {
-      _remove(context, index);
+      _remove(index);
     }
 
     HapticFeedback.selectionClick();
+  }
+
+  void _dispose() {
+    _countEvents.cancel();
+    _selected.clear();
   }
 }

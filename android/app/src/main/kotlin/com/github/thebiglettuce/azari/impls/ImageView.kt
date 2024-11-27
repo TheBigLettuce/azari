@@ -15,12 +15,14 @@ import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import kotlinx.coroutines.CoroutineScope
 
 internal class ImageView(
     context: Context,
     id: Int,
     galleryApi: PlatformGalleryApi,
     params: Map<String, String>,
+//    scope: CoroutineScope,
 ) : PlatformView {
     private var imageView: View
 
@@ -50,7 +52,6 @@ internal class ImageView(
             setImageViewFactory(GlideImageViewFactory())
             setOptimizeDisplay(false)
             showImage(Uri.parse(params["uri"]))
-
 //            setOnTouchListener { view, motionEvent -> gestureDetector.onTouchEvent(motionEvent) }
         }
     }

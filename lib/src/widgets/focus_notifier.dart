@@ -12,18 +12,12 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
     required super.child,
   });
 
-  static FocusNotifierData of(BuildContext context) {
+  static ({VoidCallback unfocus, bool hasFocus}) of(BuildContext context) {
     final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
 
-    return FocusNotifierData(
+    return (
       hasFocus: widget.notifier?.hasFocus ?? false,
       unfocus: widget.notifier?.previousFocus ?? () {},
     );
   }
-}
-
-class FocusNotifierData {
-  const FocusNotifierData({required this.hasFocus, required this.unfocus});
-  final void Function() unfocus;
-  final bool hasFocus;
 }

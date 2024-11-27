@@ -6,15 +6,16 @@
 import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/more/settings/radio_dialog.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class PermissionsPage extends StatefulWidget {
   const PermissionsPage({
@@ -24,7 +25,8 @@ class PermissionsPage extends StatefulWidget {
   });
 
   final List<PermissionController> permissions;
-  final void Function(BuildContext context)? onEnd;
+
+  final ContextCallback? onEnd;
 
   @override
   State<PermissionsPage> createState() => _PermissionsPageState();
@@ -122,7 +124,7 @@ class WelcomePage extends StatefulWidget {
     this.onEnd,
   });
 
-  final void Function(BuildContext context)? onEnd;
+  final ContextCallback? onEnd;
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -174,7 +176,7 @@ class CongratulationPage extends StatelessWidget {
     required this.onEnd,
   });
 
-  final void Function(BuildContext context)? onEnd;
+  final ContextCallback? onEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +220,7 @@ class InitalSettings extends StatefulWidget {
     required this.onEnd,
   });
 
-  final void Function(BuildContext context)? onEnd;
+  final ContextCallback? onEnd;
 
   @override
   State<InitalSettings> createState() => _InitalSettingsState();
@@ -402,11 +404,13 @@ class _WrapPadding extends StatelessWidget {
     this.addCenteredIcon = false,
   });
 
-  final List<Widget> buttons;
-  final String title;
-  final Widget body;
-  final String? explanation;
   final bool addCenteredIcon;
+
+  final String title;
+  final String? explanation;
+
+  final List<Widget> buttons;
+  final Widget body;
 
   @override
   Widget build(BuildContext context) {
@@ -514,10 +518,12 @@ class _ButtonWithPadding extends StatelessWidget {
     required this.variant,
   });
 
-  final Icon icon;
-  final void Function()? onPressed;
   final String label;
+  final Icon icon;
+
   final ButtonVariant variant;
+
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

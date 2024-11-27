@@ -12,8 +12,8 @@ class Sticker {
     this.subtitle,
   });
 
-  final IconData icon;
   final bool important;
 
   final String? subtitle;
+  final IconData icon;
 }

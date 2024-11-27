@@ -3,42 +3,40 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-class BlacklistedDirectories extends StatefulWidget {
-  const BlacklistedDirectories({
+class BlacklistedDirectoriesPage extends StatefulWidget {
+  const BlacklistedDirectoriesPage({
     super.key,
     required this.db,
-    required this.generate,
     required this.popScope,
   });
 
   final DbConn db;
-  final SelectionGlue Function([Set<GluePreferences> preferences]) generate;
   final void Function(bool) popScope;
 
   @override
-  State<BlacklistedDirectories> createState() => _BlacklistedDirectoriesState();
+  State<BlacklistedDirectoriesPage> createState() =>
+      _BlacklistedDirectoriesPageState();
 }
 
-class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
+class _BlacklistedDirectoriesPageState
+    extends State<BlacklistedDirectoriesPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.db.blacklistedDirectories;
 
@@ -90,7 +88,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
     return GridConfiguration(
       watch: gridConfiguration.watch,
       child: WrapGridPage(
-        provided: widget.generate,
         child: GridFrame<BlacklistedDirectoryData>(
           key: state.gridKey,
           slivers: [
@@ -130,28 +127,10 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                 },
                 icon: const Icon(Icons.arrow_back),
               ),
-              // trailingItems: [
-              //   IconButton(
-              //     onPressed: blacklistedDirectory.backingStorage.clear,
-              //     icon: const Icon(Icons.delete),
-              //   ),
-              // ],
             ),
-            selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
           description: GridDescription(
-            actions: const [
-              // GridAction(
-              //   Icons.restore_page_rounded,
-              //   (selected) {
-              //     blacklistedDirectory.backingStorage.removeAll(
-              //       selected.map((e) => e.bucketId).toList(),
-              //     );
-              //   },
-              //   true,
-              // ),
-            ],
             animationsOnSourceWatch: false,
             pageName: l10n.blacklistedFoldersPage,
             gridSeed: state.gridSeed,

@@ -19,16 +19,19 @@ class ImageViewBody extends StatelessWidget {
     required this.onPressedRight,
   });
 
-  final void Function(int idx) onPageChanged;
-  final PageController pageController;
-  final void Function() onTap;
-  final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
-  final void Function() onLongPress;
   final int itemCount;
-  final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
 
-  final void Function()? onPressedRight;
-  final void Function()? onPressedLeft;
+  final PageController pageController;
+  final ContentIdxCallback onPageChanged;
+
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  final VoidCallback? onPressedRight;
+  final VoidCallback? onPressedLeft;
+
+  final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
+  final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
 
   @override
   Widget build(BuildContext context) {

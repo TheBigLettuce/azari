@@ -18,6 +18,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
   }) : super(
           type: GalleryFilesPageType.normal,
           target: "joinedDir",
+          bucketId: "joinedDir",
         );
 
   @override
@@ -34,6 +35,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
 
 class _AndroidGalleryFiles implements Files {
   _AndroidGalleryFiles({
+    required this.bucketId,
     required this.directories,
     required this.sourceTags,
     required this.localTags,
@@ -86,6 +88,9 @@ class _AndroidGalleryFiles implements Files {
 
   @override
   final List<Directory> directories;
+
+  @override
+  final String bucketId;
 }
 
 class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
@@ -142,23 +147,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
         AndroidGalleryApi.appContext
             .invokeMethod("refreshTrashed", sortingMode.sortingIdAndroid),
       );
-    }
-    // else if (type.isFavorites()) {
-    //   int offset = 0;
-
-    //   while (true) {
-    //     final f = favoritePosts.getAll(offset: offset, limit: 200);
-    //     offset += f.length;
-
-    //     if (f.isEmpty) {
-    //       break;
-    //     }
-
-    //     await const AndroidGalleryManagementApi()
-    //         .refreshFavorites(f, sortingMode);
-    //   }
-    // }
-    else {
+    } else {
       if (directories.length == 1) {
         unawaited(
           AndroidGalleryApi.appContext.invokeMethod("refreshFiles", {

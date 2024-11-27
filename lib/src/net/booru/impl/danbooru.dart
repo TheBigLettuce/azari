@@ -16,15 +16,13 @@ import "package:logging/logging.dart";
 
 class Danbooru implements BooruAPI {
   const Danbooru(
-    this.client,
-    this.pageSaver, {
+    this.client, {
     this.booru = Booru.danbooru,
   });
 
   static final _log = Logger("Danbooru API");
 
   final Dio client;
-  final PageSaver pageSaver;
 
   @override
   final Booru booru;
@@ -131,6 +129,7 @@ class Danbooru implements BooruAPI {
                 BooruPostsOrder.latest,
               RandomPostsOrder.rating => BooruPostsOrder.score,
             },
+      pageSaver: PageSaver.noPersist(),
     );
 
     return p.$1;
@@ -144,6 +143,7 @@ class Danbooru implements BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   }) =>
       _commonPosts(
         tags,
@@ -166,6 +166,7 @@ class Danbooru implements BooruAPI {
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
+    required PageSaver pageSaver,
   }) =>
       _commonPosts(
         tags,

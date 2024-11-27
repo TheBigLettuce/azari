@@ -3,44 +3,41 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-class Downloads extends StatefulWidget {
-  const Downloads({
+class DownloadsPage extends StatefulWidget {
+  const DownloadsPage({
     super.key,
-    required this.generateGlue,
     required this.downloadManager,
     required this.db,
   });
 
-  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
   final DownloadManager downloadManager;
 
   final DbConn db;
 
   @override
-  State<Downloads> createState() => _DownloadsState();
+  State<DownloadsPage> createState() => _DownloadsPageState();
 }
 
-class _DownloadsState extends State<Downloads> {
+class _DownloadsPageState extends State<DownloadsPage> {
   DownloadManager get downloadManager => widget.downloadManager;
 
   late final ChainedFilterResourceSource<String, DownloadHandle> filter;
@@ -123,7 +120,6 @@ class _DownloadsState extends State<Downloads> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
-        provided: widget.generateGlue,
         child: GridFrame<DownloadHandle>(
           key: state.gridKey,
           slivers: [
@@ -137,6 +133,7 @@ class _DownloadsState extends State<Downloads> {
             ),
           ],
           functionality: GridFunctionality(
+            selectionActions: SelectionActions.of(context),
             onEmptySource: EmptyWidgetBackground(
               subtitle: l10n.emptyDownloadProgress,
             ),
@@ -154,11 +151,10 @@ class _DownloadsState extends State<Downloads> {
                 ),
               ],
             ),
-            selectionGlue: GlueProvider.generateOf(context)(),
             source: filter,
           ),
           description: GridDescription(
-            actions: [
+            actions: <GridAction<DownloadHandle>>[
               delete(context),
               GridAction(
                 Icons.restart_alt_rounded,

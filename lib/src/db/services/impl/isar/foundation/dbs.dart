@@ -21,7 +21,6 @@ class _Dbs {
     required this.blacklisted,
     required this.directory,
     required this.main,
-    required this.anime,
     required this.temporaryDbDir,
     required this.temporaryImagesDir,
     required this.thumbnail,
@@ -36,7 +35,6 @@ class _Dbs {
       _currentBooruDbs.putIfAbsent(booru, () => _openPrimaryGrid(booru));
 
   final Isar main;
-  final Isar anime;
   final Isar localTags;
   final Isar? thumbnail;
   final Isar blacklisted;

@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/restart_widget.dart";
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
@@ -12,7 +13,6 @@ import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:flutter/material.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:logging/logging.dart";
 
 List<Sticker> defaultStickersFile(
@@ -93,7 +93,7 @@ Future<void> loadNetworkThumb(
     final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
     if (res != null) {
       final client = BooruAPI.defaultClientForBooru(res.booru);
-      final api = BooruAPI.fromEnum(res.booru, client, PageSaver.noPersist());
+      final api = BooruAPI.fromEnum(res.booru, client);
 
       try {
         final post = await api.singlePost(res.id);

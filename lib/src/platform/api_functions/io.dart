@@ -6,12 +6,12 @@
 import "dart:convert";
 import "dart:io";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:path/path.dart" as path;
 import "package:permission_handler/permission_handler.dart";
 
@@ -31,11 +31,6 @@ class _LinuxImpl implements PlatformApi {
 
   @override
   bool get authSupported => false;
-
-  // @override
-  // Future<void> setTitle(String windowTitle) {
-  //   return _channel.invokeMethod("set_title", windowTitle);
-  // }
 
   @override
   Future<Color> get accentColor async {

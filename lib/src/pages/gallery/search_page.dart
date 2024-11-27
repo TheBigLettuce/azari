@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -12,18 +13,18 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/pages/anime/anime.dart";
-import "package:azari/src/pages/gallery/callback_description.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 part "search_panels/chips_panel_body.dart";
 part "search_panels/directory_list.dart";
@@ -44,6 +45,8 @@ class DirectoriesSearchPage extends StatefulWidget {
     required this.callback,
   });
 
+  final ReturnFileCallback? callback;
+
   final ResourceSource<int, Directory> source;
 
   final void Function(Directory) onDirectoryPressed;
@@ -55,8 +58,6 @@ class DirectoriesSearchPage extends StatefulWidget {
   }) joinedDirectories;
 
   final Future<List<BooruTag>> Function(String str) directoryComplete;
-
-  final CallbackDescriptionNested? callback;
 
   final DbConn db;
 
@@ -131,7 +132,6 @@ class _DirectoriesSearchPageState extends State<DirectoriesSearchPage> {
                 }
 
                 _search(searchController.text.trim());
-                // _onTagPressed(searchController.text.trim());
               },
               icon: const Icon(Icons.search_rounded),
             ),

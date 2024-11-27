@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
@@ -12,12 +13,11 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/glue_provider.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
@@ -27,20 +27,17 @@ import "package:azari/src/widgets/time_label.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class BookmarkPage extends StatefulWidget {
   const BookmarkPage({
     super.key,
-    required this.saveSelectedPage,
-    required this.generateGlue,
     required this.pagingRegistry,
     required this.db,
+    required this.saveSelectedPage,
   });
 
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
   final DbConn db;
 
@@ -108,7 +105,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
             name: e.name,
             pagingRegistry: widget.pagingRegistry,
             saveSelectedPage: widget.saveSelectedPage,
-            generateGlue: widget.generateGlue,
             db: widget.db,
           );
         },
@@ -123,7 +119,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
-        provided: widget.generateGlue,
         child: Builder(
           builder: (context) => GridFrame<GridBookmark>(
             key: state.gridKey,
@@ -131,11 +126,13 @@ class _BookmarkPageState extends State<BookmarkPage> {
               _BookmarkBody(
                 source: source.backingStorage,
                 db: widget.db,
-                launchGrid: launchGrid,
+                openBookmark: launchGrid,
                 progress: source.progress,
               ),
             ],
             functionality: GridFunctionality(
+              fab: const NoGridFab(),
+              scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
               onEmptySource: EmptyWidgetBackground(
                 subtitle: l10n.emptyBookmarkedSearches,
               ),
@@ -148,10 +145,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
                   icon: const Icon(Icons.menu_rounded),
                 ),
               ),
-              selectionGlue: GlueProvider.generateOf(context)(),
             ),
             description: GridDescription(
-              actions: const [],
               pullToRefresh: false,
               gridSeed: state.gridSeed,
               pageName: l10n.bookmarksPageName,
@@ -168,15 +163,14 @@ class _BookmarkBody extends StatefulWidget {
     // super.key,
     required this.source,
     required this.db,
-    required this.launchGrid,
+    required this.openBookmark,
     required this.progress,
   });
 
   final ReadOnlyStorage<int, GridBookmark> source;
-
-  final void Function(BuildContext context, GridBookmark e) launchGrid;
-
   final RefreshingProgress progress;
+
+  final void Function(BuildContext context, GridBookmark e) openBookmark;
 
   final DbConn db;
 
@@ -210,13 +204,13 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
     final titleStyle = theme.textTheme.titleSmall!
         .copyWith(color: theme.colorScheme.secondary);
 
-    (int, int, int)? time;
+    ({int day, int month, int year})? time;
 
     for (final e in widget.source) {
-      final addTime =
-          time == null || time != (e.time.day, e.time.month, e.time.year);
+      final addTime = time == null ||
+          time != (day: e.time.day, month: e.time.month, year: e.time.year);
       if (addTime) {
-        time = (e.time.day, e.time.month, e.time.year);
+        time = (day: e.time.day, month: e.time.month, year: e.time.year);
 
         list.add(TimeLabel(time, titleStyle, timeNow));
       }
@@ -225,7 +219,7 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
         Padding(
           padding: EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
           child: _BookmarkListTile(
-            onPressed: widget.launchGrid,
+            openBookmark: widget.openBookmark,
             key: ValueKey(e.name),
             state: e,
             title: e.tags,
@@ -241,14 +235,14 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
 
   @override
   Widget build(BuildContext context) {
-    return SliverList.list(children: makeList(context, Theme.of(context)))
-        // EmptyWidgetOrContent(
-        //   count: widget.source.count,
-        //   progress: widget.progress,
-        //   buildEmpty: null,
-        //   child: SliverList.list(children: makeList(context, Theme.of(context))),
-        // )
-        ;
+    final theme = Theme.of(context);
+
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: 8),
+      sliver: SliverList.list(
+        children: makeList(context, theme),
+      ),
+    );
   }
 }
 
@@ -258,14 +252,16 @@ class _BookmarkListTile extends StatefulWidget {
     required this.subtitle,
     required this.title,
     required this.state,
-    required this.onPressed,
+    required this.openBookmark,
     required this.db,
   });
 
   final String title;
   final String subtitle;
+
   final GridBookmark state;
-  final void Function(BuildContext context, GridBookmark e) onPressed;
+
+  final void Function(BuildContext context, GridBookmark e) openBookmark;
 
   final DbConn db;
 
@@ -319,7 +315,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
       ],
       child: GestureDetector(
         onTap: () {
-          widget.onPressed(context, widget.state);
+          widget.openBookmark(context, widget.state);
         },
         child: Stack(
           alignment: Alignment.bottomCenter,

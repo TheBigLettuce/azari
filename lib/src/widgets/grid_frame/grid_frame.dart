@@ -5,31 +5,32 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/selection_glue.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/search/autocomplete/autocomplete_tag.dart";
+import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 part "configuration/grid_action.dart";
 part "configuration/grid_description.dart";
 part "configuration/grid_selection.dart";
-part "configuration/search_and_focus.dart";
 part "configuration/segments.dart";
 part "parts/app_bar.dart";
 part "parts/bottom_widget.dart";
@@ -67,7 +68,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   /// [belowMainFocus.requestFocus] get called.
   final FocusNode? belowMainFocus;
 
-  final void Function()? onDispose;
+  final VoidCallback? onDispose;
 
   final List<Widget> slivers;
 
@@ -81,30 +82,31 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
   final _animationsKey = GlobalKey<_PlayAnimationsState>();
 
   late final StreamSubscription<int>? _subscription;
+  final List<StreamSubscription<void>> _scrollUpEvents = [];
 
   late final ValueNotifier<bool>? _scrollingNotifier;
 
   final searchFocus = FocusNode();
 
-  late final selection = GridSelection<T>(
-    widget.description.actions,
-    widget.functionality.selectionGlue.chain(
-      updateCount: (parent, count) {
-        parent.updateCount(count);
-        _holderKey.currentState?.update();
-      },
-    ),
-    source: widget.functionality.source.backingStorage,
-    noAppBar: !widget.description.showAppBar,
-  );
+  late final GridSelection<T>? selection;
 
   ResourceSource<int, T> get source => widget.functionality.source;
 
   late double lastOffset = widget.initalScrollPosition;
+  bool _scrollingReverse = false;
 
   @override
   void initState() {
     super.initState();
+
+    selection = widget.functionality.selectionActions == null
+        ? null
+        : GridSelection<T>(
+            widget.functionality.selectionActions!.controller,
+            widget.description.actions,
+            source: widget.functionality.source.backingStorage,
+            noAppBar: !widget.description.showAppBar,
+          );
 
     final description = widget.description;
 
@@ -122,10 +124,34 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
     }
 
     if (controller != null) {
+      for (final e in widget.functionality.scrollUpOn) {
+        _scrollUpEvents.add(
+          e.$1.listen((_) {
+            if (e.$2 != null) {
+              if (!e.$2!()) {
+                return;
+              }
+            }
+
+            if (controller!.hasClients) {
+              controller?.animateTo(
+                0,
+                duration: Durations.long1,
+                curve: Easing.standard,
+              );
+            }
+          }),
+        );
+      }
+
       if (widget.initalScrollPosition != 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           controller!.jumpTo(widget.initalScrollPosition);
         });
+
+        widget.functionality.scrollingSink?.add(true);
+      } else {
+        widget.functionality.scrollingSink?.add(false);
       }
 
       final f = widget.functionality.updateScrollPosition;
@@ -141,6 +167,16 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
                 controller!.offset != 0;
         if (_scrollingNotifier!.value != showFab) {
           _scrollingNotifier.value = showFab;
+        }
+
+        final scrollingEvent = controller!.position.pixels ==
+                controller!.position.maxScrollExtent ||
+            controller!.position.userScrollDirection ==
+                    ScrollDirection.reverse &&
+                controller!.offset != 0;
+        if (_scrollingReverse != scrollingEvent) {
+          _scrollingReverse = scrollingEvent;
+          widget.functionality.scrollingSink?.add(scrollingEvent);
         }
 
         if (source.hasNext) {
@@ -172,6 +208,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
 
   @override
   void dispose() {
+    selection?._dispose();
+    widget.functionality.scrollingSink?.add(false);
+
+    for (final e in _scrollUpEvents) {
+      e.cancel();
+    }
     _subscription?.cancel();
     controller?.dispose();
     searchFocus.dispose();
@@ -194,49 +236,58 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
 
     final gridSettingsWatcher = GridConfiguration.watcherOf(context);
 
+    final child = CellProvider<T>(
+      getCell: source.forIdxUnsafe,
+      child: GridScrollNotifier(
+        scrollNotifier:
+            _scrollingNotifier ?? GridScrollNotifier.notifierOf(context),
+        controller: controller ?? GridScrollNotifier.of(context),
+        child: GridExtrasNotifier(
+          data: GridExtrasData(
+            selection,
+            functionality,
+            description,
+            searchFocus,
+          ),
+          child: description.asSliver
+              ? functionality.registerNotifiers != null
+                  ? functionality.registerNotifiers!(
+                      _SingleSliverChild<T>(slivers: widget.slivers),
+                    )
+                  : _SingleSliverChild<T>(slivers: widget.slivers)
+              : functionality.registerNotifiers != null
+                  ? functionality.registerNotifiers!(
+                      _BodyChild<T>(
+                        child: _MainBody<T>(slivers: widget.slivers),
+                      ),
+                    )
+                  : _BodyChild<T>(
+                      child: _MainBody<T>(slivers: widget.slivers),
+                    ),
+        ),
+      ),
+    );
+
     return PlayAnimations(
       key: _animationsKey,
       playAnimationsOn:
           widget.functionality.playAnimationOn + [gridSettingsWatcher],
       child: FocusNotifier(
         notifier: searchFocus,
-        child: _GridSelectionCountHolder(
-          key: _holderKey,
-          selection: selection,
-          functionality: widget.functionality,
-          description: widget.description,
-          child: CellProvider<T>(
-            getCell: source.forIdxUnsafe,
-            child: GridScrollNotifier(
-              scrollNotifier:
-                  _scrollingNotifier ?? GridScrollNotifier.notifierOf(context),
-              controller: controller ?? GridScrollNotifier.of(context),
-              child: GridExtrasNotifier(
-                data: GridExtrasData(
-                  selection,
-                  functionality,
-                  description,
-                  searchFocus,
-                ),
-                child: description.asSliver
-                    ? functionality.registerNotifiers != null
-                        ? functionality.registerNotifiers!(
-                            _SingleSliverChild<T>(slivers: widget.slivers),
-                          )
-                        : _SingleSliverChild<T>(slivers: widget.slivers)
-                    : functionality.registerNotifiers != null
-                        ? functionality.registerNotifiers!(
-                            _BodyChild<T>(
-                              child: _MainBody<T>(slivers: widget.slivers),
-                            ),
-                          )
-                        : _BodyChild<T>(
-                            child: _MainBody<T>(slivers: widget.slivers),
-                          ),
+        child: selection != null
+            ? _GridSelectionCountHolder(
+                key: _holderKey,
+                selection: selection!,
+                functionality: widget.functionality,
+                description: widget.description,
+                actions: SelectionActions.of(context),
+                child: child,
+              )
+            : _StaticGridBottomPadding(
+                functionality: widget.functionality,
+                actions: SelectionActions.of(context),
+                child: child,
               ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -324,7 +375,7 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
         if (description.pullToRefresh)
           RefreshIndicator(
             onRefresh: () {
-              extras.selection.reset(true);
+              extras.selection?.reset(true);
 
               if (source is ChainedFilterResourceSource) {
                 return (source as ChainedFilterResourceSource)
@@ -352,38 +403,22 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
               child: description.footer,
             ),
           ),
-        if (description.showLoadingIndicator &&
-            (!description.showAppBar ||
-                functionality.search is BarSearchWidget) &&
-            functionality.selectionGlue.barHeight() != 0 &&
-            functionality.selectionGlue.persistentBarHeight)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              child: PreferredSize(
-                preferredSize: const Size.fromHeight(4),
-                child: _LinearProgressIndicator(
-                  progress: source.progress,
-                ),
-              ),
-            ),
-          ),
         if (functionality.onEmptySource != null)
           _EmptyWidget(
             source: source,
             onEmpty: functionality.onEmptySource!,
           ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: 4 + 8,
-              bottom: bottomPadding + 4 + 8,
+        if (functionality.fab is! NoGridFab)
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: 4 + 8,
+                bottom: bottomPadding + 4 + 8,
+              ),
+              child: functionality.fab.widget(context),
             ),
-            child: functionality.fab.widget(context),
           ),
-        ),
       ],
     );
   }
@@ -708,12 +743,15 @@ class _GridSelectionCountHolder<T extends CellBase> extends StatefulWidget {
     required this.selection,
     required this.functionality,
     required this.description,
+    required this.actions,
     required this.child,
   });
 
   final GridFunctionality<T> functionality;
   final GridDescription<T> description;
   final GridSelection<T> selection;
+
+  final SelectionActions actions;
 
   final Widget child;
 
@@ -723,13 +761,10 @@ class _GridSelectionCountHolder<T extends CellBase> extends StatefulWidget {
 }
 
 class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
+  late final StreamSubscription<void> _events;
+  late final StreamSubscription<void> _countEvents;
+
   int _updateCount = 0;
-
-  void update() {
-    _updateCount += 1;
-
-    setState(() {});
-  }
 
   void _onPop(bool _, Object? __) {
     if (widget.selection.isNotEmpty) {
@@ -738,17 +773,13 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   }
 
   double _bottomPadding(BuildContext context) {
-    final functionality = widget.functionality;
-    final selectionGlue = widget.selection.glue;
+    final paddingBottom = MediaQuery.viewPaddingOf(context).bottom;
+    final actions = widget.actions;
 
-    return (functionality.selectionGlue.keyboardVisible()
-        ? 0
-        : MediaQuery.viewPaddingOf(context).bottom +
-            (selectionGlue.isOpen()
-                ? selectionGlue.barHeight()
-                : selectionGlue.persistentBarHeight
-                    ? selectionGlue.barHeight()
-                    : 0));
+    return paddingBottom +
+        (actions.controller.isExpanded
+            ? actions.size.expanded
+            : actions.size.base);
   }
 
   @override
@@ -757,12 +788,37 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    _countEvents = widget.actions.controller.countEvents.listen((_) {
+      setState(() {
+        _updateCount += 1;
+      });
+    });
+
+    _events = widget.actions.controller.expandedEvents.listen((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _countEvents.cancel();
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: widget.selection.isEmpty,
       onPopInvokedWithResult: _onPop,
       child: GridBottomPaddingProvider(
-        fab: kFloatingActionButtonMargin * 2 + 24 + 8,
+        fab: widget.functionality.fab is NoGridFab
+            ? 0
+            : kFloatingActionButtonMargin * 2 + 24 + 8,
         padding: _bottomPadding(context),
         child: SelectionCountNotifier(
           count: widget.selection.count,
@@ -770,6 +826,33 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
           child: widget.child,
         ),
       ),
+    );
+  }
+}
+
+class _StaticGridBottomPadding<T extends CellBase> extends StatelessWidget {
+  const _StaticGridBottomPadding({
+    super.key,
+    required this.functionality,
+    required this.actions,
+    required this.child,
+  });
+
+  final GridFunctionality<T> functionality;
+  final SelectionActions actions;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final paddingBottom = MediaQuery.viewPaddingOf(context).bottom;
+
+    return GridBottomPaddingProvider(
+      fab: functionality.fab is NoGridFab
+          ? 0
+          : kFloatingActionButtonMargin * 2 + 24 + 8,
+      padding: paddingBottom + actions.size.base,
+      child: child,
     );
   }
 }
@@ -782,7 +865,7 @@ class GridExtrasData<T extends CellBase> {
     this.searchFocus,
   );
 
-  final GridSelection<T> selection;
+  final GridSelection<T>? selection;
   final GridFunctionality<T> functionality;
   final GridDescription<T> description;
 
@@ -791,21 +874,7 @@ class GridExtrasData<T extends CellBase> {
   List<Widget> bodySlivers(BuildContext context, List<Widget> slivers) {
     Widget? appBar;
     if (description.showAppBar) {
-      final bottomWidget = description.bottomWidget != null
-          ? description.bottomWidget!
-          : functionality.search is BarSearchWidget ||
-                  !description.showLoadingIndicator
-              ? null
-              : PreferredSize(
-                  preferredSize: const Size.fromHeight(4),
-                  child: _BottomWidget(
-                    progress: functionality.source.progress,
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: SizedBox.shrink(),
-                    ),
-                  ),
-                );
+      final bottomWidget = description.bottomWidget;
 
       appBar = _AppBar(
         gridFunctionality: functionality,
@@ -822,7 +891,7 @@ class GridExtrasData<T extends CellBase> {
       ...slivers,
       _WrapPadding(
         footer: description.footer,
-        selectionGlue: functionality.selectionGlue,
+        includeFabPadding: functionality.fab is! NoGridFab,
         child: null,
       ),
     ];
@@ -1048,15 +1117,9 @@ class SelectionCountNotifier extends InheritedWidget {
     required this.countUpdateTimes,
     required super.child,
   });
+
   final int count;
   final int countUpdateTimes;
-
-  static int countOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
-
-    return widget!.count;
-  }
 
   static int maybeCountOf(BuildContext context) {
     final widget =
