@@ -115,7 +115,7 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel> {
               return;
             }
 
-            Navigator.pop(context);
+            // Navigator.pop(context);
 
             widget.joinedDirectories(
               "Booru",

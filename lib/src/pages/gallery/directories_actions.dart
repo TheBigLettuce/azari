@@ -278,7 +278,7 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
           SearchBarAutocompleteWrapper(
             search: BarSearchWidget(
               textEditingController: controller,
-              onChange: null,
+              onChanged: null,
               complete: widget.completeDirectoryNameTag,
             ),
             child: (context, controller, focus, onSubmitted) {

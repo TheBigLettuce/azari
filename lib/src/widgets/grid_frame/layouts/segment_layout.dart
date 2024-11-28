@@ -559,7 +559,10 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
                   selection: widget.selection,
                   description: cell.value.description(),
                   onPressed: cell.value.tryAsPressable<T>(
-                      context, widget.gridFunctionality, idx),
+                    context,
+                    widget.gridFunctionality,
+                    idx,
+                  ),
                   functionality: widget.gridFunctionality,
                   selectFrom: null,
                   thisIndx: -1,

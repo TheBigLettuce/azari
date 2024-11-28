@@ -8,8 +8,8 @@ import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:palette_generator/palette_generator.dart";
 
-class WrapImageViewTheme extends StatefulWidget {
-  const WrapImageViewTheme({
+class ImageViewTheme extends StatefulWidget {
+  const ImageViewTheme({
     super.key,
     required this.currentPalette,
     required this.previousPallete,
@@ -22,10 +22,10 @@ class WrapImageViewTheme extends StatefulWidget {
   final Widget child;
 
   @override
-  State<WrapImageViewTheme> createState() => WrapImageViewThemeState();
+  State<ImageViewTheme> createState() => ImageViewThemeState();
 }
 
-class WrapImageViewThemeState extends State<WrapImageViewTheme>
+class ImageViewThemeState extends State<ImageViewTheme>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController = AnimationController(
     vsync: this,

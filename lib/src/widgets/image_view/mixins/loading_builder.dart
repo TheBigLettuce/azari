@@ -5,7 +5,7 @@
 
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/material.dart";
 
 mixin ImageViewLoadingBuilderMixin on State<ImageView> {
@@ -14,7 +14,7 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
     ImageChunkEvent? event,
     int idx,
     int currentPage,
-    GlobalKey<WrapImageViewNotifiersState> key,
+    GlobalKey<ImageViewNotifiersState> key,
     Contentable Function(int) drawCell,
   ) {
     final t = drawCell(idx).widgets.tryAsThumbnailable();
@@ -50,9 +50,13 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
 }
 
 class _Image extends StatefulWidget {
-  const _Image({required this.t, required this.reset});
+  const _Image({
+    required this.t,
+    required this.reset,
+  });
+
   final ImageProvider t;
-  final void Function() reset;
+  final VoidCallback reset;
 
   @override
   State<_Image> createState() => __ImageState();

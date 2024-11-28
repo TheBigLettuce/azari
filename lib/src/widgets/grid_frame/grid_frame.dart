@@ -11,6 +11,7 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/typedefs.dart";
+import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -20,7 +21,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/search/autocomplete/autocomplete_tag.dart";
 import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";

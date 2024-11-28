@@ -129,7 +129,7 @@ class __DirectoryListState extends State<_DirectoryList> {
 
                 return CustomGridCellWrapper(
                   onPressed: (context) {
-                    Navigator.pop(context);
+                    // Navigator.pop(context);
 
                     widget.onDirectoryPressed(cell);
                   },

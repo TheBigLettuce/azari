@@ -21,6 +21,7 @@ import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -28,9 +29,8 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -67,18 +67,17 @@ class BooruRestoredPage extends StatefulWidget {
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
 }
 
-class _BooruRestoredPageState extends State<BooruRestoredPage> {
+class _BooruRestoredPageState extends State<BooruRestoredPage>
+    with CommonGridData<Post, BooruRestoredPage> {
   GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
 
   BooruAPI get api => pagingState.api;
-  GridSkeletonState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
   GridPostSource get source => pagingState.source;
 
-  late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> hiddenPostWatcher;
 
@@ -158,11 +157,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       );
     }
 
-    settingsWatcher = state.settings.s.watch((s) {
-      state.settings = s!;
-
-      setState(() {});
-    });
+    watchSettings();
 
     hiddenPostWatcher = widget.db.hiddenBooruPost.watch((_) {
       source.backingStorage.addAll([]);
@@ -175,7 +170,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   void dispose() {
-    settingsWatcher.cancel();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
 
@@ -279,12 +273,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 searchTextController: null,
                 filter: null,
                 child: GridFrame<Post>(
-                  key: state.gridKey,
+                  key: gridKey,
                   slivers: [
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,
-                      gridSeed: state.gridSeed,
+                      gridSeed: gridSeed,
                       unselectOnUpdate: false,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
@@ -299,7 +293,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ),
                     GridConfigPlaceholders(
                       progress: source.progress,
-                      randomNumber: state.gridSeed,
+                      randomNumber: gridSeed,
                     ),
                     GridFooter<void>(
                       storage: source.backingStorage,
@@ -372,7 +366,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruGridPageName,
-                    gridSeed: state.gridSeed,
+                    gridSeed: gridSeed,
                   ),
                 ),
               ),
@@ -424,13 +418,10 @@ class RestoredBooruPageState implements PagingEntry {
   @override
   bool reachedEnd = false;
 
-  late final state = GridSkeletonState<Post>();
-
   @override
   Future<void> dispose([bool closeGrid = true]) {
     client.close();
     source.destroy();
-    state.dispose();
 
     if (closeGrid) {
       return secondaryGrid.close();

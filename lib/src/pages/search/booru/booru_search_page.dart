@@ -9,13 +9,15 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
+import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/search/autocomplete/autocomplete_widget.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -36,10 +38,7 @@ class BooruSearchPage extends StatefulWidget {
   const BooruSearchPage({
     super.key,
     required this.db,
-    required this.onTagPressed,
   });
-
-  final OnBooruTagPressedFunc onTagPressed;
 
   final DbConn db;
 
@@ -91,10 +90,17 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   }
 
   void _onTagPressed(String str) {
-    Navigator.pop(context);
+    // Navigator.pop(context);
 
-    widget.onTagPressed(context, api.booru, str, null);
+    // widget.onTagPressed(context, api.booru, str, null);
   }
+
+  void _onTag(
+    BuildContext context,
+    Booru booru,
+    String tag,
+    SafeMode? safeMode,
+  ) {}
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +152,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   listPadding: _ChipsPanelBody.listPadding,
                   db: widget.db,
                   booru: api.booru,
-                  onTagPressed: widget.onTagPressed,
+                  onTagPressed: _onTag,
                   tags: snapshot.data ?? "",
                   safeMode: () => settings.safeMode,
                 ),

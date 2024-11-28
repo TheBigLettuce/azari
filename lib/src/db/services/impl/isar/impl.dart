@@ -60,7 +60,7 @@ import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/foundation.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";

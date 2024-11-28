@@ -4,9 +4,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
-import "package:azari/src/widgets/search/autocomplete/autocomplete_tag.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
 
@@ -346,4 +346,21 @@ class AutocompleteSearchBar extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<List<BooruTag>> autocompleteTag(
+  String tagString,
+  Future<List<BooruTag>> Function(String) complF,
+) {
+  if (tagString.isEmpty) {
+    return Future.value([]);
+  } else if (tagString.characters.last == " ") {
+    return Future.value([]);
+  }
+
+  final tags = tagString.trim().split(" ");
+
+  return tags.isEmpty || tags.last.isEmpty
+      ? Future.value([])
+      : complF(tags.last);
 }

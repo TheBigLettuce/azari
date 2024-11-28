@@ -69,7 +69,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
       return;
     }
 
-    Navigator.pop(context);
+    // Navigator.pop(context);
 
     joinedDirectories(
       directories.length == 1

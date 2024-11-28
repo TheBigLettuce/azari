@@ -75,7 +75,7 @@ class _AppBar extends StatelessWidget {
                           ? null
                           : () => search.onPressed!(context),
                       onTapOutside: (_) => focusNode.unfocus(),
-                      onChanged: search.onChange,
+                      onChanged: search.onChanged,
                       focusNode: focusNode,
                       controller: textEditingController,
                       elevation: const WidgetStatePropertyAll(0),
@@ -104,7 +104,7 @@ class _AppBar extends StatelessWidget {
                         : () => search.onPressed!(context),
                     elevation: const WidgetStatePropertyAll(0),
                     onSubmitted: search.onSubmitted,
-                    onChanged: search.onChange,
+                    onChanged: search.onChanged,
                     focusNode: searchFocus,
                     onTapOutside: (_) => searchFocus.unfocus(),
                     controller: search.textEditingController,
@@ -202,7 +202,7 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
                   tags.add(elem);
 
                   onSelected(tags.join(" "));
-                  search.onChange?.call(search.textEditingController!.text);
+                  search.onChanged?.call(search.textEditingController!.text);
                 },
                 title: Text(elem),
               ),

@@ -11,7 +11,10 @@ class _DirectoryNamesPanel extends StatefulWidget {
     required this.filteringEvents,
     required this.searchController,
     required this.directoryComplete,
+    required this.api,
   });
+
+  final Directories api;
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
@@ -26,6 +29,7 @@ class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
   String filteringValue = "";
   late final GenericListSource<BooruTag> source = GenericListSource(
     () => Future.value(widget.directoryComplete(filteringValue)),
+    watchCount: widget.api.source.backingStorage.watch,
   );
 
   late final StreamSubscription<String> filteringSubscr;

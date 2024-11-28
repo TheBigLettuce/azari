@@ -21,6 +21,7 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/typedefs.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -30,7 +31,6 @@ import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
 
@@ -519,7 +519,7 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
         padding: EdgeInsets.zero,
         child: SearchBarAutocompleteWrapper(
           search: BarSearchWidget(
-            onChange: null,
+            onChanged: null,
             complete: (str) async {
               if (str == latestSearch?.$1) {
                 return latestSearch!.$2;
@@ -577,7 +577,8 @@ class PopularPage extends StatefulWidget {
   State<PopularPage> createState() => _PopularPageState();
 }
 
-class _PopularPageState extends State<PopularPage> {
+class _PopularPageState extends State<PopularPage>
+    with CommonGridData<Post, PopularPage> {
   GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
@@ -614,12 +615,9 @@ class _PopularPageState extends State<PopularPage> {
     },
   );
 
-  late final state = GridSkeletonState<Post>();
-
   @override
   void dispose() {
     source.destroy();
-    state.dispose();
 
     super.dispose();
   }
@@ -672,17 +670,17 @@ class _PopularPageState extends State<PopularPage> {
                   _onBooruTagPressed(context, booru, value, safeMode);
                 },
                 child: GridFrame<Post>(
-                  key: state.gridKey,
+                  key: gridKey,
                   slivers: [
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,
-                      gridSeed: state.gridSeed,
+                      gridSeed: gridSeed,
                       unselectOnUpdate: false,
                     ),
                     GridConfigPlaceholders(
                       progress: source.progress,
-                      randomNumber: state.gridSeed,
+                      randomNumber: gridSeed,
                     ),
                     GridFooter<void>(storage: source.backingStorage),
                   ],
@@ -736,7 +734,7 @@ class _PopularPageState extends State<PopularPage> {
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruLabel,
-                    gridSeed: state.gridSeed,
+                    gridSeed: gridSeed,
                   ),
                 ),
               ),

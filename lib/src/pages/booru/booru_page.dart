@@ -30,6 +30,7 @@ import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/typedefs.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -45,7 +46,6 @@ import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -71,7 +71,8 @@ class BooruPage extends StatefulWidget {
   State<BooruPage> createState() => _BooruPageState();
 }
 
-class _BooruPageState extends State<BooruPage> {
+class _BooruPageState extends State<BooruPage>
+    with CommonGridData<Post, BooruPage> {
   GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
@@ -87,15 +88,12 @@ class _BooruPageState extends State<BooruPage> {
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
   late final StreamSubscription<void> hiddenPostWatcher;
-  late final StreamSubscription<SettingsData?> settingsWatcher;
 
   final menuController = MenuController();
 
   late final AppLifecycleListener lifecycleListener;
 
   late final _MainGridPagingState pagingState;
-
-  late final state = GridSkeletonState<Post>();
 
   bool inForeground = true;
   int? currentSkipped;
@@ -105,15 +103,15 @@ class _BooruPageState extends State<BooruPage> {
     super.initState();
 
     pagingState = widget.pagingRegistry.getOrRegister(
-      state.settings.selectedBooru.string,
+      settings.selectedBooru.string,
       () {
-        final mainGrid = widget.db.mainGrid(state.settings.selectedBooru);
+        final mainGrid = widget.db.mainGrid(settings.selectedBooru);
 
         return _MainGridPagingState.prototype(
           widget.db.tagManager,
           hiddenBooruPost,
           mainGrid,
-          state.settings.selectedBooru,
+          settings.selectedBooru,
           gridBookmarks,
         );
       },
@@ -128,7 +126,7 @@ class _BooruPageState extends State<BooruPage> {
 
         if (pagingState.api.wouldBecomeStale &&
             pagingState.needToRefresh(const Duration(hours: 1))) {
-          final gridState = state.gridKey.currentState;
+          final gridState = gridKey.currentState;
           if (gridState != null) {
             source.clearRefresh();
           }
@@ -154,11 +152,7 @@ class _BooruPageState extends State<BooruPage> {
       pagingState.updateTime();
     }
 
-    settingsWatcher = state.settings.s.watch((settings) {
-      state.settings = settings!;
-
-      setState(() {});
-    });
+    watchSettings();
 
     favoritesWatcher = favoritePosts.backingStorage.watch((event) {
       source.backingStorage.addAll([]);
@@ -196,13 +190,10 @@ class _BooruPageState extends State<BooruPage> {
     gridSettings.cancel();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
-    settingsWatcher.cancel();
 
     if (!isRestart) {
       pagingState.restoreSecondaryGrid = null;
     }
-
-    state.dispose();
 
     timeUpdater.cancel();
 
@@ -266,16 +257,16 @@ class _BooruPageState extends State<BooruPage> {
               child: OnBooruTagPressed(
                 onPressed: _onBooruTagPressed,
                 child: GridFrame<Post>(
-                  key: state.gridKey,
+                  key: gridKey,
                   slivers: [
                     _HottestTagNotifier(
                       api: pagingState.api,
-                      randomNumber: state.gridSeed,
+                      randomNumber: gridSeed,
                     ),
                     CurrentGridSettingsLayout<Post>(
                       source: source.backingStorage,
                       progress: source.progress,
-                      gridSeed: state.gridSeed,
+                      gridSeed: gridSeed,
                       unselectOnUpdate: false,
                       buildEmpty: (e) => EmptyWidgetWithButton(
                         error: e,
@@ -290,7 +281,7 @@ class _BooruPageState extends State<BooruPage> {
                     ),
                     GridConfigPlaceholders(
                       progress: source.progress,
-                      randomNumber: state.gridSeed,
+                      randomNumber: gridSeed,
                     ),
                     GridFooter<void>(storage: source.backingStorage),
                   ],
@@ -301,7 +292,7 @@ class _BooruPageState extends State<BooruPage> {
                         ? const []
                         : [(navBarEvents, null)],
                     settingsButton: GridSettingsButton.onlyHeader(
-                      SafeModeButton(settingsWatcher: state.settings.s.watch),
+                      SafeModeButton(settingsWatcher: settings.s.watch),
                     ),
                     source: source,
                     search: RawSearchWidget(
@@ -361,7 +352,7 @@ class _BooruPageState extends State<BooruPage> {
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruLabel,
-                    gridSeed: state.gridSeed,
+                    gridSeed: gridSeed,
                   ),
                   initalScrollPosition: pagingState.offset,
                 ),

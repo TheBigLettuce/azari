@@ -28,7 +28,7 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 
@@ -191,12 +191,6 @@ class DatabaseConnectionNotifier extends InheritedWidget {
 
 abstract interface class ServiceMarker {}
 
-mixin DbConnHandle<T extends ServiceMarker> implements StatefulWidget {
-  T get db;
-}
-
-mixin DbScope<T extends ServiceMarker, W extends DbConnHandle<T>> on State<W> {}
-
 abstract interface class LocalTagDictionaryService {
   List<BooruTag> mostFrequent(int count);
 
@@ -316,16 +310,6 @@ abstract class BooruTagging {
     required LocalTagsService localTag,
     bool fire = false,
   });
-}
-
-mixin TagManagerDbScope<W extends DbConnHandle<TagManager>>
-    implements DbScope<TagManager, W>, TagManager {
-  @override
-  BooruTagging get excluded => widget.db.excluded;
-  @override
-  BooruTagging get latest => widget.db.latest;
-  @override
-  BooruTagging get pinned => widget.db.pinned;
 }
 
 abstract interface class TagManager implements ServiceMarker {

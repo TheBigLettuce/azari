@@ -41,7 +41,7 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/src/widgets/translation_notes.dart";

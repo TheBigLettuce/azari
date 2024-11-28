@@ -8,15 +8,16 @@ import "dart:async";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
-import "package:azari/src/widgets/image_view/video_controls_controller.dart";
+import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:flutter/material.dart";
 
-class WrapImageViewNotifiers extends StatefulWidget {
-  const WrapImageViewNotifiers({
+class ImageViewNotifiers extends StatefulWidget {
+  const ImageViewNotifiers({
     super.key,
     required this.hardRefresh,
     required this.currentPage,
@@ -36,27 +37,25 @@ class WrapImageViewNotifiers extends StatefulWidget {
   final ImageViewPageTypeMixin page;
   final Stream<int> currentPage;
   final FocusNode mainFocus;
-  final void Function([bool refreshPalette]) hardRefresh;
   final BuildContext? gridContext;
   final AnimationController controller;
   final DraggableScrollableController bottomSheetController;
-  final List<ImageTag> Function(Contentable)? tags;
-  final StreamSubscription<List<ImageTag>> Function(
-    Contentable,
-    void Function(List<ImageTag> l),
-  )? watchTags;
-
-  final VideoControlsController videoControls;
-  final NotifierWrapper? wrapNotifiers;
   final PauseVideoState pauseVideoState;
+  final VideoControlsController videoControls;
+
+  final WatchTagsCallback? watchTags;
+  final NotifierWrapper? wrapNotifiers;
+
+  final void Function([bool refreshPalette]) hardRefresh;
+  final List<ImageTag> Function(Contentable)? tags;
 
   final Widget child;
 
   @override
-  State<WrapImageViewNotifiers> createState() => WrapImageViewNotifiersState();
+  State<ImageViewNotifiers> createState() => ImageViewNotifiersState();
 }
 
-class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
+class ImageViewNotifiersState extends State<ImageViewNotifiers> {
   final _bottomSheetKey = GlobalKey<__BottomSheetPopScopeState>();
 
   StreamSubscription<List<ImageTag>>? tagWatcher;

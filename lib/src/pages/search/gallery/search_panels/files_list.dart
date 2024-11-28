@@ -11,13 +11,13 @@ class _FilesList extends StatefulWidget {
     required this.filteringEvents,
     required this.searchController,
     required this.db,
-    required this.callback,
+    // required this.callback,
   });
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
 
-  final ReturnFileCallback? callback;
+  // final ReturnFileCallback? callback;
 
   final DbConn db;
 
@@ -113,7 +113,7 @@ class __FilesListState extends State<_FilesList> {
                       ),
                       startingCell: i,
                       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-                        callback: widget.callback,
+                        callback: null,
                         child: child,
                       ),
                       tags: (c) => File.imageTags(

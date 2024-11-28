@@ -10,7 +10,7 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/material.dart";
 
 typedef ContextCallback = void Function(BuildContext context);

@@ -6,8 +6,8 @@
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:azari/src/widgets/loading_error_widget.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/gestures.dart";

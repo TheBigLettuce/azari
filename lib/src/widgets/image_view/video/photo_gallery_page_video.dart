@@ -6,17 +6,16 @@
 import "dart:async";
 
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/widgets/image_view/video_controls_controller.dart"
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/video/video_controls_controller.dart"
     as controls;
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:azari/src/widgets/loading_error_widget.dart";
 import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:video_player/video_player.dart";
 
-class PhotoGalleryPageVideo extends StatefulWidget
-    with DbConnHandle<VideoSettingsService> {
+class PhotoGalleryPageVideo extends StatefulWidget {
   const PhotoGalleryPageVideo({
     super.key,
     required this.url,
@@ -25,7 +24,6 @@ class PhotoGalleryPageVideo extends StatefulWidget
     required this.networkThumb,
   });
 
-  @override
   final VideoSettingsService db;
 
   final String url;

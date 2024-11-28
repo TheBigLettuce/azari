@@ -7,23 +7,27 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 
-class SelectionButton {
-  const SelectionButton(
-    this.icon,
-    this.consume,
-    this.closeOnPress, {
-    this.animate = false,
-    this.play = true,
-  });
+abstract class SelectionActions {
+  factory SelectionActions() => _DefaultSelectionActions();
 
-  final bool closeOnPress;
+  SelectionAreaSize get size;
 
-  final bool animate;
-  final bool play;
+  SelectionController get controller;
 
-  final IconData icon;
+  Stream<List<SelectionButton> Function()?> connect(SelectionAreaSize size);
 
-  final VoidCallback consume;
+  Widget inject(Widget child);
+
+  void dispose();
+
+  static SelectionActions of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<_Notifier>();
+
+    return widget!.instance;
+  }
+
+  static SelectionController controllerOf(BuildContext context) =>
+      of(context).controller;
 }
 
 abstract class SelectionController {
@@ -51,27 +55,76 @@ class SelectionAreaSize {
   final double expanded;
 }
 
-abstract class SelectionActions {
-  factory SelectionActions() => _DefaultSelectionActions();
+class SelectionButton {
+  const SelectionButton(
+    this.icon,
+    this.consume,
+    this.closeOnPress, {
+    this.animate = false,
+    this.play = true,
+  });
 
-  SelectionAreaSize get size;
+  final bool closeOnPress;
 
-  SelectionController get controller;
+  final bool animate;
+  final bool play;
 
-  Stream<List<SelectionButton> Function()?> connect(SelectionAreaSize size);
+  final IconData icon;
 
-  Widget inject(Widget child);
+  final VoidCallback consume;
+}
 
-  void dispose();
+mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
+  late final StreamSubscription<List<SelectionButton> Function()?>
+      _actionEvents;
+  late final StreamSubscription<void> _expandedEvents;
 
-  static SelectionActions of(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<_Notifier>();
+  List<SelectionButton> _actions = const [];
+  List<SelectionButton> Function()? _prevFunc;
 
-    return widget!.instance;
+  SelectionActions? _selectionActions;
+
+  SelectionActions get selectionActions => _selectionActions!;
+  List<SelectionButton> get actions => _actions;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_selectionActions == null) {
+      _selectionActions = SelectionActions.of(context);
+      _actionEvents = _selectionActions!
+          .connect(const SelectionAreaSize(base: 0, expanded: 0))
+          .listen((newActions) {
+        if (_prevFunc == newActions) {
+          return;
+        } else if (newActions == null) {
+          setState(() {
+            _prevFunc = null;
+            _actions = const [];
+          });
+        } else {
+          setState(() {
+            _actions = newActions();
+            _prevFunc = newActions;
+          });
+        }
+      });
+
+      _expandedEvents =
+          _selectionActions!.controller.expandedEvents.listen((_) {
+        setState(() {});
+      });
+    }
   }
 
-  static SelectionController controllerOf(BuildContext context) =>
-      of(context).controller;
+  @override
+  void dispose() {
+    _expandedEvents.cancel();
+    _actionEvents.cancel();
+
+    super.dispose();
+  }
 }
 
 class _DefaultSelectionController implements SelectionController {

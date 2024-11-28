@@ -27,6 +27,7 @@ import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -42,10 +43,9 @@ import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -89,7 +89,8 @@ class FilesPage extends StatefulWidget {
   State<FilesPage> createState() => _FilesPageState();
 }
 
-class _FilesPageState extends State<FilesPage> {
+class _FilesPageState extends State<FilesPage>
+    with CommonGridData<Post, FilesPage> {
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
   LocalTagsService get localTags => widget.db.localTags;
   WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
@@ -107,11 +108,7 @@ class _FilesPageState extends State<FilesPage> {
 
   late final postTags = PostTags(localTags, widget.db.localTagDictionary);
 
-  late final StreamSubscription<SettingsData?> settingsWatcher;
-
   late final ChainedFilterResourceSource<int, File> filter;
-
-  late final GridSkeletonState<File> state = GridSkeletonState();
 
   late final searchTextController =
       TextEditingController(text: widget.presetFilteringValue);
@@ -201,11 +198,7 @@ class _FilesPageState extends State<FilesPage> {
       initialSortingMode: SortingMode.none,
     );
 
-    settingsWatcher = state.settings.s.watch((s) {
-      state.settings = s!;
-
-      setState(() {});
-    });
+    watchSettings();
 
     if (widget.secure) {
       _listener = AppLifecycleListener(
@@ -239,14 +232,12 @@ class _FilesPageState extends State<FilesPage> {
   void dispose() {
     _subscription?.cancel();
     _listener?.dispose();
-    settingsWatcher.cancel();
 
     searchFocus.dispose();
     searchTextController.dispose();
     filter.destroy();
 
     api.close();
-    state.dispose();
 
     PlatformApi().window.setProtected(false);
 
@@ -318,7 +309,7 @@ class _FilesPageState extends State<FilesPage> {
           filter: filter,
           child: Builder(
             builder: (context) => GridFrame<File>(
-              key: state.gridKey,
+              key: gridKey,
               slivers: [
                 _TagsNotifier(
                   tagSource: api.sourceTags,
@@ -454,7 +445,7 @@ class _FilesPageState extends State<FilesPage> {
                 CurrentGridSettingsLayout<File>(
                   source: filter.backingStorage,
                   progress: filter.progress,
-                  gridSeed: state.gridSeed,
+                  gridSeed: gridSeed,
                 ),
               ],
               functionality: GridFunctionality(
@@ -557,7 +548,7 @@ class _FilesPageState extends State<FilesPage> {
                             try {
                               final n = math.Random.secure().nextInt(upTo);
 
-                              final gridState = state.gridKey.currentState;
+                              final gridState = gridKey.currentState;
                               if (gridState != null) {
                                 final cell = gridState.source.forIdxUnsafe(n);
                                 cell.onPress(
@@ -638,7 +629,7 @@ class _FilesPageState extends State<FilesPage> {
                             ),
                           ],
                 pageName: widget.dirName,
-                gridSeed: state.gridSeed,
+                gridSeed: gridSeed,
               ),
             ),
           ),

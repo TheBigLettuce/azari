@@ -6,9 +6,9 @@
 import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
+import "package:azari/src/pages/home/home_skeleton.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/home.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 

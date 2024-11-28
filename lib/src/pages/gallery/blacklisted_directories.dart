@@ -8,6 +8,7 @@ import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -17,7 +18,6 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 
 class BlacklistedDirectoriesPage extends StatefulWidget {
@@ -35,12 +35,10 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
       _BlacklistedDirectoriesPageState();
 }
 
-class _BlacklistedDirectoriesPageState
-    extends State<BlacklistedDirectoriesPage> {
+class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
+    with CommonGridData<Post, BlacklistedDirectoriesPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.db.blacklistedDirectories;
-
-  late final state = GridSkeletonState<BlacklistedDirectoryData>();
 
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;
@@ -73,7 +71,6 @@ class _BlacklistedDirectoriesPageState
 
   @override
   void dispose() {
-    state.dispose();
     searchTextController.dispose();
 
     filter.destroy();
@@ -89,7 +86,7 @@ class _BlacklistedDirectoriesPageState
       watch: gridConfiguration.watch,
       child: WrapGridPage(
         child: GridFrame<BlacklistedDirectoryData>(
-          key: state.gridKey,
+          key: gridKey,
           slivers: [
             ListLayout<BlacklistedDirectoryData>(
               hideThumbnails: false,
@@ -133,7 +130,7 @@ class _BlacklistedDirectoriesPageState
           description: GridDescription(
             animationsOnSourceWatch: false,
             pageName: l10n.blacklistedFoldersPage,
-            gridSeed: state.gridSeed,
+            gridSeed: gridSeed,
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -19,7 +20,6 @@ import "package:azari/src/widgets/grid_frame/layouts/segment_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 
 class DownloadsPage extends StatefulWidget {
@@ -37,12 +37,11 @@ class DownloadsPage extends StatefulWidget {
   State<DownloadsPage> createState() => _DownloadsPageState();
 }
 
-class _DownloadsPageState extends State<DownloadsPage> {
+class _DownloadsPageState extends State<DownloadsPage>
+    with CommonGridData<Post, DownloadsPage> {
   DownloadManager get downloadManager => widget.downloadManager;
 
   late final ChainedFilterResourceSource<String, DownloadHandle> filter;
-
-  late final state = GridSkeletonState<DownloadHandle>();
 
   final searchTextController = TextEditingController();
 
@@ -81,7 +80,6 @@ class _DownloadsPageState extends State<DownloadsPage> {
     filter.destroy();
 
     searchTextController.dispose();
-    state.dispose();
 
     super.dispose();
   }
@@ -121,14 +119,14 @@ class _DownloadsPageState extends State<DownloadsPage> {
       watch: gridSettings.watch,
       child: WrapGridPage(
         child: GridFrame<DownloadHandle>(
-          key: state.gridKey,
+          key: gridKey,
           slivers: [
             SegmentLayout<DownloadHandle>(
               segments: _makeSegments(context, l10n),
               localizations: l10n,
               suggestionPrefix: const [],
               progress: filter.progress,
-              gridSeed: state.gridSeed,
+              gridSeed: gridSeed,
               storage: filter.backingStorage,
             ),
           ],
@@ -159,13 +157,13 @@ class _DownloadsPageState extends State<DownloadsPage> {
               GridAction(
                 Icons.restart_alt_rounded,
                 (selected) {
-                  downloadManager.restartAll(selected, state.settings);
+                  downloadManager.restartAll(selected, settings);
                 },
                 false,
               ),
             ],
             pageName: l10n.downloadsPageName,
-            gridSeed: state.gridSeed,
+            gridSeed: gridSeed,
           ),
         ),
       ),

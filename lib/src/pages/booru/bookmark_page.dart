@@ -12,6 +12,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -21,7 +22,6 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:azari/src/widgets/time_label.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
@@ -44,15 +44,11 @@ class BookmarkPage extends StatefulWidget {
   State<BookmarkPage> createState() => _BookmarkPageState();
 }
 
-class _BookmarkPageState extends State<BookmarkPage> {
+class _BookmarkPageState extends State<BookmarkPage>
+    with CommonGridData<Post, BookmarkPage> {
   GridBookmarkService get gridStateBooru => widget.db.gridBookmarks;
 
-  late final StreamSubscription<void> watcher;
-  late final StreamSubscription<void> settingsWatcher;
-
-  SettingsData settings = SettingsService.db().current;
-
-  final state = GridSkeletonState<GridBookmark>();
+  late final StreamSubscription<void> events;
 
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
@@ -66,31 +62,25 @@ class _BookmarkPageState extends State<BookmarkPage> {
   );
 
   @override
-  void dispose() {
-    gridSettings.cancel();
-    watcher.cancel();
-    settingsWatcher.cancel();
-    state.dispose();
-
-    super.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
 
-    settingsWatcher = settings.s.watch((s) {
-      settings = s!;
+    watchSettings();
 
-      setState(() {});
-    });
-
-    watcher = gridStateBooru.watch(
+    events = gridStateBooru.watch(
       (event) {
         source.clearRefresh();
       },
       true,
     );
+  }
+
+  @override
+  void dispose() {
+    gridSettings.cancel();
+    events.cancel();
+
+    super.dispose();
   }
 
   void launchGrid(BuildContext context, GridBookmark e) {
@@ -120,7 +110,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
       child: WrapGridPage(
         child: Builder(
           builder: (context) => GridFrame<GridBookmark>(
-            key: state.gridKey,
+            key: gridKey,
             slivers: [
               _BookmarkBody(
                 source: source.backingStorage,
@@ -146,7 +136,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
             ),
             description: GridDescription(
               pullToRefresh: false,
-              gridSeed: state.gridSeed,
+              gridSeed: gridSeed,
               pageName: l10n.bookmarksPageName,
             ),
           ),

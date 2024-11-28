@@ -84,6 +84,7 @@ Future<void> _favoritesLoop(
     _runIsolate,
     (directoryPath, port.sendPort),
     errorsAreFatal: false,
+    debugName: "Favorite posts loader",
   );
 
   await for (final e in port) {

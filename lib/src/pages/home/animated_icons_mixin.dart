@@ -5,11 +5,7 @@
 
 part of "home.dart";
 
-mixin AnimatedIconsMixin {
-  late final AnimationController controllerNavBar;
-
-  late final AnimationController selectionBarController;
-
+mixin AnimatedIconsMixin on State<Home>, TickerProviderStateMixin<Home> {
   late final AnimationController pageFadeAnimation;
 
   late final AnimationController homeIconController;
@@ -17,62 +13,31 @@ mixin AnimatedIconsMixin {
   late final AnimationController discoverIconController;
   late final AnimationController galleryIconController;
 
-  void hideNavBar(bool hide) {
-    if (hide) {
-      controllerNavBar.forward();
-    } else {
-      if (selectionBarController.value == 0) {
-        controllerNavBar.reverse();
-      }
-    }
-  }
+  @override
+  void initState() {
+    super.initState();
 
-  Future<void> driveAnimation({required bool forward, required bool rail}) {
-    if (forward) {
-      return controllerNavBar.forward().then((_) {
-        final Future<void> f_ = selectionBarController.animateTo(1);
-
-        if (rail) {
-          return f_;
-        }
-      });
-    } else {
-      return selectionBarController.animateBack(0).then((_) {
-        final Future<void> f_ = controllerNavBar.reverse();
-
-        if (rail) {
-          return f_;
-        }
-      });
-    }
-  }
-
-  void initIcons(TickerProviderStateMixin ticker) {
-    controllerNavBar = AnimationController(
-      vsync: ticker,
-      duration: const Duration(milliseconds: 200),
-    );
-    selectionBarController = AnimationController(vsync: ticker);
     pageFadeAnimation = AnimationController(
-      vsync: ticker,
+      vsync: this,
       duration: const Duration(milliseconds: 200),
     );
 
-    homeIconController = AnimationController(vsync: ticker);
-    galleryIconController = AnimationController(vsync: ticker);
-    searchIconController = AnimationController(vsync: ticker);
-    discoverIconController = AnimationController(vsync: ticker);
+    homeIconController = AnimationController(vsync: this);
+    galleryIconController = AnimationController(vsync: this);
+    searchIconController = AnimationController(vsync: this);
+    discoverIconController = AnimationController(vsync: this);
   }
 
-  void disposeIcons() {
-    selectionBarController.dispose();
-    controllerNavBar.dispose();
+  @override
+  void dispose() {
     pageFadeAnimation.dispose();
 
     homeIconController.dispose();
     galleryIconController.dispose();
     searchIconController.dispose();
     discoverIconController.dispose();
+
+    super.dispose();
   }
 
   List<NavigationRailDestination> railIcons(

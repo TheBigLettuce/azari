@@ -24,8 +24,8 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
@@ -638,6 +638,7 @@ class __FavoriteCellWidgetState extends State<_FavoriteCellWidget> {
     _tags = pinnedTags
         .map((e) => (tag: e, pinned: true))
         .followedBy(postTags.map((e) => (tag: e, pinned: false)))
+        .take(10)
         .toList();
 
     setState(() {});
@@ -652,9 +653,6 @@ class __FavoriteCellWidgetState extends State<_FavoriteCellWidget> {
 
     final child = LayoutBuilder(
       builder: (context, constraints) {
-        final verySmall =
-            constraints.maxWidth < 100 || constraints.maxHeight < 100;
-
         final card = widget.wrapSelection(
           Card(
             elevation: 0,
@@ -699,31 +697,33 @@ class __FavoriteCellWidgetState extends State<_FavoriteCellWidget> {
           return card;
         }
 
+        final children = _tags
+            .map(
+              (e) => OutlinedTagChip(
+                tag: e.tag,
+                letterCount: 8,
+                isPinned: e.pinned,
+                onPressed: () => OnBooruTagPressed.pressOf(
+                  context,
+                  e.tag,
+                  widget.post.booru,
+                ),
+              ),
+            )
+            .toList();
+
         return Column(
           children: [
             Expanded(child: card),
             SizedBox(
-              height: verySmall ? 42 / 2 : 42 / 2,
+              height: 21,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Wrap(
                   clipBehavior: Clip.antiAlias,
                   runSpacing: 2,
                   spacing: 2,
-                  children: [
-                    ..._tags.take(10).map(
-                          (e) => OutlinedTagChip(
-                            tag: e.tag,
-                            letterCount: 8,
-                            isPinned: e.pinned,
-                            onPressed: () => OnBooruTagPressed.pressOf(
-                              context,
-                              e.tag,
-                              widget.post.booru,
-                            ),
-                          ),
-                        ),
-                  ],
+                  children: children,
                 ),
               ),
             ),
@@ -732,13 +732,17 @@ class __FavoriteCellWidgetState extends State<_FavoriteCellWidget> {
       },
     );
 
-    return animate ? child.animate(key: post.uniqueKey()).fadeIn() : child;
+    if (animate) {
+      return child.animate(key: post.uniqueKey()).fadeIn();
+    }
+
+    return child;
   }
 }
 
 class _TagsWrap extends StatefulWidget {
   const _TagsWrap({
-    super.key,
+    // super.key,
     required this.post,
     required this.letterCount,
     required this.verySmall,

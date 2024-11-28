@@ -91,7 +91,10 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
                       selection: extras.selection,
                       thisIndx: idx,
                       onPressed: cell.tryAsPressable(
-                          context, extras.functionality, idx),
+                        context,
+                        extras.functionality,
+                        idx,
+                      ),
                       description: cell.description(),
                       functionality: extras.functionality,
                       selectFrom: null,

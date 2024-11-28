@@ -3,8 +3,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/search/booru/booru_search_page.dart";
+import "package:azari/src/pages/search/gallery/gallery_search_page.dart";
 import "package:flutter/material.dart";
 
 class SearchPage extends StatefulWidget {
@@ -24,7 +26,7 @@ class _SearchPageState extends State<SearchPage>
   void initState() {
     super.initState();
 
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -36,7 +38,10 @@ class _SearchPageState extends State<SearchPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+
+    final db = DatabaseConnectionNotifier.of(context);
 
     return Scaffold(
       appBar: TabBar(
@@ -63,15 +68,17 @@ class _SearchPageState extends State<SearchPage>
             text: "Gallery",
             height: 32,
           ),
-          Tab(
-            text: "Tab 3",
-            height: 32,
-          ),
         ],
       ),
-      body: BooruSearchPage(
-        db: DatabaseConnectionNotifier.of(context),
-        onTagPressed: (context, booru, tag, overrideSafeMode) {},
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          BooruSearchPage(db: db),
+          GallerySearchPage(
+            db: db,
+            l10n: l10n,
+          ),
+        ],
       ),
     );
   }

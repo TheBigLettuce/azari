@@ -6,6 +6,7 @@
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -14,7 +15,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.da
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 
 class HiddenPostsPage extends StatefulWidget {
@@ -29,12 +29,12 @@ class HiddenPostsPage extends StatefulWidget {
   State<HiddenPostsPage> createState() => HiddenPostsPageState();
 }
 
-class HiddenPostsPageState extends State<HiddenPostsPage> {
+class HiddenPostsPageState extends State<HiddenPostsPage>
+    with CommonGridData<Post, HiddenPostsPage> {
   HiddenBooruPostService get hiddenBooruPost => widget.db;
 
   final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
 
-  late final state = GridSkeletonState<HiddenBooruPostData>();
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
       hiddenBooruPost.cachedValues.entries
@@ -60,7 +60,6 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
   void dispose() {
     gridSettings.cancel();
     source.destroy();
-    state.dispose();
 
     super.dispose();
   }
@@ -74,7 +73,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
       child: GridConfiguration(
         watch: gridSettings.watch,
         child: GridFrame<HiddenBooruPostData>(
-          key: state.gridKey,
+          key: gridKey,
           slivers: [
             ListLayout<HiddenBooruPostData>(
               hideThumbnails: false,
@@ -134,7 +133,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage> {
           description: GridDescription(
             pullToRefresh: false,
             pageName: l10n.hiddenPostsPageName,
-            gridSeed: state.gridSeed,
+            gridSeed: gridSeed,
           ),
         ),
       ),

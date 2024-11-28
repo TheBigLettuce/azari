@@ -14,7 +14,6 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
@@ -38,26 +37,10 @@ class GallerySearchPage extends StatefulWidget {
   const GallerySearchPage({
     super.key,
     required this.db,
-    required this.source,
-    required this.onDirectoryPressed,
-    required this.directoryComplete,
-    required this.joinedDirectories,
-    required this.callback,
+    required this.l10n,
   });
 
-  final ReturnFileCallback? callback;
-
-  final ResourceSource<int, Directory> source;
-
-  final void Function(Directory) onDirectoryPressed;
-  final void Function(
-    String str,
-    List<Directory> list, {
-    required String tag,
-    required FilteringMode? filteringMode,
-  }) joinedDirectories;
-
-  final Future<List<BooruTag>> Function(String str) directoryComplete;
+  final AppLocalizations l10n;
 
   final DbConn db;
 
@@ -70,6 +53,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   final focusNode = FocusNode();
 
   final _filteringEvents = StreamController<String>.broadcast();
+  late final Directories api;
 
   late final Map<String, bool> blurMap;
 
@@ -77,15 +61,25 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   void initState() {
     super.initState();
 
+    api = GalleryApi().open(
+      widget.db.blacklistedDirectories,
+      widget.db.directoryTags,
+      l10n: widget.l10n,
+    );
+
     blurMap = widget.db.directoryMetadata.toBlurAll.fold({}, (map, e) {
       map[e.categoryName] = e.blur;
 
       return map;
     });
+
+    api.source.clearRefresh();
   }
 
   @override
   void dispose() {
+    api.close();
+
     _filteringEvents.close();
 
     focusNode.dispose();
@@ -96,6 +90,73 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   void _search(String str) {
     _filteringEvents.add(str.trim());
+  }
+
+  void _onDirectoryPressed(Directory directory) {
+    // final gridExtra = GridExtrasNotifier.of<Directory>(
+    //   context,
+    // );
+
+    // directory.onPress(
+    //   context,
+    //   gridExtra.functionality,
+    //   directory,
+    //   0,
+    // );
+  }
+
+  void _joinedDirectories(
+    String str,
+    List<Directory> list, {
+    required String tag,
+    required FilteringMode? filteringMode,
+  }) {
+    //   joinedDirectoriesFnc(
+    //   context,
+    //   label,
+    //   children,
+    //   api,
+    //   widget.nestedCallback,
+    //   GlueProvider.generateOf(context),
+    //   _segmentCell,
+    //   directoryMetadata,
+    //   directoryTags,
+    //   favoritePosts,
+    //   widget.db.localTags,
+    //   widget.l10n,
+    //   tag: tag,
+    //   filteringMode: filteringMode,
+    // );
+  }
+
+  Future<List<BooruTag>> _completeDirectoryNameTag(String str) {
+    final m = <String, void>{};
+
+    return Future.value(
+      api.source.backingStorage
+          .map(
+            (e) {
+              if (e.tag.isNotEmpty &&
+                  e.tag.contains(str) &&
+                  !m.containsKey(e.tag)) {
+                m[e.tag] = null;
+                return e.tag;
+              }
+
+              if (e.name.startsWith(str) && !m.containsKey(e.name)) {
+                m[e.name] = null;
+
+                return e.name;
+              } else {
+                return null;
+              }
+            },
+          )
+          .where((e) => e != null)
+          .take(15)
+          .map((e) => BooruTag(e!, -1))
+          .toList(),
+    );
   }
 
   @override
@@ -148,33 +209,33 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   db: widget.db,
                   listPadding: _ChipsPanelBody.listPadding,
                   filteringValue: snapshot.data ?? "",
-                  joinedDirectories: widget.joinedDirectories,
-                  source: widget.source,
+                  joinedDirectories: _joinedDirectories,
+                  source: api.source,
                 ),
               ),
               _DirectoryNamesPanel(
+                api: api,
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
-                directoryComplete: widget.directoryComplete,
+                directoryComplete: _completeDirectoryNameTag,
               ),
               _LocalTagsPanel(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
-                joinedDirectories: widget.joinedDirectories,
-                source: widget.source,
+                joinedDirectories: _joinedDirectories,
+                source: api.source,
                 db: widget.db,
               ),
               _FilesList(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
-                callback: widget.callback,
                 db: widget.db,
               ),
               _DirectoryList(
                 filteringEvents: _filteringEvents,
-                source: widget.source,
+                source: api.source,
                 searchController: searchController,
-                onDirectoryPressed: widget.onDirectoryPressed,
+                onDirectoryPressed: _onDirectoryPressed,
                 blurMap: blurMap,
               ),
               Builder(

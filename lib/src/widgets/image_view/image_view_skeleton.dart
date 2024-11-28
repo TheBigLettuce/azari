@@ -16,13 +16,13 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_fab.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
-class WrapImageViewSkeleton extends StatefulWidget {
-  const WrapImageViewSkeleton({
+class ImageViewSkeleton extends StatefulWidget {
+  const ImageViewSkeleton({
     super.key,
     required this.controller,
     required this.scaffoldKey,
@@ -50,10 +50,10 @@ class WrapImageViewSkeleton extends StatefulWidget {
   final Widget child;
 
   @override
-  State<WrapImageViewSkeleton> createState() => _WrapImageViewSkeletonState();
+  State<ImageViewSkeleton> createState() => _ImageViewSkeletonState();
 }
 
-class _WrapImageViewSkeletonState extends State<WrapImageViewSkeleton>
+class _ImageViewSkeletonState extends State<ImageViewSkeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController visibilityController;
 
@@ -635,10 +635,8 @@ class OutlinedTagChip extends StatelessWidget {
       onTap: onPressed,
       onLongPress: onLongPressed,
       child: DecoratedBox(
-        decoration: ShapeDecoration(
-          // shadows: kElevationToShadow[1],
-
-          shape: const RoundedRectangleBorder(
+        decoration: const ShapeDecoration(
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(
               Radius.circular(5),
             ),

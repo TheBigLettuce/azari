@@ -17,13 +17,13 @@ import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
+import "package:azari/src/widgets/image_view/image_view_theme.dart";
 import "package:azari/src/widgets/image_view/mixins/loading_builder.dart";
 import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:azari/src/widgets/image_view/mixins/palette.dart";
-import "package:azari/src/widgets/image_view/video_controls_controller.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
-import "package:azari/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
+import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
@@ -34,8 +34,8 @@ import "package:flutter_animate/flutter_animate.dart";
 import "package:logging/logging.dart";
 import "package:photo_view/photo_view_gallery.dart";
 
-part "body.dart";
-part "video_controls.dart";
+part "image_view_body.dart";
+part "video/video_controls.dart";
 
 typedef NotifierWrapper = Widget Function(Widget child);
 typedef ContentGetter = Contentable? Function(int i);
@@ -158,13 +158,13 @@ class ImageView extends StatefulWidget {
 
   final NotifierWrapper? wrapNotifiers;
 
+  final WatchTagsCallback? watchTags;
+
   final void Function(ImageViewState state)? pageChange;
   final Future<int> Function()? onNearEnd;
   final List<ImageTag> Function(Contentable)? tags;
 
   final StreamSubscription<int> Function(void Function(int) f)? updates;
-
-  final WatchTagsCallback? watchTags;
 
   static void _nothingScroll(int _) {}
 
@@ -302,8 +302,8 @@ class ImageViewState extends State<ImageView>
         ImageViewLoadingBuilderMixin,
         TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> key = GlobalKey();
-  final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
-  final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
+  final GlobalKey<ImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
+  final GlobalKey<ImageViewThemeState> wrapThemeKey = GlobalKey();
   final bodyKey = GlobalKey();
 
   late final AnimationController animationController;
@@ -577,7 +577,7 @@ class ImageViewState extends State<ImageView>
     return ImageViewInfoTilesRefreshNotifier(
       count: _incr,
       incr: _incrTiles,
-      child: WrapImageViewNotifiers(
+      child: ImageViewNotifiers(
         hardRefresh: refreshImage,
         wrapNotifiers: widget.wrapNotifiers,
         tags: widget.tags,
@@ -591,11 +591,11 @@ class ImageViewState extends State<ImageView>
         currentPage: currentPageStream.stream,
         videoControls: videoControls,
         pauseVideoState: pauseVideoState,
-        child: WrapImageViewTheme(
+        child: ImageViewTheme(
           key: wrapThemeKey,
           currentPalette: currentPalette,
           previousPallete: previousPallete,
-          child: WrapImageViewSkeleton(
+          child: ImageViewSkeleton(
             scaffoldKey: key,
             videoControls: videoControls,
             bottomSheetController: bottomSheetController,

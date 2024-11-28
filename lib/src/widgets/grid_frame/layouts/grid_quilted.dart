@@ -97,7 +97,10 @@ class _GridQuiltedLayoutState<T extends CellBase>
                       selection: extras.selection,
                       thisIndx: idx,
                       onPressed: cell.tryAsPressable(
-                          context, extras.functionality, idx),
+                        context,
+                        extras.functionality,
+                        idx,
+                      ),
                       description: cell.description(),
                       functionality: extras.functionality,
                       selectFrom: null,

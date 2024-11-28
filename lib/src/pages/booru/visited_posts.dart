@@ -14,6 +14,7 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -23,7 +24,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.da
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 
 class VisitedPostsPage extends StatefulWidget {
@@ -38,17 +38,16 @@ class VisitedPostsPage extends StatefulWidget {
   State<VisitedPostsPage> createState() => _VisitedPostsPageState();
 }
 
-class _VisitedPostsPageState extends State<VisitedPostsPage> {
+class _VisitedPostsPageState extends State<VisitedPostsPage>
+    with CommonGridData<Post, VisitedPostsPage> {
   VisitedPostsService get visitedPosts => widget.db;
 
-  late final StreamSubscription<void> subscr;
-  late final StreamSubscription<SettingsData?> settingsSubsc;
+  late final StreamSubscription<void> events;
 
-  late final state = GridSkeletonState<VisitedPost>();
   late final source = GenericListSource<VisitedPost>(
     () => Future.value(
       visitedPosts.all
-          .where((e) => state.settings.safeMode.inLevel(e.rating.asSafeMode))
+          .where((e) => settings.safeMode.inLevel(e.rating.asSafeMode))
           .toList(),
     ),
   );
@@ -64,24 +63,18 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
   void initState() {
     super.initState();
 
-    subscr = widget.db.watch((_) {
+    events = widget.db.watch((_) {
       source.clearRefresh();
     });
 
-    settingsSubsc = state.settings.s.watch((settings) {
-      setState(() {
-        state.settings = settings!;
-      });
-    });
+    watchSettings();
   }
 
   @override
   void dispose() {
-    settingsSubsc.cancel();
-    subscr.cancel();
+    events.cancel();
     gridSettings.cancel();
     source.destroy();
-    state.dispose();
 
     super.dispose();
   }
@@ -121,11 +114,11 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
     return GridConfiguration(
       watch: gridSettings.watch,
       child: GridFrame<VisitedPost>(
-        key: state.gridKey,
+        key: gridKey,
         slivers: [
           CurrentGridSettingsLayout<VisitedPost>(
             source: source.backingStorage,
-            gridSeed: state.gridSeed,
+            gridSeed: gridSeed,
             progress: source.progress,
           ),
         ],
@@ -165,7 +158,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage> {
             ),
           ],
           pageName: l10n.visitedPage,
-          gridSeed: state.gridSeed,
+          gridSeed: gridSeed,
         ),
       ),
     );

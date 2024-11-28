@@ -11,15 +11,13 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/home/home_skeleton.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/pages/search/search_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/widgets/selection_actions.dart";
-import "package:azari/src/widgets/skeletons/home.dart";
-import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -46,11 +44,10 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home>
     with
-        TickerProviderStateMixin,
+        TickerProviderStateMixin<Home>,
         ChangePageMixin,
         AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
-  final state = SkeletonState();
   final settings = SettingsService.db().current;
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
@@ -76,9 +73,6 @@ class _HomeState extends State<Home>
       }
     });
 
-    initChangePage(this, settings);
-    initIcons(this);
-
     maybeBeforeYouContinueDialog(context, settings);
 
     if (isRestart) {
@@ -100,12 +94,8 @@ class _HomeState extends State<Home>
 
     _galleryPageNotifier.dispose();
     _booruPageNotifier.dispose();
-    disposeIcons();
-    disposeChangePage();
 
     NetworkStatus.g.notify = null;
-
-    state.dispose();
 
     super.dispose();
   }

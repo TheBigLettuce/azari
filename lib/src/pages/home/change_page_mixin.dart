@@ -212,30 +212,33 @@ mixin ChangePageMixin on State<Home> {
 
   String? restoreBookmarksPage;
 
-  void _procPopAll(
-    ValueNotifier<GallerySubPage> galleryPage,
-    AnimatedIconsMixin icons,
-    bool _,
-  ) {
-    mainKey.currentState?.maybePop();
-
-    galleryKey.currentState?.maybePop();
-    settingsKey.currentState?.maybePop().then((value) {
-      if (!value) {
-        _procPop(galleryPage, icons, false);
-      }
-    });
-  }
-
-  void initChangePage(AnimatedIconsMixin icons, SettingsData settings) {}
-
-  void disposeChangePage() {
+  @override
+  void dispose() {
     if (!themeIsChanging) {
       _routeNotifier.dispose();
       pagingRegistry.recycle();
     } else {
       themeChangeOver();
     }
+
+    super.dispose();
+  }
+
+  Future<void> animateIcons(AnimatedIconsMixin icons) {
+    return switch (_routeNotifier.value) {
+      CurrentRoute.home => icons.homeIconController
+          .reverse()
+          .then((value) => icons.homeIconController.forward()),
+      CurrentRoute.gallery => icons.galleryIconController
+          .reverse()
+          .then((value) => icons.galleryIconController.forward()),
+      CurrentRoute.search => icons.searchIconController
+          .reverse()
+          .then((value) => icons.searchIconController.forward()),
+      CurrentRoute.discover => icons.discoverIconController
+          .reverse()
+          .then((value) => icons.discoverIconController.forward()),
+    };
   }
 
   void switchPage(AnimatedIconsMixin icons, CurrentRoute to) {
@@ -256,6 +259,21 @@ mixin ChangePageMixin on State<Home> {
       setState(() {});
 
       animateIcons(icons);
+    });
+  }
+
+  void _procPopAll(
+    ValueNotifier<GallerySubPage> galleryPage,
+    AnimatedIconsMixin icons,
+    bool _,
+  ) {
+    mainKey.currentState?.maybePop();
+
+    galleryKey.currentState?.maybePop();
+    settingsKey.currentState?.maybePop().then((value) {
+      if (!value) {
+        _procPop(galleryPage, icons, false);
+      }
     });
   }
 
@@ -289,23 +307,6 @@ mixin ChangePageMixin on State<Home> {
         switchPage(icons, CurrentRoute.gallery);
       }
     }
-  }
-
-  Future<void> animateIcons(AnimatedIconsMixin icons) {
-    return switch (_routeNotifier.value) {
-      CurrentRoute.home => icons.homeIconController
-          .reverse()
-          .then((value) => icons.homeIconController.forward()),
-      CurrentRoute.gallery => icons.galleryIconController
-          .reverse()
-          .then((value) => icons.galleryIconController.forward()),
-      CurrentRoute.search => icons.searchIconController
-          .reverse()
-          .then((value) => icons.searchIconController.forward()),
-      CurrentRoute.discover => icons.discoverIconController
-          .reverse()
-          .then((value) => icons.discoverIconController.forward()),
-    };
   }
 }
 
@@ -360,7 +361,9 @@ class _CurrentPageWidget extends StatelessWidget {
 }
 
 class DiscoverPage extends StatefulWidget {
-  const DiscoverPage({super.key});
+  const DiscoverPage({
+    super.key,
+  });
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
