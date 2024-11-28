@@ -19,8 +19,10 @@ import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:logging/logging.dart";
 
 part "android_api_directories.dart";
 part "android_api_files.dart";
@@ -62,7 +64,7 @@ class AndroidGalleryApi implements GalleryApi {
   Future<int> get version => platform.GalleryHostApi().mediaVersion();
 
   @override
-  Directories openDirectory(
+  Directories open(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
     required AppLocalizations l10n,
@@ -73,7 +75,9 @@ class AndroidGalleryApi implements GalleryApi {
       localizations: l10n,
     );
 
-    return _GalleryImpl()._currentApi = api;
+    _GalleryImpl().liveInstances.add(api);
+
+    return api;
   }
 
   @override
@@ -118,39 +122,45 @@ class AndroidSearch implements Search {
   const AndroidSearch();
 
   @override
-  Future<List<File>> filesById(List<int> ids) {
+  Future<List<File>> filesById(List<int> ids) async {
     final localTags = LocalTagsService.db();
+    final cursorApi = platform.FilesCursor();
 
-    return platform.GalleryHostApi().getPicturesOnlyDirectly(ids).then(
-          (e) => e
-              .map(
-                (e) => e.toAndroidFile(
-                  localTags.get(e.name).fold({}, (map, e) {
-                    map[e] = null;
-                    return map;
-                  }),
-                ),
-              )
-              .toList(),
-        );
+    final cursor = await cursorApi.acquireIds(ids);
+
+    return (await cursor.drainFiles(cursorApi))
+        .map(
+          (e) => e.toAndroidFile(
+            localTags.get(e.name).fold({}, (map, e) {
+              map[e] = null;
+              return map;
+            }),
+          ),
+        )
+        .toList();
   }
 
   @override
-  Future<List<File>> filesByName(String name, int limit) {
+  Future<List<File>> filesByName(String name, int limit) async {
     final localTags = LocalTagsService.db();
+    final cursorApi = platform.FilesCursor();
 
-    return platform.GalleryHostApi().latestFilesByName(name, limit).then(
-          (e) => e
-              .map(
-                (e) => e.toAndroidFile(
-                  localTags.get(e.name).fold({}, (map, e) {
-                    map[e] = null;
-                    return map;
-                  }),
-                ),
-              )
-              .toList(),
-        );
+    final cursor = await cursorApi.acquireFilter(
+      name: name,
+      sortingMode: platform.FilesSortingMode.none,
+      limit: limit,
+    );
+
+    return (await cursor.drainFiles(cursorApi))
+        .map(
+          (e) => e.toAndroidFile(
+            localTags.get(e.name).fold({}, (map, e) {
+              map[e] = null;
+              return map;
+            }),
+          ),
+        )
+        .toList();
   }
 }
 

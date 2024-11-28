@@ -50,147 +50,17 @@ class _GalleryImpl implements platform.PlatformGalleryApi {
 
   static _GalleryImpl? _impl;
 
-  bool isSavingTags = false;
-
-  _AndroidGallery? _currentApi;
-
-  @override
-  bool updatePictures(
-    List<platform.DirectoryFile?> f,
-    List<int?> notFound,
-    String bucketId,
-    int startTime,
-    bool inRefresh,
-    bool empty,
-  ) {
-    final api = _currentApi?.bindFiles;
-    if (api == null || api.startTime > startTime || !api.isBucketId(bucketId)) {
-      return false;
-    }
-
-    if (empty) {
-      api.source.progress.inRefreshing = false;
-      api.source.backingStorage.clear();
-
-      return false;
-    }
-
-    if (f.isEmpty && !inRefresh) {
-      api.source.progress.inRefreshing = false;
-      api.source.backingStorage.addAll([]);
-      api.sourceTags.notify();
-
-      return false;
-    } else if (f.isEmpty) {
-      return false;
-    }
-
-    if (api.type.isFavorites()) {
-      final c = <String, DirectoryMetadata>{};
-
-      final files = f
-          .map((e) {
-            final tags = api.localTags.get(e!.name);
-            final f = e.toAndroidFile(
-              tags.fold({}, (map, e) {
-                map[e] = null;
-
-                return map;
-              }),
-            );
-
-            api.sourceTags.addAll(tags);
-
-            return f;
-          })
-          .where(
-            (dir) => GalleryFilesPageType.filterAuthBlur(
-              c,
-              dir,
-              api.directoryTag,
-              api.directoryMetadata,
-            ),
-          )
-          .toList();
-
-      api.source.backingStorage.addAll(files);
-    } else {
-      api.source.backingStorage.addAll(
-        f.map((e) {
-          final tags = api.localTags.get(e!.name);
-          final f = e.toAndroidFile(
-            tags.fold({}, (map, e) {
-              map[e] = null;
-
-              return map;
-            }),
-          );
-
-          api.sourceTags.addAll(tags);
-
-          return f;
-        }),
-        true,
-      );
-    }
-
-    return true;
-  }
-
-  @override
-  bool updateDirectories(
-    Map<String?, platform.Directory?> d,
-    bool inRefresh,
-    bool empty,
-  ) {
-    final api = _currentApi;
-    if (api == null) {
-      return false;
-    } else if (empty) {
-      api.source.progress.inRefreshing = false;
-      api.source.backingStorage.clear();
-
-      return false;
-    } else if (d.isEmpty && !inRefresh) {
-      api.source.progress.inRefreshing = false;
-      api.source.backingStorage.addAll([]);
-
-      return false;
-    } else if (d.isEmpty) {
-      return false;
-    }
-
-    final b = api.blacklistedDirectory.getAll(d.keys.map((e) => e!).toList());
-    for (final e in b) {
-      d.remove(e.bucketId);
-    }
-
-    api.source.backingStorage.addAll(
-      d.values
-          .map(
-            (e) => AndroidGalleryDirectory(
-              bucketId: e!.bucketId,
-              name: e.name,
-              tag: api.directoryTag.get(e.bucketId) ?? "",
-              volumeName: e.volumeName,
-              relativeLoc: e.relativeLoc,
-              thumbFileId: e.thumbFileId,
-              lastModified: e.lastModified,
-            ),
-          )
-          .toList(),
-      true,
-    );
-
-    return true;
-  }
+  final List<_AndroidGallery> liveInstances = [];
 
   @override
   void notify(String? target) {
-    if (target == null || target == _currentApi?.bindFiles?.target) {
-      _currentApi?.bindFiles?.source.clearRefresh();
+    for (final e in liveInstances) {
+      if (target == null || target == e.bindFiles?.target) {
+        e.bindFiles?.source.clearRefresh();
+      }
+
+      e.source.clearRefresh();
     }
-    _currentApi?.source.clearRefresh();
   }
 
   @override

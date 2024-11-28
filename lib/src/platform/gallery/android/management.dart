@@ -31,13 +31,6 @@ class AndroidFilesManagement implements FilesManagement {
   @override
   Future<bool> exists(String filePath) => io.File(filePath).exists();
 
-  void refreshFiles(String bucketId, SortingMode sortingMode) {
-    AndroidGalleryApi.appContext.invokeMethod("refreshFiles", {
-      "bucketId": bucketId,
-      "sort": sortingMode.sortingIdAndroid,
-    });
-  }
-
   @override
   Future<void> copyMove(
     String chosen,

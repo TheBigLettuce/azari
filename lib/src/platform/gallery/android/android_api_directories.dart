@@ -27,14 +27,22 @@ class _AndroidGallery implements Directories {
   TrashCell get trashCell => source.trashCell;
 
   @override
-  late final _AndroidSource source = _AndroidSource(TrashCell(localizations));
+  late final _AndroidSource source = _AndroidSource(
+    TrashCell(localizations),
+    blacklistedDirectory,
+    directoryTag,
+    localizations,
+  );
 
   @override
   void close() {
     source.destroy();
     trashCell.dispose();
     bindFiles = null;
-    _GalleryImpl()._currentApi = null;
+    _GalleryImpl().liveInstances.removeWhere((e) => e == this);
+    if (kDebugMode) {
+      print(_GalleryImpl().liveInstances);
+    }
   }
 
   @override
@@ -60,6 +68,7 @@ class _AndroidGallery implements Directories {
         type,
         favoritePosts,
         sourceTags,
+        localTags,
       ),
       sourceTags: sourceTags,
       directories: [directory],
@@ -94,6 +103,7 @@ class _AndroidGallery implements Directories {
         GalleryFilesPageType.normal,
         favoritePosts,
         sourceTags,
+        localTags,
       ),
       sourceTags: sourceTags,
       directories: directories,
@@ -107,7 +117,16 @@ class _AndroidGallery implements Directories {
 }
 
 class _AndroidSource implements ResourceSource<int, Directory> {
-  _AndroidSource(this.trashCell);
+  _AndroidSource(
+    this.trashCell,
+    this.blacklistedDirectory,
+    this.directoryTag,
+    this.localizations,
+  );
+
+  final BlacklistedDirectoryService blacklistedDirectory;
+  final DirectoryTagService directoryTag;
+  final AppLocalizations localizations;
 
   @override
   bool get hasNext => false;
@@ -120,16 +139,57 @@ class _AndroidSource implements ResourceSource<int, Directory> {
 
   final TrashCell trashCell;
 
+  final cursorApi = platform.DirectoriesCursor();
+
   @override
-  Future<int> clearRefresh() {
+  Future<int> clearRefresh() async {
     if (progress.inRefreshing) {
       return Future.value(count);
     }
     progress.inRefreshing = true;
 
     backingStorage.clear();
-    AndroidGalleryApi.appContext.invokeMethod("refreshGallery");
     trashCell.refresh();
+
+    final token = await cursorApi.acquire();
+    try {
+      while (true) {
+        final e = await cursorApi.advance(token);
+        if (e.isEmpty) {
+          break;
+        }
+
+        final blacklisted =
+            blacklistedDirectory.getAll(e.keys.map((e) => e).toList());
+        for (final b in blacklisted) {
+          e.remove(b.bucketId);
+        }
+
+        backingStorage.addAll(
+          e.values
+              .map(
+                (e) => AndroidGalleryDirectory(
+                  bucketId: e.bucketId,
+                  name: e.name,
+                  tag: directoryTag.get(e.bucketId) ?? "",
+                  volumeName: e.volumeName,
+                  relativeLoc: e.relativeLoc,
+                  thumbFileId: e.thumbFileId,
+                  lastModified: e.lastModified,
+                ),
+              )
+              .toList(),
+          true,
+        );
+      }
+    } catch (e, trace) {
+      Logger.root.severe("_AndroidSource", e, trace);
+    } finally {
+      await cursorApi.destroy(token);
+    }
+
+    progress.inRefreshing = false;
+    backingStorage.addAll([]);
 
     return Future.value(count);
   }

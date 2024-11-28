@@ -114,7 +114,7 @@ class _DirectoriesPageState extends State<DirectoriesPage> {
   late final GridSkeletonState<Directory> state = GridSkeletonState();
 
   late final api = widget.providedApi ??
-      GalleryApi().openDirectory(
+      GalleryApi().open(
         widget.db.blacklistedDirectories,
         widget.db.directoryTags,
         l10n: widget.l10n,

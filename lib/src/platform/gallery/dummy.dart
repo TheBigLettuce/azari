@@ -17,7 +17,7 @@ class DummyGalleryApi implements GalleryApi {
   void notify(String? target) {}
 
   @override
-  Directories openDirectory(
+  Directories open(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
     bool? temporaryDb,

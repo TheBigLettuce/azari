@@ -13,19 +13,22 @@ import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
 import com.github.thebiglettuce.azari.enginebindings.AppContextChannel
+import com.github.thebiglettuce.azari.generated.DirectoriesCursor
+import com.github.thebiglettuce.azari.generated.FilesCursor
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import com.github.thebiglettuce.azari.impls.DirectoriesCursorImpl
+import com.github.thebiglettuce.azari.impls.FilesCursorImpl
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 import com.github.thebiglettuce.azari.impls.NetworkCallbackImpl
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
-import io.flutter.embedding.android.FlutterFragment
+import com.github.thebiglettuce.azari.mover.Thumbnailer
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
 class MainActivity : FlutterFragmentActivity() {
     private val intents =
-        ActivityResultIntents(this, { activityContextChannel!! }, { mediaLoaderAndMover })
+        ActivityResultIntents(this, { activityContextChannel!! }, { thumbnailer })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
     private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
@@ -33,12 +36,12 @@ class MainActivity : FlutterFragmentActivity() {
         val engine = makeEngine(app, "main")
         GalleryHostApi.setUp(
             engine.dartExecutor.binaryMessenger,
-            GalleryHostApiImpl(this, mediaLoaderAndMover)
+            GalleryHostApiImpl(this)
         )
         AppContextChannel(engine, PlatformGalleryApi(engine.dartExecutor.binaryMessenger))
     }
 
-    private val mediaLoaderAndMover: MediaLoaderAndMover by lazy { (applicationContext as App).mediaLoaderAndMover }
+    private val thumbnailer: Thumbnailer by lazy { (applicationContext as App).thumbnailer }
     private val notificationsHolder: CurrentNotificationsHolder by lazy {
         CurrentNotificationsHolder(
             getSystemService(NotificationManager::class.java)
@@ -61,7 +64,7 @@ class MainActivity : FlutterFragmentActivity() {
 
         appContextChannel.attach(
             this.applicationContext as App,
-            mediaLoaderAndMover,
+            thumbnailer,
             getSystemService(ConnectivityManager::class.java)
         )
 
@@ -71,7 +74,20 @@ class MainActivity : FlutterFragmentActivity() {
             appContextChannel.engine.dartExecutor,
             PlatformGalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
         )
-        activityContextChannel!!.attach(this, intents, mediaLoaderAndMover)
+        activityContextChannel!!.attach(this, intents, thumbnailer)
+
+        FilesCursor.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            FilesCursorImpl(this.applicationContext as App, thumbnailer.scope)
+        )
+
+        DirectoriesCursor.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            DirectoriesCursorImpl(
+                this.applicationContext as App,
+                thumbnailer.scope,
+            )
+        )
 
         NotificationsApi.setUp(
             appContextChannel.engine.dartExecutor.binaryMessenger,
@@ -100,6 +116,8 @@ class MainActivity : FlutterFragmentActivity() {
         intents.unregisterAll()
         activityContextChannel!!.detach()
 
+        FilesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        DirectoriesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         NotificationsApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
 
         notificationsHolder.cancelAll()

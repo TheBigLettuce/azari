@@ -18,7 +18,7 @@ import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.glide.GlideImageLoader
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.impls.NativeViewFactory
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.mover.Thumbnailer
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineGroup
@@ -27,7 +27,7 @@ import com.github.thebiglettuce.azari.generated.NotificationChannel as Notificat
 
 class App : Application() {
     internal lateinit var engines: FlutterEngineGroup
-    val mediaLoaderAndMover = MediaLoaderAndMover(this)
+    val thumbnailer = Thumbnailer(this)
 
     override fun onCreate() {
         super.onCreate()
@@ -44,7 +44,7 @@ class App : Application() {
         BigImageViewer.initialize(GlideImageLoader.with(applicationContext))
 
         engines = FlutterEngineGroup(this)
-        mediaLoaderAndMover.initMover()
+        thumbnailer.initMover()
 
         createNotifChannels(this)
     }

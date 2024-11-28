@@ -22,14 +22,14 @@ import kotlinx.coroutines.launch
 import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
 import com.github.thebiglettuce.azari.enginebindings.copyFile
 import com.github.thebiglettuce.azari.enginebindings.copyOrMove
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.mover.Thumbnailer
 import okio.FileSystem
 import okio.Path.Companion.toPath
 
 class ActivityResultIntents(
     context: FlutterFragmentActivity,
     private val getActivityContextChannel: () -> ActivityContextChannel,
-    private val getMediaLoaderAndMover: () -> MediaLoaderAndMover,
+    private val getThumbnailer: () -> Thumbnailer,
 ) {
     val pickFileAndOpen = context.registerForActivityResult(ActionOpenDocument()) { data ->
         val activityContextChannel = getActivityContextChannel()
@@ -62,7 +62,7 @@ class ActivityResultIntents(
     val writeRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
             val activityContextChannel = getActivityContextChannel()
-            val mover = getMediaLoaderAndMover()
+            val mover = getThumbnailer()
 
             if (data.resultCode == Activity.RESULT_OK) {
                 val rename = activityContextChannel.rename!!
@@ -98,7 +98,7 @@ class ActivityResultIntents(
     val writeRequestCopyMove =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
             val activityContextChannel = getActivityContextChannel()
-            val mover = getMediaLoaderAndMover()
+            val mover = getThumbnailer()
 
             if (data.resultCode == Activity.RESULT_OK) {
                 val copyFiles = activityContextChannel.copyFiles!!
@@ -150,7 +150,7 @@ class ActivityResultIntents(
     val writeRequestInternal =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
             val activityContextChannel = getActivityContextChannel()
-            val mover = getMediaLoaderAndMover()
+            val mover = getThumbnailer()
 
             if (data.resultCode == Activity.RESULT_OK) {
                 val moveInternal = activityContextChannel.moveInternal!!
@@ -191,7 +191,7 @@ class ActivityResultIntents(
     val trashRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
             val activityContextChannel = getActivityContextChannel()
-            val mover = getMediaLoaderAndMover()
+            val mover = getThumbnailer()
 
             if (data.resultCode == Activity.RESULT_OK) {
                 activityContextChannel.notifyGallery(mover.uiScope, null)
@@ -201,7 +201,7 @@ class ActivityResultIntents(
     val deleteRequest =
         context.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { data ->
             val activityContextChannel = getActivityContextChannel()
-            val mover = getMediaLoaderAndMover()
+            val mover = getThumbnailer()
 
             if (data.resultCode == Activity.RESULT_OK) {
                 activityContextChannel.notifyGallery(mover.uiScope, null)

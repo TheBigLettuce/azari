@@ -99,17 +99,22 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     this.type,
     this.favoritePosts,
     this.sourceTags,
+    this.localTags,
   ) {
     _favoritesWatcher = favoritePosts.backingStorage.watch((_) {
       backingStorage.addAll([]);
     });
   }
 
+  final LocalTagsService localTags;
+
   final List<Directory> directories;
   final GalleryFilesPageType type;
   final FavoritePostSourceService favoritePosts;
   late final StreamSubscription<int>? _favoritesWatcher;
   final MapFilesSourceTags sourceTags;
+
+  final cursorApi = platform.FilesCursor();
 
   @override
   bool get hasNext => false;
@@ -135,35 +140,65 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
   @override
   Future<int> clearRefresh([bool silent = false]) async {
     if (progress.inRefreshing) {
-      return Future.value(count);
+      return count;
     }
+    progress.inRefreshing = true;
 
     backingStorage.list.clear();
     sourceTags.clear();
 
-    progress.inRefreshing = true;
-    if (type.isTrash()) {
-      unawaited(
-        AndroidGalleryApi.appContext
-            .invokeMethod("refreshTrashed", sortingMode.sortingIdAndroid),
-      );
-    } else {
-      if (directories.length == 1) {
-        unawaited(
-          AndroidGalleryApi.appContext.invokeMethod("refreshFiles", {
-            "bucketId": directories.first.bucketId,
-            "sort": sortingMode.sortingIdAndroid,
+    final cursor = await cursorApi.acquire(
+      directories: directories.map((e) => e.bucketId).toList(),
+      type: switch (type) {
+        GalleryFilesPageType.normal ||
+        GalleryFilesPageType.favorites =>
+          platform.FilesCursorType.normal,
+        GalleryFilesPageType.trash => platform.FilesCursorType.trashed,
+      },
+      sortingMode: switch (sortingMode) {
+        SortingMode.none => platform.FilesSortingMode.none,
+        SortingMode.size => platform.FilesSortingMode.size,
+      },
+      limit: 0,
+    );
+
+    try {
+      while (true) {
+        final e = await cursorApi.advance(cursor);
+        if (e.isEmpty) {
+          break;
+        }
+
+        backingStorage.addAll(
+          e.map((e) {
+            final tags = localTags.get(e.name);
+            final f = e.toAndroidFile(
+              tags.fold({}, (map, e) {
+                map[e] = null;
+
+                return map;
+              }),
+            );
+
+            sourceTags.addAll(tags);
+
+            return f;
           }),
-        );
-      } else {
-        unawaited(
-          AndroidGalleryApi.appContext.invokeMethod("refreshFilesMultiple", {
-            "ids": directories.map((e) => e.bucketId).toList(),
-            "sort": sortingMode.sortingIdAndroid,
-          }),
+          true,
         );
       }
+    } catch (e, trace) {
+      Logger.root.severe(
+        "_AndroidFileSourceJoined",
+        e,
+        trace,
+      );
+    } finally {
+      await cursorApi.destroy(cursor);
     }
+
+    backingStorage.addAll([]);
+    progress.inRefreshing = false;
 
     return Future.value(backingStorage.count);
   }

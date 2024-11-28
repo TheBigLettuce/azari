@@ -96,27 +96,54 @@ abstract class GalleryHostApi {
   int mediaVersion();
 
   @async
-  List<DirectoryFile> latestFilesByName(String name, int limit);
-
-  @async
-  List<DirectoryFile> getPicturesOnlyDirectly(List<int> ids);
-
-  @async
   List<UriFile> getUriPicturesDirectly(List<String> uris);
+}
+
+@HostApi()
+abstract class DirectoriesCursor {
+  String acquire();
+
+  @async
+  Map<String, Directory> advance(String token);
+
+  void destroy(String token);
+}
+
+enum FilesCursorType {
+  trashed,
+  normal;
+}
+
+enum FilesSortingMode {
+  none,
+  size;
+}
+
+@HostApi()
+abstract class FilesCursor {
+  String acquire({
+    required List<String> directories,
+    required FilesCursorType type,
+    required FilesSortingMode sortingMode,
+    required int limit,
+  });
+
+  String acquireFilter({
+    required String name,
+    required FilesSortingMode sortingMode,
+    required int limit,
+  });
+
+  String acquireIds(List<int> ids);
+
+  @async
+  List<DirectoryFile> advance(String token);
+
+  void destroy(String token);
 }
 
 @FlutterApi()
 abstract class PlatformGalleryApi {
-  bool updateDirectories(Map<String, Directory> d, bool inRefresh, bool empty);
-  bool updatePictures(
-    List<DirectoryFile?> f,
-    List<int> notFound,
-    String bucketId,
-    int startTime,
-    bool inRefresh,
-    bool empty,
-  );
-
   void notifyNetworkStatus(bool hasInternet);
 
   void notify(String? target);

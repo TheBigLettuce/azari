@@ -60,6 +60,31 @@ part "gallery_file.dart";
 
 void initGalleryPlug() => initApi();
 
+extension DrainCursorsExt on String {
+  Future<List<DirectoryFile>> drainFiles(
+    FilesCursor cursorApi,
+  ) async {
+    final ret = <DirectoryFile>[];
+
+    try {
+      while (true) {
+        final e = await cursorApi.advance(this);
+        if (e.isEmpty) {
+          break;
+        }
+
+        ret.addAll(e);
+      }
+    } catch (e, trace) {
+      Logger.root.severe(".drainFiles", e, trace);
+    } finally {
+      await cursorApi.destroy(this);
+    }
+
+    return ret;
+  }
+}
+
 abstract interface class GalleryApi {
   factory GalleryApi() {
     if (_api != null) {
@@ -71,7 +96,7 @@ abstract interface class GalleryApi {
 
   static GalleryApi? _api;
 
-  Directories openDirectory(
+  Directories open(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
     required AppLocalizations l10n,

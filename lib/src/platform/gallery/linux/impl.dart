@@ -25,7 +25,7 @@ class LinuxGalleryApi implements GalleryApi {
   Future<int> get version => Future.value(0);
 
   @override
-  Directories openDirectory(
+  Directories open(
     BlacklistedDirectoryService blacklistedDirectory,
     DirectoryTagService directoryTag, {
     required AppLocalizations l10n,

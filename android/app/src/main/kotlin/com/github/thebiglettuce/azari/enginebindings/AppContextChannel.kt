@@ -17,7 +17,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
@@ -33,12 +32,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.Glide
 import com.github.thebiglettuce.azari.ActivityResultIntents
 import com.github.thebiglettuce.azari.App
-import com.github.thebiglettuce.azari.generated.Directory
-import com.github.thebiglettuce.azari.generated.DirectoryFile
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.mover.FilesDest
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.mover.Thumbnailer
 import com.github.thebiglettuce.azari.mover.MoveInternalOp
 import com.github.thebiglettuce.azari.mover.MoveOp
 import com.github.thebiglettuce.azari.mover.RenameOp
@@ -49,7 +46,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import okio.use
@@ -70,23 +66,23 @@ class AppContextChannel(
 
     fun attach(
         app: App,
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         connectivityManager: ConnectivityManager,
     ) {
-        setMethodHandler(app, mediaLoaderAndMover, connectivityManager)
+        setMethodHandler(app, thumbnailer, connectivityManager)
     }
 
     fun attachSecondary(
         context: FlutterFragmentActivity,
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         connectivityManager: ConnectivityManager,
     ) {
-        setMethodHandler(context, mediaLoaderAndMover, connectivityManager)
+        setMethodHandler(context, thumbnailer, connectivityManager)
     }
 
     private fun setMethodHandler(
         context: Context,
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         connectivityManager: ConnectivityManager,
     ) {
 
@@ -104,7 +100,7 @@ class AppContextChannel(
                     } else if (dir == null) {
                         result.error("directory is empty", null, null)
                     } else {
-                        mediaLoaderAndMover.add(
+                        thumbnailer.add(
                             MoveOp(
                                 source,
                                 Uri.parse(rootUri),
@@ -132,36 +128,6 @@ class AppContextChannel(
                     }
                 }
 
-                "refreshFavorites" -> {
-                    mediaLoaderAndMover.refreshFavorites(
-                        call.argument<List<Long>>("ids")!!,
-                        sendMedia = ::sendMedia,
-                        sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.fromDartInt(
-                            call.argument<Int>(
-                                "sort"
-                            )!!
-                        )
-                    ) {
-                        result.success(null)
-                    }
-                }
-
-                "refreshTrashed" -> {
-                    mediaLoaderAndMover.refreshFiles(
-                        "trash",
-                        inRefreshAtEnd = true,
-                        type = MediaLoaderAndMover.Enums.LoadMediaType.Trashed,
-                        limit = 0,
-                        sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.fromDartInt(
-                            call.arguments<Int>()!!
-                        ),
-                        sendMedia = ::sendMedia,
-                    )
-
-
-                    result.success(null)
-                }
-
                 "currentMediastoreVersion" -> {
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
                         result.success(0L)
@@ -172,7 +138,7 @@ class AppContextChannel(
                 }
 
                 "deleteCachedThumbs" -> {
-                    mediaLoaderAndMover.deleteCachedThumbs(
+                    thumbnailer.deleteCachedThumbs(
                         call.argument<List<Long>>("ids")!!,
                         call.argument<Boolean>("fromPinned")!!
                     )
@@ -183,11 +149,11 @@ class AppContextChannel(
                 }
 
                 "clearCachedThumbs" -> {
-                    mediaLoaderAndMover.clearCachedThumbs(call.arguments as Boolean)
+                    thumbnailer.clearCachedThumbs(call.arguments as Boolean)
                 }
 
                 "thumbCacheSize" -> {
-                    mediaLoaderAndMover.thumbCacheSize(result, call.arguments as Boolean)
+                    thumbnailer.thumbCacheSize(result, call.arguments as Boolean)
                 }
 
                 "getCachedThumb" -> {
@@ -205,7 +171,7 @@ class AppContextChannel(
                         }
                     }
 
-                    mediaLoaderAndMover.getCachedThumbnail(id, result)
+                    thumbnailer.getCachedThumbnail(id, result)
                 }
 
                 "saveThumbNetwork" -> {
@@ -214,7 +180,7 @@ class AppContextChannel(
                     val url =
                         call.argument<String>("url") ?: throw Exception("url should be String")
 
-                    mediaLoaderAndMover.saveThumbnailNetwork(
+                    thumbnailer.saveThumbnailNetwork(
                         url,
                         if (id is Int) id.toLong() else if (id is Long) id else throw Exception("id should be Long"),
                         result
@@ -235,48 +201,9 @@ class AppContextChannel(
                     }
                 }
 
-                "refreshFiles" -> {
-                    mediaLoaderAndMover.refreshFiles(
-                        call.argument<String>("bucketId")!!,
-                        inRefreshAtEnd = true,
-                        type = MediaLoaderAndMover.Enums.LoadMediaType.Normal,
-                        limit = 0,
-                        sortingMode = MediaLoaderAndMover.Enums.FilesSortingMode.fromDartInt(
-                            call.argument<Int>(
-                                "sort"
-                            )!!
-                        ),
-                        sendMedia = ::sendMedia,
-                    )
-
-                    result.success(null)
-                }
-
-                "refreshFilesMultiple" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        mediaLoaderAndMover.refreshFilesMultiple(
-                            call.argument<List<String>>("ids")!!,
-                            MediaLoaderAndMover.Enums.FilesSortingMode.fromDartInt(
-                                call.argument<Int>(
-                                    "sort"
-                                )!!
-                            ),
-                            sendMedia = ::sendMedia,
-                        )
-                    }
-
-                    result.success(null)
-                }
-
-                "refreshGallery" -> {
-                    mediaLoaderAndMover.refreshGallery(::sendDirResult)
-
-                    result.success(null)
-                }
-
                 "trashThumbId" -> {
-                    mediaLoaderAndMover.scope.launch {
-                        val res = mediaLoaderAndMover.trashThumbIds(context, true)
+                    thumbnailer.scope.launch {
+                        val res = thumbnailer.trashThumbIds(context, true)
 
                         result.success(res.first.firstOrNull())
                     }
@@ -303,59 +230,6 @@ class AppContextChannel(
             }
         }
     }
-
-
-    private suspend fun sendMedia(
-        scope: CoroutineScope,
-        uiScope: CoroutineScope,
-        dir: String,
-        time: Long,
-        content: List<DirectoryFile>,
-        notFound: List<Long>,
-        empty: Boolean,
-        inRefresh: Boolean,
-    ) {
-        uiScope.launch {
-            galleryApi.updatePictures(
-                content,
-                notFound,
-                dir,
-                time,
-                inRefreshArg = inRefresh,
-                emptyArg = empty
-            ) {}
-        }.join()
-    }
-
-
-    private suspend fun sendDirResult(
-        scope: CoroutineScope,
-        uiScope: CoroutineScope,
-        dirs: Map<String, Directory>, inRefresh: Boolean,
-        empty: Boolean,
-    ): Boolean {
-        val ch = Channel<Boolean>(capacity = 1)
-
-        scope.launch {
-            uiScope.launch {
-                galleryApi.updateDirectories(
-                    dirs,
-                    inRefreshArg = inRefresh,
-                    emptyArg = empty
-                ) {
-                    scope.launch {
-                        ch.send(it.getOrNull()!!)
-                    }
-                }
-            }
-        }
-
-        val res = ch.receive();
-        ch.close()
-
-        return res
-    }
-
 
     fun detach() {
         GalleryHostApi.setUp(engine.dartExecutor.binaryMessenger, null)
@@ -399,7 +273,7 @@ class ActivityContextChannel(
     fun attach(
         context: FlutterFragmentActivity,
         intents: ActivityResultIntents,
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
     ) {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -410,7 +284,7 @@ class ActivityContextChannel(
                 "setWakelock" -> {
                     val lockWake = call.arguments as Boolean
 
-                    mediaLoaderAndMover.uiScope.launch {
+                    thumbnailer.uiScope.launch {
                         if (lockWake) {
                             context.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         } else {
@@ -436,12 +310,12 @@ class ActivityContextChannel(
                 }
 
                 "setFullscreen" -> {
-                    setFullscreen(mediaLoaderAndMover, context, call)
+                    setFullscreen(thumbnailer, context, call)
                 }
 
                 "deleteFiles" -> {
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                        androidQDeleteFiles(mediaLoaderAndMover, context, call, result)
+                        androidQDeleteFiles(thumbnailer, context, call, result)
                     } else {
                         deleteFiles(context, call, result, intents)
                     }
@@ -460,20 +334,20 @@ class ActivityContextChannel(
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
                         result.success(null)
                     } else {
-                        emptyTrash(mediaLoaderAndMover, context, intents)
+                        emptyTrash(thumbnailer, context, intents)
                     }
                 }
 
                 "moveInternal" -> {
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                        oldAndroidMoveInternal(mediaLoaderAndMover, context, call, result)
+                        oldAndroidMoveInternal(thumbnailer, context, call, result)
                     } else {
-                        moveInternal(mediaLoaderAndMover, context, call, result, intents)
+                        moveInternal(thumbnailer, context, call, result, intents)
                     }
                 }
 
                 "pickFileAndCopy" -> {
-                    pickFileCopy(mediaLoaderAndMover, context, call, result, intents)
+                    pickFileCopy(thumbnailer, context, call, result, intents)
                 }
 
                 "requestManageMedia" -> {
@@ -482,11 +356,11 @@ class ActivityContextChannel(
                         return@setMethodCallHandler
                     }
 
-                    requestManageMedia(mediaLoaderAndMover, context, result, intents.manageMedia)
+                    requestManageMedia(thumbnailer, context, result, intents.manageMedia)
                 }
 
                 "chooseDirectory" -> {
-                    chooseDirectory(mediaLoaderAndMover, context, call, result, intents)
+                    chooseDirectory(thumbnailer, context, call, result, intents)
                 }
 
                 "setWallpaper" -> {
@@ -499,15 +373,15 @@ class ActivityContextChannel(
 
                 "rename" -> {
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                        oldAndroidRename(mediaLoaderAndMover, context, call, result)
+                        oldAndroidRename(thumbnailer, context, call, result)
                     } else {
-                        rename(mediaLoaderAndMover, context, call, result, intents)
+                        rename(thumbnailer, context, call, result, intents)
                     }
                 }
 
                 "addToTrash" -> {
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                        androidQDeleteFiles(mediaLoaderAndMover, context, call, result)
+                        androidQDeleteFiles(thumbnailer, context, call, result)
                     } else {
                         addToTrash(context, call, result, intents)
                     }
@@ -522,14 +396,14 @@ class ActivityContextChannel(
                 }
 
                 "copyMoveInternal" -> {
-                    copyMoveInternal(mediaLoaderAndMover, context, call, result)
+                    copyMoveInternal(thumbnailer, context, call, result)
                 }
 
                 "copyMoveFiles" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        copyMoveFiles(mediaLoaderAndMover, context, call, result, intents)
+                        copyMoveFiles(thumbnailer, context, call, result, intents)
                     } else {
-                        copyMoveFilesDirect(mediaLoaderAndMover, context, call, result)
+                        copyMoveFilesDirect(thumbnailer, context, call, result)
                     }
                 }
             }
@@ -569,13 +443,13 @@ class ActivityContextChannel(
     }
 
     private fun setFullscreen(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: FlutterFragmentActivity,
         call: MethodCall,
     ) {
         val data = call.arguments as Boolean
 
-        mediaLoaderAndMover.uiScope.launch {
+        thumbnailer.uiScope.launch {
             val windowInsets = WindowCompat.getInsetsController(
                 context.window,
                 context.window.decorView
@@ -618,13 +492,13 @@ class ActivityContextChannel(
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun emptyTrash(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         intents: ActivityResultIntents,
     ) {
-        mediaLoaderAndMover.scope.launch {
-            mediaLoaderAndMover.trashDeleteMux.lock()
-            val (images, videos) = mediaLoaderAndMover.trashThumbIds(
+        thumbnailer.scope.launch {
+            thumbnailer.trashDeleteMux.lock()
+            val (images, videos) = thumbnailer.trashThumbIds(
                 context,
                 lastOnly = false,
                 separate = true
@@ -657,12 +531,12 @@ class ActivityContextChannel(
                 }
             }
 
-            mediaLoaderAndMover.trashDeleteMux.unlock()
+            thumbnailer.trashDeleteMux.unlock()
         }
     }
 
     private fun oldAndroidMoveInternal(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
@@ -675,7 +549,7 @@ class ActivityContextChannel(
 
         val contentResolver = context.contentResolver;
 
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             try {
                 for (e in urisParsed) {
                     val mimeType = contentResolver.getType(e)!!
@@ -718,7 +592,7 @@ class ActivityContextChannel(
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun moveInternal(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
@@ -730,7 +604,7 @@ class ActivityContextChannel(
 
         val urisParsed = uris.map { Uri.parse(it) }
 
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             moveInternalMux.lock()
 
             try {
@@ -754,13 +628,13 @@ class ActivityContextChannel(
     }
 
     private fun pickFileCopy(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
         intents: ActivityResultIntents,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             callbackMux.lock()
             val outputDir = call.arguments as String
             callback = {
@@ -811,12 +685,12 @@ class ActivityContextChannel(
     }
 
     private fun requestManageMedia(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         result: MethodChannel.Result,
         manageMedia: ActivityResultLauncher<String>,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             manageMediaMux.lock()
 
             try {
@@ -869,13 +743,13 @@ class ActivityContextChannel(
     }
 
     private fun chooseDirectory(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
         intents: ActivityResultIntents,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             callbackMux.lock()
             val temporary = call.arguments as Boolean
 
@@ -929,12 +803,12 @@ class ActivityContextChannel(
     }
 
     private fun oldAndroidRename(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: FlutterFragmentActivity,
         call: MethodCall,
         result: MethodChannel.Result,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             try {
                 val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
                 val newName =
@@ -987,13 +861,13 @@ class ActivityContextChannel(
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun rename(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
         intents: ActivityResultIntents,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             renameMux.lock()
             try {
                 val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
@@ -1068,7 +942,7 @@ class ActivityContextChannel(
     }
 
     private fun copyMoveInternal(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: FlutterFragmentActivity,
         call: MethodCall,
         result: MethodChannel.Result,
@@ -1079,7 +953,7 @@ class ActivityContextChannel(
         val images = call.argument<List<String>>("images")!!
         val videos = call.argument<List<String>>("videos")!!
 
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             try {
                 for (e in videos) {
                     copyFileInternal(
@@ -1216,7 +1090,7 @@ class ActivityContextChannel(
 //    }
 
     private fun oldAndroidMoveFiles(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         dest: String,
         imageIds: List<Long>,
@@ -1254,7 +1128,7 @@ class ActivityContextChannel(
 
         }
 
-        notifyGallery(mediaLoaderAndMover.uiScope, null)
+        notifyGallery(thumbnailer.uiScope, null)
 
         result.success(null)
     }
@@ -1320,12 +1194,12 @@ class ActivityContextChannel(
     }
 
     private fun copyMoveFilesDirect(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: FlutterFragmentActivity,
         call: MethodCall,
         result: MethodChannel.Result,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             val dest = call.argument<String>("dest")
             val images = call.argument<List<Long>>("images")
             val videos = call.argument<List<Long>>("videos")
@@ -1392,20 +1266,20 @@ class ActivityContextChannel(
                     copyFilesMux.unlock()
                 }
 
-                notifyGallery(mediaLoaderAndMover.uiScope, null)
+                notifyGallery(thumbnailer.uiScope, null)
             }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun copyMoveFiles(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
         intents: ActivityResultIntents,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             copyFilesMux.lock()
             val dest = call.argument<String>("dest")
             val images = call.argument<List<Long>>("images")
@@ -1474,12 +1348,12 @@ class ActivityContextChannel(
     }
 
     private fun androidQDeleteFiles(
-        mediaLoaderAndMover: MediaLoaderAndMover,
+        thumbnailer: Thumbnailer,
         context: Context,
         call: MethodCall,
         result: MethodChannel.Result,
     ) {
-        mediaLoaderAndMover.scope.launch {
+        thumbnailer.scope.launch {
             val uris = typeIdFromUri(call.arguments as List<String>)
 
             try {
@@ -1528,7 +1402,7 @@ class ActivityContextChannel(
 //                    }
                 }
 
-                notifyGallery(mediaLoaderAndMover.uiScope, null)
+                notifyGallery(thumbnailer.uiScope, null)
             } catch (e: Exception) {
                 Log.i("addToTrash", e.toString())
             }

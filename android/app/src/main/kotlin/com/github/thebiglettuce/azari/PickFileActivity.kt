@@ -19,11 +19,15 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import com.github.thebiglettuce.azari.enginebindings.ActivityContextChannel
 import com.github.thebiglettuce.azari.enginebindings.AppContextChannel
+import com.github.thebiglettuce.azari.generated.DirectoriesCursor
+import com.github.thebiglettuce.azari.generated.FilesCursor
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import com.github.thebiglettuce.azari.impls.DirectoriesCursorImpl
+import com.github.thebiglettuce.azari.impls.FilesCursorImpl
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
-import com.github.thebiglettuce.azari.mover.MediaLoaderAndMover
+import com.github.thebiglettuce.azari.mover.Thumbnailer
 
 class PickFileActivity : FlutterFragmentActivity() {
     private val appContextChannel: AppContextChannel by lazy {
@@ -48,12 +52,12 @@ class PickFileActivity : FlutterFragmentActivity() {
         ActivityResultIntents(
             this,
             { activityContextChannel!! },
-            { mediaLoaderAndMover },
+            { thumbnailer },
         )
     }
 
-    private val mediaLoaderAndMover: MediaLoaderAndMover by lazy {
-        (this.applicationContext as App).mediaLoaderAndMover
+    private val thumbnailer: Thumbnailer by lazy {
+        (this.applicationContext as App).thumbnailer
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,11 +65,11 @@ class PickFileActivity : FlutterFragmentActivity() {
 
         GalleryHostApi.setUp(
             appContextChannel.engine.dartExecutor.binaryMessenger,
-            GalleryHostApiImpl(this, mediaLoaderAndMover),
+            GalleryHostApiImpl(this),
         )
 
         appContextChannel.attachSecondary(
-            this, mediaLoaderAndMover,
+            this, thumbnailer,
             getSystemService(
                 ConnectivityManager::class.java
             ),
@@ -76,7 +80,7 @@ class PickFileActivity : FlutterFragmentActivity() {
             PlatformGalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger)
         )
 
-        activityContextChannel!!.attach(this, intents, mediaLoaderAndMover)
+        activityContextChannel!!.attach(this, intents, thumbnailer)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -86,6 +90,19 @@ class PickFileActivity : FlutterFragmentActivity() {
             Toast.makeText(this, "No permissions", Toast.LENGTH_SHORT).show()
             finish()
         }
+
+        FilesCursor.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            FilesCursorImpl(this.applicationContext as App, thumbnailer.scope)
+        )
+
+        DirectoriesCursor.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            DirectoriesCursorImpl(
+                this.applicationContext as App,
+                thumbnailer.scope,
+            )
+        )
 
         NotificationsApi.setUp(
             appContextChannel.engine.dartExecutor.binaryMessenger,
@@ -111,6 +128,9 @@ class PickFileActivity : FlutterFragmentActivity() {
         }
 
         intents.unregisterAll()
+
+        FilesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        DirectoriesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         GalleryHostApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         NotificationsApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         activityContextChannel!!.detach()
