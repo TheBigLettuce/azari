@@ -229,6 +229,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
     super.dispose();
   }
 
+  void tryScrollUp() {
+    controller?.animateTo(
+      0,
+      duration: Durations.medium3,
+      curve: Easing.standard,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final functionality = widget.functionality;

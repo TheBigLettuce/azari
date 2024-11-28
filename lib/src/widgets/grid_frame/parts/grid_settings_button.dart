@@ -20,16 +20,19 @@ class GridSettingsButton extends StatelessWidget {
     required this.add,
     required this.watch,
     this.header,
+    this.buildHideName = true,
   });
 
   factory GridSettingsButton.fromWatchable(
-    WatchableGridSettingsData w, [
+    WatchableGridSettingsData w, {
     Widget? header,
-  ]) =>
+    bool buildHideName = true,
+  }) =>
       GridSettingsButton(
         add: (d) => w.current = d,
         watch: w.watch,
         header: header,
+        buildHideName: buildHideName,
       );
 
   static Widget onlyHeader(
@@ -45,6 +48,8 @@ class GridSettingsButton extends StatelessWidget {
 
   final StreamSubscription<GridSettingsData>
       Function(void Function(GridSettingsData) f, [bool fire]) watch;
+
+  final bool buildHideName;
 
   final Widget? header;
 
@@ -65,6 +70,7 @@ class GridSettingsButton extends StatelessWidget {
               child: _BottomSheetContent(
                 add: add,
                 watch: watch,
+                buildHideName: buildHideName,
                 header: header,
               ),
             );
@@ -104,6 +110,7 @@ class _GridSettingsButtonHeader extends StatelessWidget {
               child: _BottomSheetContent(
                 add: null,
                 watch: null,
+                buildHideName: false,
                 header: header,
               ),
             );
@@ -360,6 +367,78 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   }
 }
 
+class SafeModeState {
+  SafeModeState(this._current);
+
+  final _events = StreamController<void>.broadcast();
+
+  SafeMode _current;
+  SafeMode get current => _current;
+
+  Stream<void> get events => _events.stream;
+
+  void setCurrent(SafeMode safeMode) {
+    _current = safeMode;
+    _events.add(null);
+  }
+
+  void dispose() {
+    _events.close();
+  }
+}
+
+class SafeModeSegment extends StatefulWidget {
+  const SafeModeSegment({
+    super.key,
+    required this.state,
+  });
+
+  final SafeModeState state;
+
+  @override
+  State<SafeModeSegment> createState() => _SafeModeSegmentState();
+}
+
+class _SafeModeSegmentState extends State<SafeModeSegment> {
+  SafeModeState get state => widget.state;
+
+  late final StreamSubscription<void> _events;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _events = widget.state.events.listen((_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return SegmentedButtonGroup<SafeMode>(
+      select: (e) {
+        if (e != null) {
+          state.setCurrent(e);
+        }
+      },
+      selected: state.current,
+      values: SafeMode.values
+          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      title: l10n.safeModeSetting,
+      variant: SegmentedButtonVariant.segments,
+    );
+  }
+}
+
 class SafeModeButton extends StatefulWidget {
   const SafeModeButton({
     super.key,
@@ -435,7 +514,10 @@ class _BottomSheetContent extends StatefulWidget {
     required this.add,
     required this.watch,
     required this.header,
+    required this.buildHideName,
   });
+
+  final bool buildHideName;
 
   final Widget? header;
 
@@ -569,13 +651,14 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
               ),
             ),
             if (widget.add != null) ...[
-              _hideName(
-                context,
-                _gridSettings!.hideName,
-                (n) => add!(_gridSettings!.copy(hideName: n)),
-                const EdgeInsets.symmetric(horizontal: 12),
-                l10n,
-              ),
+              if (widget.buildHideName)
+                _hideName(
+                  context,
+                  _gridSettings!.hideName,
+                  (n) => add!(_gridSettings!.copy(hideName: n)),
+                  const EdgeInsets.symmetric(horizontal: 12),
+                  l10n,
+                ),
               if (widget.header != null) widget.header!,
               _gridLayout(
                 context,

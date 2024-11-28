@@ -313,7 +313,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     updatesAvailable: source.updatesAvailable,
                     settingsButton: GridSettingsButton.fromWatchable(
                       gridSettings,
-                      SafeModeButton(secondaryGrid: pagingState.secondaryGrid),
+                      header: SafeModeButton(
+                        secondaryGrid: pagingState.secondaryGrid,
+                      ),
+                      buildHideName: false,
                     ),
                     updateScrollPosition: pagingState.setOffset,
                     download: _download,

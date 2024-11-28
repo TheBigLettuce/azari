@@ -23,6 +23,7 @@ import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
+import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -53,7 +54,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
   WatchableGridSettingsData get gridSettings =>
       widget.db.gridSettings.favoritePosts;
 
-  late final StreamSubscription<SettingsData?> settingsWatcher;
+  late final StreamSubscription<void> _safeModeWatcher;
 
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode();
@@ -64,10 +65,13 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
   late final BooruAPI api;
 
   late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
+  late final SafeModeState safeModeState;
 
   @override
   void initState() {
     super.initState();
+
+    safeModeState = SafeModeState(state.settings.safeMode);
 
     api = BooruAPI.fromEnum(state.settings.selectedBooru, client);
 
@@ -80,18 +84,17 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
               data,
               end,
               _collector,
-              state.settings.safeMode,
+              safeModeState.current,
             ),
           FilteringMode.tag => (
               searchTextController.text.isEmpty
                   ? cells.where(
-                      (e) =>
-                          state.settings.safeMode.inLevel(e.rating.asSafeMode),
+                      (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
                     )
                   : cells.where(
                       (e) =>
                           e.tags.contains(searchTextController.text) &&
-                          state.settings.safeMode.inLevel(e.rating.asSafeMode),
+                          safeModeState.current.inLevel(e.rating.asSafeMode),
                     ),
               data
             ),
@@ -99,7 +102,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
               cells.where(
                 (element) =>
                     element.type == PostContentType.gif &&
-                    state.settings.safeMode.inLevel(element.rating.asSafeMode),
+                    safeModeState.current.inLevel(element.rating.asSafeMode),
               ),
               data
             ),
@@ -107,13 +110,13 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
               cells.where(
                 (element) =>
                     element.type == PostContentType.video &&
-                    state.settings.safeMode.inLevel(element.rating.asSafeMode),
+                    safeModeState.current.inLevel(element.rating.asSafeMode),
               ),
               data
             ),
           FilteringMode() => (
               cells.where(
-                (e) => state.settings.safeMode.inLevel(e.rating.asSafeMode),
+                (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
               ),
               data
             )
@@ -139,18 +142,18 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
 
     filter.clearRefresh();
 
-    settingsWatcher = state.settings.s.watch((s) {
-      state.settings = s!;
+    _safeModeWatcher = safeModeState.events.listen((_) {
       filter.clearRefresh();
     });
 
-    filter.clearRefresh();
+    // filter.clearRefresh();
   }
 
   @override
   void dispose() {
+    safeModeState.dispose();
     client.close(force: true);
-    settingsWatcher.cancel();
+    _safeModeWatcher.cancel();
     filter.destroy();
 
     searchFocus.dispose();
@@ -210,10 +213,16 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
     String t,
     SafeMode? safeMode,
   ) {
-    // Navigator.pop(context);
+    ExitOnPressRoute.maybeExitOf(context);
 
     searchTextController.text = t;
     filter.filteringMode = FilteringMode.tag;
+
+    if (safeMode != null) {
+      safeModeState.setCurrent(safeMode);
+    }
+
+    state.gridKey.currentState?.tryScrollUp();
   }
 
   void download(int i) => filter
@@ -227,6 +236,69 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
     final child = GridFrame<FavoritePost>(
       key: state.gridKey,
       slivers: [
+        SliverToBoxAdapter(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                right: 16,
+                left: 16,
+                top: 4,
+                bottom: 8,
+              ),
+              child: SearchBarAutocompleteWrapper(
+                search: BarSearchWidget(
+                  onChange: (_) => filter.clearRefresh(),
+                  complete: api.searchTag,
+                  textEditingController: searchTextController,
+                ),
+                searchFocus: searchFocus,
+                child: (
+                  context,
+                  controller,
+                  focus,
+                  onSubmitted,
+                ) =>
+                    SearchBar(
+                  onSubmitted: (str) {
+                    onSubmitted();
+                    filter.clearRefresh();
+                  },
+                  elevation: const WidgetStatePropertyAll(0),
+                  focusNode: focus,
+                  controller: controller,
+                  onChanged: (_) => filter.clearRefresh(),
+                  hintText: l10n.filterHint,
+                  leading: IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.search_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  trailing: [
+                    // IconButton(
+                    //     onPressed: () {},
+                    //     icon: const Icon(Icons.settings_rounded)),
+                    ChainedFilterIcon(
+                      filter: filter,
+                      controller: searchTextController,
+                      complete: api.searchTag,
+                      focusNode: searchFocus,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        searchTextController.text = "";
+                        filter.clearRefresh();
+                        searchFocus.unfocus();
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
         CurrentGridSettingsLayout<FavoritePost>(
           source: filter.backingStorage,
           progress: filter.progress,
@@ -237,7 +309,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
         scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
         selectionActions: SelectionActions.of(context),
         scrollingSink: ScrollingSinkProvider.maybeOf(context),
-        // playAnimationOn: ,
         onEmptySource: EmptyWidgetBackground(
           subtitle: l10n.emptyFavoritedPosts,
         ),
@@ -248,17 +319,12 @@ class _FavoritePostsPageState extends State<FavoritePostsPage> {
             },
             icon: const Icon(Icons.menu_rounded),
           ),
-          trailingItems: [
-            ChainedFilterIcon(
-              filter: filter,
-              controller: searchTextController,
-              complete: api.searchTag,
-              onChange: (str) => filter.clearRefresh(),
-              focusNode: searchFocus,
-            ),
-          ],
         ),
-        settingsButton: GridSettingsButton.fromWatchable(gridSettings),
+        settingsButton: GridSettingsButton.fromWatchable(
+          gridSettings,
+          header: SafeModeSegment(state: safeModeState),
+          buildHideName: false,
+        ),
         registerNotifiers: (child) => OnBooruTagPressed(
           onPressed: _onPressed,
           child: child,

@@ -110,7 +110,7 @@ class ChainedFilterIcon extends StatelessWidget {
     required this.filter,
     required this.controller,
     required this.focusNode,
-    this.onChange,
+    // this.onChange,
     this.complete,
   });
 
@@ -118,7 +118,7 @@ class ChainedFilterIcon extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final Future<List<BooruTag>> Function(String string)? complete;
-  final void Function(String?)? onChange;
+  // final void Function(String?)? onChange;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +139,8 @@ class ChainedFilterIcon extends StatelessWidget {
                 select: (e) => filter.filteringMode = e,
                 currentFilter: filter.filteringMode,
                 enabledModes: filter.allowedFilteringModes,
-                onChange: onChange,
+                // onChange: onChange,
+                onChange: null,
                 controller: controller,
                 focusNode: focusNode,
               ),
