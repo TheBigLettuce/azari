@@ -34,8 +34,8 @@ part "search_panels/local_tags.dart";
 part "search_panels/search_in_booru_button.dart";
 part "search_panels/search_in_directories_buttons.dart";
 
-class DirectoriesSearchPage extends StatefulWidget {
-  const DirectoriesSearchPage({
+class GallerySearchPage extends StatefulWidget {
+  const GallerySearchPage({
     super.key,
     required this.db,
     required this.source,
@@ -62,10 +62,10 @@ class DirectoriesSearchPage extends StatefulWidget {
   final DbConn db;
 
   @override
-  State<DirectoriesSearchPage> createState() => _DirectoriesSearchPageState();
+  State<GallerySearchPage> createState() => _GallerySearchPageState();
 }
 
-class _DirectoriesSearchPageState extends State<DirectoriesSearchPage> {
+class _GallerySearchPageState extends State<GallerySearchPage> {
   final searchController = TextEditingController();
   final focusNode = FocusNode();
 

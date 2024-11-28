@@ -18,7 +18,7 @@ import "package:azari/src/pages/gallery/blacklisted_directories.dart";
 import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";

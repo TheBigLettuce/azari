@@ -21,7 +21,7 @@ import "package:azari/src/pages/booru/actions.dart" as booru_actions;
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";

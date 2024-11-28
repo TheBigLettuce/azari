@@ -7,7 +7,7 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/pages/more/settings/settings_list.dart";
+import "package:azari/src/pages/other/settings/settings_list.dart";
 import "package:azari/src/widgets/skeletons/settings.dart";
 import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";

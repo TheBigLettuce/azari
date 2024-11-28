@@ -3,29 +3,34 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../booru_search_page.dart";
 
-class _BookmarksPanel extends StatefulWidget {
-  const _BookmarksPanel({
+class _RecentlySearchedTagsPanel extends StatefulWidget {
+  const _RecentlySearchedTagsPanel({
     // super.key,
     required this.filteringEvents,
-    required this.db,
+    required this.tagManager,
+    required this.onTagPressed,
+    required this.searchController,
   });
 
-  final Stream<String> filteringEvents;
+  final StreamController<String> filteringEvents;
+  final TextEditingController searchController;
+  final TagManager tagManager;
 
-  final DbConn db;
+  final StringCallback onTagPressed;
 
   @override
-  State<_BookmarksPanel> createState() => __BookmarksPanelState();
+  State<_RecentlySearchedTagsPanel> createState() =>
+      __RecentlySearchedTagsPanelState();
 }
 
-class __BookmarksPanelState extends State<_BookmarksPanel> {
+class __RecentlySearchedTagsPanelState
+    extends State<_RecentlySearchedTagsPanel> {
   String filteringValue = "";
-  late final GenericListSource<GridBookmark> source = GenericListSource(
-    () => filteringValue.isEmpty
-        ? Future.value(const [])
-        : Future.value(widget.db.gridBookmarks.complete(filteringValue)),
+  late final GenericListSource<TagData> source = GenericListSource(
+    () => Future.value(widget.tagManager.latest.complete(filteringValue)),
+    watchCount: widget.tagManager.latest.watchCount,
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -34,7 +39,7 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
   void initState() {
     super.initState();
 
-    filteringSubscr = widget.filteringEvents.listen((str) {
+    filteringSubscr = widget.filteringEvents.stream.listen((str) {
       setState(() {
         filteringValue = str;
         source.clearRefresh();
@@ -52,40 +57,28 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
     super.dispose();
   }
 
-  void _onPressed(GridBookmark bookmark) {
-    Navigator.pop(context);
-
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BooruRestoredPage(
-          booru: bookmark.booru,
-          tags: bookmark.tags,
-          name: bookmark.name,
-          wrapScaffold: true,
-          saveSelectedPage: (_) {},
-          db: widget.db,
-        ),
-      ),
-    );
-  }
-
-  void _onLongPressed(GridBookmark bookmark) {}
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: l10n.bookmarksPageName,
+        label: l10n.recentlySearched,
         source: source,
         enableHide: false,
-        childSize: _BookmarksPanelBody.size,
-        child: _BookmarksPanelBody(
+        trailing: (
+          Icons.delete_sweep_outlined,
+          () => widget.tagManager.latest.clear(),
+        ),
+        childSize: _ChipsPanelBody.size,
+        child: _ChipsPanelBody(
           source: source,
-          onPressed: _onPressed,
-          onLongPressed: _onLongPressed,
+          onTagLongPressed: widget.onTagPressed,
+          onTagPressed: (str) {
+            widget.searchController.text = str;
+            widget.filteringEvents.add(str.trim());
+          },
+          icon: null,
         ),
       ),
     );

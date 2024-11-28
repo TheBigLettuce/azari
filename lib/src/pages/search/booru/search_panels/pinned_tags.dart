@@ -3,13 +3,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../booru_search_page.dart";
 
-class _ExcludedTagsPanel extends StatefulWidget {
-  const _ExcludedTagsPanel({
+class _PinnedTagsPanel extends StatefulWidget {
+  const _PinnedTagsPanel({
     // super.key,
     required this.filteringEvents,
     required this.tagManager,
+    required this.onTagPressed,
     required this.api,
   });
 
@@ -18,15 +19,17 @@ class _ExcludedTagsPanel extends StatefulWidget {
 
   final BooruAPI api;
 
+  final StringCallback onTagPressed;
+
   @override
-  State<_ExcludedTagsPanel> createState() => __ExcludedTagsPanelState();
+  State<_PinnedTagsPanel> createState() => __PinnedTagsPanelState();
 }
 
-class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
+class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
-    () => Future.value(widget.tagManager.excluded.complete(filteringValue)),
-    watchCount: widget.tagManager.excluded.watchCount,
+    () => Future.value(widget.tagManager.pinned.complete(filteringValue)),
+    watchCount: widget.tagManager.pinned.watchCount,
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -59,12 +62,13 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(
           child: FadingPanel(
-            label: l10n.excludedTagsLabel,
+            label: l10n.pinnedTags,
             source: source,
             enableHide: false,
             trailing: (
@@ -75,13 +79,13 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text(l10n.addToExcluded),
+                        title: Text(l10n.pinTag),
                         content: AutocompleteWidget(
                           null,
                           (s) {},
                           swapSearchIcon: false,
                           (s) {
-                            widget.tagManager.excluded.add(s.trim());
+                            widget.tagManager.pinned.add(s.trim());
 
                             Navigator.pop(context);
                           },
@@ -101,36 +105,33 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
             ),
             childSize: _ChipsPanelBody.size,
             child: _ChipsPanelBody(
-              source: source,
-              onTagPressed: (str) {
-                Navigator.push(
-                  context,
-                  DialogRoute<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(l10n.removeTag(str)),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            widget.tagManager.excluded.delete(str);
-                            Navigator.pop(context);
-                          },
-                          child: Text(l10n.yes),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text(l10n.no),
-                        ),
-                      ],
-                    ),
+              onTagLongPressed: (str) => Navigator.push(
+                context,
+                DialogRoute<void>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(l10n.removeTag(str)),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          widget.tagManager.pinned.delete(str);
+                          Navigator.pop(context);
+                        },
+                        child: Text(l10n.yes),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(l10n.no),
+                      ),
+                    ],
                   ),
-                );
-              },
-              icon: const Icon(Icons.tag_rounded),
-              backgroundColor: Colors.pink.shade300,
-              foregroundColor: Colors.black.withValues(alpha: 0.8),
+                ),
+              ),
+              source: source,
+              onTagPressed: widget.onTagPressed,
+              icon: const Icon(Icons.push_pin_rounded),
             ),
           ),
         ),
@@ -138,16 +139,16 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
           tagManager: widget.tagManager,
           storage: source.backingStorage,
           api: widget.api,
-          foregroundColor: Colors.black.withValues(alpha: 0.8),
-          backgroundColor: Colors.pink.shade300,
+          foregroundColor: theme.colorScheme.onPrimary,
+          backgroundColor: theme.colorScheme.primary,
           buildTitle: (context) => Text(
             filteringValue.isNotEmpty
-                ? l10n.addTagToExcluded(filteringValue)
-                : l10n.addToExcluded,
+                ? l10n.addTagToPinned(filteringValue)
+                : l10n.addPinnedTag,
           ),
           onPressed: () {
             if (filteringValue.isNotEmpty) {
-              widget.tagManager.excluded.add(filteringValue);
+              widget.tagManager.pinned.add(filteringValue);
 
               return;
             }
@@ -157,13 +158,13 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: Text(l10n.addToExcluded),
+                    title: Text(l10n.addPinnedTag),
                     content: AutocompleteWidget(
                       null,
                       (s) {},
                       swapSearchIcon: false,
                       (s) {
-                        widget.tagManager.excluded.add(s);
+                        widget.tagManager.pinned.add(s.trim());
 
                         Navigator.pop(context);
                       },

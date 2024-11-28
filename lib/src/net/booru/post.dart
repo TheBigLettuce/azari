@@ -14,7 +14,7 @@ import "package:azari/src/net/booru/post_functions.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";

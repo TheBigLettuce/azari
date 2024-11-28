@@ -3,21 +3,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../booru_search_page.dart";
 
 class _ChipsPanelBody extends StatefulWidget {
   const _ChipsPanelBody({
     // super.key,
     required this.source,
     required this.onTagPressed,
+    this.onTagLongPressed,
     required this.icon,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
-  final GenericListSource<BooruTag> source;
+  final GenericListSource<TagData> source;
 
   final void Function(String)? onTagPressed;
+  final void Function(String)? onTagLongPressed;
 
   final Icon? icon;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   static const size = Size(0, 42);
   static const listPadding = EdgeInsets.symmetric(horizontal: 18 + 4);
@@ -27,7 +33,7 @@ class _ChipsPanelBody extends StatefulWidget {
 }
 
 class __ChipsPanelBodyState extends State<_ChipsPanelBody> {
-  GenericListSource<BooruTag> get source => widget.source;
+  GenericListSource<TagData> get source => widget.source;
 
   late final StreamSubscription<void> subscr;
 
@@ -65,15 +71,29 @@ class __ChipsPanelBodyState extends State<_ChipsPanelBody> {
 
                 return Padding(
                   padding: const EdgeInsets.all(4),
-                  child: ActionChip(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: widget.onTagPressed == null
+                  child: GestureDetector(
+                    onLongPress: widget.onTagLongPressed == null
                         ? null
                         : () {
-                            widget.onTagPressed!(cell.tag);
+                            widget.onTagLongPressed!(cell.tag);
                           },
-                    label: Text(cell.tag),
-                    avatar: widget.icon,
+                    child: ActionChip(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onTagPressed == null
+                          ? null
+                          : () {
+                              widget.onTagPressed!(cell.tag);
+                            },
+                      label: Text(
+                        cell.tag,
+                        style: TextStyle(color: widget.foregroundColor),
+                      ),
+                      iconTheme: widget.foregroundColor != null
+                          ? IconThemeData(color: widget.foregroundColor)
+                          : null,
+                      backgroundColor: widget.backgroundColor,
+                      avatar: widget.icon,
+                    ),
                   ),
                 );
               },

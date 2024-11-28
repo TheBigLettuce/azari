@@ -9,7 +9,7 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";

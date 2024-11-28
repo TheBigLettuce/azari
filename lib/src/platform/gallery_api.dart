@@ -26,8 +26,8 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home.dart";
-import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery/io.dart"
     if (dart.library.html) "package:azari/src/platform/gallery/web.dart";
 import "package:azari/src/platform/gallery_file_functions.dart";

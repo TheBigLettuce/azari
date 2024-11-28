@@ -11,9 +11,10 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
-import "package:azari/src/pages/booru/search_page.dart";
+import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
-import "package:azari/src/pages/more/settings/settings_page.dart";
+import "package:azari/src/pages/other/settings/settings_page.dart";
+import "package:azari/src/pages/search/search_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/widgets/selection_actions.dart";
@@ -22,14 +23,14 @@ import "package:azari/src/widgets/skeletons/skeleton_state.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
-part "home/animated_icons_mixin.dart";
-part "home/before_you_continue_dialog_mixin.dart";
-part "home/change_page_mixin.dart";
-part "home/icons/discover.dart";
-part "home/icons/gallery.dart";
-part "home/icons/home.dart";
-part "home/icons/search.dart";
-part "home/navigator_shell.dart";
+part "animated_icons_mixin.dart";
+part "before_you_continue_dialog_mixin.dart";
+part "change_page_mixin.dart";
+part "icons/discover.dart";
+part "icons/gallery.dart";
+part "icons/home.dart";
+part "icons/search.dart";
+part "navigator_shell.dart";
 
 class Home extends StatefulWidget {
   const Home({

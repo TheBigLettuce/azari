@@ -3,34 +3,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../gallery_search_page.dart";
 
-class _RecentlySearchedTagsPanel extends StatefulWidget {
-  const _RecentlySearchedTagsPanel({
+class _DirectoryNamesPanel extends StatefulWidget {
+  const _DirectoryNamesPanel({
     // super.key,
     required this.filteringEvents,
-    required this.tagManager,
-    required this.onTagPressed,
     required this.searchController,
+    required this.directoryComplete,
   });
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
-  final TagManager tagManager;
 
-  final StringCallback onTagPressed;
+  final Future<List<BooruTag>> Function(String str) directoryComplete;
 
   @override
-  State<_RecentlySearchedTagsPanel> createState() =>
-      __RecentlySearchedTagsPanelState();
+  State<_DirectoryNamesPanel> createState() => __DirectoryNamesPanelState();
 }
 
-class __RecentlySearchedTagsPanelState
-    extends State<_RecentlySearchedTagsPanel> {
+class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
   String filteringValue = "";
-  late final GenericListSource<TagData> source = GenericListSource(
-    () => Future.value(widget.tagManager.latest.complete(filteringValue)),
-    watchCount: widget.tagManager.latest.watchCount,
+  late final GenericListSource<BooruTag> source = GenericListSource(
+    () => Future.value(widget.directoryComplete(filteringValue)),
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -63,17 +58,12 @@ class __RecentlySearchedTagsPanelState
 
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: l10n.recentlySearched,
+        label: l10n.directoryNames,
         source: source,
         enableHide: false,
-        trailing: (
-          Icons.delete_sweep_outlined,
-          () => widget.tagManager.latest.clear(),
-        ),
         childSize: _ChipsPanelBody.size,
         child: _ChipsPanelBody(
           source: source,
-          onTagLongPressed: widget.onTagPressed,
           onTagPressed: (str) {
             widget.searchController.text = str;
             widget.filteringEvents.add(str.trim());

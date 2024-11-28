@@ -3,29 +3,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../booru_search_page.dart";
 
-class _DirectoryNamesPanel extends StatefulWidget {
-  const _DirectoryNamesPanel({
+class _BookmarksPanel extends StatefulWidget {
+  const _BookmarksPanel({
     // super.key,
     required this.filteringEvents,
-    required this.searchController,
-    required this.directoryComplete,
+    required this.db,
   });
 
-  final StreamController<String> filteringEvents;
-  final TextEditingController searchController;
+  final Stream<String> filteringEvents;
 
-  final Future<List<BooruTag>> Function(String str) directoryComplete;
+  final DbConn db;
 
   @override
-  State<_DirectoryNamesPanel> createState() => __DirectoryNamesPanelState();
+  State<_BookmarksPanel> createState() => __BookmarksPanelState();
 }
 
-class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
+class __BookmarksPanelState extends State<_BookmarksPanel> {
   String filteringValue = "";
-  late final GenericListSource<BooruTag> source = GenericListSource(
-    () => Future.value(widget.directoryComplete(filteringValue)),
+  late final GenericListSource<GridBookmark> source = GenericListSource(
+    () => filteringValue.isEmpty
+        ? Future.value(const [])
+        : Future.value(widget.db.gridBookmarks.complete(filteringValue)),
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -34,7 +34,7 @@ class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
   void initState() {
     super.initState();
 
-    filteringSubscr = widget.filteringEvents.stream.listen((str) {
+    filteringSubscr = widget.filteringEvents.listen((str) {
       setState(() {
         filteringValue = str;
         source.clearRefresh();
@@ -52,23 +52,40 @@ class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
     super.dispose();
   }
 
+  void _onPressed(GridBookmark bookmark) {
+    Navigator.pop(context);
+
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BooruRestoredPage(
+          booru: bookmark.booru,
+          tags: bookmark.tags,
+          name: bookmark.name,
+          wrapScaffold: true,
+          saveSelectedPage: (_) {},
+          db: widget.db,
+        ),
+      ),
+    );
+  }
+
+  void _onLongPressed(GridBookmark bookmark) {}
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     return SliverToBoxAdapter(
       child: FadingPanel(
-        label: l10n.directoryNames,
+        label: l10n.bookmarksPageName,
         source: source,
         enableHide: false,
-        childSize: _ChipsPanelBody.size,
-        child: _ChipsPanelBody(
+        childSize: _BookmarksPanelBody.size,
+        child: _BookmarksPanelBody(
           source: source,
-          onTagPressed: (str) {
-            widget.searchController.text = str;
-            widget.filteringEvents.add(str.trim());
-          },
-          icon: null,
+          onPressed: _onPressed,
+          onLongPressed: _onLongPressed,
         ),
       ),
     );

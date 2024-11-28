@@ -12,7 +12,7 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery/android/android_gallery.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/notification_api.dart";

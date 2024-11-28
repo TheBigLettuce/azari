@@ -23,7 +23,7 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files_filters.dart" as filters;
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/more/settings/radio_dialog.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";

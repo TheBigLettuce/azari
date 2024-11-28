@@ -10,7 +10,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";

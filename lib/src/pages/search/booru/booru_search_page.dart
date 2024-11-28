@@ -11,7 +11,7 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
-import "package:azari/src/pages/booru/popular_random_buttons.dart";
+import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";

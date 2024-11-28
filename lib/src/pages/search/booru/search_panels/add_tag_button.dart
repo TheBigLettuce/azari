@@ -3,35 +3,45 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../search_page.dart";
+part of "../booru_search_page.dart";
 
-class _SearchInBooruButton extends StatefulWidget {
-  const _SearchInBooruButton({
+class _AddTagButton extends StatefulWidget {
+  const _AddTagButton({
     // super.key,
+    required this.tagManager,
+    required this.api,
+    required this.storage,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.buildTitle,
     required this.onPressed,
-    required this.filteringEvents,
   });
 
-  final Stream<String> filteringEvents;
+  final TagManager tagManager;
+
+  final ReadOnlyStorage<dynamic, TagData> storage;
+
+  final Color backgroundColor;
+  final Color foregroundColor;
+
+  final BooruAPI api;
 
   final VoidCallback onPressed;
+  final BuilderCallback buildTitle;
 
   @override
-  State<_SearchInBooruButton> createState() => __SearchInBooruButtonState();
+  State<_AddTagButton> createState() => __AddTagStateTagButton();
 }
 
-class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
-  String filteringValue = "";
-  late final StreamSubscription<String> subscr;
+class __AddTagStateTagButton extends State<_AddTagButton> {
+  late final StreamSubscription<void> subscr;
 
   @override
   void initState() {
     super.initState();
 
-    subscr = widget.filteringEvents.listen((str) {
-      setState(() {
-        filteringValue = str;
-      });
+    subscr = widget.storage.watch((_) {
+      setState(() {});
     });
   }
 
@@ -44,9 +54,7 @@ class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return filteringValue.isEmpty
+    return widget.storage.count != 0
         ? const SliverPadding(padding: EdgeInsets.zero)
         : SliverToBoxAdapter(
             child: Align(
@@ -56,8 +64,17 @@ class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
                     const EdgeInsets.only(top: 12, bottom: 8),
                 child: FilledButton.tonalIcon(
                   onPressed: widget.onPressed,
-                  label: Text(l10n.tagInBooru(filteringValue)),
-                  icon: const Icon(Icons.search_rounded),
+                  label: widget.buildTitle(context),
+                  icon: Icon(
+                    Icons.tag_rounded,
+                    color: widget.foregroundColor,
+                  ),
+                  style: ButtonStyle(
+                    foregroundColor:
+                        WidgetStatePropertyAll(widget.foregroundColor),
+                    backgroundColor:
+                        WidgetStatePropertyAll(widget.backgroundColor),
+                  ),
                 ),
               ),
             ).animate().fadeIn(),
