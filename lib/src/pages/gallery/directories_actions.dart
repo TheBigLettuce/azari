@@ -130,6 +130,7 @@ Future<void> joinedDirectoriesFnc(
   AppLocalizations l10n, {
   String tag = "",
   FilteringMode? filteringMode,
+  bool addScaffold = false,
 }) {
   bool requireAuth = false;
 
@@ -165,6 +166,7 @@ Future<void> joinedDirectoriesFnc(
             api: joined,
             callback: callback,
             directory: null,
+            addScaffold: addScaffold,
             dirName: label,
             presetFilteringValue: tag,
             filteringMode: filteringMode,

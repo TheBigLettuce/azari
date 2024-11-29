@@ -249,6 +249,10 @@ class _NavigationRail extends StatefulWidget {
 class __NavigationRailState extends State<_NavigationRail>
     with DefaultSelectionEventsMixin {
   @override
+  SelectionAreaSize get selectionSizes =>
+      const SelectionAreaSize(base: 0, expanded: 0);
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isExpanded = selectionActions.controller.isExpanded;
@@ -313,6 +317,10 @@ class HomeNavigationBar extends StatefulWidget {
 
 class _HomeNavigationBarState extends State<HomeNavigationBar>
     with DefaultSelectionEventsMixin {
+  @override
+  SelectionAreaSize get selectionSizes =>
+      const SelectionAreaSize(base: 48.5, expanded: 80.5);
+
   SelectionController get controller => selectionActions.controller;
 
   late final StreamSubscription<bool> events;

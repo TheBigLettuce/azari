@@ -17,7 +17,8 @@ import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
-import "package:azari/src/widgets/gesture_dead_zones.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -38,7 +39,13 @@ class BooruSearchPage extends StatefulWidget {
   const BooruSearchPage({
     super.key,
     required this.db,
+    required this.l10n,
+    required this.procPop,
   });
+
+  final AppLocalizations l10n;
+
+  final void Function(bool)? procPop;
 
   final DbConn db;
 
@@ -85,14 +92,12 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     super.dispose();
   }
 
-  void _search(String str) {
-    _filteringEvents.add(str.trim());
-  }
+  // void _search(String str) {
+  //   _filteringEvents.add(str.trim());
+  // }
 
   void _onTagPressed(String str) {
-    // Navigator.pop(context);
-
-    // widget.onTagPressed(context, api.booru, str, null);
+    _onTag(context, api.booru, str, null);
   }
 
   void _onTag(
@@ -100,104 +105,197 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     Booru booru,
     String tag,
     SafeMode? safeMode,
-  ) {}
+  ) {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BooruRestoredPage(
+          db: widget.db,
+          booru: booru,
+          tags: tag,
+          wrapScaffold: true,
+          overrideSafeMode: safeMode,
+          saveSelectedPage: (_) {},
+        ),
+      ),
+    );
+  }
+
+  void search() {
+    if (searchController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.l10n.searchTextIsEmpty),
+        ),
+      );
+
+      return;
+    }
+
+    _onTagPressed(searchController.text.trim());
+  }
+
+  void pinnedTagPressed(String str_) {
+    // final elements = str_.trim().split(" ");
+    // if (elements.isEmpty) {
+
+    // } else {
+    //   final last = elements.last;
+
+    //   final searchTextTags = searchController.text.trim().split(" ");
+    //   searchTextTags.remove(last);
+
+    //   searchController.text = "${searchTextTags.join(" ")} $last ";
+    //   // _filteringEvents.add(searchController.text.trim());
+    // }
+    searchController.text = "$str_ ";
+    _filteringEvents.add(searchController.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SearchPagePopScope(
+      searchController: searchController,
+      sink: _filteringEvents.sink,
+      procPop: widget.procPop,
+      searchFocus: focusNode,
+      child: SliverMainAxisGroup(
+        slivers: [
+          SearchPageSearchBar(
+            complete: null,
+            // filter: filter,
+            // safeModeState: safeModeState,
+            onSubmit: search,
+            sink: _filteringEvents.sink,
+            searchTextController: searchController,
+            searchFocus: focusNode,
+          ),
+          StreamBuilder(
+            stream: _filteringEvents.stream,
+            builder: (context, snapshot) => PopularRandomButtons(
+              listPadding: _ChipsPanelBody.listPadding,
+              db: widget.db,
+              booru: api.booru,
+              onTagPressed: _onTag,
+              tags: snapshot.data ?? "",
+              safeMode: () => settings.safeMode,
+            ),
+          ),
+          _RecentlySearchedTagsPanel(
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            tagManager: widget.db.tagManager,
+            onTagPressed: _onTagPressed,
+          ),
+          _PinnedTagsPanel(
+            filteringEvents: _filteringEvents.stream,
+            tagManager: widget.db.tagManager,
+            api: api,
+            onTagPressed: pinnedTagPressed,
+          ),
+          _ExcludedTagsPanel(
+            filteringEvents: _filteringEvents.stream,
+            tagManager: widget.db.tagManager,
+            api: api,
+          ),
+          _BookmarksPanel(
+            db: widget.db,
+            filteringEvents: _filteringEvents.stream,
+          ),
+          _TagList(
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            api: api,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SearchPageSearchBar extends StatelessWidget {
+  const SearchPageSearchBar({
+    super.key,
+    required this.searchTextController,
+    required this.searchFocus,
+    required this.sink,
+    required this.complete,
+    this.onSubmit = _doNothing,
+  });
+
+  final TextEditingController searchTextController;
+  final FocusNode searchFocus;
+
+  final void Function() onSubmit;
+
+  final Future<List<BooruTag>> Function(String string)? complete;
+
+  final StreamSink<String> sink;
+
+  static void _doNothing() {}
+
+  void clear() {
+    searchTextController.text = "";
+    sink.add(searchTextController.text.trim());
+    searchFocus.unfocus();
+  }
+
+  void onChanged(String? _) {
+    sink.add(searchTextController.text.trim());
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // final theme = Theme.of(context);
 
-    return _SearchPagePopScope(
-      searchController: searchController,
-      sink: _filteringEvents.sink,
-      searchFocus: focusNode,
-      child: Scaffold(
-        appBar: AppBar(
-          title: TextField(
-            controller: searchController,
-            focusNode: focusNode,
-            onTapOutside: (event) => focusNode.previousFocus(),
-            decoration: InputDecoration(
-              hintText: l10n.searchHint,
-              border: InputBorder.none,
+    const padding = EdgeInsets.only(
+      right: 26,
+      left: 26,
+      top: 8,
+      bottom: 8,
+    );
+
+    return SliverToBoxAdapter(
+      child: Center(
+        child: Padding(
+          padding: padding,
+          child: SearchBarAutocompleteWrapper(
+            search: BarSearchWidget(
+              onChanged: onChanged,
+              onSubmitted: (_) => onSubmit(),
+              complete: complete,
+              textEditingController: searchTextController,
             ),
-            onChanged: _search,
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                if (searchController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.searchTextIsEmpty),
-                    ),
-                  );
-
-                  return;
-                }
-
-                _onTagPressed(searchController.text.trim());
+            searchFocus: searchFocus,
+            child: (
+              context,
+              controller,
+              focus,
+              onSubmitted,
+            ) =>
+                SearchBar(
+              onSubmitted: (str) {
+                onSubmitted();
+                // filter.clearRefresh();
               },
-              icon: const Icon(Icons.search_rounded),
+              elevation: const WidgetStatePropertyAll(0),
+              focusNode: focus,
+              controller: controller,
+              onTapOutside: (event) => focus.unfocus(),
+              onChanged: onChanged,
+              hintText: l10n.searchHint,
+              leading: IconButton(
+                onPressed: onSubmit,
+                icon: const Icon(Icons.search_rounded),
+              ),
+              trailing: [
+                IconButton(
+                  onPressed: clear,
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
             ),
-          ],
-        ),
-        body: GestureDeadZones(
-          left: true,
-          right: true,
-          child: CustomScrollView(
-            slivers: [
-              StreamBuilder(
-                stream: _filteringEvents.stream,
-                builder: (context, snapshot) => PopularRandomButtons(
-                  listPadding: _ChipsPanelBody.listPadding,
-                  db: widget.db,
-                  booru: api.booru,
-                  onTagPressed: _onTag,
-                  tags: snapshot.data ?? "",
-                  safeMode: () => settings.safeMode,
-                ),
-              ),
-              _RecentlySearchedTagsPanel(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                tagManager: widget.db.tagManager,
-                onTagPressed: _onTagPressed,
-              ),
-              _PinnedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-                onTagPressed: (str_) {
-                  final str = str_.isEmpty
-                      ? ""
-                      : str_.trim().split(" ").lastOrNull?.trim() ?? "";
-
-                  searchController.text = "${searchController.text}$str ";
-                  _filteringEvents.add(searchController.text.trim());
-                },
-              ),
-              _ExcludedTagsPanel(
-                filteringEvents: _filteringEvents.stream,
-                tagManager: widget.db.tagManager,
-                api: api,
-              ),
-              _BookmarksPanel(
-                db: widget.db,
-                filteringEvents: _filteringEvents.stream,
-              ),
-              _TagList(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                api: api,
-              ),
-              Builder(
-                builder: (context) => SliverPadding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.viewPaddingOf(context).bottom + 24,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -211,12 +309,15 @@ class _SearchPagePopScope extends StatefulWidget {
     required this.searchController,
     required this.sink,
     required this.searchFocus,
+    required this.procPop,
     required this.child,
   });
 
   final TextEditingController searchController;
   final StreamSink<String> sink;
   final FocusNode searchFocus;
+
+  final void Function(bool)? procPop;
 
   final Widget child;
 
@@ -243,17 +344,22 @@ class __SearchPagePopScopeState extends State<_SearchPagePopScope> {
     setState(() {});
   }
 
+  void onPopInvoked(bool didPop, Object? extra) {
+    if (widget.searchController.text.isNotEmpty) {
+      widget.searchController.clear();
+      widget.searchFocus.previousFocus();
+      widget.sink.add("");
+      return;
+    }
+
+    widget.procPop?.call(didPop);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: widget.searchController.text.isEmpty,
-      onPopInvokedWithResult: (didPop, result) {
-        if (widget.searchController.text.isNotEmpty) {
-          widget.searchController.clear();
-          widget.searchFocus.previousFocus();
-          widget.sink.add("");
-        }
-      },
+      onPopInvokedWithResult: onPopInvoked,
       child: widget.child,
     );
   }

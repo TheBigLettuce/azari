@@ -156,7 +156,10 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
         GalleryFilesPageType.trash => platform.FilesCursorType.trashed,
       },
       sortingMode: switch (sortingMode) {
-        SortingMode.none => platform.FilesSortingMode.none,
+        SortingMode.none ||
+        SortingMode.rating ||
+        SortingMode.score =>
+          platform.FilesSortingMode.none,
         SortingMode.size => platform.FilesSortingMode.size,
       },
       limit: 0,

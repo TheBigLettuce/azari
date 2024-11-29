@@ -11,13 +11,10 @@ class _FilesList extends StatefulWidget {
     required this.filteringEvents,
     required this.searchController,
     required this.db,
-    // required this.callback,
   });
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
-
-  // final ReturnFileCallback? callback;
 
   final DbConn db;
 
@@ -101,45 +98,13 @@ class __FilesListState extends State<_FilesList> {
               itemBuilder: (context, i) {
                 final cell = search.files[i];
 
-                return CustomGridCellWrapper(
-                  onPressed: (context) {
-                    ImageView.launchWrapped(
-                      context,
-                      search.files.length,
-                      (i) => search.files[i].content(),
-                      imageDesctipion: ImageViewDescription(
-                        statistics:
-                            StatisticsGalleryService.asImageViewStatistics(),
-                      ),
-                      startingCell: i,
-                      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-                        callback: null,
-                        child: child,
-                      ),
-                      tags: (c) => File.imageTags(
-                        c,
-                        widget.db.localTags,
-                        widget.db.tagManager,
-                      ),
-                      watchTags: (c, f) => File.watchTags(
-                        c,
-                        f,
-                        widget.db.localTags,
-                        widget.db.tagManager,
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    width: _FilesList.size.width,
-                    child: GridCell(
-                      data: cell,
-                      imageAlign: Alignment.topCenter,
-                      hideTitle: false,
-                      overrideDescription: const CellStaticData(
-                        titleAtBottom: true,
-                        titleLines: 3,
-                      ),
-                    ),
+                return SizedBox(
+                  width: _FilesList.size.width,
+                  child: _FilesCell(
+                    file: cell,
+                    db: widget.db,
+                    search: search,
+                    idx: i,
                   ),
                 );
               },
@@ -157,4 +122,96 @@ class _FilesLoadingStatus {
   Future<void>? f;
   List<File> files = const [];
   String str = "";
+}
+
+class _FilesCell extends StatelessWidget {
+  const _FilesCell({
+    // super.key,
+    required this.file,
+    required this.db,
+    required this.search,
+    required this.idx,
+  });
+
+  final int idx;
+
+  final _FilesLoadingStatus search;
+  final File file;
+
+  final DbConn db;
+
+  void onPressed(BuildContext context) {
+    ImageView.launchWrapped(
+      context,
+      search.files.length,
+      (i) => search.files[i].content(),
+      imageDesctipion: ImageViewDescription(
+        statistics: StatisticsGalleryService.asImageViewStatistics(),
+      ),
+      startingCell: idx,
+      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
+        callback: null,
+        child: child,
+      ),
+      tags: (c) => File.imageTags(
+        c,
+        db.localTags,
+        db.tagManager,
+      ),
+      watchTags: (c, f) => File.watchTags(
+        c,
+        f,
+        db.localTags,
+        db.tagManager,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final textTheme = theme.textTheme.bodyMedium
+        ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.8));
+
+    return Column(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () => onPressed(context),
+            customBorder: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+            child: Card(
+              elevation: 0,
+              color: theme.cardColor.withValues(alpha: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: GridCellImage(
+                imageAlign: Alignment.topCenter,
+                thumbnail: file.thumbnail(),
+                blur: false,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                file.name,
+                style: textTheme,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -7,7 +7,6 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:flutter/material.dart";
 
 /// Filtering modes.
-/// Implemented outside the [FilterInterface].
 /// Some of [FilteringMode] might be virtual.
 /// Virtual [FilteringMode] means overriding the default filtering behaviour,
 /// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
@@ -69,20 +68,18 @@ enum FilteringMode {
 }
 
 /// Sorting modes.
-/// Implemented inside the [FilterInterface].
 enum SortingMode {
   none,
+  rating,
+  score,
   size;
 
   const SortingMode();
 
-  int get sortingIdAndroid => switch (this) {
-        SortingMode.none => 0,
-        SortingMode.size => 1,
-      };
-
   String translatedString(AppLocalizations l10n) => switch (this) {
         SortingMode.none => l10n.enumSortringModeNone,
         SortingMode.size => l10n.enumSortringModeSize,
+        SortingMode.rating => "Rating", // TODO: change
+        SortingMode.score => "Score", // TODO: change
       };
 }

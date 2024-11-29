@@ -75,8 +75,11 @@ class SelectionButton {
 }
 
 mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
+  SelectionAreaSize get selectionSizes;
+
   late final StreamSubscription<List<SelectionButton> Function()?>
       _actionEvents;
+
   late final StreamSubscription<void> _expandedEvents;
 
   List<SelectionButton> _actions = const [];
@@ -93,9 +96,8 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
 
     if (_selectionActions == null) {
       _selectionActions = SelectionActions.of(context);
-      _actionEvents = _selectionActions!
-          .connect(const SelectionAreaSize(base: 0, expanded: 0))
-          .listen((newActions) {
+      _actionEvents =
+          _selectionActions!.connect(selectionSizes).listen((newActions) {
         if (_prevFunc == newActions) {
           return;
         } else if (newActions == null) {

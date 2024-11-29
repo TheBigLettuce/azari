@@ -133,7 +133,11 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
         FilteringMode.video,
         FilteringMode.same,
       },
-      allowedSortingModes: const {},
+      allowedSortingModes: const {
+        SortingMode.none,
+        SortingMode.rating,
+        SortingMode.score,
+      },
       initialFilteringMode: MiscSettingsService.db().current.favoritesPageMode,
       initialSortingMode: SortingMode.none,
     );

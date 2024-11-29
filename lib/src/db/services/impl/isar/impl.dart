@@ -754,6 +754,25 @@ class _FavoritePostsMap extends MapStorage<(int, Booru), IsarFavoritePost> {
   IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
 
   @override
+  Iterable<IsarFavoritePost> trySorted(SortingMode sort) {
+    if (sort == SortingMode.none) {
+      return this;
+    }
+
+    final values = map_.values.toList()
+      ..sort((e1, e2) {
+        return switch (sort) {
+          SortingMode.none || SortingMode.size => e2.id.compareTo(e1.id),
+          SortingMode.rating =>
+            e1.rating.asSafeMode.index.compareTo(e2.rating.asSafeMode.index),
+          SortingMode.score => e1.score.compareTo(e2.score),
+        };
+      });
+
+    return values;
+  }
+
+  @override
   void add(IsarFavoritePost e, [bool silent = false]) {
     db.writeTxnSync(
       () {

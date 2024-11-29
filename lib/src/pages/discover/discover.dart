@@ -3,32 +3,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "../grid_frame.dart";
+import "package:azari/src/widgets/empty_widget.dart";
+import "package:flutter/material.dart";
 
-class _WrapPadding extends StatelessWidget {
-  const _WrapPadding({
-    required this.footer,
-    required this.includeFabPadding,
-    required this.child,
+class DiscoverPage extends StatefulWidget {
+  const DiscoverPage({
+    super.key,
   });
 
-  final bool includeFabPadding;
+  @override
+  State<DiscoverPage> createState() => _DiscoverPageState();
+}
 
-  final PreferredSizeWidget? footer;
-
-  final Widget? child;
-
+class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) {
-    final insets = EdgeInsets.only(
-      bottom: GridBottomPaddingProvider.of(context, includeFabPadding) +
-          (footer != null ? footer!.preferredSize.height : 0) +
-          8,
-    );
-
-    return SliverPadding(
-      padding: insets,
-      sliver: child,
+    return const Center(
+      child: EmptyWidgetBackground(
+        subtitle: "Not implemented", // TODO: change
+      ),
     );
   }
 }

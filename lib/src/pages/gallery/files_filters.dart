@@ -66,12 +66,22 @@ class SameFilterAccumulator {
 (Iterable<File>, dynamic) favorite(
   Iterable<File> cells,
   FavoritePostSourceService favoritePosts,
+  String searchText,
 ) {
   return (
     cells.where(
-      (element) =>
-          element.res != null &&
-          favoritePosts.contains(element.res!.$1, element.res!.$2),
+      (element) {
+        final isFavorite =
+            favoritePosts.contains(element.res!.$1, element.res!.$2);
+
+        if (searchText.isNotEmpty) {
+          return element.res != null &&
+              isFavorite &&
+              element.tags.containsKey(searchText);
+        }
+
+        return element.res != null && isFavorite;
+      },
     ),
     null
   );

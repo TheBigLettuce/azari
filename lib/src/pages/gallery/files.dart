@@ -66,9 +66,11 @@ class FilesPage extends StatefulWidget {
     this.filteringMode,
     required this.navBarEvents,
     required this.scrollingSink,
+    this.addScaffold = false,
   });
 
   final bool secure;
+  final bool addScaffold;
 
   final String dirName;
   final String presetFilteringValue;
@@ -152,7 +154,11 @@ class _FilesPageState extends State<FilesPage>
       },
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
-          FilteringMode.favorite => filters.favorite(cells, favoritePosts),
+          FilteringMode.favorite => filters.favorite(
+              cells,
+              favoritePosts,
+              searchTextController.text,
+            ),
           FilteringMode.untagged => filters.untagged(cells),
           FilteringMode.tag => filters.tag(cells, searchTextController.text),
           FilteringMode.tagReversed =>
@@ -303,7 +309,7 @@ class _FilesPageState extends State<FilesPage>
     return GridConfiguration(
       watch: gridSettings.watch,
       child: WrapGridPage(
-        addScaffoldAndBar: widget.callback != null,
+        addScaffoldAndBar: widget.addScaffold || widget.callback != null,
         child: GridPopScope(
           searchTextController: searchTextController,
           filter: filter,

@@ -26,6 +26,7 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
     () => filteringValue.isEmpty
         ? Future.value(const [])
         : Future.value(widget.db.gridBookmarks.complete(filteringValue)),
+    watchCount: widget.db.gridBookmarks.watch,
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -53,7 +54,7 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
   }
 
   void _onPressed(GridBookmark bookmark) {
-    Navigator.pop(context);
+    // Navigator.pop(context);
 
     Navigator.push<void>(
       context,

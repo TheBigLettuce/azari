@@ -12,7 +12,6 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_fab.dart";
@@ -59,6 +58,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
 
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor = GlobalKey();
 
+  bool isWide = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +75,15 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final width = MediaQuery.sizeOf(context).width;
+
+    isWide = width >= 450;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
     final stickers = widgets.tryAsStickerable(context, true);
@@ -83,6 +93,18 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final overlayStyle = SystemUiOverlayStyle(
+      statusBarColor: colorScheme.surface.withValues(alpha: 0.4),
+      statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+      systemNavigationBarIconBrightness:
+          colorScheme.brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+      systemNavigationBarColor: colorScheme.surface.withValues(alpha: 0.4),
+    );
+
     return _ExitOnPressRoute(
       scaffoldKey: widget.scaffoldKey,
       child: Scaffold(
@@ -91,19 +113,34 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
         extendBody: true,
         endDrawerEnableOpenDragGesture: false,
         resizeToAvoidBottomInset: false,
-        body: AnnotatedRegion(
-          value: SystemUiOverlayStyle(
-            statusBarColor: colorScheme.surface.withValues(alpha: 0.4),
-            statusBarIconBrightness: colorScheme.brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
-            systemNavigationBarIconBrightness:
-                colorScheme.brightness == Brightness.dark
-                    ? Brightness.light
-                    : Brightness.dark,
-            systemNavigationBarColor:
-                colorScheme.surface.withValues(alpha: 0.4),
-          ),
+        body:
+            // showRail
+            // ? AnnotatedRegion(
+            //     value: overlayStyle,
+            //     child: Stack(
+            //       children: [
+            //         widget.child,
+            //         SeekTimeAnchor(
+            //           key: seekTimeAnchor,
+            //           bottomPadding: viewPadding.bottom + 60,
+            //           videoControls: widget.videoControls,
+            //         ),
+            //         Padding(
+            //           padding: EdgeInsets.only(bottom: viewPadding.bottom),
+            //           child: VideoControls(
+            //             videoControls: widget.videoControls,
+            //             db: DatabaseConnectionNotifier.of(context)
+            //                 .videoSettings,
+            //             seekTimeAnchor: seekTimeAnchor,
+            //             vertical: true,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   )
+            // :
+            AnnotatedRegion(
+          value: overlayStyle,
           child: Stack(
             alignment: Alignment.bottomCenter,
             fit: StackFit.passthrough,
@@ -196,7 +233,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
               ),
               if (!(stickers.isEmpty && b.isEmpty && widgets is! Infoable))
                 _BottomIcons(
-                  videoControls: widget.videoControls,
+                  videoControls: isWide ? null : widget.videoControls,
                   viewPadding: viewPadding,
                   bottomSheetController: widget.bottomSheetController,
                   visibilityController: visibilityController,
@@ -209,6 +246,19 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                 bottomPadding: viewPadding.top,
                 videoControls: widget.videoControls,
               ),
+              if (isWide)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: viewPadding.bottom),
+                    child: VideoControls(
+                      videoControls: widget.videoControls,
+                      db: DatabaseConnectionNotifier.of(context).videoSettings,
+                      seekTimeAnchor: seekTimeAnchor,
+                      vertical: true,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -234,7 +284,7 @@ class _BottomIcons extends StatefulWidget {
   final AnimationController visibilityController;
 
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
-  final VideoControlsControllerImpl videoControls;
+  final VideoControlsControllerImpl? videoControls;
   final NotifierWrapper? wrapNotifiers;
   final PauseVideoState pauseVideoState;
 
@@ -285,9 +335,16 @@ class __BottomIconsState extends State<_BottomIcons>
                               e.icon,
                               e.onPress == null
                                   ? null
-                                  : () => e.onPress!(
+                                  : () {
+                                      AppBarVisibilityNotifier.toggleOf(
+                                        context,
+                                        true,
+                                      );
+
+                                      e.onPress!(
                                         CurrentContentNotifier.of(context),
-                                      ),
+                                      );
+                                    },
                               onLongPress: null,
                               play: e.play,
                               animate: e.animate,
@@ -312,13 +369,14 @@ class __BottomIconsState extends State<_BottomIcons>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      VideoControls(
-                        videoControls: widget.videoControls,
-                        db: DatabaseConnectionNotifier.of(context)
-                            .videoSettings,
-                        seekTimeAnchor: widget.seekTimeAnchor,
-                        vertical: false,
-                      ),
+                      if (widget.videoControls != null)
+                        VideoControls(
+                          videoControls: widget.videoControls!,
+                          db: DatabaseConnectionNotifier.of(context)
+                              .videoSettings,
+                          seekTimeAnchor: widget.seekTimeAnchor,
+                          vertical: false,
+                        ),
                       const Padding(padding: EdgeInsets.only(bottom: 8)),
                       if (widgets.tryAsInfoable(context) != null)
                         ImageViewFab(
@@ -682,40 +740,6 @@ class _ExitOnPressRoute extends StatelessWidget {
     return ExitOnPressRoute(
       exit: () => _exit(context),
       child: child,
-    );
-  }
-}
-
-class _AnimatedRailIcon extends StatefulWidget {
-  const _AnimatedRailIcon({
-    // super.key,
-    required this.action,
-  });
-
-  final ImageViewAction action;
-
-  @override
-  State<_AnimatedRailIcon> createState() => __AnimatedRailIconState();
-}
-
-class __AnimatedRailIconState extends State<_AnimatedRailIcon> {
-  ImageViewAction get action => widget.action;
-
-  @override
-  Widget build(BuildContext context) {
-    return WrapGridActionButton(
-      action.icon,
-      action.onPress == null
-          ? null
-          : () => action.onPress!(CurrentContentNotifier.of(context)),
-      onLongPress: null,
-      play: action.play,
-      animate: action.animate,
-      animation: action.animation,
-      watch: action.watch,
-      color: action.color,
-      notifier: action.longLoadingNotifier,
-      iconOnly: true,
     );
   }
 }

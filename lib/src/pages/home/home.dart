@@ -4,13 +4,14 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:math";
+import "dart:math" as math;
 
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/discover/discover.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/home/home_skeleton.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
@@ -134,6 +135,14 @@ class _HomeState extends State<Home>
     scrollingEvents.add(false);
   }
 
+  void onPop(bool didPop, Object? _) {
+    _procPopAll(
+      _galleryPageNotifier,
+      this,
+      didPop,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScrollingSinkProvider(
@@ -148,11 +157,7 @@ class _HomeState extends State<Home>
               _booruPageNotifier,
               PopScope(
                 canPop: false,
-                onPopInvokedWithResult: (pop, _) => _procPopAll(
-                  _galleryPageNotifier,
-                  this,
-                  pop,
-                ),
+                onPopInvokedWithResult: onPop,
                 child: HomeSkeleton(
                   animatedIcons: this,
                   onDestinationSelected: onDestinationSelected,

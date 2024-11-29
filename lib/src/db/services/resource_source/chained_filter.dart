@@ -73,14 +73,14 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
 
-  final StreamController<FilteringData> _filterEvents =
-      StreamController.broadcast();
-
-  final void Function() prefilter;
-  final void Function() onCompletelyEmpty;
+  final VoidCallback prefilter;
+  final VoidCallback onCompletelyEmpty;
 
   FilteringMode _mode;
   SortingMode _sorting;
+
+  final StreamController<FilteringData> _filterEvents =
+      StreamController.broadcast();
 
   FilteringMode get filteringMode => _mode;
   SortingMode get sortingMode => _sorting;

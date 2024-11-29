@@ -404,7 +404,9 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
         if (description.footer != null)
           Align(
             alignment: Alignment.bottomLeft,
-            child: Padding(
+            child: AnimatedPadding(
+              duration: Durations.medium3,
+              curve: Easing.standard,
               padding: EdgeInsets.only(
                 bottom: GridBottomPaddingProvider.of(context, true) + 4,
               ),
@@ -419,7 +421,9 @@ class _BodyChild<T extends CellBase> extends StatelessWidget {
         if (functionality.fab is! NoGridFab)
           Align(
             alignment: Alignment.bottomRight,
-            child: Padding(
+            child: AnimatedPadding(
+              duration: Durations.medium3,
+              curve: Easing.standard,
               padding: EdgeInsets.only(
                 right: 4 + 8,
                 bottom: bottomPadding + 4 + 8,

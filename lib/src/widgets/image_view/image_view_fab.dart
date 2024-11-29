@@ -88,6 +88,8 @@ class _ImageViewFabState extends State<ImageViewFab>
       foregroundColor:
           theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.95),
       onPressed: () {
+        AppBarVisibilityNotifier.toggleOf(context, true);
+
         showModalBottomSheet<void>(
           context: context,
           builder: (sheetContext) {

@@ -25,7 +25,7 @@ class DiscoverDestinationIcon extends StatelessWidget {
       target: 1,
       effects: [
         ShimmerEffect(
-          angle: pi / -5,
+          angle: math.pi / -5,
           duration: 440.ms,
           colors: [
             colorScheme.primary.withValues(alpha: isSelected ? 1 : 0),

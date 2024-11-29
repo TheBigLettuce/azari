@@ -13,12 +13,12 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/gallery/directories_actions.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/fading_panel.dart";
-import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
@@ -38,9 +38,12 @@ class GallerySearchPage extends StatefulWidget {
     super.key,
     required this.db,
     required this.l10n,
+    required this.procPop,
   });
 
   final AppLocalizations l10n;
+
+  final void Function(bool)? procPop;
 
   final DbConn db;
 
@@ -88,21 +91,25 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     super.dispose();
   }
 
-  void _search(String str) {
-    _filteringEvents.add(str.trim());
-  }
+  // void _search(String str) {
+  //   _filteringEvents.add(str.trim());
+  // }
 
   void _onDirectoryPressed(Directory directory) {
-    // final gridExtra = GridExtrasNotifier.of<Directory>(
-    //   context,
-    // );
+    final l10n = AppLocalizations.of(context)!;
 
-    // directory.onPress(
-    //   context,
-    //   gridExtra.functionality,
-    //   directory,
-    //   0,
-    // );
+    directory.openFilesPage(
+      context: context,
+      l10n: l10n,
+      callback: null,
+      addScaffold: true,
+      api: api,
+      segmentFnc: (cell) => DirectoriesPage.segmentCell(
+        cell.name,
+        cell.bucketId,
+        widget.db.directoryTags,
+      ),
+    );
   }
 
   void _joinedDirectories(
@@ -111,22 +118,26 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     required String tag,
     required FilteringMode? filteringMode,
   }) {
-    //   joinedDirectoriesFnc(
-    //   context,
-    //   label,
-    //   children,
-    //   api,
-    //   widget.nestedCallback,
-    //   GlueProvider.generateOf(context),
-    //   _segmentCell,
-    //   directoryMetadata,
-    //   directoryTags,
-    //   favoritePosts,
-    //   widget.db.localTags,
-    //   widget.l10n,
-    //   tag: tag,
-    //   filteringMode: filteringMode,
-    // );
+    joinedDirectoriesFnc(
+      context,
+      str,
+      list,
+      api,
+      null,
+      (cell) => DirectoriesPage.segmentCell(
+        cell.name,
+        cell.bucketId,
+        widget.db.directoryTags,
+      ),
+      widget.db.directoryMetadata,
+      widget.db.directoryTags,
+      widget.db.favoritePosts,
+      widget.db.localTags,
+      widget.l10n,
+      tag: tag,
+      filteringMode: filteringMode,
+      addScaffold: true,
+    );
   }
 
   Future<List<BooruTag>> _completeDirectoryNameTag(String str) {
@@ -161,93 +172,57 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    // final l10n = AppLocalizations.of(context)!;
 
     return _SearchPagePopScope(
       searchController: searchController,
       sink: _filteringEvents.sink,
       searchFocus: focusNode,
-      child: Scaffold(
-        appBar: AppBar(
-          title: TextField(
-            controller: searchController,
-            focusNode: focusNode,
-            onTapOutside: (event) => focusNode.previousFocus(),
-            decoration: InputDecoration(
-              hintText: l10n.searchHint,
-              border: InputBorder.none,
-            ),
-            onChanged: _search,
+      procPop: widget.procPop,
+      child: SliverMainAxisGroup(
+        slivers: [
+          SearchPageSearchBar(
+            complete: null,
+            searchTextController: searchController,
+            searchFocus: focusNode,
+            sink: _filteringEvents.sink,
           ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                if (searchController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.searchTextIsEmpty),
-                    ),
-                  );
-
-                  return;
-                }
-
-                _search(searchController.text.trim());
-              },
-              icon: const Icon(Icons.search_rounded),
+          StreamBuilder(
+            stream: _filteringEvents.stream,
+            builder: (context, snapshot) => _SearchInDirectoriesButtons(
+              db: widget.db,
+              listPadding: _ChipsPanelBody.listPadding,
+              filteringValue: snapshot.data ?? "",
+              joinedDirectories: _joinedDirectories,
+              source: api.source,
             ),
-          ],
-        ),
-        body: GestureDeadZones(
-          left: true,
-          right: true,
-          child: CustomScrollView(
-            slivers: [
-              StreamBuilder(
-                stream: _filteringEvents.stream,
-                builder: (context, snapshot) => _SearchInDirectoriesButtons(
-                  db: widget.db,
-                  listPadding: _ChipsPanelBody.listPadding,
-                  filteringValue: snapshot.data ?? "",
-                  joinedDirectories: _joinedDirectories,
-                  source: api.source,
-                ),
-              ),
-              _DirectoryNamesPanel(
-                api: api,
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                directoryComplete: _completeDirectoryNameTag,
-              ),
-              _LocalTagsPanel(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                joinedDirectories: _joinedDirectories,
-                source: api.source,
-                db: widget.db,
-              ),
-              _FilesList(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                db: widget.db,
-              ),
-              _DirectoryList(
-                filteringEvents: _filteringEvents,
-                source: api.source,
-                searchController: searchController,
-                onDirectoryPressed: _onDirectoryPressed,
-                blurMap: blurMap,
-              ),
-              Builder(
-                builder: (context) => SliverPadding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.viewPaddingOf(context).bottom + 24,
-                  ),
-                ),
-              ),
-            ],
           ),
-        ),
+          _DirectoryNamesPanel(
+            api: api,
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            directoryComplete: _completeDirectoryNameTag,
+          ),
+          _LocalTagsPanel(
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            joinedDirectories: _joinedDirectories,
+            source: api.source,
+            db: widget.db,
+          ),
+          _FilesList(
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            db: widget.db,
+          ),
+          _DirectoryList(
+            filteringEvents: _filteringEvents,
+            source: api.source,
+            searchController: searchController,
+            onDirectoryPressed: _onDirectoryPressed,
+            blurMap: blurMap,
+          ),
+        ],
       ),
     );
   }
@@ -260,11 +235,14 @@ class _SearchPagePopScope extends StatefulWidget {
     required this.sink,
     required this.searchFocus,
     required this.child,
+    required this.procPop,
   });
 
   final TextEditingController searchController;
   final StreamSink<String> sink;
   final FocusNode searchFocus;
+
+  final void Function(bool)? procPop;
 
   final Widget child;
 
@@ -300,7 +278,10 @@ class __SearchPagePopScopeState extends State<_SearchPagePopScope> {
           widget.searchController.clear();
           widget.searchFocus.previousFocus();
           widget.sink.add("");
+          return;
         }
+
+        widget.procPop?.call(didPop);
       },
       child: widget.child,
     );

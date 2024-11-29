@@ -94,6 +94,10 @@ class __DirectoryListState extends State<_DirectoryList> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
+    final textTheme = theme.textTheme.titleMedium?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+    );
+
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(
@@ -109,9 +113,7 @@ class __DirectoryListState extends State<_DirectoryList> {
             sliver: SliverToBoxAdapter(
               child: Text(
                 l10n.startInputingText,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+                style: textTheme,
               ),
             ),
           )
@@ -120,33 +122,81 @@ class __DirectoryListState extends State<_DirectoryList> {
             padding: const EdgeInsets.symmetric(horizontal: 18 + 4),
             sliver: SliverGrid.builder(
               itemCount: filter.count,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: GridAspectRatio.zeroSeven.value,
+                childAspectRatio: 0.9,
               ),
               itemBuilder: (context, index) {
                 final cell = filter.forIdxUnsafe(index);
 
-                return CustomGridCellWrapper(
-                  onPressed: (context) {
-                    // Navigator.pop(context);
-
-                    widget.onDirectoryPressed(cell);
-                  },
-                  child: GridCell(
-                    data: cell,
-                    blur: _toBlur(cell),
-                    hideTitle: false,
-                    imageAlign: Alignment.topCenter,
-                    overrideDescription: const CellStaticData(
-                      titleAtBottom: true,
-                      titleLines: 2,
-                    ),
-                  ),
+                return _DirectoryCell(
+                  directory: cell,
+                  toBlur: _toBlur(cell),
+                  onDirectoryPressed: widget.onDirectoryPressed,
                 );
               },
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _DirectoryCell extends StatelessWidget {
+  const _DirectoryCell({
+    // super.key,
+    required this.directory,
+    required this.toBlur,
+    required this.onDirectoryPressed,
+  });
+
+  final bool toBlur;
+
+  final Directory directory;
+  final void Function(Directory) onDirectoryPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final textTheme = theme.textTheme.labelLarge
+        ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.8));
+
+    return Column(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () => onDirectoryPressed(directory),
+            customBorder: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+            child: Card(
+              // margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
+              elevation: 0,
+              color: theme.cardColor.withValues(alpha: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: GridCellImage(
+                imageAlign: Alignment.topCenter,
+                thumbnail: directory.thumbnail(),
+                blur: toBlur,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              directory.name,
+              style: textTheme,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
       ],
     );
   }

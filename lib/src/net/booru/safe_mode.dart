@@ -7,8 +7,8 @@ import "package:azari/l10n/generated/app_localizations.dart";
 
 enum SafeMode {
   normal,
-  none,
-  relaxed;
+  relaxed,
+  none;
 
   const SafeMode();
 

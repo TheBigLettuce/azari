@@ -23,6 +23,8 @@ import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -72,7 +74,13 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
   GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
   HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
   FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
-  WatchableGridSettingsData get gridSettings => widget.db.gridSettings.booru;
+
+  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+    hideName: true,
+    aspectRatio: GridAspectRatio.one,
+    columns: GridColumn.two,
+    layoutType: GridLayoutType.gridQuilted,
+  );
 
   BooruAPI get api => pagingState.api;
   TagManager get tagManager => pagingState.tagManager;
@@ -170,6 +178,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
   @override
   void dispose() {
+    gridSettings.cancel();
     favoritesWatcher.cancel();
     hiddenPostWatcher.cancel();
 
@@ -305,12 +314,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                     selectionActions: SelectionActions.of(context),
                     scrollingSink: ScrollingSinkProvider.maybeOf(context),
                     updatesAvailable: source.updatesAvailable,
-                    settingsButton: GridSettingsButton.fromWatchable(
-                      gridSettings,
-                      header: SafeModeButton(
+                    settingsButton: GridSettingsButton.onlyHeader(
+                      SafeModeButton(
                         secondaryGrid: pagingState.secondaryGrid,
                       ),
-                      buildHideName: false,
                     ),
                     updateScrollPosition: pagingState.setOffset,
                     download: _download,

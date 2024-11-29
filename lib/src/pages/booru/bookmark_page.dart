@@ -20,7 +20,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.da
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/time_label.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -107,39 +106,35 @@ class _BookmarkPageState extends State<BookmarkPage>
 
     return GridConfiguration(
       watch: gridSettings.watch,
-      child: WrapGridPage(
-        child: Builder(
-          builder: (context) => GridFrame<GridBookmark>(
-            key: gridKey,
-            slivers: [
-              _BookmarkBody(
-                source: source.backingStorage,
-                db: widget.db,
-                openBookmark: launchGrid,
-                progress: source.progress,
-              ),
-            ],
-            functionality: GridFunctionality(
-              scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
-              onEmptySource: EmptyWidgetBackground(
-                subtitle: l10n.emptyBookmarkedSearches,
-              ),
-              source: source,
-              search: PageNameSearchWidget(
-                leading: IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: const Icon(Icons.menu_rounded),
-                ),
-              ),
-            ),
-            description: GridDescription(
-              pullToRefresh: false,
-              gridSeed: gridSeed,
-              pageName: l10n.bookmarksPageName,
+      child: GridFrame<GridBookmark>(
+        key: gridKey,
+        slivers: [
+          _BookmarkBody(
+            source: source.backingStorage,
+            db: widget.db,
+            openBookmark: launchGrid,
+            progress: source.progress,
+          ),
+        ],
+        functionality: GridFunctionality(
+          scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
+          onEmptySource: EmptyWidgetBackground(
+            subtitle: l10n.emptyBookmarkedSearches,
+          ),
+          source: source,
+          search: PageNameSearchWidget(
+            leading: IconButton(
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              icon: const Icon(Icons.menu_rounded),
             ),
           ),
+        ),
+        description: GridDescription(
+          pullToRefresh: false,
+          gridSeed: gridSeed,
+          pageName: l10n.bookmarksPageName,
         ),
       ),
     );

@@ -27,7 +27,6 @@ import "package:azari/src/widgets/image_view/video/video_controls_controller.dar
 import "package:azari/src/widgets/load_tags.dart";
 import "package:azari/src/widgets/selection_actions.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";

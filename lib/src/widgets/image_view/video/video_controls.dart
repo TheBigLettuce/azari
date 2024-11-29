@@ -362,12 +362,11 @@ class __PlayButtonState extends State<_PlayButton> {
           ? const Icon(Icons.play_arrow_rounded)
           : switch (playState) {
               PlayState.isPlaying => const Icon(Icons.stop_circle_rounded),
-              PlayState.buffering => SizedBox(
+              PlayState.buffering => const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.blue.harmonizeWith(theme.colorScheme.primary),
                   ),
                 ),
               PlayState.stopped => const Icon(Icons.play_arrow_rounded),

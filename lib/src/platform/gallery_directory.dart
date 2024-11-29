@@ -58,6 +58,24 @@ abstract class Directory
 
     final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
 
+    openFilesPage(
+      context: context,
+      l10n: l10n,
+      callback: callback,
+      api: api,
+      segmentFnc: segmentFnc,
+      addScaffold: false,
+    );
+  }
+
+  void openFilesPage({
+    required BuildContext context,
+    required AppLocalizations l10n,
+    required GalleryReturnCallback? callback,
+    required Directories api,
+    required String Function(Directory) segmentFnc,
+    required bool addScaffold,
+  }) {
     if (callback?.isDirectory ?? false) {
       Navigator.pop(context);
 
@@ -100,6 +118,7 @@ abstract class Directory
               api: apiFiles,
               directory: this,
               secure: requireAuth,
+              addScaffold: addScaffold,
               callback: callback?.toFileOrNull,
               dirName: switch (bucketId) {
                 "favorites" => l10n.galleryDirectoriesFavorites,
