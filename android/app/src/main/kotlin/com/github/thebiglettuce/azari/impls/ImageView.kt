@@ -7,15 +7,19 @@ package com.github.thebiglettuce.azari.impls
 
 import android.content.Context
 import android.net.Uri
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.GlideImageViewFactory
+import com.github.piasy.biv.view.ImageViewFactory
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import kotlinx.coroutines.CoroutineScope
+import com.github.thebiglettuce.azari.generated.GalleryPageChangeEvent
+
 
 internal class ImageView(
     context: Context,
@@ -34,25 +38,38 @@ internal class ImageView(
     }
 
     init {
-//        val gestureDetector: GestureDetector =
-//            GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-//                override fun onFling(
-//                    e1: MotionEvent?,
-//                    e2: MotionEvent,
-//                    velocityX: Float,
-//                    velocityY: Float,
-//                ): Boolean {
-//                    Log.w("motion", e2.toString())
-//                    return super.onFling(e1, e2, velocityX, velocityY)
-//                }
-//            })
-
         imageView = BigImageView(context).apply {
             setOnClickListener { galleryApi.galleryTapDownEvent { } }
             setImageViewFactory(GlideImageViewFactory())
             setOptimizeDisplay(false)
+            setImageViewFactory(GestureImageViewFactory(context, galleryApi))
             showImage(Uri.parse(params["uri"]))
-//            setOnTouchListener { view, motionEvent -> gestureDetector.onTouchEvent(motionEvent) }
+        }
+    }
+}
+
+class GestureImageViewFactory(
+    context: Context,
+    galleryApi: PlatformGalleryApi,
+) : ImageViewFactory() {
+    val gestureDetector: GestureDetector =
+        GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                galleryApi.galleryPageChangeEvent(if (velocityX > 0) GalleryPageChangeEvent.LEFT else GalleryPageChangeEvent.RIGHT) {}
+
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        }, null)
+
+
+    override fun createStillImageView(context: Context?): SubsamplingScaleImageView {
+        return super.createStillImageView(context).apply {
+            setOnTouchListener { view, motionEvent -> gestureDetector.onTouchEvent(motionEvent) }
         }
     }
 }

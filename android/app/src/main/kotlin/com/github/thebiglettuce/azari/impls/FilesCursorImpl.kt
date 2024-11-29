@@ -201,7 +201,7 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
 
             val cursor = state.cursor
 
-            if (cursor.isAfterLast) {
+            if (cursor.isAfterLast || (state.list.isEmpty() && cursor.isLast)) {
                 Log.i("FilesCursorImpl", "isAfterLast")
 
                 callback(Result.success(listOf()))

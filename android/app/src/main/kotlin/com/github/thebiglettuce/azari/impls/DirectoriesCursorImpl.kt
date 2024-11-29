@@ -59,7 +59,7 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
 
             val cursor = state.cursor
 
-            if (cursor.isAfterLast) {
+            if (cursor.isAfterLast || (state.resMap.isEmpty() && cursor.isLast)) {
                 Log.i("DirectoriesCursorImpl", "isAfterLast")
 
                 callback(Result.success(mapOf()))
