@@ -57,7 +57,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.25.0-0.1.pre"
+          flutter-version: "3.27.0-0.2.pre"
           channel: "beta"
           cache: true
 
