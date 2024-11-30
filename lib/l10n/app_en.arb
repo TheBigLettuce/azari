@@ -159,9 +159,14 @@
     "@aspectRatio": {
         "description": "Settings, grid cell aspect ratio"
     },
-    "hideNames": "Hide names",
+    "hideNames": "Hide {target} names",
     "@hideNames": {
-        "description": "Grid settings, hide cell names on grid"
+        "description": "Grid settings, hide cell names on grid",
+        "placeholders": {
+            "target": {
+                "type": "String"
+            }
+        }
     },
     "gridColumns": "Grid columns",
     "@gridColumns": {
@@ -384,18 +389,6 @@
     "@more": {
         "description": "Nav bar destination"
     },
-    "newsTab": "News",
-    "@newsTab": {
-        "description": "Anime page, news tab"
-    },
-    "animePage": "Anime",
-    "@animePage": {
-        "description": "Anime page label"
-    },
-    "cardWatched": "Watched",
-    "@cardWatched": {
-        "description": "Anime card panel, watched button"
-    },
     "hasTranslations": "Has translations",
     "@hasTranslations": {
         "description": "Image view, has translations tile"
@@ -423,10 +416,6 @@
     "extendedFilesGridActions": "Show extended files grid actions",
     "@extendedFilesGridActions": {
         "description": "Settings, additional buttons in the files page of the gallery"
-    },
-    "animeAlwaysOnline": "Always load Anime info from net",
-    "@animeAlwaysOnline": {
-        "description": "Settings, always load anime info data from the API"
     },
     "add": "Add",
     "@add": {
@@ -567,87 +556,6 @@
     "@listView": {
         "description": "Grid settings, list view on the grid"
     },
-    "cardInBrowser": "In browser",
-    "@cardInBrowser": {
-        "description": "Anime card panel, open in browser card"
-    },
-    "cardTrailer": "Trailer",
-    "@cardTrailer": {
-        "description": "Anime card panel, open trailer card"
-    },
-    "cardBacklog": "Backlog",
-    "@cardBacklog": {
-        "description": "Anime card panel, backlog card"
-    },
-    "cardInBacklog": "In backlog",
-    "@cardInBacklog": {
-        "description": "Anime card panel, in backlog card"
-    },
-    "cardType": "Type",
-    "@cardType": {
-        "description": "Anime card panel, type card"
-    },
-    "cardEpisodes": "Episodes",
-    "@cardEpisodes": {
-        "description": "Anime card panel, episodes card"
-    },
-    "cardAiring": "Airing",
-    "@cardAiring": {
-        "description": "Anime card panel, airing card"
-    },
-    "cardScore": "Score",
-    "@cardScore": {
-        "description": "Anime card panel, score card"
-    },
-    "cardYear": "Year",
-    "@cardYear": {
-        "description": "Anime card panel, year card"
-    },
-    "cardUnknownValue": "?",
-    "@cardUnknownValue": {
-        "description": "Anime card panel, unknown value placeholder"
-    },
-    "synopsisLabel": "Synopsis",
-    "@synopsisLabel": {
-        "description": "Anime page, body synopsis label"
-    },
-    "charactersLabel": "Characters",
-    "@charactersLabel": {
-        "description": "Anime page, body characters label"
-    },
-    "backgroundLabel": "Background",
-    "@backgroundLabel": {
-        "description": "Anime page, body background label"
-    },
-    "relationsLabel": "Related",
-    "@relationsLabel": {
-        "description": "Anime page, body related label"
-    },
-    "backlogLabel": "Backlog",
-    "@backlogLabel": {
-        "description": "Anime page, watching page backlog label"
-    },
-    "watchingLabel": "Watching",
-    "@watchingLabel": {
-        "description": "Anime page, watching page watching label"
-    },
-    "searchAnimePage": "Search Anime",
-    "@searchAnimePage": {
-        "description": "Anime page, search anime page"
-    },
-    "alsoKnownAs": "Also known as:\n{titles}",
-    "@alsoKnownAs": {
-        "description": "Anime page, titles synonyms",
-        "placeholders": {
-            "titles": {
-                "type": "String"
-            }
-        }
-    },
-    "role": "Role",
-    "@role": {
-        "description": "Image info, role of the anime character"
-    },
     "hiddenPostsPageName": "Hidden Posts",
     "@hiddenPostsPageName": {
         "description": "Hidden posts page"
@@ -655,22 +563,6 @@
     "tryAgain": "Try again",
     "@tryAgain": {
         "description": "Button label to retry fetching data from the internet"
-    },
-    "animePicturesLabel": "Pictures",
-    "@animePicturesLabel": {
-        "description": "Displayed above the anime's pictures in anime info page"
-    },
-    "animeLoadPictures": "Load pictures",
-    "@animeLoadPictures": {
-        "description": "Button label to load the anime pictures"
-    },
-    "animeSimilar": "Similar",
-    "@animeSimilar": {
-        "description": "Displayed above the anime's similar anime in anime info page"
-    },
-    "animeLoadSimilar": "Load similar",
-    "@animeLoadSimilar": {
-        "description": "Button label to load the anime's similar"
     },
     "copyLabel": "Copy",
     "@copyLabel": {
@@ -777,13 +669,21 @@
     "@enumDisplayQualitySample": {
         "description": "DisplayQuality.sample"
     },
-    "enumSortringModeNone": "None",
-    "@enumSortringModeNone": {
+    "enumSortingModeNone": "None",
+    "@enumSortingModeNone": {
         "description": "SortingMode.none"
     },
-    "enumSortringModeSize": "Size",
-    "@enumSortringModeSize": {
+    "enumSortingModeSize": "Size",
+    "@enumSortingModeSize": {
         "description": "SortingMode.size"
+    },
+    "enumSortingModeRating": "Rating",
+    "@enumSortingModeRating": {
+        "description": "SortingMode.rating"
+    },
+    "enumSortingModeScore": "Score",
+    "@enumSortingModeScore": {
+        "description": "SortingMode.score"
     },
     "enumFilteringModeFavorite": "Favorite",
     "@enumFilteringModeFavorite": {
@@ -877,14 +777,6 @@
     "@galleryDirectoryTrash": {
         "description": "Gallery directories trash page"
     },
-    "animeSearchSearching": "Searching",
-    "@animeSearchSearching": {
-        "description": "Displayed above searching options in the anime search page"
-    },
-    "animeSearchGenres": "Genres",
-    "@animeSearchGenres": {
-        "description": "Displayed above genre options"
-    },
     "enumGridLayoutTypeGrid": "Grid",
     "@enumGridLayoutTypeGrid": {
         "description": "GridLayoutType.grid"
@@ -968,10 +860,6 @@
     "openWelcomePageSetting": "Open welcome page",
     "@openWelcomePageSetting": {
         "description": "Settings, open welcome page"
-    },
-    "deletedFromWatched": "Deleted from watched",
-    "@deletedFromWatched": {
-        "description": "Anime page, showed when anime deleted from watched"
     },
     "tagsLabel": "Tags",
     "@tagsLabel": {
@@ -1209,34 +1097,6 @@
     "@visitedPage": {
         "description": "Visited booru posts page"
     },
-    "upcomingAnime": "Upcoming",
-    "@upcomingAnime": {
-        "description": "Upcoming anime panel title"
-    },
-    "removeWatching": "Remove from watching",
-    "@removeWatching": {
-        "description": "Anime info page button label"
-    },
-    "addWatching": "Add to watching",
-    "@addWatching": {
-        "description": "Anime info page button label"
-    },
-    "removeWatched": "Remove from watched",
-    "@removeWatched": {
-        "description": "Anime info page button label"
-    },
-    "addWatched": "Add to watched",
-    "@addWatched": {
-        "description": "Anime info page button label"
-    },
-    "removeBacklog": "Remove from backlog",
-    "@removeBacklog": {
-        "description": "Anime info page button label"
-    },
-    "addBacklog": "Add to backlog",
-    "@addBacklog": {
-        "description": "Anime info page button label"
-    },
     "popularPosts": "Popular",
     "@popularPosts": {
         "description": "Button label to show popular posts on booru"
@@ -1330,10 +1190,6 @@
             }
         }
     },
-    "mostRatedLabel": "Most Rated",
-    "@mostRatedLabel": {
-        "description": "Search panel label of most rated anime"
-    },
     "excludedTagsLabel": "Excluded Tags",
     "@excludedTagsLabel": {
         "description": "Search panel label of excluded tags"
@@ -1377,10 +1233,6 @@
     "@addPinnedTag": {
         "description": "Search panel button label to add tag to pinned"
     },
-    "collapse": "Collapse",
-    "@collapse": {
-        "description": "Collapse text in anime info page"
-    },
     "emptyBookmarkedSearches": "Bookmarked searches will appear here...",
     "@emptyBookmarkedSearches": {
         "description": "Empty widget body text"
@@ -1421,8 +1273,16 @@
     "@emptyDownloadProgress": {
         "description": "Empty widget body text"
     },
-    "currentSeason": "Current Season",
-    "@currentSeason": {
-        "description": "Panel title of current season anime"
+    "discoverPage": "Discover",
+    "@discoverPage": {
+        "description": "Discover page name"
+    },
+    "hideNamesFiles": "files'",
+    "@hideNamesFiles": {
+        "description": "Hide names files"
+    },
+    "hideNamesDirectories": "directories'",
+    "@hideNamesDirectories": {
+        "description": "Hide names files"
     }
 }

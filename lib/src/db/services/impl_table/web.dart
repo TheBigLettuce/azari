@@ -452,20 +452,12 @@ class $SettingsPath extends SettingsPath {
 class $MiscSettingsData extends MiscSettingsData {
   const $MiscSettingsData({
     required this.filesExtendedActions,
-    required this.animeAlwaysLoadFromNet,
     required this.favoritesThumbId,
     required this.themeType,
     required this.favoritesPageMode,
-    required this.animeWatchingOrderReversed,
     required this.randomVideosAddTags,
     required this.randomVideosOrder,
   });
-
-  @override
-  final bool animeAlwaysLoadFromNet;
-
-  @override
-  final bool animeWatchingOrderReversed;
 
   @override
   final FilteringMode favoritesPageMode;
@@ -490,21 +482,15 @@ class $MiscSettingsData extends MiscSettingsData {
     bool? filesExtendedActions,
     int? favoritesThumbId,
     ThemeType? themeType,
-    bool? animeAlwaysLoadFromNet,
-    bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
     String? randomVideosAddTags,
     RandomPostsOrder? randomVideosOrder,
   }) =>
       $MiscSettingsData(
         filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
-        animeAlwaysLoadFromNet:
-            animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
         favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId,
         themeType: themeType ?? this.themeType,
         favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
-        animeWatchingOrderReversed:
-            animeWatchingOrderReversed ?? this.animeWatchingOrderReversed,
         randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
         randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
       );

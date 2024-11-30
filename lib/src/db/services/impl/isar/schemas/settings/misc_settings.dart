@@ -14,22 +14,14 @@ part "misc_settings.g.dart";
 class IsarMiscSettings extends MiscSettingsData {
   const IsarMiscSettings({
     required this.filesExtendedActions,
-    required this.animeAlwaysLoadFromNet,
     required this.favoritesThumbId,
     required this.themeType,
     required this.favoritesPageMode,
-    required this.animeWatchingOrderReversed,
     required this.randomVideosAddTags,
     required this.randomVideosOrder,
   });
 
   Id get id => 0;
-
-  @override
-  final bool animeAlwaysLoadFromNet;
-
-  @override
-  final bool animeWatchingOrderReversed;
 
   @override
   @enumerated
@@ -57,18 +49,12 @@ class IsarMiscSettings extends MiscSettingsData {
     bool? filesExtendedActions,
     int? favoritesThumbId,
     ThemeType? themeType,
-    bool? animeAlwaysLoadFromNet,
-    bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
     String? randomVideosAddTags,
     RandomPostsOrder? randomVideosOrder,
   }) =>
       IsarMiscSettings(
-        animeWatchingOrderReversed:
-            animeWatchingOrderReversed ?? this.animeWatchingOrderReversed,
         themeType: themeType ?? this.themeType,
-        animeAlwaysLoadFromNet:
-            animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
         favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
         filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
         favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId,

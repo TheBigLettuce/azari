@@ -419,6 +419,8 @@ class _DirectoriesPageState extends State<DirectoriesPage>
           settingsButton: GridSettingsButton(
             add: _add,
             watch: gridSettings.watch,
+            localizeHideNames: (context) =>
+                l10n.hideNames(l10n.hideNamesDirectories),
           ),
           search: widget.callback != null
               ? BarSearchWidget.fromFilter(

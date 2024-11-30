@@ -466,7 +466,11 @@ class _FilesPageState extends State<FilesPage>
                 onEmptySource: EmptyWidgetBackground(
                   subtitle: l10n.emptyNoMedia,
                 ),
-                settingsButton: GridSettingsButton.fromWatchable(gridSettings),
+                settingsButton: GridSettingsButton.fromWatchable(
+                  gridSettings,
+                  localizeHideNames: (context) =>
+                      l10n.hideNames(l10n.hideNamesFiles),
+                ),
                 registerNotifiers: (child) {
                   return ReturnFileCallbackNotifier(
                     callback: widget.callback,

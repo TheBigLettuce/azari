@@ -274,6 +274,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
               gridSettings,
               header: SafeModeSegment(state: safeModeState),
               buildHideName: false,
+              localizeHideNames: (_) => "",
             ),
             registerNotifiers: (child) => OnBooruTagPressed(
               onPressed: _onPressed,

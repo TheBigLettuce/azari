@@ -40,9 +40,7 @@ abstract class MiscSettingsData {
   const MiscSettingsData();
 
   bool get filesExtendedActions;
-  bool get animeAlwaysLoadFromNet;
   int get favoritesThumbId;
-  bool get animeWatchingOrderReversed;
   ThemeType get themeType;
   FilteringMode get favoritesPageMode;
   String get randomVideosAddTags;
@@ -52,8 +50,6 @@ abstract class MiscSettingsData {
     bool? filesExtendedActions,
     int? favoritesThumbId,
     ThemeType? themeType,
-    bool? animeAlwaysLoadFromNet,
-    bool? animeWatchingOrderReversed,
     FilteringMode? favoritesPageMode,
     String? randomVideosAddTags,
     RandomPostsOrder? randomVideosOrder,

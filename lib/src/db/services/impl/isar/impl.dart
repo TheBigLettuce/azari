@@ -559,8 +559,6 @@ class IsarMiscSettingsService implements MiscSettingsService {
   MiscSettingsData get current =>
       collection.getSync(0) ??
       const IsarMiscSettings(
-        animeWatchingOrderReversed: false,
-        animeAlwaysLoadFromNet: false,
         filesExtendedActions: false,
         themeType: ThemeType.systemAccent,
         favoritesThumbId: 0,

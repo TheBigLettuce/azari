@@ -77,9 +77,9 @@ enum SortingMode {
   const SortingMode();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        SortingMode.none => l10n.enumSortringModeNone,
-        SortingMode.size => l10n.enumSortringModeSize,
-        SortingMode.rating => "Rating", // TODO: change
-        SortingMode.score => "Score", // TODO: change
+        SortingMode.none => l10n.enumSortingModeNone,
+        SortingMode.size => l10n.enumSortingModeSize,
+        SortingMode.rating => l10n.enumSortingModeRating,
+        SortingMode.score => l10n.enumSortingModeScore,
       };
 }

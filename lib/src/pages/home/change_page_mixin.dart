@@ -44,8 +44,8 @@ enum CurrentRoute {
       switch (this) {
         home => _booruDestinationLabel(context, l10n, booru.string),
         gallery => GallerySubPage.of(context).translatedString(l10n),
-        search => l10n.searchHint, // TODO: change
-        discover => "Discover", // TODO: change
+        search => l10n.searchHint,
+        discover => l10n.discoverPage,
       };
 
   static CurrentRoute of(BuildContext context) {

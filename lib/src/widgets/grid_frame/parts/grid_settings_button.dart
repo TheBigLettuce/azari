@@ -21,11 +21,13 @@ class GridSettingsButton extends StatelessWidget {
     required this.watch,
     this.header,
     this.buildHideName = true,
+    required this.localizeHideNames,
   });
 
   factory GridSettingsButton.fromWatchable(
     WatchableGridSettingsData w, {
     Widget? header,
+    required String Function(BuildContext) localizeHideNames,
     bool buildHideName = true,
   }) =>
       GridSettingsButton(
@@ -33,6 +35,7 @@ class GridSettingsButton extends StatelessWidget {
         watch: w.watch,
         header: header,
         buildHideName: buildHideName,
+        localizeHideNames: localizeHideNames,
       );
 
   static Widget onlyHeader(
@@ -48,6 +51,8 @@ class GridSettingsButton extends StatelessWidget {
 
   final StreamSubscription<GridSettingsData>
       Function(void Function(GridSettingsData) f, [bool fire]) watch;
+
+  final String Function(BuildContext) localizeHideNames;
 
   final bool buildHideName;
 
@@ -72,6 +77,7 @@ class GridSettingsButton extends StatelessWidget {
                 watch: watch,
                 buildHideName: buildHideName,
                 header: header,
+                localizeHideNames: localizeHideNames,
               ),
             );
           },
@@ -112,6 +118,7 @@ class _GridSettingsButtonHeader extends StatelessWidget {
                 watch: null,
                 buildHideName: false,
                 header: header,
+                localizeHideNames: (_) => "",
               ),
             );
           },
@@ -515,6 +522,7 @@ class _BottomSheetContent extends StatefulWidget {
     required this.watch,
     required this.header,
     required this.buildHideName,
+    required this.localizeHideNames,
   });
 
   final bool buildHideName;
@@ -522,6 +530,7 @@ class _BottomSheetContent extends StatefulWidget {
   final Widget? header;
 
   final void Function(GridSettingsData)? add;
+  final String Function(BuildContext) localizeHideNames;
 
   final StreamSubscription<GridSettingsData>
       Function(void Function(GridSettingsData) f, [bool fire])? watch;
@@ -615,7 +624,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
   ) {
     return SwitchListTile(
       contentPadding: contentPadding,
-      title: Text(l10n.hideNames),
+      title: Text(widget.localizeHideNames(context)),
       value: hideName,
       onChanged: (_) => select(!hideName),
     );

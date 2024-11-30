@@ -84,9 +84,9 @@ class _SearchPageState extends State<SearchPage>
                 labelPadding: const EdgeInsets.symmetric(horizontal: 12),
                 unselectedLabelStyle: unselectedTextStyle,
                 dividerHeight: 0,
-                tabs: const [
-                  Tab(text: "Booru"), // TODO: change
-                  Tab(text: "Gallery"), // TODO: change
+                tabs: [
+                  Tab(text: l10n.booruLabel),
+                  Tab(text: l10n.galleryLabel),
                 ],
               ),
             ),

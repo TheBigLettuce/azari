@@ -53,7 +53,14 @@
     "directoriesHint": "Папки",
     "copiedClipboard": "Скопировано!",
     "aspectRatio": "Коэффициент пропорциональности",
-    "hideNames": "Скрыть названия",
+    "hideNames": "Скрыть названия {target}",
+    "@hideNames": {
+        "placeholders": {
+            "target": {
+                "type": "String"
+            }
+        }
+    },
     "gridColumns": "Клеток в сетке",
     "metricsLabel": "Метрика",
     "thumbnailsCSize": "Размер кэша миниатюр",
@@ -96,7 +103,7 @@
     },
     "infoHeadline": "О изображении",
     "error": "Ошибка",
-    "favoritesLabel": "Фавориты",
+    "favoritesLabel": "Избранное",
     "disassembleNoPrefix": "Нет префикса",
     "disassemblePrefixNotRegistred": "Префикс не найден",
     "disassembleNumbersAndHash": "Правильное название содержит только цифры и буквы латыницы, отделенное - знаком, окруженным одним пробелом с каждой стороны",
@@ -111,13 +118,10 @@
     "later": "Потом",
     "needChooseDirectory": "Можно выбрать папку для загрузок, иначе загрузки провалятся без ошибки.",
     "beforeYouContinueTitle": "Прежде чем продолжить...",
-    "deletedFromFavorites": "Удаленно из фаворитов",
+    "deletedFromFavorites": "Удаленно из избранного",
     "undoLabel": "Отменить",
     "ungrouped": "Без группы",
     "more": "Больше",
-    "newsTab": "Новости",
-    "animePage": "Аниме",
-    "cardWatched": "Просмотрено",
     "hasTranslations": "Есть перевод",
     "tapToView": "Нажмите для просмотра",
     "translationTitle": "Перевод",
@@ -125,7 +129,6 @@
     "loadingPlaceholder": "...",
     "pinnedThumbnailsSize": "Размер кэша закрепленных миниатюр",
     "extendedFilesGridActions": "Показывать дополнительные кнопки действия для файлов",
-    "animeAlwaysOnline": "Всегда загружать информацию об аниме с интернета",
     "add": "Добавить",
     "group": "Группа",
     "bookmarked": "Добавлено в закладки",
@@ -161,39 +164,9 @@
     "cardMoved": "Перемещено",
     "showNames": "Показывать названияы",
     "gridView": "Сетка",
-    "listView": "Лист",
-    "cardInBrowser": "В браузере",
-    "cardTrailer": "Трейлер",
-    "cardBacklog": "Беклог",
-    "cardInBacklog": "В беклоге",
-    "cardType": "Тип",
-    "cardEpisodes": "Эпизоды",
-    "cardAiring": "В вещании",
-    "cardScore": "Очки",
-    "cardYear": "Год",
-    "cardUnknownValue": "?",
-    "synopsisLabel": "Синопсис",
-    "charactersLabel": "Персонажи",
-    "backgroundLabel": "Предпосылка",
-    "relationsLabel": "Связанное",
-    "backlogLabel": "Беклог",
-    "watchingLabel": "В просмотре",
-    "searchAnimePage": "Искать аниме",
-    "alsoKnownAs": "Также известно как:\n{titles}",
-    "@alsoKnownAs": {
-        "placeholders": {
-            "titles": {
-                "type": "String"
-            }
-        }
-    },
-    "role": "Роль",
+    "listView": "Список",
     "hiddenPostsPageName": "Скрытые посты",
     "tryAgain": "Повторить",
-    "animePicturesLabel": "Изображения",
-    "animeLoadPictures": "Загрузить изображения",
-    "animeSimilar": "Похожее",
-    "animeLoadSimilar": "Загрузить похожее",
     "copyLabel": "Скопировать",
     "chooseSafeMode": "Выбрать контент фильтр",
     "searchWithSafeMode": "Поиск с выбранным контент фильтром",
@@ -229,12 +202,14 @@
     "enumPostRatingExplicit": "Нецензурный",
     "enumSafeModeNormal": "Полный",
     "enumSafeModeNone": "Выключен",
-    "enumSafeModeRelaxed": "Расслабленный",
+    "enumSafeModeRelaxed": "С исключениями",
     "enumDisplayQualityOriginal": "Оригинал",
     "enumDisplayQualitySample": "Образец",
-    "enumSortringModeNone": "Никакой",
-    "enumSortringModeSize": "Размер",
-    "enumFilteringModeFavorite": "Фавориты",
+    "enumSortingModeNone": "Никакой",
+    "enumSortingModeSize": "Размер",
+    "enumSortingModeRating": "Рейтинг",
+    "enumSortingModeScore": "Очки",
+    "enumFilteringModeFavorite": "Избранное",
     "enumFilteringModeOriginal": "Оригинальный",
     "enumFilteringModeSame": "Схожесть",
     "enumFilteringModeVideo": "Видео",
@@ -255,13 +230,11 @@
     "homePage": "Начальная страница",
     "segmentsUncategorized": "Остальное",
     "segmentsSpecial": "Специальное",
-    "galleryDirectoriesFavorites": "Фавориты",
+    "galleryDirectoriesFavorites": "Избранное",
     "galleryDirectoryTrash": "Корзина",
-    "animeSearchSearching": "Поиск",
-    "animeSearchGenres": "Жанры",
     "enumGridLayoutTypeGrid": "Сетка",
-    "enumGridLayoutTypeList": "Лист",
-    "enumGridLayoutTypeGridQuilted": "Стеганая сетка",
+    "enumGridLayoutTypeList": "Список",
+    "enumGridLayoutTypeGridQuilted": "Мозайка",
     "enumGridLayoutTypeGridMasonry": "Волнистая сетка",
     "enumThemeTypeSystemAccent": "Система",
     "enumThemeTypeSecretPink": "Розовая",
@@ -300,7 +273,6 @@
     "chooseValidDirectory": "Неправильная папка",
     "pickDirectory": "Папка для загрузок",
     "openWelcomePageSetting": "Открыть странницу приветствия",
-    "deletedFromWatched": "Удаленно из просмотренного",
     "deletedFromBacklog": "Удаленно из беклога",
     "tagsLabel": "Теги",
     "bookmarksPageName": "Закладки",
@@ -359,7 +331,7 @@
             }
         }
     },
-    "latestBookmarks": "Недавние закладки",
+    "latestBookmarks": "Последние закладки",
     "noBookmarks": "Нет закладок",
     "minutesShort": "{number} м.",
     "@minutesShort": {
@@ -399,14 +371,7 @@
             }
         }
     },
-    "visitedPage": "Просмотренное",
-    "upcomingAnime": "Скоро",
-    "removeWatching": "Не смотрю",
-    "addWatching": "В смотрю",
-    "removeWatched": "Удалить из просмотренного",
-    "addWatched": "В просмотренно",
-    "removeBacklog": "Удалить из беклога",
-    "addBacklog": "В беклог",
+    "visitedPage": "История",
     "popularPosts": "Популярные",
     "randomPosts": "Случайные",
     "videosLabel": "Видео",
@@ -426,8 +391,8 @@
             }
         }
     },
-    "noPinnedDirectories": "Прикрепленные папки не найдены",
-    "tagInPinnedDirectories": "#{tag} в прикрепленных папках",
+    "noPinnedDirectories": "Закрепленные папки не найдены",
+    "tagInPinnedDirectories": "#{tag} в закрепленных папках",
     "@tagInPinnedDirectories": {
         "placeholders": {
             "tag": {
@@ -435,7 +400,7 @@
             }
         }
     },
-    "namesInPinnedDirectories": "'{name}' в прикрепленных папках",
+    "namesInPinnedDirectories": "'{name}' в закрепленных папках",
     "@namesInPinnedDirectories": {
         "placeholders": {
             "name": {
@@ -459,7 +424,6 @@
             }
         }
     },
-    "mostRatedLabel": "Высокий Рейтинг",
     "excludedTagsLabel": "Исключенные Теги",
     "removeTag": "Удалить #{tag}?",
     "@removeTag": {
@@ -478,8 +442,8 @@
         }
     },
     "addExcludedTag": "Добавить исключенный тег",
-    "pinnedTags": "Прикрепленные Теги",
-    "addTagToPinned": "Добавить #{tag} в прикрепленное",
+    "pinnedTags": "Закрепленные Теги",
+    "addTagToPinned": "Закрепить #{tag}",
     "@addTagToPinned": {
         "placeholders": {
             "tag": {
@@ -487,10 +451,9 @@
             }
         }
     },
-    "addPinnedTag": "Добавить прикрепленный тег",
-    "collapse": "Свернуть",
+    "addPinnedTag": "Закрепить тег",
     "emptyBookmarkedSearches": "Закладки появятся здесь...",
-    "emptyFavoritedPosts": "Фавориты появятся здесь...",
+    "emptyFavoritedPosts": "Избранное появятся здесь...",
     "emptyHiddenPosts": "Скрытые посты будут здесь...",
     "emptyNoPosts": "Нет постов...",
     "emptyPostsVisited": "Просмотренные посты появятся здесь...",
@@ -499,5 +462,7 @@
     "yesHide": "да, убрать",
     "emptyNoMedia": "Нет медия...",
     "emptyDownloadProgress": "Загрузки появятся здесь...",
-    "currentSeason": "Текущий Сезон"
+    "discoverPage": "Больше",
+    "hideNamesFiles": "файлов",
+    "hideNamesDirectories": "папок"
 }

@@ -92,7 +92,8 @@ class TranslationNotesButton extends StatelessWidget {
 
     return TextButton.icon(
       onPressed: () => Navigator.of(context).push<void>(
-        MaterialPageRoute(
+        DialogRoute(
+          context: context,
           builder: (context) => TranslationNotes(
             postId: postId,
             booru: booru,

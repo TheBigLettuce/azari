@@ -6,6 +6,7 @@
 package com.github.thebiglettuce.azari.impls
 
 import android.content.Context
+import android.graphics.PointF
 import android.net.Uri
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -14,11 +15,13 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.GlideImageViewFactory
 import com.github.piasy.biv.view.ImageViewFactory
+import com.github.thebiglettuce.azari.generated.GalleryPageChangeEvent
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import io.flutter.Log
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import com.github.thebiglettuce.azari.generated.GalleryPageChangeEvent
+import kotlin.math.absoluteValue
 
 
 internal class ImageView(
@@ -26,15 +29,14 @@ internal class ImageView(
     id: Int,
     galleryApi: PlatformGalleryApi,
     params: Map<String, String>,
-//    scope: CoroutineScope,
 ) : PlatformView {
-    private var imageView: View
+    private var imageView: View?
 
-    override fun getView(): View = imageView
+    override fun getView(): View? = imageView
 
     override fun dispose() {
-        imageView.invalidate()
-        (imageView as? SubsamplingScaleImageView)?.recycle()
+        imageView?.invalidate()
+        imageView = null
     }
 
     init {
@@ -42,16 +44,39 @@ internal class ImageView(
             setOnClickListener { galleryApi.galleryTapDownEvent { } }
             setImageViewFactory(GlideImageViewFactory())
             setOptimizeDisplay(false)
-            setImageViewFactory(GestureImageViewFactory(context, galleryApi))
+            setImageViewFactory(GestureImageViewFactory(galleryApi))
             showImage(Uri.parse(params["uri"]))
         }
     }
 }
 
 class GestureImageViewFactory(
-    context: Context,
-    galleryApi: PlatformGalleryApi,
+    private val galleryApi: PlatformGalleryApi,
 ) : ImageViewFactory() {
+    override fun createStillImageView(context: Context?): SubsamplingScaleImageView {
+        return GestureImageView(galleryApi, context)
+            .apply {
+                setOnStateChangedListener(listener)
+            }
+    }
+}
+
+class PanZoomListener(val ssiv: SubsamplingScaleImageView) :
+    SubsamplingScaleImageView.DefaultOnStateChangedListener() {
+    var isScaling = false
+
+    override fun onScaleChanged(newScale: Float, origin: Int) {
+        isScaling = newScale != ssiv.minScale
+    }
+}
+
+class GestureImageView(
+    val galleryApi: PlatformGalleryApi,
+    context: Context?,
+) :
+    SubsamplingScaleImageView(context) {
+    val listener = PanZoomListener(this)
+
     val gestureDetector: GestureDetector =
         GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
@@ -60,19 +85,38 @@ class GestureImageViewFactory(
                 velocityX: Float,
                 velocityY: Float,
             ): Boolean {
+                if (listener.isScaling) {
+                    return false
+                }
+
+                if (velocityY > 0 && velocityX > 0 && velocityY > velocityX) {
+                    return false
+                } else if (velocityY < 0 && velocityX < 0 && velocityY < velocityX) {
+                    return false
+                } else if (velocityY < 0 && velocityX > 0 && velocityY.absoluteValue > velocityX) {
+                    return false
+                }
+
+                if (e2.pointerCount > 1) {
+                    return false
+                }
+
                 galleryApi.galleryPageChangeEvent(if (velocityX > 0) GalleryPageChangeEvent.LEFT else GalleryPageChangeEvent.RIGHT) {}
 
-                return super.onFling(e1, e2, velocityX, velocityY)
+                return true
             }
         }, null)
 
-
-    override fun createStillImageView(context: Context?): SubsamplingScaleImageView {
-        return super.createStillImageView(context).apply {
-            setOnTouchListener { view, motionEvent -> gestureDetector.onTouchEvent(motionEvent) }
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val handledGesture = gestureDetector.onTouchEvent(event)
+        if (handledGesture) {
+            return true
         }
+
+        return super.onTouchEvent(event)
     }
 }
+
 
 class NativeViewFactory(private val galleryApi: PlatformGalleryApi) :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
