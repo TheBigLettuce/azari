@@ -53,6 +53,7 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
     this.onDispose,
     this.belowMainFocus,
     required this.description,
+    this.addGesturesPadding = false,
   });
 
   /// [initalScrollPosition] is needed for the state restoration.
@@ -71,6 +72,8 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   final VoidCallback? onDispose;
 
   final List<Widget> slivers;
+
+  final bool addGesturesPadding;
 
   @override
   State<GridFrame<T>> createState() => GridFrameState<T>();
@@ -266,11 +269,17 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
               : functionality.registerNotifiers != null
                   ? functionality.registerNotifiers!(
                       _BodyChild<T>(
-                        child: _MainBody<T>(slivers: widget.slivers),
+                        child: _MainBody<T>(
+                          slivers: widget.slivers,
+                          addGesturesPadding: widget.addGesturesPadding,
+                        ),
                       ),
                     )
                   : _BodyChild<T>(
-                      child: _MainBody<T>(slivers: widget.slivers),
+                      child: _MainBody<T>(
+                        slivers: widget.slivers,
+                        addGesturesPadding: widget.addGesturesPadding,
+                      ),
                     ),
         ),
       ),
@@ -305,9 +314,12 @@ class _MainBody<T extends CellBase> extends StatelessWidget {
   const _MainBody({
     super.key,
     required this.slivers,
+    required this.addGesturesPadding,
   });
 
   final List<Widget> slivers;
+
+  final bool addGesturesPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -332,10 +344,22 @@ class _MainBody<T extends CellBase> extends StatelessWidget {
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: MediaQuery(
             data: m,
-            child: CustomScrollView(
-              controller: controller,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: extras.bodySlivers(context, slivers),
+            child: Padding(
+              padding: addGesturesPadding
+                  ? EdgeInsets.only(
+                      left: m.systemGestureInsets.left != 0
+                          ? m.systemGestureInsets.left / 2
+                          : 0,
+                      right: m.systemGestureInsets.right != 0
+                          ? m.systemGestureInsets.right / 2
+                          : 0,
+                    )
+                  : EdgeInsets.zero,
+              child: CustomScrollView(
+                controller: controller,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: extras.bodySlivers(context, slivers),
+              ),
             ),
           ),
         ),

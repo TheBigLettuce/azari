@@ -123,7 +123,8 @@ mixin VisitedPostImpl implements VisitedPost {
   CellStaticData description() => const CellStaticData();
 
   @override
-  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
+      CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey((booru, id));
@@ -143,6 +144,8 @@ mixin VisitedPostImpl implements VisitedPost {
 }
 
 abstract interface class VisitedPostsService {
+  factory VisitedPostsService.db() => _currentDb.visitedPosts;
+
   List<VisitedPost> get all;
 
   void addAll(List<VisitedPost> visitedPosts);
@@ -589,6 +592,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
     required DateTime createdAt,
     required Booru booru,
     required PostContentType type,
+    required int size,
   }) = $Post;
 
   static String getUrl(PostBase p) {

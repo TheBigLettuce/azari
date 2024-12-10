@@ -6,10 +6,10 @@
 part of "gallery_api.dart";
 
 abstract class File
-    with DefaultBuildCellImpl
     implements
         ContentableCell,
         ContentWidgets,
+        SelectionWrapperBuilder,
         Pressable<File>,
         Thumbnailable,
         Infoable,
@@ -52,6 +52,95 @@ abstract class File
   final bool isDuplicate;
 
   final (int, Booru)? res;
+
+  @override
+  Widget buildSelectionWrapper<T extends CellBase>({
+    required BuildContext context,
+    required int thisIndx,
+    required List<int>? selectFrom,
+    required GridSelection<T>? selection,
+    required CellStaticData description,
+    required GridFunctionality<T> functionality,
+    required VoidCallback? onPressed,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+
+    return OpenContainer(
+      tappable: false,
+      closedElevation: 0,
+      openElevation: 0,
+      middleColor: theme.colorScheme.surface.withValues(alpha: 0),
+      openColor: theme.colorScheme.surface.withValues(alpha: 0),
+      closedColor: theme.colorScheme.surface.withValues(alpha: 1),
+      useRootNavigator: true,
+      closedBuilder: (context, action) => WrapSelection(
+        thisIndx: thisIndx,
+        description: description,
+        selectFrom: selectFrom,
+        selection: selection,
+        functionality: functionality,
+        onPressed: action,
+        child: child,
+      ),
+      openBuilder: (containerContext, action) {
+        final db = DatabaseConnectionNotifier.of(containerContext);
+
+        final imageDescription = ImageViewDescription(
+          ignoreOnNearEnd: false,
+          statistics: StatisticsBooruService.asImageViewStatistics(),
+        );
+
+        final getCell = functionality.source.forIdxUnsafe;
+
+        return ImageView(
+          updates: functionality.source.backingStorage.watch,
+          gridContext: context,
+          statistics: imageDescription.statistics,
+          scrollUntill: (i) =>
+              GridScrollNotifier.maybeScrollToOf<T>(context, i),
+          pageChange: (state) {
+            imageDescription.pageChange?.call(state);
+            // _addToVisited(getCell(state.currentPage) as PostImpl);
+          },
+          watchTags: (c, f) => watchTags(c, f, db.localTags, db.tagManager),
+          onExit: imageDescription.onExit,
+          getContent: (idx) => (getCell(idx) as ContentableCell).content(),
+          cellCount: functionality.source.count,
+          download: functionality.download,
+          startingCell: thisIndx,
+          tags: (c) => imageTags(c, db.localTags, db.tagManager),
+          onNearEnd:
+              imageDescription.ignoreOnNearEnd || !functionality.source.hasNext
+                  ? null
+                  : functionality.source.next,
+          wrapNotifiers: functionality.registerNotifiers,
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildCell<T extends CellBase>(
+    BuildContext context,
+    int idx,
+    T cell, {
+    required bool isList,
+    required bool hideTitle,
+    bool animated = false,
+    bool blur = false,
+    required Alignment imageAlign,
+    required Widget Function(Widget child) wrapSelection,
+  }) =>
+      _FileCell(
+        file: this,
+        isList: isList,
+        hideTitle: hideTitle,
+        animated: animated,
+        blur: blur,
+        imageAlign: imageAlign,
+        wrapSelection: wrapSelection,
+      );
 
   @override
   CellStaticData description() => const CellStaticData(
@@ -137,6 +226,7 @@ abstract class File
                       createdAt: ret.createdAt,
                       booru: ret.booru,
                       type: ret.type,
+                      size: ret.size,
                     ),
                   );
                 } catch (e, trace) {
@@ -217,7 +307,7 @@ abstract class File
             ImageViewAction(
               Icons.copy,
               (selected) {
-                AppBarVisibilityNotifier.toggleOf(context, true);
+                AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                 return moveOrCopyFnc(
                   context,
@@ -236,7 +326,7 @@ abstract class File
             ImageViewAction(
               Icons.forward_rounded,
               (selected) async {
-                AppBarVisibilityNotifier.toggleOf(context, true);
+                AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                 return moveOrCopyFnc(
                   context,
@@ -283,7 +373,8 @@ abstract class File
   }
 
   @override
-  ImageProvider<Object> thumbnail() => GalleryThumbnailProvider(
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
+      GalleryThumbnailProvider(
         id,
         isVideo,
         PinnedThumbnailService.db(),
@@ -297,7 +388,7 @@ abstract class File
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     final db = DatabaseConnectionNotifier.of(context);
 
-    final filteringData = FilteringData.maybeOf(context);
+    final filteringData = ChainedFilter.maybeOf(context);
 
     if (excludeDuplicate) {
       final stickers = <Sticker>[
@@ -443,7 +534,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final tagManager = TagManager.of(context);
-    final settings = SettingsService.db().current;
+    // final settings = SettingsService.db().current;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -462,33 +553,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
             selectTag: (str, controller) {
               HapticFeedback.mediumImpact();
 
-              Navigator.pop(context);
-
-              radioDialog<SafeMode>(
-                context,
-                SafeMode.values.map(
-                  (e) => (e, e.translatedString(l10n)),
-                ),
-                settings.safeMode,
-                (s) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) {
-                        return BooruRestoredPage(
-                          booru: settings.selectedBooru,
-                          tags: str,
-                          saveSelectedPage: (e) {},
-                          overrideSafeMode: s ?? settings.safeMode,
-                          db: DatabaseConnectionNotifier.of(context),
-                        );
-                      },
-                    ),
-                  );
-                },
-                title: l10n.chooseSafeMode,
-                allowSingle: true,
-              );
               _launchGrid(context, str);
             },
             tagManager: TagManager.of(context),
@@ -539,59 +603,57 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
         ),
         ListBody(
           children: [
-            MenuWrapper(
-              title: filename,
-              child: addInfoTile(
-                title: filename,
-                subtitle: null,
-                onPressed: () {
-                  Navigator.push<void>(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text(l10n.enterNewNameTitle),
-                          content: TextFormField(
-                            autofocus: true,
-                            initialValue: filename,
-                            autovalidateMode: AutovalidateMode.always,
-                            decoration: const InputDecoration(
-                              errorMaxLines: 2,
-                            ),
-                            validator: (value) {
-                              if (value == null) {
-                                return l10n.valueIsNull;
-                              }
-
-                              final res = ParsedFilenameResult.fromFilename(
-                                value,
-                              );
-                              if (res.hasError) {
-                                return res.asError(l10n);
-                              }
-
-                              return null;
-                            },
-                            onFieldSubmitted: (value) {
-                              GalleryApi()
-                                  .files
-                                  .rename(file.originalUri, value);
-
-                              Navigator.pop(context);
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            DimensionsRow(
+            DimensionsName(
               l10n: l10n,
               width: file.width,
               height: file.height,
+              name: file.name,
+              icon: file.isVideo
+                  ? const Icon(Icons.slideshow_outlined)
+                  : const Icon(Icons.photo_outlined),
+              onTap: () {
+                Navigator.push<void>(
+                  context,
+                  DialogRoute(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text(l10n.enterNewNameTitle),
+                        content: TextFormField(
+                          autofocus: true,
+                          initialValue: filename,
+                          autovalidateMode: AutovalidateMode.always,
+                          decoration: const InputDecoration(
+                            errorMaxLines: 2,
+                          ),
+                          validator: (value) {
+                            if (value == null) {
+                              return l10n.valueIsNull;
+                            }
+
+                            final res = ParsedFilenameResult.fromFilename(
+                              value,
+                            );
+                            if (res.hasError) {
+                              return res.asError(l10n);
+                            }
+
+                            return null;
+                          },
+                          onFieldSubmitted: (value) {
+                            GalleryApi().files.rename(file.originalUri, value);
+
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+              onLongTap: () {
+                Clipboard.setData(ClipboardData(text: file.name));
+              },
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -839,6 +901,191 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       icon: const Icon(
         Icons.wallpaper_rounded,
         size: 18,
+      ),
+    );
+  }
+}
+
+class _FileCell extends StatelessWidget {
+  const _FileCell({
+    // super.key,
+    // required this.idx,
+    required this.file,
+    required this.isList,
+    required this.hideTitle,
+    required this.animated,
+    required this.blur,
+    required this.imageAlign,
+    required this.wrapSelection,
+  });
+
+  // final int idx;
+
+  final File file;
+
+  final bool isList;
+  final bool hideTitle;
+  final bool animated;
+  final bool blur;
+  final Alignment imageAlign;
+  final Widget Function(Widget child) wrapSelection;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = file.description();
+    final alias = hideTitle ? "" : file.alias(isList);
+
+    final stickers =
+        description.ignoreStickers ? null : file.stickers(context, false);
+    final thumbnail = file.thumbnail(context);
+
+    final theme = Theme.of(context);
+
+    final filteringData = ChainedFilter.maybeOf(context);
+
+    Widget child = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Expanded(
+          child: Card(
+            margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
+            elevation: 0,
+            color: theme.cardColor.withValues(alpha: 0),
+            child: ClipPath(
+              clipper: ShapeBorderClipper(
+                shape: description.circle
+                    ? const CircleBorder()
+                    : RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+              ),
+              child: Stack(
+                children: [
+                  wrapSelection(
+                    GridCellImage(
+                      imageAlign: imageAlign,
+                      thumbnail: thumbnail,
+                      blur: blur,
+                    ),
+                  ),
+                  if (stickers != null && stickers.isNotEmpty)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.end,
+                          direction: Axis.vertical,
+                          children:
+                              stickers.map((e) => StickerWidget(e)).toList(),
+                        ),
+                      ),
+                    ),
+                  if (alias.isNotEmpty)
+                    GridCellName(
+                      title: alias,
+                      lines: description.titleLines,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (filteringData != null &&
+            (filteringData.filteringMode == FilteringMode.tag ||
+                filteringData.filteringMode == FilteringMode.tagReversed))
+          _Tags(
+            file: file,
+            db: DatabaseConnectionNotifier.of(context),
+          ),
+      ],
+    );
+
+    if (animated) {
+      child = child.animate(key: file.uniqueKey()).fadeIn();
+    }
+
+    return child;
+  }
+}
+
+class _Tags extends StatefulWidget {
+  const _Tags({
+    // super.key,
+    required this.file,
+    required this.db,
+  });
+
+  final File file;
+
+  final DbConn db;
+
+  @override
+  State<_Tags> createState() => __TagsState();
+}
+
+class __TagsState extends State<_Tags> with PinnedSortedTagsArrayMixin {
+  @override
+  List<String> postTags = const [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    final res = widget.file.res;
+    if (res != null) {
+      postTags = widget.db.localTags.get(widget.file.name);
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final res = widget.file.res;
+
+    if (res == null || postTags.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final (id, booru) = res;
+
+    return SizedBox(
+      height: 21,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: ListView.builder(
+          clipBehavior: Clip.antiAlias,
+          scrollDirection: Axis.horizontal,
+          itemCount: tags.length,
+          itemBuilder: (context, index) {
+            final e = tags[index];
+
+            return OutlinedTagChip(
+              tag: e.tag,
+              letterCount: 8,
+              isPinned: e.pinned,
+              onLongPressed: () {
+                context.openSafeModeDialog((safeMode) {
+                  OnBooruTagPressed.pressOf(
+                    context,
+                    e.tag,
+                    booru,
+                    overrideSafeMode: safeMode,
+                  );
+                });
+              },
+              onPressed: () => OnBooruTagPressed.pressOf(
+                context,
+                e.tag,
+                booru,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

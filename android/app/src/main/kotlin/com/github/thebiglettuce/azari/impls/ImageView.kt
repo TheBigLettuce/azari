@@ -52,7 +52,7 @@ internal class ImageView(
 
 class GestureImageViewFactory(
     private val galleryApi: PlatformGalleryApi,
-) : ImageViewFactory() {
+) : GlideImageViewFactory() {
     override fun createStillImageView(context: Context?): SubsamplingScaleImageView {
         return GestureImageView(galleryApi, context)
             .apply {

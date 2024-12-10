@@ -149,13 +149,13 @@ Future<void> joinedDirectoriesFnc(
 
     StatisticsGalleryService.db().current.add(joined: 1).save();
 
-    final joined = api.joinedFiles(
-      dirs,
-      directoryTags,
-      directoryMetadata,
-      favoritePosts,
-      localTags,
-    );
+    // final joined = api.joinedFiles(
+    //   dirs,
+    //   directoryTags,
+    //   directoryMetadata,
+    //   favoritePosts,
+    //   localTags,
+    // );
 
     return Navigator.push<void>(
       context,
@@ -163,9 +163,9 @@ Future<void> joinedDirectoriesFnc(
         builder: (context) {
           return FilesPage(
             secure: requireAuth,
-            api: joined,
+            api: api,
+            directories: dirs,
             callback: callback,
-            directory: null,
             addScaffold: addScaffold,
             dirName: label,
             presetFilteringValue: tag,

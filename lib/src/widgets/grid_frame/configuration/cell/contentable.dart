@@ -41,9 +41,9 @@ extension ContentWidgetsExt on ContentWidgets {
     return const [];
   }
 
-  ImageProvider? tryAsThumbnailable() {
+  ImageProvider? tryAsThumbnailable(BuildContext? context) {
     if (this is Thumbnailable) {
-      return (this as Thumbnailable).thumbnail();
+      return (this as Thumbnailable).thumbnail(context);
     }
 
     return null;

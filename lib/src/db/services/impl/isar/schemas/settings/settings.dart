@@ -33,6 +33,7 @@ class IsarSettingsPath implements SettingsPath {
 @collection
 class IsarSettings extends SettingsData {
   const IsarSettings({
+    required this.sampleThumbnails,
     required this.path,
     required this.selectedBooru,
     required this.quality,
@@ -41,6 +42,15 @@ class IsarSettings extends SettingsData {
     required this.extraSafeFilters,
   });
 
+  const IsarSettings.empty()
+      : extraSafeFilters = true,
+        showWelcomePage = true,
+        path = const IsarSettingsPath(),
+        selectedBooru = Booru.gelbooru,
+        quality = DisplayQuality.sample,
+        sampleThumbnails = false,
+        safeMode = SafeMode.normal;
+
   Id get id => 0;
 
   @override
@@ -48,6 +58,9 @@ class IsarSettings extends SettingsData {
 
   @override
   final bool extraSafeFilters;
+
+  @override
+  final bool sampleThumbnails;
 
   @override
   @enumerated
@@ -72,6 +85,7 @@ class IsarSettings extends SettingsData {
     DisplayQuality? quality,
     SafeMode? safeMode,
     bool? showWelcomePage,
+    bool? sampleThumbnails,
   }) {
     return IsarSettings(
       extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
@@ -80,6 +94,7 @@ class IsarSettings extends SettingsData {
       selectedBooru: selectedBooru ?? this.selectedBooru,
       quality: quality ?? this.quality,
       safeMode: safeMode ?? this.safeMode,
+      sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
     );
   }
 }

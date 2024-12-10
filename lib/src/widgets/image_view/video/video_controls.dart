@@ -12,12 +12,15 @@ class VideoControls extends StatefulWidget {
     required this.db,
     required this.seekTimeAnchor,
     required this.vertical,
+    this.content,
   });
 
   final bool vertical;
 
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
+
+  final Contentable? content;
 
   final VideoSettingsService db;
 
@@ -48,6 +51,14 @@ class _VideoControlsState extends State<VideoControls>
 
     animationController =
         AnimationController(vsync: this, duration: Durations.medium1);
+
+    if (widget.content != null) {
+      currentContent = widget.content!;
+
+      if (currentContent is AndroidVideo || currentContent is NetVideo) {
+        animationController.forward();
+      }
+    }
 
     playerUpdatesSubsc = controls._playerEvents.stream.listen((update) {
       switch (update) {
@@ -81,8 +92,8 @@ class _VideoControlsState extends State<VideoControls>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final newContent = CurrentContentNotifier.of(context);
-    if (newContent != currentContent) {
+    final newContent = CurrentContentNotifier.maybeOf(context);
+    if (newContent != null && newContent != currentContent) {
       currentContent = newContent;
       if (currentContent is AndroidVideo || currentContent is NetVideo) {
         animationController.forward();
@@ -91,8 +102,8 @@ class _VideoControlsState extends State<VideoControls>
       }
     }
 
-    final newAppBarVisible = AppBarVisibilityNotifier.of(context);
-    if (appBarVisible != newAppBarVisible) {
+    final newAppBarVisible = AppBarVisibilityNotifier.maybeOf(context);
+    if (newAppBarVisible != null && appBarVisible != newAppBarVisible) {
       appBarVisible = newAppBarVisible;
     }
   }

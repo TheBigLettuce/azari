@@ -156,10 +156,14 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     required this.variant,
     this.allowUnselect = false,
     this.enableFilter = false,
+    this.showSelectedIcon = true,
+    this.reorder = true,
   });
 
   final bool allowUnselect;
   final bool enableFilter;
+  final bool showSelectedIcon;
+  final bool reorder;
 
   final String title;
 
@@ -218,11 +222,13 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
           ..sort((e1, e2) {
             return e1.label.compareTo(e2.label);
           });
-    final selectedSegment =
-        newValues.indexWhere((element) => element.value == widget.selected);
-    if (selectedSegment != -1) {
-      final s = newValues.removeAt(selectedSegment);
-      newValues.insert(0, s);
+    if (widget.reorder) {
+      final selectedSegment =
+          newValues.indexWhere((element) => element.value == widget.selected);
+      if (selectedSegment != -1) {
+        final s = newValues.removeAt(selectedSegment);
+        newValues.insert(0, s);
+      }
     }
 
     final child = newValues.isEmpty
@@ -259,6 +265,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                           ),
                         )
                         .toList(),
+                    showSelectedIcon: widget.showSelectedIcon,
                     selected:
                         widget.selected != null ? {widget.selected as T} : {},
                   ),
@@ -277,7 +284,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
                     return Padding(
                       padding: EdgeInsets.only(
-                        right: index == newValues.length - 1 ? 0 : 4,
+                        right: index == newValues.length - 1 ? 0 : 8,
                       ),
                       child: ChoiceChip(
                         showCheckmark: false,
@@ -438,10 +445,20 @@ class _SafeModeSegmentState extends State<SafeModeSegment> {
         }
       },
       selected: state.current,
-      values: SafeMode.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      reorder: false,
+      values: SafeMode.values.map(
+        (e) => SegmentedButtonValue(
+          e,
+          e.translatedString(l10n),
+          icon: switch (e) {
+            SafeMode.normal => Icons.no_adult_content_outlined,
+            SafeMode.relaxed => Icons.visibility_outlined,
+            SafeMode.none => Icons.explicit_outlined,
+          },
+        ),
+      ),
       title: l10n.safeModeSetting,
-      variant: SegmentedButtonVariant.segments,
+      variant: SegmentedButtonVariant.chip,
     );
   }
 }
@@ -508,10 +525,20 @@ class _SafeModeButtonState extends State<SafeModeButton> {
         _stateSettings?.copy(safeMode: e).saveSecondary(widget.secondaryGrid!);
       },
       selected: _settings?.safeMode ?? _stateSettings?.safeMode,
-      values: SafeMode.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      reorder: false,
+      values: SafeMode.values.map(
+        (e) => SegmentedButtonValue(
+          e,
+          e.translatedString(l10n),
+          icon: switch (e) {
+            SafeMode.normal => Icons.no_adult_content_outlined,
+            SafeMode.relaxed => Icons.visibility_outlined,
+            SafeMode.none => Icons.explicit_outlined,
+          },
+        ),
+      ),
       title: l10n.safeModeSetting,
-      variant: SegmentedButtonVariant.segments,
+      variant: SegmentedButtonVariant.chip,
     );
   }
 }
@@ -573,13 +600,43 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     void Function(GridAspectRatio?) select,
     AppLocalizations l10n,
   ) {
-    return SegmentedButtonGroup(
-      variant: SegmentedButtonVariant.segments,
-      select: select,
-      selected: aspectRatio,
-      values: GridAspectRatio.values
-          .map((e) => SegmentedButtonValue(e, e.value.toString())),
-      title: l10n.aspectRatio,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding:
+                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                l10n.aspectRatio,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Slider(
+              year2023: false,
+              value: aspectRatio.index.toDouble(),
+              max: GridAspectRatio.values.length.toDouble() - 1,
+              divisions: GridAspectRatio.values.length - 1,
+              label:
+                  GridAspectRatio.fromIndex(aspectRatio.index).value.toString(),
+              semanticFormatterCallback: (value) =>
+                  GridAspectRatio.fromIndex(value.toInt()).value.toString(),
+              onChanged: (val) {
+                select(GridAspectRatio.fromIndex(val.toInt()));
+                // value = val;
+
+                // setState(() {});
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -589,13 +646,47 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     void Function(GridColumn?) select,
     AppLocalizations l10n,
   ) {
-    return SegmentedButtonGroup(
-      variant: SegmentedButtonVariant.segments,
-      select: select,
-      selected: columns,
-      values: GridColumn.values
-          .map((e) => SegmentedButtonValue(e, e.number.toString())),
-      title: l10n.gridColumns,
+    // return SegmentedButtonGroup(
+    //   variant: SegmentedButtonVariant.segments,
+    //   select: select,
+    //   selected: columns,
+    //   values: GridColumn.values
+    //       .map((e) => SegmentedButtonValue(e, e.number.toString())),
+    //   title: l10n.gridColumns,
+    // );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding:
+                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                l10n.gridColumns,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Slider(
+              year2023: false,
+              value: columns.index.toDouble(),
+              max: GridColumn.values.length.toDouble() - 1,
+              divisions: GridColumn.values.length - 1,
+              label: GridColumn.fromIndex(columns.index).number.toString(),
+              semanticFormatterCallback: (value) =>
+                  GridColumn.fromIndex(value.toInt()).number.toString(),
+              onChanged: (val) {
+                select(GridColumn.fromIndex(val.toInt()));
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -608,9 +699,28 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     return SegmentedButtonGroup(
       variant: SegmentedButtonVariant.segments,
       select: select,
+      showSelectedIcon: false,
       selected: selectGridLayout,
-      values: GridLayoutType.values
-          .map((e) => SegmentedButtonValue(e, e.translatedString(l10n))),
+      values: GridLayoutType.values.map(
+        (e) => SegmentedButtonValue(
+          e,
+          e.translatedString(l10n),
+          icon: switch (e) {
+            GridLayoutType.grid => e == selectGridLayout
+                ? Icons.grid_view_rounded
+                : Icons.grid_view_outlined,
+            GridLayoutType.list => e == selectGridLayout
+                ? Icons.view_list_rounded
+                : Icons.view_list_outlined,
+            GridLayoutType.gridQuilted => e == selectGridLayout
+                ? Icons.view_quilt_rounded
+                : Icons.view_quilt_outlined,
+            GridLayoutType.gridMasonry => e == selectGridLayout
+                ? Icons.grid_view_rounded
+                : Icons.grid_view_outlined,
+          },
+        ),
+      ),
       title: l10n.layoutLabel,
     );
   }

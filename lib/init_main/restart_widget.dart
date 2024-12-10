@@ -142,7 +142,7 @@ class _RestartWidgetState extends State<RestartWidget> {
       progressTab.inject(
         DatabaseConnectionNotifier.current(
           Builder(
-            builder: (context) => _PinnedTagsHolder(
+            builder: (context) => PinnedTagsHolder(
               tagManager: TagManager.of(context),
               child: TimeSpentNotifier(
                 timeNow,
@@ -224,8 +224,8 @@ class TimeSpentNotifier extends InheritedWidget {
       _time != oldWidget._time;
 }
 
-class _PinnedTagsHolder extends StatefulWidget {
-  const _PinnedTagsHolder({
+class PinnedTagsHolder extends StatefulWidget {
+  const PinnedTagsHolder({
     // super.key,
     required this.tagManager,
     required this.child,
@@ -236,10 +236,10 @@ class _PinnedTagsHolder extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_PinnedTagsHolder> createState() => __PinnedTagsHolderState();
+  State<PinnedTagsHolder> createState() => _PinnedTagsHolderState();
 }
 
-class __PinnedTagsHolderState extends State<_PinnedTagsHolder> {
+class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
   late final StreamSubscription<int> countEvents;
 
   Map<String, void> pinnedTags = {};

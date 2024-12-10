@@ -22,7 +22,6 @@ import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/image_view_theme.dart";
 import "package:azari/src/widgets/image_view/mixins/loading_builder.dart";
 import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
-import "package:azari/src/widgets/image_view/mixins/palette.dart";
 import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:azari/src/widgets/selection_actions.dart";
@@ -297,7 +296,6 @@ class ImageView extends StatefulWidget {
 class ImageViewState extends State<ImageView>
     with
         ImageViewPageTypeMixin,
-        ImageViewPaletteMixin,
         ImageViewLoadingBuilderMixin,
         TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> key = GlobalKey();
@@ -308,7 +306,6 @@ class ImageViewState extends State<ImageView>
   late final AnimationController animationController;
   late final AnimationController slideAnimationLeft;
   late final AnimationController slideAnimationRight;
-  late final DraggableScrollableController bottomSheetController;
 
   final scrollController = ScrollController();
   final mainFocus = FocusNode();
@@ -316,8 +313,7 @@ class ImageViewState extends State<ImageView>
 
   final videoControls = VideoControlsControllerImpl();
 
-  late PageController controller =
-      PageController(initialPage: widget.startingCell);
+  late final controller = PageController(initialPage: widget.startingCell);
 
   StreamSubscription<int>? _updates;
 
@@ -341,7 +337,6 @@ class ImageViewState extends State<ImageView>
     super.initState();
 
     animationController = AnimationController(vsync: this);
-    bottomSheetController = DraggableScrollableController();
     slideAnimationLeft = AnimationController(vsync: this);
     slideAnimationRight = AnimationController(vsync: this);
 
@@ -385,7 +380,7 @@ class ImageViewState extends State<ImageView>
         }
 
         loadCells(currentPage, cellCount);
-        refreshPalette();
+        // refreshPalette();
 
         currentPageStream.add(currentPage);
 
@@ -402,7 +397,7 @@ class ImageViewState extends State<ImageView>
       _loadNext(widget.startingCell);
     });
 
-    refreshPalette();
+    // refreshPalette();
     PlatformApi().setWakelock(true);
   }
 
@@ -426,7 +421,6 @@ class ImageViewState extends State<ImageView>
     animationController.dispose();
     slideAnimationLeft.dispose();
     slideAnimationRight.dispose();
-    bottomSheetController.dispose();
     _updates?.cancel();
 
     videoControls.dispose();
@@ -445,20 +439,6 @@ class ImageViewState extends State<ImageView>
     globalProgressTab?.loadTags().removeListener(_onTagRefresh);
 
     super.dispose();
-  }
-
-  void refreshPalette() {
-    extractPalette(
-      drawCell(currentPage, true),
-      key,
-      scrollController,
-      currentPage,
-      _resetAnimation,
-    );
-  }
-
-  void _resetAnimation() {
-    wrapThemeKey.currentState?.resetAnimation();
   }
 
   void _loadNext(int index) {
@@ -480,7 +460,7 @@ class ImageViewState extends State<ImageView>
     }
   }
 
-  void refreshImage([bool refreshPalette = false]) {
+  void refreshImage() {
     loadCells(currentPage, cellCount);
 
     final c = drawCell(currentPage, true);
@@ -488,10 +468,6 @@ class ImageViewState extends State<ImageView>
       c.provider.evict();
     } else if (c is NetGif) {
       c.provider.evict();
-    }
-
-    if (refreshPalette) {
-      this.refreshPalette();
     }
 
     setState(() {});
@@ -522,8 +498,6 @@ class ImageViewState extends State<ImageView>
     final c = drawCell(index);
 
     PlatformApi().window.setTitle(c.widgets.alias(false));
-
-    refreshPalette();
 
     currentPageStream.add(currentPage);
 
@@ -581,7 +555,6 @@ class ImageViewState extends State<ImageView>
         wrapNotifiers: widget.wrapNotifiers,
         tags: widget.tags,
         watchTags: widget.watchTags,
-        bottomSheetController: bottomSheetController,
         mainFocus: mainFocus,
         controller: animationController,
         gridContext: widget.gridContext,
@@ -592,12 +565,9 @@ class ImageViewState extends State<ImageView>
         pauseVideoState: pauseVideoState,
         child: ImageViewTheme(
           key: wrapThemeKey,
-          currentPalette: currentPalette,
-          previousPallete: previousPallete,
           child: ImageViewSkeleton(
             scaffoldKey: key,
             videoControls: videoControls,
-            bottomSheetController: bottomSheetController,
             controller: animationController,
             next: _onPressedRight,
             prev: _onPressedLeft,

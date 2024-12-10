@@ -16,6 +16,7 @@ class IsarFavoritePost extends PostImpl
     with DefaultPostPressable<FavoritePost>
     implements $FavoritePost {
   const IsarFavoritePost({
+    required this.size,
     required this.height,
     required this.id,
     required this.md5,
@@ -34,6 +35,7 @@ class IsarFavoritePost extends PostImpl
   });
 
   const IsarFavoritePost.noId({
+    required this.size,
     required this.height,
     required this.id,
     required this.md5,
@@ -86,6 +88,9 @@ class IsarFavoritePost extends PostImpl
 
   @override
   final int score;
+
+  @override
+  final int size;
 
   @override
   final String sourceUrl;

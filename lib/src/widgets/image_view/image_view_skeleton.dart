@@ -5,9 +5,7 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -25,7 +23,6 @@ class ImageViewSkeleton extends StatefulWidget {
     super.key,
     required this.controller,
     required this.scaffoldKey,
-    required this.bottomSheetController,
     required this.next,
     required this.prev,
     required this.videoControls,
@@ -36,7 +33,6 @@ class ImageViewSkeleton extends StatefulWidget {
 
   final GlobalKey<ScaffoldState> scaffoldKey;
   final AnimationController controller;
-  final DraggableScrollableController bottomSheetController;
   final PauseVideoState pauseVideoState;
 
   final VoidCallback next;
@@ -235,7 +231,6 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                 _BottomIcons(
                   videoControls: isWide ? null : widget.videoControls,
                   viewPadding: viewPadding,
-                  bottomSheetController: widget.bottomSheetController,
                   visibilityController: visibilityController,
                   seekTimeAnchor: seekTimeAnchor,
                   wrapNotifiers: widget.wrapNotifiers,
@@ -271,7 +266,6 @@ class _BottomIcons extends StatefulWidget {
   const _BottomIcons({
     // super.key,
     required this.viewPadding,
-    required this.bottomSheetController,
     required this.visibilityController,
     required this.videoControls,
     required this.seekTimeAnchor,
@@ -287,8 +281,6 @@ class _BottomIcons extends StatefulWidget {
   final VideoControlsControllerImpl? videoControls;
   final NotifierWrapper? wrapNotifiers;
   final PauseVideoState pauseVideoState;
-
-  final DraggableScrollableController bottomSheetController;
 
   @override
   State<_BottomIcons> createState() => __BottomIconsState();
@@ -336,7 +328,7 @@ class __BottomIconsState extends State<_BottomIcons>
                               e.onPress == null
                                   ? null
                                   : () {
-                                      AppBarVisibilityNotifier.toggleOf(
+                                      AppBarVisibilityNotifier.maybeToggleOf(
                                         context,
                                         true,
                                       );
@@ -382,7 +374,6 @@ class __BottomIconsState extends State<_BottomIcons>
                         ImageViewFab(
                           wrapNotifiers: widget.wrapNotifiers,
                           widgets: widgets,
-                          bottomSheetController: widget.bottomSheetController,
                           viewPadding: widget.viewPadding,
                           visibilityController: widget.visibilityController,
                           pauseVideoState: widget.pauseVideoState,
@@ -533,7 +524,7 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow> {
     final tagsRes = widget.tags;
     final pinnedTags = tagsRes.list.where((e) => e.favorite);
 
-    final l10n = AppLocalizations.of(context)!;
+    // final l10n = AppLocalizations.of(context)!;
 
     final tagsReady = pinnedTags
         .map(
@@ -551,21 +542,14 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow> {
             onLongPressed: tagsRes.res == null
                 ? null
                 : () {
-                    radioDialog<SafeMode>(
-                      context,
-                      SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-                      SettingsService.db().current.safeMode,
-                      (value) {
-                        OnBooruTagPressed.maybePressOf(
-                          context,
-                          e.tag,
-                          tagsRes.res!.booru,
-                          overrideSafeMode: value,
-                        );
-                      },
-                      title: l10n.chooseSafeMode,
-                      allowSingle: true,
-                    );
+                    context.openSafeModeDialog((value) {
+                      OnBooruTagPressed.maybePressOf(
+                        context,
+                        e.tag,
+                        tagsRes.res!.booru,
+                        overrideSafeMode: value,
+                      );
+                    });
                   },
           ),
         )
@@ -667,6 +651,7 @@ class OutlinedTagChip extends StatelessWidget {
     super.key,
     this.onPressed,
     this.onLongPressed,
+    this.onDoublePressed,
     required this.tag,
     required this.isPinned,
     this.letterCount = 10,
@@ -680,6 +665,7 @@ class OutlinedTagChip extends StatelessWidget {
 
   final VoidCallback? onPressed;
   final VoidCallback? onLongPressed;
+  final VoidCallback? onDoublePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -692,6 +678,7 @@ class OutlinedTagChip extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       onLongPress: onLongPressed,
+      onDoubleTap: onDoublePressed,
       child: DecoratedBox(
         decoration: const ShapeDecoration(
           shape: RoundedRectangleBorder(

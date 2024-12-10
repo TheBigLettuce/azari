@@ -76,6 +76,19 @@ enum SortingMode {
 
   const SortingMode();
 
+  IconData icons(SortingMode selected) => switch (this) {
+        SortingMode.none => this == selected
+            ? Icons.filter_list_off_rounded
+            : Icons.filter_list_off_outlined,
+        SortingMode.rating =>
+          this == selected ? Icons.explicit_rounded : Icons.explicit_outlined,
+        SortingMode.score =>
+          this == selected ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+        SortingMode.size => this == selected
+            ? Icons.square_foot_rounded
+            : Icons.square_foot_outlined,
+      };
+
   String translatedString(AppLocalizations l10n) => switch (this) {
         SortingMode.none => l10n.enumSortingModeNone,
         SortingMode.size => l10n.enumSortingModeSize,

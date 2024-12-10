@@ -88,6 +88,7 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>> {
             animated: PlayAnimations.maybeOf(context) ?? false,
             wrapSelection: (child) =>
                 cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                      context: context,
                       selection: extras.selection,
                       thisIndx: idx,
                       onPressed: cell.tryAsPressable(

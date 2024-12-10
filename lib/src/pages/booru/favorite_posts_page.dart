@@ -19,9 +19,11 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/actions.dart" as booru_actions;
 import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -320,7 +322,24 @@ class _SearchBarWidget extends StatelessWidget {
   final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
   final SafeModeState safeModeState;
 
-  static void _doNothing() {}
+  void launchGrid(BuildContext context) {
+    if (searchTextController.text.isNotEmpty) {
+      context.openSafeModeDialog((safeMode) {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (context) => BooruRestoredPage(
+              db: DatabaseConnectionNotifier.of(context),
+              booru: api.booru,
+              tags: searchTextController.text.trim(),
+              saveSelectedPage: (_) {},
+              overrideSafeMode: safeMode,
+              // wrapScaffold: true,
+            ),
+          ),
+        );
+      });
+    }
+  }
 
   void clear() {
     searchTextController.text = "";
@@ -372,7 +391,7 @@ class _SearchBarWidget extends StatelessWidget {
               onChanged: onChanged,
               hintText: l10n.filterHint,
               leading: IconButton(
-                onPressed: _doNothing,
+                onPressed: () => launchGrid(context),
                 icon: Icon(
                   Icons.search_rounded,
                   color: theme.colorScheme.primary,

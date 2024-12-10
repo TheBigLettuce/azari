@@ -13,4 +13,13 @@ enum GridAspectRatio {
   const GridAspectRatio(this.value);
 
   final double value;
+
+  static GridAspectRatio fromIndex(int idx) => switch (idx) {
+        0 => GridAspectRatio.one,
+        1 => GridAspectRatio.zeroFive,
+        2 => GridAspectRatio.zeroSeven,
+        3 => GridAspectRatio.oneTwo,
+        4 => GridAspectRatio.oneFive,
+        int() => GridAspectRatio.one,
+      };
 }

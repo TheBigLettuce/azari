@@ -180,7 +180,7 @@ class _DirectoryCell extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: GridCellImage(
                 imageAlign: Alignment.topCenter,
-                thumbnail: directory.thumbnail(),
+                thumbnail: directory.thumbnail(context),
                 blur: toBlur,
               ),
             ),

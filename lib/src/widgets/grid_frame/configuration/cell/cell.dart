@@ -31,9 +31,9 @@ extension CellsExt on CellBase {
     return null;
   }
 
-  ImageProvider? tryAsThumbnailable() {
+  ImageProvider? tryAsThumbnailable(BuildContext? context) {
     if (this is Thumbnailable) {
-      return (this as Thumbnailable).thumbnail();
+      return (this as Thumbnailable).thumbnail(context);
     }
 
     return null;
@@ -84,6 +84,7 @@ abstract interface class UniqueKeyable {
 
 abstract interface class SelectionWrapperBuilder {
   Widget buildSelectionWrapper<T extends CellBase>({
+    required BuildContext context,
     required int thisIndx,
     required List<int>? selectFrom,
     required GridSelection<T>? selection,
@@ -160,7 +161,7 @@ class ExitOnPressRoute extends InheritedWidget {
 
 /// Marker class to make [CellBase] implementations thumbnailable.
 abstract interface class Thumbnailable {
-  ImageProvider thumbnail();
+  ImageProvider thumbnail(BuildContext? context);
 }
 
 /// Marker class to make [CellBase] implementations stickerable.

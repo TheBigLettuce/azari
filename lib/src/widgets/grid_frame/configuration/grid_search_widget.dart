@@ -359,6 +359,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               select: _selectFilter,
               selected: currentFilter,
               allowUnselect: true,
+              reorder: false,
               values: widget.enabledModes
                   .where((element) => element != FilteringMode.noFilter)
                   .map(
@@ -374,15 +375,20 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               variant: SegmentedButtonVariant.segments,
               select: _selectSorting,
               selected: currentSorting,
+              showSelectedIcon: false,
               values: widget.enabledSorting.isEmpty
-                  ? [
+                  ? <SegmentedButtonValue<SortingMode>>[
                       SegmentedButtonValue(
                         currentSorting,
                         currentSorting.translatedString(l10n),
                       ),
                     ]
                   : widget.enabledSorting.map(
-                      (e) => SegmentedButtonValue(e, e.translatedString(l10n)),
+                      (e) => SegmentedButtonValue(
+                        e,
+                        e.translatedString(l10n),
+                        icon: e.icons(currentSorting),
+                      ),
                     ),
               title: l10n.sortingModesLabel,
             ),

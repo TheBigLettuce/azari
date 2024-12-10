@@ -5,6 +5,7 @@
 
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/impl/conventers/gelbooru.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:json_annotation/json_annotation.dart";
@@ -29,6 +30,16 @@ List<Post> fromList(List<dynamic> l) {
   return ret;
 }
 
+List<BooruPool> fromListPools(List<dynamic> l) {
+  final ret = <BooruPool>[];
+
+  for (final e in l) {
+    ret.add(_DanbooruPool.fromJson(e as Map<String, dynamic>));
+  }
+
+  return ret;
+}
+
 @JsonSerializable()
 class _DanbooruPost extends PostImpl
     with DefaultPostPressable<Post>
@@ -43,9 +54,11 @@ class _DanbooruPost extends PostImpl
     required this.createdAt,
     required this.width,
     required this.fileUrl,
-    required this.previewUrl,
+    required this.smallPreviewUrl,
     required this.sampleUrl,
     required this.rating,
+    required this.size,
+    required this.previewUrl720,
   });
 
   factory _DanbooruPost.fromJson(Map<String, dynamic> json) =>
@@ -75,9 +88,8 @@ class _DanbooruPost extends PostImpl
   @JsonKey(name: "file_url")
   final String fileUrl;
 
-  @override
   @JsonKey(name: "preview_file_url")
-  final String previewUrl;
+  final String smallPreviewUrl;
 
   @override
   @JsonKey(name: "large_file_url")
@@ -98,6 +110,10 @@ class _DanbooruPost extends PostImpl
   final DateTime createdAt;
 
   @override
+  @JsonKey(name: "file_size")
+  final int size;
+
+  @override
   @DanbooruRatingConverter()
   @JsonKey(name: "rating")
   final PostRating rating;
@@ -109,7 +125,92 @@ class _DanbooruPost extends PostImpl
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   PostContentType get type => Post.makeType(this);
+
+  @_DanbooruMediaAsset720Converter()
+  @JsonKey(name: "media_asset")
+  final String? previewUrl720;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  String get previewUrl => previewUrl720 ?? smallPreviewUrl;
 }
+
+// @JsonSerializable()
+// class _DanbooruMediaAsset {
+//   const _DanbooruMediaAsset(this.variants);
+
+//   factory _DanbooruMediaAsset.fromJson(Map<String, dynamic> json) =>
+//       _$DanbooruMediaAssetFromJson(json);
+
+//   String? find720() {
+//     final idx = variants.indexWhere((e) => e.type == "720x720");
+//     if (idx < 0) {
+//       return null;
+//     }
+
+//     return variants[idx].url;
+//   }
+
+//   @JsonKey(name: "variants")
+//   final List<_Variants> variants;
+// }
+
+// @JsonSerializable()
+// class _Variants {
+//   const _Variants(this.type, this.url);
+
+//   factory _Variants.fromJson(Map<String, dynamic> json) =>
+//       _$VariantsFromJson(json);
+
+//   @JsonKey(name: "type")
+//   final String type;
+
+//   @JsonKey(name: "url")
+//   final String url;
+// }
+
+class _DanbooruMediaAsset720Converter
+    implements JsonConverter<String?, Map<dynamic, dynamic>?> {
+  const _DanbooruMediaAsset720Converter();
+
+  @override
+  String? fromJson(Map<dynamic, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+
+    final variants = json["variants"] as List<dynamic>;
+    for (final e in variants) {
+      final type = (e as Map)["type"];
+      if (type == "720x720") {
+        return e["url"] as String;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  Map<dynamic, dynamic>? toJson(String? object) => null;
+}
+
+// class DanbooruMediaAssetConverter implements JsonConverter<_DanbooruMediaAsset, Map<dynamic, dynamic>> {
+//   const DanbooruMediaAssetConverter();
+
+//   @override
+//   PostRating fromJson(String? json) => json == null
+//       ? PostRating.general
+//       : switch (json) {
+//           "g" => PostRating.general,
+//           "s" => PostRating.sensitive,
+//           "q" => PostRating.questionable,
+//           "e" => PostRating.explicit,
+//           String() => PostRating.general,
+//         };
+
+//   @override
+//   String toJson(PostRating object) => object.name[0];
+// }
 
 class DanbooruRatingConverter implements JsonConverter<PostRating, String?> {
   const DanbooruRatingConverter();
@@ -137,4 +238,68 @@ class DanbooruDateConventer implements JsonConverter<DateTime, String> {
 
   @override
   String toJson(DateTime object) => object.toIso8601String();
+}
+
+class DanbooruPoolCategoryConventer
+    implements JsonConverter<BooruPoolCategory, String> {
+  const DanbooruPoolCategoryConventer();
+
+  @override
+  BooruPoolCategory fromJson(String json) => switch (json) {
+        "series" => BooruPoolCategory.series,
+        "collection" => BooruPoolCategory.collection,
+        String() => BooruPoolCategory.collection,
+      };
+
+  @override
+  String toJson(BooruPoolCategory object) => switch (object) {
+        BooruPoolCategory.series => "series",
+        BooruPoolCategory.collection => "collection",
+      };
+}
+
+@JsonSerializable()
+class _DanbooruPool implements BooruPool {
+  const _DanbooruPool({
+    required this.category,
+    required this.description,
+    required this.id,
+    required this.isDeleted,
+    required this.name,
+    required this.postIds,
+    required this.updatedAt,
+  });
+
+  factory _DanbooruPool.fromJson(Map<String, dynamic> json) =>
+      _$DanbooruPoolFromJson(json);
+
+  @override
+  @DanbooruPoolCategoryConventer()
+  @JsonKey(name: "category")
+  final BooruPoolCategory category;
+
+  @override
+  @JsonKey(name: "description")
+  final String description;
+
+  @override
+  @JsonKey(name: "id")
+  final int id;
+
+  @override
+  @JsonKey(name: "is_deleted")
+  final bool isDeleted;
+
+  @override
+  @JsonKey(name: "name")
+  final String name;
+
+  @override
+  @JsonKey(name: "post_ids")
+  final List<int> postIds;
+
+  @override
+  @DanbooruDateConventer()
+  @JsonKey(name: "updated_at")
+  final DateTime updatedAt;
 }

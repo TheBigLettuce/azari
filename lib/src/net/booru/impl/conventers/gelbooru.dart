@@ -158,6 +158,10 @@ class _GelbooruPost extends PostImpl
 
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
+  int get size => 0;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   Booru get booru => Booru.gelbooru;
 
   static final _dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");

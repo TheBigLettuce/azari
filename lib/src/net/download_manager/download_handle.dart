@@ -50,7 +50,7 @@ class _DownloadEntry with DefaultBuildCellImpl implements DownloadHandle {
   String alias(bool long) => data.name;
 
   @override
-  ImageProvider<Object> thumbnail() =>
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
       CachedNetworkImageProvider(data.thumbUrl);
 
   @override

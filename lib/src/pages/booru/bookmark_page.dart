@@ -141,6 +141,66 @@ class _BookmarkPageState extends State<BookmarkPage>
   }
 }
 
+class DataUpdateWidget extends StatefulWidget {
+  const DataUpdateWidget({
+    super.key,
+    required this.progress,
+    required this.child,
+  });
+
+  final RefreshingProgress progress;
+  final Widget child;
+
+  @override
+  State<DataUpdateWidget> createState() => _DataUpdateWidgetState();
+}
+
+class _DataUpdateWidgetState extends State<DataUpdateWidget>
+    with SingleTickerProviderStateMixin {
+  late final StreamSubscription<void> events;
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(
+      vsync: this,
+      duration: Durations.medium3,
+    );
+
+    events = widget.progress.watch((_) {
+      controller.forward().then((_) => controller.reverse());
+    });
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      controller: controller,
+      effects: [
+        SlideEffect(
+          begin: Offset(1, 1),
+          end: Offset(0, 1),
+        ),
+        FadeEffect(
+          begin: 1,
+          end: 0,
+        )
+      ],
+      child: widget.child,
+    );
+  }
+}
+
 class _BookmarkBody extends StatefulWidget {
   const _BookmarkBody({
     // super.key,

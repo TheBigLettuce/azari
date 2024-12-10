@@ -18,6 +18,8 @@ typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
   dynamic data,
 ]);
 
+typedef ChainedFilter<K, V> = ChainedFilterResourceSource<K, V>;
+
 /// A generic way for filtering data.
 class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   ChainedFilterResourceSource(
@@ -61,6 +63,13 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
       );
 
   static void _doNothing() {}
+
+  static FilteringData? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_FilteringDataNotifier>();
+
+    return widget?.data;
+  }
 
   final ResourceSource<K, V> _original;
   final SourceStorage<int, V> _filterStorage;
@@ -192,6 +201,11 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     return Future.value(count);
   }
 
+  Widget inject(Widget child) => _FilteringDataHolder(
+        instance: this,
+        child: child,
+      );
+
   @override
   void destroy() {
     _filterEvents.close();
@@ -212,17 +226,23 @@ class FilteringData {
   final FilteringMode filteringMode;
   final SortingMode sortingMode;
 
-  static FilteringData? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<FilteringDataNotifier>();
+  @override
+  bool operator ==(Object other) {
+    if (other is! FilteringData) {
+      return false;
+    }
 
-    return widget?.data;
+    return filteringMode == other.filteringMode &&
+        sortingMode == other.sortingMode;
   }
+
+  @override
+  int get hashCode => Object.hash(filteringMode, sortingMode);
 }
 
-class FilteringDataNotifier extends InheritedWidget {
-  const FilteringDataNotifier({
-    super.key,
+class _FilteringDataNotifier extends InheritedWidget {
+  const _FilteringDataNotifier({
+    // super.key,
     required this.data,
     required super.child,
   });
@@ -230,6 +250,58 @@ class FilteringDataNotifier extends InheritedWidget {
   final FilteringData data;
 
   @override
-  bool updateShouldNotify(FilteringDataNotifier oldWidget) =>
+  bool updateShouldNotify(_FilteringDataNotifier oldWidget) =>
       data != oldWidget.data || data != oldWidget.data;
+}
+
+class _FilteringDataHolder extends StatefulWidget {
+  const _FilteringDataHolder({
+    // super.key,
+    required this.instance,
+    required this.child,
+  });
+
+  final ChainedFilterResourceSource<dynamic, dynamic> instance;
+
+  final Widget child;
+
+  @override
+  State<_FilteringDataHolder> createState() => __FilteringDataHolderState();
+}
+
+class __FilteringDataHolderState extends State<_FilteringDataHolder> {
+  late final StreamSubscription<FilteringData> events;
+
+  late FilteringData data;
+
+  @override
+  void initState() {
+    super.initState();
+
+    data = FilteringData(
+      widget.instance.filteringMode,
+      widget.instance.sortingMode,
+    );
+
+    events = widget.instance._filterEvents.stream.listen((e) {
+      setState(() {
+        data = e;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _FilteringDataNotifier(
+      data: data,
+      child: widget.child,
+    );
+  }
 }

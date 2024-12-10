@@ -205,15 +205,13 @@ class Danbooru implements BooruAPI {
       /// anonymous api calls to danbooru are limited by two tags per search req
       "post[tags]":
           "${order == BooruPostsOrder.score ? 'order:score' : ''} ${safeModeS()} ${tags.split(" ").take(2).join(" ")}",
+
+      if (postid != null) "page": "b$postid",
+      if (page != null) "page": (page + 1).toString(),
+
+      "only":
+          "id,tag_string,md5,image_width,image_height,file_url,preview_file_url,large_file_url,source,rating,score,file_size,created_at,media_asset[variants[type,url]]",
     };
-
-    if (postid != null) {
-      query["page"] = "b$postid";
-    }
-
-    if (page != null) {
-      query["page"] = (page + 1).toString();
-    }
 
     try {
       final resp = await client.getUriLog<List<dynamic>>(
@@ -262,4 +260,167 @@ class Danbooru implements BooruAPI {
   });
 
   return (posts, currentSkipped);
+}
+
+class DanbooruCommunity implements BooruComunnityAPI {
+  DanbooruCommunity({
+    required this.booru,
+    required this.client,
+  })  : forum = _ForumAPI(client),
+        comments = _CommentsAPI(client),
+        pools = _PoolsAPI(client);
+
+  @override
+  final Booru booru;
+
+  final Dio client;
+
+  @override
+  final BooruCommentsAPI comments;
+
+  @override
+  final BooruForumAPI forum;
+
+  @override
+  final BooruPoolsAPI pools;
+}
+
+class _PoolsAPI implements BooruPoolsAPI {
+  const _PoolsAPI(this.client);
+
+  static final _log = Logger("Danbooru Pools API");
+
+  final Dio client;
+
+  @override
+  Future<List<BooruPool>> search({
+    int? limit,
+    String? name,
+    BooruPoolCategory? category,
+    BooruPoolsOrder order = BooruPoolsOrder.creationTime,
+    required PageSaver pageSaver,
+  }) async {
+    final resp = await client.getUriLog<List<dynamic>>(
+      Uri.https(
+        Booru.danbooru.url,
+        "/pools.json",
+        {
+          "search[order]": switch (order) {
+            BooruPoolsOrder.name => "name",
+            BooruPoolsOrder.latest => "updated_at",
+            BooruPoolsOrder.creationTime => "created_at",
+            BooruPoolsOrder.postCount => "post_count",
+          },
+          if (category != null)
+            "search[category]": switch (category) {
+              BooruPoolCategory.series => "series",
+              BooruPoolCategory.collection => "collection",
+            },
+          if (name != null) "search[name_matches]": "$name*",
+          "page": pageSaver.page.toString(),
+          if (limit != null) "limit": limit.toString(),
+        },
+      ),
+      LogReq("search, name: $name", _log),
+    );
+
+    return fromListPools(resp.data!);
+  }
+
+  @override
+  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools) async {
+    if (pools.isEmpty) {
+      return const {};
+    }
+
+    final idToPoolMap = <int, int>{};
+    for (final e in pools) {
+      if (e.postIds.isNotEmpty) {
+        idToPoolMap[e.postIds.first] = e.id;
+      }
+    }
+
+    final stringBuffer = StringBuffer("id:")
+      ..writeAll(
+        pools
+            .where((e) => e.postIds.isNotEmpty)
+            .map((e) => e.postIds.first.toString()),
+        ",",
+      );
+
+    final resp = await client.getUriLog<List<dynamic>>(
+      Uri.https(Booru.danbooru.url, "/posts.json", {
+        "post[tags]": stringBuffer.toString(),
+        "only": "id,preview_file_url,large_file_url",
+      }),
+      LogReq("poolThumbnails", _log),
+    );
+
+    return resp.data!.fold<Map<int, String>>({}, (map, e) {
+      final preview = (e as Map)["preview_file_url"] as String?;
+      // final large = e["large_file_url"] as String?;
+
+      final id = idToPoolMap[e["id"] as int];
+
+      if (preview != null && id != null) {
+        map[id] = preview;
+      }
+      return map;
+    });
+  }
+}
+
+class _CommentsAPI implements BooruCommentsAPI {
+  const _CommentsAPI(this.client);
+
+  final Dio client;
+
+  @override
+  Future<List<BooruComments>> forPostId({
+    required int postId,
+    int? limit,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement forPostId
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BooruComments>> search({
+    int? limit,
+    BooruCommentsOrder order = BooruCommentsOrder.latest,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement search
+    throw UnimplementedError();
+  }
+}
+
+class _ForumAPI implements BooruForumAPI {
+  const _ForumAPI(this.client);
+
+  final Dio client;
+
+  @override
+  Future<List<BooruForumPost>> postsForId({
+    required int id,
+    int? limit,
+    BooruForumCategory? category,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement postsForId
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BooruForumTopic>> searchTopic({
+    int? limit,
+    String? title,
+    BooruForumCategory? category,
+    BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement searchTopic
+    throw UnimplementedError();
+  }
 }

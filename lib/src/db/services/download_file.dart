@@ -75,7 +75,8 @@ abstract class DownloadFileDataImpl
   Key uniqueKey() => ValueKey(url);
 
   @override
-  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
+      CachedNetworkImageProvider(thumbUrl);
 
   @override
   String alias(bool isList) => name;

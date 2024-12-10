@@ -54,7 +54,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         if (widget.preloadNextPictures && content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
-            final thumb = content.widgets.tryAsThumbnailable();
+            final thumb = content.widgets.tryAsThumbnailable(context);
             if (thumb != null) {
               precacheImage(thumb, context);
             }
@@ -73,7 +73,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
         if (widget.preloadNextPictures && content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
-            final thumb = content.widgets.tryAsThumbnailable();
+            final thumb = content.widgets.tryAsThumbnailable(context);
             if (thumb != null) {
               precacheImage(thumb, context);
             }
@@ -99,14 +99,14 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
           context,
           key,
           content.uri,
-          cell.widgets.tryAsThumbnailable(),
+          cell.widgets.tryAsThumbnailable(context),
           true,
         ),
       NetVideo() => _makeVideo(
           context,
           key,
           content.uri,
-          cell.widgets.tryAsThumbnailable(),
+          cell.widgets.tryAsThumbnailable(context),
           false,
         ),
       EmptyContent() =>

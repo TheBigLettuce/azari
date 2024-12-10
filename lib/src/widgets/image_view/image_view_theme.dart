@@ -4,20 +4,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/build_theme.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
-import "package:palette_generator/palette_generator.dart";
 
 class ImageViewTheme extends StatefulWidget {
   const ImageViewTheme({
     super.key,
-    required this.currentPalette,
-    required this.previousPallete,
     required this.child,
   });
-
-  final PaletteGenerator? currentPalette;
-  final PaletteGenerator? previousPallete;
 
   final Widget child;
 
@@ -57,40 +50,40 @@ class ImageViewThemeState extends State<ImageViewTheme>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final tweenDominantColor = ColorTween(
-      begin: widget.previousPallete?.dominantColor?.color
-              .harmonizeWith(theme.colorScheme.primary) ??
-          theme.colorScheme.primary,
-      end: widget.currentPalette?.dominantColor?.color
-              .harmonizeWith(theme.colorScheme.primary) ??
-          theme.colorScheme.primary,
-    );
+    // final tweenDominantColor = ColorTween(
+    //   begin: widget.previousPallete?.dominantColor?.color
+    //           .harmonizeWith(theme.colorScheme.primary) ??
+    //       theme.colorScheme.primary,
+    //   end: widget.currentPalette?.dominantColor?.color
+    //           .harmonizeWith(theme.colorScheme.primary) ??
+    //       theme.colorScheme.primary,
+    // );
 
-    final colorScheme = ColorScheme.fromSeed(
-      brightness: theme.brightness,
-      seedColor: tweenDominantColor.lerp(_animationController.value)!,
-    );
+    // final colorScheme = ColorScheme.fromSeed(
+    //   brightness: theme.brightness,
+    //   seedColor: tweenDominantColor.lerp(_animationController.value)!,
+    // );
 
-    final themeData = ThemeData.from(
-      colorScheme: colorScheme,
-    );
+    // final themeData = ThemeData.from(
+    //   colorScheme: colorScheme,
+    // );
 
     return Theme(
-      data: themeData.copyWith(
-        appBarTheme: themeData.appBarTheme.copyWith(
-          backgroundColor: colorScheme.surfaceDim.withValues(alpha: 0.95),
+      data: theme.copyWith(
+        appBarTheme: theme.appBarTheme.copyWith(
+          backgroundColor: theme.colorScheme.surfaceDim.withValues(alpha: 0.95),
         ),
         bottomAppBarTheme: BottomAppBarTheme(
-          color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
+          color: theme.colorScheme.surfaceContainer.withValues(alpha: 0.95),
         ),
         searchBarTheme: SearchBarThemeData(
           backgroundColor: WidgetStatePropertyAll(
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           ),
         ),
       ),
       child: AnnotatedRegion(
-        value: navBarStyleForTheme(themeData, transparent: false),
+        value: navBarStyleForTheme(theme, transparent: false),
         child: widget.child,
       ),
     );

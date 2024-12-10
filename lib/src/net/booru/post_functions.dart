@@ -79,6 +79,179 @@ List<Sticker> defaultStickersPost(
   ];
 }
 
+class PostInfoSimple extends StatelessWidget {
+  const PostInfoSimple({
+    super.key,
+    required this.post,
+  });
+
+  final PostImpl post;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    // final tagManager = TagManager.of(context);
+    final buttons = post.appBarButtons(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Padding(
+        //   padding: const EdgeInsets.only(top: 10, bottom: 4),
+        //   child: TagsRibbon(
+        //     tagNotifier: ImageTagsNotifier.of(context),
+        //     emptyWidget: const Padding(padding: EdgeInsets.zero),
+        //     sliver: false,
+        //     selectTag: (str, controller) {
+        //       HapticFeedback.mediumImpact();
+
+        //       _launchGrid(context, str);
+        //     },
+        //     tagManager: TagManager.of(context),
+        //     showPin: false,
+        //     items: (tag, controller) => [
+        //       PopupMenuItem(
+        //         onTap: () {
+        //           if (tagManager.pinned.exists(tag)) {
+        //             tagManager.pinned.delete(tag);
+        //           } else {
+        //             tagManager.pinned.add(tag);
+        //           }
+
+        //           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+
+        //           controller.animateTo(
+        //             0,
+        //             duration: Durations.medium3,
+        //             curve: Easing.standard,
+        //           );
+        //         },
+        //         child: Text(
+        //           tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+        //         ),
+        //       ),
+        //       launchGridSafeModeItem(
+        //         context,
+        //         tag,
+        //         _launchGrid,
+        //         l10n,
+        //       ),
+        //       PopupMenuItem(
+        //         onTap: () {
+        //           if (tagManager.excluded.exists(tag)) {
+        //             tagManager.excluded.delete(tag);
+        //           } else {
+        //             tagManager.excluded.add(tag);
+        //           }
+        //         },
+        //         child: Text(
+        //           tagManager.excluded.exists(tag)
+        //               ? l10n.removeFromExcluded
+        //               : l10n.addToExcluded,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        const Padding(padding: EdgeInsets.only(top: 18)),
+        ListBody(
+          children: [
+            DimensionsName(
+              l10n: l10n,
+              width: post.width,
+              height: post.height,
+              name: post.id.toString(),
+              icon: post.type.toIcon(),
+              trailing: buttons
+                  .map(
+                    (e) => IconButton(
+                      onPressed: e.onPressed,
+                      icon: Icon(e.icon),
+                    ),
+                  )
+                  .toList(),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Wrap(
+                runSpacing: 4,
+                alignment: WrapAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse(post.fileDownloadUrl()),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    label: Text(l10n.linkLabel),
+                    icon: const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: post.sourceUrl.isNotEmpty &&
+                            Uri.tryParse(post.sourceUrl) != null
+                        ? () => launchUrl(
+                              Uri.parse(post.sourceUrl),
+                              mode: LaunchMode.externalApplication,
+                            )
+                        : null,
+                    label: Text(l10n.sourceFileInfoPage),
+                    icon: const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                    ),
+                  ),
+                  if (post.tags.contains("translated"))
+                    TranslationNotesButton(
+                      postId: post.id,
+                      booru: post.booru,
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 2,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  text: post.rating.translatedName(l10n),
+                  children: [
+                    TextSpan(text: " • ${post.booru.string} • "),
+                    WidgetSpan(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 2, right: 4),
+                        child: Icon(
+                          Icons.thumb_up_alt_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                    ),
+                    TextSpan(text: "${post.score}"),
+                    TextSpan(text: "\n${l10n.date(post.createdAt)}"),
+                  ],
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: 0.7,
+                    ),
+                  ),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class PostInfo extends StatefulWidget {
   const PostInfo({
     super.key,
@@ -178,10 +351,12 @@ class _PostInfoState extends State<PostInfo> {
         ),
         ListBody(
           children: [
-            DimensionsRow(
+            DimensionsName(
               l10n: l10n,
               width: post.width,
               height: post.height,
+              name: post.id.toString(),
+              icon: post.type.toIcon(),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -263,35 +438,56 @@ class _PostInfoState extends State<PostInfo> {
   }
 }
 
-class DimensionsRow extends StatelessWidget {
-  const DimensionsRow({
+class DimensionsName extends StatelessWidget {
+  const DimensionsName({
     super.key,
     required this.l10n,
     required this.width,
     required this.height,
+    required this.name,
+    required this.icon,
+    this.trailing = const [],
+    this.onTap,
+    this.onLongTap,
   });
 
   final int width;
   final int height;
 
+  final String name;
+
+  final List<Widget> trailing;
+
+  final Icon icon;
+
+  final VoidCallback? onTap;
+  final VoidCallback? onLongTap;
+
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: SizedBox(
-        width: double.infinity,
-        height: 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _ColoredRectangle(
-              primaryColor: false,
-              subtitle: "$width x ${l10n.pixels(height)}",
-              title: l10n.imageDimensions,
-            ),
-          ],
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ListTile(
+        onTap: onTap,
+        onLongPress: onLongTap,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(15)),
+        ),
+        tileColor: theme.colorScheme.surfaceContainerHigh,
+        leading: icon,
+        trailing: trailing.isEmpty
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: trailing,
+              ),
+        title: Text(name),
+        subtitle: Text(
+          "$width x ${l10n.pixels(height)}",
         ),
       ),
     );

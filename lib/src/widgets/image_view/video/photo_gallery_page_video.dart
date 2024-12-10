@@ -80,7 +80,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               DeviceOrientation.portraitUp,
             ]);
           } else {
-            AppBarVisibilityNotifier.toggleOf(context);
+            AppBarVisibilityNotifier.maybeToggleOf(context);
 
             SystemChrome.setPreferredOrientations([
               DeviceOrientation.landscapeLeft,

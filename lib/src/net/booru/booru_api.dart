@@ -116,6 +116,206 @@ abstract class BooruAPI {
   }
 }
 
+abstract interface class BooruComunnityAPI {
+  Booru get booru;
+
+  static BooruComunnityAPI fromEnum(Booru booru, Dio client) => switch (booru) {
+        Booru.gelbooru => GelbooruCommunity(booru: booru, client: client),
+        Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
+      };
+
+  BooruCommentsAPI get comments;
+  BooruPoolsAPI get pools;
+
+  BooruForumAPI get forum;
+  // BooruWikiAPI get wiki;
+}
+
+abstract interface class BooruWikiAPI {
+  Future<List<BooruForumTopic>> search({
+    int? limit,
+    // required int offset,
+    String? title,
+    BooruForumCategory? category,
+    BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
+    required PageSaver pageSaver,
+  });
+}
+
+abstract interface class BooruForumAPI {
+  Future<List<BooruForumTopic>> searchTopic({
+    int? limit,
+    // required int offset,
+    String? title,
+    BooruForumCategory? category,
+    BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
+    required PageSaver pageSaver,
+  });
+
+  Future<List<BooruForumPost>> postsForId({
+    required int id,
+    int? limit,
+    // required int offset,
+    BooruForumCategory? category,
+    required PageSaver pageSaver,
+  });
+}
+
+abstract class BooruForumPost {
+  bool get isDeleted;
+
+  int get id;
+  int get topicId;
+
+  String get body;
+
+  DateTime get updatedAt;
+}
+
+abstract class BooruForumTopic {
+  bool get isDeleted;
+  bool get isSticky;
+  bool get isLocked;
+
+  int get id;
+  int get creatorId;
+
+  int get postsCount;
+
+  String get title;
+
+  BooruUserLevel get userLevel;
+  BooruForumCategory get category;
+
+  DateTime get updatedAt;
+}
+
+enum BooruForumTopicsOrder {
+  sticky,
+  postCount;
+}
+
+enum BooruForumCategory {
+  general,
+  tags,
+  bugs;
+}
+
+enum BooruUserLevel {
+  restricted,
+  member,
+  premium,
+  janitor,
+  contributor,
+  approver,
+  moderator,
+  admin;
+}
+
+abstract interface class BooruArtistsAPI {
+  Future<List<BooruArtist>> search({
+    int? limit,
+    // required int offset,
+    String? otherName,
+    String? name,
+    BooruArtistsOrder order = BooruArtistsOrder.postCount,
+    required PageSaver pageSaver,
+  });
+}
+
+abstract class BooruArtist {
+  bool get isBanned;
+  bool get isDeleted;
+
+  int get id;
+
+  String get name;
+  String get groupName;
+
+  List<String> get otherNames;
+
+  DateTime get updatedAt;
+}
+
+enum BooruArtistsOrder {
+  name,
+  latest,
+  postCount;
+}
+
+abstract interface class BooruPoolsAPI {
+  Future<List<BooruPool>> search({
+    int? limit,
+    // required int offset,
+    String? name,
+    BooruPoolCategory? category,
+    BooruPoolsOrder order = BooruPoolsOrder.creationTime,
+    required PageSaver pageSaver,
+  });
+
+  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools);
+}
+
+abstract class BooruPool {
+  bool get isDeleted;
+
+  int get id;
+
+  String get name;
+  String get description;
+
+  List<int> get postIds;
+
+  BooruPoolCategory get category;
+
+  DateTime get updatedAt;
+}
+
+enum BooruPoolsOrder {
+  name,
+  latest,
+  creationTime,
+  postCount;
+}
+
+enum BooruPoolCategory {
+  series,
+  collection;
+}
+
+abstract interface class BooruCommentsAPI {
+  Future<List<BooruComments>> search({
+    int? limit,
+    // required int offset,
+    BooruCommentsOrder order = BooruCommentsOrder.latest,
+    required PageSaver pageSaver,
+  });
+
+  Future<List<BooruComments>> forPostId({
+    required int postId,
+    int? limit,
+    required PageSaver pageSaver,
+  });
+}
+
+enum BooruCommentsOrder {
+  latest,
+  score;
+}
+
+abstract class BooruComments {
+  bool get isSticky;
+
+  int get id;
+  int get postId;
+
+  int get score;
+
+  String get body;
+
+  DateTime get updatedAt;
+}
+
 enum RandomPostsOrder {
   random,
   latest,

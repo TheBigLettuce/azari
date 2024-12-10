@@ -17,7 +17,8 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
     GlobalKey<ImageViewNotifiersState> key,
     Contentable Function(int) drawCell,
   ) {
-    final t = drawCell(idx).widgets.tryAsThumbnailable();
+    final cell = drawCell(idx);
+    final t = cell.widgets.tryAsThumbnailable(context);
     if (t == null) {
       return const SizedBox.shrink();
     }

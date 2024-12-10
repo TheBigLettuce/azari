@@ -18,40 +18,45 @@ Future<void> mainPickfile() async {
 
   runApp(
     DatabaseConnectionNotifier.current(
-      MaterialApp(
-        title: "Azari",
-        themeAnimationCurve: Easing.standard,
-        themeAnimationDuration: const Duration(milliseconds: 300),
-        darkTheme: buildTheme(Brightness.dark, accentColor),
-        theme: buildTheme(Brightness.light, accentColor),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (context) => WrapGridPage(
-            addScaffoldAndBar: true,
-            child: DirectoriesPage(
-              db: DatabaseConnectionNotifier.of(context),
-              l10n: AppLocalizations.of(context)!,
-              callback: ReturnFileCallback(
-                choose: (chosen, [_]) {
-                  PlatformApi().closeApp(chosen.originalUri);
+      Builder(
+        builder: (context) => PinnedTagsHolder(
+          tagManager: TagManager.of(context),
+          child: MaterialApp(
+            title: "Azari",
+            themeAnimationCurve: Easing.standard,
+            themeAnimationDuration: const Duration(milliseconds: 300),
+            darkTheme: buildTheme(Brightness.dark, accentColor),
+            theme: buildTheme(Brightness.light, accentColor),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Builder(
+              builder: (context) => WrapGridPage(
+                addScaffoldAndBar: true,
+                child: DirectoriesPage(
+                  db: DatabaseConnectionNotifier.of(context),
+                  l10n: AppLocalizations.of(context)!,
+                  callback: ReturnFileCallback(
+                    choose: (chosen, [_]) {
+                      PlatformApi().closeApp(chosen.originalUri);
 
-                  return Future.value();
-                  // const AndroidApiFunctions().returnUri(chosen.originalUri);
-                },
-                preview: PreferredSize(
-                  preferredSize:
-                      Size.fromHeight(CopyMovePreview.size.toDouble()),
-                  child: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-
-                      return CopyMovePreview(
-                        files: null,
-                        title: l10n.pickFileNotice,
-                        icon: Icons.file_open_rounded,
-                      );
+                      return Future.value();
+                      // const AndroidApiFunctions().returnUri(chosen.originalUri);
                     },
+                    preview: PreferredSize(
+                      preferredSize:
+                          Size.fromHeight(CopyMovePreview.size.toDouble()),
+                      child: Builder(
+                        builder: (context) {
+                          final l10n = AppLocalizations.of(context)!;
+
+                          return CopyMovePreview(
+                            files: null,
+                            title: l10n.pickFileNotice,
+                            icon: Icons.file_open_rounded,
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),

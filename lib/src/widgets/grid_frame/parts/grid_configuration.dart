@@ -22,11 +22,13 @@ class GridConfiguration extends StatefulWidget {
 
   final Widget child;
 
-  static GridSettingsData of(BuildContext context) {
+  static GridSettingsData of(BuildContext context) => maybeOf(context)!;
+
+  static GridSettingsData? maybeOf(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
 
-    return widget!.config;
+    return widget?.config;
   }
 
   static GridSettingsWatcher watcherOf(BuildContext context) {

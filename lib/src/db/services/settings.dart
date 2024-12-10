@@ -58,6 +58,7 @@ abstract class SettingsData {
   SafeMode get safeMode;
   bool get showWelcomePage;
   bool get extraSafeFilters;
+  bool get sampleThumbnails;
 
   SettingsData copy({
     bool? extraSafeFilters,
@@ -66,5 +67,6 @@ abstract class SettingsData {
     DisplayQuality? quality,
     SafeMode? safeMode,
     bool? showWelcomePage,
+    bool? sampleThumbnails,
   });
 }

@@ -59,6 +59,7 @@ class $ThumbnailData implements ThumbnailData {
 
 class $SettingsData extends SettingsData {
   const $SettingsData({
+    required this.sampleThumbnails,
     required this.path,
     required this.selectedBooru,
     required this.quality,
@@ -83,6 +84,9 @@ class $SettingsData extends SettingsData {
   final bool showWelcomePage;
 
   @override
+  final bool sampleThumbnails;
+
+  @override
   final SettingsPath path;
 
   @override
@@ -93,6 +97,7 @@ class $SettingsData extends SettingsData {
     DisplayQuality? quality,
     SafeMode? safeMode,
     bool? showWelcomePage,
+    bool? sampleThumbnails,
   }) =>
       $SettingsData(
         selectedBooru: selectedBooru ?? this.selectedBooru,
@@ -101,6 +106,7 @@ class $SettingsData extends SettingsData {
         showWelcomePage: showWelcomePage ?? this.showWelcomePage,
         path: this.path,
         extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
+        sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
       );
 }
 
@@ -267,6 +273,7 @@ class $FavoritePost extends PostImpl
     required this.score,
     required this.createdAt,
     required this.type,
+    required this.size,
   });
 
   @override
@@ -298,6 +305,9 @@ class $FavoritePost extends PostImpl
 
   @override
   final int score;
+
+  @override
+  final int size;
 
   @override
   final String sourceUrl;
@@ -568,6 +578,7 @@ class $Post extends PostImpl with DefaultPostPressable<Post> implements Post {
     required this.score,
     required this.createdAt,
     required this.type,
+    required this.size,
   });
 
   @override
@@ -599,6 +610,9 @@ class $Post extends PostImpl with DefaultPostPressable<Post> implements Post {
 
   @override
   final int score;
+
+  @override
+  final int size;
 
   @override
   final String sourceUrl;

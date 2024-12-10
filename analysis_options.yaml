@@ -10,6 +10,9 @@
 include: package:lint/strict.yaml
 
 analyzer:
+  enable-experiment:
+    - macros
+    
   errors:
     todo: info
     missing_return: error

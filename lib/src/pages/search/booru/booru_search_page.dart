@@ -13,6 +13,7 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
@@ -96,8 +97,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   //   _filteringEvents.add(str.trim());
   // }
 
-  void _onTagPressed(String str) {
-    _onTag(context, api.booru, str, null);
+  void _onTagPressed(String str, [SafeMode? safeMode]) {
+    _onTag(context, api.booru, str, safeMode ?? settings.safeMode);
   }
 
   void _onTag(
@@ -121,7 +122,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     );
   }
 
-  void search() {
+  void search(bool dialog) {
     if (searchController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -132,7 +133,13 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       return;
     }
 
-    _onTagPressed(searchController.text.trim());
+    if (dialog) {
+      context.openSafeModeDialog((value) {
+        _onTagPressed(searchController.text.trim(), value);
+      });
+    } else {
+      _onTagPressed(searchController.text.trim());
+    }
   }
 
   void pinnedTagPressed(String str_) {
@@ -226,13 +233,13 @@ class SearchPageSearchBar extends StatelessWidget {
   final TextEditingController searchTextController;
   final FocusNode searchFocus;
 
-  final void Function() onSubmit;
-
   final Future<List<BooruTag>> Function(String string)? complete;
 
   final StreamSink<String> sink;
 
-  static void _doNothing() {}
+  final void Function(bool dialog) onSubmit;
+
+  static void _doNothing(bool _) {}
 
   void clear() {
     searchTextController.text = "";
@@ -263,7 +270,7 @@ class SearchPageSearchBar extends StatelessWidget {
           child: SearchBarAutocompleteWrapper(
             search: BarSearchWidget(
               onChanged: onChanged,
-              onSubmitted: (_) => onSubmit(),
+              // onSubmitted: (_) => onSubmit(),
               complete: complete,
               textEditingController: searchTextController,
             ),
@@ -277,6 +284,7 @@ class SearchPageSearchBar extends StatelessWidget {
                 SearchBar(
               onSubmitted: (str) {
                 onSubmitted();
+                onSubmit(false);
                 // filter.clearRefresh();
               },
               elevation: const WidgetStatePropertyAll(0),
@@ -286,7 +294,7 @@ class SearchPageSearchBar extends StatelessWidget {
               onChanged: onChanged,
               hintText: l10n.searchHint,
               leading: IconButton(
-                onPressed: onSubmit,
+                onPressed: () => onSubmit(true),
                 icon: const Icon(Icons.search_rounded),
               ),
               trailing: [

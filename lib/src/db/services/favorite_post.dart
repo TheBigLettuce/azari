@@ -43,6 +43,7 @@ abstract class FavoritePost
     required DateTime createdAt,
     required Booru booru,
     required PostContentType type,
+    required int size,
   }) = $FavoritePost;
 
   @override

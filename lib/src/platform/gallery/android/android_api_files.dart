@@ -201,6 +201,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     }
 
     backingStorage.addAll([]);
+    sourceTags.notify();
     progress.inRefreshing = false;
 
     return Future.value(backingStorage.count);

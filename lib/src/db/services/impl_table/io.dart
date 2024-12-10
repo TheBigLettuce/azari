@@ -37,7 +37,7 @@ class IoServicesImplTable implements ServicesImplTable {
   IoServicesImplTable();
 
   @override
-  IsarSettingsService get settings => const IsarSettingsService();
+  final IsarSettingsService settings = IsarSettingsService();
   @override
   IsarMiscSettingsService get miscSettings => const IsarMiscSettingsService();
   @override
@@ -79,7 +79,7 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   DirectoryTagService get directoryTags => const IsarDirectoryTagService();
   @override
-  BlacklistedDirectoryService blacklistedDirectories =
+  final BlacklistedDirectoryService blacklistedDirectories =
       IsarBlacklistedDirectoryService();
   @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
@@ -209,6 +209,7 @@ abstract class $Post extends Post {
     required DateTime createdAt,
     required Booru booru,
     required PostContentType type,
+    required int size,
   }) = PostIsar.noId;
 }
 
@@ -228,6 +229,7 @@ abstract class $FavoritePost extends FavoritePost {
     required DateTime createdAt,
     required Booru booru,
     required PostContentType type,
+    required int size,
   }) = IsarFavoritePost.noId;
 }
 

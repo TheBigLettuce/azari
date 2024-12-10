@@ -543,6 +543,7 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
                 cell.value
                     .tryAsSelectionWrapperable()
                     ?.buildSelectionWrapper<T>(
+                      context: context,
                       selection: widget.selection,
                       description: cell.value.description(),
                       onPressed: cell.value.tryAsPressable<T>(
@@ -616,6 +617,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
         animated: PlayAnimations.maybeOf(context) ?? false,
         wrapSelection: (child) =>
             cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                  context: context,
                   selection: selection,
                   thisIndx: realIdx,
                   description: cell.description(),
@@ -701,14 +703,16 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
                                   child: CircleAvatar(
                                     backgroundColor: theme.colorScheme.surface
                                         .withValues(alpha: 0),
-                                    backgroundImage: cell.tryAsThumbnailable(),
+                                    backgroundImage:
+                                        cell.tryAsThumbnailable(context),
                                   ),
                                 ),
                               )
                             : CircleAvatar(
                                 backgroundColor: theme.colorScheme.surface
                                     .withValues(alpha: 0),
-                                backgroundImage: cell.tryAsThumbnailable(),
+                                backgroundImage:
+                                    cell.tryAsThumbnailable(context),
                               ),
                         title: Text(
                           cell.alias(true),

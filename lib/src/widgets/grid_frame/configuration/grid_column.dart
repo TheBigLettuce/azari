@@ -37,6 +37,15 @@ enum GridColumn {
 
   final int number;
 
+  static GridColumn fromIndex(int idx) => switch (idx) {
+        0 => GridColumn.two,
+        1 => GridColumn.three,
+        2 => GridColumn.four,
+        3 => GridColumn.five,
+        4 => GridColumn.six,
+        int() => GridColumn.two,
+      };
+
   List<QuiltedGridTile> pattern(int gridSeed) => switch (this) {
         GridColumn.two => const [
             _PatternPart([

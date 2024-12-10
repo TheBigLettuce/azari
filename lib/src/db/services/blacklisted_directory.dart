@@ -46,33 +46,44 @@ abstract class BlacklistedDirectoryDataImpl
     final (api, _, _) = DirectoriesDataNotifier.of(context);
     final db = DatabaseConnectionNotifier.of(context);
 
-    final filesApi = api.files(
-      PlainDirectory(
-        bucketId: bucketId,
-        name: name,
-        tag: "",
-        volumeName: "",
-        relativeLoc: "",
-        lastModified: 0,
-        thumbFileId: 0,
-      ),
-      GalleryFilesPageType.normal,
-      db.directoryTags,
-      db.directoryMetadata,
-      db.favoritePosts,
-      db.localTags,
-      name: name,
-      bucketId: bucketId,
-    );
+    // final filesApi = api.files(
+    //   PlainDirectory(
+    //     bucketId: bucketId,
+    //     name: name,
+    //     tag: "",
+    //     volumeName: "",
+    //     relativeLoc: "",
+    //     lastModified: 0,
+    //     thumbFileId: 0,
+    //   ),
+    //   GalleryFilesPageType.normal,
+    //   db.directoryTags,
+    //   db.directoryMetadata,
+    //   db.favoritePosts,
+    //   db.localTags,
+    //   name: name,
+    //   bucketId: bucketId,
+    // );
 
     Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (context) {
           return FilesPage(
-            api: filesApi,
+            api: api,
             dirName: name,
-            directory: null,
+            directories: [
+              PlainDirectory(
+                bucketId: bucketId,
+                name: name,
+                tag: "",
+                volumeName: "",
+                relativeLoc: "",
+                lastModified: 0,
+                thumbFileId: 0,
+              ),
+            ],
+            // directory: null,
             secure: true,
             db: db,
             navBarEvents: NavigationButtonEvents.maybeOf(context),

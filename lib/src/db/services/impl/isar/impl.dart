@@ -50,7 +50,6 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
@@ -679,6 +678,7 @@ class IsarFavoritePostService implements FavoritePostSourceService {
                   score: post.score,
                   createdAt: post.createdAt,
                   type: post.type,
+                  size: post.size,
                   isarId: null,
                 ),
         );

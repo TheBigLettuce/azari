@@ -191,7 +191,7 @@ class _FilesCell extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: GridCellImage(
                 imageAlign: Alignment.topCenter,
-                thumbnail: file.thumbnail(),
+                thumbnail: file.thumbnail(context),
                 blur: false,
               ),
             ),

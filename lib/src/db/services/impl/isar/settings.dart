@@ -5,21 +5,32 @@
 
 part of "impl.dart";
 
-@immutable
 class IsarSettingsService implements SettingsService {
-  const IsarSettingsService();
+  IsarSettingsService();
+
+  @override
+  late SettingsData current =
+      _Dbs.g.main.isarSettings.getSync(0) ?? const IsarSettings.empty();
 
   @visibleForTesting
   void clearStorageTest_() {
     _Dbs.g.main.writeTxnSync(() {
       _Dbs.g.main.isarSettings.clearSync();
     });
+
+    current = const IsarSettings.empty();
   }
 
   @override
-  void add(SettingsData data) => _Dbs.g.main.writeTxnSync(
-        () => _Dbs.g.main.isarSettings.putSync(data as IsarSettings),
-      );
+  void add(SettingsData data) {
+    _Dbs.g.main.writeTxnSync(
+      () {
+        _Dbs.g.main.isarSettings.putSync(data as IsarSettings);
+
+        current = data;
+      },
+    );
+  }
 
   /// Pick an operating system directory.
   /// Calls [onError] in case of any error and resolves to false.
@@ -45,18 +56,6 @@ class IsarSettingsService implements SettingsService {
 
     return Future.value(true);
   }
-
-  @override
-  SettingsData get current =>
-      _Dbs.g.main.isarSettings.getSync(0) ??
-      const IsarSettings(
-        extraSafeFilters: true,
-        showWelcomePage: true,
-        path: IsarSettingsPath(),
-        selectedBooru: Booru.gelbooru,
-        quality: DisplayQuality.sample,
-        safeMode: SafeMode.normal,
-      );
 
   @override
   StreamSubscription<SettingsData?> watch(

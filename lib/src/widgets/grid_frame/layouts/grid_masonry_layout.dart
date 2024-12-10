@@ -102,6 +102,7 @@ class _GridMasonryLayoutState<T extends CellBase>
               isList: false,
               wrapSelection: (child) =>
                   cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                        context: context,
                         selection: extras.selection,
                         thisIndx: idx,
                         onPressed: cell.tryAsPressable(

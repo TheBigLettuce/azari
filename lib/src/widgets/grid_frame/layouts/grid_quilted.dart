@@ -94,6 +94,7 @@ class _GridQuiltedLayoutState<T extends CellBase>
             animated: PlayAnimations.maybeOf(context) ?? false,
             wrapSelection: (child) =>
                 cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+                      context: context,
                       selection: extras.selection,
                       thisIndx: idx,
                       onPressed: cell.tryAsPressable(

@@ -15,7 +15,6 @@ class ImageViewFab extends StatefulWidget {
   const ImageViewFab({
     super.key,
     required this.widgets,
-    required this.bottomSheetController,
     required this.viewPadding,
     required this.visibilityController,
     required this.wrapNotifiers,
@@ -23,7 +22,6 @@ class ImageViewFab extends StatefulWidget {
   });
 
   final ContentWidgets widgets;
-  final DraggableScrollableController bottomSheetController;
   final EdgeInsets viewPadding;
   final AnimationController visibilityController;
   final NotifierWrapper? wrapNotifiers;
@@ -35,9 +33,6 @@ class ImageViewFab extends StatefulWidget {
 
 class _ImageViewFabState extends State<ImageViewFab>
     with SingleTickerProviderStateMixin {
-  DraggableScrollableController get bottomSheetController =>
-      widget.bottomSheetController;
-
   late final AnimationController controller;
 
   bool iconClosedMenu = true;
@@ -46,32 +41,14 @@ class _ImageViewFabState extends State<ImageViewFab>
   void initState() {
     super.initState();
 
-    bottomSheetController.addListener(listener);
     controller = AnimationController(vsync: this, duration: Durations.medium1);
   }
 
   @override
   void dispose() {
-    bottomSheetController.removeListener(listener);
     controller.dispose();
 
     super.dispose();
-  }
-
-  void listener() {
-    final newIcon = !(widget.bottomSheetController.size > 0);
-
-    if (newIcon != iconClosedMenu) {
-      iconClosedMenu = newIcon;
-
-      if (iconClosedMenu) {
-        controller.reverse();
-        widget.visibilityController.reverse();
-      } else {
-        controller.forward();
-        widget.visibilityController.forward();
-      }
-    }
   }
 
   @override
@@ -88,7 +65,7 @@ class _ImageViewFabState extends State<ImageViewFab>
       foregroundColor:
           theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.95),
       onPressed: () {
-        AppBarVisibilityNotifier.toggleOf(context, true);
+        AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
         showModalBottomSheet<void>(
           context: context,

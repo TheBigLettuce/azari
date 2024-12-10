@@ -35,3 +35,28 @@ mixin CommonGridData<T extends CellBase, S extends StatefulWidget> on State<S> {
     super.dispose();
   }
 }
+
+mixin SettingsWatcherMixin<S extends StatefulWidget> on State<S> {
+  StreamSubscription<SettingsData?>? _settingsEvents;
+
+  SettingsData settings = SettingsService.db().current;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _settingsEvents?.cancel();
+    _settingsEvents = settings.s.watch((newSettings) {
+      setState(() {
+        settings = newSettings!;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _settingsEvents?.cancel();
+
+    super.dispose();
+  }
+}

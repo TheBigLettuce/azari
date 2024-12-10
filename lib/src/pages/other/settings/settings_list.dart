@@ -276,6 +276,12 @@ class _SettingsListState extends State<SettingsList> {
               .save(),
           title: Text(l10n.extendedFilesGridActions),
         ),
+        SwitchListTile(
+          value: _settings.sampleThumbnails,
+          onChanged: (value) =>
+              SettingsService.db().current.copy(sampleThumbnails: value).save(),
+          title: const Text("Show samples as thumbnail"), // TODO: change
+        ),
         MenuWrapper(
           title: "GPL-2.0-only",
           child: ListTile(

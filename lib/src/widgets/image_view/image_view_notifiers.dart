@@ -26,7 +26,6 @@ class ImageViewNotifiers extends StatefulWidget {
     required this.watchTags,
     required this.mainFocus,
     required this.controller,
-    required this.bottomSheetController,
     required this.gridContext,
     required this.videoControls,
     required this.wrapNotifiers,
@@ -39,14 +38,13 @@ class ImageViewNotifiers extends StatefulWidget {
   final FocusNode mainFocus;
   final BuildContext? gridContext;
   final AnimationController controller;
-  final DraggableScrollableController bottomSheetController;
   final PauseVideoState pauseVideoState;
   final VideoControlsController videoControls;
 
   final WatchTagsCallback? watchTags;
   final NotifierWrapper? wrapNotifiers;
 
-  final void Function([bool refreshPalette]) hardRefresh;
+  final VoidCallback hardRefresh;
   final List<ImageTag> Function(Contentable)? tags;
 
   final Widget child;
@@ -56,7 +54,7 @@ class ImageViewNotifiers extends StatefulWidget {
 }
 
 class ImageViewNotifiersState extends State<ImageViewNotifiers> {
-  final _bottomSheetKey = GlobalKey<__BottomSheetPopScopeState>();
+  final _bottomSheetKey = GlobalKey<_AppBarShownHolderState>();
 
   StreamSubscription<List<ImageTag>>? tagWatcher;
   final tags = ImageViewTags();
@@ -160,9 +158,8 @@ class ImageViewNotifiersState extends State<ImageViewNotifiers> {
                       content: content,
                       child: LoadingProgressNotifier(
                         progress: _loadingProgress,
-                        child: _BottomSheetPopScope(
+                        child: _AppBarShownHolder(
                           key: _bottomSheetKey,
-                          controller: widget.bottomSheetController,
                           animationController: widget.controller,
                           child: widget.child,
                         ),
@@ -308,28 +305,25 @@ class ImageTag {
   final bool excluded;
 }
 
-class _BottomSheetPopScope extends StatefulWidget {
-  const _BottomSheetPopScope({
+class _AppBarShownHolder extends StatefulWidget {
+  const _AppBarShownHolder({
     required super.key,
-    required this.controller,
     required this.animationController,
     required this.child,
   });
 
   final AnimationController animationController;
-  final DraggableScrollableController controller;
 
   final Widget child;
 
   @override
-  State<_BottomSheetPopScope> createState() => __BottomSheetPopScopeState();
+  State<_AppBarShownHolder> createState() => _AppBarShownHolderState();
 }
 
-class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
+class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   late final StreamSubscription<void>? subscription;
 
   bool ignorePointer = false;
-  double currentPixels = -1;
 
   bool _isAppbarShown = true;
 
@@ -354,78 +348,21 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     subscription = GalleryApi().events.tapDown?.listen((_) {
       toggle(null);
     });
-
-    widget.controller.addListener(listener);
   }
 
   @override
   void dispose() {
     subscription?.cancel();
-    widget.controller.removeListener(listener);
 
     super.dispose();
   }
 
-  void listener() {
-    if (widget.controller.pixels == currentPixels) {
-      return;
-    }
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      try {
-        setState(() {
-          currentPixels = widget.controller.pixels;
-        });
-      } catch (_) {}
-    });
-  }
-
-  void tryScroll(bool _, Object? __) {
-    if (!_isAppbarShown) {
-      toggle(null);
-      return;
-    }
-
-    setState(() {
-      ignorePointer = true;
-    });
-
-    widget.controller
-        .animateTo(
-          0,
-          duration: const Duration(milliseconds: 200),
-          curve: Easing.emphasizedAccelerate,
-        )
-        .then(
-          (value) => setState(() {
-            ignorePointer = false;
-            widget.controller.reset();
-          }),
-        );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!widget.controller.isAttached) {
-      return AppBarVisibilityNotifier(
-        toggle: toggle,
-        isShown: _isAppbarShown,
-        child: widget.child,
-      );
-    }
-
-    return PopScope(
-      canPop: _isAppbarShown &&
-          (currentPixels.isNegative || 0 == currentPixels.floorToDouble()),
-      onPopInvokedWithResult: tryScroll,
-      child: IgnorePointer(
-        ignoring: ignorePointer,
-        child: AppBarVisibilityNotifier(
-          toggle: toggle,
-          isShown: _isAppbarShown,
-          child: widget.child,
-        ),
-      ),
+    return AppBarVisibilityNotifier(
+      toggle: toggle,
+      isShown: _isAppbarShown,
+      child: widget.child,
     );
   }
 }
@@ -437,18 +374,18 @@ class ReloadImageNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final void Function([bool refreshPalette]) reload;
+  final VoidCallback reload;
 
   @override
   bool updateShouldNotify(ReloadImageNotifier oldWidget) {
     return reload != oldWidget.reload;
   }
 
-  static void of(BuildContext context, [bool refreshPalette = false]) {
+  static void of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<ReloadImageNotifier>();
 
-    widget!.reload(refreshPalette);
+    widget!.reload();
   }
 }
 
@@ -596,12 +533,14 @@ class CurrentContentNotifier extends InheritedWidget {
   final Contentable content;
   final Stream<Contentable> stream;
 
-  static Contentable of(BuildContext context) {
+  static Contentable? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
 
-    return widget!.content;
+    return widget?.content;
   }
+
+  static Contentable of(BuildContext context) => maybeOf(context)!;
 
   static Stream<Contentable> streamOf(BuildContext context) {
     final widget =
@@ -627,19 +566,21 @@ class AppBarVisibilityNotifier extends InheritedWidget {
 
   final void Function(bool? setTo) toggle;
 
-  static void toggleOf(BuildContext context, [bool? setTo]) {
+  static void maybeToggleOf(BuildContext context, [bool? setTo]) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
 
-    widget!.toggle(setTo);
+    widget?.toggle(setTo);
   }
 
-  static bool of(BuildContext context) {
+  static bool? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
 
-    return widget!.isShown;
+    return widget?.isShown;
   }
+
+  static bool of(BuildContext context) => maybeOf(context)!;
 
   @override
   bool updateShouldNotify(AppBarVisibilityNotifier oldWidget) =>

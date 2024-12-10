@@ -18,6 +18,7 @@ class PostIsar extends PostImpl
     with DefaultPostPressable<Post>
     implements $Post {
   const PostIsar({
+    required this.size,
     required this.height,
     required this.id,
     required this.md5,
@@ -36,6 +37,7 @@ class PostIsar extends PostImpl
   });
 
   const PostIsar.noId({
+    required this.size,
     required this.height,
     required this.id,
     required this.md5,
@@ -103,6 +105,9 @@ class PostIsar extends PostImpl
   @override
   final int width;
 
+  @override
+  final int size;
+
   static List<PostIsar> copyTo(Iterable<Post> post) => post
       .map(
         (e) => PostIsar(
@@ -121,6 +126,7 @@ class PostIsar extends PostImpl
           score: e.score,
           createdAt: e.createdAt,
           type: e.type,
+          size: e.size,
         ),
       )
       .toList();

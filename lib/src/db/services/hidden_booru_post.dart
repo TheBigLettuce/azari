@@ -41,7 +41,8 @@ abstract class HiddenBooruPostDataImpl
   const HiddenBooruPostDataImpl();
 
   @override
-  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
+      CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey((postId, booru));

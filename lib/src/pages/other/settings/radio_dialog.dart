@@ -4,7 +4,44 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
 import "package:flutter/material.dart";
+
+extension SafeModeRadioDialogExt on BuildContext {
+  void openSafeModeDialog(
+    void Function(SafeMode?) onPressed, [
+    SafeMode? defaultValue,
+  ]) {
+    final l10n = AppLocalizations.of(this)!;
+
+    // void defaultOnPressed(SafeMode? value) {
+    //   final db = DatabaseConnectionNotifier.of(this);
+
+    //   Navigator.of(this, rootNavigator: true).push<void>(
+    //     MaterialPageRoute(
+    //       builder: (context) => BooruRestoredPage(
+    //         db: db,
+    //         booru: booru,
+    //         tags: tags,
+    //         saveSelectedPage: (_) {},
+    //         wrapScaffold: true,
+    //         overrideSafeMode: value,
+    //       ),
+    //     ),
+    //   );
+    // }
+
+    radioDialog<SafeMode>(
+      this,
+      SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+      defaultValue ?? SettingsService.db().current.safeMode,
+      onPressed,
+      title: l10n.chooseSafeMode,
+      allowSingle: true,
+    );
+  }
+}
 
 void radioDialog<T>(
   BuildContext context,
@@ -14,8 +51,10 @@ void radioDialog<T>(
   required String title,
   bool allowSingle = false,
 }) {
-  Navigator.push(
+  Navigator.of(
     context,
+    rootNavigator: true,
+  ).push(
     DialogRoute<void>(
       context: context,
       builder: (context) {

@@ -161,7 +161,7 @@ class DefaultListTile<T extends CellBase> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thumbnail = cell.tryAsThumbnailable();
+    final thumbnail = cell.tryAsThumbnailable(context);
 
     final child = Builder(
       builder: (context) {

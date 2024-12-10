@@ -39,8 +39,8 @@ mixin DefaultBuildCellImpl implements CellBase {
       );
 }
 
-class _Alias extends StatelessWidget {
-  const _Alias({
+class GridCellName extends StatelessWidget {
+  const GridCellName({
     // super.key,
     required this.title,
     required this.lines,
@@ -51,29 +51,31 @@ class _Alias extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.bottomCenter,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withAlpha(50),
-            Colors.black12,
-            Colors.black45,
-          ],
+    return IgnorePointer(
+      child: Container(
+        alignment: Alignment.bottomCenter,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black.withAlpha(50),
+              Colors.black12,
+              Colors.black45,
+            ],
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Text(
-          title,
-          softWrap: false,
-          textAlign: TextAlign.left,
-          overflow: TextOverflow.ellipsis,
-          maxLines: lines,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Text(
+            title,
+            softWrap: false,
+            textAlign: TextAlign.left,
+            overflow: TextOverflow.ellipsis,
+            maxLines: lines,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
           ),
         ),
       ),
@@ -136,12 +138,18 @@ class GridCellImage extends StatefulWidget {
     required this.blur,
     required this.imageAlign,
     required this.thumbnail,
+    this.boxFit = BoxFit.cover,
+    this.heroTag,
   });
 
   final bool blur;
+
+  final BoxFit boxFit;
   final Alignment imageAlign;
 
   final ImageProvider<Object> thumbnail;
+
+  final Object? heroTag;
 
   @override
   State<GridCellImage> createState() => _GridCellImageState();
@@ -155,65 +163,75 @@ class _GridCellImageState extends State<GridCellImage> {
     final theme = Theme.of(context);
 
     return Center(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final blurSigma = constraints.biggest.longestSide * 0.069;
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final blurSigma = constraints.biggest.longestSide * 0.069;
 
-          final image = Image(
-            key: ValueKey((widget.thumbnail.hashCode, _tries)),
-            errorBuilder: (context, error, stackTrace) => LoadingErrorWidget(
-              error: error.toString(),
-              refresh: () {
-                _tries += 1;
+            Widget image = Image(
+              key: ValueKey((widget.thumbnail.hashCode, _tries)),
+              errorBuilder: (context, error, stackTrace) => LoadingErrorWidget(
+                error: error.toString(),
+                refresh: () {
+                  _tries += 1;
 
-                setState(() {});
+                  setState(() {});
+                },
+              ),
+              frameBuilder: (
+                context,
+                child,
+                frame,
+                wasSynchronouslyLoaded,
+              ) {
+                if (wasSynchronouslyLoaded) {
+                  return child;
+                }
+
+                return frame == null
+                    ? const ShimmerLoadingIndicator()
+                    : child.animate().fadeIn();
               },
-            ),
-            frameBuilder: (
-              context,
-              child,
-              frame,
-              wasSynchronouslyLoaded,
-            ) {
-              if (wasSynchronouslyLoaded) {
-                return child;
-              }
+              image: widget.thumbnail,
+              isAntiAlias: true,
+              alignment: widget.imageAlign,
+              color: widget.blur
+                  ? theme.colorScheme.surface.withValues(alpha: 0.2)
+                  : null,
+              colorBlendMode: widget.blur ? BlendMode.darken : BlendMode.darken,
+              fit: widget.boxFit,
+              filterQuality:
+                  widget.blur ? FilterQuality.none : FilterQuality.medium,
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+            );
 
-              return frame == null
-                  ? const ShimmerLoadingIndicator()
-                  : child.animate().fadeIn();
-            },
-            image: widget.thumbnail,
-            isAntiAlias: true,
-            alignment: widget.imageAlign,
-            color: widget.blur
-                ? theme.colorScheme.surface.withValues(alpha: 0.2)
-                : null,
-            colorBlendMode: widget.blur ? BlendMode.darken : BlendMode.darken,
-            fit: BoxFit.cover,
-            filterQuality:
-                widget.blur ? FilterQuality.none : FilterQuality.medium,
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-          );
+            if (widget.heroTag != null) {
+              image = Hero(
+                tag: widget.heroTag!,
+                child: image,
+              );
+            }
 
-          return widget.blur
-              ? ImageFiltered(
-                  imageFilter: ImageFilter.compose(
-                    outer: ImageFilter.blur(
-                      sigmaX: blurSigma,
-                      sigmaY: blurSigma,
-                      tileMode: TileMode.mirror,
+            return widget.blur
+                ? ImageFiltered(
+                    imageFilter: ImageFilter.compose(
+                      outer: ImageFilter.blur(
+                        sigmaX: blurSigma,
+                        sigmaY: blurSigma,
+                        tileMode: TileMode.mirror,
+                      ),
+                      inner: ImageFilter.dilate(
+                        radiusX: 0.5,
+                        radiusY: 0.5,
+                      ),
                     ),
-                    inner: ImageFilter.dilate(
-                      radiusX: 0.5,
-                      radiusY: 0.5,
-                    ),
-                  ),
-                  child: image,
-                )
-              : image;
-        },
+                    child: image,
+                  )
+                : image;
+          },
+        ),
       ),
     );
   }
@@ -254,7 +272,7 @@ class GridCell extends StatelessWidget {
     final stickers = description.ignoreStickers
         ? null
         : data.tryAsStickerable(context, false);
-    final thumbnail = data.tryAsThumbnailable();
+    final thumbnail = data.tryAsThumbnailable(context);
 
     if (alias.isEmpty &&
         (stickers == null || stickers.isEmpty) &&
@@ -309,7 +327,7 @@ class GridCell extends StatelessWidget {
                             secondaryTitle: secondaryTitle,
                             lines: description.titleLines,
                           )
-                        : _Alias(
+                        : GridCellName(
                             title: alias,
                             lines: description.titleLines,
                           ),

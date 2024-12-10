@@ -59,9 +59,9 @@ class FilesPage extends StatefulWidget {
     required this.api,
     this.callback,
     required this.dirName,
-    required this.secure,
+    this.secure,
     required this.db,
-    required this.directory,
+    required this.directories,
     this.presetFilteringValue = "",
     this.filteringMode,
     required this.navBarEvents,
@@ -69,14 +69,15 @@ class FilesPage extends StatefulWidget {
     this.addScaffold = false,
   });
 
-  final bool secure;
+  final bool? secure;
   final bool addScaffold;
 
   final String dirName;
   final String presetFilteringValue;
 
-  final Directory? directory;
-  final Files api;
+  final List<Directory> directories;
+  final Directories api;
+  // final Directories directoriesApi;
 
   final Stream<void>? navBarEvents;
   final StreamSink<bool>? scrollingSink;
@@ -101,7 +102,7 @@ class _FilesPageState extends State<FilesPage>
   final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
 
-  Files get api => widget.api;
+  late final Files api;
 
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
@@ -121,6 +122,33 @@ class _FilesPageState extends State<FilesPage>
   @override
   void initState() {
     super.initState();
+
+    if (widget.directories.length == 1) {
+      final directory = widget.directories.first;
+
+      api = widget.api.files(
+        directory,
+        switch (directory.bucketId) {
+          "favorites" => GalleryFilesPageType.favorites,
+          "trash" => GalleryFilesPageType.trash,
+          String() => GalleryFilesPageType.normal,
+        },
+        widget.db.directoryTags,
+        widget.db.directoryMetadata,
+        widget.db.favoritePosts,
+        widget.db.localTags,
+        name: directory.name,
+        bucketId: directory.bucketId,
+      );
+    } else {
+      api = widget.api.joinedFiles(
+        widget.directories,
+        widget.db.directoryTags,
+        widget.db.directoryMetadata,
+        favoritePosts,
+        localTags,
+      );
+    }
 
     filter = ChainedFilterResourceSource(
       api.source,
@@ -206,7 +234,15 @@ class _FilesPageState extends State<FilesPage>
 
     watchSettings();
 
-    if (widget.secure) {
+    final secure = widget.secure ??
+        (widget.directories.length == 1
+            ? widget.db.directoryMetadata
+                    .get(_segmentCell(widget.directories.first))
+                    ?.requireAuth ??
+                false
+            : false);
+
+    if (secure) {
       _listener = AppLifecycleListener(
         onHide: () {
           _subscription?.cancel();
@@ -250,6 +286,12 @@ class _FilesPageState extends State<FilesPage>
     super.dispose();
   }
 
+  String _segmentCell(Directory cell) => DirectoriesPage.segmentCell(
+        cell.name,
+        cell.bucketId,
+        widget.db.directoryTags,
+      );
+
   void _onBooruTagPressed(
     BuildContext context,
     Booru booru,
@@ -285,7 +327,8 @@ class _FilesPageState extends State<FilesPage>
     searchTextController.text = tag;
     filter.filteringMode = FilteringMode.tag;
     if (filter.backingStorage.isNotEmpty) {
-      Navigator.pop(context);
+      ExitOnPressRoute.maybeExitOf(context);
+      // Navigator.pop(context);
     }
   }
 
@@ -299,6 +342,26 @@ class _FilesPageState extends State<FilesPage>
       duration: Durations.medium3,
       curve: Easing.standard,
     );
+  }
+
+  PathVolume? makeThenMoveTo() {
+// ((widget.directory == null
+//                                               ? api.directories.length == 1
+//                                               : true)
+//                                           ? () {
+//                                               final dir = widget.directory ??
+//                                                   api.directories.first;
+
+//                                               return PathVolume(
+//                                                 dir.relativeLoc,
+//                                                 dir.volumeName,
+//                                                 widget.dirName,
+//                                               );
+//                                             }
+//                                           : null)
+//                                       ?.call()
+
+    return null;
   }
 
   @override
@@ -333,21 +396,7 @@ class _FilesPageState extends State<FilesPage>
                               builder: (context) {
                                 return BooruRestoredPage(
                                   booru: settings.selectedBooru,
-                                  thenMoveTo: ((widget.directory == null
-                                              ? api.directories.length == 1
-                                              : true)
-                                          ? () {
-                                              final dir = widget.directory ??
-                                                  api.directories.first;
-
-                                              return PathVolume(
-                                                dir.relativeLoc,
-                                                dir.volumeName,
-                                                widget.dirName,
-                                              );
-                                            }
-                                          : null)
-                                      ?.call(),
+                                  thenMoveTo: makeThenMoveTo(),
                                   tags: tag,
                                   wrapScaffold: widget.callback != null,
                                   trySearchBookmarkByTags: true,
@@ -369,15 +418,9 @@ class _FilesPageState extends State<FilesPage>
 
                         HapticFeedback.mediumImpact();
 
-                        radioDialog<SafeMode>(
-                          context,
-                          SafeMode.values.map(
-                            (e) => (e, e.translatedString(l10n)),
-                          ),
-                          settings.safeMode,
+                        context.openSafeModeDialog(
                           launchGrid,
-                          title: l10n.chooseSafeMode,
-                          allowSingle: true,
+                          settings.safeMode,
                         );
                       },
                       selectTag: _filterTag,
@@ -475,15 +518,12 @@ class _FilesPageState extends State<FilesPage>
                   return ReturnFileCallbackNotifier(
                     callback: widget.callback,
                     child: FilesDataNotifier(
-                      api: widget.api,
+                      api: api,
                       child: DeleteDialogShowNotifier(
                         toShow: toShowDelete,
                         child: OnBooruTagPressed(
                           onPressed: _onBooruTagPressed,
-                          child: FilteringDataHolder(
-                            source: filter,
-                            child: child,
-                          ),
+                          child: filter.inject(child),
                         ),
                       ),
                     ),
@@ -797,8 +837,6 @@ class _TagsRibbonState extends State<TagsRibbon> {
       setState(() {});
     });
 
-    _list = _sortPinned(widget.tagNotifier.list);
-
     pinnedSubscription = !widget.showPin
         ? null
         : widget.tagManager.pinned.watch((_) {
@@ -815,6 +853,8 @@ class _TagsRibbonState extends State<TagsRibbon> {
                   .toList();
             });
           });
+
+    _list = _sortPinned(widget.tagNotifier.list);
   }
 
   List<ImageTag> _sortPinned(List<ImageTag> tag) {
@@ -1491,51 +1531,51 @@ class StatisticsCard extends StatelessWidget {
   }
 }
 
-class FilteringDataHolder extends StatefulWidget {
-  const FilteringDataHolder({
-    super.key,
-    required this.source,
-    required this.child,
-  });
+// class FilteringDataHolder extends StatefulWidget {
+//   const FilteringDataHolder({
+//     super.key,
+//     required this.source,
+//     required this.child,
+//   });
 
-  final ChainedFilterResourceSource<dynamic, dynamic> source;
+//   final ChainedFilterResourceSource<dynamic, dynamic> source;
 
-  final Widget child;
+//   final Widget child;
 
-  @override
-  State<FilteringDataHolder> createState() => _FilteringDataHolderState();
-}
+//   @override
+//   State<FilteringDataHolder> createState() => _FilteringDataHolderState();
+// }
 
-class _FilteringDataHolderState extends State<FilteringDataHolder> {
-  late final StreamSubscription<dynamic> subscr;
+// class _FilteringDataHolderState extends State<FilteringDataHolder> {
+//   late final StreamSubscription<dynamic> subscr;
 
-  late FilteringData filteringData;
+//   late FilteringData filteringData;
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    filteringData =
-        FilteringData(widget.source.filteringMode, widget.source.sortingMode);
-    subscr = widget.source.watchFilter((data) {
-      setState(() {
-        filteringData = data;
-      });
-    });
-  }
+//     filteringData =
+//         FilteringData(widget.source.filteringMode, widget.source.sortingMode);
+//     subscr = widget.source.watchFilter((data) {
+//       setState(() {
+//         filteringData = data;
+//       });
+//     });
+//   }
 
-  @override
-  void dispose() {
-    subscr.cancel();
+//   @override
+//   void dispose() {
+//     subscr.cancel();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return FilteringDataNotifier(
-      data: filteringData,
-      child: widget.child,
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return FilteringDataNotifier(
+//       data: filteringData,
+//       child: widget.child,
+//     );
+//   }
+// }

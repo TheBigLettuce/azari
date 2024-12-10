@@ -256,3 +256,108 @@ class Gelbooru implements BooruAPI {
     });
   }
 }
+
+class GelbooruCommunity implements BooruComunnityAPI {
+  GelbooruCommunity({
+    required this.booru,
+    required this.client,
+  })  : forum = _ForumAPI(client),
+        comments = _CommentsAPI(client),
+        pools = _PoolsAPI(client);
+
+  @override
+  final Booru booru;
+
+  final Dio client;
+
+  @override
+  final BooruCommentsAPI comments;
+
+  @override
+  final BooruForumAPI forum;
+
+  @override
+  final BooruPoolsAPI pools;
+
+  // @override
+  // final BooruWikiAPI wiki;
+}
+
+class _PoolsAPI implements BooruPoolsAPI {
+  const _PoolsAPI(this.client);
+
+  final Dio client;
+
+  @override
+  Future<List<BooruPool>> search({
+    int? limit,
+    String? name,
+    BooruPoolCategory? category,
+    BooruPoolsOrder order = BooruPoolsOrder.creationTime,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement search
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools) {
+    // TODO: implement poolThumbnails
+    throw UnimplementedError();
+  }
+}
+
+class _CommentsAPI implements BooruCommentsAPI {
+  const _CommentsAPI(this.client);
+
+  final Dio client;
+
+  @override
+  Future<List<BooruComments>> forPostId({
+    required int postId,
+    int? limit,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement forPostId
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BooruComments>> search({
+    int? limit,
+    BooruCommentsOrder order = BooruCommentsOrder.latest,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement search
+    throw UnimplementedError();
+  }
+}
+
+class _ForumAPI implements BooruForumAPI {
+  const _ForumAPI(this.client);
+
+  final Dio client;
+
+  @override
+  Future<List<BooruForumPost>> postsForId({
+    required int id,
+    int? limit,
+    BooruForumCategory? category,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement postsForId
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BooruForumTopic>> searchTopic({
+    int? limit,
+    String? title,
+    BooruForumCategory? category,
+    BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
+    required PageSaver pageSaver,
+  }) {
+    // TODO: implement searchTopic
+    throw UnimplementedError();
+  }
+}

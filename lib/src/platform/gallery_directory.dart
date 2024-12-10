@@ -5,9 +5,34 @@
 
 part of "gallery_api.dart";
 
+class _Placeholder extends StatefulWidget {
+  const _Placeholder(
+      // {super.key,}
+      );
+
+  @override
+  State<_Placeholder> createState() => __PlaceholderState();
+}
+
+class __PlaceholderState extends State<_Placeholder> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
+  }
+}
+
 abstract class Directory
     with DefaultBuildCellImpl
-    implements CellBase, Pressable<Directory>, Thumbnailable {
+    implements
+        CellBase,
+        Pressable<Directory>,
+        Thumbnailable,
+        SelectionWrapperBuilder {
   const Directory({
     required this.bucketId,
     required this.name,
@@ -35,7 +60,107 @@ abstract class Directory
   CellStaticData description() => const CellStaticData();
 
   @override
-  ImageProvider<Object> thumbnail() => GalleryThumbnailProvider(
+  Widget buildSelectionWrapper<T extends CellBase>({
+    required BuildContext context,
+    required int thisIndx,
+    required List<int>? selectFrom,
+    required GridSelection<T>? selection,
+    required CellStaticData description,
+    required GridFunctionality<T> functionality,
+    required VoidCallback? onPressed,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+
+    final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
+
+    return OpenContainer(
+      tappable: false,
+      closedElevation: 0,
+      openElevation: 0,
+      transitionType: ContainerTransitionType.fadeThrough,
+      middleColor: theme.colorScheme.surface.withValues(alpha: 0),
+      openColor: theme.colorScheme.surface.withValues(alpha: 0),
+      closedColor: theme.colorScheme.surface.withValues(alpha: 1),
+      closedBuilder: (containerContext, action) => WrapSelection(
+        thisIndx: thisIndx,
+        description: description,
+        selectFrom: selectFrom,
+        selection: selection,
+        functionality: functionality,
+        onPressed: () {
+          final l10n = AppLocalizations.of(containerContext)!;
+
+          final (api, callback, segmentFnc) =
+              DirectoriesDataNotifier.of(context);
+
+          if (callback?.isDirectory ?? false) {
+            Navigator.pop(containerContext);
+
+            (callback! as ReturnDirectoryCallback)(
+              (bucketId: bucketId, path: relativeLoc, volumeName: volumeName),
+              false,
+            );
+          } else {
+            bool requireAuth = false;
+
+            void onSuccess(bool success) {
+              if (!success || !containerContext.mounted) {
+                return;
+              }
+
+              StatisticsGalleryService.db()
+                  .current
+                  .add(viewedDirectories: 1)
+                  .save();
+
+              action();
+            }
+
+            requireAuth = DatabaseConnectionNotifier.of(containerContext)
+                    .directoryMetadata
+                    .get(segmentFnc(this))
+                    ?.requireAuth ??
+                false;
+
+            if (AppInfo().canAuthBiometric && requireAuth) {
+              LocalAuthentication()
+                  .authenticate(
+                    localizedReason: l10n.openDirectory,
+                  )
+                  .then(onSuccess);
+            } else {
+              onSuccess(true);
+            }
+          }
+          // action();
+        }, // onPressed
+        child: child,
+      ),
+      openBuilder: (containerContext, action) {
+        final l10n = AppLocalizations.of(containerContext)!;
+
+        return FilesPage(
+          api: api,
+          dirName: switch (bucketId) {
+            "favorites" => l10n.galleryDirectoriesFavorites,
+            "trash" => l10n.galleryDirectoryTrash,
+            String() => name,
+          },
+          // secure: secure,
+          directories: [this],
+          db: DatabaseConnectionNotifier.of(containerContext),
+          scrollingSink: ScrollingSinkProvider.maybeOf(containerContext),
+          navBarEvents: NavigationButtonEvents.maybeOf(containerContext),
+          callback: callback?.toFileOrNull,
+        );
+      },
+    );
+  }
+
+  @override
+  ImageProvider<Object> thumbnail(BuildContext? context) =>
+      GalleryThumbnailProvider(
         thumbFileId,
         true,
         PinnedThumbnailService.db(),
@@ -94,30 +219,13 @@ abstract class Directory
         StatisticsGalleryService.db().current.add(viewedDirectories: 1).save();
         final d = this;
 
-        final db = DatabaseConnectionNotifier.of(context);
-
-        final apiFiles = api.files(
-          d,
-          switch (bucketId) {
-            "favorites" => GalleryFilesPageType.favorites,
-            "trash" => GalleryFilesPageType.trash,
-            String() => GalleryFilesPageType.normal,
-          },
-          db.directoryTags,
-          db.directoryMetadata,
-          db.favoritePosts,
-          db.localTags,
-          name: d.name,
-          bucketId: bucketId,
-        );
-
         Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
             builder: (context) => FilesPage(
-              api: apiFiles,
-              directory: this,
-              secure: requireAuth,
+              api: api,
+              directories: [this],
+              // secure: requireAuth,
               addScaffold: addScaffold,
               callback: callback?.toFileOrNull,
               dirName: switch (bucketId) {

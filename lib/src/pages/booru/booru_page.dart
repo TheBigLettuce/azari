@@ -263,25 +263,51 @@ class _BooruPageState extends State<BooruPage>
                       api: pagingState.api,
                       randomNumber: gridSeed,
                     ),
-                    CurrentGridSettingsLayout<Post>(
-                      source: source.backingStorage,
-                      progress: source.progress,
-                      gridSeed: gridSeed,
-                      unselectOnUpdate: false,
-                      buildEmpty: (e) => EmptyWidgetWithButton(
-                        error: e,
-                        buttonText: l10n.openInBrowser,
-                        onPressed: () {
-                          launchUrl(
-                            Uri.https(pagingState.api.booru.url),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final padding =
+                            MediaQuery.systemGestureInsetsOf(context);
+
+                        return SliverPadding(
+                          padding: EdgeInsets.only(
+                            left: padding.left * 0.2,
+                            right: padding.right * 0.2,
+                          ),
+                          sliver: CurrentGridSettingsLayout<Post>(
+                            source: source.backingStorage,
+                            progress: source.progress,
+                            gridSeed: gridSeed,
+                            unselectOnUpdate: false,
+                            buildEmpty: (e) => EmptyWidgetWithButton(
+                              error: e,
+                              buttonText: l10n.openInBrowser,
+                              onPressed: () {
+                                launchUrl(
+                                  Uri.https(pagingState.api.booru.url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    GridConfigPlaceholders(
-                      progress: source.progress,
-                      randomNumber: gridSeed,
+                    Builder(
+                      builder: (context) {
+                        final padding =
+                            MediaQuery.systemGestureInsetsOf(context);
+
+                        return SliverPadding(
+                          padding: EdgeInsets.only(
+                            left: padding.left * 0.2,
+                            right: padding.right * 0.2,
+                          ),
+                          sliver: GridConfigPlaceholders(
+                            progress: source.progress,
+                            randomNumber: gridSeed,
+                          ),
+                        );
+                      },
                     ),
                     GridFooter<void>(storage: source.backingStorage),
                   ],
@@ -611,13 +637,8 @@ PopupMenuItem<void> launchGridSafeModeItem(
           return;
         }
 
-        radioDialog<SafeMode>(
-          context,
-          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-          SettingsService.db().current.safeMode,
+        context.openSafeModeDialog(
           (value) => launchGrid(context, tag, value),
-          title: l10n.chooseSafeMode,
-          allowSingle: true,
         );
       },
       child: Text(l10n.searchWithSafeMode),
