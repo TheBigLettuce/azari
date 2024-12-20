@@ -57,7 +57,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.28.0-1.0.pre.41"
+          flutter-version: "3.28.0-2.0.pre.38556"
           channel: "master"
           cache: true
 
