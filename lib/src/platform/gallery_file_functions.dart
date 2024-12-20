@@ -4,13 +4,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
@@ -21,8 +21,6 @@ List<Sticker> defaultStickersFile(
   LocalTagsService localTags,
 ) {
   return [
-    if (file.isVideo) Sticker(FilteringMode.video.icon),
-    if (file.isGif) Sticker(FilteringMode.gif.icon),
     if (file.tags.containsKey("original")) Sticker(FilteringMode.original.icon),
     if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
     if (file.tags.containsKey("translated"))
@@ -58,10 +56,10 @@ String kbMbSize(BuildContext context, int bytes) {
   }
   final res = bytes / 1000;
   if (res > 1000) {
-    return AppLocalizations.of(context)!.megabytes(res / 1000);
+    return context.l10n().megabytes(res / 1000);
   }
 
-  return AppLocalizations.of(context)!.kilobytes(res);
+  return context.l10n().kilobytes(res);
 }
 
 Future<void> loadNetworkThumb(

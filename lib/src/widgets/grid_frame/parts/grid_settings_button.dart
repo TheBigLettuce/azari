@@ -8,12 +8,14 @@ import "dart:async";
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
+import "package:scrollable_positioned_list/scrollable_positioned_list.dart";
 
 class GridSettingsButton extends StatelessWidget {
   const GridSettingsButton({
@@ -180,11 +182,53 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
 }
 
 class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
+  final itemScrollController = ItemScrollController();
+  final itemPositionListener = ItemPositionsListener.create();
   final controller = ScrollController();
   final searchFocus = FocusNode();
   final textController = TextEditingController();
 
   final List<SegmentedButtonValue<T>> _filter = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (!widget.reorder && widget.variant == SegmentedButtonVariant.chip) {
+      WidgetsBinding.instance.scheduleFrameCallback((_) {
+        final newValues =
+            textController.text.isNotEmpty ? _filter : widget.values.toList()
+              ..sort((e1, e2) {
+                return e1.label.compareTo(e2.label);
+              });
+
+        final idx = newValues.indexWhere((e) => e.value == widget.selected);
+
+        if (idx < 0 || idx == 0) {
+          return;
+        }
+
+        final positions = itemPositionListener.itemPositions.value.toList();
+
+        final isVisisble = positions.indexWhere(
+              (e) =>
+                  e.index == idx &&
+                  !e.itemLeadingEdge.isNegative &&
+                  e.itemTrailingEdge < 1,
+            ) !=
+            -1;
+
+        if (!isVisisble) {
+          itemScrollController.scrollTo(
+            alignment: 0.5,
+            index: idx,
+            duration: Durations.extralong1,
+            curve: Easing.standard,
+          );
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -204,18 +248,29 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
     widget.select(selection.first);
 
-    controller.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Easing.standard,
-    );
+    if (widget.reorder) {
+      if (controller.hasClients) {
+        controller.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Easing.standard,
+        );
+      } else {
+        itemScrollController.scrollTo(
+          alignment: 0.5,
+          index: 0,
+          duration: Durations.medium3,
+          curve: Easing.standard,
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final newValues =
         textController.text.isNotEmpty ? _filter : widget.values.toList()
@@ -236,7 +291,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               child: Text(
-                AppLocalizations.of(context)!.emptyValue,
+                l10n.emptyValue,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -273,8 +328,9 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
               ),
             SegmentedButtonVariant.chip => SizedBox(
                 height: 40,
-                child: ListView.builder(
-                  controller: controller,
+                child: ScrollablePositionedList.builder(
+                  itemScrollController: itemScrollController,
+                  itemPositionsListener: itemPositionListener,
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemCount: newValues.length,
@@ -372,7 +428,9 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
             ),
           ),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: widget.variant == SegmentedButtonVariant.chip
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
             child: child,
           ),
         ],
@@ -436,7 +494,7 @@ class _SafeModeSegmentState extends State<SafeModeSegment> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SegmentedButtonGroup<SafeMode>(
       select: (e) {
@@ -517,7 +575,7 @@ class _SafeModeButtonState extends State<SafeModeButton> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SegmentedButtonGroup<SafeMode>(
       select: (e) {
@@ -755,7 +813,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
     }
 
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SizedBox(
       width: double.infinity,

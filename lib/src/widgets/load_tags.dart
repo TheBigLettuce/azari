@@ -6,10 +6,10 @@
 import "dart:async";
 
 import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
 extension LoadTagsGlobalNotifier on GlobalProgressTab {
@@ -32,7 +32,7 @@ class LoadTags extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final notifier = GlobalProgressTab.maybeOf(context)?.loadTags();
 
@@ -55,7 +55,7 @@ class LoadTags extends StatelessWidget {
                       ? null
                       : () {
                           final postTags = PostTags.fromContext(context);
-                          final db = DatabaseConnectionNotifier.of(context);
+                          final db = DbConn.of(context);
 
                           notifier.value = Future(() async {
                             final tags = await postTags.loadFromDissassemble(

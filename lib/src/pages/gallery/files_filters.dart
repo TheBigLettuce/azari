@@ -3,7 +3,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
@@ -136,11 +135,10 @@ Iterable<(File f, int? h)> _getDifferenceHash(
 }
 
 (Iterable<File>, dynamic) same(
-  BuildContext context,
   Iterable<File> cells,
   dynamic data, {
   required bool end,
-  required void Function() performSearch,
+  required VoidCallback onSkipped,
   required ResourceSource<int, File> source,
 }) {
   final accu =
@@ -161,29 +159,7 @@ Iterable<(File f, int? h)> _getDifferenceHash(
 
   if (end) {
     if (accu.skipped != 0) {
-      ScaffoldMessenger.of(context)
-        ..removeCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.resultsIncomplete),
-            duration: const Duration(seconds: 20),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.loadMoreLabel,
-              onPressed: () {
-                _loadNextThumbnails(source, () {
-                  try {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(AppLocalizations.of(context)!.loaded),
-                      ),
-                    );
-                    performSearch();
-                  } catch (_) {}
-                });
-              },
-            ),
-          ),
-        );
+      onSkipped();
     }
 
     return (
@@ -203,7 +179,7 @@ Iterable<(File f, int? h)> _getDifferenceHash(
   return ([], accu);
 }
 
-Future<void> _loadNextThumbnails(
+Future<void> loadNextThumbnails(
   ResourceSource<int, File> source,
   void Function() callback,
 ) async {

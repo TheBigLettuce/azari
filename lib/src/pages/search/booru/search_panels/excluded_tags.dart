@@ -58,7 +58,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SliverMainAxisGroup(
       slivers: [

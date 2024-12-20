@@ -9,7 +9,6 @@
  Required only if your app needs to access images or photos
      that other apps created.
     -->
-
     <uses-sdk tools:overrideLibrary="dev.isar.isar_flutter_libs" />
 
     <uses-feature
@@ -17,10 +16,8 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <uses-permission android:name="android.permission.MANAGE_MEDIA" />
@@ -57,27 +54,26 @@
             android:hardwareAccelerated="true"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
-
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
             <intent-filter>
                 <action android:name="android.intent.action.QUICK_VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="image/*" />
                 <data android:mimeType="video/*" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.PICK" />
+
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="image/*" />
                 <data android:mimeType="video/*" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT" />
 
@@ -88,7 +84,6 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".QuickViewActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -96,7 +91,6 @@
             android:hardwareAccelerated="true"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
-
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -109,7 +103,6 @@
 
                 <data android:scheme="content" />
                 <data android:scheme="file" />
-
                 <data android:mimeType="image/*" />
                 <data android:mimeType="video/*" />
             </intent-filter>
@@ -146,7 +139,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
         <meta-data
             android:name="firebase_analytics_collection_deactivated"
             android:value="true" />
@@ -155,12 +147,10 @@
             android:value="false" />
         <meta-data
             android:name="firebase_analytics_collection_enabled"
-            android:value="false" />
-
-        <!-- app has scrolling performance issues with Impeller as of 3.23.pre -->
+            android:value="false" /> <!-- app has scrolling performance issues with Impeller as of 3.23.pre -->
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
-
     </application>
+
 </manifest>

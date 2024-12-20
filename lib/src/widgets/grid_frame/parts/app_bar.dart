@@ -25,7 +25,7 @@ class _AppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final search = searchWidget;
 
     final backButton = gridFunctionality.backButton;
@@ -54,6 +54,9 @@ class _AppBar extends StatelessWidget {
         ),
       BarSearchWidget() => SliverAppBar(
           systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarIconBrightness: theme.brightness == Brightness.light
+                ? Brightness.dark
+                : Brightness.light,
             statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
           ),
           toolbarHeight: 80,
@@ -135,7 +138,8 @@ class _AppBar extends StatelessWidget {
               ),
         ),
       RawSearchWidget() =>
-        search.sliver(gridFunctionality.settingsButton, bottomWidget),
+        search.sliver(context, gridFunctionality.settingsButton, bottomWidget),
+      NoSearchWidget() => const SliverPadding(padding: EdgeInsets.zero),
     };
   }
 }

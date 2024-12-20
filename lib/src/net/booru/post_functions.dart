@@ -12,6 +12,7 @@ import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/translation_notes.dart";
@@ -89,71 +90,11 @@ class PostInfoSimple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    // final tagManager = TagManager.of(context);
-    final buttons = post.appBarButtons(context);
+    final l10n = context.l10n();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Padding(
-        //   padding: const EdgeInsets.only(top: 10, bottom: 4),
-        //   child: TagsRibbon(
-        //     tagNotifier: ImageTagsNotifier.of(context),
-        //     emptyWidget: const Padding(padding: EdgeInsets.zero),
-        //     sliver: false,
-        //     selectTag: (str, controller) {
-        //       HapticFeedback.mediumImpact();
-
-        //       _launchGrid(context, str);
-        //     },
-        //     tagManager: TagManager.of(context),
-        //     showPin: false,
-        //     items: (tag, controller) => [
-        //       PopupMenuItem(
-        //         onTap: () {
-        //           if (tagManager.pinned.exists(tag)) {
-        //             tagManager.pinned.delete(tag);
-        //           } else {
-        //             tagManager.pinned.add(tag);
-        //           }
-
-        //           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
-
-        //           controller.animateTo(
-        //             0,
-        //             duration: Durations.medium3,
-        //             curve: Easing.standard,
-        //           );
-        //         },
-        //         child: Text(
-        //           tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
-        //         ),
-        //       ),
-        //       launchGridSafeModeItem(
-        //         context,
-        //         tag,
-        //         _launchGrid,
-        //         l10n,
-        //       ),
-        //       PopupMenuItem(
-        //         onTap: () {
-        //           if (tagManager.excluded.exists(tag)) {
-        //             tagManager.excluded.delete(tag);
-        //           } else {
-        //             tagManager.excluded.add(tag);
-        //           }
-        //         },
-        //         child: Text(
-        //           tagManager.excluded.exists(tag)
-        //               ? l10n.removeFromExcluded
-        //               : l10n.addToExcluded,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
         const Padding(padding: EdgeInsets.only(top: 18)),
         ListBody(
           children: [
@@ -163,88 +104,17 @@ class PostInfoSimple extends StatelessWidget {
               height: post.height,
               name: post.id.toString(),
               icon: post.type.toIcon(),
-              trailing: buttons
-                  .map(
-                    (e) => IconButton(
-                      onPressed: e.onPressed,
-                      icon: Icon(e.icon),
-                    ),
-                  )
-                  .toList(),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Wrap(
-                runSpacing: 4,
-                alignment: WrapAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse(post.fileDownloadUrl()),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    label: Text(l10n.linkLabel),
-                    icon: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: post.sourceUrl.isNotEmpty &&
-                            Uri.tryParse(post.sourceUrl) != null
-                        ? () => launchUrl(
-                              Uri.parse(post.sourceUrl),
-                              mode: LaunchMode.externalApplication,
-                            )
-                        : null,
-                    label: Text(l10n.sourceFileInfoPage),
-                    icon: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                    ),
-                  ),
-                  if (post.tags.contains("translated"))
-                    TranslationNotesButton(
-                      postId: post.id,
-                      booru: post.booru,
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 2,
-              ),
-              child: Text.rich(
-                TextSpan(
-                  text: post.rating.translatedName(l10n),
-                  children: [
-                    TextSpan(text: " • ${post.booru.string} • "),
-                    WidgetSpan(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 2, right: 4),
-                        child: Icon(
-                          Icons.thumb_up_alt_rounded,
-                          size: 14,
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ),
-                    TextSpan(text: "${post.score}"),
-                    TextSpan(text: "\n${l10n.date(post.createdAt)}"),
-                  ],
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(
-                      alpha: 0.7,
-                    ),
-                  ),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
+            PostInfoTile(post: post),
+            const Padding(padding: EdgeInsets.only(top: 4)),
+            const Divider(indent: 24, endIndent: 24),
+            PostActionChips(post: post, addAppBarActions: true),
           ],
         ),
       ],
@@ -285,8 +155,7 @@ class _PostInfoState extends State<PostInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final l10n = context.l10n();
     final tagManager = TagManager.of(context);
 
     return Column(
@@ -357,83 +226,138 @@ class _PostInfoState extends State<PostInfo> {
               height: post.height,
               name: post.id.toString(),
               icon: post.type.toIcon(),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                ),
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Wrap(
-                runSpacing: 4,
-                alignment: WrapAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse(post.fileDownloadUrl()),
+            PostInfoTile(post: post),
+            const Padding(padding: EdgeInsets.only(top: 4)),
+            const Divider(indent: 24, endIndent: 24),
+            PostActionChips(post: post),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class PostActionChips extends StatelessWidget {
+  const PostActionChips({
+    super.key,
+    required this.post,
+    this.addAppBarActions = false,
+  });
+
+  final PostImpl post;
+
+  final bool addAppBarActions;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+    final appBarActions = post.appBarButtons(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          if (addAppBarActions)
+            ...appBarActions.map(
+              (e) => ActionChip(
+                onPressed: e.onPressed,
+                avatar: Icon(e.icon),
+                label: Text(e.label),
+              ),
+            ),
+          ActionChip(
+            onPressed: () => launchUrl(
+              Uri.parse(post.fileDownloadUrl()),
+              mode: LaunchMode.externalApplication,
+            ),
+            avatar: const Icon(Icons.open_in_new_rounded),
+            label: Text(l10n.linkLabel),
+          ),
+          ActionChip(
+            onPressed: post.sourceUrl.isNotEmpty &&
+                    Uri.tryParse(post.sourceUrl) != null
+                ? () => launchUrl(
+                      Uri.parse(post.sourceUrl),
                       mode: LaunchMode.externalApplication,
-                    ),
-                    label: Text(l10n.linkLabel),
-                    icon: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: post.sourceUrl.isNotEmpty &&
-                            Uri.tryParse(post.sourceUrl) != null
-                        ? () => launchUrl(
-                              Uri.parse(post.sourceUrl),
-                              mode: LaunchMode.externalApplication,
-                            )
-                        : null,
-                    label: Text(l10n.sourceFileInfoPage),
-                    icon: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                    ),
-                  ),
-                  if (post.tags.contains("translated"))
-                    TranslationNotesButton(
-                      postId: post.id,
-                      booru: post.booru,
-                    ),
-                ],
-              ),
+                    )
+                : null,
+            label: Text(l10n.sourceFileInfoPage),
+            avatar: const Icon(
+              Icons.open_in_new_rounded,
+              size: 18,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 2,
-              ),
-              child: Text.rich(
-                TextSpan(
-                  text: post.rating.translatedName(l10n),
-                  children: [
-                    TextSpan(text: " • ${post.booru.string} • "),
-                    WidgetSpan(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 2, right: 4),
-                        child: Icon(
-                          Icons.thumb_up_alt_rounded,
-                          size: 14,
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ),
-                    TextSpan(text: "${post.score}"),
-                    TextSpan(text: "\n${l10n.date(post.createdAt)}"),
-                  ],
-                  style: theme.textTheme.labelLarge?.copyWith(
+          ),
+          if (post.tags.contains("translated"))
+            TranslationNotesChip(
+              postId: post.id,
+              booru: post.booru,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class PostInfoTile extends StatelessWidget {
+  const PostInfoTile({
+    super.key,
+    required this.post,
+    this.shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(15),
+        bottomRight: Radius.circular(15),
+      ),
+    ),
+  });
+
+  final PostImpl post;
+
+  final ShapeBorder shape;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ListTile(
+        shape: shape,
+        tileColor: theme.colorScheme.surfaceContainerHigh,
+        leading: const Icon(Icons.description_outlined),
+        title: Text(post.booru.string),
+        subtitle: Text.rich(
+          TextSpan(
+            text: post.rating.translatedName(l10n),
+            children: [
+              const TextSpan(text: " • "),
+              WidgetSpan(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2, right: 4),
+                  child: Icon(
+                    Icons.thumb_up_alt_rounded,
+                    size: 14,
                     color: theme.colorScheme.onSurface.withValues(
                       alpha: 0.7,
                     ),
                   ),
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              TextSpan(text: "${post.score}"),
+              TextSpan(text: "\n${l10n.date(post.createdAt)}"),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -449,6 +373,9 @@ class DimensionsName extends StatelessWidget {
     this.trailing = const [],
     this.onTap,
     this.onLongTap,
+    this.shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(15)),
+    ),
   });
 
   final int width;
@@ -459,6 +386,8 @@ class DimensionsName extends StatelessWidget {
   final List<Widget> trailing;
 
   final Icon icon;
+
+  final ShapeBorder shape;
 
   final VoidCallback? onTap;
   final VoidCallback? onLongTap;
@@ -474,9 +403,7 @@ class DimensionsName extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         onLongPress: onLongTap,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(15)),
-        ),
+        shape: shape,
         tileColor: theme.colorScheme.surfaceContainerHigh,
         leading: icon,
         trailing: trailing.isEmpty
@@ -488,68 +415,6 @@ class DimensionsName extends StatelessWidget {
         title: Text(name),
         subtitle: Text(
           "$width x ${l10n.pixels(height)}",
-        ),
-      ),
-    );
-  }
-}
-
-class _ColoredRectangle extends StatelessWidget {
-  const _ColoredRectangle({
-    // super.key,
-    required this.title,
-    required this.subtitle,
-    required this.primaryColor,
-  });
-
-  final bool primaryColor;
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      child: Center(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: primaryColor
-                ? theme.colorScheme.primaryContainer
-                : theme.colorScheme.secondaryContainer,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Expanded(
-                  child: Text(
-                    subtitle,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: primaryColor
-                          ? theme.colorScheme.onPrimaryContainer
-                          : theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: primaryColor
-                          ? theme.colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.8)
-                          : theme.colorScheme.onSecondaryContainer
-                              .withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

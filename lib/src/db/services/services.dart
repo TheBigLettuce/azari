@@ -92,6 +92,26 @@ abstract interface class ServicesImplTable implements ServiceMarker {
     SafeMode? safeMode, [
     bool create = false,
   ]);
+
+  static Widget inject(Widget child) => _DbConnNotifier._(
+        downloadManager: _downloadManager!,
+        db: _currentDb,
+        child: child,
+      );
+
+  static DownloadManager downloadManagerOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_DbConnNotifier>();
+
+    return widget!.downloadManager;
+  }
+
+  static DbConn of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_DbConnNotifier>();
+
+    return widget!.db;
+  }
 }
 
 final ServicesImplTable _currentDb = getApi();
@@ -156,40 +176,18 @@ abstract interface class VisitedPostsService {
   StreamSubscription<void> watch(void Function(void) f);
 }
 
-class DatabaseConnectionNotifier extends InheritedWidget {
-  const DatabaseConnectionNotifier._({
+class _DbConnNotifier extends InheritedWidget {
+  const _DbConnNotifier._({
     required this.downloadManager,
     required this.db,
     required super.child,
   });
 
-  factory DatabaseConnectionNotifier.current(Widget child) =>
-      DatabaseConnectionNotifier._(
-        db: _currentDb,
-        downloadManager: _downloadManager!,
-        child: child,
-      );
-
   final DbConn db;
   final DownloadManager downloadManager;
 
-  static DownloadManager downloadManagerOf(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<DatabaseConnectionNotifier>();
-
-    return widget!.downloadManager;
-  }
-
-  static DbConn of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<DatabaseConnectionNotifier>();
-
-    return widget!.db;
-  }
-
   @override
-  bool updateShouldNotify(DatabaseConnectionNotifier oldWidget) =>
-      db != oldWidget.db;
+  bool updateShouldNotify(_DbConnNotifier oldWidget) => db != oldWidget.db;
 }
 
 abstract interface class ServiceMarker {}
@@ -317,8 +315,8 @@ abstract class BooruTagging {
 
 abstract interface class TagManager implements ServiceMarker {
   factory TagManager.of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<DatabaseConnectionNotifier>();
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_DbConnNotifier>();
 
     return widget!.db.tagManager;
   }
@@ -623,7 +621,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
     int postId, {
     Widget Function(Widget)? wrapNotifiers,
   }) {
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
 
     ImageView.launchWrappedAsyncSingle(
       context,

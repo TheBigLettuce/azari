@@ -34,7 +34,7 @@ abstract class DownloadManager
         MapStorage<String, _DownloadEntry>,
         ResourceSource<String, _DownloadEntry> {
   factory DownloadManager.of(BuildContext context) =>
-      DatabaseConnectionNotifier.downloadManagerOf(context);
+      DbConn.downloadManagerOf(context);
 
   Dio get client;
   String get downloadDir;

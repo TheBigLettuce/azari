@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -21,6 +20,7 @@ import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -268,7 +268,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -323,38 +323,42 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                     download: _download,
                     source: source,
                     search: RawSearchWidget(
-                      (settingsButton, bottomWidget) => SliverAppBar(
-                        leading: const BackButton(),
-                        floating: true,
-                        pinned: true,
-                        snap: true,
-                        stretch: true,
-                        bottom: bottomWidget ??
-                            const PreferredSize(
-                              preferredSize: Size.zero,
-                              child: SizedBox.shrink(),
-                            ),
-                        title: _AppBarText(key: _textKey, source: source),
-                        actions: [
-                          IconButton(
-                            icon: pagingState.addToBookmarks
-                                ? const Icon(Icons.bookmark_remove_rounded)
-                                : const Icon(Icons.bookmark_add_rounded),
-                            onPressed: () {
-                              pagingState.addToBookmarks =
-                                  !pagingState.addToBookmarks;
+                      (context, settingsButton, bottomWidget) {
+                        // final theme = Theme.of(context);
 
-                              setState(() {});
-                            },
-                          ),
-                          // LaunchingSearchWidget(
-                          //   state: search,
-                          //   searchController: searchController,
-                          //   hint: pagingState.api.booru.name,
-                          // ),
-                          if (settingsButton != null) settingsButton,
-                        ],
-                      ),
+                        return SliverAppBar(
+                          leading: const BackButton(),
+                          floating: true,
+                          pinned: true,
+                          snap: true,
+                          stretch: true,
+                          bottom: bottomWidget ??
+                              const PreferredSize(
+                                preferredSize: Size.zero,
+                                child: SizedBox.shrink(),
+                              ),
+                          title: _AppBarText(key: _textKey, source: source),
+                          actions: [
+                            IconButton(
+                              icon: pagingState.addToBookmarks
+                                  ? const Icon(Icons.bookmark_remove_rounded)
+                                  : const Icon(Icons.bookmark_add_rounded),
+                              onPressed: () {
+                                pagingState.addToBookmarks =
+                                    !pagingState.addToBookmarks;
+
+                                setState(() {});
+                              },
+                            ),
+                            // LaunchingSearchWidget(
+                            //   state: search,
+                            //   searchController: searchController,
+                            //   hint: pagingState.api.booru.name,
+                            // ),
+                            if (settingsButton != null) settingsButton,
+                          ],
+                        );
+                      },
                     ),
                     registerNotifiers: (child) => OnBooruTagPressed(
                       onPressed: _onTagPressed,

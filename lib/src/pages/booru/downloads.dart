@@ -9,6 +9,7 @@ import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -113,7 +114,7 @@ class _DownloadsPageState extends State<DownloadsPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridConfiguration(
       watch: gridSettings.watch,

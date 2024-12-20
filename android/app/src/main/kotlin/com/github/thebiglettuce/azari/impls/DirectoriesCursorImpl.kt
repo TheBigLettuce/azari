@@ -25,8 +25,6 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
         i += 1
         val token = i.toString()
 
-        Log.i("DirectoriesCursorImpl", "acquire, token: $token")
-
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
@@ -59,28 +57,20 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
 
             val cursor = state.cursor
 
-            if (cursor.isAfterLast || (state.resMap.isEmpty() && cursor.isLast)) {
-                Log.i("DirectoriesCursorImpl", "isAfterLast")
-
-                callback(Result.success(mapOf()))
-                destroy(token)
-                return@launch
-            }
-
             if (!state.movedToFirst) {
-                Log.i("DirectoriesCursorImpl", "movedToFirst")
-
                 val moveToFirst = cursor.moveToFirst()
 
                 if (!moveToFirst) {
                     callback(Result.success(mapOf()))
                     destroy(token)
                     return@launch
-                } else {
-                    cursor.moveToPrevious()
                 }
+
+                cursor.moveToPrevious()
                 state.movedToFirst = true
             }
+
+            val resMap = mutableMapOf<String, Directory>()
 
             try {
                 while (cursor.moveToNext()) {
@@ -91,7 +81,7 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
 
                     state.map[bucketId] = Unit
 
-                    state.resMap[bucketId] = Directory(
+                    resMap[bucketId] = Directory(
                         thumbFileId = cursor.getLong(state.id),
                         lastModified = cursor.getLong(state.date_modified),
                         bucketId = bucketId,
@@ -100,23 +90,21 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
                         relativeLoc = cursor.getString(state.relative_path)
                     )
 
-                    if (state.resMap.count() == 40) {
-                        val copy = state.resMap.toMap()
-                        state.resMap.clear()
-
-                        callback(Result.success(copy))
+                    if (resMap.count() == 40) {
                         break
                     }
                 }
 
-                if (state.resMap.isNotEmpty()) {
-                    val copy = state.resMap.toMap()
-                    state.resMap.clear()
-
-                    callback(Result.success(copy))
+                if (resMap.isNotEmpty()) {
+                    callback(Result.success(resMap))
+                    return@launch
                 }
 
-                Log.i("DirectoriesCursorImpl", "end of while")
+                if (cursor.isAfterLast || cursor.isLast) {
+                    callback(Result.success(mapOf()))
+                    destroy(token)
+                    return@launch
+                }
             } catch (e: java.lang.Exception) {
                 Log.e("DirectoriesCursorImpl", "advance", e)
             }
@@ -124,8 +112,6 @@ class DirectoriesCursorImpl(private val appContext: App, private val scope: Coro
     }
 
     override fun destroy(token: String) {
-        Log.i("DirectoriesCursorImpl", "destroy")
-
         liveInstances.remove(token)?.close()
     }
 }
@@ -134,7 +120,7 @@ class DirectoriesCursorState(val cursor: Cursor) {
     var movedToFirst: Boolean = false
 
     val map = HashMap<String, Unit>()
-    val resMap = mutableMapOf<String, Directory>()
+//    val resMap = mutableMapOf<String, Directory>()
 
     val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
     val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
@@ -150,7 +136,6 @@ class DirectoriesCursorState(val cursor: Cursor) {
 
     fun close() {
         if (!cursor.isClosed) {
-            Log.i("DirectoriesCursorState", "close cursor")
             cursor.close()
         }
     }

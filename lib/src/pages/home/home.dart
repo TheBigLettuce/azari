@@ -15,9 +15,9 @@ import "package:azari/src/pages/discover/discover.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/home/home_skeleton.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
-import "package:azari/src/pages/search/search_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -132,7 +132,7 @@ class _HomeState extends State<Home>
       switchPage(this, route);
     }
 
-    scrollingEvents.add(false);
+    scrollingEvents.add(true);
   }
 
   void onPop(bool didPop, Object? _) {

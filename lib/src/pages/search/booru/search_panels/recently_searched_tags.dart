@@ -59,7 +59,7 @@ class __RecentlySearchedTagsPanelState
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SliverToBoxAdapter(
       child: FadingPanel(

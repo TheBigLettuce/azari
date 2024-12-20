@@ -464,5 +464,7 @@
     "emptyDownloadProgress": "Загрузки появятся здесь...",
     "discoverPage": "Больше",
     "hideNamesFiles": "файлов",
-    "hideNamesDirectories": "папок"
+    "hideNamesDirectories": "папок",
+    "openOnBooru": "Открыть на {booru}",
+    "shareLabel": "Поделиться"
 }

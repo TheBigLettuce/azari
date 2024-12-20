@@ -44,7 +44,7 @@ abstract class BlacklistedDirectoryDataImpl
     int idx,
   ) {
     final (api, _, _) = DirectoriesDataNotifier.of(context);
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
 
     // final filesApi = api.files(
     //   PlainDirectory(

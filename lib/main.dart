@@ -9,14 +9,17 @@ import "package:azari/init_main/build_theme.dart";
 import "package:azari/init_main/init_main.dart";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery/android/android_gallery.dart";
+import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
@@ -47,20 +50,21 @@ void main() async {
         themeAnimationDuration: const Duration(milliseconds: 300),
         darkTheme: d,
         theme: l,
-        home: settings.showWelcomePage
-            ? WelcomePage(
-                onEnd: (context) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) {
-                        return Home(stream: notificationStream.stream);
-                      },
-                    ),
-                  );
-                },
-              )
-            : Home(stream: notificationStream.stream),
+        home: switch (settings.showWelcomePage) {
+          true => WelcomePage(
+              onEnd: (context) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) {
+                      return Home(stream: notificationStream.stream);
+                    },
+                  ),
+                );
+              },
+            ),
+          false => Home(stream: notificationStream.stream),
+        },
         debugShowCheckedModeBanner: false,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

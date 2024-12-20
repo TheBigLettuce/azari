@@ -17,7 +17,7 @@ Future<void> mainPickfile() async {
   final accentColor = await PlatformApi().accentColor;
 
   runApp(
-    DatabaseConnectionNotifier.current(
+    DbConn.inject(
       Builder(
         builder: (context) => PinnedTagsHolder(
           tagManager: TagManager.of(context),
@@ -33,28 +33,29 @@ Future<void> mainPickfile() async {
               builder: (context) => WrapGridPage(
                 addScaffoldAndBar: true,
                 child: DirectoriesPage(
-                  db: DatabaseConnectionNotifier.of(context),
-                  l10n: AppLocalizations.of(context)!,
+                  db: DbConn.of(context),
+                  l10n: context.l10n(),
                   callback: ReturnFileCallback(
                     choose: (chosen, [_]) {
                       PlatformApi().closeApp(chosen.originalUri);
 
                       return Future.value();
-                      // const AndroidApiFunctions().returnUri(chosen.originalUri);
                     },
                     preview: PreferredSize(
                       preferredSize:
                           Size.fromHeight(CopyMovePreview.size.toDouble()),
-                      child: Builder(
-                        builder: (context) {
-                          final l10n = AppLocalizations.of(context)!;
+                      child: IgnorePointer(
+                        child: Builder(
+                          builder: (context) {
+                            final l10n = context.l10n();
 
-                          return CopyMovePreview(
-                            files: null,
-                            title: l10n.pickFileNotice,
-                            icon: Icons.file_open_rounded,
-                          );
-                        },
+                            return CopyMovePreview(
+                              files: null,
+                              title: l10n.pickFileNotice,
+                              icon: Icons.file_open_rounded,
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

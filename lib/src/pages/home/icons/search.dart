@@ -5,28 +5,28 @@
 
 part of "../home.dart";
 
-class SearchDestinationIcon extends StatelessWidget {
-  const SearchDestinationIcon({
-    super.key,
-    required this.controller,
-  });
+// class SearchDestinationIcon extends StatelessWidget {
+//   const SearchDestinationIcon({
+//     super.key,
+//     required this.controller,
+//   });
 
-  final AnimationController controller;
+//   final AnimationController controller;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
 
-    final isSelected = CurrentRoute.of(context) == CurrentRoute.search;
+//     final isSelected = CurrentRoute.of(context) == CurrentRoute.search;
 
-    return Animate(
-      autoPlay: true,
-      controller: controller,
-      effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
-      child: Icon(
-        isSelected ? Icons.search_rounded : Icons.search_outlined,
-        color: isSelected ? theme.colorScheme.primary : null,
-      ),
-    );
-  }
-}
+//     return Animate(
+//       autoPlay: true,
+//       controller: controller,
+//       effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
+//       child: Icon(
+//         isSelected ? Icons.search_rounded : Icons.search_outlined,
+//         color: isSelected ? theme.colorScheme.primary : null,
+//       ),
+//     );
+//   }
+// }

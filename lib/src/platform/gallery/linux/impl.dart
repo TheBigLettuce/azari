@@ -13,7 +13,6 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery/io.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:file_picker/file_picker.dart";
 import "package:mime/mime.dart";
 import "package:path/path.dart" as path;
@@ -384,7 +383,4 @@ class LinuxFile extends File {
     required super.originalUri,
     required super.res,
   });
-
-  @override
-  Contentable content() => EmptyContent(this);
 }

@@ -3,9 +3,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 
@@ -18,6 +18,22 @@ class TranslationNotes extends StatefulWidget {
 
   final int postId;
   final Booru booru;
+
+  static void open(
+    BuildContext context, {
+    required int postId,
+    required Booru booru,
+  }) {
+    Navigator.of(context, rootNavigator: true).push<void>(
+      DialogRoute(
+        context: context,
+        builder: (context) => TranslationNotes(
+          postId: postId,
+          booru: booru,
+        ),
+      ),
+    );
+  }
 
   @override
   State<TranslationNotes> createState() => _TranslationNotesState();
@@ -44,8 +60,10 @@ class _TranslationNotesState extends State<TranslationNotes> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
     return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.translationTitle),
+      title: Text(l10n.translationTitle),
       content: FutureBuilder(
         future: f,
         builder: (context, snapshot) {
@@ -76,8 +94,8 @@ class _TranslationNotesState extends State<TranslationNotes> {
   }
 }
 
-class TranslationNotesButton extends StatelessWidget {
-  const TranslationNotesButton({
+class TranslationNotesChip extends StatelessWidget {
+  const TranslationNotesChip({
     super.key,
     required this.postId,
     required this.booru,
@@ -88,20 +106,13 @@ class TranslationNotesButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    return TextButton.icon(
-      onPressed: () => Navigator.of(context).push<void>(
-        DialogRoute(
-          context: context,
-          builder: (context) => TranslationNotes(
-            postId: postId,
-            booru: booru,
-          ),
-        ),
-      ),
+    return ActionChip(
+      onPressed: () =>
+          TranslationNotes.open(context, postId: postId, booru: booru),
       label: Text(l10n.hasTranslations),
-      icon: const Icon(
+      avatar: const Icon(
         Icons.open_in_new_rounded,
         size: 18,
       ),

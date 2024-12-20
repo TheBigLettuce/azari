@@ -9,6 +9,7 @@ import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
+import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:dio/dio.dart";
@@ -44,9 +45,9 @@ class _DiscoverPageState extends State<DiscoverPage> with SettingsWatcherMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: _PoolsBody(
-        api: api.pools,
+    return const Center(
+      child: EmptyWidgetBackground(
+        subtitle: "Not implemented", // TODO: change
       ),
     );
   }

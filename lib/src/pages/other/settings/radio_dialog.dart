@@ -6,6 +6,7 @@
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
 extension SafeModeRadioDialogExt on BuildContext {
@@ -64,7 +65,7 @@ void radioDialog<T>(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text(AppLocalizations.of(context)!.back),
+              child: Text(context.l10n().back),
             ),
           ],
           title: Text(title),

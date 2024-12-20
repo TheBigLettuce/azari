@@ -44,7 +44,7 @@ class __SearchInBooruButtonState extends State<_SearchInBooruButton> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return filteringValue.isEmpty
         ? const SliverPadding(padding: EdgeInsets.zero)

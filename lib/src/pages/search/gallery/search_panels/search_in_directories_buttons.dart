@@ -36,7 +36,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     required bool asTag,
     required bool onlyPinned,
   }) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final List<Directory> directories = [];
 
@@ -97,7 +97,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return SliverPadding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),

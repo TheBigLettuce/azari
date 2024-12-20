@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
@@ -43,7 +43,7 @@ class MenuWrapper extends StatefulWidget {
             onTap: () {
               Clipboard.setData(ClipboardData(text: title));
             },
-            child: Text(AppLocalizations.of(context)!.copyLabel),
+            child: Text(context.l10n().copyLabel),
           ),
       ];
 

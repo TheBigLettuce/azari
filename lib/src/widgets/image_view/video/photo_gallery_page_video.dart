@@ -126,6 +126,11 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   }
 
   Future<void> _initController() {
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      playerControls.clear();
+      playerControls.setPlayState(controls.PlayState.buffering);
+    });
+
     return controller.initialize().then((value) {
       if (!disposed) {
         controller.addListener(_listener);
@@ -185,6 +190,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     if (prevProgress != newProgress) {
       prevProgress = newProgress;
 
+      playerControls.setDuration(controller.value.duration);
       playerControls.setProgress(newProgress);
     }
 

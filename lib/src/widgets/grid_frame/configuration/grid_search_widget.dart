@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/net/booru/booru_api.dart";
@@ -42,9 +41,14 @@ class RawSearchWidget implements GridSearchWidget {
   List<Widget>? get trailingItems => null;
 
   final Widget Function(
+    BuildContext context,
     Widget? gridSettingsButton,
     PreferredSizeWidget? bottomWidget,
   ) sliver;
+}
+
+class NoSearchWidget extends GridSearchWidget {
+  const NoSearchWidget() : super(leading: null, trailingItems: null);
 }
 
 class BarSearchWidget extends GridSearchWidget {
@@ -285,7 +289,7 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return Padding(
       padding: MediaQuery.viewInsetsOf(context),
@@ -372,10 +376,11 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               title: l10n.filteringModesLabel,
             ),
             SegmentedButtonGroup<SortingMode>(
-              variant: SegmentedButtonVariant.segments,
+              variant: SegmentedButtonVariant.chip,
               select: _selectSorting,
               selected: currentSorting,
               showSelectedIcon: false,
+              reorder: false,
               values: widget.enabledSorting.isEmpty
                   ? <SegmentedButtonValue<SortingMode>>[
                       SegmentedButtonValue(

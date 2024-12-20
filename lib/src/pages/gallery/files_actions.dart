@@ -35,7 +35,7 @@ Future<void> deleteFilesDialog(
   List<File> selected,
   DeleteDialogShow toShow,
 ) {
-  final l10n = AppLocalizations.of(context)!;
+  final l10n = context.l10n();
 
   void delete() {
     GalleryApi().trash.addAll(
@@ -54,14 +54,14 @@ Future<void> deleteFilesDialog(
     DialogRoute(
       context: context,
       builder: (context) {
+        final text = selected.length == 1
+            ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
+            : "${l10n.tagDeleteDialogTitle}"
+                " ${selected.length}"
+                " ${l10n.elementPlural}";
+
         return AlertDialog(
-          title: Text(
-            selected.length == 1
-                ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
-                : "${l10n.tagDeleteDialogTitle}"
-                    " ${selected.length}"
-                    " ${l10n.elementPlural}",
-          ),
+          title: Text(text),
           content: Text(l10n.youCanRestoreFromTrash),
           actions: [
             TextButton(
@@ -119,7 +119,7 @@ GridAction<File> _saveTagsAction(
         postTags,
         localTags,
         localTagDictionary,
-        AppLocalizations.of(context)!,
+        context.l10n(),
       );
     },
     true,
@@ -145,7 +145,7 @@ GridAction<File> _addTagAction(
 
           refresh();
         },
-        AppLocalizations.of(context)!,
+        context.l10n(),
       );
     },
     false,
@@ -262,7 +262,7 @@ void moveOrCopyFnc(
           showBackButton: true,
           wrapGridPage: true,
           providedApi: providedApi,
-          db: DatabaseConnectionNotifier.of(context),
+          db: DbConn.of(context),
           callback: ReturnDirectoryCallback(
             choose: (value, newDir) {
               if (!newDir && value.bucketId == originalBucketId) {
@@ -344,7 +344,7 @@ void moveOrCopyFnc(
             joinable: false,
             suggestFor: searchPrefix,
           ),
-          l10n: AppLocalizations.of(context)!,
+          l10n: context.l10n(),
         );
       },
     ),

@@ -29,6 +29,8 @@ import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
+import "package:azari/src/pages/search/booru/booru_search_page.dart";
+import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
@@ -172,7 +174,7 @@ class _BooruPageState extends State<BooruPage>
             builder: (context) {
               return BooruRestoredPage(
                 pagingRegistry: widget.pagingRegistry,
-                db: DatabaseConnectionNotifier.of(context),
+                db: DbConn.of(context),
                 booru: e.booru,
                 tags: e.tags,
                 saveSelectedPage: _setSecondaryName,
@@ -242,7 +244,7 @@ class _BooruPageState extends State<BooruPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     return switch (BooruSubPage.of(context)) {
@@ -322,7 +324,9 @@ class _BooruPageState extends State<BooruPage>
                     ),
                     source: source,
                     search: RawSearchWidget(
-                      (settingsButton, bottomWidget) => SliverAppBar(
+                      (context, settingsButton, bottomWidget) => SliverAppBar(
+                        pinned: true,
+                        floating: true,
                         leading: Center(
                           child: IconButton(
                             onPressed: () {
@@ -332,25 +336,30 @@ class _BooruPageState extends State<BooruPage>
                           ),
                         ),
                         bottom: bottomWidget ??
-                            const PreferredSize(
-                              preferredSize: Size.zero,
-                              child: SizedBox.shrink(),
+                            PreferredSize(
+                              preferredSize: const Size.fromHeight(56),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: SizedBox(
+                                  height: 40,
+                                  child: PopularRandomChips(
+                                    db: widget.db,
+                                    safeMode: () => settings.safeMode,
+                                    booru: pagingState.booru,
+                                    onTagPressed: _onBooruTagPressed,
+                                    listPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                        // centerTitle: true,
-                        // title: IconButton(
-                        //   onPressed: () {
-                        //     Navigator.of(context, rootNavigator: true)
-                        //         .push<void>(
-                        //       MaterialPageRoute(
-                        //         builder: (context) => BooruSearchPage(
-                        //           db: widget.db,
-                        //           onTagPressed: _onBooruTagPressed,
-                        //         ),
-                        //       ),
-                        //     );
-                        //   },
-                        //   icon: const Icon(Icons.search_rounded),
-                        // ),
+                        centerTitle: true,
+                        title: IconButton(
+                          onPressed: () => BooruSearchPage.open(context),
+                          icon: const Icon(Icons.search_rounded),
+                        ),
                         actions: [
                           if (settingsButton != null) settingsButton,
                         ],
@@ -608,7 +617,7 @@ class OpenMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return PopupMenuButton(
       itemBuilder: (_) {
@@ -662,7 +671,7 @@ class _HottestTagNotifier extends StatelessWidget {
     }
 
     return HottestTagsCarousel(
-      db: DatabaseConnectionNotifier.of(context),
+      db: DbConn.of(context),
       api: api,
       notifier: notifier,
       randomNumber: randomNumber,

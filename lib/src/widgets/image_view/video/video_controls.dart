@@ -12,15 +12,13 @@ class VideoControls extends StatefulWidget {
     required this.db,
     required this.seekTimeAnchor,
     required this.vertical,
-    this.content,
+    // this.content,
   });
 
   final bool vertical;
 
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
-
-  final Contentable? content;
 
   final VideoSettingsService db;
 
@@ -40,7 +38,6 @@ class _VideoControlsState extends State<VideoControls>
 
   VideoControlsControllerImpl get controls => widget.videoControls;
 
-  Contentable currentContent = const EmptyContent(ContentWidgets.empty());
   bool appBarVisible = true;
 
   late VideoSettingsData videoSettings = widget.db.current;
@@ -52,14 +49,6 @@ class _VideoControlsState extends State<VideoControls>
     animationController =
         AnimationController(vsync: this, duration: Durations.medium1);
 
-    if (widget.content != null) {
-      currentContent = widget.content!;
-
-      if (currentContent is AndroidVideo || currentContent is NetVideo) {
-        animationController.forward();
-      }
-    }
-
     playerUpdatesSubsc = controls._playerEvents.stream.listen((update) {
       switch (update) {
         case DurationUpdate():
@@ -70,6 +59,10 @@ class _VideoControlsState extends State<VideoControls>
         case ClearUpdate():
           playButtonKey.currentState?._update();
           videoTimeKey.currentState?._update();
+        case VolumeUpdate():
+          if (update.volume != videoSettings.volume) {
+            videoSettings.copy(volume: update.volume).save();
+          }
       }
     });
 
@@ -92,10 +85,9 @@ class _VideoControlsState extends State<VideoControls>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final newContent = CurrentContentNotifier.maybeOf(context);
-    if (newContent != null && newContent != currentContent) {
-      currentContent = newContent;
-      if (currentContent is AndroidVideo || currentContent is NetVideo) {
+    final newContent = CurrentIndexMetadata.maybeOf(context);
+    if (newContent != null) {
+      if (newContent.isVideo) {
         animationController.forward();
       } else {
         animationController.reverse();
@@ -284,7 +276,7 @@ class SeekTimeAnchorState extends State<SeekTimeAnchor> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return Animate(
       autoPlay: false,

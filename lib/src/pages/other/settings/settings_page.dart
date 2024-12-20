@@ -5,10 +5,10 @@
 
 import "package:azari/init_main/build_theme.dart";
 import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/pages/other/settings/settings_list.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:flutter/material.dart";
 
@@ -23,18 +23,17 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final db = DatabaseConnectionNotifier.of(context);
+    final l10n = context.l10n();
+    final db = DbConn.of(context);
 
-    final padding = const EdgeInsets.only(bottom: 8) +
-        EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom);
+    final padding =
+        EdgeInsets.only(bottom: 8 + MediaQuery.paddingOf(context).bottom);
 
     return SettingsSkeleton(
       l10n.settingsPageName,
       child: SliverPadding(
         padding: padding,
         sliver: SettingsList(
-          sliver: true,
           db: db,
         ),
       ),

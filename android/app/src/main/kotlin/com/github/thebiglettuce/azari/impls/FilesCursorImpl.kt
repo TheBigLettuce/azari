@@ -48,8 +48,6 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
         i += 1
         val token = i.toString()
 
-        Log.i("FilesCursorImpl", "acquire, token: $token")
-
         if (type == FilesCursorType.TRASHED && (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R)) {
             liveInstances[token] = null
             return token
@@ -110,8 +108,6 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
         i += 1
         val token = i.toString()
 
-        Log.i("FilesCursorImpl", "acquireFilter, token: $token")
-
         val selection =
             "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ? AND ${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
 
@@ -145,8 +141,6 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
     override fun acquireIds(ids: List<Long>): String {
         i += 1
         val token = i.toString()
-
-        Log.i("FilesCursorImpl", "acquireIds, token: $token")
 
         if (ids.isEmpty()) {
             liveInstances[token] = null
@@ -201,28 +195,20 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
 
             val cursor = state.cursor
 
-            if (cursor.isAfterLast || (state.list.isEmpty() && cursor.isLast)) {
-                Log.i("FilesCursorImpl", "isAfterLast")
-
-                callback(Result.success(listOf()))
-                destroy(token)
-                return@launch
-            }
-
             if (!state.movedToFirst) {
-                Log.i("FilesCursorImpl", "movedToFirst")
-
                 val moveToFirst = cursor.moveToFirst()
 
                 if (!moveToFirst) {
                     callback(Result.success(listOf()))
                     destroy(token)
                     return@launch
-                } else {
-                    cursor.moveToPrevious()
                 }
+
+                cursor.moveToPrevious()
                 state.movedToFirst = true
             }
+
+            val list = mutableListOf<DirectoryFile>()
 
             try {
                 while (cursor.moveToNext()) {
@@ -242,7 +228,7 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
                         }
 
 
-                    state.list.add(
+                    list.add(
                         DirectoryFile(
                             id = id,
                             bucketId = cursor.getString(state.bucket_id),
@@ -258,19 +244,21 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
                         )
                     )
 
-                    if (state.limit == 0L && state.list.count() == 40) {
-                        callback(Result.success(state.list.toList()))
-                        state.list.clear()
+                    if (state.limit == 0L && list.count() == 40) {
                         break
                     }
                 }
 
-                if (state.list.isNotEmpty()) {
-                    callback(Result.success(state.list.toList()))
-                    state.list.clear()
+                if (list.isNotEmpty()) {
+                    callback(Result.success(list))
+                    return@launch
                 }
 
-                Log.i("FilesCursorImpl", "end of while")
+                if (cursor.isAfterLast || cursor.isLast) {
+                    callback(Result.success(listOf()))
+                    destroy(token)
+                    return@launch
+                }
             } catch (e: java.lang.Exception) {
                 Log.e("FilesCursorImpl", "advance", e)
             }
@@ -278,8 +266,6 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
     }
 
     override fun destroy(token: String) {
-        Log.i("FilesCursorImpl", "destroy")
-
         liveInstances.remove(token)?.close()
     }
 }
@@ -287,7 +273,7 @@ class FilesCursorImpl(private val appContext: App, private val scope: CoroutineS
 class FilesCursorState(val cursor: Cursor, val limit: Long) {
     var movedToFirst: Boolean = false
 
-    val list = mutableListOf<DirectoryFile>()
+//    val list = mutableListOf<DirectoryFile>()
 
     val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
     val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
@@ -306,8 +292,6 @@ class FilesCursorState(val cursor: Cursor, val limit: Long) {
 
     fun close() {
         if (!cursor.isClosed) {
-            Log.i("FilesCursorState", "close cursor")
-
             cursor.close()
         }
     }

@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:io";
 
 import "package:animations/animations.dart";
 import "package:azari/init_main/app_info.dart";
@@ -34,6 +35,7 @@ import "package:azari/src/platform/gallery_file_functions.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
@@ -42,12 +44,17 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/src/widgets/image_view/image_view_fab.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
+import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:azari/src/widgets/load_tags.dart";
 import "package:azari/src/widgets/translation_notes.dart";
 import "package:dio/dio.dart";
+import "package:flutter/foundation.dart";
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:local_auth/local_auth.dart";
@@ -55,12 +62,12 @@ import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
 
 export "package:azari/src/platform/generated/platform_api.g.dart"
-    show GalleryPageChangeEvent;
+    show FlutterGalleryData, GalleryPageChangeEvent, GalleryVideoEvents;
 
 part "gallery_directory.dart";
 part "gallery_file.dart";
 
-void initGalleryPlug() => initApi();
+void initGalleryApi() => initApi();
 
 extension DrainCursorsExt on String {
   Future<List<DirectoryFile>> drainFiles(

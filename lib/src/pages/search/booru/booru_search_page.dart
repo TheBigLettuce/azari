@@ -14,7 +14,6 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
@@ -49,6 +48,18 @@ class BooruSearchPage extends StatefulWidget {
   final void Function(bool)? procPop;
 
   final DbConn db;
+
+  static void open(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) => BooruSearchPage(
+          db: DbConn.of(context),
+          l10n: context.l10n(),
+          procPop: null,
+        ),
+      ),
+    );
+  }
 
   @override
   State<BooruSearchPage> createState() => _BooruSearchPageState();
@@ -161,60 +172,70 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    return _SearchPagePopScope(
-      searchController: searchController,
-      sink: _filteringEvents.sink,
-      procPop: widget.procPop,
-      searchFocus: focusNode,
-      child: SliverMainAxisGroup(
-        slivers: [
-          SearchPageSearchBar(
-            complete: null,
-            // filter: filter,
-            // safeModeState: safeModeState,
-            onSubmit: search,
-            sink: _filteringEvents.sink,
-            searchTextController: searchController,
-            searchFocus: focusNode,
-          ),
-          StreamBuilder(
-            stream: _filteringEvents.stream,
-            builder: (context, snapshot) => PopularRandomButtons(
-              listPadding: _ChipsPanelBody.listPadding,
-              db: widget.db,
-              booru: api.booru,
-              onTagPressed: _onTag,
-              tags: snapshot.data ?? "",
-              safeMode: () => settings.safeMode,
+    return Scaffold(
+      appBar: AppBar(),
+      body: _SearchPagePopScope(
+        searchController: searchController,
+        sink: _filteringEvents.sink,
+        procPop: widget.procPop,
+        searchFocus: focusNode,
+        child: CustomScrollView(
+          slivers: [
+            SearchPageSearchBar(
+              complete: null,
+              // filter: filter,
+              // safeModeState: safeModeState,
+              onSubmit: search,
+              sink: _filteringEvents.sink,
+              searchTextController: searchController,
+              searchFocus: focusNode,
             ),
-          ),
-          _RecentlySearchedTagsPanel(
-            filteringEvents: _filteringEvents,
-            searchController: searchController,
-            tagManager: widget.db.tagManager,
-            onTagPressed: _onTagPressed,
-          ),
-          _PinnedTagsPanel(
-            filteringEvents: _filteringEvents.stream,
-            tagManager: widget.db.tagManager,
-            api: api,
-            onTagPressed: pinnedTagPressed,
-          ),
-          _ExcludedTagsPanel(
-            filteringEvents: _filteringEvents.stream,
-            tagManager: widget.db.tagManager,
-            api: api,
-          ),
-          _BookmarksPanel(
-            db: widget.db,
-            filteringEvents: _filteringEvents.stream,
-          ),
-          _TagList(
-            filteringEvents: _filteringEvents,
-            searchController: searchController,
-            api: api,
-          ),
-        ],
+            // StreamBuilder(
+            //   stream: _filteringEvents.stream,
+            //   builder: (context, snapshot) => PopularRandomChips(
+            //     listPadding: _ChipsPanelBody.listPadding,
+            //     db: widget.db,
+            //     booru: api.booru,
+            //     onTagPressed: _onTag,
+            //     tags: snapshot.data ?? "",
+            //     safeMode: () => settings.safeMode,
+            //   ),
+            // ),
+            _RecentlySearchedTagsPanel(
+              filteringEvents: _filteringEvents,
+              searchController: searchController,
+              tagManager: widget.db.tagManager,
+              onTagPressed: _onTagPressed,
+            ),
+            _PinnedTagsPanel(
+              filteringEvents: _filteringEvents.stream,
+              tagManager: widget.db.tagManager,
+              api: api,
+              onTagPressed: pinnedTagPressed,
+            ),
+            _ExcludedTagsPanel(
+              filteringEvents: _filteringEvents.stream,
+              tagManager: widget.db.tagManager,
+              api: api,
+            ),
+            _BookmarksPanel(
+              db: widget.db,
+              filteringEvents: _filteringEvents.stream,
+            ),
+            _TagList(
+              filteringEvents: _filteringEvents,
+              searchController: searchController,
+              api: api,
+            ),
+            Builder(
+              builder: (context) => SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -253,7 +274,7 @@ class SearchPageSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     // final theme = Theme.of(context);
 
     const padding = EdgeInsets.only(

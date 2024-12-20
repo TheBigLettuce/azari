@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/typedefs.dart";
 import "package:dio/dio.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
@@ -90,7 +90,7 @@ class _EmptyWidgetState extends State<EmptyWidget> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final emptySpan = TextSpan(
       text: error != null ? "(ﾟヘﾟ)？" "\n" : l10n.emptyWidgetNotice,
@@ -194,7 +194,7 @@ class EmptyWidgetBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     return Center(

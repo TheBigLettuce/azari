@@ -7,24 +7,19 @@ part of "home.dart";
 
 enum CurrentRoute {
   home,
-  search,
   discover,
   gallery;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
         0 => home,
-        1 => search,
-        2 => discover,
-        3 => gallery,
+        1 => discover,
+        2 => gallery,
         int() => throw "no route",
       };
 
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
         home => HomeDestinationIcon(
             controller: mixin.homeIconController,
-          ),
-        search => SearchDestinationIcon(
-            controller: mixin.searchIconController,
           ),
         discover => DiscoverDestinationIcon(
             controller: mixin.discoverIconController,
@@ -44,7 +39,6 @@ enum CurrentRoute {
       switch (this) {
         home => _booruDestinationLabel(context, l10n, booru.string),
         gallery => GallerySubPage.of(context).translatedString(l10n),
-        search => l10n.searchHint,
         discover => l10n.discoverPage,
       };
 
@@ -232,9 +226,6 @@ mixin ChangePageMixin on State<Home> {
       CurrentRoute.gallery => icons.galleryIconController
           .reverse()
           .then((value) => icons.galleryIconController.forward()),
-      CurrentRoute.search => icons.searchIconController
-          .reverse()
-          .then((value) => icons.searchIconController.forward()),
       CurrentRoute.discover => icons.discoverIconController
           .reverse()
           .then((value) => icons.discoverIconController.forward()),
@@ -338,7 +329,7 @@ class _CurrentPageWidget extends StatelessWidget {
             child: BooruPage(
               pagingRegistry: changePage.pagingRegistry,
               procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-              db: DatabaseConnectionNotifier.of(context),
+              db: DbConn.of(context),
             ),
           ),
         CurrentRoute.gallery => _NavigatorShell(
@@ -349,15 +340,8 @@ class _CurrentPageWidget extends StatelessWidget {
                 icons,
                 pop,
               ),
-              db: DatabaseConnectionNotifier.of(context),
-              l10n: AppLocalizations.of(context)!,
-            ),
-          ),
-        CurrentRoute.search => SearchPage(
-            procPop: (pop) => changePage._procPop(
-              galleryPage,
-              icons,
-              pop,
+              db: DbConn.of(context),
+              l10n: context.l10n(),
             ),
           ),
         CurrentRoute.discover => const DiscoverPage(),

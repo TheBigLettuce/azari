@@ -129,6 +129,9 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
   Iterable<V> get reversed => map_.values.toList().reversed;
 
   @override
+  Stream<int> get countEvents => _events.stream;
+
+  @override
   V? get(K idx) => map_[idx];
 
   @override
@@ -230,6 +233,9 @@ class ListStorage<V> extends SourceStorage<int, V> {
       sortFnc;
 
   final StreamController<int> _events = StreamController.broadcast();
+
+  @override
+  Stream<int> get countEvents => _events.stream;
 
   final List<V> list = [];
 

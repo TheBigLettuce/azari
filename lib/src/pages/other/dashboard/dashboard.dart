@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
 class TimeSpentWidget extends StatefulWidget {
@@ -78,7 +79,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
     final theme = Theme.of(context);
     final color = theme.colorScheme.onSurface.withValues(alpha: 0.8);
 
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -14,7 +14,6 @@ import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -79,15 +78,65 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
+mixin GridScrollNotifierMixin<S extends StatefulWidget> on State<S> {
+  ScrollController? get controller;
+  void Function(double)? get updateScrollPosition;
+
+  late final ValueNotifier<bool>? _scrollingNotifier;
+
+  ValueNotifier<bool>? get scrollingNotifier => _scrollingNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollingNotifier = controller == null ? null : ValueNotifier(false);
+
+    controller?.addListener(_listener);
+
+    if (updateScrollPosition != null) {
+      _scrollingNotifier?.addListener(_scrollListener);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollingNotifier?.dispose();
+
+    controller?.removeListener(_listener);
+
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    updateScrollPosition?.call(controller!.offset);
+  }
+
+  void _listener() {
+    final showFab = controller!.position.pixels ==
+            controller!.position.maxScrollExtent ||
+        controller!.position.userScrollDirection == ScrollDirection.forward &&
+            controller!.offset != 0;
+    if (_scrollingNotifier!.value != showFab) {
+      _scrollingNotifier.value = showFab;
+    }
+  }
+}
+
+class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
+    with GridScrollNotifierMixin {
+  @override
   late final ScrollController? controller;
+
+  @override
+  void Function(double)? get updateScrollPosition =>
+      widget.functionality.updateScrollPosition;
+
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
   final _animationsKey = GlobalKey<_PlayAnimationsState>();
 
   late final StreamSubscription<int>? _subscription;
   final List<StreamSubscription<void>> _scrollUpEvents = [];
-
-  late final ValueNotifier<bool>? _scrollingNotifier;
 
   final searchFocus = FocusNode();
 
@@ -96,10 +145,15 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
   ResourceSource<int, T> get source => widget.functionality.source;
 
   late double lastOffset = widget.initalScrollPosition;
-  bool _scrollingReverse = false;
+  bool _scrollingReverse = true;
+  double _scrollingOffsetFling = 0;
+  double _prevScrollOffset = 0;
 
   @override
   void initState() {
+    final description = widget.description;
+    controller = description.asSliver ? null : ScrollController();
+
     super.initState();
 
     selection = widget.functionality.selectionActions == null
@@ -108,19 +162,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
             widget.functionality.selectionActions!.controller,
             widget.description.actions,
             source: widget.functionality.source.backingStorage,
-            noAppBar: !widget.description.showAppBar,
+            noAppBar: widget.functionality.search is NoSearchWidget,
           );
-
-    final description = widget.description;
 
     _subscription = widget.description.animationsOnSourceWatch
         ? widget.functionality.source.backingStorage.watch((_) {
             _animationsKey.currentState?.enableAnimationsFor();
           })
         : null;
-
-    controller = description.asSliver ? null : ScrollController();
-    _scrollingNotifier = description.asSliver ? null : ValueNotifier(false);
 
     if (source.count == 0) {
       source.clearRefresh();
@@ -151,35 +200,37 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           controller!.jumpTo(widget.initalScrollPosition);
         });
-
-        widget.functionality.scrollingSink?.add(true);
-      } else {
-        widget.functionality.scrollingSink?.add(false);
       }
 
-      final f = widget.functionality.updateScrollPosition;
-      if (f != null) {
-        _scrollingNotifier!.addListener(_scrollListener);
-      }
+      widget.functionality.scrollingSink?.add(true);
 
       controller!.addListener(() {
-        final showFab = controller!.position.pixels ==
-                controller!.position.maxScrollExtent ||
-            controller!.position.userScrollDirection ==
-                    ScrollDirection.forward &&
-                controller!.offset != 0;
-        if (_scrollingNotifier!.value != showFab) {
-          _scrollingNotifier.value = showFab;
+        if (controller!.offset == 0 ||
+            controller!.offset == controller!.position.maxScrollExtent) {
+          widget.functionality.scrollingSink?.add(true);
         }
 
         final scrollingEvent = controller!.position.pixels ==
                 controller!.position.maxScrollExtent ||
             controller!.position.userScrollDirection ==
-                    ScrollDirection.reverse &&
-                controller!.offset != 0;
+                ScrollDirection.forward ||
+            controller!.offset == 0;
         if (_scrollingReverse != scrollingEvent) {
-          _scrollingReverse = scrollingEvent;
-          widget.functionality.scrollingSink?.add(scrollingEvent);
+          if (_scrollingOffsetFling > 18) {
+            _scrollingReverse = scrollingEvent;
+            widget.functionality.scrollingSink?.add(scrollingEvent);
+          } else {
+            if (_prevScrollOffset == 0) {
+              _prevScrollOffset = controller!.offset;
+            } else {
+              _scrollingOffsetFling +=
+                  (_prevScrollOffset - controller!.offset).abs();
+              _prevScrollOffset = controller!.offset;
+            }
+          }
+        } else {
+          _scrollingOffsetFling = 0;
+          _prevScrollOffset = 0;
         }
 
         if (source.hasNext) {
@@ -205,14 +256,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
     }
   }
 
-  void _scrollListener() {
-    widget.functionality.updateScrollPosition?.call(controller!.offset);
-  }
-
   @override
   void dispose() {
     selection?._dispose();
-    widget.functionality.scrollingSink?.add(false);
+    if (!_scrollingReverse) {
+      widget.functionality.scrollingSink?.add(true);
+    }
 
     for (final e in _scrollUpEvents) {
       e.cancel();
@@ -220,8 +269,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>> {
     _subscription?.cancel();
     controller?.dispose();
     searchFocus.dispose();
-
-    _scrollingNotifier?.dispose();
 
     widget.belowMainFocus?.requestFocus();
 
@@ -334,7 +381,7 @@ class _MainBody<T extends CellBase> extends StatelessWidget {
         padding: m.padding +
             EdgeInsets.only(
               top: 4,
-              bottom: !extras.description.showAppBar ? 4 : 0,
+              bottom: extras.functionality.search is NoSearchWidget ? 4 : 0,
             ),
       ),
       child: Scrollbar(
@@ -661,7 +708,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
   Widget build(BuildContext context) {
     final notifier = GridScrollNotifier.notifierOf(context);
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     const circularProgress = SizedBox.square(
       dimension: 12,
@@ -909,7 +956,7 @@ class GridExtrasData<T extends CellBase> {
 
   List<Widget> bodySlivers(BuildContext context, List<Widget> slivers) {
     Widget? appBar;
-    if (description.showAppBar) {
+    if (functionality.search is! NoSearchWidget) {
       final bottomWidget = description.bottomWidget;
 
       appBar = _AppBar(

@@ -5,7 +5,62 @@
 
 part of "image_view.dart";
 
-class ImageViewBody extends StatelessWidget {
+// class ImageViewBody extends StatelessWidget {
+//   const ImageViewBody({
+//     super.key,
+//     required this.onPageChanged,
+//     required this.pageController,
+//     required this.builder,
+//     required this.loadingBuilder,
+//     required this.itemCount,
+//     required this.onLongPress,
+//     required this.onTap,
+//     required this.onPressedLeft,
+//     required this.onPressedRight, required this.countEvents,
+//   });
+
+//   final int itemCount;
+//   final Stream<int> countEvents;
+
+//   final PageController pageController;
+//   final ContentIdxCallback onPageChanged;
+
+//   final VoidCallback onTap;
+//   final VoidCallback onLongPress;
+
+//   final VoidCallback? onPressedRight;
+//   final VoidCallback? onPressedLeft;
+
+//   final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
+//   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDeadZones(
+//       left: true,
+//       right: true,
+//       onPressedRight: onPressedRight,
+//       onPressedLeft: onPressedLeft,
+//       child: GestureDetector(
+//         onLongPress: onLongPress,
+//         onTap: onTap,
+//         child: PhotoViewGallery.builder(
+//           loadingBuilder: loadingBuilder,
+//           enableRotation: true,
+//           backgroundDecoration: BoxDecoration(
+//             color: Theme.of(context).colorScheme.surface,
+//           ),
+//           onPageChanged: onPageChanged,
+//           pageController: pageController,
+//           itemCount: itemCount,
+//           builder: builder,
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+class ImageViewBody extends StatefulWidget {
   const ImageViewBody({
     super.key,
     required this.onPageChanged,
@@ -17,9 +72,11 @@ class ImageViewBody extends StatelessWidget {
     required this.onTap,
     required this.onPressedLeft,
     required this.onPressedRight,
+    required this.countEvents,
   });
 
   final int itemCount;
+  final Stream<int> countEvents;
 
   final PageController pageController;
   final ContentIdxCallback onPageChanged;
@@ -34,25 +91,54 @@ class ImageViewBody extends StatelessWidget {
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
 
   @override
+  State<ImageViewBody> createState() => _ImageViewBodyState();
+}
+
+class _ImageViewBodyState extends State<ImageViewBody> {
+  late final StreamSubscription<int> countEvents;
+
+  int count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    count = widget.itemCount;
+
+    countEvents = widget.countEvents.listen((newCount) {
+      setState(() {
+        count = newCount;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    countEvents.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDeadZones(
       left: true,
       right: true,
-      onPressedRight: onPressedRight,
-      onPressedLeft: onPressedLeft,
+      onPressedRight: widget.onPressedRight,
+      onPressedLeft: widget.onPressedLeft,
       child: GestureDetector(
-        onLongPress: onLongPress,
-        onTap: onTap,
+        onLongPress: widget.onLongPress,
+        onTap: widget.onTap,
         child: PhotoViewGallery.builder(
-          loadingBuilder: loadingBuilder,
+          loadingBuilder: widget.loadingBuilder,
           enableRotation: true,
           backgroundDecoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
           ),
-          onPageChanged: onPageChanged,
-          pageController: pageController,
-          itemCount: itemCount,
-          builder: builder,
+          onPageChanged: widget.onPageChanged,
+          pageController: widget.pageController,
+          itemCount: count,
+          builder: widget.builder,
         ),
       ),
     );

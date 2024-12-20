@@ -5,13 +5,13 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -102,7 +102,7 @@ class _BookmarkPageState extends State<BookmarkPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -137,66 +137,6 @@ class _BookmarkPageState extends State<BookmarkPage>
           pageName: l10n.bookmarksPageName,
         ),
       ),
-    );
-  }
-}
-
-class DataUpdateWidget extends StatefulWidget {
-  const DataUpdateWidget({
-    super.key,
-    required this.progress,
-    required this.child,
-  });
-
-  final RefreshingProgress progress;
-  final Widget child;
-
-  @override
-  State<DataUpdateWidget> createState() => _DataUpdateWidgetState();
-}
-
-class _DataUpdateWidgetState extends State<DataUpdateWidget>
-    with SingleTickerProviderStateMixin {
-  late final StreamSubscription<void> events;
-  late final AnimationController controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = AnimationController(
-      vsync: this,
-      duration: Durations.medium3,
-    );
-
-    events = widget.progress.watch((_) {
-      controller.forward().then((_) => controller.reverse());
-    });
-  }
-
-  @override
-  void dispose() {
-    events.cancel();
-    controller.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Animate(
-      controller: controller,
-      effects: [
-        SlideEffect(
-          begin: Offset(1, 1),
-          end: Offset(0, 1),
-        ),
-        FadeEffect(
-          begin: 1,
-          end: 0,
-        )
-      ],
-      child: widget.child,
     );
   }
 }
@@ -335,7 +275,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
     final size = MediaQuery.sizeOf(context).longestSide * 0.2;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return Animate(
       autoPlay: false,

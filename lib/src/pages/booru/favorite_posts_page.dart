@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
@@ -24,6 +23,7 @@ import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -235,7 +235,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridPopScope(
       searchTextController: searchTextController,
@@ -328,7 +328,7 @@ class _SearchBarWidget extends StatelessWidget {
         Navigator.of(context).push<void>(
           MaterialPageRoute(
             builder: (context) => BooruRestoredPage(
-              db: DatabaseConnectionNotifier.of(context),
+              db: DbConn.of(context),
               booru: api.booru,
               tags: searchTextController.text.trim(),
               saveSelectedPage: (_) {},
@@ -353,7 +353,7 @@ class _SearchBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     const padding = EdgeInsets.only(
@@ -385,6 +385,7 @@ class _SearchBarWidget extends StatelessWidget {
                 onSubmitted();
                 filter.clearRefresh();
               },
+              onTapOutside: (event) => focus.unfocus(),
               elevation: const WidgetStatePropertyAll(0),
               focusNode: focus,
               controller: controller,

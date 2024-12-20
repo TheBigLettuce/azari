@@ -23,10 +23,10 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files_filters.dart" as filters;
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/empty_widget.dart";
@@ -77,7 +77,6 @@ class FilesPage extends StatefulWidget {
 
   final List<Directory> directories;
   final Directories api;
-  // final Directories directoriesApi;
 
   final Stream<void>? navBarEvents;
   final StreamSink<bool>? scrollingSink;
@@ -118,6 +117,7 @@ class _FilesPageState extends State<FilesPage>
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
+  late final FlutterGalleryDataImpl impl;
 
   @override
   void initState() {
@@ -149,6 +149,27 @@ class _FilesPageState extends State<FilesPage>
         localTags,
       );
     }
+
+    impl = FlutterGalleryDataImpl(
+      source: api.source,
+      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
+      watchTags: (c, f) =>
+          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
+      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
+        callback: widget.callback,
+        child: FilesDataNotifier(
+          api: api,
+          child: DeleteDialogShowNotifier(
+            toShow: toShowDelete,
+            child: OnBooruTagPressed(
+              onPressed: _onBooruTagPressed,
+              child: filter.inject(child),
+            ),
+          ),
+        ),
+      ),
+      db: widget.db.videoSettings,
+    );
 
     filter = ChainedFilterResourceSource(
       api.source,
@@ -196,10 +217,37 @@ class _FilesPageState extends State<FilesPage>
           FilteringMode.duplicate => filters.duplicate(cells),
           FilteringMode.original => filters.original(cells),
           FilteringMode.same => filters.same(
-              context,
               cells,
               data,
-              performSearch: () => api.source.clearRefreshSilent(),
+              onSkipped: () {
+                if (!context.mounted) {
+                  return;
+                }
+
+                ScaffoldMessenger.of(context)
+                  ..removeCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(context.l10n().resultsIncomplete),
+                      duration: const Duration(seconds: 20),
+                      action: SnackBarAction(
+                        label: context.l10n().loadMoreLabel,
+                        onPressed: () {
+                          filters.loadNextThumbnails(api.source, () {
+                            try {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(context.l10n().loaded),
+                                ),
+                              );
+                              api.source.clearRefreshSilent();
+                            } catch (_) {}
+                          });
+                        },
+                      ),
+                    ),
+                  );
+              },
               end: end,
               source: api.source,
             ),
@@ -268,10 +316,18 @@ class _FilesPageState extends State<FilesPage>
     }
 
     api.source.clearRefreshSilent();
+
+    FlutterGalleryData.setUp(impl);
+    GalleryVideoEvents.setUp(impl);
   }
 
   @override
   void dispose() {
+    FlutterGalleryData.setUp(null);
+    GalleryVideoEvents.setUp(null);
+
+    impl.dispose();
+
     _subscription?.cancel();
     _listener?.dispose();
 
@@ -334,15 +390,15 @@ class _FilesPageState extends State<FilesPage>
 
   FilteringMode? beforeButtons;
 
-  void _filterTag(String tag, ScrollController scrollController) {
-    searchTextController.text = tag;
-    filter.filteringMode = FilteringMode.tag;
-    scrollController.animateTo(
-      0,
-      duration: Durations.medium3,
-      curve: Easing.standard,
-    );
-  }
+  // void _filterTag(String tag, ScrollController scrollController) {
+  //   searchTextController.text = tag;
+  //   filter.filteringMode = FilteringMode.tag;
+  //   scrollController.animateTo(
+  //     0,
+  //     duration: Durations.medium3,
+  //     curve: Easing.standard,
+  //   );
+  // }
 
   PathVolume? makeThenMoveTo() {
 // ((widget.directory == null
@@ -367,319 +423,439 @@ class _FilesPageState extends State<FilesPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: WrapGridPage(
-        addScaffoldAndBar: widget.addScaffold || widget.callback != null,
-        child: GridPopScope(
-          searchTextController: searchTextController,
-          filter: filter,
-          child: Builder(
-            builder: (context) => GridFrame<File>(
-              key: gridKey,
-              slivers: [
-                _TagsNotifier(
-                  tagSource: api.sourceTags,
-                  tagManager: TagManager.of(context),
-                  child: Builder(
-                    builder: (context) => TagsRibbon(
-                      tagNotifier: ImageTagsNotifier.of(context),
-                      onLongPress: (tag, controller) {
-                        final settings = SettingsService.db().current;
+    return FlutterGalleryDataNotifier(
+      galleryDataImpl: impl,
+      child: GridConfiguration(
+        watch: gridSettings.watch,
+        child: WrapGridPage(
+          addScaffoldAndBar: widget.addScaffold || widget.callback != null,
+          child: GridPopScope(
+            searchTextController: searchTextController,
+            filter: filter,
+            child: Builder(
+              builder: (context) => GridFrame<File>(
+                key: gridKey,
+                slivers: [
+                  // _TagsNotifier(
+                  //   tagSource: api.sourceTags,
+                  //   tagManager: TagManager.of(context),
+                  //   child: Builder(
+                  //     builder: (context) => TagsRibbon(
+                  //       tagNotifier: ImageTagsNotifier.of(context),
+                  //       onLongPress: (tag, controller) {
+                  //         final settings = SettingsService.db().current;
 
-                        void launchGrid(SafeMode? s) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (context) {
-                                return BooruRestoredPage(
-                                  booru: settings.selectedBooru,
-                                  thenMoveTo: makeThenMoveTo(),
-                                  tags: tag,
-                                  wrapScaffold: widget.callback != null,
-                                  trySearchBookmarkByTags: true,
-                                  saveSelectedPage: (e) {},
-                                  overrideSafeMode: s ?? settings.safeMode,
-                                  db: widget.db,
-                                );
-                              },
+                  //         void launchGrid(SafeMode? s) {
+                  //           Navigator.push(
+                  //             context,
+                  //             MaterialPageRoute<void>(
+                  //               builder: (context) {
+                  //                 return BooruRestoredPage(
+                  //                   booru: settings.selectedBooru,
+                  //                   thenMoveTo: makeThenMoveTo(),
+                  //                   tags: tag,
+                  //                   wrapScaffold: widget.callback != null,
+                  //                   trySearchBookmarkByTags: true,
+                  //                   saveSelectedPage: (e) {},
+                  //                   overrideSafeMode: s ?? settings.safeMode,
+                  //                   db: widget.db,
+                  //                 );
+                  //               },
+                  //             ),
+                  //           );
+                  //         }
+
+                  //         final bookmark =
+                  //             widget.db.gridBookmarks.getFirstByTags(
+                  //           tag.trim(),
+                  //           settings.selectedBooru,
+                  //         );
+                  //         if (bookmark != null) {
+                  //           launchGrid(null);
+                  //           return;
+                  //         }
+
+                  //         HapticFeedback.mediumImpact();
+
+                  //         context.openSafeModeDialog(
+                  //           launchGrid,
+                  //           settings.safeMode,
+                  //         );
+                  //       },
+                  //       selectTag: _filterTag,
+                  //       tagManager: widget.db.tagManager,
+                  //     ),
+                  //   ),
+                  // ),
+                  // Builder(
+                  //   builder: (context) {
+                  //     return IconBarGridHeader(
+                  //       countWatcher: filter.backingStorage.watch,
+                  //       icons: [
+                  //         BarIcon(
+                  //           key: _duplicateButtonKey,
+                  // icon: FilteringMode.duplicate.icon,
+                  //           onPressed: () {
+
+                  //           },
+                  //         ),
+                  //         if (!api.type.isFavorites())
+                  //           BarIcon(
+                  //             key: _favoriteButtonKey,
+                  // icon: FilteringMode.favorite.icon,
+                  //             onPressed: () {
+
+                  //             },
+                  //           ),
+                  //         BarIcon(
+                  //           key: _videoButtonKey,
+                  // icon: FilteringMode.video.icon,
+                  //           onPressed: () {
+                  // if (filter.filteringMode == FilteringMode.video) {
+                  //   filter.filteringMode = beforeButtons ==
+                  //           FilteringMode.video
+                  //       ? FilteringMode.noFilter
+                  //       : beforeButtons ?? FilteringMode.noFilter;
+                  //   return false;
+                  // } else {
+                  //   beforeButtons = filter.filteringMode;
+                  //   filter.filteringMode = FilteringMode.video;
+                  //   return true;
+                  // }
+                  //           },
+                  //         ),
+                  //       ],
+                  //     );
+                  //   },
+                  // ),
+
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    sliver: SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 40,
+                        child: ListView(
+                          padding: const EdgeInsets.only(left: 18, right: 12),
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Builder(
+                                builder: (context) => IconButton(
+                                  padding: EdgeInsets.zero,
+                                  // labelPadding: EdgeInsets.zero,
+                                  // label: SizedBox(
+                                  // height: 38,
+                                  // ),
+                                  onPressed: () {
+                                    final gridExtras =
+                                        GridExtrasNotifier.of<File>(context);
+                                    if (gridExtras.selection == null) {
+                                      return;
+                                    }
+
+                                    if (gridExtras.selection!.count ==
+                                        gridExtras.functionality.source.count) {
+                                      gridExtras.selection!.reset(true);
+                                    } else {
+                                      gridExtras.selection!.selectAll();
+                                    }
+                                  },
+                                  icon: const Icon(Icons.select_all_rounded),
+                                ),
+                              ),
                             ),
-                          );
-                        }
-
-                        final bookmark = widget.db.gridBookmarks
-                            .getFirstByTags(tag.trim(), settings.selectedBooru);
-                        if (bookmark != null) {
-                          launchGrid(null);
-                          return;
-                        }
-
-                        HapticFeedback.mediumImpact();
-
-                        context.openSafeModeDialog(
-                          launchGrid,
-                          settings.safeMode,
-                        );
-                      },
-                      selectTag: _filterTag,
-                      tagManager: widget.db.tagManager,
-                    ),
-                  ),
-                ),
-                Builder(
-                  builder: (context) {
-                    return IconBarGridHeader(
-                      countWatcher: filter.backingStorage.watch,
-                      icons: [
-                        BarIcon(
-                          key: _duplicateButtonKey,
-                          icon: FilteringMode.duplicate.icon,
-                          onPressed: () {
-                            if (filter.filteringMode ==
-                                FilteringMode.duplicate) {
-                              filter.filteringMode = beforeButtons ==
-                                      FilteringMode.duplicate
-                                  ? FilteringMode.noFilter
-                                  : (beforeButtons ?? FilteringMode.noFilter);
-                              return false;
-                            } else {
-                              beforeButtons = filter.filteringMode;
-                              filter.filteringMode = FilteringMode.duplicate;
-                              return true;
-                            }
-                          },
-                        ),
-                        if (!api.type.isFavorites())
-                          BarIcon(
-                            key: _favoriteButtonKey,
-                            icon: FilteringMode.favorite.icon,
-                            onPressed: () {
-                              if (filter.filteringMode ==
-                                  FilteringMode.favorite) {
-                                filter.filteringMode = beforeButtons ==
-                                        FilteringMode.favorite
-                                    ? FilteringMode.noFilter
-                                    : beforeButtons ?? FilteringMode.noFilter;
-                                return false;
-                              } else {
-                                beforeButtons = filter.filteringMode;
-                                filter.filteringMode = FilteringMode.favorite;
-                                return true;
-                              }
-                            },
-                          ),
-                        BarIcon(
-                          key: _videoButtonKey,
-                          icon: FilteringMode.video.icon,
-                          onPressed: () {
-                            if (filter.filteringMode == FilteringMode.video) {
-                              filter.filteringMode =
-                                  beforeButtons == FilteringMode.video
-                                      ? FilteringMode.noFilter
-                                      : beforeButtons ?? FilteringMode.noFilter;
-                              return false;
-                            } else {
-                              beforeButtons = filter.filteringMode;
-                              filter.filteringMode = FilteringMode.video;
-                              return true;
-                            }
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                CurrentGridSettingsLayout<File>(
-                  source: filter.backingStorage,
-                  progress: filter.progress,
-                  gridSeed: gridSeed,
-                ),
-              ],
-              functionality: GridFunctionality(
-                selectionActions: SelectionActions.of(context),
-                scrollingSink: widget.scrollingSink,
-                scrollUpOn: widget.navBarEvents == null
-                    ? const []
-                    : [(widget.navBarEvents!, null)],
-                fab: widget.callback == null
-                    ? const NoGridFab()
-                    : const DefaultGridFab(),
-                onEmptySource: EmptyWidgetBackground(
-                  subtitle: l10n.emptyNoMedia,
-                ),
-                settingsButton: GridSettingsButton.fromWatchable(
-                  gridSettings,
-                  localizeHideNames: (context) =>
-                      l10n.hideNames(l10n.hideNamesFiles),
-                ),
-                registerNotifiers: (child) {
-                  return ReturnFileCallbackNotifier(
-                    callback: widget.callback,
-                    child: FilesDataNotifier(
-                      api: api,
-                      child: DeleteDialogShowNotifier(
-                        toShow: toShowDelete,
-                        child: OnBooruTagPressed(
-                          onPressed: _onBooruTagPressed,
-                          child: filter.inject(child),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                backButton: CallbackGridBackButton(
-                  onPressed: () {
-                    if (filter.filteringMode != FilteringMode.noFilter) {
-                      filter.filteringMode = FilteringMode.noFilter;
-                      return;
-                    }
-                    Navigator.pop(context);
-                  },
-                ),
-                source: filter,
-                search: BarSearchWidget.fromFilter(
-                  filter,
-                  hintText: widget.dirName,
-                  textEditingController: searchTextController,
-                  focus: searchFocus,
-                  complete: widget.db.localTagDictionary.complete,
-                  trailingItems: [
-                    if (widget.callback == null && api.type.isTrash())
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).push(
-                            DialogRoute<void>(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(l10n.emptyTrashTitle),
-                                  content: Text(
-                                    l10n.thisIsPermanent,
-                                    style: TextStyle(
-                                      color: Colors.red.harmonizeWith(
-                                        theme.colorScheme.primary,
-                                      ),
-                                    ),
+                            StreamBuilder(
+                              stream: filter.filterEvents,
+                              builder: (context, value) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    showCheckmark: false,
+                                    avatar: Icon(FilteringMode.duplicate.icon),
+                                    selected: filter.filteringMode ==
+                                        FilteringMode.duplicate,
+                                    label:
+                                        Text(l10n.enumFilteringModeDuplicate),
+                                    onSelected: (value) {
+                                      if (filter.filteringMode ==
+                                          FilteringMode.duplicate) {
+                                        filter.filteringMode = beforeButtons ==
+                                                FilteringMode.duplicate
+                                            ? FilteringMode.noFilter
+                                            : (beforeButtons ??
+                                                FilteringMode.noFilter);
+                                        return;
+                                      } else {
+                                        beforeButtons = filter.filteringMode;
+                                        filter.filteringMode =
+                                            FilteringMode.duplicate;
+                                        return;
+                                      }
+                                    },
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        GalleryApi().trash.empty();
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.yes),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.no),
-                                    ),
-                                  ],
                                 );
                               },
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.delete_sweep_outlined),
-                      ),
-                    if (widget.callback != null)
-                      Builder(
-                        builder: (context) => IconButton(
-                          onPressed: () {
-                            if (filter.progress.inRefreshing) {
-                              return;
-                            }
-
-                            final upTo = filter.backingStorage.count;
-
-                            try {
-                              final n = math.Random.secure().nextInt(upTo);
-
-                              final gridState = gridKey.currentState;
-                              if (gridState != null) {
-                                final cell = gridState.source.forIdxUnsafe(n);
-                                cell.onPress(
-                                  context,
-                                  gridState.widget.functionality,
-                                  n,
+                            StreamBuilder(
+                              stream: filter.filterEvents,
+                              builder: (context, value) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    showCheckmark: false,
+                                    avatar: Icon(FilteringMode.favorite.icon),
+                                    selected: filter.filteringMode ==
+                                        FilteringMode.favorite,
+                                    label: Text(l10n.favoritesLabel),
+                                    onSelected: (value) {
+                                      if (filter.filteringMode ==
+                                          FilteringMode.favorite) {
+                                        filter.filteringMode = beforeButtons ==
+                                                FilteringMode.favorite
+                                            ? FilteringMode.noFilter
+                                            : beforeButtons ??
+                                                FilteringMode.noFilter;
+                                        return;
+                                      } else {
+                                        beforeButtons = filter.filteringMode;
+                                        filter.filteringMode =
+                                            FilteringMode.favorite;
+                                        return;
+                                      }
+                                    },
+                                  ),
                                 );
-                              }
-                            } catch (e, trace) {
-                              Logger.root
-                                  .warning("getting random number", e, trace);
-
-                              return;
-                            }
-
-                            if (widget.callback!.returnBack) {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            }
-                          },
-                          icon: const Icon(Icons.casino_outlined),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              description: GridDescription(
-                footer: widget.callback?.preview,
-                overrideEmptyWidgetNotice:
-                    api.type.isFavorites() ? l10n.someFilesShownNotice : null,
-                actions: widget.callback != null
-                    ? const <GridAction<File>>[]
-                    : api.type.isTrash()
-                        ? <GridAction<File>>[
-                            _restoreFromTrashAction(),
-                          ]
-                        : <GridAction<File>>[
-                            if (api.type.isFavorites())
-                              _setFavoritesThumbnailAction(
-                                widget.db.miscSettings,
-                              ),
-                            if (miscSettings.filesExtendedActions) ...[
-                              GridAction(
-                                Icons.download_rounded,
-                                (selected) {
-                                  redownloadFiles(context, selected);
-                                },
-                                true,
-                              ),
-                              _saveTagsAction(
-                                context,
-                                postTags,
-                                localTags,
-                                widget.db.localTagDictionary,
-                              ),
-                              _addTagAction(
-                                context,
-                                () => api.source.clearRefreshSilent(),
-                                localTags,
-                              ),
-                            ],
-                            _deleteAction(context, toShowDelete),
-                            _copyAction(
-                              context,
-                              api.bucketId,
-                              widget.db.tagManager,
-                              localTags,
-                              api.parent,
-                              toShowDelete,
+                              },
                             ),
-                            _moveAction(
-                              context,
-                              api.bucketId,
-                              widget.db.tagManager,
-                              localTags,
-                              api.parent,
-                              toShowDelete,
+                            StreamBuilder(
+                              stream: filter.filterEvents,
+                              builder: (context, value) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    showCheckmark: false,
+                                    avatar: Icon(FilteringMode.video.icon),
+                                    selected: filter.filteringMode ==
+                                        FilteringMode.video,
+                                    label: Text(l10n.videosLabel),
+                                    onSelected: (value) {
+                                      if (filter.filteringMode ==
+                                          FilteringMode.video) {
+                                        filter.filteringMode =
+                                            beforeButtons == FilteringMode.video
+                                                ? FilteringMode.noFilter
+                                                : beforeButtons ??
+                                                    FilteringMode.noFilter;
+                                        return;
+                                      } else {
+                                        beforeButtons = filter.filteringMode;
+                                        filter.filteringMode =
+                                            FilteringMode.video;
+                                        return;
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
                             ),
                           ],
-                pageName: widget.dirName,
-                gridSeed: gridSeed,
+                        ),
+                      ),
+                    ),
+                  ),
+                  CurrentGridSettingsLayout<File>(
+                    source: filter.backingStorage,
+                    progress: filter.progress,
+                    gridSeed: gridSeed,
+                  ),
+                ],
+                functionality: GridFunctionality(
+                  selectionActions: SelectionActions.of(context),
+                  scrollingSink: widget.scrollingSink,
+                  scrollUpOn: widget.navBarEvents == null
+                      ? const []
+                      : [(widget.navBarEvents!, null)],
+                  fab: widget.callback == null
+                      ? const NoGridFab()
+                      : const DefaultGridFab(),
+                  onEmptySource: EmptyWidgetBackground(
+                    subtitle: l10n.emptyNoMedia,
+                  ),
+                  settingsButton: GridSettingsButton.fromWatchable(
+                    gridSettings,
+                    localizeHideNames: (context) =>
+                        l10n.hideNames(l10n.hideNamesFiles),
+                  ),
+                  registerNotifiers: (child) {
+                    return ReturnFileCallbackNotifier(
+                      callback: widget.callback,
+                      child: FilesDataNotifier(
+                        api: api,
+                        child: DeleteDialogShowNotifier(
+                          toShow: toShowDelete,
+                          child: OnBooruTagPressed(
+                            onPressed: _onBooruTagPressed,
+                            child: filter.inject(child),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  backButton: CallbackGridBackButton(
+                    onPressed: () {
+                      if (filter.filteringMode != FilteringMode.noFilter) {
+                        filter.filteringMode = FilteringMode.noFilter;
+                        return;
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                  source: filter,
+                  search: BarSearchWidget.fromFilter(
+                    filter,
+                    hintText: widget.dirName,
+                    textEditingController: searchTextController,
+                    focus: searchFocus,
+                    complete: widget.db.localTagDictionary.complete,
+                    trailingItems: [
+                      if (widget.callback == null && api.type.isTrash())
+                        IconButton(
+                          onPressed: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              DialogRoute<void>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(l10n.emptyTrashTitle),
+                                    content: Text(
+                                      l10n.thisIsPermanent,
+                                      style: TextStyle(
+                                        color: Colors.red.harmonizeWith(
+                                          theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          GalleryApi().trash.empty();
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(l10n.yes),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(l10n.no),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.delete_sweep_outlined),
+                        ),
+                      if (widget.callback != null)
+                        Builder(
+                          builder: (context) => IconButton(
+                            onPressed: () {
+                              if (filter.progress.inRefreshing) {
+                                return;
+                              }
+
+                              final upTo = filter.backingStorage.count;
+
+                              try {
+                                final n = math.Random.secure().nextInt(upTo);
+
+                                final gridState = gridKey.currentState;
+                                if (gridState != null) {
+                                  final cell = gridState.source.forIdxUnsafe(n);
+                                  cell.onPress(
+                                    context,
+                                    gridState.widget.functionality,
+                                    n,
+                                  );
+                                }
+                              } catch (e, trace) {
+                                Logger.root
+                                    .warning("getting random number", e, trace);
+
+                                return;
+                              }
+
+                              if (widget.callback!.returnBack) {
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                              }
+                            },
+                            icon: const Icon(Icons.casino_outlined),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                description: GridDescription(
+                  footer: widget.callback?.preview,
+                  overrideEmptyWidgetNotice:
+                      api.type.isFavorites() ? l10n.someFilesShownNotice : null,
+                  actions: widget.callback != null
+                      ? const <GridAction<File>>[]
+                      : api.type.isTrash()
+                          ? <GridAction<File>>[
+                              _restoreFromTrashAction(),
+                            ]
+                          : <GridAction<File>>[
+                              if (api.type.isFavorites())
+                                _setFavoritesThumbnailAction(
+                                  widget.db.miscSettings,
+                                ),
+                              if (miscSettings.filesExtendedActions) ...[
+                                GridAction(
+                                  Icons.download_rounded,
+                                  (selected) {
+                                    redownloadFiles(context, selected);
+                                  },
+                                  true,
+                                ),
+                                _saveTagsAction(
+                                  context,
+                                  postTags,
+                                  localTags,
+                                  widget.db.localTagDictionary,
+                                ),
+                                _addTagAction(
+                                  context,
+                                  () => api.source.clearRefreshSilent(),
+                                  localTags,
+                                ),
+                              ],
+                              _deleteAction(context, toShowDelete),
+                              _copyAction(
+                                context,
+                                api.bucketId,
+                                widget.db.tagManager,
+                                localTags,
+                                api.parent,
+                                toShowDelete,
+                              ),
+                              _moveAction(
+                                context,
+                                api.bucketId,
+                                widget.db.tagManager,
+                                localTags,
+                                api.parent,
+                                toShowDelete,
+                              ),
+                            ],
+                  pageName: widget.dirName,
+                  gridSeed: gridSeed,
+                ),
               ),
             ),
           ),
@@ -687,6 +863,27 @@ class _FilesPageState extends State<FilesPage>
       ),
     );
   }
+}
+
+class FlutterGalleryDataNotifier extends InheritedWidget {
+  const FlutterGalleryDataNotifier({
+    super.key,
+    required this.galleryDataImpl,
+    required super.child,
+  });
+
+  final FlutterGalleryDataImpl galleryDataImpl;
+
+  static FlutterGalleryDataImpl of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
+
+    return widget!.galleryDataImpl;
+  }
+
+  @override
+  bool updateShouldNotify(FlutterGalleryDataNotifier oldWidget) =>
+      galleryDataImpl != oldWidget.galleryDataImpl;
 }
 
 class _TagsNotifier extends StatefulWidget {
@@ -884,7 +1081,7 @@ class _TagsRibbonState extends State<TagsRibbon> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final gestureRight = MediaQuery.systemGestureInsetsOf(context).right;
 
     final fromList = showOnlyPinned || _list.isEmpty && _pinnedList != null
@@ -940,33 +1137,40 @@ class _TagsRibbonState extends State<TagsRibbon> {
                         curve: Easing.standard,
                       );
                     },
-                    onLongPress: widget.onLongPress == null
-                        ? null
-                        : () {
-                            widget.onLongPress!(
-                              elem.tag,
-                              scrollController,
-                            );
-                          },
-                    child: ActionChip(
-                      labelStyle: elem.excluded
-                          ? TextStyle(
-                              color: theme.disabledColor,
-                              decoration: TextDecoration.lineThrough,
-                            )
-                          : null,
-                      avatar: elem.favorite
-                          ? const Icon(Icons.push_pin_rounded)
-                          : null,
+                    child: TextButton(
+                      // icon: elem.favorite
+                      //     ? const Icon(Icons.push_pin_rounded)
+                      //     : null,
+                      onLongPress: widget.onLongPress == null
+                          ? null
+                          : () {
+                              widget.onLongPress!(
+                                elem.tag,
+                                scrollController,
+                              );
+                            },
                       onPressed: () => widget.selectTag(
                         elem.tag,
                         scrollController,
                       ),
-                      label: Text(elem.tag),
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: Text(
+                        elem.tag,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: elem.excluded
+                              ? theme.disabledColor
+                              : elem.favorite
+                                  ? theme.colorScheme.primary
+                                  : null,
+                        ),
+                      ),
                     ),
                   );
 
                   return Padding(
+                    key: ValueKey(elem.tag),
                     padding: i != fromList.length - 1
                         ? const EdgeInsets.only(right: 6)
                         : EdgeInsets.zero,
@@ -1364,7 +1568,7 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     if (widget.storage.isEmpty) {
       return const SliverPadding(padding: EdgeInsets.zero);
@@ -1530,52 +1734,3 @@ class StatisticsCard extends StatelessWidget {
     );
   }
 }
-
-// class FilteringDataHolder extends StatefulWidget {
-//   const FilteringDataHolder({
-//     super.key,
-//     required this.source,
-//     required this.child,
-//   });
-
-//   final ChainedFilterResourceSource<dynamic, dynamic> source;
-
-//   final Widget child;
-
-//   @override
-//   State<FilteringDataHolder> createState() => _FilteringDataHolderState();
-// }
-
-// class _FilteringDataHolderState extends State<FilteringDataHolder> {
-//   late final StreamSubscription<dynamic> subscr;
-
-//   late FilteringData filteringData;
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     filteringData =
-//         FilteringData(widget.source.filteringMode, widget.source.sortingMode);
-//     subscr = widget.source.watchFilter((data) {
-//       setState(() {
-//         filteringData = data;
-//       });
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     subscr.cancel();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return FilteringDataNotifier(
-//       data: filteringData,
-//       child: widget.child,
-//     );
-//   }
-// }

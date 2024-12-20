@@ -91,8 +91,10 @@ class NavigationAction {
   const NavigationAction(
     this.icon,
     this.onPressed,
+    this.label,
   );
 
+  final String label;
   final IconData icon;
 
   final VoidCallback onPressed;
@@ -106,47 +108,47 @@ class EmptyContent extends Contentable {
   final ContentWidgets widgets;
 }
 
-class AndroidGif extends Contentable {
-  const AndroidGif(
-    this.widgets, {
-    required this.uri,
-    required this.size,
-  });
+// class AndroidGif extends Contentable {
+//   const AndroidGif(
+//     this.widgets, {
+//     required this.uri,
+//     required this.size,
+//   });
 
-  final String uri;
-  final Size size;
+//   final String uri;
+//   final Size size;
 
-  @override
-  final ContentWidgets widgets;
-}
+//   @override
+//   final ContentWidgets widgets;
+// }
 
-class AndroidVideo extends Contentable {
-  const AndroidVideo(
-    this.widgets, {
-    required this.uri,
-    required this.size,
-  });
+// class AndroidVideo extends Contentable {
+//   const AndroidVideo(
+//     this.widgets, {
+//     required this.uri,
+//     required this.size,
+//   });
 
-  final String uri;
-  final Size size;
+//   final String uri;
+//   final Size size;
 
-  @override
-  final ContentWidgets widgets;
-}
+//   @override
+//   final ContentWidgets widgets;
+// }
 
-class AndroidImage extends Contentable {
-  const AndroidImage(
-    this.widgets, {
-    required this.uri,
-    required this.size,
-  });
+// class AndroidImage extends Contentable {
+//   const AndroidImage(
+//     this.widgets, {
+//     required this.uri,
+//     required this.size,
+//   });
 
-  final String uri;
-  final Size size;
+//   final String uri;
+//   final Size size;
 
-  @override
-  final ContentWidgets widgets;
-}
+//   @override
+//   final ContentWidgets widgets;
+// }
 
 class NetImage extends Contentable {
   const NetImage(

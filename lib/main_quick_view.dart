@@ -22,41 +22,114 @@ Future<void> mainQuickView() async {
 
   final files = (await platform.GalleryHostApi().getUriPicturesDirectly(uris))
       .map(
-        (e) => AndroidUriFile(
+        (e) => AndroidGalleryFile(
           width: e.width,
           height: e.height,
-          uri: e.uri,
+          originalUri: e.uri,
           name: e.name,
           lastModified: e.lastModified,
           size: e.size,
+          id: -1,
+          bucketId: "",
+          isVideo: false,
+          isGif: false,
+          isDuplicate: false,
+          tags: const {},
+          res: null,
         ),
       )
       .toList();
 
+  final source = GenericListSource<File>(
+    () => Future.value(files),
+  );
+  await source.clearRefresh();
+
   runApp(
-    DatabaseConnectionNotifier.current(
-      MaterialApp(
-        title: "Azari",
-        themeAnimationCurve: Easing.standard,
-        themeAnimationDuration: const Duration(milliseconds: 300),
-        darkTheme: buildTheme(Brightness.dark, accentColor),
-        theme: buildTheme(Brightness.light, accentColor),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: WrapGridPage(
-          addScaffoldAndBar: true,
-          child: PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (didPop, result) {
-              PlatformApi().closeApp();
+    DbConn.inject(
+      Builder(
+        builder: (context) {
+          return _GalleryDataHolder(
+            source: source,
+            db: DbConn.of(context),
+            child: (stateController) {
+              return MaterialApp(
+                title: "Azari",
+                themeAnimationCurve: Easing.standard,
+                themeAnimationDuration: const Duration(milliseconds: 300),
+                darkTheme: buildTheme(Brightness.dark, accentColor),
+                theme: buildTheme(Brightness.light, accentColor),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: WrapGridPage(
+                  addScaffoldAndBar: true,
+                  child: PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, result) {
+                      PlatformApi().closeApp();
+                    },
+                    child: ImageView(
+                      stateController: stateController,
+                    ),
+                  ),
+                ),
+              );
             },
-            child: ImageView.simple(
-              cellCount: files.length,
-              getContent: (i) => files[i].content(),
-            ),
-          ),
-        ),
+          );
+        },
       ),
     ),
   );
+}
+
+class _GalleryDataHolder extends StatefulWidget {
+  const _GalleryDataHolder({
+    // super.key,
+    required this.source,
+    required this.db,
+    required this.child,
+  });
+
+  final GenericListSource<File> source;
+
+  final Widget Function(FlutterGalleryDataImpl impl) child;
+
+  final DbConn db;
+
+  @override
+  State<_GalleryDataHolder> createState() => __GalleryDataHolderState();
+}
+
+class __GalleryDataHolderState extends State<_GalleryDataHolder> {
+  late final FlutterGalleryDataImpl impl;
+
+  @override
+  void initState() {
+    super.initState();
+
+    impl = FlutterGalleryDataImpl(
+      source: widget.source,
+      wrapNotifiers: null,
+      watchTags: (c, f) =>
+          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
+      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
+      db: widget.db.videoSettings,
+    );
+
+    FlutterGalleryData.setUp(impl);
+  }
+
+  @override
+  void dispose() {
+    FlutterGalleryData.setUp(null);
+
+    impl.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child(impl);
+  }
 }

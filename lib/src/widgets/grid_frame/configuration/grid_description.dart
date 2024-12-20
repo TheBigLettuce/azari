@@ -11,7 +11,6 @@ class GridDescription<T extends CellBase> {
     this.pullToRefresh = true,
     this.actions = const [],
     this.gridSeed = 0,
-    this.showAppBar = true,
     this.bottomWidget,
     this.asSliver = false,
     this.footer,
@@ -20,7 +19,6 @@ class GridDescription<T extends CellBase> {
     this.animationsOnSourceWatch = true,
   });
 
-  final bool showAppBar;
   final bool pullToRefresh;
   final bool animationsOnSourceWatch;
   final bool asSliver;

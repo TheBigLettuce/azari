@@ -59,57 +59,20 @@ mixin AnimatedIconsMixin on State<Home>, TickerProviderStateMixin<Home> {
   List<Widget> icons(
     BuildContext context,
     Booru selectedBooru,
-    void Function(BuildContext, CurrentRoute) onDestinationSelected,
   ) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return CurrentRoute.values
         .map(
           (e) => Builder(
             builder: (context) {
-              return _NavigationDestination(
+              return NavigationDestination(
                 icon: e.icon(this),
                 label: e.label(context, l10n, selectedBooru),
-                onSelected: () => onDestinationSelected(context, e),
               );
             },
           ),
         )
         .toList();
-  }
-}
-
-class _NavigationDestination extends StatelessWidget {
-  const _NavigationDestination({
-    // super.key,
-    required this.icon,
-    required this.label,
-    required this.onSelected,
-  });
-
-  final String label;
-  final Widget icon;
-
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final currentRoute = CurrentRoute.of(context);
-
-    return Center(
-      child: SizedBox.square(
-        dimension: 38,
-        child: InkWell(
-          onLongPress: currentRoute == CurrentRoute.home
-              ? () {
-                  Scaffold.maybeOf(context)?.openDrawer();
-                }
-              : null,
-          borderRadius: const BorderRadius.all(Radius.circular(15)),
-          onTap: onSelected,
-          child: icon,
-        ),
-      ),
-    );
   }
 }

@@ -18,7 +18,10 @@ import android.util.Size
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
-import com.bumptech.glide.Glide
+import coil3.BitmapImage
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,7 +72,7 @@ class Thumbnailer(private val context: Context) {
                 try {
                     if (inProgress.count() == cap) {
                         inProgress.first().join()
-                        inProgress.removeFirst()
+                        inProgress.removeAt(0)
                     }
 
                     inProgress.add(launch {
@@ -123,7 +126,7 @@ class Thumbnailer(private val context: Context) {
             for (op in moveChannel) {
                 if (inProgress.count() == cap) {
                     inProgress.first().join()
-                    inProgress.removeFirst()
+                    inProgress.removeAt(0)
                 }
 
                 inProgress.add(launch {
@@ -348,12 +351,18 @@ class Thumbnailer(private val context: Context) {
             return Pair("", 0)
         }
 
+
         val thumb =
-            if (network) Glide.with(context)
-                .asBitmap().disallowHardwareConfig().load(uri).submit()
-                .get() else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) Glide.with(context)
-                .asBitmap().disallowHardwareConfig().load(uri).override(320, 320).submit()
-                .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+            if (network) (context.imageLoader.execute(
+                ImageRequest.Builder(context).data(uri).allowHardware(false).build()
+            ).image!! as BitmapImage).bitmap
+            else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) (context.imageLoader.execute(
+                ImageRequest.Builder(context).data(uri).size(320, 320).allowHardware(false).build()
+            ).image!! as BitmapImage).bitmap else context.contentResolver.loadThumbnail(
+                uri,
+                Size(320, 320),
+                null
+            )
         val stream = ByteArrayOutputStream()
 
         val scaled = thumb.scale(9, 8)

@@ -19,7 +19,7 @@ class PostTags {
   const PostTags(this._db, this._freq);
 
   factory PostTags.fromContext(BuildContext context) {
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
 
     return PostTags(db.localTags, db.localTagDictionary);
   }

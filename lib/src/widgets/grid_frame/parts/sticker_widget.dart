@@ -11,8 +11,8 @@ class StickerWidget extends StatelessWidget {
     this.e, {
     super.key,
     this.onPressed,
-    this.size = 28,
-    this.iconSize = 20,
+    this.size = 20,
+    this.iconSize = 16,
   });
 
   final double size;
@@ -81,18 +81,21 @@ class StickerWidget extends StatelessWidget {
         width: size,
         child: Container(
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+          decoration: ShapeDecoration(
+            // shape: BoxShape.circle,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(5)),
+            ),
             color: e.important
                 ? colorScheme.onPrimary.withValues(alpha: 0.9)
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           child: Icon(
             e.icon,
             size: iconSize,
             color: e.important
                 ? colorScheme.primary.withValues(alpha: 0.9)
-                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                : colorScheme.surfaceContainer.withValues(alpha: 0.8),
           ),
         ),
       ),

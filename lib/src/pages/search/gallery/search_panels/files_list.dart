@@ -26,57 +26,89 @@ class _FilesList extends StatefulWidget {
 }
 
 class __FilesListState extends State<_FilesList> {
-  _FilesLoadingStatus search = _FilesLoadingStatus();
+  late final GenericListSource<File> fileSource;
+
+  late _FilesLoadingStatus search;
 
   late final StreamSubscription<String> subscr;
+  late final StreamSubscription<void> refreshingEvents;
+
+  late final FlutterGalleryDataImpl impl;
 
   @override
   void initState() {
     super.initState();
 
+    fileSource = GenericListSource(
+      () {
+        if (search.str.isEmpty) {
+          return Future.value(const []);
+        }
+
+        return GalleryApi().search.filesByName(search.str, 30);
+      },
+    );
+
+    search = _FilesLoadingStatus(fileSource);
+
+    impl = FlutterGalleryDataImpl(
+      source: search.source,
+      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
+        callback: null,
+        child: child,
+      ),
+      watchTags: (c, f) => File.watchTags(
+        c,
+        f,
+        widget.db.localTags,
+        widget.db.tagManager,
+      ),
+      tags: (c) => File.imageTags(
+        c,
+        widget.db.localTags,
+        widget.db.tagManager,
+      ),
+      db: widget.db.videoSettings,
+    );
+
+    refreshingEvents = fileSource.progress.watch((_) {
+      setState(() {});
+    });
+
     subscr = widget.filteringEvents.stream.listen((str) {
       setState(() {
-        if (search.str == str) {
+        if (search.str == str || fileSource.progress.inRefreshing) {
           return;
         }
 
-        search.f?.ignore();
-
-        if (str.isEmpty) {
-          search = _FilesLoadingStatus();
-
-          return;
-        }
-
-        final newSearch = _FilesLoadingStatus()..str = str;
-        newSearch.f = GalleryApi().search.filesByName(str, 30)
-          ..then(
-            (e) => newSearch.files = e,
-          ).whenComplete(
-            () => setState(() {
-              newSearch.f = null;
-            }),
-          );
-
-        search = newSearch;
+        search = _FilesLoadingStatus(fileSource)..str = str;
+        fileSource.clearRefresh();
       });
     });
+
+    FlutterGalleryData.setUp(impl);
+    GalleryVideoEvents.setUp(impl);
   }
 
   @override
   void dispose() {
-    subscr.cancel();
+    FlutterGalleryData.setUp(null);
+    GalleryVideoEvents.setUp(null);
 
-    search.f?.ignore();
+    impl.dispose();
+
+    subscr.cancel();
+    refreshingEvents.cancel();
+    fileSource.destroy();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    if ((search.f == null || search.f != null) && search.files.isEmpty) {
+    if (fileSource.backingStorage.isEmpty) {
       return const SliverPadding(padding: EdgeInsets.zero);
     }
 
@@ -94,9 +126,9 @@ class __FilesListState extends State<_FilesList> {
             child: ListView.builder(
               padding: _FilesList.listPadding,
               scrollDirection: Axis.horizontal,
-              itemCount: search.files.length,
+              itemCount: fileSource.count,
               itemBuilder: (context, i) {
-                final cell = search.files[i];
+                final cell = fileSource.backingStorage[i];
 
                 return SizedBox(
                   width: _FilesList.size.width,
@@ -104,6 +136,7 @@ class __FilesListState extends State<_FilesList> {
                     file: cell,
                     db: widget.db,
                     search: search,
+                    impl: impl,
                     idx: i,
                   ),
                 );
@@ -117,10 +150,9 @@ class __FilesListState extends State<_FilesList> {
 }
 
 class _FilesLoadingStatus {
-  _FilesLoadingStatus();
+  _FilesLoadingStatus(this.source);
 
-  Future<void>? f;
-  List<File> files = const [];
+  final GenericListSource<File> source;
   String str = "";
 }
 
@@ -131,38 +163,26 @@ class _FilesCell extends StatelessWidget {
     required this.db,
     required this.search,
     required this.idx,
+    required this.impl,
   });
 
   final int idx;
 
   final _FilesLoadingStatus search;
+  final FlutterGalleryDataImpl impl;
   final File file;
 
   final DbConn db;
 
   void onPressed(BuildContext context) {
-    ImageView.launchWrapped(
-      context,
-      search.files.length,
-      (i) => search.files[i].content(),
-      imageDesctipion: ImageViewDescription(
-        statistics: StatisticsGalleryService.asImageViewStatistics(),
-      ),
-      startingCell: idx,
-      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-        callback: null,
-        child: child,
-      ),
-      tags: (c) => File.imageTags(
-        c,
-        db.localTags,
-        db.tagManager,
-      ),
-      watchTags: (c, f) => File.watchTags(
-        c,
-        f,
-        db.localTags,
-        db.tagManager,
+    Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) {
+          return ImageView(
+            startingIndex: idx,
+            stateController: impl,
+          );
+        },
       ),
     );
   }

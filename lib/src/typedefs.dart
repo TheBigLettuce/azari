@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
@@ -12,6 +13,23 @@ import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/material.dart";
+
+extension OpenLicensePageExt on LicensePage {
+  void open(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return this;
+        },
+      ),
+    );
+  }
+}
+
+extension AppLocalizationsContextExt on BuildContext {
+  AppLocalizations l10n() => AppLocalizations.of(this)!;
+}
 
 typedef ContextCallback = void Function(BuildContext context);
 
@@ -45,6 +63,6 @@ typedef CompleteBooruTagFunc = Future<List<BooruTag>> Function(String str);
 typedef StringCallback = void Function(String str);
 
 typedef WatchTagsCallback = StreamSubscription<List<ImageTag>> Function(
-  Contentable content,
+  ContentWidgets content,
   void Function(List<ImageTag> l) f,
 );

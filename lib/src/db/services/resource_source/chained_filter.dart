@@ -217,6 +217,8 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     void Function(FilteringData) f,
   ) =>
       _filterEvents.stream.listen(f);
+
+  Stream<FilteringData> get filterEvents => _filterEvents.stream;
 }
 
 @immutable

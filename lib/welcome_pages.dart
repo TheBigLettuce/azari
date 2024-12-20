@@ -6,7 +6,6 @@
 import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
@@ -60,7 +59,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return _WrapPadding(
       title: l10n.welcomePermissions,
@@ -126,6 +125,25 @@ class WelcomePage extends StatefulWidget {
 
   final ContextCallback? onEnd;
 
+  static void open(
+    BuildContext context, {
+    bool popBackOnEnd = false,
+  }) =>
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) {
+            return WelcomePage(
+              onEnd: popBackOnEnd
+                  ? (context) {
+                      Navigator.pop(context);
+                    }
+                  : null,
+            );
+          },
+        ),
+      );
+
   @override
   State<WelcomePage> createState() => _WelcomePageState();
 }
@@ -138,7 +156,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     return _WrapPadding(
@@ -180,7 +198,7 @@ class CongratulationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     return Stack(
@@ -278,7 +296,7 @@ class _InitalSettingsState extends State<InitalSettings> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     return _WrapPadding(

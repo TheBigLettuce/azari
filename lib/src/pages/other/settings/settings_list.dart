@@ -11,9 +11,9 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/pages/other/settings/settings_label.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
@@ -21,11 +21,8 @@ import "package:flutter/material.dart";
 class SettingsList extends StatefulWidget {
   const SettingsList({
     super.key,
-    required this.sliver,
     required this.db,
   });
-
-  final bool sliver;
 
   final DbConn db;
 
@@ -71,7 +68,7 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   void showDialog(String s) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     Navigator.of(context).push(
       DialogRoute<void>(
@@ -92,240 +89,6 @@ class _SettingsListState extends State<SettingsList> {
     );
   }
 
-  List<Widget> makeList(
-    BuildContext context,
-    TextStyle titleStyle,
-    AppLocalizations l10n,
-  ) =>
-      [
-        SettingsLabel(l10n.booruLabel, titleStyle),
-        MenuWrapper(
-          title: _settings.path.path,
-          child: ListTile(
-            title: Text(l10n.downloadDirectorySetting),
-            subtitle: Text(_settings.path.pathDisplay),
-            onTap: () async {
-              await SettingsService.db().chooseDirectory(showDialog, l10n);
-            },
-          ),
-        ),
-        ListTile(
-          title: Text(l10n.selectedBooruSetting),
-          subtitle: Text(_settings.selectedBooru.string),
-          onTap: () => radioDialog(
-            context,
-            Booru.values.map((e) => (e, e.string)),
-            _settings.selectedBooru,
-            (value) {
-              if (value != null && value != _settings.selectedBooru) {
-                selectBooru(context, _settings, value);
-              }
-            },
-            title: l10n.selectedBooruSetting,
-          ),
-        ),
-        ListTile(
-          title: Text(l10n.settingsTheme),
-          onTap: () => radioDialog(
-            context,
-            ThemeType.values.map((e) => (e, e.translatedString(l10n))),
-            _miscSettings.themeType,
-            (value) {
-              if (value != null) {
-                selectTheme(context, _miscSettings, value);
-              }
-            },
-            title: l10n.settingsTheme,
-          ),
-          subtitle: Text(_miscSettings.themeType.translatedString(l10n)),
-        ),
-        ListTile(
-          title: Text(l10n.imageDisplayQualitySetting),
-          onTap: () => radioDialog(
-            context,
-            DisplayQuality.values.map((e) => (e, e.translatedString(l10n))),
-            _settings.quality,
-            (value) => _settings.copy(quality: value).save(),
-            title: l10n.imageDisplayQualitySetting,
-          ),
-          subtitle: Text(_settings.quality.translatedString(l10n)),
-        ),
-        SettingsLabel(l10n.miscLabel, titleStyle),
-        FutureBuilder(
-          future: thumbnailCount,
-          builder: (context, data) {
-            return ListTile(
-              title: Text(l10n.thumbnailsCSize),
-              subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, l10n))
-                  : Text(l10n.loadingPlaceholder),
-              trailing: PopupMenuButton(
-                itemBuilder: (context) {
-                  return [
-                    PopupMenuItem<void>(
-                      enabled: false,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            DialogRoute<void>(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(l10n.areYouSure),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.no),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        db.thumbnails.clear();
-
-                                        GalleryApi().thumbs.clear();
-
-                                        thumbnailCount = Future.value(0);
-
-                                        setState(() {});
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.yes),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        child: Text(l10n.purgeThumbnails),
-                      ),
-                    ),
-                  ];
-                },
-                icon: const Icon(Icons.more_horiz_rounded),
-              ),
-            );
-          },
-        ),
-        FutureBuilder(
-          future: pinnedThumbnailCount,
-          builder: (context, data) {
-            return ListTile(
-              title: Text(l10n.pinnedThumbnailsSize),
-              subtitle: data.hasData
-                  ? Text(_calculateMBSize(data.data!, l10n))
-                  : Text(l10n.loadingPlaceholder),
-              trailing: PopupMenuButton(
-                itemBuilder: (context) {
-                  return [
-                    PopupMenuItem<void>(
-                      enabled: false,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            DialogRoute<void>(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(l10n.areYouSure),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.no),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        db.pinnedThumbnails.clear();
-
-                                        GalleryApi().thumbs.clear(true);
-
-                                        thumbnailCount =
-                                            GalleryApi().thumbs.size(true);
-
-                                        setState(() {});
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(l10n.yes),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        child: Text(l10n.purgeThumbnails),
-                      ),
-                    ),
-                  ];
-                },
-                icon: const Icon(Icons.more_horiz_rounded),
-              ),
-            );
-          },
-        ),
-        SwitchListTile(
-          value: _miscSettings.filesExtendedActions,
-          onChanged: (value) => MiscSettingsService.db()
-              .current
-              .copy(filesExtendedActions: value)
-              .save(),
-          title: Text(l10n.extendedFilesGridActions),
-        ),
-        SwitchListTile(
-          value: _settings.sampleThumbnails,
-          onChanged: (value) =>
-              SettingsService.db().current.copy(sampleThumbnails: value).save(),
-          title: const Text("Show samples as thumbnail"), // TODO: change
-        ),
-        MenuWrapper(
-          title: "GPL-2.0-only",
-          child: ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (context) {
-                    return const LicensePage();
-                  },
-                ),
-              );
-            },
-            title: Text(l10n.licenseSetting),
-            subtitle: const Text("GPL-2.0-only"),
-          ),
-        ),
-        SwitchListTile(
-          title: Text(l10n.extraSafeModeFilters),
-          subtitle: Text(
-            l10n.blacklistsTags(BooruAPI.additionalSafetyTags.keys.join(", ")),
-          ),
-          value: _settings.extraSafeFilters,
-          onChanged: (value) => _settings.copy(extraSafeFilters: value).save(),
-        ),
-        ListTile(
-          title: Text(l10n.openWelcomePageSetting),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) {
-                  return WelcomePage(
-                    onEnd: (context) {
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ];
-
   String _calculateMBSize(int i, AppLocalizations localizations) {
     if (i == 0) {
       return localizations.megabytes(0);
@@ -338,17 +101,235 @@ class _SettingsListState extends State<SettingsList> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final titleStyle = theme.textTheme.titleSmall!
-        .copyWith(color: theme.colorScheme.secondary);
+    // final titleStyle = theme.textTheme.titleSmall!
+    //     .copyWith(color: theme.colorScheme.secondary);
 
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    return widget.sliver
-        ? SliverList.list(
-            children: makeList(context, titleStyle, l10n),
-          )
-        : ListView(
-            children: makeList(context, titleStyle, l10n),
-          );
+    final list = <Widget>[
+      _SettingsGroup(
+        children: [
+          ListTile(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(25),
+                topRight: Radius.circular(25),
+              ),
+            ),
+            tileColor: theme.colorScheme.surfaceContainerHigh,
+            title: Text(l10n.selectedBooruSetting),
+            subtitle: Text(_settings.selectedBooru.string),
+            onTap: () => radioDialog(
+              context,
+              Booru.values.map((e) => (e, e.string)),
+              _settings.selectedBooru,
+              (value) {
+                if (value != null && value != _settings.selectedBooru) {
+                  selectBooru(context, _settings, value);
+                }
+              },
+              title: l10n.selectedBooruSetting,
+            ),
+          ),
+          ListTile(
+            tileColor: theme.colorScheme.surfaceContainerHigh,
+            title: Text(l10n.imageDisplayQualitySetting),
+            onTap: () => radioDialog(
+              context,
+              DisplayQuality.values.map((e) => (e, e.translatedString(l10n))),
+              _settings.quality,
+              (value) => _settings.copy(quality: value).save(),
+              title: l10n.imageDisplayQualitySetting,
+            ),
+            subtitle: Text(_settings.quality.translatedString(l10n)),
+          ),
+          SwitchListTile(
+            title: Text(l10n.extraSafeModeFilters),
+            tileColor: theme.colorScheme.surfaceContainerHigh,
+            subtitle: Text(
+              l10n.blacklistsTags(
+                BooruAPI.additionalSafetyTags.keys.join(", "),
+              ),
+            ),
+            value: _settings.extraSafeFilters,
+            onChanged: (value) =>
+                _settings.copy(extraSafeFilters: value).save(),
+          ),
+          // SwitchListTile(
+          //   shape: const RoundedRectangleBorder(
+          //     borderRadius: BorderRadius.only(
+          //       bottomLeft: Radius.circular(25),
+          //       bottomRight: Radius.circular(25),
+          //     ),
+          //   ),
+          //   tileColor: theme.colorScheme.surfaceContainerHigh,
+          //   value: _settings.sampleThumbnails,
+          //   onChanged: (value) => SettingsService.db()
+          //       .current
+          //       .copy(sampleThumbnails: value)
+          //       .save(),
+          //   title: const Text("Show samples as thumbnail"), // TODO: change
+          // ),
+        ],
+      ),
+      _SettingsGroup(
+        children: [
+          MenuWrapper(
+            title: _settings.path.path,
+            child: ListTile(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                ),
+              ),
+              tileColor: theme.colorScheme.surfaceContainerHigh,
+              title: Text(l10n.downloadDirectorySetting),
+              subtitle: Text(_settings.path.pathDisplay),
+              onTap: () async {
+                await SettingsService.db().chooseDirectory(showDialog, l10n);
+              },
+            ),
+          ),
+          ListTile(
+            title: Text(l10n.settingsTheme),
+            tileColor: theme.colorScheme.surfaceContainerHigh,
+            onTap: () => radioDialog(
+              context,
+              ThemeType.values.map((e) => (e, e.translatedString(l10n))),
+              _miscSettings.themeType,
+              (value) {
+                if (value != null) {
+                  selectTheme(context, _miscSettings, value);
+                }
+              },
+              title: l10n.settingsTheme,
+            ),
+            subtitle: Text(_miscSettings.themeType.translatedString(l10n)),
+          ),
+          SwitchListTile(
+            tileColor: theme.colorScheme.surfaceContainerHigh,
+            value: _miscSettings.filesExtendedActions,
+            onChanged: (value) => MiscSettingsService.db()
+                .current
+                .copy(filesExtendedActions: value)
+                .save(),
+            title: Text(l10n.extendedFilesGridActions),
+          ),
+          FutureBuilder(
+            future: thumbnailCount,
+            builder: (context, data) {
+              return ListTile(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(25),
+                    bottomRight: Radius.circular(25),
+                  ),
+                ),
+                tileColor: theme.colorScheme.surfaceContainerHigh,
+                title: Text(l10n.thumbnailsCSize),
+                subtitle: data.hasData
+                    ? Text(_calculateMBSize(data.data!, l10n))
+                    : Text(l10n.loadingPlaceholder),
+                trailing: PopupMenuButton(
+                  itemBuilder: (context) {
+                    return [
+                      PopupMenuItem<void>(
+                        enabled: false,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              DialogRoute<void>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(l10n.areYouSure),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(l10n.no),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          db.thumbnails.clear();
+
+                                          GalleryApi().thumbs.clear();
+
+                                          thumbnailCount = Future.value(0);
+
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(l10n.yes),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          child: Text(l10n.purgeThumbnails),
+                        ),
+                      ),
+                    ];
+                  },
+                  icon: const Icon(Icons.more_horiz_rounded),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      MenuWrapper(
+        title: "GPL-2.0-only",
+        child: ListTile(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          onTap: () => const LicensePage().open(context),
+          title: Text(l10n.licenseSetting),
+          subtitle: const Text("GPL-2.0-only"),
+        ),
+      ),
+      ListTile(
+        title: Text(l10n.openWelcomePageSetting),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        onTap: () => WelcomePage.open(
+          context,
+          popBackOnEnd: true,
+        ),
+      ),
+    ];
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      sliver: SliverList.list(
+        children: list,
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({
+    // super.key,
+    required this.children,
+  });
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(25)),
+        child: ListBody(
+          children: children,
+        ),
+      ),
+    );
   }
 }

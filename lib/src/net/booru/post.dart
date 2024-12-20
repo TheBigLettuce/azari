@@ -5,11 +5,9 @@
 
 import "dart:async";
 
-import "package:animations/animations.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
-import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
@@ -20,6 +18,7 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
@@ -69,17 +68,17 @@ abstract class PostImpl
   @override
   Widget info(BuildContext context) => PostInfo(post: this);
 
-  void _addToVisited(PostImpl post) {
-    VisitedPostsService.db().addAll([
-      VisitedPost(
-        booru: post.booru,
-        id: post.id,
-        rating: post.rating,
-        thumbUrl: post.previewUrl,
-        date: DateTime.now(),
-      ),
-    ]);
-  }
+  // void _addToVisited(PostImpl post) {
+  //   VisitedPostsService.db().addAll([
+  //     VisitedPost(
+  //       booru: post.booru,
+  //       id: post.id,
+  //       rating: post.rating,
+  //       thumbUrl: post.previewUrl,
+  //       date: DateTime.now(),
+  //     ),
+  //   ]);
+  // }
 
   @override
   Widget buildSelectionWrapper<T extends CellBase>({
@@ -92,63 +91,88 @@ abstract class PostImpl
     required VoidCallback? onPressed,
     required Widget child,
   }) {
-    final theme = Theme.of(context);
+    final downloadManager = DownloadManager.of(context);
 
-    return OpenContainer(
-      tappable: false,
-      closedElevation: 0,
-      openElevation: 0,
-      middleColor: theme.colorScheme.surface.withValues(alpha: 0),
-      openColor: theme.colorScheme.surface.withValues(alpha: 0),
-      closedColor: theme.colorScheme.surface.withValues(alpha: 1),
-      useRootNavigator: true,
-      closedBuilder: (context, action) => WrapSelection(
-        thisIndx: thisIndx,
-        description: description,
-        selectFrom: selectFrom,
-        selection: selection,
-        functionality: functionality,
-        onPressed: () {
-          _addToVisited(this);
-          action();
-        },
-        child: child,
-      ),
-      openBuilder: (containerContext, action) {
-        final tagManager = TagManager.of(containerContext);
+    return WrapSelection(
+      thisIndx: thisIndx,
+      description: description,
+      selectFrom: selectFrom,
+      selection: selection,
+      functionality: functionality,
+      onPressed: onPressed,
+      onDoubleTap: (context) {
+        final status = downloadManager.statusFor(fileDownloadUrl());
+        final downloadStatus = status?.data.status;
 
-        final imageDescription = ImageViewDescription(
-          ignoreOnNearEnd: false,
-          statistics: StatisticsBooruService.asImageViewStatistics(),
-        );
-
-        final getCell = functionality.source.forIdxUnsafe;
-
-        return ImageView(
-          updates: functionality.source.backingStorage.watch,
-          gridContext: context,
-          statistics: imageDescription.statistics,
-          scrollUntill: (i) =>
-              GridScrollNotifier.maybeScrollToOf<T>(context, i),
-          pageChange: (state) {
-            imageDescription.pageChange?.call(state);
-            _addToVisited(getCell(state.currentPage) as PostImpl);
-          },
-          watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, tagManager),
-          onExit: imageDescription.onExit,
-          getContent: (idx) => (getCell(idx) as PostImpl).content(),
-          cellCount: functionality.source.count,
-          download: functionality.download,
-          startingCell: thisIndx,
-          tags: (c) => DefaultPostPressable.imageViewTags(c, tagManager),
-          onNearEnd:
-              imageDescription.ignoreOnNearEnd || !functionality.source.hasNext
-                  ? null
-                  : functionality.source.next,
-          wrapNotifiers: functionality.registerNotifiers,
-        );
+        if (downloadStatus == DownloadStatus.failed) {
+          downloadManager.restartAll([status!], SettingsService.db().current);
+        } else {
+          download(
+            downloadManager,
+            PostTags.fromContext(context),
+          );
+        }
+        WrapperSelectionAnimation.tryPlayOf(context);
       },
+      child: child,
     );
+
+    // return OpenContainer(
+    //   tappable: false,
+    //   closedElevation: 0,
+    //   openElevation: 0,
+    //   middleColor: theme.colorScheme.surface.withValues(alpha: 0),
+    //   openColor: theme.colorScheme.surface.withValues(alpha: 0),
+    //   closedColor: theme.colorScheme.surface.withValues(alpha: 1),
+    //   useRootNavigator: true,
+    //   closedBuilder: (context, action) => WrapSelection(
+    //     thisIndx: thisIndx,
+    //     description: description,
+    //     selectFrom: selectFrom,
+    //     selection: selection,
+    //     functionality: functionality,
+    //     onPressed: () {
+    //       _addToVisited(this);
+    //       action();
+    //     },
+    //     child: child,
+    //   ),
+    //   openBuilder: (containerContext, action) {
+    //     final tagManager = TagManager.of(containerContext);
+
+    //     final imageDescription = ImageViewDescription(
+    //       ignoreOnNearEnd: false,
+    //       statistics: StatisticsBooruService.asImageViewStatistics(),
+    //     );
+
+    //     final getCell = functionality.source.forIdxUnsafe;
+
+    //     // return ImageView(
+    //     //   // updates: functionality.source.backingStorage.watch,
+    //     //   // gridContext: context,
+    //     //   // statistics: imageDescription.statistics,
+    //     //   // scrollUntill: (i) =>
+    //     //   //     GridScrollNotifier.maybeScrollToOf<T>(context, i),
+    //     //   // pageChange: (state) {
+    //     //   //   imageDescription.pageChange?.call(state);
+    //     //   //   _addToVisited(getCell(state.currentPage) as PostImpl);
+    //     //   // },
+    //     //   // watchTags: (c, f) => DefaultPostPressable.watchTags(c, f, tagManager),
+    //     //   // onExit: imageDescription.onExit,
+    //     //   // getContent: (idx) => (getCell(idx) as PostImpl).content(),
+    //     //   // cellCount: functionality.source.count,
+    //     //   // download: functionality.download,
+    //     //   // startingCell: thisIndx,
+    //     //   // tags: (c) => DefaultPostPressable.imageViewTags(c, tagManager),
+    //     //   // onNearEnd:
+    //     //   //     imageDescription.ignoreOnNearEnd || !functionality.source.hasNext
+    //     //   //         ? null
+    //     //   //         : functionality.source.next,
+    //     //   // stateController: ,
+    //     //   wrapNotifiers: functionality.registerNotifiers,
+    //     // );
+    //   },
+    // );
   }
 
   @override
@@ -171,6 +195,8 @@ abstract class PostImpl
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
+    final l10n = context.l10n();
+
     return [
       NavigationAction(
         Icons.public,
@@ -180,12 +206,14 @@ abstract class PostImpl
             mode: LaunchMode.externalApplication,
           );
         },
+        l10n.openOnBooru(booru.string),
       ),
       NavigationAction(
         Icons.share,
         () {
           PlatformApi().shareMedia(fileUrl, url: true);
         },
+        l10n.shareLabel,
       ),
     ];
   }
@@ -194,7 +222,7 @@ abstract class PostImpl
   List<ImageViewAction> actions(BuildContext context) {
     final theme = Theme.of(context);
 
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
     final favorites = db.favoritePosts;
     final hidden = db.hiddenBooruPost;
 
@@ -379,7 +407,7 @@ abstract class PostImpl
       return icons.isEmpty ? const [] : icons;
     }
 
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
 
     final isHidden = db.hiddenBooruPost.isHidden(id, booru);
 
@@ -480,7 +508,7 @@ mixin DefaultPostPressable<T extends PostImpl>
     GridFunctionality<T> functionality,
     int idx,
   ) {
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
     final tagManager = TagManager.of(context);
 
     if (this is! FavoritePost &&
@@ -516,8 +544,11 @@ mixin DefaultPostPressable<T extends PostImpl>
     });
   }
 
-  static List<ImageTag> imageViewTags(Contentable c, TagManager tagManager) =>
-      (c.widgets as PostBase)
+  static List<ImageTag> imageViewTags(
+    ContentWidgets c,
+    TagManager tagManager,
+  ) =>
+      (c as PostBase)
           .tags
           .map(
             (e) => ImageTag(
@@ -529,11 +560,11 @@ mixin DefaultPostPressable<T extends PostImpl>
           .toList();
 
   static StreamSubscription<List<ImageTag>> watchTags(
-    Contentable c,
+    ContentWidgets c,
     void Function(List<ImageTag> l) f,
     TagManager tagManager,
   ) =>
-      tagManager.pinned.watchImage((c.widgets as PostBase).tags, f);
+      tagManager.pinned.watchImage((c as PostBase).tags, f);
 }
 
 extension MultiplePostDownloadExt on List<PostImpl> {
@@ -798,22 +829,6 @@ class _CellWidgetState extends State<_CellWidget>
         final card = widget.wrapSelection(
           Builder(
             builder: (context) => GestureDetector(
-              onDoubleTap: () {
-                final status =
-                    downloadManager.statusFor(post.fileDownloadUrl());
-                final downloadStatus = status?.data.status;
-
-                if (downloadStatus == DownloadStatus.failed) {
-                  downloadManager
-                      .restartAll([status!], SettingsService.db().current);
-                } else {
-                  widget.post.download(
-                    downloadManager,
-                    PostTags.fromContext(context),
-                  );
-                }
-                WrapperSelectionAnimation.tryPlayOf(context);
-              },
               child: Card(
                 elevation: 0,
                 clipBehavior: Clip.antiAlias,
@@ -823,36 +838,27 @@ class _CellWidgetState extends State<_CellWidget>
                 color: theme.cardColor.withValues(alpha: 0),
                 child: Stack(
                   children: [
-                    if (post.type == PostContentType.video &&
-                        post.size != 0 &&
-                        !post.size.isNegative &&
-                        post.size < 131072 / 2)
-                      _Video(
-                        post: post,
-                      )
-                    else
-                      GridCellImage(
-                        heroTag: post.uniqueKey(),
-                        imageAlign: Alignment.topCenter,
-                        thumbnail: post.type == PostContentType.gif &&
-                                post.size != 0 &&
-                                !post.size.isNegative &&
-                                post.size < 524288
-                            ? CachedNetworkImageProvider(
-                                post.sampleUrl.isEmpty
-                                    ? post.fileUrl
-                                    : post.sampleUrl,
-                              )
-                            : thumbnail,
-                        blur: false,
-                      ),
+                    GridCellImage(
+                      heroTag: post.uniqueKey(),
+                      imageAlign: Alignment.topCenter,
+                      thumbnail: post.type == PostContentType.gif &&
+                              post.size != 0 &&
+                              !post.size.isNegative &&
+                              post.size < 524288
+                          ? CachedNetworkImageProvider(
+                              post.sampleUrl.isEmpty
+                                  ? post.fileUrl
+                                  : post.sampleUrl,
+                            )
+                          : thumbnail,
+                      blur: false,
+                    ),
                     if (widget.post is! FavoritePost)
                       Padding(
                         padding: const EdgeInsets.all(4),
                         child: _FavoriteButton(
                           post: post,
-                          favoritePosts: DatabaseConnectionNotifier.of(context)
-                              .favoritePosts,
+                          favoritePosts: DbConn.of(context).favoritePosts,
                         ),
                       ),
                     Align(
@@ -862,10 +868,9 @@ class _CellWidgetState extends State<_CellWidget>
                           horizontal: 6,
                           vertical: 4,
                         ),
-                        child: _VideoRatingRow(
+                        child: VideoGifRow(
                           isVideo: widget.post.type == PostContentType.video,
                           isGif: widget.post.type == PostContentType.gif,
-                          score: widget.post.score,
                         ),
                       ),
                     ),
@@ -1084,7 +1089,7 @@ class _ExpandedImage extends StatelessWidget {
               url: (content as NetVideo).uri,
               networkThumb: post.thumbnail(context),
               localVideo: false,
-              db: DatabaseConnectionNotifier.of(context).videoSettings,
+              db: DbConn.of(context).videoSettings,
             ),
           )
         : PhotoView(
@@ -1204,9 +1209,8 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
                 child: Padding(
                   padding: EdgeInsets.only(bottom: viewPadding.bottom + 20),
                   child: VideoControls(
-                    content: widget.post.content(),
                     videoControls: videoControls,
-                    db: DatabaseConnectionNotifier.of(context).videoSettings,
+                    db: DbConn.of(context).videoSettings,
                     seekTimeAnchor: seekTimeAnchor,
                     vertical: true,
                   ),
@@ -1220,17 +1224,15 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
   }
 }
 
-class _VideoRatingRow extends StatelessWidget {
-  const _VideoRatingRow({
-    // super.key,
+class VideoGifRow extends StatelessWidget {
+  const VideoGifRow({
+    super.key,
     required this.isVideo,
     required this.isGif,
-    required this.score,
   });
 
   final bool isVideo;
   final bool isGif;
-  final int score;
 
   @override
   Widget build(BuildContext context) {
@@ -1427,7 +1429,9 @@ class _FavoriteButton extends StatefulWidget {
   State<_FavoriteButton> createState() => __FavoriteButtonState();
 }
 
-class __FavoriteButtonState extends State<_FavoriteButton> {
+class __FavoriteButtonState extends State<_FavoriteButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
   late final StreamSubscription<void> events;
 
   bool favorite = false;
@@ -1436,20 +1440,27 @@ class __FavoriteButtonState extends State<_FavoriteButton> {
   void initState() {
     super.initState();
 
+    controller = AnimationController(vsync: this);
+
     favorite =
         widget.favoritePosts.isFavorite(widget.post.id, widget.post.booru);
 
     events = widget.favoritePosts
         .streamSingle(widget.post.id, widget.post.booru)
         .listen((newFavorite) {
-      setState(() {
-        favorite = newFavorite;
-      });
+      favorite = newFavorite;
+
+      if (favorite) {
+        controller.forward().then((_) => controller.reverse());
+      }
+
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
+    controller.dispose();
     events.cancel();
 
     super.dispose();
@@ -1477,8 +1488,22 @@ class __FavoriteButtonState extends State<_FavoriteButton> {
         onPressed: () {
           widget.favoritePosts.addRemove([widget.post]);
         },
-        icon: Icon(
-          favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        icon: Animate(
+          controller: controller,
+          value: 0,
+          autoPlay: false,
+          effects: const [
+            ScaleEffect(
+              delay: Duration(milliseconds: 40),
+              duration: Durations.short3,
+              begin: Offset(1, 1),
+              end: Offset(2, 2),
+              curve: Easing.emphasizedDecelerate,
+            ),
+          ],
+          child: Icon(
+            favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          ),
         ),
       ),
     );

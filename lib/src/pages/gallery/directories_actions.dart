@@ -12,6 +12,7 @@ import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -170,7 +171,7 @@ Future<void> joinedDirectoriesFnc(
             dirName: label,
             presetFilteringValue: tag,
             filteringMode: filteringMode,
-            db: DatabaseConnectionNotifier.of(context),
+            db: DbConn.of(context),
             navBarEvents: NavigationButtonEvents.maybeOf(context),
             scrollingSink: ScrollingSinkProvider.maybeOf(context),
           );
@@ -259,7 +260,7 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return AlertDialog(
       title: Text(l10n.group),

@@ -117,7 +117,7 @@ abstract class Directory
               action();
             }
 
-            requireAuth = DatabaseConnectionNotifier.of(containerContext)
+            requireAuth = DbConn.of(containerContext)
                     .directoryMetadata
                     .get(segmentFnc(this))
                     ?.requireAuth ??
@@ -149,7 +149,7 @@ abstract class Directory
           },
           // secure: secure,
           directories: [this],
-          db: DatabaseConnectionNotifier.of(containerContext),
+          db: DbConn.of(containerContext),
           scrollingSink: ScrollingSinkProvider.maybeOf(containerContext),
           navBarEvents: NavigationButtonEvents.maybeOf(containerContext),
           callback: callback?.toFileOrNull,
@@ -179,7 +179,7 @@ abstract class Directory
     GridFunctionality<Directory> functionality,
     int idx,
   ) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
 
@@ -233,7 +233,7 @@ abstract class Directory
                 "trash" => l10n.galleryDirectoryTrash,
                 String() => d.name,
               },
-              db: DatabaseConnectionNotifier.of(context),
+              db: DbConn.of(context),
               scrollingSink: ScrollingSinkProvider.maybeOf(context),
               navBarEvents: NavigationButtonEvents.maybeOf(context),
             ),
@@ -241,7 +241,7 @@ abstract class Directory
         );
       }
 
-      requireAuth = DatabaseConnectionNotifier.of(context)
+      requireAuth = DbConn.of(context)
               .directoryMetadata
               .get(segmentFnc(this))
               ?.requireAuth ??

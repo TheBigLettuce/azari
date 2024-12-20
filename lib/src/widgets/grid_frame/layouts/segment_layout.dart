@@ -11,6 +11,7 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -792,10 +793,11 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
     final toSticky = modifiers.contains(SegmentModifier.sticky);
     final toBlur = modifiers.contains(SegmentModifier.blur);
     final toAuth = modifiers.contains(SegmentModifier.auth);
-    final l10n = AppLocalizations.of(context)!;
 
     final isBooru = segmentLabel.seg == "Booru";
     final isSpecial = segmentLabel.seg == segments.injectedLabel;

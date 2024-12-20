@@ -5,9 +5,454 @@
 
 part of "gallery_api.dart";
 
+class FlutterGalleryDataImpl
+    implements
+        FlutterGalleryData,
+        ImageViewStateController,
+        GalleryVideoEvents {
+  FlutterGalleryDataImpl({
+    required this.source,
+    required this.wrapNotifiers,
+    required this.watchTags,
+    required this.tags,
+    required this.db,
+  }) {
+    _events = source.backingStorage.watch((_) {
+      if (Platform.isAndroid) {
+        PlatformGalleryEvents().metadataChanged();
+      }
+    });
+  }
+
+  final NotifierWrapper? wrapNotifiers;
+  final WatchTagsCallback? watchTags;
+
+  final VideoSettingsService db;
+
+  final List<ImageTag> Function(ContentWidgets)? tags;
+
+  late final StreamSubscription<void> _events;
+  final _indexChanges = StreamController<int>.broadcast();
+  final _videoChanges = StreamController<_VideoPlayerEvent>.broadcast();
+
+  @override
+  int currentIndex = 0;
+
+  @override
+  int get count => source.count;
+
+  final ResourceSource<int, File> source;
+
+  @override
+  Stream<int> get countEvents => source.backingStorage.countEvents;
+
+  @override
+  Stream<int> get indexEvents => _indexChanges.stream;
+
+  @override
+  Future<DirectoryFile> atIndex(int index) =>
+      Future.value(source.forIdxUnsafe(index).toDirectoryFile());
+
+  @override
+  Future<GalleryMetadata> metadata() =>
+      Future.value(GalleryMetadata(count: source.count));
+
+  @override
+  void setCurrentIndex(int index) {
+    currentIndex = index;
+    _indexChanges.add(index);
+  }
+
+  void dispose() {
+    _events.cancel();
+    _indexChanges.close();
+    _videoChanges.close();
+  }
+
+  @override
+  void bind(
+    BuildContext context, {
+    required int startingIndex,
+    required VoidCallback playAnimationLeft,
+    required VoidCallback playAnimationRight,
+    required VoidCallback flipShowAppBar,
+  }) {
+    // if (startingIndex != 0) {
+    currentIndex = startingIndex;
+    _indexChanges.add(currentIndex);
+    // }
+  }
+
+  @override
+  void unbind() {}
+
+  @override
+  Widget buildBody(BuildContext context) {
+    return _ImageViewBodyPlatformView(
+      videoEvents: _videoChanges.stream,
+      controls: VideoControlsNotifier.of(context),
+      startingCell: currentIndex,
+      db: DbConn.of(context),
+    );
+  }
+
+  @override
+  Widget injectMetadataProvider(Widget child) {
+    final ret = ImageViewTagsProvider(
+      currentPage: indexEvents,
+      currentCell: () => (source.forIdxUnsafe(currentIndex), currentIndex),
+      tags: tags,
+      watchTags: watchTags,
+      child: _FileMetadataProvider(
+        indexEvents: indexEvents,
+        currentIndex: currentIndex,
+        wrapNotifiers: wrapNotifiers,
+        source: source,
+        child: child,
+      ),
+    );
+
+    if (wrapNotifiers == null) {
+      return ret;
+    }
+
+    return wrapNotifiers!(ret);
+  }
+
+  @override
+  void refreshImage() {}
+
+  @override
+  void durationEvent(int duration) {
+    _videoChanges.add(_DurationEvent(duration));
+  }
+
+  @override
+  void playbackStateEvent(VideoPlaybackState state) {
+    _videoChanges.add(_PlaybackStateEvent(state));
+  }
+
+  @override
+  void volumeEvent(double volume) {
+    _videoChanges.add(_VolumeEvent(volume));
+  }
+
+  @override
+  void progressEvent(int progress) {
+    _videoChanges.add(_ProgressEvent(progress));
+  }
+
+  @override
+  void loopingEvent(bool looping) {
+    _videoChanges.add(_LoopingEvent(looping));
+  }
+
+  @override
+  Future<double?> initialVolume() => Future.value(db.current.volume);
+}
+
+sealed class _VideoPlayerEvent {
+  const _VideoPlayerEvent();
+}
+
+class _VolumeEvent implements _VideoPlayerEvent {
+  const _VolumeEvent(this.volume);
+
+  final double volume;
+}
+
+class _DurationEvent implements _VideoPlayerEvent {
+  const _DurationEvent(this.duration);
+
+  final int duration;
+}
+
+class _PlaybackStateEvent implements _VideoPlayerEvent {
+  const _PlaybackStateEvent(this.state);
+
+  final VideoPlaybackState state;
+}
+
+class _ProgressEvent implements _VideoPlayerEvent {
+  const _ProgressEvent(this.duration);
+
+  final int duration;
+}
+
+class _LoopingEvent implements _VideoPlayerEvent {
+  const _LoopingEvent(this.looping);
+
+  final bool looping;
+}
+
+class _FileMetadataProvider extends StatefulWidget {
+  const _FileMetadataProvider({
+    // super.key,
+    required this.currentIndex,
+    required this.indexEvents,
+    required this.source,
+    required this.child,
+    required this.wrapNotifiers,
+  });
+
+  final int currentIndex;
+
+  final ResourceSource<int, File> source;
+
+  final Stream<int> indexEvents;
+
+  final NotifierWrapper? wrapNotifiers;
+
+  final Widget child;
+
+  @override
+  State<_FileMetadataProvider> createState() => __FileMetadataProviderState();
+}
+
+class __FileMetadataProviderState extends State<_FileMetadataProvider> {
+  late final StreamSubscription<int> _events;
+
+  late CurrentIndexMetadata metadata;
+
+  @override
+  void initState() {
+    super.initState();
+
+    metadata = _FileToMetadata(
+      file: widget.source.forIdxUnsafe(widget.currentIndex),
+      index: widget.currentIndex,
+      wrapNotifiers: widget.wrapNotifiers,
+    );
+
+    _events = widget.indexEvents.listen((newIndex) {
+      metadata = _FileToMetadata(
+        file: widget.source.forIdxUnsafe(newIndex),
+        index: newIndex,
+        wrapNotifiers: widget.wrapNotifiers,
+      );
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CurrentIndexMetadataNotifier(
+      metadata: metadata,
+      child: widget.child,
+    );
+  }
+}
+
+class _FileToMetadata implements CurrentIndexMetadata {
+  const _FileToMetadata({
+    required this.file,
+    required this.index,
+    required this.wrapNotifiers,
+  });
+
+  final NotifierWrapper? wrapNotifiers;
+
+  final File file;
+
+  @override
+  final int index;
+
+  @override
+  bool get isVideo => file.isVideo;
+
+  @override
+  Key get uniqueKey => file.uniqueKey();
+
+  @override
+  List<ImageViewAction> actions(BuildContext context) => file.actions(context);
+
+  @override
+  List<NavigationAction> appBarButtons(BuildContext context) =>
+      file.appBarButtons(context);
+
+  @override
+  Widget? openMenuButton(BuildContext context) {
+    return ImageViewFab(
+      openBottomSheet: (context) {
+        return showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (sheetContext) {
+            final child = ExitOnPressRoute(
+              exit: () {
+                Navigator.of(sheetContext).pop();
+                ExitOnPressRoute.exitOf(context);
+              },
+              child: PauseVideoNotifierHolder(
+                state: PauseVideoNotifier.stateOf(context),
+                child: ImageTagsNotifier(
+                  tags: ImageTagsNotifier.of(context),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: 8,
+                      bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+                    ),
+                    child: SizedBox(
+                      width: MediaQuery.sizeOf(sheetContext).width,
+                      child: file.info(context),
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+            if (wrapNotifiers != null) {
+              return wrapNotifiers!(child);
+            }
+
+            return child;
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  List<Sticker> stickers(BuildContext context) => file.stickers(context, true);
+}
+
+class _ImageViewBodyPlatformView extends StatefulWidget {
+  const _ImageViewBodyPlatformView({
+    // super.key,
+    required this.controls,
+    required this.startingCell,
+    required this.videoEvents,
+    required this.db,
+  });
+
+  final Stream<_VideoPlayerEvent> videoEvents;
+  final VideoControlsController controls;
+  final int startingCell;
+
+  final DbConn db;
+
+  @override
+  State<_ImageViewBodyPlatformView> createState() =>
+      __ImageViewBodyPlatformViewState();
+}
+
+class __ImageViewBodyPlatformViewState
+    extends State<_ImageViewBodyPlatformView> {
+  late final StreamSubscription<_VideoPlayerEvent> events;
+  late final StreamSubscription<VideoControlsEvent> controlsEvents;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final galleryEvents = PlatformGalleryEvents();
+
+    controlsEvents = widget.controls.events.listen(
+      (e) => switch (e) {
+        VolumeButton() => galleryEvents.volumeButtonPressed(null),
+        FullscreenButton() => null,
+        PlayButton() => galleryEvents.playButtonPressed(),
+        LoopingButton() => galleryEvents.loopingButtonPressed(),
+        AddDuration() =>
+          galleryEvents.durationChanged(e.durationSeconds.ceil() * 1000),
+      },
+    );
+
+    events = widget.videoEvents.listen(
+      (e) {
+        return switch (e) {
+          _VolumeEvent() => widget.controls.setVolume(e.volume),
+          _DurationEvent() =>
+            widget.controls.setDuration(Duration(milliseconds: e.duration)),
+          _ProgressEvent() =>
+            widget.controls.setProgress(Duration(milliseconds: e.duration)),
+          _LoopingEvent() => widget.db.videoSettings
+              .add(widget.db.videoSettings.current.copy(looping: e.looping)),
+          _PlaybackStateEvent() => widget.controls.setPlayState(
+              switch (e.state) {
+                VideoPlaybackState.stopped => PlayState.stopped,
+                VideoPlaybackState.playing => PlayState.isPlaying,
+                VideoPlaybackState.buffering => PlayState.buffering,
+              },
+            ),
+        };
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+    controlsEvents.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        child: PlatformViewLink(
+          viewType: "gallery",
+          surfaceFactory: (context, controller) {
+            return AndroidViewSurface(
+              controller: controller as AndroidViewController,
+              hitTestBehavior: PlatformViewHitTestBehavior.translucent,
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
+            );
+          },
+          onCreatePlatformView: (params) {
+            return PlatformViewsService.initExpensiveAndroidView(
+              id: params.id,
+              viewType: params.viewType,
+              creationParams: {
+                "id": widget.startingCell,
+              },
+              creationParamsCodec: const StandardMessageCodec(),
+              layoutDirection: TextDirection.ltr,
+            )
+              ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+              ..create();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+extension FileToDirectoryFileExt on File {
+  DirectoryFile toDirectoryFile() => DirectoryFile(
+        id: id,
+        bucketId: bucketId,
+        bucketName: name,
+        name: name,
+        originalUri: originalUri,
+        lastModified: lastModified,
+        height: height,
+        width: width,
+        size: size,
+        isVideo: isVideo,
+        isGif: isGif,
+      );
+}
+
 abstract class File
     implements
-        ContentableCell,
+        CellBase,
         ContentWidgets,
         SelectionWrapperBuilder,
         Pressable<File>,
@@ -84,37 +529,17 @@ abstract class File
         child: child,
       ),
       openBuilder: (containerContext, action) {
-        final db = DatabaseConnectionNotifier.of(containerContext);
-
         final imageDescription = ImageViewDescription(
           ignoreOnNearEnd: false,
           statistics: StatisticsBooruService.asImageViewStatistics(),
         );
 
-        final getCell = functionality.source.forIdxUnsafe;
+        final impl = FlutterGalleryDataNotifier.of(context);
 
         return ImageView(
-          updates: functionality.source.backingStorage.watch,
-          gridContext: context,
-          statistics: imageDescription.statistics,
-          scrollUntill: (i) =>
-              GridScrollNotifier.maybeScrollToOf<T>(context, i),
-          pageChange: (state) {
-            imageDescription.pageChange?.call(state);
-            // _addToVisited(getCell(state.currentPage) as PostImpl);
-          },
-          watchTags: (c, f) => watchTags(c, f, db.localTags, db.tagManager),
           onExit: imageDescription.onExit,
-          getContent: (idx) => (getCell(idx) as ContentableCell).content(),
-          cellCount: functionality.source.count,
-          download: functionality.download,
-          startingCell: thisIndx,
-          tags: (c) => imageTags(c, db.localTags, db.tagManager),
-          onNearEnd:
-              imageDescription.ignoreOnNearEnd || !functionality.source.hasNext
-                  ? null
-                  : functionality.source.next,
-          wrapNotifiers: functionality.registerNotifiers,
+          startingIndex: thisIndx,
+          stateController: impl,
         );
       },
     );
@@ -152,19 +577,25 @@ abstract class File
 
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
+    final l10n = context.l10n();
     final res = ParsedFilenameResult.fromFilename(name).maybeValue();
 
     return [
       if (res != null)
-        NavigationAction(Icons.public, () {
-          launchUrl(
-            res.booru.browserLink(res.id),
-            mode: LaunchMode.externalApplication,
-          );
-        }),
+        NavigationAction(
+          Icons.public,
+          () {
+            launchUrl(
+              res.booru.browserLink(res.id),
+              mode: LaunchMode.externalApplication,
+            );
+          },
+          l10n.openOnBooru(res.booru.string),
+        ),
       NavigationAction(
         Icons.share,
         () => PlatformApi().shareMedia(originalUri),
+        l10n.shareLabel,
       ),
     ];
   }
@@ -179,7 +610,7 @@ abstract class File
   @override
   List<ImageViewAction> actions(BuildContext context) {
     final api = FilesDataNotifier.maybeOf(context);
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
     final tagManager = TagManager.of(context);
 
     final buttonProgress =
@@ -346,33 +777,6 @@ abstract class File
   }
 
   @override
-  Contentable content() {
-    final size = Size(width.toDouble(), height.toDouble());
-
-    if (isVideo) {
-      return AndroidVideo(
-        this,
-        uri: originalUri,
-        size: size,
-      );
-    }
-
-    if (isGif) {
-      return AndroidGif(
-        this,
-        uri: originalUri,
-        size: size,
-      );
-    }
-
-    return AndroidImage(
-      this,
-      uri: originalUri,
-      size: size,
-    );
-  }
-
-  @override
   ImageProvider<Object> thumbnail(BuildContext? context) =>
       GalleryThumbnailProvider(
         id,
@@ -386,7 +790,7 @@ abstract class File
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
 
     final filteringData = ChainedFilter.maybeOf(context);
 
@@ -418,28 +822,42 @@ abstract class File
     GridFunctionality<File> functionality,
     int idx,
   ) {
-    final db = DatabaseConnectionNotifier.of(context);
+    final db = DbConn.of(context);
     final tagManager = TagManager.of(context);
 
-    ImageView.defaultForGrid<File>(
-      context,
-      functionality,
-      ImageViewDescription(
-        statistics: StatisticsGalleryService.asImageViewStatistics(),
-      ),
-      idx,
-      (c) => imageTags(c, db.localTags, tagManager),
-      (c, f) => watchTags(c, f, db.localTags, tagManager),
-      null,
+    final impl = FlutterGalleryDataImpl(
+      source: functionality.source,
+      wrapNotifiers: functionality.registerNotifiers,
+      watchTags: (c, f) => watchTags(c, f, db.localTags, tagManager),
+      tags: (c) => imageTags(c, db.localTags, tagManager),
+      db: db.videoSettings,
     );
+
+    FlutterGalleryData.setUp(impl);
+    GalleryVideoEvents.setUp(impl);
+
+    Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) {
+          return ImageView(
+            startingIndex: idx,
+            stateController: impl,
+          );
+        },
+      ),
+    ).whenComplete(() {
+      impl.dispose();
+      FlutterGalleryData.setUp(null);
+      GalleryVideoEvents.setUp(null);
+    });
   }
 
   static List<ImageTag> imageTags(
-    Contentable c,
+    ContentWidgets c,
     LocalTagsService localTags,
     TagManager tagManager,
   ) {
-    final postTags = localTags.get(c.widgets.alias(false));
+    final postTags = localTags.get(c.alias(false));
     if (postTags.isEmpty) {
       return const [];
     }
@@ -456,13 +874,12 @@ abstract class File
   }
 
   static StreamSubscription<List<ImageTag>> watchTags(
-    Contentable c,
+    ContentWidgets c,
     void Function(List<ImageTag> l) f,
     LocalTagsService localTags,
     TagManager tagManager,
   ) =>
-      tagManager.pinned
-          .watchImageLocal(c.widgets.alias(false), f, localTag: localTags);
+      tagManager.pinned.watchImageLocal(c.alias(false), f, localTag: localTags);
 }
 
 extension FavoritePostsGlobalProgress on GlobalProgressTab {
@@ -498,12 +915,12 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
   void initState() {
     super.initState();
 
-    if (tags.list.indexWhere((e) => e.tag == "translated") == -1) {
+    if (tags.list.indexWhere((e) => e.tag == "translated") != -1) {
       hasTranslation = true;
     }
 
     events = widget.tags.stream.listen((_) {
-      if (tags.list.indexWhere((e) => e.tag == "translated") == -1) {
+      if (tags.list.indexWhere((e) => e.tag == "translated") != -1) {
         hasTranslation = true;
       }
 
@@ -531,10 +948,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
   Widget build(BuildContext context) {
     final filename = file.name;
 
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final l10n = context.l10n();
     final tagManager = TagManager.of(context);
-    // final settings = SettingsService.db().current;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -654,54 +1069,21 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
               onLongTap: () {
                 Clipboard.setData(ClipboardData(text: file.name));
               },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Wrap(
-                runSpacing: 4,
-                alignment: WrapAlignment.center,
-                children: [
-                  if (tags.res != null)
-                    RedownloadButton(
-                      key: file.uniqueKey(),
-                      file: file,
-                      res: tags.res,
-                    ),
-                  if (!file.isVideo && !file.isGif)
-                    SetWallpaperButton(id: file.id),
-                  if (tags.res != null && hasTranslation)
-                    TranslationNotesButton(
-                      postId: tags.res!.id,
-                      booru: tags.res!.booru,
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 2,
-              ),
-              child: Text.rich(
-                TextSpan(
-                  text: kbMbSize(context, file.size),
-                  children: [
-                    TextSpan(
-                      text: "\n${l10n.date(
-                        DateTime.fromMillisecondsSinceEpoch(
-                          file.lastModified * 1000,
-                        ),
-                      )}",
-                    ),
-                  ],
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(
-                      alpha: 0.7,
-                    ),
-                  ),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
                 ),
-                textAlign: TextAlign.center,
               ),
+            ),
+            if (file.res != null) FileBooruInfoTile(res: file.res!),
+            FileInfoTile(file: file),
+            const Padding(padding: EdgeInsets.only(top: 4)),
+            const Divider(indent: 24, endIndent: 24),
+            FileActionChips(
+              file: file,
+              tags: tags,
+              hasTranslation: hasTranslation,
             ),
           ],
         ),
@@ -710,8 +1092,116 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
   }
 }
 
-class RedownloadButton extends StatefulWidget {
-  const RedownloadButton({
+class FileBooruInfoTile extends StatelessWidget {
+  const FileBooruInfoTile({
+    super.key,
+    required this.res,
+  });
+
+  final (int, Booru) res;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ListTile(
+        onTap: () {
+          Navigator.pop(context);
+
+          Post.imageViewSingle(context, res.$2, res.$1);
+        },
+        tileColor: theme.colorScheme.surfaceContainerHigh,
+        leading: const Icon(Icons.description_outlined),
+        title: Text(res.$2.string),
+        subtitle: Text(res.$1.toString()),
+      ),
+    );
+  }
+}
+
+class FileInfoTile extends StatelessWidget {
+  const FileInfoTile({
+    super.key,
+    required this.file,
+    this.shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(15),
+        bottomRight: Radius.circular(15),
+      ),
+    ),
+  });
+
+  final File file;
+
+  final ShapeBorder shape;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ListTile(
+        shape: shape,
+        tileColor: theme.colorScheme.surfaceContainerHigh,
+        leading: const Icon(Icons.description_outlined),
+        title: Text(kbMbSize(context, file.size)),
+        subtitle: Text(
+          l10n.date(
+            DateTime.fromMillisecondsSinceEpoch(
+              file.lastModified * 1000,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FileActionChips extends StatelessWidget {
+  const FileActionChips({
+    super.key,
+    required this.file,
+    required this.tags,
+    required this.hasTranslation,
+  });
+
+  final bool hasTranslation;
+
+  final File file;
+  final ImageViewTags tags;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          if (tags.res != null)
+            RedownloadChip(
+              key: file.uniqueKey(),
+              file: file,
+              res: tags.res,
+            ),
+          if (!file.isVideo && !file.isGif) SetWallpaperChip(id: file.id),
+          if (tags.res != null && hasTranslation)
+            TranslationNotesChip(
+              postId: tags.res!.id,
+              booru: tags.res!.booru,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class RedownloadChip extends StatefulWidget {
+  const RedownloadChip({
     super.key,
     required this.file,
     required this.res,
@@ -721,10 +1211,10 @@ class RedownloadButton extends StatefulWidget {
   final ParsedFilenameResult? res;
 
   @override
-  State<RedownloadButton> createState() => _RedownloadButtonState();
+  State<RedownloadChip> createState() => _RedownloadChipState();
 }
 
-class _RedownloadButtonState extends State<RedownloadButton> {
+class _RedownloadChipState extends State<RedownloadChip> {
   ValueNotifier<Future<void>?>? notifier;
 
   @override
@@ -756,16 +1246,16 @@ class _RedownloadButtonState extends State<RedownloadButton> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    return TextButton.icon(
+    return ActionChip(
       onPressed: notifier == null || notifier?.value != null
           ? null
           : () {
               redownloadFiles(context, [widget.file]);
             },
       label: Text(l10n.redownloadLabel),
-      icon: const Icon(
+      avatar: const Icon(
         Icons.download_outlined,
         size: 18,
       ),
@@ -780,7 +1270,7 @@ extension RedownloadFilesGlobalNotifier on GlobalProgressTab {
 }
 
 Future<void> redownloadFiles(BuildContext context, List<File> files) {
-  final l10n = AppLocalizations.of(context)!;
+  final l10n = context.l10n();
 
   final notifier = GlobalProgressTab.maybeOf(context)?.redownloadFiles();
   if (notifier == null) {
@@ -857,8 +1347,8 @@ Future<void> redownloadFiles(BuildContext context, List<File> files) {
   });
 }
 
-class SetWallpaperButton extends StatefulWidget {
-  const SetWallpaperButton({
+class SetWallpaperChip extends StatefulWidget {
+  const SetWallpaperChip({
     super.key,
     required this.id,
   });
@@ -866,17 +1356,17 @@ class SetWallpaperButton extends StatefulWidget {
   final int id;
 
   @override
-  State<SetWallpaperButton> createState() => _SetWallpaperButtonState();
+  State<SetWallpaperChip> createState() => _SetWallpaperChipState();
 }
 
-class _SetWallpaperButtonState extends State<SetWallpaperButton> {
+class _SetWallpaperChipState extends State<SetWallpaperChip> {
   Future<void>? _status;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
-    return TextButton.icon(
+    return ActionChip(
       onPressed: _status != null
           ? null
           : () {
@@ -898,7 +1388,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Text(l10n.setAsWallpaper),
-      icon: const Icon(
+      avatar: const Icon(
         Icons.wallpaper_rounded,
         size: 18,
       ),
@@ -909,7 +1399,6 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 class _FileCell extends StatelessWidget {
   const _FileCell({
     // super.key,
-    // required this.idx,
     required this.file,
     required this.isList,
     required this.hideTitle,
@@ -918,8 +1407,6 @@ class _FileCell extends StatelessWidget {
     required this.imageAlign,
     required this.wrapSelection,
   });
-
-  // final int idx;
 
   final File file;
 
@@ -976,11 +1463,23 @@ class _FileCell extends StatelessWidget {
                         child: Wrap(
                           crossAxisAlignment: WrapCrossAlignment.end,
                           direction: Axis.vertical,
-                          children:
-                              stickers.map((e) => StickerWidget(e)).toList(),
+                          children: stickers.map(StickerWidget.new).toList(),
                         ),
                       ),
                     ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      child: VideoGifRow(
+                        isVideo: file.isVideo,
+                        isGif: file.isGif,
+                      ),
+                    ),
+                  ),
                   if (alias.isNotEmpty)
                     GridCellName(
                       title: alias,
@@ -996,7 +1495,7 @@ class _FileCell extends StatelessWidget {
                 filteringData.filteringMode == FilteringMode.tagReversed))
           _Tags(
             file: file,
-            db: DatabaseConnectionNotifier.of(context),
+            db: DbConn.of(context),
           ),
       ],
     );

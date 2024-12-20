@@ -33,7 +33,7 @@ Future<void> initMain(
   await initServices(temporary);
   await initAppInfo();
   await initNetworkStatus();
-  initGalleryPlug();
+  initGalleryApi();
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }

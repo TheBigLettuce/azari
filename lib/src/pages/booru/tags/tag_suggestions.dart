@@ -5,10 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -79,7 +79,7 @@ class _TagSuggestionsState extends State<TagSuggestions> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     return Animate(
@@ -175,7 +175,7 @@ class SingleTagWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return MenuWrapper(
       title: tag.tag,

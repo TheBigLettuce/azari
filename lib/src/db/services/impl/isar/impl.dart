@@ -382,6 +382,9 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
       _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
 
   @override
+  Stream<int> get countEvents => _collection.watchLazy().map((_) => count);
+
+  @override
   Iterable<Post> trySorted(SortingMode sort) => this;
 }
 
@@ -459,6 +462,9 @@ class IsarSourceStorage<K, V, CollectionType extends V>
   @override
   StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
       _collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
+
+  @override
+  Stream<int> get countEvents => _collection.watchLazy().map((_) => count);
 }
 
 class IsarLocalTagDictionaryService implements LocalTagDictionaryService {

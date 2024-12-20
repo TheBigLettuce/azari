@@ -5,27 +5,16 @@
 
 import "dart:async";
 
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/material.dart";
 
 class ImageViewFab extends StatefulWidget {
   const ImageViewFab({
     super.key,
-    required this.widgets,
-    required this.viewPadding,
-    required this.visibilityController,
-    required this.wrapNotifiers,
-    required this.pauseVideoState,
+    required this.openBottomSheet,
   });
 
-  final ContentWidgets widgets;
-  final EdgeInsets viewPadding;
-  final AnimationController visibilityController;
-  final NotifierWrapper? wrapNotifiers;
-  final PauseVideoState pauseVideoState;
+  final Future<void> Function(BuildContext context) openBottomSheet;
 
   @override
   State<ImageViewFab> createState() => _ImageViewFabState();
@@ -41,7 +30,10 @@ class _ImageViewFabState extends State<ImageViewFab>
   void initState() {
     super.initState();
 
-    controller = AnimationController(vsync: this, duration: Durations.medium1);
+    controller = AnimationController(
+      vsync: this,
+      duration: Durations.medium1,
+    );
   }
 
   @override
@@ -54,7 +46,6 @@ class _ImageViewFabState extends State<ImageViewFab>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cellStream = CurrentContentNotifier.streamOf(context);
 
     return FloatingActionButton(
       elevation: 0,
@@ -67,43 +58,10 @@ class _ImageViewFabState extends State<ImageViewFab>
       onPressed: () {
         AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
-        showModalBottomSheet<void>(
-          context: context,
-          builder: (sheetContext) {
-            final child = ExitOnPressRoute(
-              exit: () {
-                Navigator.of(sheetContext)
-                  ..pop()
-                  ..pop();
-              },
-              child: PauseVideoNotifierHolder(
-                state: widget.pauseVideoState,
-                child: ImageTagsNotifier(
-                  tags: ImageTagsNotifier.of(context),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: 8,
-                      bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-                    ),
-                    child: SizedBox(
-                      width: MediaQuery.sizeOf(sheetContext).width,
-                      child: _CellContent(
-                        firstContent: CurrentContentNotifier.of(context),
-                        stream: cellStream,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-
-            if (widget.wrapNotifiers != null) {
-              return widget.wrapNotifiers!(child);
-            }
-
-            return child;
-          },
-        );
+        controller.forward();
+        widget.openBottomSheet(context).whenComplete(() {
+          controller.reverse();
+        });
       },
       child: AnimatedIcon(
         icon: AnimatedIcons.menu_close,
@@ -113,105 +71,60 @@ class _ImageViewFabState extends State<ImageViewFab>
   }
 }
 
-class _CellContent extends StatefulWidget {
-  const _CellContent({
-    // super.key,
-    required this.stream,
-    required this.firstContent,
-  });
+// class _IgnoringPointer extends StatefulWidget {
+//   const _IgnoringPointer({
+//     // super.key,
+//     required this.widgets,
+//     required this.bottomSheetController,
+//     required this.viewPadding,
+//     required this.child,
+//   });
 
-  final Contentable firstContent;
-  final Stream<Contentable> stream;
+//   final ContentWidgets widgets;
+//   final DraggableScrollableController bottomSheetController;
+//   final EdgeInsets viewPadding;
 
-  @override
-  State<_CellContent> createState() => __CellContentState();
-}
+//   final Widget child;
 
-class __CellContentState extends State<_CellContent> {
-  late final StreamSubscription<Contentable> events;
+//   @override
+//   State<_IgnoringPointer> createState() => __IgnoringPointerState();
+// }
 
-  late Contentable content;
+// class __IgnoringPointerState extends State<_IgnoringPointer> {
+//   DraggableScrollableController get bottomSheetController =>
+//       widget.bottomSheetController;
 
-  @override
-  void initState() {
-    super.initState();
+//   bool ignorePointer = true;
 
-    content = widget.firstContent;
+//   @override
+//   void initState() {
+//     super.initState();
 
-    events = widget.stream.listen((newContent) {
-      setState(() {
-        content = newContent;
-      });
-    });
-  }
+//     bottomSheetController.addListener(listener);
+//   }
 
-  @override
-  void dispose() {
-    events.cancel();
+//   @override
+//   void dispose() {
+//     bottomSheetController.removeListener(listener);
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink();
-  }
-}
+//   void listener() {
+//     final newIgnorePointer = widget.bottomSheetController.size <= 0;
 
-class _IgnoringPointer extends StatefulWidget {
-  const _IgnoringPointer({
-    // super.key,
-    required this.widgets,
-    required this.bottomSheetController,
-    required this.viewPadding,
-    required this.child,
-  });
+//     if (newIgnorePointer != ignorePointer) {
+//       ignorePointer = newIgnorePointer;
 
-  final ContentWidgets widgets;
-  final DraggableScrollableController bottomSheetController;
-  final EdgeInsets viewPadding;
+//       setState(() {});
+//     }
+//   }
 
-  final Widget child;
-
-  @override
-  State<_IgnoringPointer> createState() => __IgnoringPointerState();
-}
-
-class __IgnoringPointerState extends State<_IgnoringPointer> {
-  DraggableScrollableController get bottomSheetController =>
-      widget.bottomSheetController;
-
-  bool ignorePointer = true;
-
-  @override
-  void initState() {
-    super.initState();
-
-    bottomSheetController.addListener(listener);
-  }
-
-  @override
-  void dispose() {
-    bottomSheetController.removeListener(listener);
-
-    super.dispose();
-  }
-
-  void listener() {
-    final newIgnorePointer = widget.bottomSheetController.size <= 0;
-
-    if (newIgnorePointer != ignorePointer) {
-      ignorePointer = newIgnorePointer;
-
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverIgnorePointer(
-      ignoring: ignorePointer,
-      sliver: widget.child,
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return SliverIgnorePointer(
+//       ignoring: ignorePointer,
+//       sliver: widget.child,
+//     );
+//   }
+// }

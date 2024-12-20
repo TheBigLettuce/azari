@@ -152,6 +152,53 @@ abstract class PlatformGalleryApi {
   void galleryPageChangeEvent(GalleryPageChangeEvent e);
 }
 
+@FlutterApi()
+abstract class GalleryVideoEvents {
+  void playbackStateEvent(VideoPlaybackState state);
+  void volumeEvent(double volume);
+  void durationEvent(int duration);
+  void progressEvent(int progress);
+  void loopingEvent(bool looping);
+}
+
+enum VideoPlaybackState {
+  stopped,
+  playing,
+  buffering;
+}
+
+@FlutterApi()
+abstract class FlutterGalleryData {
+  @async
+  GalleryMetadata metadata();
+
+  @async
+  double? initialVolume();
+
+  @async
+  DirectoryFile atIndex(int index);
+
+  void setCurrentIndex(int index);
+}
+
+@HostApi()
+abstract class PlatformGalleryEvents {
+  void metadataChanged();
+
+  void volumeButtonPressed(double? volume);
+  void playButtonPressed();
+  void loopingButtonPressed();
+  void durationChanged(int d);
+}
+
+class GalleryMetadata {
+  const GalleryMetadata({
+    required this.count,
+  });
+
+  final int count;
+}
+
 class CopyOp {
   const CopyOp({
     required this.from,

@@ -19,7 +19,9 @@ import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/pages/search/gallery/gallery_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
@@ -367,8 +369,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   }
 
   Widget child(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final l10n = context.l10n();
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     return GridPopScope(
@@ -468,34 +469,54 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                   ],
                 )
               : RawSearchWidget(
-                  (settingsButton, bottomWidget) => SliverAppBar(
-                    leading: const SizedBox.shrink(),
-                    systemOverlayStyle: SystemUiOverlayStyle(
-                      statusBarBrightness: theme.brightness == Brightness.light
-                          ? Brightness.dark
-                          : Brightness.light,
-                      statusBarColor:
-                          theme.colorScheme.surface.withValues(alpha: 0.95),
-                    ),
-                    bottom: bottomWidget ??
-                        const PreferredSize(
-                          preferredSize: Size.zero,
-                          child: SizedBox.shrink(),
-                        ),
-                    centerTitle: true,
-                    actions: [
-                      IconButton(
+                  (context, settingsButton, bottomWidget) {
+                    final theme = Theme.of(context);
+
+                    return SliverAppBar(
+                      leading: const SizedBox.shrink(),
+                      systemOverlayStyle: SystemUiOverlayStyle(
+                        statusBarIconBrightness:
+                            theme.brightness == Brightness.light
+                                ? Brightness.dark
+                                : Brightness.light,
+                        statusBarColor:
+                            theme.colorScheme.surface.withValues(alpha: 0.95),
+                      ),
+                      bottom: bottomWidget ??
+                          const PreferredSize(
+                            preferredSize: Size.zero,
+                            child: SizedBox.shrink(),
+                          ),
+                      centerTitle: true,
+                      title: IconButton(
                         onPressed: () {
-                          GallerySubPage.selectOf(
-                            context,
-                            GallerySubPage.blacklisted,
+                          Navigator.of(context, rootNavigator: true).push<void>(
+                            MaterialPageRoute(
+                              builder: (context) => GallerySearchPage(
+                                db: widget.db,
+                                l10n: l10n,
+                                procPop: (didPop) {},
+                                // onTagPressed: _onBooruTagPressed,
+                              ),
+                            ),
                           );
                         },
-                        icon: const Icon(Icons.folder_off_outlined),
+                        icon: const Icon(Icons.search_rounded),
                       ),
-                      if (settingsButton != null) settingsButton,
-                    ],
-                  ),
+                      actions: [
+                        IconButton(
+                          onPressed: () {
+                            GallerySubPage.selectOf(
+                              context,
+                              GallerySubPage.blacklisted,
+                            );
+                          },
+                          icon: const Icon(Icons.folder_off_outlined),
+                        ),
+                        if (settingsButton != null) settingsButton,
+                      ],
+                    );
+                  },
                 ),
         ),
         description: GridDescription(
@@ -717,7 +738,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridExtrasNotifier(
       data: GridExtrasData(
@@ -1005,7 +1026,7 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     if (haveTrashCell) {
       return const SizedBox.shrink();

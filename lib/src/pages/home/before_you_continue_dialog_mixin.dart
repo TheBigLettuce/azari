@@ -18,7 +18,7 @@ mixin _BeforeYouContinueDialogMixin {
             DialogRoute<void>(
               context: context,
               builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
+                final l10n = context.l10n();
 
                 return AlertDialog(
                   title: Text(l10n.beforeYouContinueTitle),

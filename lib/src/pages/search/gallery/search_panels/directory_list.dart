@@ -91,7 +91,7 @@ class __DirectoryListState extends State<_DirectoryList> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     final textTheme = theme.textTheme.titleMedium?.copyWith(

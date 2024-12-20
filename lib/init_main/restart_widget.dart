@@ -140,7 +140,7 @@ class _RestartWidgetState extends State<RestartWidget> {
 
     return selectionEvents.inject(
       progressTab.inject(
-        DatabaseConnectionNotifier.current(
+        DbConn.inject(
           Builder(
             builder: (context) => PinnedTagsHolder(
               tagManager: TagManager.of(context),
@@ -206,6 +206,7 @@ class TimeSpentNotifier extends InheritedWidget {
     required this.current,
     required super.child,
   });
+
   final Stream<Duration> ticker;
   final Duration Function() current;
   final DateTime _time;

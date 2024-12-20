@@ -18,6 +18,7 @@ import "package:azari/src/pages/gallery/directories_actions.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
@@ -96,7 +97,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   // }
 
   void _onDirectoryPressed(Directory directory) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     directory.openFilesPage(
       context: context,
@@ -172,57 +173,67 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    // final l10n = AppLocalizations.of(context)!;
+    // final l10n = context.l10n();
 
-    return _SearchPagePopScope(
-      searchController: searchController,
-      sink: _filteringEvents.sink,
-      searchFocus: focusNode,
-      procPop: widget.procPop,
-      child: SliverMainAxisGroup(
-        slivers: [
-          SearchPageSearchBar(
-            complete: null,
-            searchTextController: searchController,
-            searchFocus: focusNode,
-            sink: _filteringEvents.sink,
-          ),
-          StreamBuilder(
-            stream: _filteringEvents.stream,
-            builder: (context, snapshot) => _SearchInDirectoriesButtons(
-              db: widget.db,
-              listPadding: _ChipsPanelBody.listPadding,
-              filteringValue: snapshot.data ?? "",
+    return Scaffold(
+      appBar: AppBar(),
+      body: _SearchPagePopScope(
+        searchController: searchController,
+        sink: _filteringEvents.sink,
+        searchFocus: focusNode,
+        procPop: widget.procPop,
+        child: CustomScrollView(
+          slivers: [
+            SearchPageSearchBar(
+              complete: null,
+              searchTextController: searchController,
+              searchFocus: focusNode,
+              sink: _filteringEvents.sink,
+            ),
+            StreamBuilder(
+              stream: _filteringEvents.stream,
+              builder: (context, snapshot) => _SearchInDirectoriesButtons(
+                db: widget.db,
+                listPadding: _ChipsPanelBody.listPadding,
+                filteringValue: snapshot.data ?? "",
+                joinedDirectories: _joinedDirectories,
+                source: api.source,
+              ),
+            ),
+            _DirectoryNamesPanel(
+              api: api,
+              filteringEvents: _filteringEvents,
+              searchController: searchController,
+              directoryComplete: _completeDirectoryNameTag,
+            ),
+            _LocalTagsPanel(
+              filteringEvents: _filteringEvents,
+              searchController: searchController,
               joinedDirectories: _joinedDirectories,
               source: api.source,
+              db: widget.db,
             ),
-          ),
-          _DirectoryNamesPanel(
-            api: api,
-            filteringEvents: _filteringEvents,
-            searchController: searchController,
-            directoryComplete: _completeDirectoryNameTag,
-          ),
-          _LocalTagsPanel(
-            filteringEvents: _filteringEvents,
-            searchController: searchController,
-            joinedDirectories: _joinedDirectories,
-            source: api.source,
-            db: widget.db,
-          ),
-          _FilesList(
-            filteringEvents: _filteringEvents,
-            searchController: searchController,
-            db: widget.db,
-          ),
-          _DirectoryList(
-            filteringEvents: _filteringEvents,
-            source: api.source,
-            searchController: searchController,
-            onDirectoryPressed: _onDirectoryPressed,
-            blurMap: blurMap,
-          ),
-        ],
+            _FilesList(
+              filteringEvents: _filteringEvents,
+              searchController: searchController,
+              db: widget.db,
+            ),
+            _DirectoryList(
+              filteringEvents: _filteringEvents,
+              source: api.source,
+              searchController: searchController,
+              onDirectoryPressed: _onDirectoryPressed,
+              blurMap: blurMap,
+            ),
+            Builder(
+              builder: (context) => SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

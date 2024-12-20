@@ -12,6 +12,7 @@ import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -178,7 +179,7 @@ class _SinglePostState extends State<SinglePost> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
     final downloadManager = DownloadManager.of(context);
     final postTags = PostTags.fromContext(context);
 
@@ -187,7 +188,7 @@ class _SinglePostState extends State<SinglePost> {
       controller: menuController,
       child: SearchBar(
         elevation: const WidgetStatePropertyAll(0),
-        hintText: AppLocalizations.of(context)!.goPostHint,
+        hintText: context.l10n().goPostHint,
         controller: controller,
         trailing: [
           IconButton(

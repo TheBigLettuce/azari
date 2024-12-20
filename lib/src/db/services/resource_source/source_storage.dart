@@ -37,4 +37,5 @@ abstract class ReadOnlyStorage<K, V> with Iterable<V> {
   V operator [](K index);
 
   StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
+  Stream<int> get countEvents;
 }

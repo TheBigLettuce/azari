@@ -31,12 +31,13 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.da
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/image_view/default_state_controller.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
 
-class PopularRandomButtons extends StatelessWidget {
-  const PopularRandomButtons({
+class PopularRandomChips extends StatelessWidget {
+  const PopularRandomChips({
     super.key,
     required this.db,
     required this.safeMode,
@@ -62,11 +63,14 @@ class PopularRandomButtons extends StatelessWidget {
     BuildContext gridContext,
     AppLocalizations l10n,
     ThemeData theme,
-    bool longPress,
+    // bool longPress,
   ) {
     if (tags.isNotEmpty) {
       db.tagManager.latest.add(tags);
     }
+
+    final downloadManager = DownloadManager.of(gridContext);
+    final postTags = PostTags.fromContext(gridContext);
 
     final client = BooruAPI.defaultClientForBooru(booru);
     final api = BooruAPI.fromEnum(booru, client);
@@ -75,151 +79,148 @@ class PopularRandomButtons extends StatelessWidget {
     int page = 0;
     bool canLoadMore = true;
 
+    final stateController = DefaultStateController(
+      getContent: (i) => value[i].content(),
+      count: 0,
+      wrapNotifiers: (child) => OnBooruTagPressed(
+        onPressed: onTagPressed,
+        child: child,
+      ),
+      statistics: StatisticsBooruService.asImageViewStatistics(),
+      download: (i) => value[i].download(downloadManager, postTags),
+      tags: (c) => DefaultPostPressable.imageViewTags(
+        c,
+        db.tagManager,
+      ),
+      watchTags: (c, f) => DefaultPostPressable.watchTags(
+        c,
+        f,
+        db.tagManager,
+      ),
+      pageChange: (state) {
+        final post = value[state.currentIndex];
+
+        db.visitedPosts.addAll([
+          VisitedPost(
+            booru: post.booru,
+            id: post.id,
+            thumbUrl: post.previewUrl,
+            rating: post.rating,
+            date: DateTime.now(),
+          ),
+        ]);
+      },
+      onNearEnd: () async {
+        if (!canLoadMore) {
+          return value.length;
+        }
+
+        final List<Post> next;
+
+        if (tags.isEmpty) {
+          final miscSettings = MiscSettingsService.db().current;
+          next = await api.randomPosts(
+            db.tagManager.excluded,
+            safeMode(),
+            true,
+            // order: RandomPostsOrder.random,
+            addTags: miscSettings.randomVideosAddTags,
+            page: page + 1,
+          );
+        } else {
+          next = await api.randomPosts(
+            db.tagManager.excluded,
+            safeMode(),
+            true,
+            // order: RandomPostsOrder.random,
+            addTags: tags,
+            page: page + 1,
+          );
+        }
+
+        page += 1;
+        value.addAll(next);
+        if (next.isEmpty) {
+          canLoadMore = false;
+        }
+
+        return value.length;
+      },
+    );
+
     Navigator.of(gridContext, rootNavigator: true)
         .push<void>(
-          MaterialPageRoute(
-            builder: (context) => WrapFutureRestartable(
-              builder: (context, _) {
-                if (value.isEmpty) {
-                  return Scaffold(
-                    appBar: AppBar(),
-                    body: Center(
-                      child: Text(
-                        l10n.emptyResult,
-                        style: theme.textTheme.titleLarge,
-                      ),
-                    ),
-                  );
-                }
-
-                final downloadManager = DownloadManager.of(context);
-                final postTags = PostTags.fromContext(context);
-
-                {
-                  final post = value.first;
-
-                  db.visitedPosts.addAll([
-                    VisitedPost(
-                      booru: post.booru,
-                      id: post.id,
-                      thumbUrl: post.previewUrl,
-                      rating: post.rating,
-                      date: DateTime.now(),
-                    ),
-                  ]);
-                }
-
-                return ImageView(
-                  gridContext: gridContext,
-                  cellCount: value.length,
-                  scrollUntill: (_) {},
-                  startingCell: 0,
-                  getContent: (i) => value[i].content(),
-                  wrapNotifiers: (child) => OnBooruTagPressed(
-                    onPressed: onTagPressed,
-                    child: child,
+      MaterialPageRoute(
+        builder: (context) => WrapFutureRestartable(
+          builder: (context, _) {
+            if (value.isEmpty) {
+              return Scaffold(
+                appBar: AppBar(),
+                body: Center(
+                  child: Text(
+                    l10n.emptyResult,
+                    style: theme.textTheme.titleLarge,
                   ),
-                  onNearEnd: () async {
-                    if (!canLoadMore) {
-                      return value.length;
-                    }
+                ),
+              );
+            }
 
-                    final List<Post> next;
+            return ImageView(
+              stateController: stateController,
+            );
+          },
+          newStatus: () async {
+            page = 0;
+            value.clear();
+            canLoadMore = true;
 
-                    if (tags.isEmpty) {
-                      final miscSettings = MiscSettingsService.db().current;
-                      next = await api.randomPosts(
-                        db.tagManager.excluded,
-                        safeMode(),
-                        true,
-                        order: miscSettings.randomVideosOrder,
-                        addTags: miscSettings.randomVideosAddTags,
-                        page: page + 1,
-                      );
-                    } else {
-                      next = await api.randomPosts(
-                        db.tagManager.excluded,
-                        safeMode(),
-                        true,
-                        order: longPress
-                            ? RandomPostsOrder.random
-                            : RandomPostsOrder.latest,
-                        addTags: tags,
-                        page: page + 1,
-                      );
-                    }
+            final List<Post> posts;
 
-                    page += 1;
-                    value.addAll(next);
-                    if (next.isEmpty) {
-                      canLoadMore = false;
-                    }
+            if (tags.isEmpty) {
+              final miscSettings = MiscSettingsService.db().current;
 
-                    return value.length;
-                  },
-                  statistics: StatisticsBooruService.asImageViewStatistics(),
-                  download: (i) => value[i].download(downloadManager, postTags),
-                  tags: (c) => DefaultPostPressable.imageViewTags(
-                    c,
-                    db.tagManager,
-                  ),
-                  watchTags: (c, f) => DefaultPostPressable.watchTags(
-                    c,
-                    f,
-                    db.tagManager,
-                  ),
-                  pageChange: (state) {
-                    final post = value[state.currentPage];
+              posts = await api.randomPosts(
+                db.tagManager.excluded,
+                safeMode(),
+                true,
+                // order: RandomPostsOrder.random,
+                addTags: miscSettings.randomVideosAddTags,
+              );
+            } else {
+              posts = await api.randomPosts(
+                db.tagManager.excluded,
+                safeMode(),
+                true,
+                // order: RandomPostsOrder.random,
+                addTags: tags,
+              );
+            }
 
-                    db.visitedPosts.addAll([
-                      VisitedPost(
-                        booru: post.booru,
-                        id: post.id,
-                        thumbUrl: post.previewUrl,
-                        rating: post.rating,
-                        date: DateTime.now(),
-                      ),
-                    ]);
-                  },
-                );
-              },
-              newStatus: () async {
-                page = 0;
-                value.clear();
-                canLoadMore = true;
+            value.addAll(posts);
 
-                final List<Post> posts;
+            final post = value.first;
 
-                if (tags.isEmpty) {
-                  final miscSettings = MiscSettingsService.db().current;
+            db.visitedPosts.addAll([
+              VisitedPost(
+                booru: post.booru,
+                id: post.id,
+                thumbUrl: post.previewUrl,
+                rating: post.rating,
+                date: DateTime.now(),
+              ),
+            ]);
 
-                  posts = await api.randomPosts(
-                    db.tagManager.excluded,
-                    safeMode(),
-                    true,
-                    order: miscSettings.randomVideosOrder,
-                    addTags: miscSettings.randomVideosAddTags,
-                  );
-                } else {
-                  posts = await api.randomPosts(
-                    db.tagManager.excluded,
-                    safeMode(),
-                    true,
-                    order: longPress
-                        ? RandomPostsOrder.random
-                        : RandomPostsOrder.latest,
-                    addTags: tags,
-                  );
-                }
+            stateController.count = value.length;
 
-                value.addAll(posts);
-
-                return value;
-              },
-            ),
-          ),
-        )
-        .whenComplete(() => client.close(force: true));
+            return value;
+          },
+        ),
+      ),
+    )
+        .whenComplete(() {
+      stateController.dispose();
+      client.close(force: true);
+    });
   }
 
   void launchRandom(
@@ -234,109 +235,114 @@ class PopularRandomButtons extends StatelessWidget {
     final client = BooruAPI.defaultClientForBooru(booru);
     final api = BooruAPI.fromEnum(booru, client);
 
+    final downloadManager = DownloadManager.of(gridContext);
+    final postTags = PostTags.fromContext(gridContext);
+
     final value = <Post>[];
     int page = 0;
     bool canLoadMore = true;
 
+    final stateController = DefaultStateController(
+      getContent: (i) => value[i].content(),
+      statistics: StatisticsBooruService.asImageViewStatistics(),
+      download: (i) => value[i].download(downloadManager, postTags),
+      tags: (c) => DefaultPostPressable.imageViewTags(
+        c,
+        db.tagManager,
+      ),
+      watchTags: (c, f) => DefaultPostPressable.watchTags(
+        c,
+        f,
+        db.tagManager,
+      ),
+      preloadNextPictures: true,
+      pageChange: (state) {
+        final post = value[state.currentIndex];
+
+        db.visitedPosts.addAll([
+          VisitedPost(
+            booru: post.booru,
+            id: post.id,
+            rating: post.rating,
+            thumbUrl: post.previewUrl,
+            date: DateTime.now(),
+          ),
+        ]);
+      },
+      wrapNotifiers: (child) => OnBooruTagPressed(
+        onPressed: onTagPressed,
+        child: child,
+      ),
+      onNearEnd: () async {
+        if (!canLoadMore) {
+          return value.length;
+        }
+
+        final ret = await api.randomPosts(
+          db.tagManager.excluded,
+          safeMode(),
+          false,
+          addTags: tags,
+          page: page + 1,
+        );
+
+        page += 1;
+        value.addAll(ret);
+        if (ret.isEmpty) {
+          canLoadMore = false;
+        }
+
+        return value.length;
+      },
+      count: 0,
+    );
+
     Navigator.of(gridContext, rootNavigator: true)
         .push<void>(
-          MaterialPageRoute(
-            builder: (context) => WrapFutureRestartable(
-              builder: (context, value) {
-                final downloadManager = DownloadManager.of(context);
-                final postTags = PostTags.fromContext(context);
+      MaterialPageRoute(
+        builder: (context) => WrapFutureRestartable(
+          newStatus: () async {
+            page = 0;
+            value.clear();
+            canLoadMore = true;
 
-                {
-                  final post = value.first;
+            final ret = await api.randomPosts(
+              db.tagManager.excluded,
+              safeMode(),
+              false,
+              addTags: tags,
+            );
 
-                  db.visitedPosts.addAll([
-                    VisitedPost(
-                      booru: post.booru,
-                      id: post.id,
-                      rating: post.rating,
-                      thumbUrl: post.previewUrl,
-                      date: DateTime.now(),
-                    ),
-                  ]);
-                }
+            value.addAll(ret);
 
-                return ImageView(
-                  cellCount: value.length,
-                  scrollUntill: (_) {},
-                  startingCell: 0,
-                  wrapNotifiers: (child) => OnBooruTagPressed(
-                    onPressed: onTagPressed,
-                    child: child,
-                  ),
-                  getContent: (i) => value[i].content(),
-                  onNearEnd: () async {
-                    if (!canLoadMore) {
-                      return value.length;
-                    }
+            final post = value.first;
 
-                    final ret = await api.randomPosts(
-                      db.tagManager.excluded,
-                      safeMode(),
-                      false,
-                      addTags: tags,
-                      page: page + 1,
-                    );
+            db.visitedPosts.addAll([
+              VisitedPost(
+                booru: post.booru,
+                id: post.id,
+                rating: post.rating,
+                thumbUrl: post.previewUrl,
+                date: DateTime.now(),
+              ),
+            ]);
 
-                    page += 1;
-                    value.addAll(ret);
-                    if (ret.isEmpty) {
-                      canLoadMore = false;
-                    }
+            stateController.count = value.length;
 
-                    return value.length;
-                  },
-                  statistics: StatisticsBooruService.asImageViewStatistics(),
-                  download: (i) => value[i].download(downloadManager, postTags),
-                  tags: (c) => DefaultPostPressable.imageViewTags(
-                    c,
-                    db.tagManager,
-                  ),
-                  watchTags: (c, f) => DefaultPostPressable.watchTags(
-                    c,
-                    f,
-                    db.tagManager,
-                  ),
-                  preloadNextPictures: true,
-                  pageChange: (state) {
-                    final post = value[state.currentPage];
-
-                    db.visitedPosts.addAll([
-                      VisitedPost(
-                        booru: post.booru,
-                        id: post.id,
-                        rating: post.rating,
-                        thumbUrl: post.previewUrl,
-                        date: DateTime.now(),
-                      ),
-                    ]);
-                  },
-                );
-              },
-              newStatus: () async {
-                page = 0;
-                value.clear();
-                canLoadMore = true;
-
-                final ret = await api.randomPosts(
-                  db.tagManager.excluded,
-                  safeMode(),
-                  false,
-                  addTags: tags,
-                );
-
-                value.addAll(ret);
-
-                return value;
-              },
-            ),
-          ),
-        )
-        .whenComplete(() => client.close(force: true));
+            return value;
+          },
+          builder: (context, value) {
+            return ImageView(
+              stateController: stateController,
+            );
+          },
+        ),
+      ),
+    )
+        .whenComplete(() {
+      stateController.dispose();
+      client.close(force: true);
+    });
   }
 
   @override
@@ -344,79 +350,74 @@ class PopularRandomButtons extends StatelessWidget {
     final l10n = AppLocalizations.of(gridContext)!;
     final theme = Theme.of(gridContext);
 
-    return SliverPadding(
-      padding: const EdgeInsets.only(
-        top: 4,
-        bottom: 4,
-      ),
-      sliver: SliverToBoxAdapter(
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: SingleChildScrollView(
-            padding: listPadding,
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    if (tags.isNotEmpty) {
-                      db.tagManager.latest.add(tags);
-                    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SingleChildScrollView(
+        padding: listPadding,
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ActionChip(
+              onPressed: () {
+                if (tags.isNotEmpty) {
+                  db.tagManager.latest.add(tags);
+                }
 
-                    final client = BooruAPI.defaultClientForBooru(booru);
-                    final api = BooruAPI.fromEnum(booru, client);
+                final client = BooruAPI.defaultClientForBooru(booru);
+                final api = BooruAPI.fromEnum(booru, client);
 
-                    Navigator.of(gridContext, rootNavigator: true)
-                        .push<void>(
-                          MaterialPageRoute(
-                            builder: (context) => PopularPage(
-                              api: api,
-                              tags: tags,
-                              db: db,
-                              safeMode: safeMode,
-                            ),
-                          ),
-                        )
-                        .whenComplete(() => client.close(force: true));
-                  },
-                  label: Text(
-                    "${l10n.popularPosts}${tags.isEmpty ? '' : " #$tags"}",
-                  ),
-                  icon: const Icon(Icons.whatshot_outlined),
-                ),
-                TextButton.icon(
-                  onPressed: () => launchRandom(gridContext, l10n, theme),
-                  label: Text(
-                    "${l10n.randomPosts}${tags.isEmpty ? '' : " #$tags"}",
-                  ),
-                  icon: const Icon(Icons.shuffle_outlined),
-                ),
-                TextButton.icon(
-                  onPressed: () =>
-                      launchVideos(gridContext, l10n, theme, false),
-                  onLongPress: tags.isNotEmpty
-                      ? () => launchVideos(gridContext, l10n, theme, true)
-                      : () {
-                          Navigator.of(gridContext, rootNavigator: true)
-                              .push<void>(
-                            DialogRoute(
-                              context: gridContext,
-                              builder: (context) => _VideosSettingsDialog(
-                                booru: booru,
-                              ),
-                            ),
-                          );
-                        },
-                  label: Text(
-                    "${l10n.videosLabel}${tags.isEmpty ? '' : " #$tags"}",
-                  ),
-                  icon: const Icon(Icons.video_collection_outlined),
-                ),
-              ],
+                Navigator.of(gridContext, rootNavigator: true)
+                    .push<void>(
+                      MaterialPageRoute(
+                        builder: (context) => PopularPage(
+                          api: api,
+                          tags: tags,
+                          db: db,
+                          safeMode: safeMode,
+                        ),
+                      ),
+                    )
+                    .whenComplete(() => client.close(force: true));
+              },
+              label: Text(
+                "${l10n.popularPosts}${tags.isEmpty ? '' : " #$tags"}",
+              ),
+              avatar: const Icon(Icons.whatshot_outlined),
             ),
-          ),
+            const Padding(padding: EdgeInsets.only(right: 6)),
+            ActionChip(
+              onPressed: () => launchRandom(gridContext, l10n, theme),
+              label: Text(
+                "${l10n.randomPosts}${tags.isEmpty ? '' : " #$tags"}",
+              ),
+              avatar: const Icon(Icons.shuffle_outlined),
+            ),
+            const Padding(padding: EdgeInsets.only(right: 6)),
+            ActionChip(
+              onPressed: () => launchVideos(gridContext, l10n, theme),
+              // backgroundColor: theme.colorScheme.surface.withValues(alpha: 1),
+              // onLongPress: tags.isNotEmpty
+              //     ? () => launchVideos(gridContext, l10n, theme, true)
+              //     : () {
+              //         Navigator.of(gridContext, rootNavigator: true)
+              //             .push<void>(
+              //           DialogRoute(
+              //             context: gridContext,
+              //             builder: (context) => _VideosSettingsDialog(
+              //               booru: booru,
+              //             ),
+              //           ),
+              //         );
+              //       },
+              // selected: true,
+              label: Text(
+                "${l10n.videosLabel}${tags.isEmpty ? '' : " #$tags"}",
+              ),
+              avatar: const Icon(Icons.video_collection_outlined),
+            ),
+          ],
         ),
       ),
     );
@@ -481,7 +482,7 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return AlertDialog(
       title: Text(l10n.settingsLabel),
@@ -651,7 +652,7 @@ class _PopularPageState extends State<PopularPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     final gridActions = <GridAction<Post>>[
       actions.download(context, widget.api.booru, null),
@@ -697,7 +698,7 @@ class _PopularPageState extends State<PopularPage>
                   onEmptySource: _EmptyWidget(progress: source.progress),
                   source: source,
                   search: RawSearchWidget(
-                    (settingsButton, bottomWidget) => SliverAppBar(
+                    (context, settingsButton, bottomWidget) => SliverAppBar(
                       floating: true,
                       pinned: true,
                       snap: true,
@@ -778,7 +779,7 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     if (widget.progress.inRefreshing) {
       return const SizedBox.shrink();

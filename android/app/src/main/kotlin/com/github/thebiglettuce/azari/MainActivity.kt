@@ -18,22 +18,28 @@ import com.github.thebiglettuce.azari.generated.FilesCursor
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryEvents
 import com.github.thebiglettuce.azari.impls.DirectoriesCursorImpl
 import com.github.thebiglettuce.azari.impls.FilesCursorImpl
+import com.github.thebiglettuce.azari.impls.GalleryEventsImpl
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 import com.github.thebiglettuce.azari.impls.NetworkCallbackImpl
 import com.github.thebiglettuce.azari.mover.Thumbnailer
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.cancel
+import kotlinx.coroutines.flow.coroutineContext
 
 class MainActivity : FlutterFragmentActivity() {
+    private val galleryEvents = GalleryEventsImpl()
     private val intents =
         ActivityResultIntents(this, { activityContextChannel!! }, { thumbnailer })
     private val connectivityManager by lazy { getSystemService(ConnectivityManager::class.java) }
     private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = makeEngine(app, "main")
+        val engine = makeEngine(app, "main", galleryEvents)
         GalleryHostApi.setUp(
             engine.dartExecutor.binaryMessenger,
             GalleryHostApiImpl(this)
@@ -89,6 +95,11 @@ class MainActivity : FlutterFragmentActivity() {
             )
         )
 
+        PlatformGalleryEvents.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            galleryEvents,
+        )
+
         NotificationsApi.setUp(
             appContextChannel.engine.dartExecutor.binaryMessenger,
             NotificationsApiImpl(
@@ -115,8 +126,11 @@ class MainActivity : FlutterFragmentActivity() {
         connectivityManager.unregisterNetworkCallback(netStatus)
         intents.unregisterAll()
         activityContextChannel!!.detach()
-
-        FilesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
+        FilesCursor.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            null
+        )
+        PlatformGalleryEvents.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         DirectoriesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         NotificationsApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
 

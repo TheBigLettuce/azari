@@ -12,81 +12,125 @@ import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/mixins/page_type_mixin.dart";
 import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:flutter/material.dart";
 
 class ImageViewNotifiers extends StatefulWidget {
   const ImageViewNotifiers({
     super.key,
-    required this.hardRefresh,
-    required this.currentPage,
-    required this.page,
-    required this.tags,
-    required this.watchTags,
-    required this.mainFocus,
+    required this.stateController,
     required this.controller,
-    required this.gridContext,
     required this.videoControls,
-    required this.wrapNotifiers,
     required this.pauseVideoState,
+    required this.flipShowAppBar,
     required this.child,
   });
 
-  final ImageViewPageTypeMixin page;
-  final Stream<int> currentPage;
-  final FocusNode mainFocus;
-  final BuildContext? gridContext;
+  final Stream<void> flipShowAppBar;
+
   final AnimationController controller;
   final PauseVideoState pauseVideoState;
   final VideoControlsController videoControls;
-
-  final WatchTagsCallback? watchTags;
-  final NotifierWrapper? wrapNotifiers;
-
-  final VoidCallback hardRefresh;
-  final List<ImageTag> Function(Contentable)? tags;
+  final ImageViewStateController stateController;
 
   final Widget child;
 
   @override
-  State<ImageViewNotifiers> createState() => ImageViewNotifiersState();
+  State<ImageViewNotifiers> createState() => _ImageViewNotifiersState();
 }
 
-class ImageViewNotifiersState extends State<ImageViewNotifiers> {
-  final _bottomSheetKey = GlobalKey<_AppBarShownHolderState>();
-
-  StreamSubscription<List<ImageTag>>? tagWatcher;
-  final tags = ImageViewTags();
-
-  late final StreamSubscription<int> subscr;
-  late Contentable content;
-  late int currentCell;
-
-  late final _cellStream = StreamController<Contentable>.broadcast();
-
-  double? _loadingProgress = 1;
+class _ImageViewNotifiersState extends State<ImageViewNotifiers> {
+  ImageViewStateController get stateController => widget.stateController;
+  int get currentIndex => stateController.currentIndex;
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
 
-  void toggle() => _bottomSheetKey.currentState?.toggle(null);
+  @override
+  void dispose() {
+    _searchData.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return stateController.injectMetadataProvider(
+      ReloadImageNotifier(
+        reload: stateController.refreshImage,
+        child: PauseVideoNotifierHolder(
+          state: widget.pauseVideoState,
+          child: VideoControlsNotifier(
+            controller: widget.videoControls,
+            child: TagFilterValueNotifier(
+              notifier: _searchData.searchController,
+              child: TagFilterNotifier(
+                data: _searchData,
+                child: FocusNotifier(
+                  notifier: _searchData.searchFocus,
+                  child: _AppBarShownHolder(
+                    flipShowAppBar: widget.flipShowAppBar,
+                    animationController: widget.controller,
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ImageViewTagsProvider extends StatefulWidget {
+  const ImageViewTagsProvider({
+    super.key,
+    required this.currentPage,
+    required this.watchTags,
+    required this.tags,
+    required this.currentCell,
+    required this.child,
+  });
+
+  final Stream<int> currentPage;
+
+  final WatchTagsCallback? watchTags;
+
+  final List<ImageTag> Function(ContentWidgets)? tags;
+  final (ContentWidgets, int) Function() currentCell;
+
+  final Widget child;
+
+  @override
+  State<ImageViewTagsProvider> createState() => _ImageViewTagsProviderState();
+}
+
+class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
+  StreamSubscription<List<ImageTag>>? tagWatcher;
+  final tags = ImageViewTags();
+
+  late final StreamSubscription<int> subscr;
+  late ContentWidgets content;
+  late int currentCell;
+
+  // late final _cellStream = StreamController<ContentWidgets>.broadcast();
 
   @override
   void initState() {
     super.initState();
-    final (c, cc) = widget.page.currentCell();
+    final (c, cc) = widget.currentCell();
     content = c;
     currentCell = cc;
 
     _watchTags(content);
 
     subscr = widget.currentPage.listen((i) {
-      final (c, cc) = widget.page.currentCell();
+      final (c, cc) = widget.currentCell();
       content = c;
       currentCell = cc;
 
-      _cellStream.add(c);
+      // _cellStream.add(c);
       _watchTags(content);
 
       setState(() {});
@@ -95,16 +139,14 @@ class ImageViewNotifiersState extends State<ImageViewNotifiers> {
 
   @override
   void dispose() {
-    _cellStream.close();
     tags.dispose();
-    tagWatcher?.cancel();
     subscr.cancel();
-    _searchData.dispose();
+    tagWatcher?.cancel();
 
     super.dispose();
   }
 
-  void _watchTags(Contentable content) {
+  void _watchTags(ContentWidgets content) {
     tagWatcher?.cancel();
     tagWatcher = widget.watchTags?.call(content, (t) {
       final newTags = <ImageTag>[];
@@ -123,62 +165,16 @@ class ImageViewNotifiersState extends State<ImageViewNotifiers> {
               .where((element) => element.favorite)
               .followedBy(t.where((element) => !element.favorite))
               .toList(),
-      content.widgets.alias(true),
+      content.alias(true),
     );
-  }
-
-  void setLoadingProgress(double? progress) {
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      try {
-        setState(() => _loadingProgress = progress);
-      } catch (_) {}
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final child = OriginalGridContext(
-      gridContext: widget.gridContext ?? context,
-      child: ImageTagsNotifier(
-        tags: tags,
-        child: ReloadImageNotifier(
-          reload: widget.hardRefresh,
-          child: PauseVideoNotifierHolder(
-            state: widget.pauseVideoState,
-            child: VideoControlsNotifier(
-              controller: widget.videoControls,
-              child: TagFilterValueNotifier(
-                notifier: _searchData.searchController,
-                child: TagFilterNotifier(
-                  data: _searchData,
-                  child: FocusNotifier(
-                    notifier: _searchData.searchFocus,
-                    child: CurrentContentNotifier(
-                      stream: _cellStream.stream,
-                      content: content,
-                      child: LoadingProgressNotifier(
-                        progress: _loadingProgress,
-                        child: _AppBarShownHolder(
-                          key: _bottomSheetKey,
-                          animationController: widget.controller,
-                          child: widget.child,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return ImageTagsNotifier(
+      tags: tags,
+      child: widget.child,
     );
-
-    if (widget.wrapNotifiers != null) {
-      return widget.wrapNotifiers!(child);
-    }
-
-    return child;
   }
 }
 
@@ -221,6 +217,7 @@ class _PauseVideoNotifierHolderState extends State<PauseVideoNotifierHolder> {
   Widget build(BuildContext context) {
     return PauseVideoNotifier(
       pause: widget.state.isPaused,
+      state: widget.state,
       setPause: widget.state.setIsPaused,
       child: widget.child,
     );
@@ -307,10 +304,13 @@ class ImageTag {
 
 class _AppBarShownHolder extends StatefulWidget {
   const _AppBarShownHolder({
-    required super.key,
+    // super.key,
     required this.animationController,
+    required this.flipShowAppBar,
     required this.child,
   });
+
+  final Stream<void> flipShowAppBar;
 
   final AnimationController animationController;
 
@@ -322,6 +322,7 @@ class _AppBarShownHolder extends StatefulWidget {
 
 class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   late final StreamSubscription<void>? subscription;
+  late final StreamSubscription<void> _flipShowAppBar;
 
   bool ignorePointer = false;
 
@@ -345,7 +346,12 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   @override
   void initState() {
     super.initState();
+
     subscription = GalleryApi().events.tapDown?.listen((_) {
+      toggle(null);
+    });
+
+    _flipShowAppBar = widget.flipShowAppBar.listen((_) {
       toggle(null);
     });
   }
@@ -353,6 +359,7 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   @override
   void dispose() {
     subscription?.cancel();
+    _flipShowAppBar.cancel();
 
     super.dispose();
   }
@@ -392,14 +399,24 @@ class ReloadImageNotifier extends InheritedWidget {
 class PauseVideoNotifier extends InheritedWidget {
   const PauseVideoNotifier({
     super.key,
+    required this.state,
     required this.pause,
     required this.setPause,
     required super.child,
   });
 
+  final PauseVideoState state;
+
   final bool pause;
 
   final void Function(bool) setPause;
+
+  static PauseVideoState stateOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+
+    return widget!.state;
+  }
 
   static bool of(BuildContext context) {
     final widget =
@@ -417,7 +434,7 @@ class PauseVideoNotifier extends InheritedWidget {
 
   @override
   bool updateShouldNotify(PauseVideoNotifier oldWidget) =>
-      pause != oldWidget.pause;
+      pause != oldWidget.pause || state != oldWidget.state;
 }
 
 class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
@@ -449,27 +466,6 @@ class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(ImageViewInfoTilesRefreshNotifier oldWidget) =>
       count != oldWidget.count;
-}
-
-class LoadingProgressNotifier extends InheritedWidget {
-  const LoadingProgressNotifier({
-    super.key,
-    required this.progress,
-    required super.child,
-  });
-
-  final double? progress;
-
-  static double? of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
-
-    return widget!.progress;
-  }
-
-  @override
-  bool updateShouldNotify(LoadingProgressNotifier oldWidget) =>
-      progress != oldWidget.progress;
 }
 
 class TagFilterNotifier extends InheritedWidget {
@@ -520,38 +516,6 @@ class TagFilterValueNotifier extends InheritedNotifier<TextEditingController> {
         context.dependOnInheritedWidgetOfExactType<TagFilterValueNotifier>();
     return widget?.notifier?.value.text ?? "";
   }
-}
-
-class CurrentContentNotifier extends InheritedWidget {
-  const CurrentContentNotifier({
-    super.key,
-    required this.stream,
-    required this.content,
-    required super.child,
-  });
-
-  final Contentable content;
-  final Stream<Contentable> stream;
-
-  static Contentable? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
-
-    return widget?.content;
-  }
-
-  static Contentable of(BuildContext context) => maybeOf(context)!;
-
-  static Stream<Contentable> streamOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
-
-    return widget!.stream;
-  }
-
-  @override
-  bool updateShouldNotify(CurrentContentNotifier oldWidget) =>
-      content != oldWidget.content;
 }
 
 class AppBarVisibilityNotifier extends InheritedWidget {

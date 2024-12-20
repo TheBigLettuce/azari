@@ -1284,5 +1284,18 @@
     "hideNamesDirectories": "directories'",
     "@hideNamesDirectories": {
         "description": "Hide names files"
+    },
+    "openOnBooru": "Open on {booru}",
+    "@openOnBooru": {
+        "description": "Chip button label to open post in browser",
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
+    },
+    "shareLabel": "Share",
+    "@shareLabel": {
+        "description": "Chip button label to shere content"
     }
 }

@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
@@ -14,6 +13,7 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -99,7 +99,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
             booru: booru,
             tags: tag,
             overrideSafeMode: safeMode,
-            db: DatabaseConnectionNotifier.of(context),
+            db: DbConn.of(context),
             saveSelectedPage: (_) {},
           );
         },
@@ -109,7 +109,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n();
 
     return GridConfiguration(
       watch: gridSettings.watch,

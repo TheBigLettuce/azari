@@ -73,7 +73,7 @@ class ImageViewAction {
   /// [onPress] is called when the button gets pressed,
   /// if [showOnlyWhenSingle] is true then this is guranteed to be called
   /// with [selected] elements zero or one.
-  final void Function(Contentable selected)? onPress;
+  final void Function(int index)? onPress;
 
   final Color? color;
   final List<Effect<dynamic>> animation;

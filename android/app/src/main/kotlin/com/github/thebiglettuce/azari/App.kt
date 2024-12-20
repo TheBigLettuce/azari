@@ -14,11 +14,19 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.StrictMode
 import androidx.core.content.getSystemService
-import com.github.piasy.biv.BigImageViewer
-import com.github.piasy.biv.loader.glide.GlideImageLoader
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.gif.AnimatedImageDecoder
+import coil3.memory.MemoryCache
+import coil3.video.VideoFrameDecoder
+import com.github.thebiglettuce.azari.generated.FlutterGalleryData
+import com.github.thebiglettuce.azari.generated.GalleryVideoEvents
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import com.github.thebiglettuce.azari.impls.GalleryEventsImpl
+import com.github.thebiglettuce.azari.impls.GalleryImpl
 import com.github.thebiglettuce.azari.impls.NativeViewFactory
 import com.github.thebiglettuce.azari.mover.Thumbnailer
+import com.google.android.material.color.DynamicColors
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineGroup
@@ -41,12 +49,23 @@ class App : Application() {
             )
         }
 
-        BigImageViewer.initialize(GlideImageLoader.with(applicationContext))
 
         engines = FlutterEngineGroup(this)
         thumbnailer.initMover()
 
         createNotifChannels(this)
+
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader.Builder(context)
+                .components {
+                    add(AnimatedImageDecoder.Factory())
+                    add(VideoFrameDecoder.Factory())
+                }
+                .memoryCache {
+                    MemoryCache.Builder().maxSizePercent(context, 0.25).build()
+                }
+                .build()
+        }
     }
 }
 
@@ -70,20 +89,29 @@ private fun createNotifChannels(context: Context) {
     }
 }
 
-fun makeEngine(app: App, entrypoint: String): FlutterEngine {
+fun makeEngine(
+    app: App,
+    entrypoint: String,
+    galleryEvents: GalleryEventsImpl,
+): FlutterEngine {
     val dartEntrypoint =
         DartExecutor.DartEntrypoint(
             FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
         )
     val engine = app.engines.createAndRunEngine(app, dartEntrypoint)
     engine.platformViewsController.registry.registerViewFactory(
-        "imageview",
-        NativeViewFactory(PlatformGalleryApi(engine.dartExecutor.binaryMessenger))
+        "gallery",
+        NativeViewFactory(
+            FlutterGalleryData(engine.dartExecutor.binaryMessenger),
+            PlatformGalleryApi(engine.dartExecutor.binaryMessenger),
+            GalleryVideoEvents(engine.dartExecutor.binaryMessenger),
+            galleryEvents.events,
+            galleryEvents.playerButtonsEvents,
+        )
     )
 
     return engine
 }
-
 
 class LocaleBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

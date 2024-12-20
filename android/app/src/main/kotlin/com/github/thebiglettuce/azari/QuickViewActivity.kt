@@ -19,16 +19,20 @@ import com.github.thebiglettuce.azari.generated.FilesCursor
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
 import com.github.thebiglettuce.azari.generated.NotificationsApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
+import com.github.thebiglettuce.azari.generated.PlatformGalleryEvents
 import com.github.thebiglettuce.azari.impls.DirectoriesCursorImpl
 import com.github.thebiglettuce.azari.impls.FilesCursorImpl
+import com.github.thebiglettuce.azari.impls.GalleryEventsImpl
 import com.github.thebiglettuce.azari.impls.GalleryHostApiImpl
 import com.github.thebiglettuce.azari.mover.Thumbnailer
 
 class QuickViewActivity : FlutterFragmentActivity() {
+    private val galleryEvents = GalleryEventsImpl()
+
     private val appContextChannel: AppContextChannel by lazy {
         val app = this.applicationContext as App
 
-        val engine = makeEngine(app, "mainQuickView")
+        val engine = makeEngine(app, "mainQuickView", galleryEvents)
 
         AppContextChannel(
             engine, PlatformGalleryApi(engine.dartExecutor.binaryMessenger),
@@ -76,6 +80,11 @@ class QuickViewActivity : FlutterFragmentActivity() {
 
         activityContextChannel!!.attach(this, intents, thumbnailer)
 
+        PlatformGalleryEvents.setUp(
+            appContextChannel.engine.dartExecutor.binaryMessenger,
+            galleryEvents,
+        )
+
         FilesCursor.setUp(
             appContextChannel.engine.dartExecutor.binaryMessenger,
             FilesCursorImpl(this.applicationContext as App, thumbnailer.scope)
@@ -114,6 +123,7 @@ class QuickViewActivity : FlutterFragmentActivity() {
 
         intents.unregisterAll()
 
+        PlatformGalleryEvents.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         FilesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         DirectoriesCursor.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)
         GalleryHostApi.setUp(appContextChannel.engine.dartExecutor.binaryMessenger, null)

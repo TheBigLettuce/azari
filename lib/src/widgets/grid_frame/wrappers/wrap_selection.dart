@@ -14,6 +14,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     required this.selection,
     required this.functionality,
     required this.onPressed,
+    this.onDoubleTap,
     this.limitedSize = false,
     this.shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(15)),
@@ -34,6 +35,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
   final ShapeBorder shape;
 
   final VoidCallback? onPressed;
+  final ContextCallback? onDoubleTap;
 
   final Widget child;
 
@@ -45,6 +47,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       return _WrappedSelectionCore(
         thisIndx: thisIndx,
         selectFrom: selectFrom,
+        onDoubleTap: onDoubleTap,
         shape: shape,
         selection: null,
         onPressed: onPressed,
@@ -56,6 +59,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       return _WrappedSelectionCore(
         thisIndx: thisIndx,
         selectFrom: selectFrom,
+        onDoubleTap: onDoubleTap,
         shape: shape,
         selection: null,
         onPressed: onPressed,
@@ -69,6 +73,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       return _WrappedSelectionCore<T>(
         selection: selection,
         functionality: functionality,
+        onDoubleTap: onDoubleTap,
         selectFrom: selectFrom,
         shape: shape,
         onPressed: onPressed,
@@ -109,6 +114,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
               thisIndx: thisIndx,
               shape: shape,
               onPressed: onPressed,
+              onDoubleTap: onDoubleTap,
               selectFrom: selectFrom,
               selection: selection,
               limitedSize: limitedSize,
@@ -125,6 +131,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
             thisIndx: thisIndx,
             shape: shape,
             onPressed: onPressed,
+            onDoubleTap: onDoubleTap,
             selectFrom: selectFrom,
             selection: selection,
             limitedSize: limitedSize,
@@ -143,6 +150,7 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
     required this.selection,
     required this.functionality,
     required this.onPressed,
+    required this.onDoubleTap,
     required this.limitedSize,
     required this.shape,
     required this.child,
@@ -158,6 +166,7 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
   final GridFunctionality<T> functionality;
 
   final VoidCallback? onPressed;
+  final ContextCallback? onDoubleTap;
 
   final ShapeBorder shape;
 
@@ -201,6 +210,9 @@ class __WrappedSelectionCoreState<T extends CellBase>
   Widget build(BuildContext context) {
     if (widget.selection == null) {
       return InkWell(
+        onDoubleTap: widget.onDoubleTap == null
+            ? null
+            : () => widget.onDoubleTap!(context),
         customBorder: widget.shape,
         onTap: thisIndx.isNegative && widget.onPressed == null
             ? null
@@ -232,16 +244,22 @@ class __WrappedSelectionCoreState<T extends CellBase>
                 thisIndx: widget.thisIndx,
                 selectFrom: widget.selectFrom,
                 child: GestureDetector(
-                  child: InkWell(
-                    customBorder: widget.shape,
-                    onTap: selection.isEmpty
-                        ? thisIndx.isNegative && widget.onPressed == null
-                            ? null
-                            : widget.onPressed
-                        : () {
-                            selection.selectOrUnselect(thisIndx);
-                          },
-                    child: widget.child,
+                  child: Builder(
+                    builder: (context) => InkWell(
+                      onDoubleTap: widget.onDoubleTap == null ||
+                              widget.selection!.isNotEmpty
+                          ? null
+                          : () => widget.onDoubleTap!(context),
+                      customBorder: widget.shape,
+                      onTap: selection.isEmpty
+                          ? thisIndx.isNegative && widget.onPressed == null
+                              ? null
+                              : widget.onPressed
+                          : () {
+                              selection.selectOrUnselect(thisIndx);
+                            },
+                      child: widget.child,
+                    ),
                   ),
                 ),
               ),

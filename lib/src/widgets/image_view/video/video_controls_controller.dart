@@ -9,6 +9,7 @@ abstract class VideoControlsController {
   void setDuration(Duration d);
   void setProgress(Duration p);
   void setPlayState(PlayState p);
+  void setVolume(double volume);
 
   void clear();
 
@@ -68,6 +69,12 @@ class PlayStateUpdate extends PlayerUpdate {
   const PlayStateUpdate(this.playState);
 
   final PlayState playState;
+}
+
+class VolumeUpdate extends PlayerUpdate {
+  const VolumeUpdate(this.volume);
+
+  final double volume;
 }
 
 class ClearUpdate extends PlayerUpdate {

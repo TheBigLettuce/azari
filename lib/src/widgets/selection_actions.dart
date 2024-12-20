@@ -90,6 +90,8 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
   SelectionActions get selectionActions => _selectionActions!;
   List<SelectionButton> get actions => _actions;
 
+  void animateNavBar(bool show) {}
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -115,6 +117,7 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
 
       _expandedEvents =
           _selectionActions!.controller.expandedEvents.listen((_) {
+        animateNavBar(_selectionActions!.controller.isExpanded);
         setState(() {});
       });
     }

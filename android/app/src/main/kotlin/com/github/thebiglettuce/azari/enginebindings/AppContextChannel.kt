@@ -29,7 +29,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.bumptech.glide.Glide
 import com.github.thebiglettuce.azari.ActivityResultIntents
 import com.github.thebiglettuce.azari.App
 import com.github.thebiglettuce.azari.generated.GalleryHostApi
@@ -145,7 +144,7 @@ class AppContextChannel(
                 }
 
                 "preloadImage" -> {
-                    Glide.with(context).load(Uri.parse(call.arguments as String)).preload()
+//                    Glide.with(context).load(Uri.parse(call.arguments as String)).preload()
                 }
 
                 "clearCachedThumbs" -> {

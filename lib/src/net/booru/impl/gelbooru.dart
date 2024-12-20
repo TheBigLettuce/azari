@@ -296,13 +296,11 @@ class _PoolsAPI implements BooruPoolsAPI {
     BooruPoolsOrder order = BooruPoolsOrder.creationTime,
     required PageSaver pageSaver,
   }) {
-    // TODO: implement search
     throw UnimplementedError();
   }
 
   @override
   Future<Map<int, String>> poolThumbnails(List<BooruPool> pools) {
-    // TODO: implement poolThumbnails
     throw UnimplementedError();
   }
 }
@@ -318,7 +316,6 @@ class _CommentsAPI implements BooruCommentsAPI {
     int? limit,
     required PageSaver pageSaver,
   }) {
-    // TODO: implement forPostId
     throw UnimplementedError();
   }
 
@@ -328,7 +325,6 @@ class _CommentsAPI implements BooruCommentsAPI {
     BooruCommentsOrder order = BooruCommentsOrder.latest,
     required PageSaver pageSaver,
   }) {
-    // TODO: implement search
     throw UnimplementedError();
   }
 }
@@ -345,7 +341,6 @@ class _ForumAPI implements BooruForumAPI {
     BooruForumCategory? category,
     required PageSaver pageSaver,
   }) {
-    // TODO: implement postsForId
     throw UnimplementedError();
   }
 
@@ -357,7 +352,6 @@ class _ForumAPI implements BooruForumAPI {
     BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
     required PageSaver pageSaver,
   }) {
-    // TODO: implement searchTopic
     throw UnimplementedError();
   }
 }

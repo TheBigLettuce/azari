@@ -221,7 +221,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
   }
 }
 
-class AndroidUriFile implements ImageViewContentable, ContentWidgets {
+class AndroidUriFile implements ContentWidgets {
   const AndroidUriFile({
     required this.uri,
     required this.name,
@@ -241,19 +241,19 @@ class AndroidUriFile implements ImageViewContentable, ContentWidgets {
   final String name;
   final String uri;
 
-  @override
-  Contentable content() {
-    final t = PostContentType.fromUrl(uri);
+  // @override
+  // Contentable content() {
+  //   final t = PostContentType.fromUrl(uri);
 
-    final imageSize = Size(width.toDouble(), height.toDouble());
+  //   final imageSize = Size(width.toDouble(), height.toDouble());
 
-    return switch (t) {
-      PostContentType.none => EmptyContent(this),
-      PostContentType.video => AndroidVideo(this, uri: uri, size: imageSize),
-      PostContentType.gif => AndroidGif(this, uri: uri, size: imageSize),
-      PostContentType.image => AndroidImage(this, uri: uri, size: imageSize),
-    };
-  }
+  //   return switch (t) {
+  //     PostContentType.none => EmptyContent(this),
+  //     PostContentType.video => AndroidVideo(this, uri: uri, size: imageSize),
+  //     PostContentType.gif => AndroidGif(this, uri: uri, size: imageSize),
+  //     PostContentType.image => AndroidImage(this, uri: uri, size: imageSize),
+  //   };
+  // }
 
   @override
   String alias(bool long) => name;
