@@ -370,6 +370,7 @@ class __PlayButtonState extends State<_PlayButton> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
+                    year2023: false,
                   ),
                 ),
               PlayState.stopped => const Icon(Icons.play_arrow_rounded),

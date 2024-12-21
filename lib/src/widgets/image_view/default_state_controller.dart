@@ -324,6 +324,7 @@ class DefaultStateController extends ImageViewStateController {
         ),
         Center(
           child: CircularProgressIndicator(
+            year2023: false,
             color: theme.colorScheme.onSurfaceVariant,
             backgroundColor:
                 theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),

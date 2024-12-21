@@ -599,7 +599,9 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
             padding: EdgeInsets.only(top: 4),
             child: SizedBox(),
           )
-        : const LinearProgressIndicator();
+        : const LinearProgressIndicator(
+            year2023: false,
+          );
   }
 }
 
@@ -713,6 +715,7 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
     const circularProgress = SizedBox.square(
       dimension: 12,
       child: CircularProgressIndicator(
+        year2023: false,
         strokeWidth: 2,
       ),
     );

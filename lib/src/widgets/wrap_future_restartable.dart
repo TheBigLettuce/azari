@@ -66,7 +66,9 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
                     child: Center(
                       child: SizedBox(
                         width: 40,
-                        child: LinearProgressIndicator(),
+                        child: LinearProgressIndicator(
+                          year2023: false,
+                        ),
                       ),
                     ),
                   ),
@@ -114,7 +116,9 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
                   body: Center(
                     child: SizedBox(
                       width: 40,
-                      child: LinearProgressIndicator(),
+                      child: LinearProgressIndicator(
+                        year2023: false,
+                      ),
                     ),
                   ),
                 ),

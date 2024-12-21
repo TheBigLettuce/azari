@@ -86,7 +86,11 @@ class _TranslationNotesState extends State<TranslationNotes> {
 
           return SizedBox.fromSize(
             size: const Size.square(42),
-            child: const Center(child: CircularProgressIndicator()),
+            child: const Center(
+              child: CircularProgressIndicator(
+                year2023: false,
+              ),
+            ),
           );
         },
       ),

@@ -19,6 +19,6 @@ class Dart
   end
 
   def self.format_file(file)
-    raise_on_error Open3.capture2(DART_EXEC, "format", "--fix", file)
+    raise_on_error Open3.capture2(DART_EXEC, "format", file)
   end
 end

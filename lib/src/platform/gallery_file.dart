@@ -1385,7 +1385,10 @@ class _SetWallpaperChipState extends State<SetWallpaperChip> {
           ? const SizedBox(
               height: 14,
               width: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                year2023: false,
+              ),
             )
           : Text(l10n.setAsWallpaper),
       avatar: const Icon(

@@ -44,6 +44,8 @@ class __BottomWidgetState extends State<_BottomWidget> {
   Widget build(BuildContext context) {
     return !progress.inRefreshing
         ? widget.child
-        : const LinearProgressIndicator();
+        : const LinearProgressIndicator(
+            year2023: false,
+          );
   }
 }

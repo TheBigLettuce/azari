@@ -244,7 +244,11 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                         filterQuality: FilterQuality.high,
                         fit: BoxFit.contain,
                       )
-                    : const Center(child: CircularProgressIndicator())
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          year2023: false,
+                        ),
+                      )
                 : GestureDetector(
                     onDoubleTap: () {
                       if (!disposed) {

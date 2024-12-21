@@ -1716,6 +1716,7 @@ class __LinearProgressState extends State<_LinearProgress> {
       child: LinearProgressIndicator(
         borderRadius: const BorderRadius.all(Radius.circular(5)),
         minHeight: 2,
+        year2023: false,
         value: progress,
       ),
     );
@@ -1763,6 +1764,7 @@ class __ProgressState extends State<_Progress> {
       dimension: 38,
       child: CircularProgressIndicator(
         strokeWidth: 2,
+        year2023: false,
         value: progress,
       ),
     );

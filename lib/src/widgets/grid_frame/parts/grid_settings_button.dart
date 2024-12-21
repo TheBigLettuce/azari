@@ -806,7 +806,9 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
         child: Padding(
           padding: EdgeInsets.all(18),
           child: Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              year2023: false,
+            ),
           ),
         ),
       );

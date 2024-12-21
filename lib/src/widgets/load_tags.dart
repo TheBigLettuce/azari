@@ -87,6 +87,7 @@ class LoadTags extends StatelessWidget {
                           width: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
+                            year2023: false,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         )

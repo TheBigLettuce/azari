@@ -102,7 +102,10 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton>
     final icon = widget.notifier != null && widget.notifier?.value != null
         ? const SizedBox.square(
             dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              year2023: false,
+            ),
           )
         : TweenAnimationBuilder(
             tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
