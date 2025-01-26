@@ -21,6 +21,7 @@ class FlutterGalleryDataImpl
       if (Platform.isAndroid) {
         PlatformGalleryEvents().metadataChanged();
       }
+      _indexChanges.add(currentIndex);
     });
   }
 
@@ -77,10 +78,8 @@ class FlutterGalleryDataImpl
     required VoidCallback playAnimationRight,
     required VoidCallback flipShowAppBar,
   }) {
-    // if (startingIndex != 0) {
     currentIndex = startingIndex;
     _indexChanges.add(currentIndex);
-    // }
   }
 
   @override
@@ -213,6 +212,7 @@ class __FileMetadataProviderState extends State<_FileMetadataProvider> {
   late final StreamSubscription<int> _events;
 
   late CurrentIndexMetadata metadata;
+  int refreshTimes = 0;
 
   @override
   void initState() {
@@ -231,6 +231,10 @@ class __FileMetadataProviderState extends State<_FileMetadataProvider> {
         wrapNotifiers: widget.wrapNotifiers,
       );
 
+      refreshTimes += 1;
+
+      print(newIndex);
+
       setState(() {});
     });
   }
@@ -246,6 +250,7 @@ class __FileMetadataProviderState extends State<_FileMetadataProvider> {
   Widget build(BuildContext context) {
     return CurrentIndexMetadataNotifier(
       metadata: metadata,
+      refreshTimes: refreshTimes,
       child: widget.child,
     );
   }

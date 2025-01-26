@@ -49,7 +49,24 @@ GridAction<Post> hide(
   );
 }
 
-GridAction<T> download<T extends Post>(
+GridAction<Post> downloadPost(
+  BuildContext context,
+  Booru booru,
+  PathVolume? thenMoveTo,
+) {
+  return GridAction(
+    Icons.download,
+    (selected) => selected.downloadAll(
+      DownloadManager.of(context),
+      PostTags.fromContext(context),
+      thenMoveTo,
+    ),
+    true,
+    animate: true,
+  );
+}
+
+GridAction<FavoritePost> downloadFavoritePost(
   BuildContext context,
   Booru booru,
   PathVolume? thenMoveTo,

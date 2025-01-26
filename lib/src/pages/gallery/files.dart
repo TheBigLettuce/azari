@@ -150,27 +150,6 @@ class _FilesPageState extends State<FilesPage>
       );
     }
 
-    impl = FlutterGalleryDataImpl(
-      source: api.source,
-      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
-      watchTags: (c, f) =>
-          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
-      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-        callback: widget.callback,
-        child: FilesDataNotifier(
-          api: api,
-          child: DeleteDialogShowNotifier(
-            toShow: toShowDelete,
-            child: OnBooruTagPressed(
-              onPressed: _onBooruTagPressed,
-              child: filter.inject(child),
-            ),
-          ),
-        ),
-      ),
-      db: widget.db.videoSettings,
-    );
-
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
@@ -278,6 +257,27 @@ class _FilesPageState extends State<FilesPage>
       },
       initialFilteringMode: widget.filteringMode ?? FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
+    );
+
+    impl = FlutterGalleryDataImpl(
+      source: filter,
+      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
+      watchTags: (c, f) =>
+          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
+      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
+        callback: widget.callback,
+        child: FilesDataNotifier(
+          api: api,
+          child: DeleteDialogShowNotifier(
+            toShow: toShowDelete,
+            child: OnBooruTagPressed(
+              onPressed: _onBooruTagPressed,
+              child: filter.inject(child),
+            ),
+          ),
+        ),
+      ),
+      db: widget.db.videoSettings,
     );
 
     watchSettings();
@@ -390,16 +390,6 @@ class _FilesPageState extends State<FilesPage>
 
   FilteringMode? beforeButtons;
 
-  // void _filterTag(String tag, ScrollController scrollController) {
-  //   searchTextController.text = tag;
-  //   filter.filteringMode = FilteringMode.tag;
-  //   scrollController.animateTo(
-  //     0,
-  //     duration: Durations.medium3,
-  //     curve: Easing.standard,
-  //   );
-  // }
-
   PathVolume? makeThenMoveTo() {
 // ((widget.directory == null
 //                                               ? api.directories.length == 1
@@ -438,99 +428,6 @@ class _FilesPageState extends State<FilesPage>
               builder: (context) => GridFrame<File>(
                 key: gridKey,
                 slivers: [
-                  // _TagsNotifier(
-                  //   tagSource: api.sourceTags,
-                  //   tagManager: TagManager.of(context),
-                  //   child: Builder(
-                  //     builder: (context) => TagsRibbon(
-                  //       tagNotifier: ImageTagsNotifier.of(context),
-                  //       onLongPress: (tag, controller) {
-                  //         final settings = SettingsService.db().current;
-
-                  //         void launchGrid(SafeMode? s) {
-                  //           Navigator.push(
-                  //             context,
-                  //             MaterialPageRoute<void>(
-                  //               builder: (context) {
-                  //                 return BooruRestoredPage(
-                  //                   booru: settings.selectedBooru,
-                  //                   thenMoveTo: makeThenMoveTo(),
-                  //                   tags: tag,
-                  //                   wrapScaffold: widget.callback != null,
-                  //                   trySearchBookmarkByTags: true,
-                  //                   saveSelectedPage: (e) {},
-                  //                   overrideSafeMode: s ?? settings.safeMode,
-                  //                   db: widget.db,
-                  //                 );
-                  //               },
-                  //             ),
-                  //           );
-                  //         }
-
-                  //         final bookmark =
-                  //             widget.db.gridBookmarks.getFirstByTags(
-                  //           tag.trim(),
-                  //           settings.selectedBooru,
-                  //         );
-                  //         if (bookmark != null) {
-                  //           launchGrid(null);
-                  //           return;
-                  //         }
-
-                  //         HapticFeedback.mediumImpact();
-
-                  //         context.openSafeModeDialog(
-                  //           launchGrid,
-                  //           settings.safeMode,
-                  //         );
-                  //       },
-                  //       selectTag: _filterTag,
-                  //       tagManager: widget.db.tagManager,
-                  //     ),
-                  //   ),
-                  // ),
-                  // Builder(
-                  //   builder: (context) {
-                  //     return IconBarGridHeader(
-                  //       countWatcher: filter.backingStorage.watch,
-                  //       icons: [
-                  //         BarIcon(
-                  //           key: _duplicateButtonKey,
-                  // icon: FilteringMode.duplicate.icon,
-                  //           onPressed: () {
-
-                  //           },
-                  //         ),
-                  //         if (!api.type.isFavorites())
-                  //           BarIcon(
-                  //             key: _favoriteButtonKey,
-                  // icon: FilteringMode.favorite.icon,
-                  //             onPressed: () {
-
-                  //             },
-                  //           ),
-                  //         BarIcon(
-                  //           key: _videoButtonKey,
-                  // icon: FilteringMode.video.icon,
-                  //           onPressed: () {
-                  // if (filter.filteringMode == FilteringMode.video) {
-                  //   filter.filteringMode = beforeButtons ==
-                  //           FilteringMode.video
-                  //       ? FilteringMode.noFilter
-                  //       : beforeButtons ?? FilteringMode.noFilter;
-                  //   return false;
-                  // } else {
-                  //   beforeButtons = filter.filteringMode;
-                  //   filter.filteringMode = FilteringMode.video;
-                  //   return true;
-                  // }
-                  //           },
-                  //         ),
-                  //       ],
-                  //     );
-                  //   },
-                  // ),
-
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     sliver: SliverToBoxAdapter(
@@ -1138,9 +1035,6 @@ class _TagsRibbonState extends State<TagsRibbon> {
                       );
                     },
                     child: TextButton(
-                      // icon: elem.favorite
-                      //     ? const Icon(Icons.push_pin_rounded)
-                      //     : null,
                       onLongPress: widget.onLongPress == null
                           ? null
                           : () {

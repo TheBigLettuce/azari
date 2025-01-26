@@ -18,32 +18,10 @@ import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/widgets/loading_error_widget.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:photo_view/photo_view.dart";
 import "package:photo_view/photo_view_gallery.dart";
-
-// void _watchTags(int index) {
-//   tagWatcher?.cancel();
-//   tagWatcher = widget.watchTags?.call(index, (t) {
-//     final newTags = <ImageTag>[];
-
-//     newTags.addAll(t.where((element) => element.favorite));
-//     newTags.addAll(t.where((element) => !element.favorite));
-
-//     tags.update(newTags, null);
-//   });
-
-//   final t = widget.tags?.call(index);
-//   tags.update(
-//     t == null
-//         ? const []
-//         : t
-//             .where((element) => element.favorite)
-//             .followedBy(t.where((element) => !element.favorite))
-//             .toList(),
-//     content.widgets.alias(true),
-//   );
-// }
 
 class _StateContainer {
   _StateContainer({
@@ -295,14 +273,24 @@ class DefaultStateController extends ImageViewStateController {
   Widget loadingBuilder(
     BuildContext context,
     ImageChunkEvent? event,
-    int idx,
     int currentPage,
     Contentable Function(int) drawCell,
   ) {
     final theme = Theme.of(context);
 
-    final cell = drawCell(idx);
-    final t = cell.widgets.tryAsThumbnailable(context);
+    Contentable? cell;
+    try {
+      final p =
+          switch (_container!.pageController.position.userScrollDirection) {
+        ScrollDirection.idle => _container!.pageController.page?.round(),
+        ScrollDirection.forward => _container!.pageController.page?.floor(),
+        ScrollDirection.reverse => _container!.pageController.page?.ceil(),
+      };
+
+      cell = drawCell(p ?? currentPage);
+    } catch (_) {}
+
+    final t = cell?.widgets.tryAsThumbnailable(context);
     if (t == null) {
       return const SizedBox.shrink();
     }
@@ -328,7 +316,7 @@ class DefaultStateController extends ImageViewStateController {
             color: theme.colorScheme.onSurfaceVariant,
             backgroundColor:
                 theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
-            value: value,
+            value: value ?? 0,
           ),
         ),
       ],
@@ -393,10 +381,9 @@ class DefaultStateController extends ImageViewStateController {
       countEvents: countEvents,
       loadingBuilder: ignoreLoadingBuilder
           ? null
-          : (context, event, idx) => loadingBuilder(
+          : (context, event) => loadingBuilder(
                 context,
                 event,
-                idx,
                 currentIndex,
                 drawCell,
               ),
@@ -503,109 +490,7 @@ class DefaultStateController extends ImageViewStateController {
       });
     }
   }
-
-  // void onPressedRight() {
-  //   if (_container == null) {
-  //     return;
-  //   }
-
-  //   if (currentIndex + 1 != count && count != 1) {
-  //     _container!.pageController
-  //         .nextPage(duration: Durations.short4, curve: Easing.standard);
-  //   } else {
-  //     if (onRightSwitchPageEnd != null) {
-  //       onRightSwitchPageEnd?.call();
-  //     } else {
-  //       _container!.playAnimationRight();
-  //     }
-  //   }
-  // }
-
-  // void onPressedLeft() {
-  //   if (_container == null) {
-  //     return;
-  //   }
-
-  //   if (currentIndex != 0 && count != 1) {
-  //     _container!.pageController
-  //         .previousPage(duration: Durations.short4, curve: Easing.standard);
-  //   } else {
-  //     if (onLeftSwitchPageEnd != null) {
-  //       onLeftSwitchPageEnd?.call();
-  //     } else {
-  //       _container!.playAnimationLeft();
-  //     }
-  //   }
-  // }
 }
-
-// class CurrentContentNotifier extends InheritedWidget {
-//   const CurrentContentNotifier({
-//     super.key,
-//     required this.stream,
-//     required this.content,
-//     required super.child,
-//   });
-
-//   final Contentable content;
-//   final Stream<Contentable> stream;
-
-//   static Contentable? maybeOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
-
-//     return widget?.content;
-//   }
-
-//   static Contentable of(BuildContext context) => maybeOf(context)!;
-
-//   static Stream<Contentable> streamOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<CurrentContentNotifier>();
-
-//     return widget!.stream;
-//   }
-
-//   @override
-//   bool updateShouldNotify(CurrentContentNotifier oldWidget) =>
-//       content != oldWidget.content;
-// }
-
-// PhotoViewGalleryPageOptions _makeAndroidImage(
-//   BuildContext context,
-//   Key key,
-//   int idx,
-//   Size size,
-//   String uri,
-//   bool isGif,
-// ) =>
-//     PhotoViewGalleryPageOptions.customChild(
-//       gestureDetectorBehavior: HitTestBehavior.translucent,
-//       disableGestures: true,
-//       child: KeyedSubtree(
-//         key: ValueKey((key, idx)),
-//         child: Center(
-//           child: SizedBox(
-//             height: MediaQuery.of(context).size.height,
-//             width: MediaQuery.of(context).size.width,
-//             child: AndroidView(
-//               viewType: "imageview",
-//               hitTestBehavior: PlatformViewHitTestBehavior.translucent,
-//               gestureRecognizers: {
-//                 Factory<OneSequenceGestureRecognizer>(
-//                   () => EagerGestureRecognizer(),
-//                 ),
-//               },
-//               creationParams: {
-//                 "uri": uri,
-//                 if (isGif) "gif": "",
-//               },
-//               creationParamsCodec: const StandardMessageCodec(),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
 
 class _CurrentIndexMetadataHolder extends StatefulWidget {
   const _CurrentIndexMetadataHolder({
@@ -637,7 +522,7 @@ class __CurrentIndexMetadataHolderState
   late final StreamSubscription<int> indexEvents;
 
   late _ContentToMetadata currentMetadata;
-  // int currentIndex = 0;
+  int refreshCounts = 0;
 
   @override
   void initState() {
@@ -651,6 +536,8 @@ class __CurrentIndexMetadataHolderState
         wrapNotifiers: widget.wrapNotifiers,
         index: newIndex,
       );
+
+      refreshCounts += 1;
 
       setState(() {});
     });
@@ -675,41 +562,11 @@ class __CurrentIndexMetadataHolderState
   Widget build(BuildContext context) {
     return CurrentIndexMetadataNotifier(
       metadata: currentMetadata,
+      refreshTimes: refreshCounts,
       child: widget.child,
     );
   }
 }
-
-// class LoadingProgressNotifier extends InheritedWidget {
-//   const LoadingProgressNotifier({
-//     super.key,
-//     required this.progress,
-//     required this.setProgress,
-//     required super.child,
-//   });
-
-//   final double? progress;
-
-//   final void Function(double? p) setProgress;
-
-//   static double? of(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
-
-//     return widget!.progress;
-//   }
-
-//   static void setProgressOf(BuildContext context, double? progress) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
-
-//     widget!.setProgress(progress);
-//   }
-
-//   @override
-//   bool updateShouldNotify(LoadingProgressNotifier oldWidget) =>
-//       progress != oldWidget.progress || setProgress != oldWidget.setProgress;
-// }
 
 class _ContentToMetadata implements CurrentIndexMetadata {
   const _ContentToMetadata({

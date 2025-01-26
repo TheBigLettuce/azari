@@ -1097,8 +1097,7 @@ class _ExpandedImage extends StatelessWidget {
             maxScale: PhotoViewComputedScale.contained * 1.8,
             minScale: PhotoViewComputedScale.contained * 0.8,
             filterQuality: FilterQuality.high,
-            loadingBuilder: (context, event, indx) =>
-                const ShimmerLoadingIndicator(),
+            loadingBuilder: (context, event) => const ShimmerLoadingIndicator(),
             backgroundDecoration: BoxDecoration(
               color: theme.colorScheme.surface.withValues(alpha: 0),
             ),

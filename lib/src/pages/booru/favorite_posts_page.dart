@@ -67,6 +67,30 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
   late final SafeModeState safeModeState;
 
+  Iterable<FavoritePost> _filterTag(Iterable<FavoritePost> cells) {
+    final searchText = searchTextController.text.trim();
+    if (searchText.isEmpty) {
+      return cells;
+    }
+
+    final tags = searchText.split(" ");
+
+    return cells.where((e) {
+      final flags = tags.map((_) => false).toList();
+
+      for (final (index, tagsTo) in tags.indexed) {
+        for (final tag in e.tags) {
+          if (tag.startsWith(tagsTo)) {
+            flags[index] = true;
+            break;
+          }
+        }
+      }
+
+      return flags.fold(true, (v, e1) => v & e1);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -87,36 +111,38 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
               safeModeState.current,
             ),
           FilteringMode.tag => (
-              searchTextController.text.isEmpty
-                  ? cells.where(
-                      (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
-                    )
-                  : cells.where(
-                      (e) =>
-                          e.tags.contains(searchTextController.text) &&
-                          safeModeState.current.inLevel(e.rating.asSafeMode),
-                    ),
+              _filterTag(
+                cells.where(
+                  (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
+                ),
+              ),
               data
             ),
           FilteringMode.gif => (
-              cells.where(
-                (element) =>
-                    element.type == PostContentType.gif &&
-                    safeModeState.current.inLevel(element.rating.asSafeMode),
+              _filterTag(
+                cells.where(
+                  (element) =>
+                      element.type == PostContentType.gif &&
+                      safeModeState.current.inLevel(element.rating.asSafeMode),
+                ),
               ),
               data
             ),
           FilteringMode.video => (
-              cells.where(
-                (element) =>
-                    element.type == PostContentType.video &&
-                    safeModeState.current.inLevel(element.rating.asSafeMode),
+              _filterTag(
+                cells.where(
+                  (element) =>
+                      element.type == PostContentType.video &&
+                      safeModeState.current.inLevel(element.rating.asSafeMode),
+                ),
               ),
               data
             ),
           FilteringMode() => (
-              cells.where(
-                (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
+              _filterTag(
+                cells.where(
+                  (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
+                ),
               ),
               data
             )
@@ -286,8 +312,12 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
             source: filter,
           ),
           description: GridDescription(
-            actions: [
-              booru_actions.download(context, settings.selectedBooru, null),
+            actions: <GridAction<FavoritePost>>[
+              booru_actions.downloadFavoritePost(
+                context,
+                settings.selectedBooru,
+                null,
+              ),
               booru_actions.favorites<FavoritePost>(
                 context,
                 favoritePosts,

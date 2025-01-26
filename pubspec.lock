@@ -834,11 +834,10 @@ packages:
   photo_view:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "92d9b36b7b17719b1e851de3f8d963688da1c279"
-      resolved-ref: "92d9b36b7b17719b1e851de3f8d963688da1c279"
-      url: "https://github.com/TheBigLettuce/photo_view.git"
-    source: git
+      name: photo_view
+      sha256: "1fc3d970a91295fbd1364296575f854c9863f225505c28c46e0a03e48960c75e"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.15.0"
   pigeon:
     dependency: "direct dev"

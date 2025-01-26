@@ -78,11 +78,8 @@ dependencies:
   path: ^1.8.3
   path_provider: ^2.0.14
   permission_handler: ^11.0.1
-  photo_view:
-    git:
-      url: https://github.com/TheBigLettuce/photo_view.git
-      ref: 92d9b36b7b17719b1e851de3f8d963688da1c279
-
+  photo_view: ^0.15.0
+  
   scrollable_positioned_list: ^0.3.8
   sliver_tools: ^0.2.12
   stream_transform: ^2.1.0

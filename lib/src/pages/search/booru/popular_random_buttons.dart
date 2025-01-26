@@ -397,21 +397,6 @@ class PopularRandomChips extends StatelessWidget {
             const Padding(padding: EdgeInsets.only(right: 6)),
             ActionChip(
               onPressed: () => launchVideos(gridContext, l10n, theme),
-              // backgroundColor: theme.colorScheme.surface.withValues(alpha: 1),
-              // onLongPress: tags.isNotEmpty
-              //     ? () => launchVideos(gridContext, l10n, theme, true)
-              //     : () {
-              //         Navigator.of(gridContext, rootNavigator: true)
-              //             .push<void>(
-              //           DialogRoute(
-              //             context: gridContext,
-              //             builder: (context) => _VideosSettingsDialog(
-              //               booru: booru,
-              //             ),
-              //           ),
-              //         );
-              //       },
-              // selected: true,
               label: Text(
                 "${l10n.videosLabel}${tags.isEmpty ? '' : " #$tags"}",
               ),
@@ -655,7 +640,7 @@ class _PopularPageState extends State<PopularPage>
     final l10n = context.l10n();
 
     final gridActions = <GridAction<Post>>[
-      actions.download(context, widget.api.booru, null),
+      actions.downloadPost(context, widget.api.booru, null),
       actions.favorites(
         context,
         favoritePosts,

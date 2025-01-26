@@ -101,9 +101,6 @@ class _SettingsListState extends State<SettingsList> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // final titleStyle = theme.textTheme.titleSmall!
-    //     .copyWith(color: theme.colorScheme.secondary);
-
     final l10n = context.l10n();
 
     final list = <Widget>[
@@ -146,6 +143,12 @@ class _SettingsListState extends State<SettingsList> {
           SwitchListTile(
             title: Text(l10n.extraSafeModeFilters),
             tileColor: theme.colorScheme.surfaceContainerHigh,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+            ),
             subtitle: Text(
               l10n.blacklistsTags(
                 BooruAPI.additionalSafetyTags.keys.join(", "),
@@ -155,21 +158,6 @@ class _SettingsListState extends State<SettingsList> {
             onChanged: (value) =>
                 _settings.copy(extraSafeFilters: value).save(),
           ),
-          // SwitchListTile(
-          //   shape: const RoundedRectangleBorder(
-          //     borderRadius: BorderRadius.only(
-          //       bottomLeft: Radius.circular(25),
-          //       bottomRight: Radius.circular(25),
-          //     ),
-          //   ),
-          //   tileColor: theme.colorScheme.surfaceContainerHigh,
-          //   value: _settings.sampleThumbnails,
-          //   onChanged: (value) => SettingsService.db()
-          //       .current
-          //       .copy(sampleThumbnails: value)
-          //       .save(),
-          //   title: const Text("Show samples as thumbnail"), // TODO: change
-          // ),
         ],
       ),
       _SettingsGroup(

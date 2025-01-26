@@ -172,7 +172,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         : null;
 
     if (source.count == 0) {
-      source.clearRefresh();
+      source.clearRefresh().whenComplete(() {
+        if (mounted) {
+          widget.functionality.scrollingSink?.add(true);
+        }
+      });
     }
 
     if (controller != null) {

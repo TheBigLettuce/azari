@@ -311,6 +311,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                   ],
                   initalScrollPosition: pagingState.offset,
                   functionality: GridFunctionality(
+                    scrollUpOn: [
+                      (NavigationButtonEvents.maybeOf(context)!, null),
+                    ],
                     selectionActions: SelectionActions.of(context),
                     scrollingSink: ScrollingSinkProvider.maybeOf(context),
                     updatesAvailable: source.updatesAvailable,
@@ -350,11 +353,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                                 setState(() {});
                               },
                             ),
-                            // LaunchingSearchWidget(
-                            //   state: search,
-                            //   searchController: searchController,
-                            //   hint: pagingState.api.booru.name,
-                            // ),
                             if (settingsButton != null) settingsButton,
                           ],
                         );
@@ -367,7 +365,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                   ),
                   description: GridDescription(
                     actions: [
-                      actions.download(context, api.booru, widget.thenMoveTo),
+                      actions.downloadPost(
+                          context, api.booru, widget.thenMoveTo),
                       actions.favorites(
                         context,
                         favoritePosts,

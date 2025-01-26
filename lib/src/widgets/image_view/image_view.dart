@@ -139,42 +139,17 @@ class CurrentIndexMetadataNotifier extends InheritedWidget {
     super.key,
     required this.metadata,
     required super.child,
-  });
+    required int refreshTimes,
+  }) : _refreshTimes = refreshTimes;
 
   final CurrentIndexMetadata metadata;
+  final int _refreshTimes;
 
   @override
   bool updateShouldNotify(CurrentIndexMetadataNotifier oldWidget) =>
-      metadata != oldWidget.metadata;
+      metadata != oldWidget.metadata ||
+      _refreshTimes != oldWidget._refreshTimes;
 }
-
-// widget.stateController.isPlatform
-//                     ? _ImageViewBodyPlatformView(
-//                         startingCell: widget.startingCell,
-//                       )
-//                     : ImageViewBody(
-//                         key: bodyKey,
-//                         onPressedLeft: _onPressedLeft,
-//                         onPressedRight: _onPressedRight,
-//                         onPageChanged: _onPageChanged,
-//                         onLongPress: _onLongPress,
-//                         pageController: controller,
-//                         loadingBuilder: widget.ignoreLoadingBuilder
-//                             ? null
-//                             : (context, event, idx) => loadingBuilder(
-//                                   context,
-//                                   event,
-//                                   idx,
-//                                   currentPage,
-//                                   wrapNotifiersKey,
-//                                   drawCell,
-//                                 ),
-//                         itemCount: cellCount,
-//                         onTap: _onTap,
-//                         builder: galleryBuilder,
-//                       )
-
-// static void _nothingScroll(int _) {}
 
 class ImageView extends StatefulWidget {
   const ImageView({
