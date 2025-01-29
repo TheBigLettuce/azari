@@ -12,8 +12,8 @@ import "package:flutter_animate/flutter_animate.dart";
 class WrapFutureRestartable<T> extends StatefulWidget {
   const WrapFutureRestartable({
     super.key,
-    required this.builder,
     required this.newStatus,
+    required this.builder,
     this.bottomSheetVariant = false,
     this.placeholder,
   });

@@ -10,6 +10,7 @@ import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
@@ -136,16 +137,18 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   final _animationsKey = GlobalKey<_PlayAnimationsState>();
 
   late final StreamSubscription<int>? _subscription;
+  late final StreamSubscription<void>? _refreshEvents;
+
   final List<StreamSubscription<void>> _scrollUpEvents = [];
 
   final searchFocus = FocusNode();
 
   late final GridSelection<T>? selection;
 
+  ScrollingStateSink? get scrollingState => widget.functionality.scrollingState;
   ResourceSource<int, T> get source => widget.functionality.source;
 
   late double lastOffset = widget.initalScrollPosition;
-  bool _scrollingReverse = true;
   double _scrollingOffsetFling = 0;
   double _prevScrollOffset = 0;
 
@@ -171,12 +174,16 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           })
         : null;
 
+    _refreshEvents = widget.functionality.scrollingState != null
+        ? source.progress.watch((isRefreshing) {
+            if (!isRefreshing) {
+              scrollingState?.sink.add(true);
+            }
+          })
+        : null;
+
     if (source.count == 0) {
-      source.clearRefresh().whenComplete(() {
-        if (mounted) {
-          widget.functionality.scrollingSink?.add(true);
-        }
-      });
+      source.clearRefresh();
     }
 
     if (controller != null) {
@@ -206,12 +213,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         });
       }
 
-      widget.functionality.scrollingSink?.add(true);
+      scrollingState?.sink.add(true);
 
       controller!.addListener(() {
         if (controller!.offset == 0 ||
             controller!.offset == controller!.position.maxScrollExtent) {
-          widget.functionality.scrollingSink?.add(true);
+          scrollingState?.sink.add(true);
         }
 
         final scrollingEvent = controller!.position.pixels ==
@@ -219,10 +226,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             controller!.position.userScrollDirection ==
                 ScrollDirection.forward ||
             controller!.offset == 0;
-        if (_scrollingReverse != scrollingEvent) {
+        if (scrollingState?.isExpanded != scrollingEvent) {
           if (_scrollingOffsetFling > 18) {
-            _scrollingReverse = scrollingEvent;
-            widget.functionality.scrollingSink?.add(scrollingEvent);
+            scrollingState?.sink.add(scrollingEvent);
           } else {
             if (_prevScrollOffset == 0) {
               _prevScrollOffset = controller!.offset;
@@ -262,9 +268,10 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   @override
   void dispose() {
+    _refreshEvents?.cancel();
     selection?._dispose();
-    if (!_scrollingReverse) {
-      widget.functionality.scrollingSink?.add(true);
+    if (scrollingState != null && !scrollingState!.isExpanded) {
+      scrollingState?.sink.add(true);
     }
 
     for (final e in _scrollUpEvents) {

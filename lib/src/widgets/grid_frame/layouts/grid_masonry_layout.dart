@@ -14,121 +14,121 @@ import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
 import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 
-class GridMasonryLayout<T extends CellBase> extends StatefulWidget {
-  const GridMasonryLayout({
-    super.key,
-    required this.randomNumber,
-    required this.source,
-    required this.progress,
-    this.buildEmpty,
-    this.unselectOnUpdate = true,
-  });
+// class GridMasonryLayout<T extends CellBase> extends StatefulWidget {
+//   const GridMasonryLayout({
+//     super.key,
+//     required this.randomNumber,
+//     required this.source,
+//     required this.progress,
+//     this.buildEmpty,
+//     this.unselectOnUpdate = true,
+//   });
 
-  final bool unselectOnUpdate;
+//   final bool unselectOnUpdate;
 
-  final int randomNumber;
+//   final int randomNumber;
 
-  final ReadOnlyStorage<int, T> source;
-  final RefreshingProgress progress;
+//   final ReadOnlyStorage<int, T> source;
+//   final RefreshingProgress progress;
 
-  final Widget Function(Object? error)? buildEmpty;
+//   final Widget Function(Object? error)? buildEmpty;
 
-  @override
-  State<GridMasonryLayout<T>> createState() => _GridMasonryLayoutState();
-}
+//   @override
+//   State<GridMasonryLayout<T>> createState() => _GridMasonryLayoutState();
+// }
 
-class _GridMasonryLayoutState<T extends CellBase>
-    extends State<GridMasonryLayout<T>> {
-  ReadOnlyStorage<int, T> get source => widget.source;
+// class _GridMasonryLayoutState<T extends CellBase>
+//     extends State<GridMasonryLayout<T>> {
+//   ReadOnlyStorage<int, T> get source => widget.source;
 
-  late final StreamSubscription<int> _watcher;
+//   late final StreamSubscription<int> _watcher;
 
-  @override
-  void initState() {
-    _watcher = source.watch((_) {
-      if (widget.unselectOnUpdate) {
-        GridExtrasNotifier.of<T>(context).selection?.reset();
-      }
+//   @override
+//   void initState() {
+//     _watcher = source.watch((_) {
+//       if (widget.unselectOnUpdate) {
+//         GridExtrasNotifier.of<T>(context).selection?.reset();
+//       }
 
-      setState(() {});
-    });
+//       setState(() {});
+//     });
 
-    super.initState();
-  }
+//     super.initState();
+//   }
 
-  @override
-  void dispose() {
-    _watcher.cancel();
+//   @override
+//   void dispose() {
+//     _watcher.cancel();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    final getCell = CellProvider.of<T>(context);
-    final extras = GridExtrasNotifier.of<T>(context);
-    final config = GridConfiguration.of(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     final getCell = CellProvider.of<T>(context);
+//     final extras = GridExtrasNotifier.of<T>(context);
+//     final config = GridConfiguration.of(context);
 
-    final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
-        config.columns.number;
+//     final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) /
+//         config.columns.number;
 
-    return EmptyWidgetOrContent(
-      source: source,
-      progress: widget.progress,
-      buildEmpty: widget.buildEmpty,
-      child: SliverMasonryGrid(
-        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: config.columns.number,
-        ),
-        delegate: SliverChildBuilderDelegate(childCount: source.count,
-            (context, idx) {
-          final cell = getCell(idx);
+//     return EmptyWidgetOrContent(
+//       source: source,
+//       progress: widget.progress,
+//       buildEmpty: widget.buildEmpty,
+//       child: SliverMasonryGrid(
+//         gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+//           crossAxisCount: config.columns.number,
+//         ),
+//         delegate: SliverChildBuilderDelegate(childCount: source.count,
+//             (context, idx) {
+//           final cell = getCell(idx);
 
-          final rem = ((widget.randomNumber + idx) % 11) * 0.5;
-          final maxHeight = (size / config.aspectRatio.value) +
-              (rem *
-                      (size *
-                          (0.037 + (config.columns.number / 100) - rem * 0.01)))
-                  .toInt();
+//           final rem = ((widget.randomNumber + idx) % 11) * 0.5;
+//           final maxHeight = (size / config.aspectRatio.value) +
+//               (rem *
+//                       (size *
+//                           (0.037 + (config.columns.number / 100) - rem * 0.01)))
+//                   .toInt();
 
-          return ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: maxHeight),
-            child: cell.buildCell<T>(
-              context,
-              idx,
-              cell,
-              imageAlign: Alignment.center,
-              hideTitle: config.hideName,
-              isList: false,
-              wrapSelection: (child) =>
-                  cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-                        context: context,
-                        selection: extras.selection,
-                        thisIndx: idx,
-                        onPressed: cell.tryAsPressable(
-                          context,
-                          extras.functionality,
-                          idx,
-                        ),
-                        description: cell.description(),
-                        functionality: extras.functionality,
-                        selectFrom: null,
-                        child: child,
-                      ) ??
-                  WrapSelection(
-                    selection: extras.selection,
-                    thisIndx: idx,
-                    onPressed:
-                        cell.tryAsPressable(context, extras.functionality, idx),
-                    description: cell.description(),
-                    functionality: extras.functionality,
-                    selectFrom: null,
-                    child: child,
-                  ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
+//           return ConstrainedBox(
+//             constraints: BoxConstraints(maxHeight: maxHeight),
+//             child: cell.buildCell<T>(
+//               context,
+//               idx,
+//               cell,
+//               imageAlign: Alignment.center,
+//               hideTitle: config.hideName,
+//               isList: false,
+//               wrapSelection: (child) =>
+//                   cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+//                         context: context,
+//                         selection: extras.selection,
+//                         thisIndx: idx,
+//                         onPressed: cell.tryAsPressable(
+//                           context,
+//                           extras.functionality,
+//                           idx,
+//                         ),
+//                         description: cell.description(),
+//                         functionality: extras.functionality,
+//                         selectFrom: null,
+//                         child: child,
+//                       ) ??
+//                   WrapSelection(
+//                     selection: extras.selection,
+//                     thisIndx: idx,
+//                     onPressed:
+//                         cell.tryAsPressable(context, extras.functionality, idx),
+//                     description: cell.description(),
+//                     functionality: extras.functionality,
+//                     selectFrom: null,
+//                     child: child,
+//                   ),
+//             ),
+//           );
+//         }),
+//       ),
+//     );
+//   }
+// }

@@ -28,7 +28,7 @@ class HomeSkeleton extends StatefulWidget {
     required this.onDestinationSelected,
     required this.changePage,
     required this.booru,
-    required this.scrollingEvents,
+    required this.scrollingState,
     required this.child,
   });
 
@@ -37,7 +37,7 @@ class HomeSkeleton extends StatefulWidget {
 
   final Booru booru;
 
-  final Stream<bool> scrollingEvents;
+  final ScrollingStateSink scrollingState;
 
   final DestinationCallback onDestinationSelected;
 
@@ -68,7 +68,7 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
     final bottomNavigationBar = showRail
         ? null
         : HomeNavigationBar(
-            scrollingEvents: widget.scrollingEvents,
+            scrollingState: widget.scrollingState,
             onDestinationSelected: widget.onDestinationSelected,
             desitinations: widget.animatedIcons.icons(
               context,
@@ -308,12 +308,12 @@ class HomeNavigationBar extends StatefulWidget {
   const HomeNavigationBar({
     super.key,
     required this.desitinations,
-    required this.scrollingEvents,
+    required this.scrollingState,
     required this.onDestinationSelected,
   });
 
   final List<Widget> desitinations;
-  final Stream<bool> scrollingEvents;
+  final ScrollingStateSink scrollingState;
 
   final void Function(BuildContext, CurrentRoute) onDestinationSelected;
 
@@ -321,8 +321,14 @@ class HomeNavigationBar extends StatefulWidget {
   State<HomeNavigationBar> createState() => _HomeNavigationBarState();
 }
 
+abstract class IsExpandedConnector {
+  bool get isExpanded;
+  set isExpanded(bool e);
+}
+
 class _HomeNavigationBarState extends State<HomeNavigationBar>
-    with DefaultSelectionEventsMixin, TickerProviderStateMixin {
+    with DefaultSelectionEventsMixin, TickerProviderStateMixin
+    implements IsExpandedConnector {
   late final AnimationController scrollingAnimation;
 
   @override
@@ -334,27 +340,43 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
   late final StreamSubscription<bool> events;
 
   @override
+  bool get isExpanded => mounted && (scrollingAnimation.value > 0);
+
+  @override
+  set isExpanded(bool e) {
+    if (e) {
+      scrollingAnimation.forward();
+    } else {
+      scrollingAnimation.reverse();
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
 
     scrollingAnimation = AnimationController(
-      value: 0,
+      value: 1,
       duration: Durations.short4,
       reverseDuration: Durations.short4,
       vsync: this,
     );
 
-    events = widget.scrollingEvents.listen((scrollingUp) {
+    widget.scrollingState.connect(this);
+
+    events = widget.scrollingState.stream.listen((scrollingUp) {
       if (scrollingUp) {
-        scrollingAnimation.reverse();
-      } else {
         scrollingAnimation.forward();
+      } else {
+        scrollingAnimation.reverse();
       }
     });
   }
 
   @override
   void dispose() {
+    widget.scrollingState.disconnect();
+
     scrollingAnimation.dispose();
 
     events.cancel();
@@ -365,7 +387,7 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
   @override
   void animateNavBar(bool show) {
     if (show) {
-      scrollingAnimation.reverse();
+      scrollingAnimation.forward();
     }
   }
 
@@ -388,8 +410,8 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
             reverseCurve: Easing.emphasizedAccelerate,
           ).drive<Offset>(
             Tween(
-              begin: Offset.zero,
-              end: const Offset(0, 1),
+              begin: const Offset(0, 1),
+              end: Offset.zero,
             ),
           ),
           child: child,

@@ -29,6 +29,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:logging/logging.dart";
+import "package:photo_view/photo_view.dart";
 import "package:photo_view/photo_view_gallery.dart";
 
 part "image_view_body.dart";
@@ -104,6 +105,8 @@ abstract class ImageViewStateController {
 
   void refreshImage();
 
+  void seekTo(int i);
+
   Widget buildBody(BuildContext context);
   Widget injectMetadataProvider(Widget child);
 
@@ -119,10 +122,18 @@ abstract class CurrentIndexMetadata {
     return widget?.metadata;
   }
 
+  static ImageProvider? Function(int idx) thumbnailsOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ThumbnailsNotifier>();
+
+    return widget!.provider;
+  }
+
   static CurrentIndexMetadata of(BuildContext context) => maybeOf(context)!;
 
-  int get index;
   bool get isVideo;
+  int get index;
+  int get count;
   Key get uniqueKey;
 
   List<ImageViewAction> actions(BuildContext context);
@@ -149,6 +160,20 @@ class CurrentIndexMetadataNotifier extends InheritedWidget {
   bool updateShouldNotify(CurrentIndexMetadataNotifier oldWidget) =>
       metadata != oldWidget.metadata ||
       _refreshTimes != oldWidget._refreshTimes;
+}
+
+class ThumbnailsNotifier extends InheritedWidget {
+  const ThumbnailsNotifier({
+    super.key,
+    required this.provider,
+    required super.child,
+  });
+
+  final ImageProvider? Function(int idx) provider;
+
+  @override
+  bool updateShouldNotify(ThumbnailsNotifier oldWidget) =>
+      provider != oldWidget.provider;
 }
 
 class ImageView extends StatefulWidget {
@@ -436,6 +461,7 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
           key: wrapThemeKey,
           child: ImageViewSkeleton(
             scaffoldKey: key,
+            stateControler: widget.stateController,
             videoControls: videoControls,
             controller: animationController,
             pauseVideoState: pauseVideoState,

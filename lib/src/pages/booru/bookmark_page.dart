@@ -56,6 +56,8 @@ class _BookmarkPageState extends State<BookmarkPage>
     layoutType: GridLayoutType.list,
   );
 
+  String? currentPage;
+
   late final source = GenericListSource<GridBookmark>(
     () => Future.value(gridStateBooru.all),
   );
@@ -83,6 +85,8 @@ class _BookmarkPageState extends State<BookmarkPage>
   }
 
   void launchGrid(BuildContext context, GridBookmark e) {
+    currentPage = e.name;
+
     Navigator.push<void>(
       context,
       MaterialPageRoute(
@@ -97,7 +101,7 @@ class _BookmarkPageState extends State<BookmarkPage>
           );
         },
       ),
-    );
+    ).whenComplete(() => currentPage = null);
   }
 
   @override
@@ -117,7 +121,12 @@ class _BookmarkPageState extends State<BookmarkPage>
           ),
         ],
         functionality: GridFunctionality(
-          scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
+          scrollUpOn: [
+            (
+              NavigationButtonEvents.maybeOf(context)!,
+              () => currentPage == null,
+            ),
+          ],
           onEmptySource: EmptyWidgetBackground(
             subtitle: l10n.emptyBookmarkedSearches,
           ),

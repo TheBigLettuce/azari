@@ -71,6 +71,7 @@ class NativeViewFactory(
     private val galleryApi: PlatformGalleryApi,
     private val videoEvents: GalleryVideoEvents,
     private val metadataChangeEvents: StateFlow<Long>,
+    private val pageChangeEvents: SharedFlow<Long>,
     private val playerButtonsEvents: SharedFlow<PlayerButtonEvents>,
 ) :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -80,6 +81,7 @@ class NativeViewFactory(
             data,
             videoEvents,
             metadataChangeEvents,
+            pageChangeEvents,
             playerButtonsEvents,
             galleryApi,
             args as Map<String, Any>
@@ -93,6 +95,7 @@ internal class GalleryImpl(
     private val data: FlutterGalleryData,
     private val videoEvents: GalleryVideoEvents,
     private val metadataChangeEvents: StateFlow<Long>,
+    private val pageChangeEvents: SharedFlow<Long>,
     private val playerButtonsEvents: SharedFlow<PlayerButtonEvents>,
     galleryApi: PlatformGalleryApi,
     params: Map<String, Any>,
@@ -221,6 +224,14 @@ internal class GalleryImpl(
         }
     }
 
+    private val pageChangeJob: Job = CoroutineScope(Dispatchers.IO).launch {
+        pageChangeEvents.collect {
+            CoroutineScope(Dispatchers.Main).launch {
+                pageViewer?.setCurrentItem(it.toInt(), false)
+            }
+        }
+    }
+
     private val playerButtonEventsJob = CoroutineScope(Dispatchers.IO).launch {
         playerButtonsEvents.collect {
             CoroutineScope(Dispatchers.Main).launch {
@@ -325,6 +336,7 @@ internal class GalleryImpl(
 
     override fun dispose() {
         job.cancel()
+        pageChangeJob.cancel()
         playerButtonEventsJob.cancel()
         dataChangeUpdatesJob.cancel()
 
@@ -480,10 +492,17 @@ class MediaPlayerAdapter(
 
 class GalleryEventsImpl() : PlatformGalleryEvents {
     val events: MutableStateFlow<Long> = MutableStateFlow(0)
+    val pageChangeEvents: MutableSharedFlow<Long> = MutableSharedFlow()
     val playerButtonsEvents: MutableSharedFlow<PlayerButtonEvents> = MutableSharedFlow()
 
     override fun metadataChanged() {
         events.value += 1
+    }
+
+    override fun seekToIndex(i: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            pageChangeEvents.emit(i)
+        }
     }
 
     override fun volumeButtonPressed(volume: Double?) {
@@ -509,6 +528,7 @@ class GalleryEventsImpl() : PlatformGalleryEvents {
             playerButtonsEvents.emit(PlayerButtonEvents.Duration(d))
         }
     }
+
 }
 
 sealed interface PlayerButtonEvents {

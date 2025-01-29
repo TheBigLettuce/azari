@@ -773,9 +773,9 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
             GridLayoutType.gridQuilted => e == selectGridLayout
                 ? Icons.view_quilt_rounded
                 : Icons.view_quilt_outlined,
-            GridLayoutType.gridMasonry => e == selectGridLayout
-                ? Icons.grid_view_rounded
-                : Icons.grid_view_outlined,
+            // GridLayoutType.gridMasonry => e == selectGridLayout
+            //     ? Icons.grid_view_rounded
+            //     : Icons.grid_view_outlined,
           },
         ),
       ),

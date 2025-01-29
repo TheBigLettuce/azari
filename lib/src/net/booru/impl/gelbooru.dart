@@ -316,7 +316,8 @@ class _CommentsAPI implements BooruCommentsAPI {
     int? limit,
     required PageSaver pageSaver,
   }) {
-    throw UnimplementedError();
+    // TODO: implement when unlocked
+    return Future.value(const []);
   }
 
   @override

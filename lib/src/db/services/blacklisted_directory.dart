@@ -87,7 +87,7 @@ abstract class BlacklistedDirectoryDataImpl
             secure: true,
             db: db,
             navBarEvents: NavigationButtonEvents.maybeOf(context),
-            scrollingSink: ScrollingSinkProvider.maybeOf(context),
+            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
           );
         },
       ),

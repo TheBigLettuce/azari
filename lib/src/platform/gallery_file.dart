@@ -83,6 +83,11 @@ class FlutterGalleryDataImpl
   }
 
   @override
+  void seekTo(int i) {
+    PlatformGalleryEvents().seekToIndex(i);
+  }
+
+  @override
   void unbind() {}
 
   @override
@@ -105,6 +110,8 @@ class FlutterGalleryDataImpl
       child: _FileMetadataProvider(
         indexEvents: indexEvents,
         currentIndex: currentIndex,
+        currentCount: count,
+        countEvents: countEvents,
         wrapNotifiers: wrapNotifiers,
         source: source,
         child: child,
@@ -190,15 +197,19 @@ class _FileMetadataProvider extends StatefulWidget {
     required this.currentIndex,
     required this.indexEvents,
     required this.source,
-    required this.child,
     required this.wrapNotifiers,
+    required this.currentCount,
+    required this.countEvents,
+    required this.child,
   });
 
   final int currentIndex;
+  final int currentCount;
 
   final ResourceSource<int, File> source;
 
   final Stream<int> indexEvents;
+  final Stream<int> countEvents;
 
   final NotifierWrapper? wrapNotifiers;
 
@@ -209,9 +220,10 @@ class _FileMetadataProvider extends StatefulWidget {
 }
 
 class __FileMetadataProviderState extends State<_FileMetadataProvider> {
-  late final StreamSubscription<int> _events;
+  late final StreamSubscription<int> _eventsIndex;
+  late final StreamSubscription<int> _eventsCount;
 
-  late CurrentIndexMetadata metadata;
+  late _FileToMetadata metadata;
   int refreshTimes = 0;
 
   @override
@@ -221,19 +233,32 @@ class __FileMetadataProviderState extends State<_FileMetadataProvider> {
     metadata = _FileToMetadata(
       file: widget.source.forIdxUnsafe(widget.currentIndex),
       index: widget.currentIndex,
+      count: widget.currentCount,
       wrapNotifiers: widget.wrapNotifiers,
     );
 
-    _events = widget.indexEvents.listen((newIndex) {
+    _eventsIndex = widget.indexEvents.listen((newIndex) {
       metadata = _FileToMetadata(
         file: widget.source.forIdxUnsafe(newIndex),
+        count: metadata.count,
         index: newIndex,
         wrapNotifiers: widget.wrapNotifiers,
       );
 
       refreshTimes += 1;
 
-      print(newIndex);
+      setState(() {});
+    });
+
+    _eventsCount = widget.countEvents.listen((newCount) {
+      metadata = _FileToMetadata(
+        file: metadata.file,
+        index: metadata.index,
+        count: newCount,
+        wrapNotifiers: widget.wrapNotifiers,
+      );
+
+      refreshTimes += 1;
 
       setState(() {});
     });
@@ -241,17 +266,24 @@ class __FileMetadataProviderState extends State<_FileMetadataProvider> {
 
   @override
   void dispose() {
-    _events.cancel();
+    _eventsIndex.cancel();
+    _eventsCount.cancel();
 
     super.dispose();
   }
 
+  ImageProvider _getThumbnail(int i) =>
+      widget.source.forIdxUnsafe(i).thumbnail(null);
+
   @override
   Widget build(BuildContext context) {
-    return CurrentIndexMetadataNotifier(
-      metadata: metadata,
-      refreshTimes: refreshTimes,
-      child: widget.child,
+    return ThumbnailsNotifier(
+      provider: _getThumbnail,
+      child: CurrentIndexMetadataNotifier(
+        metadata: metadata,
+        refreshTimes: refreshTimes,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -261,14 +293,17 @@ class _FileToMetadata implements CurrentIndexMetadata {
     required this.file,
     required this.index,
     required this.wrapNotifiers,
+    required this.count,
   });
 
   final NotifierWrapper? wrapNotifiers;
-
   final File file;
 
   @override
   final int index;
+
+  @override
+  final int count;
 
   @override
   bool get isVideo => file.isVideo;
@@ -515,6 +550,16 @@ abstract class File
     required Widget child,
   }) {
     final theme = Theme.of(context);
+
+    return WrapSelection(
+      thisIndx: thisIndx,
+      description: description,
+      selectFrom: selectFrom,
+      selection: selection,
+      functionality: functionality,
+      onPressed: onPressed,
+      child: child,
+    );
 
     return OpenContainer(
       tappable: false,
@@ -1456,13 +1501,6 @@ class _FileCell extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  wrapSelection(
-                    GridCellImage(
-                      imageAlign: imageAlign,
-                      thumbnail: thumbnail,
-                      blur: blur,
-                    ),
-                  ),
                   if (stickers != null && stickers.isNotEmpty)
                     Align(
                       alignment: Alignment.topRight,
@@ -1493,6 +1531,13 @@ class _FileCell extends StatelessWidget {
                       title: alias,
                       lines: description.titleLines,
                     ),
+                  wrapSelection(
+                    GridCellImage(
+                      imageAlign: imageAlign,
+                      thumbnail: thumbnail,
+                      blur: blur,
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -279,16 +279,28 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
               searchTextController: searchTextController,
               searchFocus: searchFocus,
             ),
-            CurrentGridSettingsLayout<FavoritePost>(
-              source: filter.backingStorage,
-              progress: filter.progress,
-              gridSeed: gridSeed,
+            Builder(
+              builder: (context) {
+                final padding = MediaQuery.systemGestureInsetsOf(context);
+
+                return SliverPadding(
+                  padding: EdgeInsets.only(
+                    left: padding.left * 0.2,
+                    right: padding.right * 0.2,
+                  ),
+                  sliver: CurrentGridSettingsLayout<FavoritePost>(
+                    source: filter.backingStorage,
+                    progress: filter.progress,
+                    gridSeed: gridSeed,
+                  ),
+                );
+              },
             ),
           ],
           functionality: GridFunctionality(
             scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
             selectionActions: SelectionActions.of(context),
-            scrollingSink: ScrollingSinkProvider.maybeOf(context),
+            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
             onEmptySource: EmptyWidgetBackground(
               subtitle: l10n.emptyFavoritedPosts,
             ),

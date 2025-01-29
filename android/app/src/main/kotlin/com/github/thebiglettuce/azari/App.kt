@@ -106,6 +106,7 @@ fun makeEngine(
             PlatformGalleryApi(engine.dartExecutor.binaryMessenger),
             GalleryVideoEvents(engine.dartExecutor.binaryMessenger),
             galleryEvents.events,
+            galleryEvents.pageChangeEvents,
             galleryEvents.playerButtonsEvents,
         )
     )

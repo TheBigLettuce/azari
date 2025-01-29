@@ -10,6 +10,7 @@ import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/post_functions.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
@@ -32,6 +33,7 @@ import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
@@ -300,6 +302,57 @@ abstract class PostImpl
             }).listen(f);
           },
         ),
+      // ImageViewAction(
+      //   Icons.comment_rounded,
+      //   (_) {
+      //     final client = BooruAPI.defaultClientForBooru(booru);
+      //     final api = BooruComunnityAPI.fromEnum(booru, client);
+
+      //     final pageSaver = PageSaver.noPersist();
+
+      //     Navigator.push<void>(
+      //       context,
+      //       ModalBottomSheetRoute(
+      //         isScrollControlled: true,
+      //         showDragHandle: true,
+      //         builder: (context) {
+      //           return WrapFutureRestartable(
+      //             newStatus: () =>
+      //                 api.comments.forPostId(postId: id, pageSaver: pageSaver),
+      //             builder: (context, data) {
+      //               return ListView.builder(
+      //                 itemCount: data.length,
+      //                 itemBuilder: (context, idx) {
+      //                   return CommentTile(
+      //                     comments: data[idx],
+      //                   );
+      //                 },
+      //               );
+      //             },
+      //           );
+      //         },
+      //       ),
+      //     ).whenComplete(() {
+      //       client.close(force: true);
+      //     });
+      //   },
+      //   animate: true,
+      //   watch: (f, [fire = false]) => db.favoritePosts.watchSingle(
+      //     id,
+      //     booru,
+      //     (isFavorite_) => (
+      //       isFavorite_
+      //           ? Icons.favorite_rounded
+      //           : Icons.favorite_border_rounded,
+      //       isFavorite_
+      //           ? Colors.red.harmonizeWith(theme.colorScheme.primary)
+      //           : null,
+      //       !isFavorite_,
+      //     ),
+      //     f,
+      //     fire,
+      //   ),
+      // ),
     ];
   }
 
@@ -421,6 +474,20 @@ abstract class PostImpl
         booru,
       ),
     ];
+  }
+}
+
+class CommentTile extends StatelessWidget {
+  const CommentTile({
+    super.key,
+    required this.comments,
+  });
+
+  final BooruComments comments;
+
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
   }
 }
 

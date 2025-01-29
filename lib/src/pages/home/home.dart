@@ -53,7 +53,7 @@ class _HomeState extends State<Home>
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
   final navBarEvents = StreamController<void>.broadcast();
-  final scrollingEvents = StreamController<bool>.broadcast();
+  final scrollingState = ScrollingStateSink();
 
   bool isRefreshing = false;
 
@@ -89,7 +89,7 @@ class _HomeState extends State<Home>
 
   @override
   void dispose() {
-    scrollingEvents.close();
+    scrollingState.dispose();
     navBarEvents.close();
     notificationEvents.cancel();
 
@@ -132,7 +132,7 @@ class _HomeState extends State<Home>
       switchPage(this, route);
     }
 
-    scrollingEvents.add(true);
+    scrollingState.sink.add(true);
   }
 
   void onPop(bool didPop, Object? _) {
@@ -145,8 +145,8 @@ class _HomeState extends State<Home>
 
   @override
   Widget build(BuildContext context) {
-    return ScrollingSinkProvider(
-      sink: scrollingEvents.sink,
+    return ScrollingStateSinkProvider(
+      stateSink: scrollingState,
       child: NavigationButtonEvents(
         events: navBarEvents.stream,
         child: CurrentRoute.wrap(
@@ -163,7 +163,7 @@ class _HomeState extends State<Home>
                   onDestinationSelected: onDestinationSelected,
                   changePage: this,
                   booru: settings.selectedBooru,
-                  scrollingEvents: scrollingEvents.stream,
+                  scrollingState: scrollingState,
                   child: _CurrentPageWidget(
                     icons: this,
                     changePage: this,
@@ -178,24 +178,50 @@ class _HomeState extends State<Home>
   }
 }
 
-class ScrollingSinkProvider extends InheritedWidget {
-  const ScrollingSinkProvider({
-    required this.sink,
+class ScrollingStateSink {
+  ScrollingStateSink();
+
+  final _scrollingEvents = StreamController<bool>.broadcast();
+
+  IsExpandedConnector? _connector;
+
+  StreamSink<bool> get sink => _scrollingEvents.sink;
+  Stream<bool> get stream => _scrollingEvents.stream;
+  bool get isExpanded => _connector?.isExpanded ?? false;
+
+  // ignore: use_setters_to_change_properties
+  void connect(IsExpandedConnector connector) {
+    _connector = connector;
+  }
+
+  void disconnect() {
+    _connector = null;
+  }
+
+  void dispose() {
+    _connector = null;
+    _scrollingEvents.close();
+  }
+}
+
+class ScrollingStateSinkProvider extends InheritedWidget {
+  const ScrollingStateSinkProvider({
+    required this.stateSink,
     required super.child,
   });
 
-  final StreamSink<bool> sink;
+  final ScrollingStateSink stateSink;
 
-  static StreamSink<bool>? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ScrollingSinkProvider>();
+  static ScrollingStateSink? maybeOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ScrollingStateSinkProvider>();
 
-    return widget?.sink;
+    return widget?.stateSink;
   }
 
   @override
-  bool updateShouldNotify(ScrollingSinkProvider oldWidget) {
-    return sink != oldWidget.sink;
+  bool updateShouldNotify(ScrollingStateSinkProvider oldWidget) {
+    return stateSink != oldWidget.stateSink;
   }
 }
 

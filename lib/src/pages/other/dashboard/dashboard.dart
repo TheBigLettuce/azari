@@ -6,6 +6,8 @@
 import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/other/dashboard/dashboard_card.dart";
 import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
@@ -99,6 +101,210 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({
+    super.key,
+  });
+
+  static Future<void> open(BuildContext context) => Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) {
+            return const DashboardPage();
+          },
+        ),
+      );
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: Text(l10n.dashboardPage),
+          ),
+          _GeneralStatistics(),
+          _DailyStatistics(),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyStatistics extends StatefulWidget {
+  const _DailyStatistics({
+    super.key,
+  });
+
+  @override
+  State<_DailyStatistics> createState() => __DailyStatisticsState();
+}
+
+class __DailyStatisticsState extends State<_DailyStatistics> {
+  late final StreamSubscription<StatisticsDailyData> _events;
+
+  late StatisticsDailyData currentData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    currentData = StatisticsDailyService.db().current;
+
+    _events = StatisticsDailyService.db().watch((e) {
+      currentData = e;
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return SliverGrid.count(
+      crossAxisCount: 3,
+      children: [
+        // _DashboardCard(
+        //   value: currentData.refreshes.toString(),
+        //   title: "Refreshes",
+        // ),
+        _DashboardCard(
+          value: l10n.dateSimple(currentData.date),
+          title: "Date",
+        ),
+        _DashboardCard(
+          value: l10n.minutesShort(
+            Duration(milliseconds: currentData.durationMillis).inMinutes,
+          ),
+          title: "Time spent",
+        ),
+        _DashboardCard(
+          title: "Swiped",
+          value: currentData.swipedBoth.toString(),
+        ),
+      ],
+    );
+  }
+}
+
+class _GeneralStatistics extends StatefulWidget {
+  const _GeneralStatistics({
+    super.key,
+  });
+
+  @override
+  State<_GeneralStatistics> createState() => __GeneralStatisticsState();
+}
+
+class __GeneralStatisticsState extends State<_GeneralStatistics> {
+  late final StreamSubscription<StatisticsGeneralData> _events;
+
+  late StatisticsGeneralData currentData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    currentData = StatisticsGeneralService.db().current;
+
+    _events = StatisticsGeneralService.db().watch((e) {
+      currentData = e;
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return SliverGrid.count(
+      crossAxisCount: 3,
+      children: [
+        _DashboardCard(
+          value: currentData.refreshes.toString(),
+          title: "Refreshes",
+        ),
+        _DashboardCard(
+          value: currentData.scrolledUp.toString(),
+          title: "Scrolled up",
+        ),
+        _DashboardCard(
+          value: l10n.minutesShort(
+            Duration(milliseconds: currentData.timeDownload).inMinutes,
+          ),
+          title: "Time downloaded",
+        ),
+        _DashboardCard(
+          title: "Time spent",
+          value: l10n.minutesShort(
+            Duration(milliseconds: currentData.timeSpent).inMinutes,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashboardCard extends StatelessWidget {
+  const _DashboardCard({
+    super.key,
+    required this.title,
+    required this.value,
+  });
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Stack(
+        alignment: Alignment.topLeft,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleLarge,
+              ),
+              Text(
+                value,
+                style: theme.textTheme.labelLarge,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

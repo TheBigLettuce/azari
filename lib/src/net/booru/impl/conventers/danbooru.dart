@@ -40,6 +40,16 @@ List<BooruPool> fromListPools(List<dynamic> l) {
   return ret;
 }
 
+List<BooruComments> fromListComments(List<dynamic> l) {
+  final ret = <BooruComments>[];
+
+  for (final e in l) {
+    ret.add(_DanbooruComments.fromJson(e as Map<String, dynamic>));
+  }
+
+  return ret;
+}
+
 @JsonSerializable()
 class _DanbooruPost extends PostImpl
     with DefaultPostPressable<Post>
@@ -297,6 +307,46 @@ class _DanbooruPool implements BooruPool {
   @override
   @JsonKey(name: "post_ids")
   final List<int> postIds;
+
+  @override
+  @DanbooruDateConventer()
+  @JsonKey(name: "updated_at")
+  final DateTime updatedAt;
+}
+
+@JsonSerializable()
+class _DanbooruComments implements BooruComments {
+  const _DanbooruComments({
+    required this.body,
+    required this.id,
+    required this.isSticky,
+    required this.postId,
+    required this.score,
+    required this.updatedAt,
+  });
+
+  factory _DanbooruComments.fromJson(Map<String, dynamic> json) =>
+      _$DanbooruCommentsFromJson(json);
+
+  @override
+  @JsonKey(name: "is_sticky")
+  final bool isSticky;
+
+  @override
+  @JsonKey(name: "id")
+  final int id;
+
+  @override
+  @JsonKey(name: "post_id")
+  final int postId;
+
+  @override
+  @JsonKey(name: "score")
+  final int score;
+
+  @override
+  @JsonKey(name: "body")
+  final String body;
 
   @override
   @DanbooruDateConventer()

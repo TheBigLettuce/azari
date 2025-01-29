@@ -944,6 +944,16 @@ class IsarStatisticsGeneralService implements StatisticsGeneralService {
       () => collection.putSync(data as IsarStatisticsGeneral),
     );
   }
+
+  @override
+  StreamSubscription<StatisticsGeneralData> watch(
+    void Function(StatisticsGeneralData d) f, [
+    bool fire = false,
+  ]) =>
+      collection
+          .watchObjectLazy(0, fireImmediately: fire)
+          .map((e) => current)
+          .listen(f);
 }
 
 class IsarStatisticsGalleryService implements StatisticsGalleryService {
@@ -1040,6 +1050,16 @@ class IsarDailyStatisticsService implements StatisticsDailyService {
       () => collection.putSync(data as IsarDailyStatistics),
     );
   }
+
+  @override
+  StreamSubscription<StatisticsDailyData> watch(
+    void Function(StatisticsDailyData d) f, [
+    bool fire = false,
+  ]) =>
+      collection
+          .watchObjectLazy(0, fireImmediately: fire)
+          .map((e) => current)
+          .listen(f);
 }
 
 class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {

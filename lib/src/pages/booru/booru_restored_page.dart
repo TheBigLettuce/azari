@@ -25,6 +25,7 @@ import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -269,6 +270,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
+    final navigationButtonEvents = NavigationButtonEvents.maybeOf(context);
 
     return GridConfiguration(
       watch: gridSettings.watch,
@@ -284,25 +286,51 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                 child: GridFrame<Post>(
                   key: gridKey,
                   slivers: [
-                    CurrentGridSettingsLayout<Post>(
-                      source: source.backingStorage,
-                      progress: source.progress,
-                      gridSeed: gridSeed,
-                      unselectOnUpdate: false,
-                      buildEmpty: (e) => EmptyWidgetWithButton(
-                        error: e,
-                        buttonText: l10n.openInBrowser,
-                        onPressed: () {
-                          launchUrl(
-                            Uri.https(api.booru.url),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final padding =
+                            MediaQuery.systemGestureInsetsOf(context);
+
+                        return SliverPadding(
+                          padding: EdgeInsets.only(
+                            left: padding.left * 0.2,
+                            right: padding.right * 0.2,
+                          ),
+                          sliver: CurrentGridSettingsLayout<Post>(
+                            source: source.backingStorage,
+                            progress: source.progress,
+                            gridSeed: gridSeed,
+                            unselectOnUpdate: false,
+                            buildEmpty: (e) => EmptyWidgetWithButton(
+                              error: e,
+                              buttonText: l10n.openInBrowser,
+                              onPressed: () {
+                                launchUrl(
+                                  Uri.https(api.booru.url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    GridConfigPlaceholders(
-                      progress: source.progress,
-                      randomNumber: gridSeed,
+                    Builder(
+                      builder: (context) {
+                        final padding =
+                            MediaQuery.systemGestureInsetsOf(context);
+
+                        return SliverPadding(
+                          padding: EdgeInsets.only(
+                            left: padding.left * 0.2,
+                            right: padding.right * 0.2,
+                          ),
+                          sliver: GridConfigPlaceholders(
+                            progress: source.progress,
+                            randomNumber: gridSeed,
+                          ),
+                        );
+                      },
                     ),
                     GridFooter<void>(
                       storage: source.backingStorage,
@@ -311,11 +339,14 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                   ],
                   initalScrollPosition: pagingState.offset,
                   functionality: GridFunctionality(
-                    scrollUpOn: [
-                      (NavigationButtonEvents.maybeOf(context)!, null),
-                    ],
+                    fab: navigationButtonEvents == null
+                        ? const DefaultGridFab()
+                        : const NoGridFab(),
+                    scrollUpOn: navigationButtonEvents == null
+                        ? const []
+                        : [(navigationButtonEvents, null)],
                     selectionActions: SelectionActions.of(context),
-                    scrollingSink: ScrollingSinkProvider.maybeOf(context),
+                    scrollingState: ScrollingStateSinkProvider.maybeOf(context),
                     updatesAvailable: source.updatesAvailable,
                     settingsButton: GridSettingsButton.onlyHeader(
                       SafeModeButton(
@@ -327,8 +358,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                     source: source,
                     search: RawSearchWidget(
                       (context, settingsButton, bottomWidget) {
-                        // final theme = Theme.of(context);
-
                         return SliverAppBar(
                           leading: const BackButton(),
                           floating: true,

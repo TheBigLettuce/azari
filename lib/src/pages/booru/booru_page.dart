@@ -315,7 +315,7 @@ class _BooruPageState extends State<BooruPage>
                   ],
                   functionality: GridFunctionality(
                     selectionActions: SelectionActions.of(context),
-                    scrollingSink: ScrollingSinkProvider.maybeOf(context),
+                    scrollingState: ScrollingStateSinkProvider.maybeOf(context),
                     scrollUpOn: navBarEvents == null
                         ? const []
                         : [(navBarEvents, null)],
@@ -484,8 +484,8 @@ class _GridConfigPlaceholdersState extends State<GridConfigPlaceholders> {
 
     return switch (gridConfig.layoutType) {
       GridLayoutType.grid ||
-      GridLayoutType.gridMasonry =>
-        GridLayoutPlaceholder(description: widget.description),
+      // GridLayoutType.gridMasonry =>
+      //   GridLayoutPlaceholder(description: widget.description),
       GridLayoutType.list =>
         ListLayoutPlaceholder(description: widget.description),
       GridLayoutType.gridQuilted => GridQuiltedLayoutPlaceholder(

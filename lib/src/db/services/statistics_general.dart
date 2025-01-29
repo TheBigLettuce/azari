@@ -15,6 +15,11 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
   StatisticsGeneralData get current;
 
   void add(StatisticsGeneralData data);
+
+  StreamSubscription<StatisticsGeneralData> watch(
+    void Function(StatisticsGeneralData d) f, [
+    bool fire = false,
+  ]);
 }
 
 abstract class StatisticsGeneralData {

@@ -650,7 +650,7 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
       modifiers: val.modifiers,
       count: val.list.length,
       sliver: switch (config.layoutType) {
-        GridLayoutType.grid || GridLayoutType.gridMasonry => SliverGrid.builder(
+        GridLayoutType.grid => SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               childAspectRatio: config.aspectRatio.value,
               crossAxisCount: config.columns.number,

@@ -30,7 +30,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   void add(StatisticsGalleryData data);
 
   StreamSubscription<StatisticsGalleryData> watch(
-    void Function(StatisticsGalleryData) f, [
+    void Function(StatisticsGalleryData d) f, [
     bool fire = false,
   ]);
 }

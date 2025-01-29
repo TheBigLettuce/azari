@@ -150,7 +150,7 @@ abstract class Directory
           // secure: secure,
           directories: [this],
           db: DbConn.of(containerContext),
-          scrollingSink: ScrollingSinkProvider.maybeOf(containerContext),
+          scrollingState: ScrollingStateSinkProvider.maybeOf(containerContext),
           navBarEvents: NavigationButtonEvents.maybeOf(containerContext),
           callback: callback?.toFileOrNull,
         );
@@ -234,7 +234,7 @@ abstract class Directory
                 String() => d.name,
               },
               db: DbConn.of(context),
-              scrollingSink: ScrollingSinkProvider.maybeOf(context),
+              scrollingState: ScrollingStateSinkProvider.maybeOf(context),
               navBarEvents: NavigationButtonEvents.maybeOf(context),
             ),
           ),

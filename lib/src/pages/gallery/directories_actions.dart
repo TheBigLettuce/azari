@@ -173,7 +173,7 @@ Future<void> joinedDirectoriesFnc(
             filteringMode: filteringMode,
             db: DbConn.of(context),
             navBarEvents: NavigationButtonEvents.maybeOf(context),
-            scrollingSink: ScrollingSinkProvider.maybeOf(context),
+            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
           );
         },
       ),

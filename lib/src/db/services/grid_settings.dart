@@ -44,7 +44,8 @@ enum GridLayoutType {
   grid(),
   list(),
   gridQuilted(),
-  gridMasonry();
+  // gridMasonry()
+  ;
 
   const GridLayoutType();
 
@@ -52,7 +53,7 @@ enum GridLayoutType {
         GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
         GridLayoutType.list => l10n.enumGridLayoutTypeList,
         GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
-        GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
+        // GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
       };
 }
 

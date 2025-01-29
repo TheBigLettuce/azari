@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
@@ -95,7 +96,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   SortingMode get sortingMode => _sorting;
 
   @override
-  RefreshingProgress get progress => _original.progress;
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
 
   set filteringMode(FilteringMode f) {
     if (allowedFilteringModes.isEmpty) {
@@ -152,14 +153,17 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
   @override
   Future<int> clearRefresh() async {
-    if (progress.inRefreshing) {
+    if (_original.progress.inRefreshing || progress.inRefreshing) {
       return count;
     }
+    progress.inRefreshing = true;
+    progress.error = null;
 
     backingStorage.clear(true);
 
     if (_original.backingStorage.count == 0) {
       backingStorage.addAll([]);
+      progress.inRefreshing = false;
       onCompletelyEmpty();
       return 0;
     }
@@ -170,24 +174,30 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
     final buffer = <V>[];
 
-    for (final e in _original is SortingResourceSource<K, V> ||
-            sortingMode == SortingMode.none
-        ? _original.backingStorage
-        : _original.backingStorage.trySorted(sortingMode)) {
-      buffer.add(e);
+    try {
+      for (final e in _original is SortingResourceSource<K, V> ||
+              sortingMode == SortingMode.none
+          ? _original.backingStorage
+          : _original.backingStorage.trySorted(sortingMode)) {
+        buffer.add(e);
 
-      if (buffer.length == 40) {
-        final Iterable<V> filtered;
-        (filtered, data) =
-            filter(buffer, filteringMode, sortingMode, false, data);
+        if (buffer.length == 40) {
+          final Iterable<V> filtered;
+          (filtered, data) =
+              filter(buffer, filteringMode, sortingMode, false, data);
 
-        backingStorage.addAll(filtered, true);
-        buffer.clear();
+          backingStorage.addAll(filtered, true);
+          buffer.clear();
+        }
       }
-    }
 
-    backingStorage
-        .addAll(filter(buffer, filteringMode, sortingMode, true, data).$1);
+      backingStorage
+          .addAll(filter(buffer, filteringMode, sortingMode, true, data).$1);
+    } catch (e) {
+      progress.error = e;
+    } finally {
+      progress.inRefreshing = false;
+    }
 
     return count;
   }
@@ -208,6 +218,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
   @override
   void destroy() {
+    progress.close();
     _filterEvents.close();
     backingStorage.destroy();
     _originalSubscr.cancel();

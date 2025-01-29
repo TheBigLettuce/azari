@@ -375,13 +375,28 @@ class _CommentsAPI implements BooruCommentsAPI {
 
   final Dio client;
 
+  static final _log = Logger("Danbooru Comments API");
+
   @override
   Future<List<BooruComments>> forPostId({
     required int postId,
     int? limit,
     required PageSaver pageSaver,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    final resp = await client.getUriLog<List<dynamic>>(
+      Uri.https(
+        Booru.danbooru.url,
+        "/comments.json",
+        {
+          "post_id": postId.toString(),
+          "group_by": "comment",
+          "only": "is_sticky,id,post_id,updated_at,score,body",
+        },
+      ),
+      LogReq("forPostId, id: $postId", _log),
+    );
+
+    return fromListComments(resp.data!);
   }
 
   @override

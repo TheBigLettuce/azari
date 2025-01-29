@@ -134,7 +134,6 @@ abstract interface class BooruComunnityAPI {
 abstract interface class BooruWikiAPI {
   Future<List<BooruForumTopic>> search({
     int? limit,
-    // required int offset,
     String? title,
     BooruForumCategory? category,
     BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
@@ -145,7 +144,6 @@ abstract interface class BooruWikiAPI {
 abstract interface class BooruForumAPI {
   Future<List<BooruForumTopic>> searchTopic({
     int? limit,
-    // required int offset,
     String? title,
     BooruForumCategory? category,
     BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
@@ -155,7 +153,6 @@ abstract interface class BooruForumAPI {
   Future<List<BooruForumPost>> postsForId({
     required int id,
     int? limit,
-    // required int offset,
     BooruForumCategory? category,
     required PageSaver pageSaver,
   });
@@ -215,7 +212,6 @@ enum BooruUserLevel {
 abstract interface class BooruArtistsAPI {
   Future<List<BooruArtist>> search({
     int? limit,
-    // required int offset,
     String? otherName,
     String? name,
     BooruArtistsOrder order = BooruArtistsOrder.postCount,
@@ -246,7 +242,6 @@ enum BooruArtistsOrder {
 abstract interface class BooruPoolsAPI {
   Future<List<BooruPool>> search({
     int? limit,
-    // required int offset,
     String? name,
     BooruPoolCategory? category,
     BooruPoolsOrder order = BooruPoolsOrder.creationTime,

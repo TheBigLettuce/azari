@@ -10,6 +10,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/pages/other/dashboard/dashboard.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
@@ -289,6 +290,11 @@ class _SettingsListState extends State<SettingsList> {
           popBackOnEnd: true,
         ),
       ),
+      // ListTile(
+      //   title: Text(l10n.dashboardPage),
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      //   onTap: () => DashboardPage.open(context),
+      // ),
     ];
 
     return SliverPadding(

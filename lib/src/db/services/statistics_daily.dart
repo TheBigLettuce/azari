@@ -15,6 +15,11 @@ abstract interface class StatisticsDailyService implements ServiceMarker {
   StatisticsDailyData get current;
 
   void add(StatisticsDailyData data);
+
+  StreamSubscription<StatisticsDailyData> watch(
+    void Function(StatisticsDailyData d) f, [
+    bool fire = false,
+  ]);
 }
 
 abstract class StatisticsDailyData {

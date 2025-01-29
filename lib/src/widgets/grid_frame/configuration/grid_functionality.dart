@@ -7,6 +7,7 @@ import "dart:async";
 
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
@@ -30,7 +31,7 @@ class GridFunctionality<T extends CellBase> {
     this.search = const PageNameSearchWidget(),
     this.onEmptySource,
     this.scrollUpOn = const [],
-    this.scrollingSink,
+    this.scrollingState,
   });
 
   final SelectionActions? selectionActions;
@@ -52,7 +53,7 @@ class GridFunctionality<T extends CellBase> {
 
   final List<WatchFire<dynamic>> playAnimationOn;
   final List<(Stream<void> stream, bool Function()? conditional)> scrollUpOn;
-  final StreamSink<bool>? scrollingSink;
+  final ScrollingStateSink? scrollingState;
 
   final GridFabType fab;
   final GridBackButtonBehaviour backButton;

@@ -9,12 +9,17 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
+import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:scrollable_positioned_list/scrollable_positioned_list.dart";
+import "package:transparent_image/transparent_image.dart";
 
 class ImageViewSkeleton extends StatefulWidget {
   const ImageViewSkeleton({
@@ -23,6 +28,7 @@ class ImageViewSkeleton extends StatefulWidget {
     required this.scaffoldKey,
     required this.videoControls,
     required this.pauseVideoState,
+    required this.stateControler,
     required this.child,
   });
 
@@ -31,6 +37,7 @@ class ImageViewSkeleton extends StatefulWidget {
   final PauseVideoState pauseVideoState;
 
   final VideoControlsControllerImpl videoControls;
+  final ImageViewStateController stateControler;
 
   final Widget child;
 
@@ -41,6 +48,7 @@ class ImageViewSkeleton extends StatefulWidget {
 class _ImageViewSkeletonState extends State<ImageViewSkeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController visibilityController;
+  late final thumbnailsBarShowEvents = StreamController<void>.broadcast();
 
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor = GlobalKey();
 
@@ -99,33 +107,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
         extendBody: true,
         endDrawerEnableOpenDragGesture: false,
         resizeToAvoidBottomInset: false,
-        body:
-            // showRail
-            // ? AnnotatedRegion(
-            //     value: overlayStyle,
-            //     child: Stack(
-            //       children: [
-            //         widget.child,
-            //         SeekTimeAnchor(
-            //           key: seekTimeAnchor,
-            //           bottomPadding: viewPadding.bottom + 60,
-            //           videoControls: widget.videoControls,
-            //         ),
-            //         Padding(
-            //           padding: EdgeInsets.only(bottom: viewPadding.bottom),
-            //           child: VideoControls(
-            //             videoControls: widget.videoControls,
-            //             db: DatabaseConnectionNotifier.of(context)
-            //                 .videoSettings,
-            //             seekTimeAnchor: seekTimeAnchor,
-            //             vertical: true,
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   )
-            // :
-            AnnotatedRegion(
+        body: AnnotatedRegion(
           value: overlayStyle,
           child: Stack(
             alignment: Alignment.bottomCenter,
@@ -147,48 +129,69 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                   ignoring: !AppBarVisibilityNotifier.of(context),
                   child: Align(
                     alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      height: 100,
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 8,
-                            ) +
-                            EdgeInsets.only(top: viewPadding.top),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            BackButton(
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStatePropertyAll(
-                                  colorScheme.surface,
-                                ),
-                              ),
-                            ),
-                            Row(
-                              children: appBarButtons.reversed
-                                  .map(
-                                    (e) => Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: IconButton(
-                                        onPressed: e.onPressed,
-                                        icon: Icon(e.icon),
-                                        style: ButtonStyle(
-                                          backgroundColor:
-                                              WidgetStatePropertyAll(
-                                            colorScheme.surface,
-                                          ),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 56 + viewPadding.top,
+                          width: double.infinity,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ) +
+                                EdgeInsets.only(top: viewPadding.top),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    BackButton(
+                                      style: ButtonStyle(
+                                        backgroundColor: WidgetStatePropertyAll(
+                                          colorScheme.surface,
                                         ),
                                       ),
                                     ),
-                                  )
-                                  .toList(),
+                                    const Padding(
+                                        padding: EdgeInsets.only(left: 8)),
+                                    _CountButton(
+                                      showThumbnailsBar: () =>
+                                          thumbnailsBarShowEvents.add(null),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: appBarButtons.reversed
+                                      .map(
+                                        (e) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 8),
+                                          child: IconButton(
+                                            onPressed: e.onPressed,
+                                            icon: Icon(e.icon),
+                                            style: ButtonStyle(
+                                              backgroundColor:
+                                                  WidgetStatePropertyAll(
+                                                colorScheme.surface,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                        Expanded(
+                          child: _ThumbnailsBar(
+                            events: thumbnailsBarShowEvents.stream,
+                            stateControler: widget.stateControler,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -226,6 +229,317 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThumbnailsBar extends StatefulWidget {
+  const _ThumbnailsBar({
+    super.key,
+    required this.events,
+    required this.stateControler,
+  });
+
+  final ImageViewStateController stateControler;
+  final Stream<void> events;
+
+  @override
+  State<_ThumbnailsBar> createState() => __ThumbnailsBarState();
+}
+
+class __ThumbnailsBarState extends State<_ThumbnailsBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+  late final StreamSubscription<void> _events;
+  final itemPositionListener = ItemPositionsListener.create();
+  final itemScrollController = ItemScrollController();
+
+  bool isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(
+      vsync: this,
+      duration: Durations.medium1,
+    );
+
+    _events = widget.events.listen((_) {
+      if (controller.isForwardOrCompleted) {
+        controller.reverse();
+      } else {
+        controller.forward().then((_) {
+          scrollTo(CurrentIndexMetadata.of(context).index);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  void scrollTo(int idx, [bool force = false]) {
+    final positions = itemPositionListener.itemPositions.value.toList();
+
+    if (force) {
+      itemScrollController.scrollTo(
+        alignment: 0.5,
+        index: idx,
+        duration: Durations.extralong1,
+        curve: Easing.emphasizedDecelerate,
+      );
+
+      return;
+    }
+
+    final isVisisble = positions.indexWhere(
+          (e) =>
+              e.index == idx &&
+              !e.itemLeadingEdge.isNegative &&
+              e.itemTrailingEdge < 1,
+        ) !=
+        -1;
+
+    if (!isVisisble) {
+      itemScrollController.scrollTo(
+        alignment: 0.5,
+        index: idx,
+        duration: Durations.extralong1,
+        curve: Easing.emphasizedDecelerate,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnailsProvider = CurrentIndexMetadata.thumbnailsOf(context);
+    final metadata = CurrentIndexMetadata.of(context);
+
+    return Animate(
+      autoPlay: false,
+      controller: controller,
+      effects: const [
+        FadeEffect(duration: Durations.medium1, begin: 0, end: 1),
+      ],
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          height: 100,
+          child: AnimatedBuilder(
+            animation: controller.view,
+            builder: (context, child) => IgnorePointer(
+              ignoring: controller.isDismissed,
+              child: ScrollConfiguration(
+                behavior: const _NoBallisticScrollBehaviour(),
+                child: ScrollablePositionedList.builder(
+                  itemScrollController: itemScrollController,
+                  itemPositionsListener: itemPositionListener,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.isDismissed ? 0 : metadata.count,
+                  itemBuilder: (context, index) {
+                    final thumbnail = thumbnailsProvider(index);
+
+                    return _ThumbnailBarChild(
+                      index: index,
+                      thumbnail: thumbnail,
+                      seekTo: (i) {
+                        widget.stateControler.seekTo(index);
+                        scrollTo(index, true);
+                      },
+                      metadata: metadata,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoBallisticScrollBehaviour extends MaterialScrollBehavior {
+  const _NoBallisticScrollBehaviour();
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+}
+
+class _ThumbnailBarChild extends StatelessWidget {
+  const _ThumbnailBarChild({
+    super.key,
+    required this.index,
+    required this.thumbnail,
+    required this.seekTo,
+    required this.metadata,
+  });
+
+  final int index;
+
+  final ImageProvider<Object>? thumbnail;
+
+  final void Function(int i) seekTo;
+  final CurrentIndexMetadata metadata;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: const BorderRadius.all(Radius.circular(15)),
+      onTap: metadata.index == index
+          ? null
+          : () {
+              seekTo(index);
+            },
+      child: SizedBox(
+        width: 100,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: AnimatedContainer(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              boxShadow: kElevationToShadow[2],
+              borderRadius: metadata.index == index
+                  ? const BorderRadius.all(Radius.circular(15))
+                  : BorderRadius.zero,
+            ),
+            duration: Durations.medium3,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (thumbnail == null)
+                  const ShimmerLoadingIndicator()
+                else
+                  Image(
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded) {
+                        return child;
+                      }
+
+                      return frame == null
+                          ? const ShimmerLoadingIndicator()
+                          : child.animate().fadeIn();
+                    },
+                    image: thumbnail!,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          theme.colorScheme.surfaceContainer
+                              .withValues(alpha: 0.8),
+                          theme.colorScheme.surfaceContainer
+                              .withValues(alpha: 0.6),
+                          theme.colorScheme.surfaceContainer
+                              .withValues(alpha: 0.4),
+                          theme.colorScheme.surfaceContainer
+                              .withValues(alpha: 0.2),
+                          theme.colorScheme.surfaceContainer
+                              .withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                    child: const SizedBox(
+                      height: 40,
+                      width: double.infinity,
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      index.toString(),
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CountButton extends StatelessWidget {
+  const _CountButton({
+    super.key,
+    required this.showThumbnailsBar,
+  });
+
+  final void Function() showThumbnailsBar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final metadata = CurrentIndexMetadata.of(context);
+
+    return SizedBox(
+      height: 40,
+      child: Center(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+          child: GestureDetector(
+            onTap: showThumbnailsBar,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLowest,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Text.rich(
+                  TextSpan(
+                    text: "${metadata.index}",
+                    children: [
+                      TextSpan(
+                        text: "/${metadata.count}",
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    letterSpacing: 1.2,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

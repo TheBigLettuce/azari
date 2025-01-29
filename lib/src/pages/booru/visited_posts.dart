@@ -124,7 +124,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
         ],
         functionality: GridFunctionality(
           selectionActions: SelectionActions.of(context),
-          scrollingSink: ScrollingSinkProvider.maybeOf(context),
+          scrollingState: ScrollingStateSinkProvider.maybeOf(context),
           onEmptySource: EmptyWidgetBackground(
             subtitle: l10n.emptyPostsVisited,
           ),

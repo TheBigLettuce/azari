@@ -402,7 +402,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
         ],
         functionality: GridFunctionality(
           selectionActions: SelectionActions.of(context),
-          scrollingSink: ScrollingSinkProvider.maybeOf(context),
+          scrollingState: ScrollingStateSinkProvider.maybeOf(context),
           scrollUpOn: navBarEvents == null
               ? const []
               : [(navBarEvents, () => api.bindFiles == null)],

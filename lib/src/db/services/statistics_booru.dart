@@ -30,7 +30,7 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
   void add(StatisticsBooruData data);
 
   StreamSubscription<StatisticsBooruData> watch(
-    void Function(StatisticsBooruData) f, [
+    void Function(StatisticsBooruData d) f, [
     bool fire = false,
   ]);
 }

@@ -23,6 +23,7 @@ import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files_filters.dart" as filters;
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/platform_api.dart";
@@ -65,7 +66,7 @@ class FilesPage extends StatefulWidget {
     this.presetFilteringValue = "",
     this.filteringMode,
     required this.navBarEvents,
-    required this.scrollingSink,
+    required this.scrollingState,
     this.addScaffold = false,
   });
 
@@ -79,7 +80,7 @@ class FilesPage extends StatefulWidget {
   final Directories api;
 
   final Stream<void>? navBarEvents;
-  final StreamSink<bool>? scrollingSink;
+  final ScrollingStateSink? scrollingState;
 
   final ReturnFileCallback? callback;
 
@@ -571,7 +572,7 @@ class _FilesPageState extends State<FilesPage>
                 ],
                 functionality: GridFunctionality(
                   selectionActions: SelectionActions.of(context),
-                  scrollingSink: widget.scrollingSink,
+                  scrollingState: widget.scrollingState,
                   scrollUpOn: widget.navBarEvents == null
                       ? const []
                       : [(widget.navBarEvents!, null)],
@@ -1372,13 +1373,13 @@ class CurrentGridSettingsLayout<T extends CellBase> extends StatelessWidget {
           buildEmpty: buildEmpty,
           unselectOnUpdate: unselectOnUpdate,
         ),
-      GridLayoutType.gridMasonry => GridMasonryLayout(
-          randomNumber: gridSeed,
-          source: source,
-          progress: progress,
-          buildEmpty: buildEmpty,
-          unselectOnUpdate: unselectOnUpdate,
-        ),
+      // GridLayoutType.gridMasonry => GridMasonryLayout(
+      //     randomNumber: gridSeed,
+      //     source: source,
+      //     progress: progress,
+      //     buildEmpty: buildEmpty,
+      //     unselectOnUpdate: unselectOnUpdate,
+      //   ),
     };
   }
 }

@@ -184,6 +184,7 @@ abstract class FlutterGalleryData {
 @HostApi()
 abstract class PlatformGalleryEvents {
   void metadataChanged();
+  void seekToIndex(int i);
 
   void volumeButtonPressed(double? volume);
   void playButtonPressed();

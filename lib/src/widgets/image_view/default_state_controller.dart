@@ -218,6 +218,11 @@ class DefaultStateController extends ImageViewStateController {
     _container?.dispose();
   }
 
+  @override
+  void seekTo(int i) {
+    _container?.pageController.jumpToPage(i);
+  }
+
   void loadCells(int i, int maxCells) {
     _currentCell = (getContent(i)!, i);
 
@@ -273,24 +278,25 @@ class DefaultStateController extends ImageViewStateController {
   Widget loadingBuilder(
     BuildContext context,
     ImageChunkEvent? event,
+    int index,
     int currentPage,
     Contentable Function(int) drawCell,
   ) {
     final theme = Theme.of(context);
 
-    Contentable? cell;
-    try {
-      final p =
-          switch (_container!.pageController.position.userScrollDirection) {
-        ScrollDirection.idle => _container!.pageController.page?.round(),
-        ScrollDirection.forward => _container!.pageController.page?.floor(),
-        ScrollDirection.reverse => _container!.pageController.page?.ceil(),
-      };
+    final cell = drawCell(index);
+    // try {
+    //   final p =
+    //       switch (_container!.pageController.position.userScrollDirection) {
+    //     ScrollDirection.idle => _container!.pageController.page?.round(),
+    //     ScrollDirection.forward => _container!.pageController.page?.floor(),
+    //     ScrollDirection.reverse => _container!.pageController.page?.ceil(),
+    //   };
 
-      cell = drawCell(p ?? currentPage);
-    } catch (_) {}
+    //   cell = drawCell(p ?? currentPage);
+    // } catch (_) {}
 
-    final t = cell?.widgets.tryAsThumbnailable(context);
+    final t = cell.widgets.tryAsThumbnailable(context);
     if (t == null) {
       return const SizedBox.shrink();
     }
@@ -334,6 +340,8 @@ class DefaultStateController extends ImageViewStateController {
         getContent: getContent,
         currentIndex: currentIndex,
         indexEvents: indexEvents,
+        currentCount: _count,
+        countEvents: countEvents,
         wrapNotifiers: wrapNotifiers,
         child: child,
       ),
@@ -379,14 +387,13 @@ class DefaultStateController extends ImageViewStateController {
       onLongPress: _onLongPress,
       pageController: _container!.pageController,
       countEvents: countEvents,
-      loadingBuilder: ignoreLoadingBuilder
-          ? null
-          : (context, event) => loadingBuilder(
-                context,
-                event,
-                currentIndex,
-                drawCell,
-              ),
+      loadingBuilder: (context, event, index) => loadingBuilder(
+        context,
+        event,
+        index,
+        currentIndex,
+        drawCell,
+      ),
       itemCount: count,
       onTap: _container!.flipShowAppBar,
       builder: galleryBuilder,
@@ -499,14 +506,18 @@ class _CurrentIndexMetadataHolder extends StatefulWidget {
     required this.currentIndex,
     required this.indexEvents,
     required this.wrapNotifiers,
+    required this.countEvents,
+    required this.currentCount,
     required this.child,
   });
 
   final ContentGetter getContent;
 
   final int currentIndex;
+  final int currentCount;
 
   final Stream<int> indexEvents;
+  final Stream<int> countEvents;
 
   final NotifierWrapper? wrapNotifiers;
 
@@ -520,6 +531,7 @@ class _CurrentIndexMetadataHolder extends StatefulWidget {
 class __CurrentIndexMetadataHolderState
     extends State<_CurrentIndexMetadataHolder> {
   late final StreamSubscription<int> indexEvents;
+  late final StreamSubscription<int> countEvents;
 
   late _ContentToMetadata currentMetadata;
   int refreshCounts = 0;
@@ -535,6 +547,22 @@ class __CurrentIndexMetadataHolderState
         getContent: widget.getContent,
         wrapNotifiers: widget.wrapNotifiers,
         index: newIndex,
+        count: currentMetadata.count,
+      );
+
+      refreshCounts += 1;
+
+      setState(() {});
+    });
+
+    countEvents = widget.countEvents.listen((newCount) {
+      currentMetadata = _ContentToMetadata(
+        indexEvents: widget.indexEvents,
+        content: currentMetadata.content,
+        getContent: widget.getContent,
+        wrapNotifiers: widget.wrapNotifiers,
+        index: currentMetadata.index,
+        count: newCount,
       );
 
       refreshCounts += 1;
@@ -547,6 +575,7 @@ class __CurrentIndexMetadataHolderState
       content: widget.getContent(widget.currentIndex)!,
       getContent: widget.getContent,
       wrapNotifiers: widget.wrapNotifiers,
+      count: widget.currentCount,
       index: widget.currentIndex,
     );
   }
@@ -554,16 +583,23 @@ class __CurrentIndexMetadataHolderState
   @override
   void dispose() {
     indexEvents.cancel();
+    countEvents.cancel();
 
     super.dispose();
   }
 
+  ImageProvider? _getThumbnail(int i) =>
+      widget.getContent(i)?.widgets.tryAsThumbnailable(null);
+
   @override
   Widget build(BuildContext context) {
-    return CurrentIndexMetadataNotifier(
-      metadata: currentMetadata,
-      refreshTimes: refreshCounts,
-      child: widget.child,
+    return ThumbnailsNotifier(
+      provider: _getThumbnail,
+      child: CurrentIndexMetadataNotifier(
+        metadata: currentMetadata,
+        refreshTimes: refreshCounts,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -575,11 +611,15 @@ class _ContentToMetadata implements CurrentIndexMetadata {
     required this.getContent,
     required this.indexEvents,
     required this.wrapNotifiers,
+    required this.count,
   });
 
   final NotifierWrapper? wrapNotifiers;
   final ContentGetter getContent;
   final Stream<int> indexEvents;
+
+  @override
+  final int count;
 
   @override
   bool get isVideo => content is NetVideo;
