@@ -73,7 +73,7 @@ jobs:
       - name: Start release build
         run: flutter build apk --split-per-abi --split-debug-info=debug_info
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: output
           path: build/app/outputs/flutter-apk/
