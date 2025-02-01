@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+// ignore_for_file: unused_element_parameter
+
 part of "image_view.dart";
 
 class ImageViewBody extends StatefulWidget {
@@ -66,7 +68,6 @@ class _ImageViewBodyState extends State<ImageViewBody> {
 
   @override
   Widget build(BuildContext context) {
-    ;
     return GestureDeadZones(
       left: true,
       right: true,
@@ -93,21 +94,18 @@ class _ImageViewBodyState extends State<ImageViewBody> {
 
 class _PhotoViewGallery extends StatefulWidget {
   const _PhotoViewGallery.builder({
-    super.key,
+    // super.key,
     required this.itemCount,
     required this.builder,
     required this.pageController,
     required this.loadingBuilder,
-    this.backgroundDecoration,
+    required this.backgroundDecoration,
+    required this.onPageChanged,
     this.wantKeepAlive = false,
     this.gaplessPlayback = false,
     this.reverse = false,
-    this.onPageChanged,
-    this.scaleStateChangedCallback,
     this.enableRotation = false,
-    this.scrollPhysics,
     this.scrollDirection = Axis.horizontal,
-    this.customSize,
     this.allowImplicitScrolling = false,
     this.pageSnapping = true,
   });
@@ -115,8 +113,6 @@ class _PhotoViewGallery extends StatefulWidget {
   final int itemCount;
 
   final PhotoViewGalleryBuilder builder;
-
-  final ScrollPhysics? scrollPhysics;
 
   final Widget Function(
     BuildContext context,
@@ -136,11 +132,7 @@ class _PhotoViewGallery extends StatefulWidget {
 
   final PhotoViewGalleryPageChangedCallback? onPageChanged;
 
-  final ValueChanged<PhotoViewScaleState>? scaleStateChangedCallback;
-
   final bool enableRotation;
-
-  final Size? customSize;
 
   final Axis scrollDirection;
 
@@ -154,10 +146,6 @@ class _PhotoViewGallery extends StatefulWidget {
 
 class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
   PageController get _controller => widget.pageController;
-
-  void scaleStateChangedCallback(PhotoViewScaleState scaleState) {
-    widget.scaleStateChangedCallback?.call(scaleState);
-  }
 
   int get actualPage {
     return _controller.hasClients ? _controller.page!.floor() : 0;
@@ -177,9 +165,7 @@ class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
             wantKeepAlive: widget.wantKeepAlive,
             controller: pageOption.controller,
             scaleStateController: pageOption.scaleStateController,
-            customSize: widget.customSize,
             heroAttributes: pageOption.heroAttributes,
-            scaleStateChangedCallback: scaleStateChangedCallback,
             enableRotation: widget.enableRotation,
             initialScale: pageOption.initialScale,
             minScale: pageOption.minScale,
@@ -207,11 +193,9 @@ class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
             wantKeepAlive: widget.wantKeepAlive,
             controller: pageOption.controller,
             scaleStateController: pageOption.scaleStateController,
-            customSize: widget.customSize,
             semanticLabel: pageOption.semanticLabel,
             gaplessPlayback: widget.gaplessPlayback,
             heroAttributes: pageOption.heroAttributes,
-            scaleStateChangedCallback: scaleStateChangedCallback,
             enableRotation: widget.enableRotation,
             initialScale: pageOption.initialScale,
             minScale: pageOption.minScale,
@@ -244,7 +228,6 @@ class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
         itemCount: itemCount,
         itemBuilder: _buildItem,
         scrollDirection: widget.scrollDirection,
-        physics: widget.scrollPhysics,
         allowImplicitScrolling: widget.allowImplicitScrolling,
         pageSnapping: widget.pageSnapping,
       ),

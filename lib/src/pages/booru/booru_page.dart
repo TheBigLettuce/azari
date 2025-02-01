@@ -40,7 +40,6 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/grid_layout.dart";
 import "package:azari/src/widgets/grid_frame/layouts/grid_quilted.dart";
 import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
@@ -378,7 +377,10 @@ class _BooruPageState extends State<BooruPage>
                   description: GridDescription(
                     actions: [
                       actions.downloadPost(
-                          context, pagingState.api.booru, null),
+                        context,
+                        pagingState.api.booru,
+                        null,
+                      ),
                       actions.favorites(
                         context,
                         favoritePosts,

@@ -395,7 +395,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                   description: GridDescription(
                     actions: [
                       actions.downloadPost(
-                          context, api.booru, widget.thenMoveTo),
+                        context,
+                        api.booru,
+                        widget.thenMoveTo,
+                      ),
                       actions.favorites(
                         context,
                         favoritePosts,

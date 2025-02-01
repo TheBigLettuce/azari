@@ -9,17 +9,14 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:scrollable_positioned_list/scrollable_positioned_list.dart";
-import "package:transparent_image/transparent_image.dart";
 
 class ImageViewSkeleton extends StatefulWidget {
   const ImageViewSkeleton({
@@ -154,7 +151,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                                       ),
                                     ),
                                     const Padding(
-                                        padding: EdgeInsets.only(left: 8)),
+                                      padding: EdgeInsets.only(left: 8),
+                                    ),
                                     _CountButton(
                                       showThumbnailsBar: () =>
                                           thumbnailsBarShowEvents.add(null),
@@ -238,7 +236,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
 
 class _ThumbnailsBar extends StatefulWidget {
   const _ThumbnailsBar({
-    super.key,
+    // super.key,
     required this.events,
     required this.stateControler,
   });
@@ -258,6 +256,8 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
   final itemScrollController = ItemScrollController();
 
   bool isExpanded = false;
+
+  int currentIndex = 0;
 
   @override
   void initState() {
@@ -285,6 +285,19 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
     controller.dispose();
 
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newIndex = CurrentIndexMetadata.of(context).index;
+    if (newIndex != currentIndex) {
+      currentIndex = newIndex;
+      if (itemScrollController.isAttached) {
+        scrollTo(currentIndex, true);
+      }
+    }
   }
 
   void scrollTo(int idx, [bool force = false]) {
@@ -354,7 +367,7 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
                       thumbnail: thumbnail,
                       seekTo: (i) {
                         widget.stateControler.seekTo(index);
-                        scrollTo(index, true);
+                        // scrollTo(index, true);
                       },
                       metadata: metadata,
                     );
@@ -374,14 +387,17 @@ class _NoBallisticScrollBehaviour extends MaterialScrollBehavior {
 
   @override
   Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
     return child;
   }
 }
 
 class _ThumbnailBarChild extends StatelessWidget {
   const _ThumbnailBarChild({
-    super.key,
+    // super.key,
     required this.index,
     required this.thumbnail,
     required this.seekTo,
@@ -413,7 +429,7 @@ class _ThumbnailBarChild extends StatelessWidget {
           child: AnimatedContainer(
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              boxShadow: kElevationToShadow[2],
+              boxShadow: kElevationToShadow[4],
               borderRadius: metadata.index == index
                   ? const BorderRadius.all(Radius.circular(15))
                   : BorderRadius.zero,
@@ -495,7 +511,7 @@ class _ThumbnailBarChild extends StatelessWidget {
 
 class _CountButton extends StatelessWidget {
   const _CountButton({
-    super.key,
+    // super.key,
     required this.showThumbnailsBar,
   });
 

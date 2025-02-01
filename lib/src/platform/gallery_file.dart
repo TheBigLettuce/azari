@@ -549,8 +549,6 @@ abstract class File
     required VoidCallback? onPressed,
     required Widget child,
   }) {
-    final theme = Theme.of(context);
-
     return WrapSelection(
       thisIndx: thisIndx,
       description: description,
@@ -559,39 +557,6 @@ abstract class File
       functionality: functionality,
       onPressed: onPressed,
       child: child,
-    );
-
-    return OpenContainer(
-      tappable: false,
-      closedElevation: 0,
-      openElevation: 0,
-      middleColor: theme.colorScheme.surface.withValues(alpha: 0),
-      openColor: theme.colorScheme.surface.withValues(alpha: 0),
-      closedColor: theme.colorScheme.surface.withValues(alpha: 1),
-      useRootNavigator: true,
-      closedBuilder: (context, action) => WrapSelection(
-        thisIndx: thisIndx,
-        description: description,
-        selectFrom: selectFrom,
-        selection: selection,
-        functionality: functionality,
-        onPressed: action,
-        child: child,
-      ),
-      openBuilder: (containerContext, action) {
-        final imageDescription = ImageViewDescription(
-          ignoreOnNearEnd: false,
-          statistics: StatisticsBooruService.asImageViewStatistics(),
-        );
-
-        final impl = FlutterGalleryDataNotifier.of(context);
-
-        return ImageView(
-          onExit: imageDescription.onExit,
-          startingIndex: thisIndx,
-          stateController: impl,
-        );
-      },
     );
   }
 
@@ -1499,46 +1464,46 @@ class _FileCell extends StatelessWidget {
                         borderRadius: BorderRadius.circular(15),
                       ),
               ),
-              child: Stack(
-                children: [
-                  if (stickers != null && stickers.isNotEmpty)
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.end,
-                          direction: Axis.vertical,
-                          children: stickers.map(StickerWidget.new).toList(),
-                        ),
-                      ),
-                    ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 4,
-                      ),
-                      child: VideoGifRow(
-                        isVideo: file.isVideo,
-                        isGif: file.isGif,
-                      ),
-                    ),
-                  ),
-                  if (alias.isNotEmpty)
-                    GridCellName(
-                      title: alias,
-                      lines: description.titleLines,
-                    ),
-                  wrapSelection(
+              child: wrapSelection(
+                Stack(
+                  children: [
                     GridCellImage(
                       imageAlign: imageAlign,
                       thumbnail: thumbnail,
                       blur: blur,
                     ),
-                  ),
-                ],
+                    if (stickers != null && stickers.isNotEmpty)
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.end,
+                            direction: Axis.vertical,
+                            children: stickers.map(StickerWidget.new).toList(),
+                          ),
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        child: VideoGifRow(
+                          isVideo: file.isVideo,
+                          isGif: file.isGif,
+                        ),
+                      ),
+                    ),
+                    if (alias.isNotEmpty)
+                      GridCellName(
+                        title: alias,
+                        lines: description.titleLines,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

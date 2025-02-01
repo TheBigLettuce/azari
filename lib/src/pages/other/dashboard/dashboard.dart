@@ -7,7 +7,6 @@ import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/pages/other/dashboard/dashboard_card.dart";
 import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
@@ -134,8 +133,8 @@ class _DashboardPageState extends State<DashboardPage> {
           SliverAppBar(
             title: Text(l10n.dashboardPage),
           ),
-          _GeneralStatistics(),
-          _DailyStatistics(),
+          const _GeneralStatistics(),
+          const _DailyStatistics(),
         ],
       ),
     );
@@ -143,9 +142,9 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 class _DailyStatistics extends StatefulWidget {
-  const _DailyStatistics({
-    super.key,
-  });
+  const _DailyStatistics(
+      // {super.key}
+      );
 
   @override
   State<_DailyStatistics> createState() => __DailyStatisticsState();
@@ -207,9 +206,9 @@ class __DailyStatisticsState extends State<_DailyStatistics> {
 }
 
 class _GeneralStatistics extends StatefulWidget {
-  const _GeneralStatistics({
-    super.key,
-  });
+  const _GeneralStatistics(
+      // {super.key}
+      );
 
   @override
   State<_GeneralStatistics> createState() => __GeneralStatisticsState();
@@ -274,7 +273,7 @@ class __GeneralStatisticsState extends State<_GeneralStatistics> {
 
 class _DashboardCard extends StatelessWidget {
   const _DashboardCard({
-    super.key,
+    // super.key,
     required this.title,
     required this.value,
   });
@@ -286,7 +285,7 @@ class _DashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Stack(
         alignment: Alignment.topLeft,
         children: [

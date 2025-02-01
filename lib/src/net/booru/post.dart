@@ -33,7 +33,6 @@ import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
-import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
@@ -1724,9 +1723,7 @@ class __DownloadIconState extends State<_DownloadIcon> {
           icon: icon,
         ),
         if (status != null && downloadStatus == DownloadStatus.inProgress)
-          _Progress(
-            handle: status!,
-          ),
+          _Progress(handle: status!),
       ],
     );
   }
@@ -1830,7 +1827,6 @@ class __ProgressState extends State<_Progress> {
       dimension: 38,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        year2023: false,
         value: progress,
       ),
     );
