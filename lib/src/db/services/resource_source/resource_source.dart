@@ -52,6 +52,8 @@ abstract interface class ResourceSource<K, V> {
   const ResourceSource();
 
   factory ResourceSource.empty(K Function(V) getKey) = _EmptyResourceSource;
+  factory ResourceSource.external(ReadOnlyStorage<K, V> backingStorage) =
+      _ExternalResourceSource;
 
   SourceStorage<K, V> get backingStorage;
 
@@ -80,6 +82,82 @@ abstract class RefreshingProgress {
   bool get canLoadMore;
 
   StreamSubscription<bool> watch(void Function(bool) f);
+}
+
+class _ExternalResourceSource<K, V> implements ResourceSource<K, V> {
+  _ExternalResourceSource(ReadOnlyStorage<K, V> backingStorage_)
+      : backingStorage = backingStorage_ is SourceStorage<K, V>
+            ? backingStorage_
+            : _WrappedReadOnlyStorage(backingStorage_);
+
+  @override
+  final SourceStorage<K, V> backingStorage;
+
+  @override
+  bool get hasNext => false;
+
+  @override
+  Future<int> clearRefresh() => Future.value(backingStorage.count);
+
+  @override
+  Future<int> next() => Future.value(backingStorage.count);
+
+  @override
+  RefreshingProgress get progress => const _EmptyProgress();
+
+  @override
+  void destroy() {}
+}
+
+class _WrappedReadOnlyStorage<K, V> extends SourceStorage<K, V> {
+  const _WrappedReadOnlyStorage(this.backingStorage);
+
+  final ReadOnlyStorage<K, V> backingStorage;
+
+  @override
+  V operator [](K index) => backingStorage[index];
+
+  @override
+  int get count => backingStorage.count;
+
+  @override
+  Stream<int> get countEvents => throw UnimplementedError();
+
+  @override
+  V? get(K idx) => backingStorage.get(idx);
+
+  @override
+  Iterator<V> get iterator => backingStorage.iterator;
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      backingStorage.watch(f);
+
+  @override
+  void operator []=(K index, V value) {}
+
+  @override
+  void add(V e, [bool silent = false]) {}
+
+  @override
+  void addAll(Iterable<V> l, [bool silent = false]) {}
+
+  @override
+  void clear([bool silent = false]) {}
+
+  @override
+  void destroy() {}
+
+  @override
+  List<V> removeAll(Iterable<K> idx, [bool silent = false]) {
+    return const [];
+  }
+
+  @override
+  Iterable<V> get reversed => this;
+
+  @override
+  Iterable<V> trySorted(SortingMode sort) => this;
 }
 
 class _EmptyProgress implements RefreshingProgress {

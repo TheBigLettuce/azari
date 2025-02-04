@@ -172,7 +172,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       source.backingStorage.addAll([]);
     });
 
-    favoritesWatcher = favoritePosts.backingStorage.watch((event) {
+    favoritesWatcher = favoritePosts.cache.countEvents.listen((event) {
       source.backingStorage.addAll([]);
     });
   }

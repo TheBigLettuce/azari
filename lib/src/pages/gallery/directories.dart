@@ -158,7 +158,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       api.source.clearRefresh();
     });
 
-    favoritesWatcher = favoritePosts.backingStorage.watch((_) {
+    favoritesWatcher = favoritePosts.cache.countEvents.listen((_) {
       api.source.clearRefresh();
       setState(() {});
     });

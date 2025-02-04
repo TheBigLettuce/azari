@@ -232,21 +232,22 @@ abstract class PostImpl
         Icons.favorite_border_rounded,
         (_) => favorites.addRemove([this]),
         animate: true,
-        watch: (f, [fire = false]) => db.favoritePosts.watchSingle(
-          id,
-          booru,
-          (isFavorite_) => (
-            isFavorite_
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            isFavorite_
-                ? Colors.red.harmonizeWith(theme.colorScheme.primary)
-                : null,
-            !isFavorite_,
-          ),
-          f,
-          fire,
-        ),
+        watch: (f, [fire = false]) {
+          return db.favoritePosts.cache
+              .streamSingle(id, booru, fire)
+              .map(
+                (isFavorite_) => (
+                  isFavorite_
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  isFavorite_
+                      ? Colors.red.harmonizeWith(theme.colorScheme.primary)
+                      : null,
+                  !isFavorite_,
+                ),
+              )
+              .listen(f);
+        },
       ),
       ImageViewAction(
         Icons.download,
@@ -1507,10 +1508,10 @@ class __FavoriteButtonState extends State<_FavoriteButton>
 
     controller = AnimationController(vsync: this);
 
-    favorite =
-        widget.favoritePosts.isFavorite(widget.post.id, widget.post.booru);
+    favorite = widget.favoritePosts.cache
+        .isFavorite(widget.post.id, widget.post.booru);
 
-    events = widget.favoritePosts
+    events = widget.favoritePosts.cache
         .streamSingle(widget.post.id, widget.post.booru)
         .listen((newFavorite) {
       favorite = newFavorite;

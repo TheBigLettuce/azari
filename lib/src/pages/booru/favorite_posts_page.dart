@@ -100,7 +100,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     api = BooruAPI.fromEnum(settings.selectedBooru, client);
 
     filter = ChainedFilterResourceSource(
-      favoritePosts,
+      ResourceSource.external(favoritePosts.cache),
+      ListStorage(reverse: true),
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
           FilteringMode.same => sameFavorites(
@@ -148,7 +149,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
             )
         };
       },
-      ListStorage(reverse: true),
       prefilter: () {
         MiscSettingsService.db()
             .current
@@ -195,7 +195,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   ) sync* {
     for (final ids in data!.values) {
       for (final i in ids) {
-        yield favoritePosts.forIdxUnsafe((i.$1, i.$2));
+        yield favoritePosts.cache.get((i.$1, i.$2))!;
       }
     }
   }

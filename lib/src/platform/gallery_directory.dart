@@ -163,7 +163,7 @@ abstract class Directory
       GalleryThumbnailProvider(
         thumbFileId,
         true,
-        PinnedThumbnailService.db(),
+        // PinnedThumbnailService.db(),
         ThumbnailService.db(),
       );
 

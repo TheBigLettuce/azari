@@ -19,22 +19,22 @@ Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
 
 ServicesImplTable getApi() => throw UnimplementedError();
 
-class $PinnedThumbnailData implements PinnedThumbnailData {
-  const $PinnedThumbnailData({
-    required this.id,
-    required this.differenceHash,
-    required this.path,
-  });
+// class $PinnedThumbnailData implements PinnedThumbnailData {
+//   const $PinnedThumbnailData({
+//     required this.id,
+//     required this.differenceHash,
+//     required this.path,
+//   });
 
-  @override
-  final int differenceHash;
+//   @override
+//   final int differenceHash;
 
-  @override
-  final int id;
+//   @override
+//   final int id;
 
-  @override
-  final String path;
-}
+//   @override
+//   final String path;
+// }
 
 class $ThumbnailData implements ThumbnailData {
   const $ThumbnailData({

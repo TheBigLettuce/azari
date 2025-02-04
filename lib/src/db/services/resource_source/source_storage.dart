@@ -9,6 +9,8 @@ import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 
 /// Generic way of dealing with persistent or not data.
 abstract class SourceStorage<K, V> extends ReadOnlyStorage<K, V> {
+  const SourceStorage();
+
   /// [reversed] might not reverse anything and just return [this].
   Iterable<V> get reversed;
 
@@ -30,12 +32,15 @@ abstract class SourceStorage<K, V> extends ReadOnlyStorage<K, V> {
 }
 
 abstract class ReadOnlyStorage<K, V> with Iterable<V> {
+  const ReadOnlyStorage();
+
   int get count;
+
+  Stream<int> get countEvents;
 
   V? get(K idx);
 
   V operator [](K index);
 
   StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
-  Stream<int> get countEvents;
 }

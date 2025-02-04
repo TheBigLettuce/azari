@@ -17,7 +17,6 @@ import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file
 import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
-import "package:azari/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/anime_discovery.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
@@ -42,6 +41,7 @@ import "package:azari/src/db/services/impl/isar/schemas/tags/hottest_tag_refresh
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -61,6 +61,7 @@ import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
 import "package:isar/isar.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
@@ -651,21 +652,16 @@ class IsarHiddenBooruPostService implements HiddenBooruPostService {
 class IsarFavoritePostService implements FavoritePostSourceService {
   IsarFavoritePostService();
 
-  Isar get db => _Dbs.g.main;
-
-  IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
+  @override
+  late final _FavoritePostCache cache = _FavoritePostCache();
 
   @override
-  bool isFavorite(int id, Booru booru) =>
-      backingStorage.map_.containsKey((id, booru));
-
-  @override
-  List<PostBase> addRemove(List<PostBase> posts) {
+  void addRemove(List<PostBase> posts) {
     final toAdd = <IsarFavoritePost>[];
     final toRemove = <(int, Booru)>[];
 
     for (final post in posts) {
-      if (!backingStorage.map_.containsKey((post.id, post.booru))) {
+      if (!cache.isFavorite(post.id, post.booru)) {
         toAdd.add(
           post is IsarFavoritePost
               ? post
@@ -694,155 +690,373 @@ class IsarFavoritePostService implements FavoritePostSourceService {
     }
 
     if (toAdd.isEmpty && toRemove.isEmpty) {
-      return const [];
+      return;
     }
 
-    backingStorage.addAll(toAdd);
-    return backingStorage.removeAll(toRemove);
+    addAll(toAdd);
+    removeAll(toRemove);
   }
 
   @override
-  final _FavoritePostsMap backingStorage =
-      _FavoritePostsMap((v) => (v.id, v.booru));
-
-  @override
-  Future<int> clearRefresh() => Future.value(backingStorage.count);
-
-  @override
-  void destroy() {
-    backingStorage.destroy();
+  void addAll(List<FavoritePost> posts) {
+    _Dbs.g.favorites.add(posts);
   }
 
   @override
-  bool get hasNext => false;
+  void removeAll(List<(int, Booru)> idxs) {
+    _Dbs.g.favorites.remove(idxs);
+  }
 
-  @override
-  Future<int> next() => Future.value(backingStorage.count);
-
-  @override
-  RefreshingProgress get progress => const RefreshingProgress.empty();
-
-  @override
-  StreamSubscription<T> watchSingle<T>(
-    int id,
-    Booru booru,
-    T Function(bool p1) transform,
-    void Function(T p1) f, [
-    bool fire = false,
-  ]) =>
-      collection
-          .where()
-          .idBooruEqualTo(id, booru)
-          .watch(fireImmediately: fire)
-          .map((e) => transform(e.isNotEmpty))
-          .listen(f);
-
-  @override
-  Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]) =>
-      collection
-          .where()
-          .idBooruEqualTo(postId, booru)
-          .watchLazy(fireImmediately: fire)
-          .map((_) => backingStorage.map_.containsKey((postId, booru)));
-
-  @override
-  bool contains(int id, Booru booru) =>
-      backingStorage.map_.containsKey((id, booru));
+  void dispose() {
+    cache.destroy();
+  }
 }
 
-class _FavoritePostsMap extends MapStorage<(int, Booru), IsarFavoritePost> {
-  _FavoritePostsMap(super.getKey);
+class _FavoritePostCache extends FavoritePostCache {
+  _FavoritePostCache() {
+    _events = _Dbs.g.favorites.events.listen((e) {
+      switch (e) {
+        case PostsAddedResult():
+          addAll(e.posts);
+        case PostsRemovedResult():
+          removeAll(e.posts);
+        case PostsClearResult():
+          clear();
+      }
+    });
 
-  Isar get db => _Dbs.g.main;
+    eventsTable = DefaultEventStreamsTable(
+      _singleEvents.stream,
+      const _FavoritePostsConditions(),
+    );
+  }
 
-  IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
+  late final StreamSubscription<_FavoritePostResult> _events;
+  late final DefaultEventStreamsTable eventsTable;
+
+  final _singleEvents = StreamController<EventData>.broadcast();
+  final _countEvents = StreamController<int>.broadcast();
+
+  final _map = <(int, Booru), FavoritePost>{};
 
   @override
-  Iterable<IsarFavoritePost> trySorted(SortingMode sort) {
-    if (sort == SortingMode.none) {
-      return this;
+  int get count => _map.length;
+
+  @override
+  Iterator<FavoritePost> get iterator => _map.values.iterator;
+
+  @override
+  Stream<int> get countEvents => _countEvents.stream;
+
+  @override
+  FavoritePost operator []((int, Booru) index) => _map[index]!;
+
+  void addAll(Iterable<FavoritePost> l) {
+    for (final e in l) {
+      final cond = _FavoritesEventCondition((e.id, e.booru));
+
+      if (eventsTable.hasListeners(cond)) {
+        _singleEvents.add(cond);
+      }
+
+      _map[(e.id, e.booru)] = e;
     }
 
-    final values = map_.values.toList()
-      ..sort((e1, e2) {
-        return switch (sort) {
-          SortingMode.none || SortingMode.size => e2.id.compareTo(e1.id),
-          SortingMode.rating =>
-            e1.rating.asSafeMode.index.compareTo(e2.rating.asSafeMode.index),
-          SortingMode.score => e1.score.compareTo(e2.score),
-        };
-      });
+    _countEvents.add(_map.length);
+  }
 
-    return values;
+  void clear() {
+    _map.clear();
+    eventsTable.clear();
+    _countEvents.add(_map.length);
+  }
+
+  void removeAll(Iterable<(int, Booru)> idx) {
+    for (final e in idx) {
+      final cond = _FavoritesEventCondition(e);
+
+      if (eventsTable.hasListeners(cond)) {
+        _singleEvents.add(cond);
+      }
+
+      _map.remove(e);
+    }
+
+    _countEvents.add(_map.length);
   }
 
   @override
-  void add(IsarFavoritePost e, [bool silent = false]) {
-    db.writeTxnSync(
-      () {
-        collection.putByIdBooruSync(e);
+  FavoritePost? get((int, Booru) idx) => _map[idx];
 
-        super.add(e, silent);
-      },
-      silent: silent,
+  @override
+  bool isFavorite(int id, Booru booru) => _map.containsKey((id, booru));
+
+  @override
+  StreamSubscription<int> watch(
+    void Function(int p1) f, [
+    bool fire = false,
+  ]) {
+    if (fire) {
+      _countEvents.add(count);
+    }
+
+    return countEvents.listen(f);
+  }
+
+  @override
+  Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]) {
+    final stream = eventsTable.forCondition(
+      _FavoritesEventCondition((postId, booru)),
+      fire,
     );
+
+    return stream.map((_) => _map.containsKey((postId, booru)));
   }
 
-  @override
-  void addAll(Iterable<IsarFavoritePost> l, [bool silent = false]) {
-    db.writeTxnSync(
-      () {
-        collection.putAllByIdBooruSync(l.toList());
-
-        for (final e in l) {
-          super.add(e, true);
-        }
-
-        if (!silent) {
-          super.addAll([]);
-        }
-      },
-      silent: silent,
-    );
+  void destroy() {
+    _events.cancel();
+    _countEvents.close();
+    _singleEvents.close();
+    eventsTable.dispose();
   }
+}
 
-  @override
-  void operator []=((int, Booru) index, IsarFavoritePost value) {
-    db.writeTxnSync(() {
-      collection.putByIdBooruSync(value);
+class DefaultEventStreamsTable extends EventStreamsTable {
+  DefaultEventStreamsTable(super.rootStream, this.conditions) {
+    _rootEvents = rootStream.listen((e) {
+      final key = _transformers.isNotEmpty
+          ? conditions.processEvent(_transformers.fold(e, (ev, fn) => fn(ev)))
+          : conditions.processEvent(e);
 
-      super[index] = value;
+      _map[key]?.add(null);
     });
   }
 
   @override
-  List<IsarFavoritePost> removeAll(
-    Iterable<(int, Booru)> idx, [
-    bool silent = false,
-  ]) {
-    return db.writeTxnSync<List<IsarFavoritePost>>(
-      () {
-        final (ids, boorus) = _foldTulpeList(idx);
-        collection.deleteAllByIdBooruSync(ids, boorus);
+  final Conditions conditions;
 
-        return super.removeAll(idx, silent);
-      },
-      silent: silent,
-    );
+  late final StreamSubscription<EventData> _rootEvents;
+
+  final _transformers = <EventData Function(EventData p1)>[];
+  final _map = <dynamic, StreamController<void>>{};
+
+  bool hasListeners(EventCondition c) =>
+      _map.containsKey(conditions.describeUnique(c));
+
+  @override
+  void addTransformer(EventData Function(EventData p1) f) {
+    _transformers.add(f);
   }
 
   @override
-  void clear([bool silent = false]) {
-    db.writeTxnSync(
-      () {
-        collection.clearSync();
+  void removeTransformer(EventData Function(EventData p1) f) {
+    _transformers.removeWhere((e) => f == e);
+  }
 
-        super.clear(silent);
-      },
-      silent: silent,
+  @override
+  Stream<void> forCondition(EventCondition c, [bool fire = false]) {
+    if (!conditions.isOfThis(c)) {
+      throw "expected $c to be of $conditions";
+    }
+    final key = conditions.describeUnique(c);
+
+    final e = _map.putIfAbsent(
+      key,
+      () => StreamController.broadcast(
+        onCancel: () {
+          _map.remove(key)?.close();
+        },
+      ),
     );
+
+    final ret = StreamController<void>();
+
+    if (fire) {
+      ret.add(null);
+    }
+
+    ret.addStream(e.stream);
+    return ret.stream;
+  }
+
+  void clear() {
+    for (final e in _map.values) {
+      e.close();
+    }
+    _map.clear();
+  }
+
+  void dispose() {
+    _rootEvents.cancel();
+    clear();
   }
 }
+
+abstract class EventStreamsTable {
+  EventStreamsTable(this.rootStream);
+
+  final Stream<EventData> rootStream;
+
+  Conditions get conditions;
+
+  void addTransformer(EventData Function(EventData) f);
+  void removeTransformer(EventData Function(EventData) f);
+
+  Stream<void> forCondition(EventCondition c);
+}
+
+class _FavoritePostsConditions implements Conditions {
+  const _FavoritePostsConditions();
+
+  @override
+  bool isOfThis(EventCondition c) => c is _FavoritesEventCondition;
+
+  @override
+  dynamic describeUnique(EventCondition c) {
+    return (c as _FavoritesEventCondition).key;
+  }
+
+  @override
+  dynamic processEvent(EventData e) {
+    return (e as _FavoritesEventCondition).key;
+  }
+}
+
+class _FavoritesEventCondition implements EventCondition, EventData {
+  const _FavoritesEventCondition(this.key);
+
+  final (int, Booru) key;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _FavoritesEventCondition) {
+      return false;
+    }
+
+    return key == other.key;
+  }
+
+  @override
+  int get hashCode => key.hashCode;
+}
+
+abstract class Conditions {
+  bool isOfThis(EventCondition c);
+
+  dynamic processEvent(EventData e);
+  dynamic describeUnique(EventCondition c);
+}
+
+abstract class EventCondition {
+  const EventCondition();
+}
+
+abstract class EventData {
+  const EventData();
+}
+
+// class _FavoritePostsMap extends MapStorage<(int, Booru), IsarFavoritePost> {
+//   _FavoritePostsMap(super.getKey);
+
+//   // Isar get db => _Dbs.g.favoritePosts;
+
+//   // IsarCollection<IsarFavoritePost> get collection => db.isarFavoritePosts;
+
+//   @override
+//   Iterable<IsarFavoritePost> trySorted(SortingMode sort) {
+//     if (sort == SortingMode.none) {
+//       return this;
+//     }
+
+//     final values = map_.values.toList()
+//       ..sort((e1, e2) {
+//         return switch (sort) {
+//           SortingMode.none || SortingMode.size => e2.id.compareTo(e1.id),
+//           SortingMode.rating =>
+//             e1.rating.asSafeMode.index.compareTo(e2.rating.asSafeMode.index),
+//           SortingMode.score => e1.score.compareTo(e2.score),
+//         };
+//       });
+
+//     return values;
+//   }
+
+//   @override
+//   void add(IsarFavoritePost e, [bool silent = false]) {
+//     _Dbs.g.favorites.add([e]);
+//     // db.writeTxnSync(
+//     //   () {
+//     //     collection.putByIdBooruSync(e);
+
+//     //     super.add(e, silent);
+//     //   },
+//     //   silent: silent,
+//     // );
+//   }
+
+//   @override
+//   void addAll(Iterable<IsarFavoritePost> l, [bool silent = false]) {
+//     _Dbs.g.favorites.add(l.toList());
+
+//     // db.writeTxnSync(
+//     //   () {
+//     //     collection.putAllByIdBooruSync(l.toList());
+
+//     //     for (final e in l) {
+//     //       super.add(e, true);
+//     //     }
+
+//     //     if (!silent) {
+//     //       super.addAll([]);
+//     //     }
+//     //   },
+//     //   silent: silent,
+//     // );
+//   }
+
+//   @override
+//   void operator []=((int, Booru) index, IsarFavoritePost value) {
+//     add(value);
+//     // _Dbs.g.favorites.add([value]);
+//     // db.writeTxnSync(() {
+//     //   collection.putByIdBooruSync(value);
+
+//     //   super[index] = value;
+//     // });
+//   }
+
+//   @override
+//   List<IsarFavoritePost> removeAll(
+//     Iterable<(int, Booru)> idx, [
+//     bool silent = false,
+//   ]) {
+//     _Dbs.g.favorites.remove(idx.toList());
+
+//     // return db.writeTxnSync<List<IsarFavoritePost>>(
+//     //   () {
+//     //     final (ids, boorus) = _foldTulpeList(idx);
+//     //     collection.deleteAllByIdBooruSync(ids, boorus);
+
+//     //     return super.removeAll(idx, silent);
+//     //   },
+//     //   silent: silent,
+//     // );
+//   }
+
+//   @override
+//   void clear([bool silent = false]) {
+//     _Dbs.g.favorites.clear();
+
+//     // db.writeTxnSync(
+//     //   () {
+//     //     collection.clearSync();
+
+//     //     super.clear(silent);
+//     //   },
+//     //   silent: silent,
+//     // );
+//   }
+// }
 
 class IsarDownloadFileService implements DownloadFileService {
   const IsarDownloadFileService();
@@ -1364,35 +1578,35 @@ class _DirectoryMetadataCap implements SegmentCapability {
   }
 }
 
-class IsarPinnedThumbnailService implements PinnedThumbnailService {
-  const IsarPinnedThumbnailService();
+// class IsarPinnedThumbnailService implements PinnedThumbnailService {
+//   const IsarPinnedThumbnailService();
 
-  @override
-  PinnedThumbnailData? get(int id) =>
-      _Dbs.g.thumbnail!.isarPinnedThumbnails.getSync(id);
+//   @override
+//   PinnedThumbnailData? get(int id) =>
+//       _Dbs.g.thumbnail!.isarPinnedThumbnails.getSync(id);
 
-  @override
-  void clear() => _Dbs.g.thumbnail!
-      .writeTxnSync(() => _Dbs.g.thumbnail!.isarPinnedThumbnails.clearSync());
+//   @override
+//   void clear() => _Dbs.g.thumbnail!
+//       .writeTxnSync(() => _Dbs.g.thumbnail!.isarPinnedThumbnails.clearSync());
 
-  @override
-  bool delete(int id) => _Dbs.g.thumbnail!.writeTxnSync(
-        () => _Dbs.g.thumbnail!.isarPinnedThumbnails.deleteSync(id),
-      );
+//   @override
+//   bool delete(int id) => _Dbs.g.thumbnail!.writeTxnSync(
+//         () => _Dbs.g.thumbnail!.isarPinnedThumbnails.deleteSync(id),
+//       );
 
-  @override
-  void add(int id, String path, int differenceHash) {
-    _Dbs.g.thumbnail!.writeTxnSync(
-      () => _Dbs.g.thumbnail!.isarPinnedThumbnails.putSync(
-        IsarPinnedThumbnail(
-          id: id,
-          differenceHash: differenceHash,
-          path: path,
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   void add(int id, String path, int differenceHash) {
+//     _Dbs.g.thumbnail!.writeTxnSync(
+//       () => _Dbs.g.thumbnail!.isarPinnedThumbnails.putSync(
+//         IsarPinnedThumbnail(
+//           id: id,
+//           differenceHash: differenceHash,
+//           path: path,
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class IsarThumbnailService implements ThumbnailService {
   const IsarThumbnailService();

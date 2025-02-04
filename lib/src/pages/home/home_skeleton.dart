@@ -885,7 +885,7 @@ class __FavoritePostsCountState extends State<_FavoritePostsCount> {
   void initState() {
     super.initState();
 
-    events = widget.db.favoritePosts.backingStorage.watch((_) {
+    events = widget.db.favoritePosts.cache.countEvents.listen((_) {
       setState(() {});
     });
   }
@@ -899,7 +899,7 @@ class __FavoritePostsCountState extends State<_FavoritePostsCount> {
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.db.favoritePosts.backingStorage.count;
+    final count = widget.db.favoritePosts.cache.count;
 
     return switch (count <= 0) {
       true => const SizedBox.shrink(),

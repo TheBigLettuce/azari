@@ -636,8 +636,8 @@ abstract class File
       res == null || buttonProgress == null
           ? null
           : (selected) {
-              if (db.favoritePosts.contains(res!.$1, res!.$2)) {
-                db.favoritePosts.backingStorage.removeAll([res!]);
+              if (db.favoritePosts.cache.isFavorite(res!.$1, res!.$2)) {
+                db.favoritePosts.removeAll([res!]);
 
                 return;
               }
@@ -656,7 +656,7 @@ abstract class File
                 try {
                   final ret = await api.singlePost(res!.$1);
 
-                  db.favoritePosts.backingStorage.add(
+                  db.favoritePosts.addAll([
                     FavoritePost(
                       id: ret.id,
                       md5: ret.md5,
@@ -674,7 +674,7 @@ abstract class File
                       type: ret.type,
                       size: ret.size,
                     ),
-                  );
+                  ]);
                 } catch (e, trace) {
                   Logger.root.warning("favoritePostButton", e, trace);
                 } finally {
@@ -687,7 +687,7 @@ abstract class File
       watch: res == null
           ? null
           : (f, [bool fire = false]) {
-              return db.favoritePosts
+              return db.favoritePosts.cache
                   .streamSingle(res!.$1, res!.$2, fire)
                   .map<(IconData?, Color?, bool?)>((e) {
                 return (
@@ -796,7 +796,7 @@ abstract class File
       GalleryThumbnailProvider(
         id,
         isVideo,
-        PinnedThumbnailService.db(),
+        // PinnedThumbnailService.db(),
         ThumbnailService.db(),
       );
 
@@ -826,7 +826,7 @@ abstract class File
 
     return [
       ...defaultStickersFile(context, this, db.localTags),
-      if (res != null && db.favoritePosts.contains(res!.$1, res!.$2))
+      if (res != null && db.favoritePosts.cache.isFavorite(res!.$1, res!.$2))
         const Sticker(Icons.favorite_rounded, important: true),
     ];
   }

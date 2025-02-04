@@ -17,6 +17,7 @@ late final _Dbs _dbs;
 
 class _Dbs {
   _Dbs._({
+    // required this.favoritePosts,
     required this.localTags,
     required this.blacklisted,
     required this.directory,
@@ -25,6 +26,7 @@ class _Dbs {
     required this.temporaryImagesDir,
     required this.thumbnail,
     required this.secondaryGridDbDir,
+    required this.favorites,
   });
 
   final _hiddenBooruPostCachedValues = <(int, Booru), String>{};
@@ -38,11 +40,14 @@ class _Dbs {
   final Isar localTags;
   final Isar? thumbnail;
   final Isar blacklisted;
+  // final Isar favoritePosts;
 
   final String directory;
   final String temporaryDbDir;
   final String temporaryImagesDir;
   final String secondaryGridDbDir;
+
+  final FavoritePosts favorites;
 
   String get appStorageDir => directory;
 

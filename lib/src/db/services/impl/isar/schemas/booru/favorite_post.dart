@@ -8,9 +8,11 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:isar/isar.dart";
+import "package:meta/meta.dart";
 
 part "favorite_post.g.dart";
 
+@immutable
 @collection
 class IsarFavoritePost extends PostImpl
     with DefaultPostPressable<FavoritePost>

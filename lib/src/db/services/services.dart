@@ -11,6 +11,7 @@ import "package:azari/src/db/services/impl_table/io.dart"
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
@@ -73,7 +74,6 @@ abstract interface class ServicesImplTable implements ServiceMarker {
   StatisticsDailyService get statisticsDaily;
   DirectoryMetadataService get directoryMetadata;
   ThumbnailService get thumbnails;
-  PinnedThumbnailService get pinnedThumbnails;
   LocalTagsService get localTags;
   LocalTagDictionaryService get localTagDictionary;
   GridBookmarkService get gridBookmarks;

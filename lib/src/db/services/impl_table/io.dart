@@ -34,7 +34,16 @@ Future<DownloadManager> init(ServicesImplTable db, bool temporary) async {
 ServicesImplTable getApi() => IoServicesImplTable();
 
 class IoServicesImplTable implements ServicesImplTable {
-  IoServicesImplTable();
+  factory IoServicesImplTable() {
+    if (_instance != null) {
+      return _instance!;
+    }
+
+    return _instance = IoServicesImplTable._();
+  }
+  IoServicesImplTable._();
+
+  static IoServicesImplTable? _instance;
 
   @override
   final IsarSettingsService settings = IsarSettingsService();
@@ -48,7 +57,7 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   DownloadFileService get downloads => const IsarDownloadFileService();
   @override
-  FavoritePostSourceService favoritePosts = IsarFavoritePostService();
+  final FavoritePostSourceService favoritePosts = IsarFavoritePostService();
   @override
   StatisticsGeneralService get statisticsGeneral =>
       const IsarStatisticsGeneralService();
@@ -67,8 +76,8 @@ class IoServicesImplTable implements ServicesImplTable {
   @override
   ThumbnailService get thumbnails => const IsarThumbnailService();
   @override
-  PinnedThumbnailService get pinnedThumbnails =>
-      const IsarPinnedThumbnailService();
+  // PinnedThumbnailService get pinnedThumbnails =>
+  //     const IsarPinnedThumbnailService();
   @override
   LocalTagsService get localTags => const IsarLocalTagsService();
   @override

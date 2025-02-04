@@ -155,7 +155,7 @@ class _BooruPageState extends State<BooruPage>
 
     watchSettings();
 
-    favoritesWatcher = favoritePosts.backingStorage.watch((event) {
+    favoritesWatcher = favoritePosts.cache.countEvents.listen((event) {
       source.backingStorage.addAll([]);
     });
 

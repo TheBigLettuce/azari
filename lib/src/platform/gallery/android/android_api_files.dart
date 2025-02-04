@@ -101,7 +101,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     this.sourceTags,
     this.localTags,
   ) {
-    _favoritesWatcher = favoritePosts.backingStorage.watch((_) {
+    _favoritesWatcher = favoritePosts.cache.countEvents.listen((_) {
       backingStorage.addAll([]);
     });
   }

@@ -88,29 +88,9 @@ GridAction<T> favorites<T extends PostImpl>(
   FavoritePostSourceService favoritePost, {
   bool showDeleteSnackbar = false,
 }) {
-  final l10n = context.l10n();
-
   return GridAction<T>(
     Icons.favorite_border_rounded,
-    (selected) {
-      final ret = favoritePost.addRemove(selected);
-
-      if (ret.isNotEmpty && showDeleteSnackbar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 20),
-            behavior: SnackBarBehavior.floating,
-            content: Text(l10n.deletedFromFavorites),
-            action: SnackBarAction(
-              label: l10n.undoLabel,
-              onPressed: () {
-                favoritePost.addRemove(ret);
-              },
-            ),
-          ),
-        );
-      }
-    },
+    favoritePost.addRemove,
     true,
   );
 }

@@ -38,14 +38,14 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
   const GalleryThumbnailProvider(
     this.id,
     this.tryPinned,
-    this.pinnedThumbnails,
+    // this.pinnedThumbnails,
     this.thumbnails,
   );
 
   final int id;
   final bool tryPinned;
 
-  final PinnedThumbnailService pinnedThumbnails;
+  // final PinnedThumbnailService pinnedThumbnails;
   final ThumbnailService thumbnails;
 
   @override
@@ -91,14 +91,14 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
         return io.File(thumb.path);
       }
 
-      if (tryPinned) {
-        final thumb = pinnedThumbnails.get(id);
-        if (thumb != null &&
-            thumb.differenceHash != 0 &&
-            thumb.path.isNotEmpty) {
-          return io.File(thumb.path);
-        }
-      }
+      // if (tryPinned) {
+      //   final thumb = pinnedThumbnails.get(id);
+      //   if (thumb != null &&
+      //       thumb.differenceHash != 0 &&
+      //       thumb.path.isNotEmpty) {
+      //     return io.File(thumb.path);
+      //   }
+      // }
 
       final future2 = _thumbLoadingStatus[id];
       if (future2 != null) {

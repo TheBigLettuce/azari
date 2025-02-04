@@ -5,22 +5,18 @@
 
 part of "services.dart";
 
-abstract interface class FavoritePostSourceService
-    implements
-        ResourceSource<(int id, Booru booru), FavoritePost>,
-        ServiceMarker {
-  List<PostBase> addRemove(List<PostBase> posts);
+abstract interface class FavoritePostSourceService {
+  FavoritePostCache get cache;
 
+  void addAll(List<FavoritePost> posts);
+  void removeAll(List<(int id, Booru booru)> idxs);
+
+  void addRemove(List<PostBase> posts);
+}
+
+abstract class FavoritePostCache
+    extends ReadOnlyStorage<(int, Booru), FavoritePost> {
   bool isFavorite(int id, Booru booru);
-  bool contains(int id, Booru booru);
-
-  StreamSubscription<T> watchSingle<T>(
-    int id,
-    Booru booru,
-    T Function(bool) transform,
-    void Function(T) f, [
-    bool fire = false,
-  ]);
 
   Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]);
 }

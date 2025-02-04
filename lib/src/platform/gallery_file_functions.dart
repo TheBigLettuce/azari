@@ -3,17 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/src/db/services/post_tags.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
 import "package:flutter/material.dart";
-import "package:logging/logging.dart";
 
 List<Sticker> defaultStickersFile(
   BuildContext? context,
@@ -62,52 +57,52 @@ String kbMbSize(BuildContext context, int bytes) {
   return context.l10n().kilobytes(res);
 }
 
-Future<void> loadNetworkThumb(
-  BuildContext context,
-  String filename,
-  int id,
-  ThumbnailService thumbnails,
-  PinnedThumbnailService pinnedThumbnails, [
-  bool addToPinned = true,
-]) {
-  final notifier = GlobalProgressTab.maybeOf(context)
-      ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
-  if (notifier == null ||
-      notifier.value != null ||
-      pinnedThumbnails.get(id) != null) {
-    return Future.value();
-  }
+// Future<void> loadNetworkThumb(
+//   BuildContext context,
+//   String filename,
+//   int id,
+//   ThumbnailService thumbnails,
+//   PinnedThumbnailService pinnedThumbnails, [
+//   bool addToPinned = true,
+// ]) {
+//   final notifier = GlobalProgressTab.maybeOf(context)
+//       ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
+//   if (notifier == null ||
+//       notifier.value != null ||
+//       pinnedThumbnails.get(id) != null) {
+//     return Future.value();
+//   }
 
-  return notifier.value = Future(() async {
-    final notif = await NotificationApi().show(
-      id: NotificationApi.savingThumbId,
-      title: "",
-      channel: NotificationChannel.misc,
-      group: NotificationGroup.misc,
-    );
+//   return notifier.value = Future(() async {
+//     final notif = await NotificationApi().show(
+//       id: NotificationApi.savingThumbId,
+//       title: "",
+//       channel: NotificationChannel.misc,
+//       group: NotificationGroup.misc,
+//     );
 
-    notif.update(0, filename);
+//     notif.update(0, filename);
 
-    final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
-    if (res != null) {
-      final client = BooruAPI.defaultClientForBooru(res.booru);
-      final api = BooruAPI.fromEnum(res.booru, client);
+//     final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
+//     if (res != null) {
+//       final client = BooruAPI.defaultClientForBooru(res.booru);
+//       final api = BooruAPI.fromEnum(res.booru, client);
 
-      try {
-        final post = await api.singlePost(res.id);
+//       try {
+//         final post = await api.singlePost(res.id);
 
-        final t =
-            await GalleryApi().thumbs.saveFromNetwork(post.previewUrl, id);
+//         final t =
+//             await GalleryApi().thumbs.saveFromNetwork(post.previewUrl, id);
 
-        thumbnails.delete(id);
-        pinnedThumbnails.add(id, t.path, t.differenceHash);
-      } catch (e, trace) {
-        Logger.root.warning("loadNetworkThumb", e, trace);
-      }
+//         thumbnails.delete(id);
+//         pinnedThumbnails.add(id, t.path, t.differenceHash);
+//       } catch (e, trace) {
+//         Logger.root.warning("loadNetworkThumb", e, trace);
+//       }
 
-      client.close(force: true);
-    }
+//       client.close(force: true);
+//     }
 
-    notif.done();
-  }).whenComplete(() => notifier.value = null);
-}
+//     notif.done();
+//   }).whenComplete(() => notifier.value = null);
+// }

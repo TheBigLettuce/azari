@@ -5,22 +5,22 @@
 
 part of "services.dart";
 
-abstract interface class PinnedThumbnailService {
-  factory PinnedThumbnailService.db() => _currentDb.pinnedThumbnails;
+// abstract interface class PinnedThumbnailService {
+//   factory PinnedThumbnailService.db() => _currentDb.pinnedThumbnails;
 
-  void clear();
+//   void clear();
 
-  void add(int id, String path, int differenceHash);
-  PinnedThumbnailData? get(int id);
+//   void add(int id, String path, int differenceHash);
+//   PinnedThumbnailData? get(int id);
 
-  bool delete(int id);
-}
+//   bool delete(int id);
+// }
 
-@immutable
-abstract class PinnedThumbnailData {
-  const PinnedThumbnailData();
+// @immutable
+// abstract class PinnedThumbnailData {
+//   const PinnedThumbnailData();
 
-  int get id;
-  String get path;
-  int get differenceHash;
-}
+//   int get id;
+//   String get path;
+//   int get differenceHash;
+// }

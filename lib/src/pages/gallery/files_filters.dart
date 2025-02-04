@@ -71,7 +71,7 @@ class SameFilterAccumulator {
     cells.where(
       (element) {
         final isFavorite =
-            favoritePosts.contains(element.res!.$1, element.res!.$2);
+            favoritePosts.cache.isFavorite(element.res!.$1, element.res!.$2);
 
         if (searchText.isNotEmpty) {
           return element.res != null &&
