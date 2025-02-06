@@ -176,6 +176,12 @@ class GlobalProgressTab {
     return widget?.tab;
   }
 
+  static bool presentInScope(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<_ProgressTab>();
+
+    return widget != null;
+  }
+
   final Map<String, ValueNotifier<dynamic>> _notifiers = {};
 
   Widget inject(Widget child) => _ProgressTab(tab: this, child: child);

@@ -237,7 +237,7 @@
     "enumGridLayoutTypeGridQuilted": "Мозайка",
     "enumGridLayoutTypeGridMasonry": "Волнистая сетка",
     "enumThemeTypeSystemAccent": "Система",
-    "enumThemeTypeSecretPink": "Розовая",
+    "enumThemeTypePink": "Розовая",
     "pixels": "{number} п.",
     "@pixels": {
         "placeholders": {

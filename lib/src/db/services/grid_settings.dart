@@ -11,7 +11,6 @@ typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
 ]);
 
 abstract interface class GridSettingsService {
-  WatchableGridSettingsData get animeDiscovery;
   WatchableGridSettingsData get booru;
   WatchableGridSettingsData get directories;
   WatchableGridSettingsData get favoritePosts;
@@ -43,9 +42,7 @@ abstract class CancellableWatchableGridSettingsData
 enum GridLayoutType {
   grid(),
   list(),
-  gridQuilted(),
-  // gridMasonry()
-  ;
+  gridQuilted();
 
   const GridLayoutType();
 
@@ -53,7 +50,6 @@ enum GridLayoutType {
         GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
         GridLayoutType.list => l10n.enumGridLayoutTypeList,
         GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
-        // GridLayoutType.gridMasonry => l10n.enumGridLayoutTypeGridMasonry,
       };
 }
 

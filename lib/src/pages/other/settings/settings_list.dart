@@ -195,15 +195,15 @@ class _SettingsListState extends State<SettingsList> {
             ),
             subtitle: Text(_miscSettings.themeType.translatedString(l10n)),
           ),
-          SwitchListTile(
-            tileColor: theme.colorScheme.surfaceContainerHigh,
-            value: _miscSettings.filesExtendedActions,
-            onChanged: (value) => MiscSettingsService.db()
-                .current
-                .copy(filesExtendedActions: value)
-                .save(),
-            title: Text(l10n.extendedFilesGridActions),
-          ),
+          // SwitchListTile(
+          //   tileColor: theme.colorScheme.surfaceContainerHigh,
+          //   value: _miscSettings.filesExtendedActions,
+          //   onChanged: (value) => MiscSettingsService.db()
+          //       .current
+          //       .copy(filesExtendedActions: value)
+          //       .save(),
+          //   title: Text(l10n.extendedFilesGridActions),
+          // ),
           FutureBuilder(
             future: thumbnailCount,
             builder: (context, data) {

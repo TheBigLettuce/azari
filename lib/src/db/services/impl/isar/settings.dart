@@ -8,14 +8,18 @@ part of "impl.dart";
 class IsarSettingsService implements SettingsService {
   IsarSettingsService();
 
+  Isar get db => Dbs().main;
+
+  IsarCollection<IsarSettings> get collection => db.isarSettings;
+
   @override
   late SettingsData current =
-      _Dbs.g.main.isarSettings.getSync(0) ?? const IsarSettings.empty();
+      collection.getSync(0) ?? const IsarSettings.empty();
 
   @visibleForTesting
   void clearStorageTest_() {
-    _Dbs.g.main.writeTxnSync(() {
-      _Dbs.g.main.isarSettings.clearSync();
+    db.writeTxnSync(() {
+      collection.clearSync();
     });
 
     current = const IsarSettings.empty();
@@ -23,9 +27,9 @@ class IsarSettingsService implements SettingsService {
 
   @override
   void add(SettingsData data) {
-    _Dbs.g.main.writeTxnSync(
+    db.writeTxnSync(
       () {
-        _Dbs.g.main.isarSettings.putSync(data as IsarSettings);
+        collection.putSync(data as IsarSettings);
 
         current = data;
       },
@@ -62,5 +66,5 @@ class IsarSettingsService implements SettingsService {
     void Function(SettingsData? s) f, [
     bool fire = false,
   ]) =>
-      _Dbs.g.main.isarSettings.watchObject(0, fireImmediately: fire).listen(f);
+      collection.watchObject(0, fireImmediately: fire).listen(f);
 }

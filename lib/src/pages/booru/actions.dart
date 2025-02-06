@@ -8,7 +8,6 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 

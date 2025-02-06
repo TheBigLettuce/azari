@@ -6,7 +6,6 @@
 import "dart:ui" as ui;
 
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/widgets/fade_sideways_page_transition_builder.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
@@ -14,8 +13,8 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = MiscSettingsService.db().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
-      ..[TargetPlatform.android] = const PredictiveBackPageTransitionsBuilder()
-      ..[TargetPlatform.linux] = const FadeSidewaysPageTransitionBuilder(),
+      ..[TargetPlatform.android] = const FadeForwardsPageTransitionsBuilder()
+      ..[TargetPlatform.linux] = const FadeForwardsPageTransitionsBuilder(),
   );
 
   const menuTheme = MenuThemeData(
@@ -43,7 +42,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
         useMaterial3: true,
         colorSchemeSeed: accentColor,
       ),
-    ThemeType.secretPink => ThemeData(
+    ThemeType.pink => ThemeData(
         brightness: Brightness.dark,
         menuTheme: menuTheme,
         popupMenuTheme: popupMenuTheme,
@@ -76,7 +75,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
         ),
       );
 
-    case ThemeType.secretPink:
+    case ThemeType.pink:
       baseTheme = baseTheme.copyWith(
         scrollbarTheme: scrollBarTheme,
         scaffoldBackgroundColor: baseTheme.colorScheme.surface,

@@ -105,8 +105,9 @@ class _FilesPageState extends State<FilesPage>
 
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
+  late final StreamSubscription<MiscSettingsData?> _miscSettingsEvents;
 
-  final miscSettings = MiscSettingsService.db().current;
+  MiscSettingsData miscSettings = MiscSettingsService.db().current;
 
   late final postTags = PostTags(localTags, widget.db.localTagDictionary);
 
@@ -122,6 +123,17 @@ class _FilesPageState extends State<FilesPage>
   @override
   void initState() {
     super.initState();
+
+    _miscSettingsEvents = miscSettings.s.watch((newMiscSettings) {
+      if (newMiscSettings!.filesExtendedActions !=
+          miscSettings.filesExtendedActions) {
+        SelectionActions.of(context).controller.setCount(0);
+      }
+
+      setState(() {
+        miscSettings = newMiscSettings;
+      });
+    });
 
     if (widget.directories.length == 1) {
       final directory = widget.directories.first;
@@ -323,6 +335,8 @@ class _FilesPageState extends State<FilesPage>
 
   @override
   void dispose() {
+    _miscSettingsEvents.cancel();
+
     FlutterGalleryData.setUp(null);
     GalleryVideoEvents.setUp(null);
 
@@ -426,7 +440,7 @@ class _FilesPageState extends State<FilesPage>
             filter: filter,
             child: Builder(
               builder: (context) => GridFrame<File>(
-                key: gridKey,
+                key: ValueKey(miscSettings.filesExtendedActions),
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -583,6 +597,7 @@ class _FilesPageState extends State<FilesPage>
                   ),
                   settingsButton: GridSettingsButton.fromWatchable(
                     gridSettings,
+                    header: const _ShowAdditionalButtons(),
                     localizeHideNames: (context) =>
                         l10n.hideNames(l10n.hideNamesFiles),
                   ),
@@ -762,6 +777,55 @@ class _FilesPageState extends State<FilesPage>
   }
 }
 
+class _ShowAdditionalButtons extends StatefulWidget {
+  const _ShowAdditionalButtons({
+    super.key,
+  });
+
+  @override
+  State<_ShowAdditionalButtons> createState() => __ShowAdditionalButtonsState();
+}
+
+class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons> {
+  late final StreamSubscription<MiscSettingsData?> _miscSettingsEvents;
+
+  MiscSettingsData miscSettings = MiscSettingsService.db().current;
+
+  @override
+  void initState() {
+    _miscSettingsEvents = miscSettings.s.watch((newMiscSettings) {
+      setState(() {
+        miscSettings = newMiscSettings!;
+      });
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _miscSettingsEvents.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+    // final theme = Theme.of(context);
+
+    return SwitchListTile(
+      value: miscSettings.filesExtendedActions,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+      onChanged: (value) => MiscSettingsService.db()
+          .current
+          .copy(filesExtendedActions: value)
+          .save(),
+      title: Text(l10n.extendedFilesGridActions),
+    );
+  }
+}
+
 class FlutterGalleryDataNotifier extends InheritedWidget {
   const FlutterGalleryDataNotifier({
     super.key,
@@ -889,7 +953,7 @@ class TagsRibbon extends StatefulWidget {
   final Widget emptyWidget;
 
   final void Function(String tag, ScrollController controller)? onLongPress;
-  final void Function(String tag, ScrollController controller) selectTag;
+  final void Function(String tag, ScrollController controller)? selectTag;
   final List<PopupMenuItem<void>> Function(
     String tag,
     ScrollController controller,
@@ -1043,10 +1107,12 @@ class _TagsRibbonState extends State<TagsRibbon> {
                                 scrollController,
                               );
                             },
-                      onPressed: () => widget.selectTag(
-                        elem.tag,
-                        scrollController,
-                      ),
+                      onPressed: widget.selectTag == null
+                          ? null
+                          : () => widget.selectTag!(
+                                elem.tag,
+                                scrollController,
+                              ),
                       style: const ButtonStyle(
                         visualDensity: VisualDensity.compact,
                       ),

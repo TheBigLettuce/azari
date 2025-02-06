@@ -69,7 +69,20 @@ class _FadingPanelState extends State<FadingPanel>
     final textSize =
         MediaQuery.textScalerOf(context).scale(textStyle?.fontSize ?? 28);
 
-    final double labelSize = 18 + 18 + 6 + textSize;
+    final double labelSize = widget.label.isEmpty ? 0 : 18 + 18 + 6 + textSize;
+
+    final body = Animate(
+      value: 1,
+      autoPlay: false,
+      controller: controller,
+      effects: const [
+        FadeEffect(
+          begin: 0,
+          end: 1,
+        ),
+      ],
+      child: shrink ? const SizedBox.shrink() : widget.child,
+    );
 
     return FadingController(
       source: widget.source,
@@ -77,48 +90,41 @@ class _FadingPanelState extends State<FadingPanel>
         widget.childSize.width,
         (shrink ? 0 : widget.childSize.height) + labelSize,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FadingPanelLabel(
-            horizontalPadding: widget.horizontalPadding,
-            label: widget.label,
-            controller: controller,
-            onPressed: widget.enableHide
-                ? () {
-                    if (shrink) {
-                      controller.forward().then((_) {
-                        setState(() {
-                          shrink = false;
-                        });
-                      });
-                    } else {
-                      controller.reverse().then((_) {
-                        setState(() {
-                          shrink = true;
-                        });
-                      });
-                    }
-                  }
-                : null,
-            icon: widget.enableHide ? Icons.keyboard_arrow_down_rounded : null,
-            trailing: widget.trailing,
-          ),
-          Animate(
-            value: 1,
-            autoPlay: false,
-            controller: controller,
-            effects: const [
-              FadeEffect(
-                begin: 0,
-                end: 1,
-              ),
-            ],
-            child: shrink ? const SizedBox.shrink() : widget.child,
-          ),
-        ],
-      ),
+      child: widget.label.isEmpty
+          ? body
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FadingPanelLabel(
+                  horizontalPadding: widget.horizontalPadding,
+                  label: widget.label,
+                  controller: controller,
+                  onPressed: widget.enableHide
+                      ? () {
+                          if (shrink) {
+                            controller.forward().then((_) {
+                              setState(() {
+                                shrink = false;
+                              });
+                            });
+                          } else {
+                            controller.reverse().then((_) {
+                              setState(() {
+                                shrink = true;
+                              });
+                            });
+                          }
+                        }
+                      : null,
+                  icon: widget.enableHide
+                      ? Icons.keyboard_arrow_down_rounded
+                      : null,
+                  trailing: widget.trailing,
+                ),
+                body,
+              ],
+            ),
     );
   }
 }

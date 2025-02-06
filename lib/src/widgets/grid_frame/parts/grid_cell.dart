@@ -308,14 +308,24 @@ class GridCell extends StatelessWidget {
                     ),
                   if (stickers != null && stickers.isNotEmpty)
                     Align(
-                      alignment: Alignment.topRight,
+                      alignment: description.alignStickersTopCenter
+                          ? Alignment.topLeft
+                          : Alignment.topRight,
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.end,
-                          direction: Axis.vertical,
-                          children:
-                              stickers.map((e) => StickerWidget(e)).toList(),
+                          textDirection: description.alignStickersTopCenter
+                              ? null
+                              : TextDirection.rtl,
+                          spacing: 2,
+                          runSpacing: 2,
+                          crossAxisAlignment: description.alignStickersTopCenter
+                              ? WrapCrossAlignment.center
+                              : WrapCrossAlignment.start,
+                          direction: description.alignStickersTopCenter
+                              ? Axis.horizontal
+                              : Axis.vertical,
+                          children: stickers.map(StickerWidget.new).toList(),
                         ),
                       ),
                     ),

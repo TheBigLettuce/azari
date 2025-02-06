@@ -25,13 +25,13 @@ abstract interface class MiscSettingsService implements ServiceMarker {
 
 enum ThemeType {
   systemAccent(),
-  secretPink();
+  pink();
 
   const ThemeType();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
         ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
-        ThemeType.secretPink => l10n.enumThemeTypeSecretPink,
+        ThemeType.pink => l10n.enumThemeTypePink,
       };
 }
 

@@ -77,6 +77,8 @@ class UriFile {
     this.lastModified,
     this.height,
     this.width,
+    this.isVideo,
+    this.isGif,
   );
 
   final String uri;
@@ -86,6 +88,9 @@ class UriFile {
 
   final int height;
   final int width;
+
+  final bool isVideo;
+  final bool isGif;
 
   final int size;
 }

@@ -797,9 +797,9 @@
     "@enumThemeTypeSystemAccent": {
         "description": "ThemeType.systemAccent"
     },
-    "enumThemeTypeSecretPink": "Secret Pink",
-    "@enumThemeTypeSecretPink": {
-        "description": "ThemeType.secretPink"
+    "enumThemeTypePink": "Pink",
+    "@enumThemeTypePink": {
+        "description": "ThemeType.pink"
     },
     "sizeInfoPage": "Size",
     "@sizeInfoPage": {

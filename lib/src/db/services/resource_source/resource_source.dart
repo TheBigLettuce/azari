@@ -52,8 +52,10 @@ abstract interface class ResourceSource<K, V> {
   const ResourceSource();
 
   factory ResourceSource.empty(K Function(V) getKey) = _EmptyResourceSource;
-  factory ResourceSource.external(ReadOnlyStorage<K, V> backingStorage) =
-      _ExternalResourceSource;
+  factory ResourceSource.external(
+    ReadOnlyStorage<K, V> backingStorage, {
+    Iterable<V> Function(SortingMode sort)? trySorted,
+  }) = _ExternalResourceSource;
 
   SourceStorage<K, V> get backingStorage;
 
@@ -85,10 +87,12 @@ abstract class RefreshingProgress {
 }
 
 class _ExternalResourceSource<K, V> implements ResourceSource<K, V> {
-  _ExternalResourceSource(ReadOnlyStorage<K, V> backingStorage_)
-      : backingStorage = backingStorage_ is SourceStorage<K, V>
+  _ExternalResourceSource(
+    ReadOnlyStorage<K, V> backingStorage_, {
+    Iterable<V> Function(SortingMode sort)? trySorted,
+  }) : backingStorage = backingStorage_ is SourceStorage<K, V>
             ? backingStorage_
-            : _WrappedReadOnlyStorage(backingStorage_);
+            : _WrappedReadOnlyStorage(backingStorage_, trySorted);
 
   @override
   final SourceStorage<K, V> backingStorage;
@@ -110,7 +114,9 @@ class _ExternalResourceSource<K, V> implements ResourceSource<K, V> {
 }
 
 class _WrappedReadOnlyStorage<K, V> extends SourceStorage<K, V> {
-  const _WrappedReadOnlyStorage(this.backingStorage);
+  const _WrappedReadOnlyStorage(this.backingStorage, this.trySorted_);
+
+  final Iterable<V> Function(SortingMode sort)? trySorted_;
 
   final ReadOnlyStorage<K, V> backingStorage;
 
@@ -157,7 +163,7 @@ class _WrappedReadOnlyStorage<K, V> extends SourceStorage<K, V> {
   Iterable<V> get reversed => this;
 
   @override
-  Iterable<V> trySorted(SortingMode sort) => this;
+  Iterable<V> trySorted(SortingMode sort) => trySorted_?.call(sort) ?? this;
 }
 
 class _EmptyProgress implements RefreshingProgress {

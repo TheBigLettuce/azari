@@ -105,6 +105,7 @@ class CellStaticData {
     this.circle = false,
     this.alignTitleToTopLeft = false,
     this.ignoreStickers = false,
+    this.alignStickersTopCenter = false,
   });
 
   /// [GridCell] is displayed in form as a beveled rectangle.
@@ -116,6 +117,7 @@ class CellStaticData {
   final bool tightMode;
   final bool alignTitleToTopLeft;
   final bool ignoreStickers;
+  final bool alignStickersTopCenter;
 
   final int titleLines;
 }

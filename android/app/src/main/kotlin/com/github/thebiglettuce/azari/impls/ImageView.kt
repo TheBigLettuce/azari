@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import androidx.core.net.toUri
 
 // Based on Lineage OS's Glimpse
 
@@ -286,7 +287,7 @@ internal class GalleryImpl(
 
     private fun updateExoPlayer(file: DirectoryFile) {
         if (file.isVideo) {
-            val originalUri = Uri.parse(file.originalUri)
+            val originalUri = file.originalUri.toUri()
 
             with(exoPlayerLazy.value) {
                 if (originalUri != lastVideoUriPlayed) {
@@ -407,7 +408,6 @@ class MediaPlayerAdapter(
 
         private val onClickCallback = View.OnClickListener {
             CoroutineScope(Dispatchers.Main).launch {
-                Log.i("click", "clicked")
                 galleryApi.galleryTapDownEvent {
                 }
             }

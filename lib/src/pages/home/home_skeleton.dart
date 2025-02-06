@@ -1079,6 +1079,7 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
     return AnimatedList(
       key: listKey,
       shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       initialItemCount: bookmarks.length,
       itemBuilder: itemBuilder,
     );

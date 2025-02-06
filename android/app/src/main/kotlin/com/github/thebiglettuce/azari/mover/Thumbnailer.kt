@@ -41,6 +41,7 @@ import java.io.FileOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
+import androidx.core.net.toUri
 
 class Thumbnailer(private val context: Context) {
     private val cap = if (Runtime.getRuntime().availableProcessors() == 1) {
@@ -91,7 +92,7 @@ class Thumbnailer(private val context: Context) {
                                 is NetworkThumbOp -> {
                                     getThumb(
                                         op.thumb.id,
-                                        Uri.parse(op.thumb.url),
+                                        op.thumb.url.toUri(),
                                         network = true,
                                         saveToPinned = op.saveToPinned
                                     )

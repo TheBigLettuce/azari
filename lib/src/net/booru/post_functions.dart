@@ -413,9 +413,11 @@ class DimensionsName extends StatelessWidget {
                 children: trailing,
               ),
         title: Text(name),
-        subtitle: Text(
-          "$width x ${l10n.pixels(height)}",
-        ),
+        subtitle: width == 0 && height == 0
+            ? null
+            : Text(
+                "$width x ${l10n.pixels(height)}",
+              ),
       ),
     );
   }

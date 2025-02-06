@@ -103,7 +103,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
   late final StreamSubscription<void> blacklistedWatcher;
   late final StreamSubscription<void> directoryTagWatcher;
-  late final StreamSubscription<void> favoritesWatcher;
 
   late final AppLifecycleListener lifecycleListener;
 
@@ -158,11 +157,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       api.source.clearRefresh();
     });
 
-    favoritesWatcher = favoritePosts.cache.countEvents.listen((_) {
-      api.source.clearRefresh();
-      setState(() {});
-    });
-
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
@@ -188,7 +182,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
   @override
   void dispose() {
-    favoritesWatcher.cancel();
     directoryTagWatcher.cancel();
     blacklistedWatcher.cancel();
     miscSettingsWatcher.cancel();
@@ -386,7 +379,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                 selectionActions: SelectionActions.of(context),
                 db: widget.db,
                 parent: api,
-                callback: widget.callback!.toFile,
+                callback: widget.callback?.toFile,
               ),
             ),
           SegmentLayout(
@@ -634,7 +627,7 @@ class _LatestImagesWidget extends StatefulWidget {
   });
 
   final Directories parent;
-  final ReturnFileCallback callback;
+  final ReturnFileCallback? callback;
 
   final SelectionActions selectionActions;
 
@@ -738,7 +731,6 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = context.l10n();
 
     return GridExtrasNotifier(
       data: GridExtrasData(
@@ -759,7 +751,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
                   theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
             ),
             child: FadingPanel(
-              label: l10n.lastAdded,
+              label: "",
               source: filesApi.source,
               enableHide: false,
               horizontalPadding: _LatestList.listPadding,
@@ -853,7 +845,7 @@ class __LatestListState extends State<_LatestList> {
                       imageAlign: Alignment.topCenter,
                       overrideDescription: const CellStaticData(
                         ignoreSwipeSelectGesture: true,
-                        alignTitleToTopLeft: true,
+                        alignStickersTopCenter: true,
                       ),
                     ),
                   ),

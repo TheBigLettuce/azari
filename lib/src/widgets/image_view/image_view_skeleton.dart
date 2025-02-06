@@ -426,81 +426,90 @@ class _ThumbnailBarChild extends StatelessWidget {
         width: 100,
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: AnimatedContainer(
+          child: AnimatedPhysicalModel(
             clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              boxShadow: kElevationToShadow[4],
-              borderRadius: metadata.index == index
-                  ? const BorderRadius.all(Radius.circular(15))
-                  : BorderRadius.zero,
-            ),
+            color: theme.colorScheme.surface,
+            shadowColor: Colors.black,
+            borderRadius: metadata.index == index
+                ? const BorderRadius.all(Radius.circular(15))
+                : BorderRadius.zero,
+            elevation: metadata.index == index ? 3 : 1,
             duration: Durations.medium3,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (thumbnail == null)
-                  const ShimmerLoadingIndicator()
-                else
-                  Image(
-                    frameBuilder: (
-                      context,
-                      child,
-                      frame,
-                      wasSynchronouslyLoaded,
-                    ) {
-                      if (wasSynchronouslyLoaded) {
-                        return child;
-                      }
+            child: AnimatedContainer(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: metadata.index == index
+                    ? const BorderRadius.all(Radius.circular(15))
+                    : BorderRadius.zero,
+              ),
+              duration: Durations.medium3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (thumbnail == null)
+                    const ShimmerLoadingIndicator()
+                  else
+                    Image(
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded) {
+                          return child;
+                        }
 
-                      return frame == null
-                          ? const ShimmerLoadingIndicator()
-                          : child.animate().fadeIn();
-                    },
-                    image: thumbnail!,
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                  ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          theme.colorScheme.surfaceContainer
-                              .withValues(alpha: 0.8),
-                          theme.colorScheme.surfaceContainer
-                              .withValues(alpha: 0.6),
-                          theme.colorScheme.surfaceContainer
-                              .withValues(alpha: 0.4),
-                          theme.colorScheme.surfaceContainer
-                              .withValues(alpha: 0.2),
-                          theme.colorScheme.surfaceContainer
-                              .withValues(alpha: 0),
-                        ],
+                        return frame == null
+                            ? const ShimmerLoadingIndicator()
+                            : child.animate().fadeIn();
+                      },
+                      image: thumbnail!,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            theme.colorScheme.surfaceContainer
+                                .withValues(alpha: 0.8),
+                            theme.colorScheme.surfaceContainer
+                                .withValues(alpha: 0.6),
+                            theme.colorScheme.surfaceContainer
+                                .withValues(alpha: 0.4),
+                            theme.colorScheme.surfaceContainer
+                                .withValues(alpha: 0.2),
+                            theme.colorScheme.surfaceContainer
+                                .withValues(alpha: 0),
+                          ],
+                        ),
+                      ),
+                      child: const SizedBox(
+                        height: 40,
+                        width: double.infinity,
                       ),
                     ),
-                    child: const SizedBox(
-                      height: 40,
-                      width: double.infinity,
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        (index + 1).toString(),
+                        style: theme.textTheme.labelLarge,
+                      ),
                     ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    child: Text(
-                      index.toString(),
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -538,7 +547,7 @@ class _CountButton extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Text.rich(
                   TextSpan(
-                    text: "${metadata.index}",
+                    text: "${metadata.index + 1}",
                     children: [
                       TextSpan(
                         text: "/${metadata.count}",

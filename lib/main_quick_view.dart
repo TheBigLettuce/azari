@@ -31,11 +31,11 @@ Future<void> mainQuickView() async {
           size: e.size,
           id: -1,
           bucketId: "",
-          isVideo: false,
-          isGif: false,
+          isVideo: e.isVideo,
+          isGif: e.isGif,
           isDuplicate: false,
           tags: const {},
-          res: null,
+          res: ParsedFilenameResult.simple(e.name),
         ),
       )
       .toList();
@@ -116,12 +116,14 @@ class __GalleryDataHolderState extends State<_GalleryDataHolder> {
       db: widget.db.videoSettings,
     );
 
+    GalleryVideoEvents.setUp(impl);
     FlutterGalleryData.setUp(impl);
   }
 
   @override
   void dispose() {
     FlutterGalleryData.setUp(null);
+    GalleryVideoEvents.setUp(null);
 
     impl.dispose();
 

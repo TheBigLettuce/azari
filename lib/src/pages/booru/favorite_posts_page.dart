@@ -100,7 +100,26 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     api = BooruAPI.fromEnum(settings.selectedBooru, client);
 
     filter = ChainedFilterResourceSource(
-      ResourceSource.external(favoritePosts.cache),
+      ResourceSource.external(
+        favoritePosts.cache,
+        trySorted: (sort) {
+          if (sort == SortingMode.none) {
+            return favoritePosts.cache;
+          }
+
+          final values = favoritePosts.cache.toList()
+            ..sort((e1, e2) {
+              return switch (sort) {
+                SortingMode.none || SortingMode.size => e2.id.compareTo(e1.id),
+                SortingMode.rating => e1.rating.asSafeMode.index
+                    .compareTo(e2.rating.asSafeMode.index),
+                SortingMode.score => e1.score.compareTo(e2.score),
+              };
+            });
+
+          return values;
+        },
+      ),
       ListStorage(reverse: true),
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {

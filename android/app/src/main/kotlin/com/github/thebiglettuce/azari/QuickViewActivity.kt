@@ -113,6 +113,7 @@ class QuickViewActivity : FlutterFragmentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
         appContextChannel.detach()
 
         try {

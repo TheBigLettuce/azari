@@ -593,7 +593,6 @@ abstract class File
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
     final l10n = context.l10n();
-    final res = ParsedFilenameResult.fromFilename(name).maybeValue();
 
     return [
       if (res != null)
@@ -601,11 +600,11 @@ abstract class File
           Icons.public,
           () {
             launchUrl(
-              res.booru.browserLink(res.id),
+              res!.$2.browserLink(res!.$1),
               mode: LaunchMode.externalApplication,
             );
           },
-          l10n.openOnBooru(res.booru.string),
+          l10n.openOnBooru(res!.$2.string),
         ),
       NavigationAction(
         Icons.share,
@@ -980,11 +979,13 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                     filename: filename,
                     res: tags.res!,
                   ),
-            selectTag: (str, controller) {
-              HapticFeedback.mediumImpact();
+            selectTag: !GlobalProgressTab.presentInScope(context)
+                ? null
+                : (str, controller) {
+                    HapticFeedback.mediumImpact();
 
-              _launchGrid(context, str);
-            },
+                    _launchGrid(context, str);
+                  },
             tagManager: TagManager.of(context),
             showPin: false,
             items: (tag, controller) => [
@@ -1008,12 +1009,13 @@ class _GalleryFileInfoState extends State<GalleryFileInfo> {
                   tagManager.pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
                 ),
               ),
-              launchGridSafeModeItem(
-                context,
-                tag,
-                _launchGrid,
-                l10n,
-              ),
+              if (GlobalProgressTab.presentInScope(context))
+                launchGridSafeModeItem(
+                  context,
+                  tag,
+                  _launchGrid,
+                  l10n,
+                ),
               PopupMenuItem(
                 onTap: () {
                   if (tagManager.excluded.exists(tag)) {
@@ -1119,14 +1121,18 @@ class FileBooruInfoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final hasNotifiers = GlobalProgressTab.presentInScope(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: ListTile(
-        onTap: () {
-          Navigator.pop(context);
+        onTap: !hasNotifiers
+            ? null
+            : () {
+                Navigator.pop(context);
 
-          Post.imageViewSingle(context, res.$2, res.$1);
-        },
+                Post.imageViewSingle(context, res.$2, res.$1);
+              },
         tileColor: theme.colorScheme.surfaceContainerHigh,
         leading: const Icon(Icons.description_outlined),
         title: Text(res.$2.string),
