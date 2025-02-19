@@ -8,13 +8,12 @@ import "dart:math";
 
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
@@ -58,15 +57,80 @@ class BooruPage extends StatefulWidget {
   const BooruPage({
     super.key,
     required this.pagingRegistry,
-    required this.db,
     required this.procPop,
+    required this.gridBookmarks,
+    required this.hiddenBooruPosts,
+    required this.favoritePosts,
+    required this.settingsService,
+    required this.tagManager,
+    required this.gridDbs,
+    required this.downloadManager,
+    required this.localTags,
+    required this.hottestTags,
+    required this.gridSettings,
+    required this.visitedPosts,
+    required this.miscSettingsService,
   });
 
   final PagingStateRegistry pagingRegistry;
 
   final void Function(bool) procPop;
 
-  final DbConn db;
+  final GridBookmarkService? gridBookmarks;
+  final HiddenBooruPostsService? hiddenBooruPosts;
+  final FavoritePostSourceService? favoritePosts;
+  final TagManagerService? tagManager;
+  final DownloadManager? downloadManager;
+  final LocalTagsService? localTags;
+  final HottestTagsService? hottestTags;
+  final GridSettingsService? gridSettings;
+  final VisitedPostsService? visitedPosts;
+  final MiscSettingsService? miscSettingsService;
+
+  final GridDbService gridDbs;
+
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<GridDbService>() != null;
+
+  static Future<void> open(
+    BuildContext context, {
+    required PagingStateRegistry pagingRegistry,
+    required void Function(bool) procPop,
+  }) {
+    final db = Services.of(context);
+    final gridDbs = db.get<GridDbService>();
+    if (gridDbs == null) {
+      showSnackbar(
+        context,
+        "Booru functionality isn't available", // TODO: change
+      );
+
+      return Future.value();
+    }
+
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => BooruPage(
+          pagingRegistry: pagingRegistry,
+          procPop: procPop,
+          gridDbs: gridDbs,
+          tagManager: db.get<TagManagerService>(),
+          gridBookmarks: db.get<GridBookmarkService>(),
+          hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
+          favoritePosts: db.get<FavoritePostSourceService>(),
+          downloadManager: DownloadManager.of(context),
+          localTags: db.get<LocalTagsService>(),
+          hottestTags: db.get<HottestTagsService>(),
+          gridSettings: db.get<GridSettingsService>(),
+          visitedPosts: db.get<VisitedPostsService>(),
+          miscSettingsService: db.get<MiscSettingsService>(),
+          settingsService: db.require<SettingsService>(),
+        ),
+      ),
+    );
+  }
 
   @override
   State<BooruPage> createState() => _BooruPageState();
@@ -74,9 +138,21 @@ class BooruPage extends StatefulWidget {
 
 class _BooruPageState extends State<BooruPage>
     with CommonGridData<Post, BooruPage> {
-  GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
-  HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
-  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
+  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
+  HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  TagManagerService? get tagManager => widget.tagManager;
+  DownloadManager? get downloadManager => widget.downloadManager;
+  LocalTagsService? get localTags => widget.localTags;
+  HottestTagsService? get hottestTags => widget.hottestTags;
+  VisitedPostsService? get visitedPosts => widget.visitedPosts;
+  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
+
+  GridDbService get gridDbs => widget.gridDbs;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
+
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: true,
     aspectRatio: GridAspectRatio.one,
@@ -86,9 +162,9 @@ class _BooruPageState extends State<BooruPage>
 
   GridPostSource get source => pagingState.source;
 
-  late final StreamSubscription<void> favoritesWatcher;
+  late final StreamSubscription<void>? favoritesWatcher;
+  late final StreamSubscription<void>? hiddenPostWatcher;
   late final StreamSubscription<void> timeUpdater;
-  late final StreamSubscription<void> hiddenPostWatcher;
 
   final menuController = MenuController();
 
@@ -106,14 +182,14 @@ class _BooruPageState extends State<BooruPage>
     pagingState = widget.pagingRegistry.getOrRegister(
       settings.selectedBooru.string,
       () {
-        final mainGrid = widget.db.mainGrid(settings.selectedBooru);
+        final mainGrid = gridDbs.openMain(settings.selectedBooru);
 
         return _MainGridPagingState.prototype(
-          widget.db.tagManager,
-          hiddenBooruPost,
-          mainGrid,
           settings.selectedBooru,
-          gridBookmarks,
+          mainGrid,
+          gridBookmarks: gridBookmarks,
+          tagManager: tagManager,
+          hiddenBooruPosts: hiddenBooruPosts,
         );
       },
     );
@@ -139,10 +215,7 @@ class _BooruPageState extends State<BooruPage>
 
     timeUpdater = Stream<void>.periodic(5.seconds).listen((event) {
       if (inForeground) {
-        StatisticsGeneralService.db()
-            .current
-            .add(timeSpent: 5.seconds.inMilliseconds)
-            .save();
+        StatisticsGeneralService.addTimeSpent(5.seconds.inMilliseconds);
       }
     });
 
@@ -155,32 +228,26 @@ class _BooruPageState extends State<BooruPage>
 
     watchSettings();
 
-    favoritesWatcher = favoritePosts.cache.countEvents.listen((event) {
+    favoritesWatcher = favoritePosts?.cache.countEvents.listen((event) {
       source.backingStorage.addAll([]);
     });
 
-    hiddenPostWatcher = widget.db.hiddenBooruPost.watch((_) {
+    hiddenPostWatcher = hiddenBooruPosts?.watch((_) {
       source.backingStorage.addAll([]);
     });
 
-    if (pagingState.restoreSecondaryGrid != null) {
+    if (gridBookmarks != null && pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        final e = gridBookmarks.get(pagingState.restoreSecondaryGrid!)!;
+        final e = gridBookmarks!.get(pagingState.restoreSecondaryGrid!)!;
 
-        Navigator.push(
+        BooruRestoredPage.open(
           context,
-          MaterialPageRoute<void>(
-            builder: (context) {
-              return BooruRestoredPage(
-                pagingRegistry: widget.pagingRegistry,
-                db: DbConn.of(context),
-                booru: e.booru,
-                tags: e.tags,
-                saveSelectedPage: _setSecondaryName,
-                name: e.name,
-              );
-            },
-          ),
+          pagingRegistry: widget.pagingRegistry,
+          booru: e.booru,
+          tags: e.tags,
+          saveSelectedPage: _setSecondaryName,
+          name: e.name,
+          rootNavigator: false,
         );
       });
     }
@@ -189,8 +256,8 @@ class _BooruPageState extends State<BooruPage>
   @override
   void dispose() {
     gridSettings.cancel();
-    favoritesWatcher.cancel();
-    hiddenPostWatcher.cancel();
+    favoritesWatcher?.cancel();
+    hiddenPostWatcher?.cancel();
 
     if (!isRestart) {
       pagingState.restoreSecondaryGrid = null;
@@ -203,9 +270,11 @@ class _BooruPageState extends State<BooruPage>
     super.dispose();
   }
 
-  void _download(int i) => source
-      .forIdx(i)
-      ?.download(DownloadManager.of(context), PostTags.fromContext(context));
+  void _download(int i) => source.forIdx(i)?.download(
+        downloadManager: downloadManager!,
+        localTags: localTags!,
+        settingsService: settingsService,
+      );
 
   void _onBooruTagPressed(
     BuildContext context_,
@@ -219,20 +288,14 @@ class _BooruPageState extends State<BooruPage>
 
     ExitOnPressRoute.maybeExitOf(context_);
 
-    Navigator.push(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return BooruRestoredPage(
-            booru: booru,
-            tags: tag,
-            overrideSafeMode: safeMode,
-            db: widget.db,
-            saveSelectedPage: _setSecondaryName,
-            pagingRegistry: widget.pagingRegistry,
-          );
-        },
-      ),
+      booru: booru,
+      tags: tag,
+      overrideSafeMode: safeMode,
+      saveSelectedPage: _setSecondaryName,
+      pagingRegistry: widget.pagingRegistry,
+      rootNavigator: false,
     );
   }
 
@@ -260,10 +323,15 @@ class _BooruPageState extends State<BooruPage>
                 child: GridFrame<Post>(
                   key: gridKey,
                   slivers: [
-                    _HottestTagNotifier(
-                      api: pagingState.api,
-                      randomNumber: gridSeed,
-                    ),
+                    if (hottestTags != null)
+                      _HottestTagNotifier(
+                        api: pagingState.api,
+                        randomNumber: gridSeed,
+                        hottestTags: hottestTags!,
+                        tagManager: tagManager,
+                        localTags: localTags,
+                        settingsService: settingsService,
+                      ),
                     Builder(
                       builder: (context) {
                         final padding =
@@ -319,7 +387,7 @@ class _BooruPageState extends State<BooruPage>
                         ? const []
                         : [(navBarEvents, null)],
                     settingsButton: GridSettingsButton.onlyHeader(
-                      SafeModeButton(settingsWatcher: settings.s.watch),
+                      SafeModeButton(settingsWatcher: settingsService.watch),
                     ),
                     source: source,
                     search: RawSearchWidget(
@@ -334,26 +402,7 @@ class _BooruPageState extends State<BooruPage>
                             icon: const Icon(Icons.menu_rounded),
                           ),
                         ),
-                        bottom: bottomWidget ??
-                            PreferredSize(
-                              preferredSize: const Size.fromHeight(56),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: SizedBox(
-                                  height: 40,
-                                  child: PopularRandomChips(
-                                    db: widget.db,
-                                    safeMode: () => settings.safeMode,
-                                    booru: pagingState.booru,
-                                    onTagPressed: _onBooruTagPressed,
-                                    listPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                        bottom: bottomWidget,
                         centerTitle: true,
                         title: IconButton(
                           onPressed: () => BooruSearchPage.open(context),
@@ -364,7 +413,9 @@ class _BooruPageState extends State<BooruPage>
                         ],
                       ),
                     ),
-                    download: _download,
+                    download: downloadManager != null && localTags != null
+                        ? _download
+                        : null,
                     updateScrollPosition: pagingState.setOffset,
                     registerNotifiers: (child) => OnBooruTagPressed(
                       onPressed: _onBooruTagPressed,
@@ -375,18 +426,44 @@ class _BooruPageState extends State<BooruPage>
                     ),
                   ),
                   description: GridDescription(
+                    bottomWidget: PreferredSize(
+                      preferredSize: const Size.fromHeight(56),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: SizedBox(
+                          height: 40,
+                          child: PopularRandomChips(
+                            safeMode: () => settings.safeMode,
+                            booru: pagingState.booru,
+                            onTagPressed: _onBooruTagPressed,
+                            listPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
+                            tagManager: tagManager,
+                            visitedPosts: visitedPosts,
+                            miscSettingsService: miscSettingsService,
+                          ),
+                        ),
+                      ),
+                    ),
                     actions: [
-                      actions.downloadPost(
-                        context,
-                        pagingState.api.booru,
-                        null,
-                      ),
-                      actions.favorites(
-                        context,
-                        favoritePosts,
-                        showDeleteSnackbar: true,
-                      ),
-                      actions.hide(context, hiddenBooruPost),
+                      if (downloadManager != null && localTags != null)
+                        actions.downloadPost(
+                          context,
+                          pagingState.api.booru,
+                          null,
+                          downloadManager: downloadManager!,
+                          localTags: localTags!,
+                          settingsService: settingsService,
+                        ),
+                      if (favoritePosts != null)
+                        actions.favorites(
+                          context,
+                          favoritePosts!,
+                          showDeleteSnackbar: true,
+                        ),
+                      if (hiddenBooruPosts != null)
+                        actions.hide(context, hiddenBooruPosts!),
                     ],
                     animationsOnSourceWatch: false,
                     pageName: l10n.booruLabel,
@@ -400,7 +477,12 @@ class _BooruPageState extends State<BooruPage>
         ),
       BooruSubPage.favorites => FavoritePostsPage(
           rootNavigatorPop: widget.procPop,
-          db: widget.db,
+          gridSettings: widget.gridSettings!,
+          favoritePosts: favoritePosts!,
+          settingsService: settingsService,
+          downloadManager: downloadManager,
+          localTags: localTags,
+          miscSettingsService: miscSettingsService,
         ),
       BooruSubPage.bookmarks => GridPopScope(
           searchTextController: null,
@@ -409,7 +491,9 @@ class _BooruPageState extends State<BooruPage>
           child: BookmarkPage(
             pagingRegistry: widget.pagingRegistry,
             saveSelectedPage: _setSecondaryName,
-            db: widget.db,
+            gridBookmarks: gridBookmarks!,
+            gridDbs: gridDbs,
+            settingsService: settingsService,
           ),
         ),
       BooruSubPage.hiddenPosts => GridPopScope(
@@ -417,7 +501,8 @@ class _BooruPageState extends State<BooruPage>
           filter: null,
           rootNavigatorPop: widget.procPop,
           child: HiddenPostsPage(
-            db: widget.db.hiddenBooruPost,
+            hiddenBooruPosts: hiddenBooruPosts!,
+            settingsService: settingsService,
           ),
         ),
       BooruSubPage.downloads => GridPopScope(
@@ -425,8 +510,8 @@ class _BooruPageState extends State<BooruPage>
           filter: null,
           rootNavigatorPop: widget.procPop,
           child: DownloadsPage(
-            downloadManager: DownloadManager.of(context),
-            db: widget.db,
+            downloadManager: downloadManager!,
+            settingsService: settingsService,
           ),
         ),
       BooruSubPage.visited => GridPopScope(
@@ -434,7 +519,8 @@ class _BooruPageState extends State<BooruPage>
           filter: null,
           rootNavigatorPop: widget.procPop,
           child: VisitedPostsPage(
-            db: widget.db.visitedPosts,
+            visitedPosts: visitedPosts!,
+            settingsService: settingsService,
           ),
         ),
     };
@@ -500,23 +586,27 @@ class _GridConfigPlaceholdersState extends State<GridConfigPlaceholders> {
 
 class _MainGridPagingState implements PagingEntry {
   _MainGridPagingState(
-    HiddenBooruPostService hiddenBooruPosts,
+    HiddenBooruPostsService? hiddenBooruPosts,
     this.booru,
     this.tagManager,
     this.mainGrid,
     this.gridBookmarks,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
-    source =
-        mainGrid.makeSource(api, tagManager.excluded, this, hiddenBooruPosts);
+    source = mainGrid.makeSource(
+      api,
+      this,
+      hiddenBooruPosts: hiddenBooruPosts,
+      excluded: tagManager?.excluded,
+    );
   }
 
   factory _MainGridPagingState.prototype(
-    TagManager tagManager,
-    HiddenBooruPostService hiddenBooruPosts,
-    MainGridService mainGrid,
     Booru booru,
-    GridBookmarkService gridBookmarks,
-  ) =>
+    MainGridHandle mainGrid, {
+    required TagManagerService? tagManager,
+    required HiddenBooruPostsService? hiddenBooruPosts,
+    required GridBookmarkService? gridBookmarks,
+  }) =>
       _MainGridPagingState(
         hiddenBooruPosts,
         booru,
@@ -531,11 +621,11 @@ class _MainGridPagingState implements PagingEntry {
   bool reachedEnd = false;
 
   late final BooruAPI api = BooruAPI.fromEnum(booru, client);
-  final TagManager tagManager;
+  final TagManagerService? tagManager;
   final Dio client;
   late final GridPostSource source;
-  final MainGridService mainGrid;
-  final GridBookmarkService gridBookmarks;
+  final MainGridHandle mainGrid;
+  final GridBookmarkService? gridBookmarks;
 
   @override
   void updateTime() => mainGrid.time = DateTime.now();
@@ -610,6 +700,7 @@ class OpenMenuButton extends StatelessWidget {
     required this.booru,
     required this.launchGrid,
     required this.context,
+    required this.settingsService,
   });
 
   final TextEditingController controller;
@@ -617,6 +708,8 @@ class OpenMenuButton extends StatelessWidget {
   final BuildContext context;
 
   final OpenSearchCallback launchGrid;
+
+  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -630,6 +723,7 @@ class OpenMenuButton extends StatelessWidget {
             controller.text,
             launchGrid,
             l10n,
+            settingsService: settingsService,
           ),
         ]);
       },
@@ -641,8 +735,9 @@ PopupMenuItem<void> launchGridSafeModeItem(
   BuildContext context,
   String tag,
   OpenSearchCallback launchGrid,
-  AppLocalizations l10n,
-) =>
+  AppLocalizations l10n, {
+  required SettingsService settingsService,
+}) =>
     PopupMenuItem(
       onTap: () {
         if (tag.isEmpty) {
@@ -650,6 +745,7 @@ PopupMenuItem<void> launchGridSafeModeItem(
         }
 
         context.openSafeModeDialog(
+          settingsService,
           (value) => launchGrid(context, tag, value),
         );
       },
@@ -661,10 +757,20 @@ class _HottestTagNotifier extends StatelessWidget {
     // super.key,
     required this.api,
     required this.randomNumber,
+    required this.hottestTags,
+    required this.tagManager,
+    required this.settingsService,
+    required this.localTags,
   });
 
   final BooruAPI api;
   final int randomNumber;
+
+  final TagManagerService? tagManager;
+  final LocalTagsService? localTags;
+
+  final HottestTagsService hottestTags;
+  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -674,10 +780,13 @@ class _HottestTagNotifier extends StatelessWidget {
     }
 
     return HottestTagsCarousel(
-      db: DbConn.of(context),
       api: api,
       notifier: notifier,
       randomNumber: randomNumber,
+      hottestTags: hottestTags,
+      tagManager: tagManager,
+      localTags: localTags,
+      settingsService: settingsService,
     );
   }
 }
@@ -685,10 +794,13 @@ class _HottestTagNotifier extends StatelessWidget {
 class HottestTagsCarousel extends StatefulWidget {
   const HottestTagsCarousel({
     super.key,
-    required this.db,
     required this.api,
     required this.notifier,
     required this.randomNumber,
+    required this.hottestTags,
+    required this.tagManager,
+    required this.settingsService,
+    required this.localTags,
   });
 
   final int randomNumber;
@@ -697,13 +809,22 @@ class HottestTagsCarousel extends StatefulWidget {
 
   final BooruAPI api;
 
-  final DbConn db;
+  final TagManagerService? tagManager;
+  final LocalTagsService? localTags;
+
+  final HottestTagsService hottestTags;
+  final SettingsService settingsService;
 
   @override
   State<HottestTagsCarousel> createState() => _HottestTagsCarouselState();
 }
 
 class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
+  HottestTagsService get hottestTags => widget.hottestTags;
+  TagManagerService? get tagManager => widget.tagManager;
+
+  SettingsService get settingsService => widget.settingsService;
+
   late final StreamSubscription<void> subsc;
   late List<_HottestTagData> list;
 
@@ -713,18 +834,26 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
   void initState() {
     super.initState();
 
-    final refreshedAt = widget.db.hottestTags.refreshedAt(widget.api.booru);
+    final refreshedAt = hottestTags.refreshedAt(widget.api.booru);
 
     if (refreshedAt == null ||
         refreshedAt.add(const Duration(days: 3)).isBefore(DateTime.now())) {
-      _loadHottestTags(widget.notifier, widget.db, widget.api);
+      if (widget.localTags != null && tagManager != null) {
+        _loadHottestTags(
+          widget.notifier,
+          widget.api,
+          hottestTags: hottestTags,
+          localTagsService: widget.localTags!,
+          tagManager: tagManager!,
+        );
+      }
     }
 
     widget.notifier.addListener(listener);
 
     list = loadAndFilter();
 
-    subsc = widget.db.hottestTags.watch(widget.api.booru, (_) {
+    subsc = hottestTags.watch(widget.api.booru, (_) {
       setState(() {
         list = loadAndFilter();
       });
@@ -732,7 +861,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
   }
 
   List<_HottestTagData> loadAndFilter() {
-    final all = widget.db.hottestTags.all(widget.api.booru);
+    final all = hottestTags.all(widget.api.booru);
     final ret = <_HottestTagData>[];
     final m = <String, void>{};
 
@@ -842,7 +971,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel> {
                         context,
                         tag.tag,
                         widget.api.booru,
-                        overrideSafeMode: SettingsService.db().current.safeMode,
+                        overrideSafeMode: settingsService.current.safeMode,
                       ),
                       onLongPress: () => Post.imageViewSingle(
                         context,
@@ -959,9 +1088,11 @@ extension HottestTagsProgress on GlobalProgressTab {
 
 Future<void> _loadHottestTags(
   ValueNotifier<Future<void>?> notifier,
-  DbConn db,
-  BooruAPI api,
-) async {
+  BooruAPI api, {
+  required HottestTagsService hottestTags,
+  required LocalTagsService localTagsService,
+  required TagManagerService tagManager,
+}) async {
   if (notifier.value != null) {
     return;
   }
@@ -984,13 +1115,13 @@ Future<void> _loadHottestTags(
         return map;
       });
 
-      final localTags = db.localTagDictionary
+      final localTags = localTagsService
           .mostFrequent(45)
           .where((e) => !tags.containsKey(e.tag))
           .take(15)
           .toList();
 
-      final favoriteTags = db.tagManager.pinned
+      final favoriteTags = tagManager.pinned
           .get(130)
           .where((e) => !tags.containsKey(e.tag))
           .toList()
@@ -1007,7 +1138,7 @@ Future<void> _loadHottestTags(
         final posts = await api.page(
           0,
           tag.tag,
-          db.tagManager.excluded,
+          tagManager.excluded,
           SafeMode.normal,
           limit: 15,
           pageSaver: PageSaver.noPersist(),
@@ -1028,7 +1159,7 @@ Future<void> _loadHottestTags(
         );
       }
 
-      db.hottestTags.replace(res, api.booru);
+      hottestTags.replace(res, api.booru);
     } catch (e, trace) {
       Logger.root.severe("loadHottestTags", e, trace);
     } finally {

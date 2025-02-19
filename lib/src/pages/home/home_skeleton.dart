@@ -26,20 +26,21 @@ class HomeSkeleton extends StatefulWidget {
     super.key,
     required this.animatedIcons,
     required this.onDestinationSelected,
-    required this.changePage,
     required this.booru,
     required this.scrollingState,
+    required this.drawer,
     required this.child,
   });
 
   final AnimatedIconsMixin animatedIcons;
-  final ChangePageMixin changePage;
 
   final Booru booru;
 
   final ScrollingStateSink scrollingState;
 
   final DestinationCallback onDestinationSelected;
+
+  final Widget? drawer;
 
   final Widget child;
 
@@ -48,8 +49,6 @@ class HomeSkeleton extends StatefulWidget {
 }
 
 class _HomeSkeletonState extends State<HomeSkeleton> {
-  ChangePageMixin get changePage => widget.changePage;
-
   bool showRail = false;
 
   @override
@@ -63,7 +62,6 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     final theme = Theme.of(context);
-    final db = DbConn.of(context);
 
     final bottomNavigationBar = showRail
         ? null
@@ -99,11 +97,7 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
         drawerEnableOpenDragGesture: false,
         resizeToAvoidBottomInset: false,
         bottomNavigationBar: bottomNavigationBar,
-        drawer: HomeDrawer(
-          changePage: widget.changePage,
-          db: db,
-          animatedIcons: widget.animatedIcons,
-        ),
+        drawer: widget.drawer,
         body: switch (showRail) {
           true => Row(
               children: [
@@ -292,7 +286,7 @@ class __NavigationRailState extends State<_NavigationRail>
             ),
           ),
         ],
-      false => widget.animatedIcons.railIcons(l10n, widget.booru),
+      false => widget.animatedIcons.railIcons(context, l10n, widget.booru),
     };
 
     return NavigationRail(
@@ -624,26 +618,33 @@ class _SelectionBarState extends State<SelectionBar> {
 class HomeDrawer extends StatefulWidget {
   const HomeDrawer({
     super.key,
-    required this.db,
+    required this.settingsService,
     required this.changePage,
     required this.animatedIcons,
+    required this.gridBookmarks,
+    required this.favoritePosts,
   });
 
   final ChangePageMixin changePage;
   final AnimatedIconsMixin animatedIcons;
 
-  final DbConn db;
+  final GridBookmarkService? gridBookmarks;
+  final FavoritePostSourceService? favoritePosts;
+
+  final SettingsService settingsService;
 
   @override
   State<HomeDrawer> createState() => _HomeDrawerState();
 }
 
 class _HomeDrawerState extends State<HomeDrawer> {
-  GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
-  late List<GridBookmark> bookmarks = gridBookmarks.firstNumber(5);
-  late final StreamSubscription<void> subscr;
+  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
 
-  final settings = SettingsService.db().current;
+  late List<GridBookmark> bookmarks;
+  late final StreamSubscription<void>? bookmarkEvents;
+
+  late final SettingsData settings;
 
   final key = GlobalKey<__AnimatedTagColumnState>();
 
@@ -651,9 +652,12 @@ class _HomeDrawerState extends State<HomeDrawer> {
   void initState() {
     super.initState();
 
-    subscr = gridBookmarks.watch(
+    bookmarks = gridBookmarks?.firstNumber(5) ?? [];
+    settings = widget.settingsService.current;
+
+    bookmarkEvents = gridBookmarks?.watch(
       (_) {
-        key.currentState?.diffAndAnimate(gridBookmarks.firstNumber(5));
+        key.currentState?.diffAndAnimate(gridBookmarks!.firstNumber(5));
       },
       true,
     );
@@ -661,7 +665,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
   @override
   void dispose() {
-    subscr.cancel();
+    bookmarkEvents?.cancel();
 
     super.dispose();
   }
@@ -694,13 +698,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     }
   }
 
-  void openSettings() {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) => const SettingsPage(),
-      ),
-    );
-  }
+  void openSettings() => SettingsPage.open(context);
 
   @override
   Widget build(BuildContext context) {
@@ -715,10 +713,17 @@ class _HomeDrawerState extends State<HomeDrawer> {
         ? Brightness.dark
         : Brightness.light;
 
+    final db = Services.of(context);
+    final (favoritePosts, gridBookmarks) = (
+      db.get<FavoritePostSourceService>(),
+      db.get<GridBookmarkService>(),
+    );
+
     final navigationDestinations = BooruSubPage.values.map(
       (e) => NavigationDrawerDestination(
         selectedIcon: Icon(e.selectedIcon),
         icon: Icon(e.icon),
+        enabled: e.hasServices(db),
         label: Expanded(
           child: Align(
             alignment: Alignment.centerRight,
@@ -730,16 +735,16 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       ? settings.selectedBooru.string
                       : e.translatedString(l10n),
                 ),
-                if (e == BooruSubPage.favorites)
+                if (e == BooruSubPage.favorites && favoritePosts != null)
                   _DrawerNavigationBadgeStyle(
                     child: _FavoritePostsCount(
-                      db: widget.db,
+                      favoritePosts: favoritePosts,
                     ),
                   )
-                else if (e == BooruSubPage.bookmarks)
+                else if (e == BooruSubPage.bookmarks && gridBookmarks != null)
                   _DrawerNavigationBadgeStyle(
                     child: _BookmarksCount(
-                      db: widget.db,
+                      gridBookmarks: gridBookmarks,
                     ),
                   ),
               ],
@@ -777,7 +782,6 @@ class _HomeDrawerState extends State<HomeDrawer> {
             _AnimatedTagColumn(
               key: key,
               initalBookmarks: bookmarks,
-              db: widget.db,
             ),
           ],
           const Padding(
@@ -788,7 +792,6 @@ class _HomeDrawerState extends State<HomeDrawer> {
             icon: Icons.settings_outlined,
             label: l10n.settingsLabel,
             onPressed: openSettings,
-            db: widget.db,
           ),
         ],
       ),
@@ -825,10 +828,10 @@ class _DrawerNavigationBadgeStyle extends StatelessWidget {
 class _BookmarksCount extends StatefulWidget {
   const _BookmarksCount({
     // super.key,
-    required this.db,
+    required this.gridBookmarks,
   });
 
-  final DbConn db;
+  final GridBookmarkService gridBookmarks;
 
   @override
   State<_BookmarksCount> createState() => __BookmarksCountState();
@@ -841,9 +844,9 @@ class __BookmarksCountState extends State<_BookmarksCount> {
   @override
   void initState() {
     super.initState();
-    count = widget.db.gridBookmarks.count;
+    count = widget.gridBookmarks.count;
 
-    events = widget.db.gridBookmarks.watch((newCount) {
+    events = widget.gridBookmarks.watch((newCount) {
       setState(() {
         count = newCount;
       });
@@ -869,10 +872,10 @@ class __BookmarksCountState extends State<_BookmarksCount> {
 class _FavoritePostsCount extends StatefulWidget {
   const _FavoritePostsCount({
     // super.key,
-    required this.db,
+    required this.favoritePosts,
   });
 
-  final DbConn db;
+  final FavoritePostSourceService favoritePosts;
 
   @override
   State<_FavoritePostsCount> createState() => __FavoritePostsCountState();
@@ -885,7 +888,7 @@ class __FavoritePostsCountState extends State<_FavoritePostsCount> {
   void initState() {
     super.initState();
 
-    events = widget.db.favoritePosts.cache.countEvents.listen((_) {
+    events = widget.favoritePosts.cache.countEvents.listen((_) {
       setState(() {});
     });
   }
@@ -899,7 +902,7 @@ class __FavoritePostsCountState extends State<_FavoritePostsCount> {
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.db.favoritePosts.cache.count;
+    final count = widget.favoritePosts.cache.count;
 
     return switch (count <= 0) {
       true => const SizedBox.shrink(),
@@ -912,12 +915,9 @@ class _AnimatedTagColumn extends StatefulWidget {
   const _AnimatedTagColumn({
     super.key,
     required this.initalBookmarks,
-    required this.db,
   });
 
   final List<GridBookmark> initalBookmarks;
-
-  final DbConn db;
 
   @override
   State<_AnimatedTagColumn> createState() => __AnimatedTagColumnState();
@@ -939,7 +939,6 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
             icon: Icons.bookmark_outline_rounded,
             label: e.tags,
             onPressed: () => openBooruSearchPage(e),
-            db: widget.db,
           ),
         );
       }
@@ -996,7 +995,6 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
             icon: Icons.bookmark_outline_rounded,
             label: e.$2.tags,
             onPressed: () => openBooruSearchPage(e.$2),
-            db: widget.db,
           ),
         ),
         duration: Durations.short3,
@@ -1051,26 +1049,18 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
         icon: Icons.bookmark_outline_rounded,
         label: e.tags,
         onPressed: () => openBooruSearchPage(e),
-        db: widget.db,
       ),
     );
   }
 
   void openBooruSearchPage(GridBookmark e) {
-    Navigator.push<void>(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute(
-        builder: (context) {
-          return BooruRestoredPage(
-            booru: e.booru,
-            tags: e.tags,
-            name: e.name,
-            wrapScaffold: true,
-            saveSelectedPage: (_) {},
-            db: widget.db,
-          );
-        },
-      ),
+      booru: e.booru,
+      tags: e.tags,
+      name: e.name,
+      rootNavigator: true,
+      saveSelectedPage: (_) {},
     );
   }
 
@@ -1089,7 +1079,6 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
 class _NavigationDrawerTile extends StatelessWidget {
   const _NavigationDrawerTile({
     // super.key,
-    required this.db,
     required this.label,
     required this.onPressed,
     required this.icon,
@@ -1099,8 +1088,6 @@ class _NavigationDrawerTile extends StatelessWidget {
   final IconData icon;
 
   final VoidCallback onPressed;
-
-  final DbConn db;
 
   @override
   Widget build(BuildContext context) {

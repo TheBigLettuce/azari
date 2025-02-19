@@ -27,7 +27,7 @@ void selectTheme(
 
   _themeChange = true;
 
-  miscSettings.copy(themeType: value).save();
+  miscSettings.copy(themeType: value).maybeSave();
 
   RestartWidget.restartApp(context);
 }

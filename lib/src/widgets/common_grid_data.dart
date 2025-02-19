@@ -12,45 +12,29 @@ import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 
 mixin CommonGridData<T extends CellBase, S extends StatefulWidget> on State<S> {
-  void watchSettings() {
-    _settingsEvents?.cancel();
-    _settingsEvents = settings.s.watch((newSettings) {
-      setState(() {
-        settings = newSettings!;
-      });
-    });
-  }
+  SettingsService get settingsService;
 
   StreamSubscription<SettingsData?>? _settingsEvents;
 
   final gridSeed = math.Random().nextInt(948512342);
 
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
-  SettingsData settings = SettingsService.db().current;
+  late SettingsData settings;
 
-  @override
-  void dispose() {
+  void watchSettings() {
     _settingsEvents?.cancel();
-
-    super.dispose();
+    _settingsEvents = settingsService.watch((newSettings) {
+      setState(() {
+        settings = newSettings;
+      });
+    });
   }
-}
-
-mixin SettingsWatcherMixin<S extends StatefulWidget> on State<S> {
-  StreamSubscription<SettingsData?>? _settingsEvents;
-
-  SettingsData settings = SettingsService.db().current;
 
   @override
   void initState() {
     super.initState();
 
-    _settingsEvents?.cancel();
-    _settingsEvents = settings.s.watch((newSettings) {
-      setState(() {
-        settings = newSettings!;
-      });
-    });
+    settings = settingsService.current;
   }
 
   @override

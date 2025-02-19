@@ -3,17 +3,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 
 GridAction<Post> hide(
   BuildContext context,
-  HiddenBooruPostService hiddenPost,
+  HiddenBooruPostsService hiddenPost,
 ) {
   return GridAction(
     Icons.hide_image_rounded,
@@ -51,14 +50,18 @@ GridAction<Post> hide(
 GridAction<Post> downloadPost(
   BuildContext context,
   Booru booru,
-  PathVolume? thenMoveTo,
-) {
+  PathVolume? thenMoveTo, {
+  required DownloadManager downloadManager,
+  required LocalTagsService localTags,
+  required SettingsService settingsService,
+}) {
   return GridAction(
     Icons.download,
     (selected) => selected.downloadAll(
-      DownloadManager.of(context),
-      PostTags.fromContext(context),
-      thenMoveTo,
+      downloadManager: downloadManager,
+      localTags: localTags,
+      settingsService: settingsService,
+      thenMoveTo: thenMoveTo,
     ),
     true,
     animate: true,
@@ -68,14 +71,18 @@ GridAction<Post> downloadPost(
 GridAction<FavoritePost> downloadFavoritePost(
   BuildContext context,
   Booru booru,
-  PathVolume? thenMoveTo,
-) {
+  PathVolume? thenMoveTo, {
+  required DownloadManager downloadManager,
+  required LocalTagsService localTags,
+  required SettingsService settingsService,
+}) {
   return GridAction(
     Icons.download,
     (selected) => selected.downloadAll(
-      DownloadManager.of(context),
-      PostTags.fromContext(context),
-      thenMoveTo,
+      downloadManager: downloadManager,
+      localTags: localTags,
+      settingsService: settingsService,
+      thenMoveTo: thenMoveTo,
     ),
     true,
     animate: true,

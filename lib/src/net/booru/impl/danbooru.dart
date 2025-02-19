@@ -97,7 +97,7 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<List<Post>> randomPosts(
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode,
     bool videosOnly, {
     RandomPostsOrder order = RandomPostsOrder.random,
@@ -139,7 +139,7 @@ class Danbooru implements BooruAPI {
   Future<(List<Post>, int?)> page(
     int i,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
@@ -162,7 +162,7 @@ class Danbooru implements BooruAPI {
   Future<(List<Post>, int?)> fromPostId(
     int postId,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
@@ -179,7 +179,7 @@ class Danbooru implements BooruAPI {
 
   Future<(List<Post>, int?)> _commonPosts(
     String tags,
-    BooruTagging? excludedTags, {
+    BooruTagging<Excluded>? excludedTags, {
     int? postid,
     int? page,
     required SafeMode safeMode,
@@ -239,7 +239,10 @@ class Danbooru implements BooruAPI {
   }
 }
 
-(List<Post>, int?) _skipExcluded(List<Post> posts, BooruTagging excludedTags) {
+(List<Post>, int?) _skipExcluded(
+  List<Post> posts,
+  BooruTagging<Excluded> excludedTags,
+) {
   final exclude = excludedTags.get(-1);
 
   if (exclude.isEmpty) {

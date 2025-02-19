@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/db/services/services.dart";
 import "package:flutter/material.dart";
 
 /// Filtering modes.
@@ -44,12 +45,43 @@ enum FilteringMode {
   /// Filter by segments.
   group(Icons.group_work_outlined),
 
-  ungrouped(Icons.fiber_manual_record_rounded);
+  ungrouped(Icons.fiber_manual_record_rounded),
+
+  fiveStars(Icons.star_rounded),
+  fourHalfStars(Icons.star_half_rounded),
+  fourStars(Icons.star_rounded),
+  threeHalfStars(Icons.star_half_rounded),
+  threeStars(Icons.star_rounded),
+  twoHalfStars(Icons.star_half_rounded),
+  twoStars(Icons.star_rounded),
+  oneHalfStars(Icons.star_half_rounded),
+  oneStars(Icons.star_rounded),
+  zeroHalfStars(Icons.star_half_rounded),
+  zeroStars(Icons.star_rounded);
 
   const FilteringMode(this.icon);
 
   /// Icon displayed in search bar.
   final IconData icon;
+
+  FavoriteStars get toStars => toStarsOrNull ?? FavoriteStars.zero;
+
+  FavoriteStars? get toStarsOrNull {
+    return switch (this) {
+      FilteringMode.fiveStars => FavoriteStars.five,
+      FilteringMode.fourHalfStars => FavoriteStars.fourFive,
+      FilteringMode.fourStars => FavoriteStars.four,
+      FilteringMode.threeHalfStars => FavoriteStars.threeFive,
+      FilteringMode.threeStars => FavoriteStars.three,
+      FilteringMode.twoHalfStars => FavoriteStars.twoFive,
+      FilteringMode.twoStars => FavoriteStars.two,
+      FilteringMode.oneHalfStars => FavoriteStars.oneFive,
+      FilteringMode.oneStars => FavoriteStars.one,
+      FilteringMode.zeroHalfStars => FavoriteStars.zeroFive,
+      FilteringMode.zeroStars => FavoriteStars.zero,
+      FilteringMode() => null,
+    };
+  }
 
   String translatedString(AppLocalizations l10n) => switch (this) {
         FilteringMode.favorite => l10n.enumFilteringModeFavorite,
@@ -64,6 +96,17 @@ enum FilteringMode {
         FilteringMode.untagged => l10n.enumFilteringModeUntagged,
         FilteringMode.group => l10n.enumFilteringModeGroup,
         FilteringMode.ungrouped => l10n.enumFilteringModeUngrouped,
+        FilteringMode.fiveStars => "5 stars", // TODO: change
+        FilteringMode.fourHalfStars => "4.5 stars",
+        FilteringMode.fourStars => "4 stars",
+        FilteringMode.threeHalfStars => "3.5 stars",
+        FilteringMode.threeStars => "3 stars",
+        FilteringMode.twoHalfStars => "2.5 stars",
+        FilteringMode.twoStars => "2 stars",
+        FilteringMode.oneHalfStars => "1.5 stars",
+        FilteringMode.oneStars => "1 star",
+        FilteringMode.zeroHalfStars => "0.5 star",
+        FilteringMode.zeroStars => "No stars",
       };
 }
 
@@ -72,7 +115,8 @@ enum SortingMode {
   none,
   rating,
   score,
-  size;
+  size,
+  stars;
 
   const SortingMode();
 
@@ -87,6 +131,8 @@ enum SortingMode {
         SortingMode.size => this == selected
             ? Icons.square_foot_rounded
             : Icons.square_foot_outlined,
+        SortingMode.stars =>
+          this == selected ? Icons.star_rounded : Icons.star_outlined,
       };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
@@ -94,5 +140,6 @@ enum SortingMode {
         SortingMode.size => l10n.enumSortingModeSize,
         SortingMode.rating => l10n.enumSortingModeRating,
         SortingMode.score => l10n.enumSortingModeScore,
+        SortingMode.stars => "Stars", // TODO: change
       };
 }

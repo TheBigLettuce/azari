@@ -12,58 +12,73 @@ Future<void> mainPickfile() async {
   final notificationStream =
       StreamController<NotificationRouteEvent>.broadcast();
 
-  await initMain(true, notificationStream);
+  await initMain(AppInstanceType.pickFile, notificationStream);
 
   final accentColor = await PlatformApi().accentColor;
 
   runApp(
-    DbConn.inject(
+    Services.inject(
       Builder(
-        builder: (context) => PinnedTagsHolder(
-          tagManager: TagManager.of(context),
-          child: MaterialApp(
-            title: "Azari",
-            themeAnimationCurve: Easing.standard,
-            themeAnimationDuration: const Duration(milliseconds: 300),
-            darkTheme: buildTheme(Brightness.dark, accentColor),
-            theme: buildTheme(Brightness.light, accentColor),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Builder(
-              builder: (context) => WrapGridPage(
-                addScaffoldAndBar: true,
-                child: DirectoriesPage(
-                  db: DbConn.of(context),
-                  l10n: context.l10n(),
-                  callback: ReturnFileCallback(
-                    choose: (chosen, [_]) {
-                      PlatformApi().closeApp(chosen.originalUri);
+        builder: (context) {
+          final db = Services.of(context);
+          final (tagManager,) = (db.get<TagManagerService>(),);
 
-                      return Future.value();
-                    },
-                    preview: PreferredSize(
-                      preferredSize:
-                          Size.fromHeight(CopyMovePreview.size.toDouble()),
-                      child: IgnorePointer(
-                        child: Builder(
-                          builder: (context) {
-                            final l10n = context.l10n();
+          return PinnedTagsHolder(
+            pinnedTags: tagManager?.pinned,
+            child: MaterialApp(
+              title: "Azari",
+              themeAnimationCurve: Easing.standard,
+              themeAnimationDuration: const Duration(milliseconds: 300),
+              darkTheme: buildTheme(context, Brightness.dark, accentColor),
+              theme: buildTheme(context, Brightness.light, accentColor),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Builder(
+                builder: (context) => WrapGridPage(
+                  addScaffoldAndBar: true,
+                  child: DirectoriesPage(
+                    l10n: context.l10n(),
+                    callback: ReturnFileCallback(
+                      choose: (chosen, [_]) {
+                        PlatformApi().closeApp(chosen.originalUri);
 
-                            return CopyMovePreview(
-                              files: null,
-                              title: l10n.pickFileNotice,
-                              icon: Icons.file_open_rounded,
-                            );
-                          },
+                        return Future.value();
+                      },
+                      preview: PreferredSize(
+                        preferredSize:
+                            Size.fromHeight(CopyMovePreview.size.toDouble()),
+                        child: IgnorePointer(
+                          child: Builder(
+                            builder: (context) {
+                              final l10n = context.l10n();
+
+                              return CopyMovePreview(
+                                files: null,
+                                title: l10n.pickFileNotice,
+                                icon: Icons.file_open_rounded,
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
+                    directoryMetadata: db.get<DirectoryMetadataService>(),
+                    directoryTags: db.get<DirectoryTagService>(),
+                    favoritePosts: db.get<FavoritePostSourceService>(),
+                    blacklistedDirectories:
+                        db.get<BlacklistedDirectoryService>(),
+                    miscSettingsService: db.get<MiscSettingsService>(),
+                    localTagsService: db.get<LocalTagsService>(),
+                    galleryService: db.get<GalleryService>()!,
+                    gridDbs: db.get<GridDbService>()!,
+                    gridSettings: db.get<GridSettingsService>()!,
+                    settingsService: db.require<SettingsService>(),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     ),
   );

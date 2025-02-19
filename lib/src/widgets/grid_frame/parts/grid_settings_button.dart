@@ -529,7 +529,7 @@ class SafeModeButton extends StatefulWidget {
   }) : assert(settingsWatcher == null || secondaryGrid == null);
 
   final WatchFire<SettingsData?>? settingsWatcher;
-  final SecondaryGridService? secondaryGrid;
+  final SecondaryGridHandle? secondaryGrid;
 
   @override
   State<SafeModeButton> createState() => _SafeModeButtonState();

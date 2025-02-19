@@ -5,35 +5,35 @@
 
 part of "android_gallery.dart";
 
-class AndroidGalleryDirectory extends Directory {
-  const AndroidGalleryDirectory({
-    required super.bucketId,
-    required super.name,
-    required super.tag,
-    required super.volumeName,
-    required super.relativeLoc,
-    required super.lastModified,
-    required super.thumbFileId,
-  });
-}
+// class AndroidGalleryDirectory extends Directory {
+//   const AndroidGalleryDirectory({
+//     required super.bucketId,
+//     required super.name,
+//     required super.tag,
+//     required super.volumeName,
+//     required super.relativeLoc,
+//     required super.lastModified,
+//     required super.thumbFileId,
+//   });
+// }
 
-class AndroidGalleryFile extends File {
-  const AndroidGalleryFile({
-    required super.id,
-    required super.bucketId,
-    required super.name,
-    required super.isVideo,
-    required super.isGif,
-    required super.size,
-    required super.height,
-    required super.isDuplicate,
-    required super.width,
-    required super.lastModified,
-    required super.originalUri,
-    required super.tags,
-    required super.res,
-  });
-}
+// class AndroidGalleryFile extends File {
+//   const AndroidGalleryFile({
+//     required super.id,
+//     required super.bucketId,
+//     required super.name,
+//     required super.isVideo,
+//     required super.isGif,
+//     required super.size,
+//     required super.height,
+//     required super.isDuplicate,
+//     required super.width,
+//     required super.lastModified,
+//     required super.originalUri,
+//     required super.tags,
+//     required super.res,
+//   });
+// }
 
 class _GalleryImpl implements platform.PlatformGalleryApi {
   factory _GalleryImpl() {

@@ -6,12 +6,10 @@
 part of "services.dart";
 
 extension StatisticsDailyDataExt on StatisticsDailyData {
-  void save() => _currentDb.statisticsDaily.add(this);
+  void maybeSave() => _currentDb.get<StatisticsDailyService>()?.add(this);
 }
 
 abstract interface class StatisticsDailyService implements ServiceMarker {
-  factory StatisticsDailyService.db() => _currentDb.statisticsDaily;
-
   StatisticsDailyData get current;
 
   void add(StatisticsDailyData data);
@@ -20,6 +18,77 @@ abstract interface class StatisticsDailyService implements ServiceMarker {
     void Function(StatisticsDailyData d) f, [
     bool fire = false,
   ]);
+
+  static void addSwipedBoth(int s) {
+    final current = _currentDb.get<StatisticsDailyService>()?.current;
+
+    current?.copy(swipedBoth: current.swipedBoth + s).maybeSave();
+  }
+
+  static void addDurationMillis(int d) {
+    final current = _currentDb.get<StatisticsDailyService>()?.current;
+
+    current?.copy(durationMillis: current.durationMillis + d).maybeSave();
+  }
+
+  static void setDurationMillis(int d) {
+    final current = _currentDb.get<StatisticsDailyService>()?.current;
+
+    current?.copy(durationMillis: d).maybeSave();
+  }
+
+  static void addDate(DateTime d) {
+    final current = _currentDb.get<StatisticsDailyService>()?.current;
+
+    current
+        ?.copy(
+          date: DateTime.fromMillisecondsSinceEpoch(
+            current.date.millisecondsSinceEpoch + d.millisecondsSinceEpoch,
+          ),
+        )
+        .maybeSave();
+  }
+
+  static void reset() {
+    _currentDb
+        .get<StatisticsDailyService>()
+        ?.current
+        .copy(
+          durationMillis: 1,
+          swipedBoth: 0,
+          date: DateTime.now(),
+        )
+        .maybeSave();
+  }
+}
+
+mixin StatisticsDailyWatcherMixin<S extends StatefulWidget> on State<S> {
+  StatisticsDailyService get statisticsDailyService;
+
+  StreamSubscription<StatisticsDailyData>? _statisticsDailyEvents;
+
+  late StatisticsDailyData statisticsDaily;
+
+  @override
+  void initState() {
+    super.initState();
+
+    statisticsDaily = statisticsDailyService.current;
+
+    _statisticsDailyEvents?.cancel();
+    _statisticsDailyEvents = statisticsDailyService.watch((newSettings) {
+      setState(() {
+        statisticsDaily = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statisticsDailyEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 abstract class StatisticsDailyData {

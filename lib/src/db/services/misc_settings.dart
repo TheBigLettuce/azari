@@ -6,21 +6,51 @@
 part of "services.dart";
 
 extension MiscSettingsDataExt on MiscSettingsData {
-  void save() => _currentDb.miscSettings.add(this);
-  MiscSettingsService get s => _currentDb.miscSettings;
+  void maybeSave() => _currentDb.get<MiscSettingsService>()?.add(this);
 }
 
 abstract interface class MiscSettingsService implements ServiceMarker {
-  factory MiscSettingsService.db() => _currentDb.miscSettings;
-
   MiscSettingsData get current;
 
   void add(MiscSettingsData data);
 
-  StreamSubscription<MiscSettingsData?> watch(
-    void Function(MiscSettingsData?) f, [
+  StreamSubscription<MiscSettingsData> watch(
+    void Function(MiscSettingsData) f, [
     bool fire = false,
   ]);
+}
+
+mixin MiscSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
+  MiscSettingsService? get miscSettingsService;
+
+  StreamSubscription<MiscSettingsData>? _miscSettingsEvents;
+
+  late MiscSettingsData? miscSettings;
+
+  void onNewMiscSettings(MiscSettingsData newSettings) {}
+
+  @override
+  void initState() {
+    super.initState();
+
+    miscSettings = miscSettingsService?.current;
+
+    _miscSettingsEvents?.cancel();
+    _miscSettingsEvents = miscSettingsService?.watch((newSettings) {
+      onNewMiscSettings(newSettings);
+
+      setState(() {
+        miscSettings = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _miscSettingsEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 enum ThemeType {

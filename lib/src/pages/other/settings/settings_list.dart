@@ -12,7 +12,6 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/menu_wrapper.dart";
 import "package:azari/welcome_pages.dart";
@@ -21,50 +20,43 @@ import "package:flutter/material.dart";
 class SettingsList extends StatefulWidget {
   const SettingsList({
     super.key,
-    required this.db,
+    required this.settingsService,
+    required this.miscSettingsService,
+    required this.thumbnailService,
+    required this.galleryService,
   });
 
-  final DbConn db;
+  final GalleryService? galleryService;
+  final MiscSettingsService? miscSettingsService;
+  final ThumbnailService? thumbnailService;
+
+  final SettingsService settingsService;
 
   @override
   State<SettingsList> createState() => _SettingsListState();
 }
 
-class _SettingsListState extends State<SettingsList> {
-  late final StreamSubscription<SettingsData?> _watcher;
-  late final StreamSubscription<MiscSettingsData?> _miscWatcher;
+class _SettingsListState extends State<SettingsList>
+    with MiscSettingsWatcherMixin, SettingsWatcherMixin {
+  GalleryService? get galleryService => widget.galleryService;
+  ThumbnailService? get thumbnailService => widget.thumbnailService;
 
-  DbConn get db => widget.db;
+  @override
+  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
 
-  SettingsData _settings = SettingsService.db().current;
-  MiscSettingsData _miscSettings = MiscSettingsService.db().current;
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
-  Future<int> thumbnailCount = GalleryApi().thumbs.size();
+  late Future<int> thumbnailCount;
 
-  Future<int> pinnedThumbnailCount = GalleryApi().thumbs.size(true);
+  late Future<int> pinnedThumbnailCount;
 
   @override
   void initState() {
     super.initState();
 
-    _watcher = _settings.s.watch((s) {
-      setState(() {
-        _settings = s!;
-      });
-    });
-
-    _miscWatcher = _miscSettings.s.watch((s) {
-      setState(() {
-        _miscSettings = s!;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _watcher.cancel();
-    _miscWatcher.cancel();
-    super.dispose();
+    thumbnailCount = galleryService?.thumbs.size() ?? Future.value(0);
+    pinnedThumbnailCount = galleryService?.thumbs.size(true) ?? Future.value(0);
   }
 
   void showDialog(String s) {
@@ -115,14 +107,18 @@ class _SettingsListState extends State<SettingsList> {
             ),
             tileColor: theme.colorScheme.surfaceContainerHigh,
             title: Text(l10n.selectedBooruSetting),
-            subtitle: Text(_settings.selectedBooru.string),
+            subtitle: Text(settings.selectedBooru.string),
             onTap: () => radioDialog(
               context,
               Booru.values.map((e) => (e, e.string)),
-              _settings.selectedBooru,
+              settings.selectedBooru,
               (value) {
-                if (value != null && value != _settings.selectedBooru) {
-                  selectBooru(context, _settings, value);
+                if (value != null && value != settings.selectedBooru) {
+                  selectBooru(
+                    context,
+                    settings,
+                    value,
+                  );
                 }
               },
               title: l10n.selectedBooruSetting,
@@ -134,11 +130,11 @@ class _SettingsListState extends State<SettingsList> {
             onTap: () => radioDialog(
               context,
               DisplayQuality.values.map((e) => (e, e.translatedString(l10n))),
-              _settings.quality,
-              (value) => _settings.copy(quality: value).save(),
+              settings.quality,
+              (value) => settings.copy(quality: value).save(),
               title: l10n.imageDisplayQualitySetting,
             ),
-            subtitle: Text(_settings.quality.translatedString(l10n)),
+            subtitle: Text(settings.quality.translatedString(l10n)),
           ),
           SwitchListTile(
             title: Text(l10n.extraSafeModeFilters),
@@ -154,16 +150,15 @@ class _SettingsListState extends State<SettingsList> {
                 BooruAPI.additionalSafetyTags.keys.join(", "),
               ),
             ),
-            value: _settings.extraSafeFilters,
-            onChanged: (value) =>
-                _settings.copy(extraSafeFilters: value).save(),
+            value: settings.extraSafeFilters,
+            onChanged: (value) => settings.copy(extraSafeFilters: value).save(),
           ),
         ],
       ),
       _SettingsGroup(
         children: [
           MenuWrapper(
-            title: _settings.path.path,
+            title: settings.path.path,
             child: ListTile(
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
@@ -173,27 +168,39 @@ class _SettingsListState extends State<SettingsList> {
               ),
               tileColor: theme.colorScheme.surfaceContainerHigh,
               title: Text(l10n.downloadDirectorySetting),
-              subtitle: Text(_settings.path.pathDisplay),
-              onTap: () async {
-                await SettingsService.db().chooseDirectory(showDialog, l10n);
-              },
+              subtitle: Text(settings.path.pathDisplay),
+              onTap: galleryService != null
+                  ? () async {
+                      await SettingsService.chooseDirectory(
+                        showDialog,
+                        l10n,
+                        galleryServices: galleryService!,
+                      );
+                    }
+                  : null,
             ),
           ),
           ListTile(
             title: Text(l10n.settingsTheme),
             tileColor: theme.colorScheme.surfaceContainerHigh,
-            onTap: () => radioDialog(
-              context,
-              ThemeType.values.map((e) => (e, e.translatedString(l10n))),
-              _miscSettings.themeType,
-              (value) {
-                if (value != null) {
-                  selectTheme(context, _miscSettings, value);
-                }
-              },
-              title: l10n.settingsTheme,
+            onTap: miscSettings != null
+                ? () => radioDialog(
+                      context,
+                      ThemeType.values
+                          .map((e) => (e, e.translatedString(l10n))),
+                      miscSettings!.themeType,
+                      (value) {
+                        if (value != null) {
+                          selectTheme(context, miscSettings!, value);
+                        }
+                      },
+                      title: l10n.settingsTheme,
+                    )
+                : null,
+            subtitle: Text(
+              (miscSettings?.themeType ?? ThemeType.systemAccent)
+                  .translatedString(l10n),
             ),
-            subtitle: Text(_miscSettings.themeType.translatedString(l10n)),
           ),
           // SwitchListTile(
           //   tileColor: theme.colorScheme.surfaceContainerHigh,
@@ -220,6 +227,7 @@ class _SettingsListState extends State<SettingsList> {
                     ? Text(_calculateMBSize(data.data!, l10n))
                     : Text(l10n.loadingPlaceholder),
                 trailing: PopupMenuButton(
+                  enabled: thumbnailService != null && galleryService != null,
                   itemBuilder: (context) {
                     return [
                       PopupMenuItem<void>(
@@ -241,16 +249,20 @@ class _SettingsListState extends State<SettingsList> {
                                         child: Text(l10n.no),
                                       ),
                                       TextButton(
-                                        onPressed: () {
-                                          db.thumbnails.clear();
+                                        onPressed: thumbnailService != null &&
+                                                galleryService != null
+                                            ? () {
+                                                thumbnailService!.clear();
 
-                                          GalleryApi().thumbs.clear();
+                                                galleryService!.thumbs.clear();
 
-                                          thumbnailCount = Future.value(0);
+                                                thumbnailCount =
+                                                    Future.value(0);
 
-                                          setState(() {});
-                                          Navigator.pop(context);
-                                        },
+                                                setState(() {});
+                                                Navigator.pop(context);
+                                              }
+                                            : null,
                                         child: Text(l10n.yes),
                                       ),
                                     ],
@@ -287,6 +299,8 @@ class _SettingsListState extends State<SettingsList> {
         onTap: () => WelcomePage.open(
           context,
           popBackOnEnd: true,
+          settingsService: settingsService,
+          galleryService: galleryService,
         ),
       ),
       // ListTile(

@@ -17,7 +17,8 @@ extension CellsExt on CellBase {
     int idx,
   ) {
     if (this is Pressable<T>) {
-      return () => (this as Pressable<T>).onPress(context, functionality, idx);
+      return () =>
+          (this as Pressable<T>).onPressed(context, functionality, idx);
     }
 
     return null;
@@ -124,10 +125,10 @@ class CellStaticData {
 
 /// Marker class to make [CellBase] implementations pressable.
 /// [Pressable] requires the type parameter to have correct type
-/// [GridFunctionality] and [onPress].cell.
+/// [GridFunctionality] and [onPressed].cell.
 abstract interface class Pressable<T extends CellBase> {
-  /// Potentially, [onPress] can open any page, or not open a page at all.
-  void onPress(
+  /// Potentially, [onPressed] can open any page, or not open a page at all.
+  void onPressed(
     BuildContext context,
     GridFunctionality<T> functionality,
     int idx,

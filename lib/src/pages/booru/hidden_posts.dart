@@ -20,10 +20,15 @@ import "package:flutter/material.dart";
 class HiddenPostsPage extends StatefulWidget {
   const HiddenPostsPage({
     super.key,
-    required this.db,
+    required this.hiddenBooruPosts,
+    required this.settingsService,
   });
 
-  final HiddenBooruPostService db;
+  final HiddenBooruPostsService hiddenBooruPosts;
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<HiddenBooruPostsService>() != null;
 
   @override
   State<HiddenPostsPage> createState() => HiddenPostsPageState();
@@ -31,7 +36,10 @@ class HiddenPostsPage extends StatefulWidget {
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
     with CommonGridData<Post, HiddenPostsPage> {
-  HiddenBooruPostService get hiddenBooruPost => widget.db;
+  HiddenBooruPostsService get hiddenBooruPost => widget.hiddenBooruPosts;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
 

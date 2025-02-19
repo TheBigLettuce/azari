@@ -9,7 +9,6 @@ import "dart:ui" as ui;
 
 import "package:azari/init_main/app_info.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:flutter/foundation.dart";
@@ -19,7 +18,7 @@ import "package:flutter/services.dart";
 import "package:logging/logging.dart";
 
 Future<void> initMain(
-  bool temporary,
+  AppInstanceType appType,
   StreamController<NotificationRouteEvent> stream,
 ) async {
   _initLogger();
@@ -30,10 +29,9 @@ Future<void> initMain(
 
   await initNotifications(stream);
 
-  await initServices(temporary);
+  await initServices(appType);
   await initAppInfo();
   await initNetworkStatus();
-  initGalleryApi();
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }

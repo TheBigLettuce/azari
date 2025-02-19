@@ -7,13 +7,12 @@ import "dart:async";
 import "dart:io" as io;
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/network_status.dart";
@@ -31,7 +30,7 @@ extension DirectoryFileToAndroidFile on platform.DirectoryFile {
   static final _regxp = RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*");
 
   File toAndroidFile(Map<String, void> tags) {
-    return AndroidGalleryFile(
+    return File(
       tags: tags,
       id: id,
       bucketId: bucketId,
@@ -49,8 +48,12 @@ extension DirectoryFileToAndroidFile on platform.DirectoryFile {
   }
 }
 
-class AndroidGalleryApi implements GalleryApi {
-  const AndroidGalleryApi();
+class AndroidGalleryApi implements GalleryService {
+  const AndroidGalleryApi({
+    required this.localTagsService,
+  });
+
+  final LocalTagsService? localTagsService;
 
   static const appContext =
       MethodChannel("com.github.thebiglettuce.azari.app_context");
@@ -62,14 +65,18 @@ class AndroidGalleryApi implements GalleryApi {
   Future<int> get version => platform.GalleryHostApi().mediaVersion();
 
   @override
-  Directories open(
-    BlacklistedDirectoryService blacklistedDirectory,
-    DirectoryTagService directoryTag, {
+  Directories open({
     required AppLocalizations l10n,
+    required BlacklistedDirectoryService? blacklistedDirectory,
+    required DirectoryTagService? directoryTags,
+    required GalleryTrash? galleryTrash,
+    required SettingsService settingsService,
   }) {
     final api = _AndroidGallery(
       blacklistedDirectory,
-      directoryTag,
+      directoryTags,
+      settingsService,
+      galleryTrash,
       localizations: l10n,
     );
 
@@ -96,7 +103,7 @@ class AndroidGalleryApi implements GalleryApi {
   FilesManagement get files => const AndroidFilesManagement();
 
   @override
-  Search get search => const AndroidSearch();
+  Search get search => AndroidSearch(localTagsService);
 
   @override
   Future<({String path, String formattedPath})?> chooseDirectory(
@@ -117,11 +124,12 @@ void initalizeAndroidGallery() {
 }
 
 class AndroidSearch implements Search {
-  const AndroidSearch();
+  const AndroidSearch(this.localTags);
+
+  final LocalTagsService? localTags;
 
   @override
   Future<List<File>> filesById(List<int> ids) async {
-    final localTags = LocalTagsService.db();
     final cursorApi = platform.FilesCursor();
 
     final cursor = await cursorApi.acquireIds(ids);
@@ -129,7 +137,7 @@ class AndroidSearch implements Search {
     return (await cursor.drainFiles(cursorApi))
         .map(
           (e) => e.toAndroidFile(
-            localTags.get(e.name).fold({}, (map, e) {
+            (localTags?.get(e.name) ?? []).fold({}, (map, e) {
               map[e] = null;
               return map;
             }),
@@ -140,7 +148,6 @@ class AndroidSearch implements Search {
 
   @override
   Future<List<File>> filesByName(String name, int limit) async {
-    final localTags = LocalTagsService.db();
     final cursorApi = platform.FilesCursor();
 
     final cursor = await cursorApi.acquireFilter(
@@ -152,7 +159,7 @@ class AndroidSearch implements Search {
     return (await cursor.drainFiles(cursorApi))
         .map(
           (e) => e.toAndroidFile(
-            localTags.get(e.name).fold({}, (map, e) {
+            (localTags?.get(e.name) ?? []).fold({}, (map, e) {
               map[e] = null;
               return map;
             }),

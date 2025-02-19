@@ -6,21 +6,22 @@
 part of "services.dart";
 
 extension StatisticsBooruDataExt on StatisticsBooruData {
-  void save() => _currentDb.statisticsBooru.add(this);
+  void maybeSave() => _currentDb.get<StatisticsBooruService>()?.add(this);
 }
 
 abstract interface class StatisticsBooruService implements ServiceMarker {
-  factory StatisticsBooruService.db() => _currentDb.statisticsBooru;
-
-  static ImageViewStatistics asImageViewStatistics() {
-    final db = _currentDb.statisticsBooru;
-    final daily = _currentDb.statisticsDaily;
+  static ImageViewStatistics? asImageViewStatistics() {
+    final booru = _currentDb.get<StatisticsBooruService>();
+    final daily = _currentDb.get<StatisticsDailyService>();
+    if (booru == null || daily == null) {
+      return null;
+    }
 
     return ImageViewStatistics(
-      swiped: () => db.current.add(swiped: 1).save(),
+      swiped: () => booru.current.add(swiped: 1).maybeSave(),
       viewed: () {
-        db.current.add(viewed: 1).save();
-        daily.current.add(swipedBoth: 1).save();
+        booru.current.add(viewed: 1).maybeSave();
+        daily.current.add(swipedBoth: 1).maybeSave();
       },
     );
   }
@@ -33,6 +34,67 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
     void Function(StatisticsBooruData d) f, [
     bool fire = false,
   ]);
+
+  static void addViewed(int v) {
+    _currentDb
+        .get<StatisticsBooruService>()
+        ?.current
+        .add(viewed: v)
+        .maybeSave();
+  }
+
+  static void addDownloaded(int d) {
+    _currentDb
+        .get<StatisticsBooruService>()
+        ?.current
+        .add(downloaded: d)
+        .maybeSave();
+  }
+
+  static void addSwiped(int s) {
+    _currentDb
+        .get<StatisticsBooruService>()
+        ?.current
+        .add(swiped: s)
+        .maybeSave();
+  }
+
+  static void addBooruSwitches(int b) {
+    _currentDb
+        .get<StatisticsBooruService>()
+        ?.current
+        .add(booruSwitches: b)
+        .maybeSave();
+  }
+}
+
+mixin StatisticsBooruWatcherMixin<S extends StatefulWidget> on State<S> {
+  StatisticsBooruService get statisticsBooruService;
+
+  StreamSubscription<StatisticsBooruData>? _statisticsBooruEvents;
+
+  late StatisticsBooruData statisticsBooru;
+
+  @override
+  void initState() {
+    super.initState();
+
+    statisticsBooru = statisticsBooruService.current;
+
+    _statisticsBooruEvents?.cancel();
+    _statisticsBooruEvents = statisticsBooruService.watch((newSettings) {
+      setState(() {
+        statisticsBooru = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statisticsBooruEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 abstract class StatisticsBooruData {

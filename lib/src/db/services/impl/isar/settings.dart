@@ -36,35 +36,10 @@ class IsarSettingsService implements SettingsService {
     );
   }
 
-  /// Pick an operating system directory.
-  /// Calls [onError] in case of any error and resolves to false.
   @override
-  Future<bool> chooseDirectory(
-    void Function(String) onError,
-    AppLocalizations l10n,
-  ) async {
-    late final SettingsPath resp;
-
-    try {
-      resp = await gallery.GalleryApi().chooseDirectory(l10n).then(
-            (e) =>
-                IsarSettingsPath(path: e!.path, pathDisplay: e.formattedPath),
-          );
-    } catch (e, trace) {
-      Logger.root.severe("chooseDirectory", e, trace);
-      onError(l10n.emptyResult);
-      return false;
-    }
-
-    current.copy(path: resp).save();
-
-    return Future.value(true);
-  }
-
-  @override
-  StreamSubscription<SettingsData?> watch(
-    void Function(SettingsData? s) f, [
+  StreamSubscription<SettingsData> watch(
+    void Function(SettingsData s) f, [
     bool fire = false,
   ]) =>
-      collection.watchObject(0, fireImmediately: fire).listen(f);
+      collection.watchLazy(fireImmediately: fire).map((e) => current).listen(f);
 }

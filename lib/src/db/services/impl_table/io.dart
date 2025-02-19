@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:io";
+
 import "package:azari/src/db/services/impl/isar/impl.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
@@ -15,97 +17,149 @@ import "package:azari/src/db/services/impl/isar/schemas/settings/hidden_booru_po
 import "package:azari/src/db/services/impl/isar/schemas/tags/hottest_tag.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:azari/src/db/services/obj_impls/directory_impl.dart";
+import "package:azari/src/db/services/obj_impls/file_impl.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/platform/gallery/android/android_gallery.dart";
+import "package:azari/src/platform/gallery/io.dart";
+import "package:azari/src/platform/gallery/linux/impl.dart";
 import "package:path_provider/path_provider.dart";
 
-Future<DownloadManager> init(ServicesImplTable db, bool temporary) async {
+Future<DownloadManager?> init(
+  Services db,
+  AppInstanceType appType,
+) async {
+  initApi();
   return await initalizeIsarDb(
-    temporary,
+    appType,
     db,
     (await getApplicationSupportDirectory()).path,
     (await getTemporaryDirectory()).path,
   );
 }
 
-ServicesImplTable getApi() => IoServicesImplTable();
+Services getApi() => IoServices();
 
-class IoServicesImplTable implements ServicesImplTable {
-  factory IoServicesImplTable() {
+class IoServices implements Services {
+  factory IoServices() {
     if (_instance != null) {
       return _instance!;
     }
 
-    return _instance = IoServicesImplTable._();
+    return _instance = IoServices._();
   }
-  IoServicesImplTable._();
 
-  static IoServicesImplTable? _instance;
+  IoServices._();
+
+  static IoServices? _instance;
 
   @override
+  T? get<T extends ServiceMarker>() {
+    // dart doesn't support switch on types
+    if (T == StatisticsBooruService) {
+      return statisticsBooru as T;
+    } else if (T == StatisticsGeneralService) {
+      return statisticsGeneral as T;
+    } else if (T == StatisticsGalleryService) {
+      return statisticsGallery as T;
+    } else if (T == StatisticsDailyService) {
+      return statisticsDaily as T;
+    } else if (T == DirectoryMetadataService) {
+      return directoryMetadata as T;
+    } else if (T == ThumbnailService) {
+      return thumbnails as T;
+    } else if (T == VisitedPostsService) {
+      return visitedPosts as T;
+    } else if (T == GalleryService) {
+      return galleryService as T;
+    } else if (T == LocalTagsService) {
+      return localTags as T;
+    } else if (T == HottestTagsService) {
+      return hottestTags as T;
+    } else if (T == GridBookmarkService) {
+      return gridBookmarks as T;
+    } else if (T == DirectoryTagService) {
+      return directoryTags as T;
+    } else if (T == BlacklistedDirectoryService) {
+      return blacklistedDirectories as T;
+    } else if (T == GridSettingsService) {
+      return gridSettings as T;
+    } else if (T == TagManagerService) {
+      return tagManager as T;
+    } else if (T == GridDbService) {
+      return gridDbs as T;
+    } else if (T == FavoritePostSourceService) {
+      return favoritePosts as T;
+    } else if (T == DownloadFileService) {
+      return downloads as T;
+    } else if (T == HiddenBooruPostsService) {
+      return hiddenBooruPosts as T;
+    } else if (T == VideoSettingsService) {
+      return videoSettings as T;
+    } else if (T == MiscSettingsService) {
+      return miscSettings as T;
+    } else {
+      return this as T;
+    }
+  }
+
+  @override
+  T require<T extends RequiredService>() {
+    if (T == SettingsService) {
+      return settings as T;
+    }
+
+    throw "unimplemented";
+  }
+
   final IsarSettingsService settings = IsarSettingsService();
-  @override
   IsarMiscSettingsService get miscSettings => const IsarMiscSettingsService();
-  @override
   VideoSettingsService get videoSettings => const IsarVideoService();
-  @override
-  HiddenBooruPostService get hiddenBooruPost =>
+  HiddenBooruPostsService get hiddenBooruPosts =>
       const IsarHiddenBooruPostService();
-  @override
   DownloadFileService get downloads => const IsarDownloadFileService();
-  @override
   final FavoritePostSourceService favoritePosts = IsarFavoritePostService();
-  @override
   StatisticsGeneralService get statisticsGeneral =>
       const IsarStatisticsGeneralService();
-  @override
   StatisticsGalleryService get statisticsGallery =>
       const IsarStatisticsGalleryService();
-  @override
   StatisticsBooruService get statisticsBooru =>
       const IsarStatisticsBooruService();
-  @override
   StatisticsDailyService get statisticsDaily =>
       const IsarDailyStatisticsService();
-  @override
   DirectoryMetadataService get directoryMetadata =>
       const IsarDirectoryMetadataService();
-  @override
   ThumbnailService get thumbnails => const IsarThumbnailService();
-  @override
-  // PinnedThumbnailService get pinnedThumbnails =>
-  //     const IsarPinnedThumbnailService();
-  @override
   LocalTagsService get localTags => const IsarLocalTagsService();
-  @override
-  LocalTagDictionaryService get localTagDictionary =>
-      const IsarLocalTagDictionaryService();
-  @override
   GridBookmarkService get gridBookmarks => const IsarGridStateBooruService();
-  @override
   DirectoryTagService get directoryTags => const IsarDirectoryTagService();
-  @override
   final BlacklistedDirectoryService blacklistedDirectories =
       IsarBlacklistedDirectoryService();
-  @override
   GridSettingsService get gridSettings => const IsarGridSettinsService();
+  final TagManagerService tagManager = const IsarTagManager();
 
-  @override
-  final TagManager tagManager = const IsarTagManager();
-
-  @override
   VisitedPostsService get visitedPosts => const IsarVisitedPostsService();
 
-  @override
   HottestTagsService get hottestTags => const IsarHottestTagsService();
 
+  IsarGridDbsService get gridDbs => const IsarGridDbsService();
+
+  late final GalleryService galleryService = Platform.isAndroid
+      ? AndroidGalleryApi(localTagsService: localTags)
+      : const LinuxGalleryApi();
+}
+
+class IsarGridDbsService implements GridDbService {
+  const IsarGridDbsService();
+
   @override
-  MainGridService mainGrid(Booru booru) => IsarMainGridService.booru(booru);
+  MainGridHandle openMain(Booru booru) => IsarMainGridService.booru(booru);
+
   @override
-  SecondaryGridService secondaryGrid(
+  SecondaryGridHandle openSecondary(
     Booru booru,
     String name,
     SafeMode? safeMode, [
@@ -239,6 +293,7 @@ abstract class $FavoritePost extends FavoritePost {
     required Booru booru,
     required PostContentType type,
     required int size,
+    required FavoriteStars stars,
   }) = IsarFavoritePost.noId;
 }
 
@@ -250,4 +305,96 @@ abstract class $VisitedPost extends VisitedPost {
     required DateTime date,
     required PostRating rating,
   }) = IsarVisitedPost.noId;
+}
+
+class $Directory extends DirectoryImpl
+    with PigeonDirectoryPressable
+    implements Directory {
+  const $Directory({
+    required this.bucketId,
+    required this.name,
+    required this.tag,
+    required this.volumeName,
+    required this.relativeLoc,
+    required this.lastModified,
+    required this.thumbFileId,
+  });
+
+  @override
+  final String bucketId;
+
+  @override
+  final int lastModified;
+
+  @override
+  final String name;
+
+  @override
+  final String relativeLoc;
+
+  @override
+  final String tag;
+
+  @override
+  final int thumbFileId;
+
+  @override
+  final String volumeName;
+}
+
+class $File extends FileImpl with PigeonFilePressable implements File {
+  const $File({
+    required this.bucketId,
+    required this.height,
+    required this.id,
+    required this.isDuplicate,
+    required this.isGif,
+    required this.isVideo,
+    required this.lastModified,
+    required this.name,
+    required this.originalUri,
+    required this.res,
+    required this.size,
+    required this.tags,
+    required this.width,
+  });
+
+  @override
+  final String bucketId;
+
+  @override
+  final int height;
+
+  @override
+  final int id;
+
+  @override
+  final bool isDuplicate;
+
+  @override
+  final bool isGif;
+
+  @override
+  final bool isVideo;
+
+  @override
+  final int lastModified;
+
+  @override
+  final String name;
+
+  @override
+  final String originalUri;
+
+  @override
+  final (int, Booru)? res;
+
+  @override
+  final int size;
+
+  @override
+  final Map<String, void> tags;
+
+  @override
+  final int width;
 }

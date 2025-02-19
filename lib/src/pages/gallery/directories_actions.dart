@@ -10,8 +10,6 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home/home.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
@@ -22,10 +20,10 @@ import "package:local_auth/local_auth.dart";
 GridAction<Directory> blacklist(
   BuildContext context,
   String Function(Directory) segment,
-  DirectoryMetadataService directoryMetadata,
-  BlacklistedDirectoryService blacklistedDirectory,
-  AppLocalizations l10n,
-) {
+  AppLocalizations l10n, {
+  required DirectoryMetadataService? directoryMetadata,
+  required BlacklistedDirectoryService blacklistedDirectory,
+}) {
   return GridAction(
     Icons.hide_image_outlined,
     (selected) {
@@ -33,7 +31,7 @@ GridAction<Directory> blacklist(
       final noAuth = <BlacklistedDirectoryData>[];
 
       for (final e in selected) {
-        final m = directoryMetadata.get(segment(e));
+        final m = directoryMetadata?.get(segment(e));
         if (m != null && m.requireAuth) {
           requireAuth.add(
             BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
@@ -88,12 +86,12 @@ GridAction<Directory> joinedDirectories(
   Directories api,
   ReturnFileCallback? callback,
   String Function(Directory) segment,
-  DirectoryMetadataService directoryMetadata,
-  DirectoryTagService directoryTags,
-  FavoritePostSourceService favoritePosts,
-  LocalTagsService localTags,
-  AppLocalizations l10n,
-) {
+  AppLocalizations l10n, {
+  required DirectoryMetadataService? directoryMetadata,
+  required DirectoryTagService? directoryTags,
+  required FavoritePostSourceService? favoritePosts,
+  required LocalTagsService? localTags,
+}) {
   return GridAction(
     Icons.merge_rounded,
     (selected) {
@@ -106,11 +104,11 @@ GridAction<Directory> joinedDirectories(
         api,
         callback,
         segment,
-        directoryMetadata,
-        directoryTags,
-        favoritePosts,
-        localTags,
         l10n,
+        directoryMetadata: directoryMetadata,
+        directoryTags: directoryTags,
+        favoritePosts: favoritePosts,
+        localTags: localTags,
       );
     },
     true,
@@ -124,11 +122,11 @@ Future<void> joinedDirectoriesFnc(
   Directories api,
   ReturnFileCallback? callback,
   String Function(Directory) segment,
-  DirectoryMetadataService directoryMetadata,
-  DirectoryTagService directoryTags,
-  FavoritePostSourceService favoritePosts,
-  LocalTagsService localTags,
   AppLocalizations l10n, {
+  required DirectoryMetadataService? directoryMetadata,
+  required DirectoryTagService? directoryTags,
+  required FavoritePostSourceService? favoritePosts,
+  required LocalTagsService? localTags,
   String tag = "",
   FilteringMode? filteringMode,
   bool addScaffold = false,
@@ -136,7 +134,7 @@ Future<void> joinedDirectoriesFnc(
   bool requireAuth = false;
 
   for (final e in dirs) {
-    final auth = directoryMetadata.get(segment(e))?.requireAuth ?? false;
+    final auth = directoryMetadata?.get(segment(e))?.requireAuth ?? false;
     if (auth) {
       requireAuth = true;
       break;
@@ -148,7 +146,7 @@ Future<void> joinedDirectoriesFnc(
       return Future.value();
     }
 
-    StatisticsGalleryService.db().current.add(joined: 1).save();
+    StatisticsGalleryService.addJoined(1);
 
     // final joined = api.joinedFiles(
     //   dirs,
@@ -158,25 +156,16 @@ Future<void> joinedDirectoriesFnc(
     //   localTags,
     // );
 
-    return Navigator.push<void>(
+    return FilesPage.open(
       context,
-      MaterialPageRoute(
-        builder: (context) {
-          return FilesPage(
-            secure: requireAuth,
-            api: api,
-            directories: dirs,
-            callback: callback,
-            addScaffold: addScaffold,
-            dirName: label,
-            presetFilteringValue: tag,
-            filteringMode: filteringMode,
-            db: DbConn.of(context),
-            navBarEvents: NavigationButtonEvents.maybeOf(context),
-            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-          );
-        },
-      ),
+      secure: requireAuth,
+      api: api,
+      directories: dirs,
+      callback: callback,
+      addScaffold: addScaffold,
+      dirName: label,
+      presetFilteringValue: tag,
+      filteringMode: filteringMode,
     );
   }
 

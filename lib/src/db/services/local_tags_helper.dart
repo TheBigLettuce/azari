@@ -15,24 +15,20 @@ import "package:path/path.dart";
 
 /// Post tags saved locally.
 /// This is used for offline tag viewing in the gallery.
-class PostTags {
-  const PostTags(this._db, this._freq);
+extension LocalTagsHelperExt on LocalTagsService {
+  /// Returns true if tags for the [filename] includes [tag],
+  /// or false if there are no tags for [filename].
+  bool contains(String filename, String tag) => get(filename).contains(tag);
 
-  factory PostTags.fromContext(BuildContext context) {
-    final db = DbConn.of(context);
-
-    return PostTags(db.localTags, db.localTagDictionary);
-  }
-
-  final LocalTagDictionaryService _freq;
-  final LocalTagsService _db;
+  /// Returns true if the tags for the [filename] have "original",
+  /// or false if there are no tags for [filename].
+  bool isOriginal(String filename) => get(filename).contains("original");
 
   /// Connects to the booru and downloads the tags from it.
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
     String filename,
     ParsedFilenameResult dissassembled,
-    LocalTagDictionaryService localTagDictionary,
   ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
     final api = BooruAPI.fromEnum(dissassembled.booru, client);
@@ -43,8 +39,8 @@ class PostTags {
         return [];
       }
 
-      _db.add(filename, post.tags);
-      localTagDictionary.add(post.tags);
+      add(filename, post.tags);
+      addFrequency(post.tags);
 
       return post.tags;
     } catch (e, trace) {
@@ -55,37 +51,54 @@ class PostTags {
     }
   }
 
+  /// Disassembles the [filename] and load tags online from the booru.
+  /// Resolves to an empty list in case of any error.
+  Future<List<String>> getOnlineAndSaveTags(
+    String filename,
+  ) async {
+    final dissassembled = ParsedFilenameResult.fromFilename(filename);
+    if (dissassembled.hasError) {
+      return const [];
+    }
+
+    return loadFromDissassemble(
+      filename,
+      dissassembled.asValue(),
+    );
+  }
+
   /// Adds tags to the db.
   /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
-  void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
+  void addTagsPost(
+    String filename,
+    List<String> tags,
+    bool noDisassemble,
+  ) {
     if (!noDisassemble &&
         ParsedFilenameResult.fromFilename(filename).hasError) {
       return;
     }
 
-    _freq.add(tags);
-    _db.add(filename, tags);
+    addFrequency(tags);
+    add(filename, tags);
   }
 
   /// Doesn't dissassemble.
-  void addAllUnsafe(Iterable<(String, List<String>)> tags) {
-    tags.map((e) => _freq.add(e.$2));
-    _db.addAll(
+  void addAllUnsafe(
+    Iterable<(String, List<String>)> tags,
+    LocalTagsService localTags,
+  ) {
+    tags.map((e) => localTags.addFrequency(e.$2));
+    addAll(
       tags.map((e) => LocalTagsData(filename: e.$1, tags: e.$2)).toList(),
     );
-  }
-
-  /// Returns true if tags for the [filename] includes [tag],
-  /// or false if there are no tags for [filename].
-  bool contains(String filename, String tag) {
-    return _db.get(filename).contains(tag);
   }
 
   /// Returns true if tags for the [filename] includes all the [tags].
   /// [Tags] should be a string with tags separated by a space.
   /// Or false if there are no tags for the [filename].
   bool containsEvery(String filename, List<String> tags) {
-    final localTags = _db.get(filename);
+    final localTags = get(filename);
     if (localTags.isEmpty) {
       return false;
     }
@@ -97,28 +110,6 @@ class PostTags {
     }
 
     return true;
-  }
-
-  /// Returns true if the tags for the [filename] have "original",
-  /// or false if there are no tags for [filename].
-  bool isOriginal(String filename) => _db.get(filename).contains("original");
-
-  /// Disassembles the [filename] and load tags online from the booru.
-  /// Resolves to an empty list in case of any error.
-  Future<List<String>> getOnlineAndSaveTags(
-    String filename,
-    LocalTagDictionaryService localTagDictionary,
-  ) async {
-    final dissassembled = ParsedFilenameResult.fromFilename(filename);
-    if (dissassembled.hasError) {
-      return const [];
-    }
-
-    return loadFromDissassemble(
-      filename,
-      dissassembled.asValue(),
-      localTagDictionary,
-    );
   }
 }
 

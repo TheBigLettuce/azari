@@ -9,7 +9,7 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 
-class DummyGalleryApi implements GalleryApi {
+class DummyGalleryApi implements GalleryService {
   @override
   Future<int> get version => Future.value(0);
 
@@ -17,12 +17,14 @@ class DummyGalleryApi implements GalleryApi {
   void notify(String? target) {}
 
   @override
-  Directories open(
-    BlacklistedDirectoryService blacklistedDirectory,
-    DirectoryTagService directoryTag, {
+  Directories open({
+    required BlacklistedDirectoryService? blacklistedDirectory,
+    required DirectoryTagService? directoryTags,
+    required AppLocalizations l10n,
+    required SettingsService settingsService,
+    required GalleryTrash? galleryTrash,
     bool? temporaryDb,
     bool setCurrentApi = true,
-    required AppLocalizations l10n,
   }) {
     return _DummyDirectories();
   }
@@ -73,10 +75,10 @@ class _DummyDirectories implements Directories {
   Files files(
     Directory directory,
     GalleryFilesPageType type,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags, {
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags, {
     required String name,
     required String bucketId,
   }) {
@@ -86,10 +88,10 @@ class _DummyDirectories implements Directories {
   @override
   Files joinedFiles(
     List<Directory> directories,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags,
   ) {
     throw UnimplementedError();
   }

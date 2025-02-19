@@ -6,12 +6,10 @@
 part of "services.dart";
 
 extension StatisticsGeneralDataExt on StatisticsGeneralData {
-  void save() => _currentDb.statisticsGeneral.add(this);
+  void maybeSave() => _currentDb.get<StatisticsGeneralService>()?.add(this);
 }
 
 abstract interface class StatisticsGeneralService implements ServiceMarker {
-  factory StatisticsGeneralService.db() => _currentDb.statisticsGeneral;
-
   StatisticsGeneralData get current;
 
   void add(StatisticsGeneralData data);
@@ -20,6 +18,67 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
     void Function(StatisticsGeneralData d) f, [
     bool fire = false,
   ]);
+
+  static void addTimeSpent(int t) {
+    _currentDb
+        .get<StatisticsGeneralService>()
+        ?.current
+        .add(timeSpent: t)
+        .maybeSave();
+  }
+
+  static void addTimeDownload(int t) {
+    _currentDb
+        .get<StatisticsGeneralService>()
+        ?.current
+        .add(timeDownload: t)
+        .maybeSave();
+  }
+
+  static void addScrolledUp(int s) {
+    _currentDb
+        .get<StatisticsGeneralService>()
+        ?.current
+        .add(scrolledUp: s)
+        .maybeSave();
+  }
+
+  static void addRefreshes(int r) {
+    _currentDb
+        .get<StatisticsGeneralService>()
+        ?.current
+        .add(refreshes: r)
+        .maybeSave();
+  }
+}
+
+mixin StatisticsGeneralWatcherMixin<S extends StatefulWidget> on State<S> {
+  StatisticsGeneralService get statisticsGeneralService;
+
+  StreamSubscription<StatisticsGeneralData>? _statisticsGeneralEvents;
+
+  late StatisticsGeneralData statisticsGeneral;
+
+  @override
+  void initState() {
+    super.initState();
+
+    statisticsGeneral = statisticsGeneralService.current;
+
+    _statisticsGeneralEvents?.cancel();
+    _statisticsGeneralEvents = statisticsGeneralService.watch((newSettings) {
+      setState(() {
+        statisticsGeneral = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statisticsGeneralEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 abstract class StatisticsGeneralData {

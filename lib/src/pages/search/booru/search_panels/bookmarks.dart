@@ -9,12 +9,12 @@ class _BookmarksPanel extends StatefulWidget {
   const _BookmarksPanel({
     // super.key,
     required this.filteringEvents,
-    required this.db,
+    required this.gridBookmarks,
   });
 
   final Stream<String> filteringEvents;
 
-  final DbConn db;
+  final GridBookmarkService gridBookmarks;
 
   @override
   State<_BookmarksPanel> createState() => __BookmarksPanelState();
@@ -25,8 +25,8 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
   late final GenericListSource<GridBookmark> source = GenericListSource(
     () => filteringValue.isEmpty
         ? Future.value(const [])
-        : Future.value(widget.db.gridBookmarks.complete(filteringValue)),
-    watchCount: widget.db.gridBookmarks.watch,
+        : Future.value(widget.gridBookmarks.complete(filteringValue)),
+    watchCount: widget.gridBookmarks.watch,
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -56,18 +56,13 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
   void _onPressed(GridBookmark bookmark) {
     // Navigator.pop(context);
 
-    Navigator.push<void>(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute(
-        builder: (context) => BooruRestoredPage(
-          booru: bookmark.booru,
-          tags: bookmark.tags,
-          name: bookmark.name,
-          wrapScaffold: true,
-          saveSelectedPage: (_) {},
-          db: widget.db,
-        ),
-      ),
+      booru: bookmark.booru,
+      tags: bookmark.tags,
+      name: bookmark.name,
+      rootNavigator: true,
+      saveSelectedPage: (_) {},
     );
   }
 

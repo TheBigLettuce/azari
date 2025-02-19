@@ -34,15 +34,16 @@ Future<void> deleteFilesDialog(
   BuildContext context,
   List<File> selected,
   DeleteDialogShow toShow,
+  GalleryTrash galleryTrash,
 ) {
   final l10n = context.l10n();
 
   void delete() {
-    GalleryApi().trash.addAll(
-          selected.map((e) => e.originalUri).toList(),
-        );
+    galleryTrash.addAll(
+      selected.map((e) => e.originalUri).toList(),
+    );
 
-    StatisticsGalleryService.db().current.add(deleted: selected.length).save();
+    StatisticsGalleryService.addDeleted(selected.length);
   }
 
   if (!toShow.show) {
@@ -92,34 +93,32 @@ Future<void> deleteFilesDialog(
   );
 }
 
-GridAction<File> _restoreFromTrashAction() {
+GridAction<File> _restoreFromTrashAction(GalleryTrash galleryTrash) {
   return GridAction(
     Icons.restore_from_trash,
     (selected) {
-      GalleryApi().trash.removeAll(
-            selected.map((e) => e.originalUri).toList(),
-          );
+      galleryTrash.removeAll(
+        selected.map((e) => e.originalUri).toList(),
+      );
     },
     false,
   );
 }
 
 GridAction<File> _saveTagsAction(
-  BuildContext context,
-  PostTags postTags,
-  LocalTagsService localTags,
-  LocalTagDictionaryService localTagDictionary,
-) {
+  BuildContext context, {
+  required LocalTagsService localTags,
+  required GalleryService galleryService,
+}) {
   return GridAction(
     Icons.tag_rounded,
     (selected) {
       _saveTags(
         context,
         selected,
-        postTags,
-        localTags,
-        localTagDictionary,
         context.l10n(),
+        localTags: localTags,
+        galleryService: galleryService,
       );
     },
     true,
@@ -158,7 +157,9 @@ GridAction<File> _setFavoritesThumbnailAction(
   return GridAction(
     Icons.image_outlined,
     (selected) {
-      miscSettings.current.copy(favoritesThumbId: selected.first.id).save();
+      miscSettings.current
+          .copy(favoritesThumbId: selected.first.id)
+          .maybeSave();
     },
     true,
     showOnlyWhenSingle: true,
@@ -168,6 +169,7 @@ GridAction<File> _setFavoritesThumbnailAction(
 GridAction<File> _deleteAction(
   BuildContext context,
   DeleteDialogShow toShow,
+  GalleryTrash galleryTrash,
 ) {
   return GridAction(
     Icons.delete,
@@ -176,6 +178,7 @@ GridAction<File> _deleteAction(
         context,
         selected,
         toShow,
+        galleryTrash,
       );
     },
     false,
@@ -185,11 +188,12 @@ GridAction<File> _deleteAction(
 GridAction<File> _copyAction(
   BuildContext context,
   String bucketId,
-  TagManager tagManager,
-  LocalTagsService localTags,
   Directories providedApi,
-  DeleteDialogShow toShow,
-) {
+  DeleteDialogShow toShow, {
+  required GalleryService galleryService,
+  required TagManagerService tagManager,
+  required LocalTagsService localTags,
+}) {
   return GridAction(
     Icons.copy,
     (selected) {
@@ -198,10 +202,11 @@ GridAction<File> _copyAction(
         bucketId,
         selected,
         false,
-        tagManager,
-        localTags,
         providedApi,
         toShow,
+        galleryService: galleryService,
+        tagManager: tagManager,
+        localTags: localTags,
       );
     },
     false,
@@ -211,11 +216,12 @@ GridAction<File> _copyAction(
 GridAction<File> _moveAction(
   BuildContext context,
   String bucketId,
-  TagManager tagManager,
-  LocalTagsService localTags,
   Directories providedApi,
-  DeleteDialogShow toShow,
-) {
+  DeleteDialogShow toShow, {
+  required GalleryService galleryService,
+  required TagManagerService tagManager,
+  required LocalTagsService localTags,
+}) {
   return GridAction(
     Icons.forward_rounded,
     (selected) {
@@ -224,10 +230,11 @@ GridAction<File> _moveAction(
         bucketId,
         selected,
         true,
-        tagManager,
-        localTags,
         providedApi,
         toShow,
+        galleryService: galleryService,
+        tagManager: tagManager,
+        localTags: localTags,
       );
     },
     false,
@@ -239,11 +246,12 @@ void moveOrCopyFnc(
   String originalBucketId,
   List<File> selected,
   bool move,
-  TagManager tagManager,
-  LocalTagsService localTags,
   Directories providedApi,
-  DeleteDialogShow toShow,
-) {
+  DeleteDialogShow toShow, {
+  required GalleryService galleryService,
+  required TagManagerService tagManager,
+  required LocalTagsService localTags,
+}) {
   PauseVideoNotifier.maybePauseOf(topContext, true);
 
   final List<String> searchPrefix = [];
@@ -255,99 +263,87 @@ void moveOrCopyFnc(
 
   final l10n = AppLocalizations.of(topContext)!;
 
-  Navigator.of(topContext, rootNavigator: true).push(
-    MaterialPageRoute<void>(
-      builder: (context) {
-        return DirectoriesPage(
-          showBackButton: true,
-          wrapGridPage: true,
-          providedApi: providedApi,
-          db: DbConn.of(context),
-          callback: ReturnDirectoryCallback(
-            choose: (value, newDir) {
-              if (!newDir && value.bucketId == originalBucketId) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    content: Text(
-                      move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
-                    ),
-                  ),
-                );
-                return Future.value();
-              }
-
-              if (value.bucketId == "trash") {
-                if (!move) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      behavior: SnackBarBehavior.floating,
-                      content: Text(
-                        l10n.cantCopyToTrash,
-                      ),
-                    ),
-                  );
-                  return Future.value();
-                }
-
-                return deleteFilesDialog(
-                  context,
-                  selected,
-                  toShow,
-                );
-              } else {
-                GalleryApi()
-                    .files
-                    .copyMove(
-                      value.path,
-                      value.volumeName,
-                      selected,
-                      move: move,
-                      newDir: newDir,
-                    )
-                    .catchError((dynamic e) {
-                  if (topContext.mounted) {
-                    ScaffoldMessenger.of(topContext).showSnackBar(
-                      SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        content: Text(
-                          e is PlatformException ? e.code : e.toString(),
-                        ),
-                      ),
-                    );
-                  }
-                });
-
-                if (move) {
-                  StatisticsGalleryService.db()
-                      .current
-                      .add(moved: selected.length)
-                      .save();
-                } else {
-                  StatisticsGalleryService.db()
-                      .current
-                      .add(copied: selected.length)
-                      .save();
-                }
-              }
-
-              return Future.value();
-            },
-            preview: PreferredSize(
-              preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
-              child: CopyMovePreview(
-                files: selected,
-                icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-                title: move ? l10n.moveTo : l10n.copyTo,
+  DirectoriesPage.open(
+    topContext,
+    showBackButton: true,
+    wrapGridPage: true,
+    providedApi: providedApi,
+    callback: ReturnDirectoryCallback(
+      choose: (value, newDir) {
+        if (!newDir && value.bucketId == originalBucketId) {
+          ScaffoldMessenger.of(topContext).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(
+                move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
               ),
             ),
-            joinable: false,
-            suggestFor: searchPrefix,
-          ),
-          l10n: context.l10n(),
-        );
+          );
+          return Future.value();
+        }
+
+        if (value.bucketId == "trash") {
+          if (!move) {
+            ScaffoldMessenger.of(topContext).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text(
+                  l10n.cantCopyToTrash,
+                ),
+              ),
+            );
+            return Future.value();
+          }
+
+          return deleteFilesDialog(
+            topContext,
+            selected,
+            toShow,
+            galleryService.trash,
+          );
+        } else {
+          galleryService.files
+              .copyMove(
+            value.path,
+            value.volumeName,
+            selected,
+            move: move,
+            newDir: newDir,
+          )
+              .catchError((dynamic e) {
+            if (topContext.mounted) {
+              ScaffoldMessenger.of(topContext).showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  content: Text(
+                    e is PlatformException ? e.code : e.toString(),
+                  ),
+                ),
+              );
+            }
+          });
+
+          if (move) {
+            StatisticsGalleryService.addMoved(selected.length);
+          } else {
+            StatisticsGalleryService.addCopied(selected.length);
+          }
+        }
+
+        return Future.value();
       },
+      preview: PreferredSize(
+        preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
+        child: CopyMovePreview(
+          files: selected,
+          icon: move ? Icons.forward_rounded : Icons.copy_rounded,
+          title: move ? l10n.moveTo : l10n.copyTo,
+        ),
+      ),
+      joinable: false,
+      suggestFor: searchPrefix,
     ),
+    l10n: topContext.l10n(),
   ).then((value) {
     if (topContext.mounted) {
       PauseVideoNotifier.maybePauseOf(topContext, false);
@@ -364,11 +360,10 @@ extension SaveTagsGlobalNotifier on GlobalProgressTab {
 Future<void> _saveTags(
   BuildContext context,
   List<File> selected,
-  PostTags postTags,
-  LocalTagsService localTags,
-  LocalTagDictionaryService localTagDictionary,
-  AppLocalizations l10n,
-) async {
+  AppLocalizations l10n, {
+  required LocalTagsService localTags,
+  required GalleryService galleryService,
+}) async {
   final notifier = GlobalProgressTab.maybeOf(context)?.saveTags();
   if (notifier == null) {
     return;
@@ -398,7 +393,7 @@ Future<void> _saveTags(
       notifi.update(i, "$i/${selected.length}");
 
       if (localTags.get(elem.name).isEmpty) {
-        await postTags.getOnlineAndSaveTags(elem.name, localTagDictionary);
+        await localTags.getOnlineAndSaveTags(elem.name);
       }
     }
   }).onError((e, trace) {
@@ -406,7 +401,7 @@ Future<void> _saveTags(
     return null;
   }).whenComplete(() {
     notifi.done();
-    GalleryApi().notify(null);
+    galleryService.notify(null);
 
     return notifier.value = null;
   });

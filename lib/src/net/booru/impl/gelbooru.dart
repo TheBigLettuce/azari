@@ -106,7 +106,7 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
@@ -129,7 +129,7 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> _commonPosts(
     String tags,
     int p,
-    BooruTagging? excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     required BooruPostsOrder order,
@@ -202,7 +202,7 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<Post>> randomPosts(
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode,
     bool videosOnly, {
     RandomPostsOrder order = RandomPostsOrder.random,
@@ -233,7 +233,7 @@ class Gelbooru implements BooruAPI {
   Future<(List<Post>, int?)> fromPostId(
     int _,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,

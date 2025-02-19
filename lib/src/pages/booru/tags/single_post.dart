@@ -5,12 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
@@ -23,21 +21,29 @@ import "package:logging/logging.dart";
 class SinglePost extends StatefulWidget {
   const SinglePost({
     super.key,
-    required this.tagManager,
+    required this.settingsService,
+    required this.localTags,
+    required this.downloadManager,
     this.overrideLeading,
-    required this.db,
   });
 
-  final TagManager tagManager;
   final Widget? overrideLeading;
 
-  final FavoritePostSourceService db;
+  final LocalTagsService? localTags;
+  final DownloadManager? downloadManager;
+
+  final SettingsService settingsService;
 
   @override
   State<SinglePost> createState() => _SinglePostState();
 }
 
 class _SinglePostState extends State<SinglePost> {
+  LocalTagsService? get localTags => widget.localTags;
+  DownloadManager? get downloadManager => widget.downloadManager;
+
+  SettingsService get settingsService => widget.settingsService;
+
   late final Dio client;
   late final BooruAPI booruApi;
 
@@ -53,7 +59,7 @@ class _SinglePostState extends State<SinglePost> {
   void initState() {
     super.initState();
 
-    final booru = SettingsService.db().current.selectedBooru;
+    final booru = widget.settingsService.current.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
     booruApi = BooruAPI.fromEnum(booru, client);
   }
@@ -68,15 +74,18 @@ class _SinglePostState extends State<SinglePost> {
   }
 
   Future<void> _launch(
-    DownloadManager downloadManager,
-    AppLocalizations l10n,
-    PostTags postTags, [
+    BuildContext context, {
+    required LocalTagsService localTags,
+    required DownloadManager downloadManager,
+    required SettingsService settingsService,
     Booru? replaceBooru,
     int? replaceId,
-  ]) {
+  }) {
     if (inProcessLoading) {
       return Future.value();
     }
+
+    final l10n = context.l10n();
 
     inProcessLoading = true;
 
@@ -93,8 +102,12 @@ class _SinglePostState extends State<SinglePost> {
       ImageView.launchWrapped(
         context,
         1,
-        (__) => p.content(),
-        download: (_) => p.download(downloadManager, postTags),
+        (__) => p.content(context),
+        download: (_) => p.download(
+          downloadManager: downloadManager,
+          localTags: localTags,
+          settingsService: settingsService,
+        ),
       );
     }
 
@@ -180,15 +193,13 @@ class _SinglePostState extends State<SinglePost> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    final downloadManager = DownloadManager.of(context);
-    final postTags = PostTags.fromContext(context);
 
     return MenuAnchor(
       menuChildren: menuItems,
       controller: menuController,
       child: SearchBar(
         elevation: const WidgetStatePropertyAll(0),
-        hintText: context.l10n().goPostHint,
+        hintText: l10n.goPostHint,
         controller: controller,
         trailing: [
           IconButton(
@@ -205,7 +216,14 @@ class _SinglePostState extends State<SinglePost> {
               effects: const [RotateEffect()],
               autoPlay: false,
             ),
-            onPressed: () => _launch(downloadManager, l10n, postTags),
+            onPressed: downloadManager != null && localTags != null
+                ? () => _launch(
+                      context,
+                      localTags: localTags!,
+                      downloadManager: downloadManager!,
+                      settingsService: settingsService,
+                    )
+                : null,
           ),
         ],
       ),

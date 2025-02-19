@@ -21,11 +21,14 @@ class PermissionsPage extends StatefulWidget {
     super.key,
     required this.onEnd,
     required this.permissions,
+    required this.settingsService,
   });
 
   final List<PermissionController> permissions;
 
   final ContextCallback? onEnd;
+
+  final SettingsService settingsService;
 
   @override
   State<PermissionsPage> createState() => _PermissionsPageState();
@@ -105,6 +108,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 builder: (context) {
                   return CongratulationPage(
                     onEnd: widget.onEnd,
+                    settingsService: widget.settingsService,
                   );
                 },
               ),
@@ -120,20 +124,29 @@ class _PermissionsPageState extends State<PermissionsPage> {
 class WelcomePage extends StatefulWidget {
   const WelcomePage({
     super.key,
+    required this.settingsService,
+    required this.galleryService,
     this.onEnd,
   });
 
   final ContextCallback? onEnd;
 
+  final GalleryService? galleryService;
+  final SettingsService settingsService;
+
   static void open(
     BuildContext context, {
     bool popBackOnEnd = false,
+    required SettingsService settingsService,
+    required GalleryService? galleryService,
   }) =>
       Navigator.push(
         context,
         MaterialPageRoute<void>(
           builder: (context) {
             return WelcomePage(
+              galleryService: galleryService,
+              settingsService: settingsService,
               onEnd: popBackOnEnd
                   ? (context) {
                       Navigator.pop(context);
@@ -149,11 +162,6 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
@@ -176,6 +184,8 @@ class _WelcomePageState extends State<WelcomePage> {
                 builder: (context) {
                   return InitalSettings(
                     onEnd: widget.onEnd,
+                    settingsService: widget.settingsService,
+                    galleryService: widget.galleryService,
                   );
                 },
               ),
@@ -192,9 +202,11 @@ class CongratulationPage extends StatelessWidget {
   const CongratulationPage({
     super.key,
     required this.onEnd,
+    required this.settingsService,
   });
 
   final ContextCallback? onEnd;
+  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -217,10 +229,7 @@ class CongratulationPage extends StatelessWidget {
               label: Text(l10n.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
-                SettingsService.db()
-                    .current
-                    .copy(showWelcomePage: false)
-                    .save();
+                settingsService.current.copy(showWelcomePage: false).save();
 
                 onEnd?.call(context);
               },
@@ -236,38 +245,31 @@ class InitalSettings extends StatefulWidget {
   const InitalSettings({
     super.key,
     required this.onEnd,
+    required this.settingsService,
+    required this.galleryService,
   });
 
   final ContextCallback? onEnd;
+
+  final GalleryService? galleryService;
+  final SettingsService settingsService;
 
   @override
   State<InitalSettings> createState() => _InitalSettingsState();
 }
 
-class _InitalSettingsState extends State<InitalSettings> {
-  late final StreamSubscription<void> watcher;
-  SettingsData settings = SettingsService.db().current;
+class _InitalSettingsState extends State<InitalSettings>
+    with SettingsWatcherMixin {
+  GalleryService? get galleryService => widget.galleryService;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   String? error;
 
   @override
-  void initState() {
-    super.initState();
-
-    watcher = settings.s.watch((s) {
-      settings = s!;
-
-      error = null;
-
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    watcher.cancel();
-
-    super.dispose();
+  void onNewSettings(SettingsData newSettings) {
+    error = null;
   }
 
   void _nextPage() {
@@ -280,6 +282,7 @@ class _InitalSettingsState extends State<InitalSettings> {
               builder: (context) {
                 return PermissionsPage(
                   permissions: permissions,
+                  settingsService: settingsService,
                   onEnd: widget.onEnd,
                 );
               },
@@ -288,6 +291,7 @@ class _InitalSettingsState extends State<InitalSettings> {
               builder: (context) {
                 return CongratulationPage(
                   onEnd: widget.onEnd,
+                  settingsService: settingsService,
                 );
               },
             ),
@@ -311,16 +315,19 @@ class _InitalSettingsState extends State<InitalSettings> {
               icon: settings.path.isNotEmpty
                   ? const Icon(Icons.check_rounded)
                   : const Icon(Icons.folder),
-              onPressed: () {
-                settings.s.chooseDirectory(
-                  (e) {
-                    error = e;
+              onPressed: galleryService != null
+                  ? () {
+                      SettingsService.chooseDirectory(
+                        (e) {
+                          error = e;
 
-                    setState(() {});
-                  },
-                  l10n,
-                );
-              },
+                          setState(() {});
+                        },
+                        l10n,
+                        galleryServices: galleryService!,
+                      );
+                    }
+                  : null,
               label: Text(
                 settings.path.isEmpty
                     ? l10n.downloadDirectorySetting
@@ -405,7 +412,9 @@ class _InitalSettingsState extends State<InitalSettings> {
       buttons: [
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
-          onPressed: settings.path.isEmpty ? null : _nextPage,
+          onPressed: settings.path.isNotEmpty || galleryService == null
+              ? _nextPage
+              : null,
           label: Text(l10n.welcomeNextLabel),
         ),
       ],

@@ -7,8 +7,6 @@ import "dart:async";
 import "dart:io" as io;
 
 import "package:async/async.dart";
-import "package:azari/init_main/app_info.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/impl/isar/foundation/dbs.dart";
 import "package:azari/src/db/services/impl/isar/foundation/favorite_posts_isolate.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/favorite_post.dart";
@@ -50,12 +48,9 @@ import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/home/home.dart";
-import "package:azari/src/platform/gallery_api.dart" as gallery;
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:azari/src/widgets/grid_frame/grid_frame.dart";
@@ -63,7 +58,6 @@ import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:isar/isar.dart";
-import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 
@@ -113,7 +107,7 @@ class IsarCurrentBooruSource extends GridPostSource
   @override
   final BooruAPI api;
   @override
-  final BooruTagging excluded;
+  final BooruTagging<Excluded>? excluded;
   @override
   final PagingEntry entry;
 
@@ -121,6 +115,9 @@ class IsarCurrentBooruSource extends GridPostSource
 
   @override
   SafeMode get safeMode => safeMode_();
+
+  @override
+  bool get extraSafeFilters => IoServices().settings.current.extraSafeFilters;
 
   @override
   final _IsarPostsStorage backingStorage;
@@ -467,61 +464,6 @@ class IsarSourceStorage<K, V, CollectionType extends V>
   Stream<int> get countEvents => _collection.watchLazy().map((_) => count);
 }
 
-class IsarLocalTagDictionaryService implements LocalTagDictionaryService {
-  const IsarLocalTagDictionaryService();
-
-  Isar get db => Dbs().localTags;
-
-  IsarCollection<IsarLocalTagDictionary> get collection =>
-      db.isarLocalTagDictionarys;
-
-  @override
-  List<BooruTag> mostFrequent(int count) => count.isNegative
-      ? collection
-          .where()
-          .sortByFrequencyDesc()
-          .limit(100)
-          .findAllSync()
-          .map((e) => BooruTag(e.tag, e.frequency))
-          .toList()
-      : collection
-          .where()
-          .sortByFrequencyDesc()
-          .limit(count)
-          .findAllSync()
-          .map((e) => BooruTag(e.tag, e.frequency))
-          .toList();
-
-  @override
-  void add(List<String> tags) {
-    db.writeTxnSync(
-      () => collection.putAllSync(
-        tags
-            .map(
-              (e) => IsarLocalTagDictionary(
-                e,
-                (collection.getByTagSync(e)?.frequency ?? 0) + 1,
-                isarId: null,
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  @override
-  Future<List<BooruTag>> complete(String string) async {
-    final result = collection
-        .filter()
-        .tagContains(string)
-        .sortByFrequencyDesc()
-        .limit(10)
-        .findAllSync();
-
-    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
-  }
-}
-
 class IsarVideoService implements VideoSettingsService {
   const IsarVideoService();
 
@@ -580,14 +522,14 @@ class IsarMiscSettingsService implements MiscSettingsService {
   }
 
   @override
-  StreamSubscription<MiscSettingsData?> watch(
-    void Function(MiscSettingsData?) f, [
+  StreamSubscription<MiscSettingsData> watch(
+    void Function(MiscSettingsData) f, [
     bool fire = false,
   ]) =>
-      collection.watchObject(0, fireImmediately: fire).listen(f);
+      collection.watchLazy(fireImmediately: fire).map((e) => current).listen(f);
 }
 
-class IsarHiddenBooruPostService implements HiddenBooruPostService {
+class IsarHiddenBooruPostService implements HiddenBooruPostsService {
   const IsarHiddenBooruPostService();
 
   Isar get db => Dbs().main;
@@ -681,6 +623,7 @@ class IsarFavoritePostService implements FavoritePostSourceService {
                   type: post.type,
                   size: post.size,
                   isarId: null,
+                  stars: FavoriteStars.zero,
                 ),
         );
       } else {
@@ -1173,23 +1116,6 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
   }
 
   @override
-  Future<bool> canAuth(String id, String reason) async {
-    if (!AppInfo().canAuthBiometric) {
-      return true;
-    }
-
-    if (get(id)?.requireAuth ?? false) {
-      final success =
-          await LocalAuthentication().authenticate(localizedReason: reason);
-      if (!success) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @override
   void add(DirectoryMetadata data) {
     db.writeTxnSync(
       () {
@@ -1403,7 +1329,7 @@ class IsarThumbnailService implements ThumbnailService {
         return toDelete;
       });
 
-      gallery.GalleryApi().thumbs.removeAll(toDelete);
+      IoServices().galleryService.thumbs.removeAll(toDelete);
     }
 
     db.writeTxnSync(() {
@@ -1593,6 +1519,54 @@ class IsarLocalTagsService implements LocalTagsService {
   Isar get db => Dbs().localTags;
 
   IsarCollection<IsarLocalTags> get collection => db.isarLocalTags;
+  IsarCollection<IsarLocalTagDictionary> get collectionDict =>
+      db.isarLocalTagDictionarys;
+
+  @override
+  List<BooruTag> mostFrequent(int count) => count.isNegative
+      ? collectionDict
+          .where()
+          .sortByFrequencyDesc()
+          .limit(100)
+          .findAllSync()
+          .map((e) => BooruTag(e.tag, e.frequency))
+          .toList()
+      : collectionDict
+          .where()
+          .sortByFrequencyDesc()
+          .limit(count)
+          .findAllSync()
+          .map((e) => BooruTag(e.tag, e.frequency))
+          .toList();
+
+  @override
+  void addFrequency(List<String> tags) {
+    db.writeTxnSync(
+      () => collectionDict.putAllSync(
+        tags
+            .map(
+              (e) => IsarLocalTagDictionary(
+                e,
+                (collectionDict.getByTagSync(e)?.frequency ?? 0) + 1,
+                isarId: null,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  @override
+  Future<List<BooruTag>> complete(String string) async {
+    final result = collectionDict
+        .filter()
+        .tagContains(string)
+        .sortByFrequencyDesc()
+        .limit(10)
+        .findAllSync();
+
+    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
+  }
 
   @override
   int get count => collection.countSync();
@@ -1741,19 +1715,21 @@ class IsarDirectoryTagService implements DirectoryTagService {
   }
 }
 
-class IsarTagManager implements TagManager {
+class IsarTagManager implements TagManagerService {
   const IsarTagManager();
 
   @override
-  IsarBooruTagging get excluded =>
+  IsarBooruTagging<Excluded> get excluded =>
       const IsarBooruTagging(mode: TagType.excluded);
   @override
-  IsarBooruTagging get latest => const IsarBooruTagging(mode: TagType.normal);
+  IsarBooruTagging<Latest> get latest =>
+      const IsarBooruTagging(mode: TagType.normal);
   @override
-  IsarBooruTagging get pinned => const IsarBooruTagging(mode: TagType.pinned);
+  IsarBooruTagging<Pinned> get pinned =>
+      const IsarBooruTagging(mode: TagType.pinned);
 }
 
-class IsarBooruTagging implements BooruTagging {
+class IsarBooruTagging<T extends BooruTaggingType> implements BooruTagging<T> {
   const IsarBooruTagging({
     required this.mode,
   });
@@ -1955,7 +1931,7 @@ class IsarGridStateBooruService implements GridBookmarkService {
           .listen(f);
 }
 
-class IsarSecondaryGridService implements SecondaryGridService {
+class IsarSecondaryGridService implements SecondaryGridHandle {
   const IsarSecondaryGridService._(
     this._secondaryGrid,
     this._mainGrid,
@@ -2030,11 +2006,11 @@ class IsarSecondaryGridService implements SecondaryGridService {
   @override
   GridPostSource makeSource(
     BooruAPI api,
-    BooruTagging excluded,
     PagingEntry entry,
-    String tags,
-    HiddenBooruPostService hiddenBooruPosts,
-  ) =>
+    String tags, {
+    required BooruTagging<Excluded>? excluded,
+    required HiddenBooruPostsService? hiddenBooruPosts,
+  }) =>
       IsarCurrentBooruSource(
         db: _secondaryGrid,
         api: api,
@@ -2043,7 +2019,8 @@ class IsarSecondaryGridService implements SecondaryGridService {
         tags: tags,
         safeMode_: () => currentState.safeMode,
         filters: [
-          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+          if (hiddenBooruPosts != null)
+            (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
         ],
       );
 
@@ -2060,7 +2037,7 @@ class IsarSecondaryGridService implements SecondaryGridService {
           .listen(f);
 }
 
-class IsarMainGridService implements MainGridService {
+class IsarMainGridService implements MainGridHandle {
   const IsarMainGridService._(this._mainGrid);
 
   factory IsarMainGridService.booru(Booru booru) {
@@ -2120,19 +2097,20 @@ class IsarMainGridService implements MainGridService {
   @override
   GridPostSource makeSource(
     BooruAPI api,
-    BooruTagging excluded,
-    PagingEntry entry,
-    HiddenBooruPostService hiddenBooruPosts,
-  ) =>
+    PagingEntry entry, {
+    required BooruTagging<Excluded>? excluded,
+    required HiddenBooruPostsService? hiddenBooruPosts,
+  }) =>
       IsarCurrentBooruSource(
         db: _mainGrid,
         api: api,
         excluded: excluded,
         entry: entry,
         tags: "",
-        safeMode_: () => SettingsService.db().current.safeMode,
+        safeMode_: () => IoServices().settings.current.safeMode,
         filters: [
-          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+          if (hiddenBooruPosts != null)
+            (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
         ],
       );
 }

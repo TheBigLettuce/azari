@@ -37,7 +37,7 @@ abstract class BooruAPI {
 
   /// Load random 30 posts.
   Future<List<Post>> randomPosts(
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode,
     bool videosOnly, {
     RandomPostsOrder order = RandomPostsOrder.random,
@@ -49,7 +49,7 @@ abstract class BooruAPI {
   Future<(List<Post>, int?)> page(
     int p,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
@@ -64,7 +64,7 @@ abstract class BooruAPI {
   Future<(List<Post>, int?)> fromPostId(
     int postId,
     String tags,
-    BooruTagging excludedTags,
+    BooruTagging<Excluded>? excludedTags,
     SafeMode safeMode, {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
@@ -92,9 +92,9 @@ abstract class BooruAPI {
   /// Some booru have no way to retreive posts down a certain post number,
   /// in such a case the implementation is likely to use paging,
   /// and should use provided [pageSaver] for this purpose.
-  static BooruAPI fromSettings(Dio client) {
+  static BooruAPI fromSettings(SettingsService settingsService, Dio client) {
     return BooruAPI.fromEnum(
-      SettingsService.db().current.selectedBooru,
+      settingsService.current.selectedBooru,
       client,
     );
   }

@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/db/services/obj_impls/file_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -18,6 +19,7 @@ import "package:azari/src/pages/gallery/directories_actions.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
@@ -37,22 +39,83 @@ part "search_panels/search_in_directories_buttons.dart";
 class GallerySearchPage extends StatefulWidget {
   const GallerySearchPage({
     super.key,
-    required this.db,
     required this.l10n,
     required this.procPop,
+    required this.directoryMetadata,
+    required this.blacklistedDirectories,
+    required this.directoryTags,
+    required this.favoritePosts,
+    required this.localTags,
+    required this.tagManager,
+    required this.videoSettings,
+    required this.galleryService,
+    required this.settingsService,
   });
 
   final AppLocalizations l10n;
 
   final void Function(bool)? procPop;
 
-  final DbConn db;
+  final DirectoryMetadataService? directoryMetadata;
+  final BlacklistedDirectoryService? blacklistedDirectories;
+  final DirectoryTagService? directoryTags;
+  final FavoritePostSourceService? favoritePosts;
+  final LocalTagsService? localTags;
+  final TagManagerService? tagManager;
+  final VideoSettingsService? videoSettings;
+
+  final GalleryService galleryService;
+  final SettingsService settingsService;
+
+  static Future<void> open(
+    BuildContext context, {
+    void Function(bool)? procPop,
+  }) {
+    final db = Services.of(context);
+    final (galleryService,) = (db.get<GalleryService>(),);
+    if (galleryService == null) {
+      // TODO: change
+      showSnackbar(context, "Search functionality isn't available");
+
+      return Future.value();
+    }
+
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => GallerySearchPage(
+          l10n: context.l10n(),
+          procPop: procPop,
+          galleryService: galleryService,
+          directoryMetadata: db.get<DirectoryMetadataService>(),
+          blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
+          directoryTags: db.get<DirectoryTagService>(),
+          favoritePosts: db.get<FavoritePostSourceService>(),
+          localTags: db.get<LocalTagsService>(),
+          tagManager: db.get<TagManagerService>(),
+          videoSettings: db.get<VideoSettingsService>(),
+          settingsService: db.require<SettingsService>(),
+        ),
+      ),
+    );
+  }
 
   @override
   State<GallerySearchPage> createState() => _GallerySearchPageState();
 }
 
 class _GallerySearchPageState extends State<GallerySearchPage> {
+  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
+  BlacklistedDirectoryService? get blacklistedDirectories =>
+      widget.blacklistedDirectories;
+  DirectoryTagService? get directoryTags => widget.directoryTags;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  LocalTagsService? get localTags => widget.localTags;
+  TagManagerService? get tagManager => widget.tagManager;
+  VideoSettingsService? get videoSettings => widget.videoSettings;
+  GalleryService get galleryService => widget.galleryService;
+
+  SettingsService get settingsService => widget.settingsService;
+
   final searchController = TextEditingController();
   final focusNode = FocusNode();
 
@@ -65,13 +128,15 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   void initState() {
     super.initState();
 
-    api = GalleryApi().open(
-      widget.db.blacklistedDirectories,
-      widget.db.directoryTags,
+    api = galleryService.open(
       l10n: widget.l10n,
+      settingsService: settingsService,
+      blacklistedDirectory: blacklistedDirectories,
+      directoryTags: directoryTags,
+      galleryTrash: galleryService.trash,
     );
 
-    blurMap = widget.db.directoryMetadata.toBlurAll.fold({}, (map, e) {
+    blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
       map[e.categoryName] = e.blur;
 
       return map;
@@ -99,16 +164,17 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   void _onDirectoryPressed(Directory directory) {
     final l10n = context.l10n();
 
-    directory.openFilesPage(
+    FilesPage.openProtected(
       context: context,
       l10n: l10n,
       callback: null,
       addScaffold: true,
       api: api,
+      directory: directory,
       segmentFnc: (cell) => DirectoriesPage.segmentCell(
         cell.name,
         cell.bucketId,
-        widget.db.directoryTags,
+        directoryTags,
       ),
     );
   }
@@ -128,16 +194,16 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       (cell) => DirectoriesPage.segmentCell(
         cell.name,
         cell.bucketId,
-        widget.db.directoryTags,
+        directoryTags,
       ),
-      widget.db.directoryMetadata,
-      widget.db.directoryTags,
-      widget.db.favoritePosts,
-      widget.db.localTags,
       widget.l10n,
       tag: tag,
       filteringMode: filteringMode,
       addScaffold: true,
+      directoryMetadata: directoryMetadata,
+      directoryTags: directoryTags,
+      favoritePosts: favoritePosts,
+      localTags: localTags,
     );
   }
 
@@ -193,11 +259,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             StreamBuilder(
               stream: _filteringEvents.stream,
               builder: (context, snapshot) => _SearchInDirectoriesButtons(
-                db: widget.db,
                 listPadding: _ChipsPanelBody.listPadding,
                 filteringValue: snapshot.data ?? "",
                 joinedDirectories: _joinedDirectories,
                 source: api.source,
+                directoryMetadata: directoryMetadata,
               ),
             ),
             _DirectoryNamesPanel(
@@ -206,17 +272,21 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               searchController: searchController,
               directoryComplete: _completeDirectoryNameTag,
             ),
-            _LocalTagsPanel(
-              filteringEvents: _filteringEvents,
-              searchController: searchController,
-              joinedDirectories: _joinedDirectories,
-              source: api.source,
-              db: widget.db,
-            ),
+            if (localTags != null)
+              _LocalTagsPanel(
+                filteringEvents: _filteringEvents,
+                searchController: searchController,
+                joinedDirectories: _joinedDirectories,
+                source: api.source,
+                localTags: localTags!,
+              ),
             _FilesList(
               filteringEvents: _filteringEvents,
               searchController: searchController,
-              db: widget.db,
+              localTags: localTags,
+              tagManager: tagManager,
+              videoSettings: videoSettings,
+              galleryService: galleryService,
             ),
             _DirectoryList(
               filteringEvents: _filteringEvents,

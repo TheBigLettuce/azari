@@ -6,7 +6,7 @@
 import "dart:io" as io;
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
@@ -17,22 +17,26 @@ import "package:file_picker/file_picker.dart";
 import "package:mime/mime.dart";
 import "package:path/path.dart" as path;
 
-class LinuxGalleryApi implements GalleryApi {
+class LinuxGalleryApi implements GalleryService {
   const LinuxGalleryApi();
 
   @override
   Future<int> get version => Future.value(0);
 
   @override
-  Directories open(
-    BlacklistedDirectoryService blacklistedDirectory,
-    DirectoryTagService directoryTag, {
+  Directories open({
+    required BlacklistedDirectoryService? blacklistedDirectory,
+    required DirectoryTagService? directoryTags,
     required AppLocalizations l10n,
+    required SettingsService settingsService,
+    required GalleryTrash? galleryTrash,
   }) {
     return _Directories(
       blacklistedDirectory: blacklistedDirectory,
-      directoryTag: directoryTag,
+      directoryTag: directoryTags,
       l10n: l10n,
+      galleryTrash: galleryTrash,
+      settingsService: settingsService,
     );
   }
 
@@ -70,14 +74,20 @@ class _Directories implements Directories {
     required this.l10n,
     required this.blacklistedDirectory,
     required this.directoryTag,
+    required this.settingsService,
+    required this.galleryTrash,
   });
 
-  final BlacklistedDirectoryService blacklistedDirectory;
-  final DirectoryTagService directoryTag;
+  final BlacklistedDirectoryService? blacklistedDirectory;
+  final DirectoryTagService? directoryTag;
+  final GalleryTrash? galleryTrash;
+
+  final SettingsService settingsService;
   final AppLocalizations l10n;
 
   @override
-  late final TrashCell trashCell = TrashCell(l10n);
+  late final TrashCell? trashCell =
+      galleryTrash != null ? TrashCell(l10n, galleryTrash!) : null;
 
   @override
   Files? bindFiles;
@@ -86,10 +96,10 @@ class _Directories implements Directories {
   Files files(
     Directory directory,
     GalleryFilesPageType type,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags, {
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags, {
     required String name,
     required String bucketId,
   }) {
@@ -103,7 +113,7 @@ class _Directories implements Directories {
       bucketId: bucketId,
       type: type,
       directoryMetadata: directoryMetadata,
-      directoryTag: directoryTag,
+      directoryTags: directoryTag,
       favoritePosts: favoritePosts,
       localTags: localTags,
     );
@@ -112,10 +122,10 @@ class _Directories implements Directories {
   @override
   Files joinedFiles(
     List<Directory> directories,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
@@ -127,27 +137,30 @@ class _Directories implements Directories {
       bucketId: "joinedDir",
       type: GalleryFilesPageType.normal,
       directoryMetadata: directoryMetadata,
-      directoryTag: directoryTag,
+      directoryTags: directoryTag,
       favoritePosts: favoritePosts,
       localTags: localTags,
     );
   }
 
   @override
-  late final ResourceSource<int, Directory> source =
-      _LinuxResourceSource(directoryTag);
+  late final ResourceSource<int, Directory> source = _LinuxResourceSource(
+    directoryTag,
+    settingsService,
+  );
 
   @override
   void close() {
     source.destroy();
-    trashCell.dispose();
+    trashCell?.dispose();
   }
 }
 
 class _LinuxResourceSource implements ResourceSource<int, Directory> {
-  _LinuxResourceSource(this.directoryTag);
+  _LinuxResourceSource(this.directoryTag, this.settingsService);
 
-  final DirectoryTagService directoryTag;
+  final DirectoryTagService? directoryTag;
+  final SettingsService settingsService;
 
   @override
   bool get hasNext => false;
@@ -165,7 +178,7 @@ class _LinuxResourceSource implements ResourceSource<int, Directory> {
     }
     progress.inRefreshing = true;
 
-    final settings = SettingsService.db().current;
+    final settings = settingsService.current;
     if (settings.path.path.isNotEmpty) {
       try {
         final dir = io.Directory(settings.path.path);
@@ -176,10 +189,10 @@ class _LinuxResourceSource implements ResourceSource<int, Directory> {
 
         await for (final e in dir.list(followLinks: false)) {
           backingStorage.add(
-            LinuxDirectory(
+            Directory(
               bucketId: e.path,
               name: path.basename(e.path),
-              tag: directoryTag.get(e.path) ?? "",
+              tag: directoryTag?.get(e.path) ?? "",
               volumeName: "",
               relativeLoc: path.dirname(e.path),
               lastModified: (await e.stat()).modified.millisecondsSinceEpoch,
@@ -210,18 +223,6 @@ class _LinuxResourceSource implements ResourceSource<int, Directory> {
   }
 }
 
-class LinuxDirectory extends Directory {
-  const LinuxDirectory({
-    required super.bucketId,
-    required super.name,
-    required super.tag,
-    required super.volumeName,
-    required super.relativeLoc,
-    required super.lastModified,
-    required super.thumbFileId,
-  });
-}
-
 class _Files implements Files {
   _Files({
     required this.bucketId,
@@ -229,7 +230,7 @@ class _Files implements Files {
     required this.parent,
     required this.type,
     required this.directoryMetadata,
-    required this.directoryTag,
+    required this.directoryTags,
     required this.favoritePosts,
     required this.localTags,
   });
@@ -241,16 +242,16 @@ class _Files implements Files {
   final GalleryFilesPageType type;
 
   @override
-  final DirectoryMetadataService directoryMetadata;
+  final DirectoryMetadataService? directoryMetadata;
 
   @override
-  final DirectoryTagService directoryTag;
+  final DirectoryTagService? directoryTags;
 
   @override
-  final FavoritePostSourceService favoritePosts;
+  final FavoritePostSourceService? favoritePosts;
 
   @override
-  final LocalTagsService localTags;
+  final LocalTagsService? localTags;
 
   @override
   final _Directories parent;
@@ -276,7 +277,7 @@ class _Files implements Files {
 class _LinuxFilesSource implements SortingResourceSource<int, File> {
   _LinuxFilesSource(this.directories, this.localTags);
 
-  final LocalTagsService localTags;
+  final LocalTagsService? localTags;
 
   final List<Directory> directories;
 
@@ -311,12 +312,14 @@ class _LinuxFilesSource implements SortingResourceSource<int, File> {
           final s = await e.stat();
 
           backingStorage.add(
-            LinuxFile(
-              tags: localTags.get(name).fold({}, (map, e) {
-                map[e] = null;
+            File(
+              tags: localTags != null
+                  ? localTags!.get(name).fold({}, (map, e) {
+                      map[e] = null;
 
-                return map;
-              }),
+                      return map;
+                    })
+                  : const {},
               id: 0,
               bucketId: dirPath.bucketId,
               name: name,
@@ -367,20 +370,35 @@ class _LinuxFilesSource implements SortingResourceSource<int, File> {
   Future<int> clearRefreshSilent() => clearRefresh();
 }
 
-class LinuxFile extends File {
-  const LinuxFile({
-    required super.tags,
-    required super.id,
-    required super.bucketId,
-    required super.name,
-    required super.isVideo,
-    required super.isGif,
-    required super.size,
-    required super.height,
-    required super.isDuplicate,
-    required super.width,
-    required super.lastModified,
-    required super.originalUri,
-    required super.res,
-  });
-}
+
+// class LinuxDirectory extends Directory {
+//   const LinuxDirectory({
+//     required super.bucketId,
+//     required super.name,
+//     required super.tag,
+//     required super.volumeName,
+//     required super.relativeLoc,
+//     required super.lastModified,
+//     required super.thumbFileId,
+//   });
+// }
+
+
+
+// class LinuxFile extends File {
+//   const LinuxFile({
+//     required super.tags,
+//     required super.id,
+//     required super.bucketId,
+//     required super.name,
+//     required super.isVideo,
+//     required super.isGif,
+//     required super.size,
+//     required super.height,
+//     required super.isDuplicate,
+//     required super.width,
+//     required super.lastModified,
+//     required super.originalUri,
+//     required super.res,
+//   });
+// }

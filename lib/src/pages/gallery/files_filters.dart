@@ -5,7 +5,6 @@
 
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:flutter/material.dart";
 
 /// Data for the [FilteringMode.same].
@@ -128,9 +127,10 @@ class SameFilterAccumulator {
 
 Iterable<(File f, int? h)> _getDifferenceHash(
   Iterable<File> cells,
+  ThumbnailService thumbnailService,
 ) sync* {
   for (final cell in cells) {
-    yield (cell, ThumbnailService.db().get(cell.id)?.differenceHash);
+    yield (cell, thumbnailService.get(cell.id)?.differenceHash);
   }
 }
 
@@ -140,11 +140,12 @@ Iterable<(File f, int? h)> _getDifferenceHash(
   required bool end,
   required VoidCallback onSkipped,
   required ResourceSource<int, File> source,
+  required ThumbnailService thumbnailService,
 }) {
   final accu =
       (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
 
-  for (final (cell, hash) in _getDifferenceHash(cells)) {
+  for (final (cell, hash) in _getDifferenceHash(cells, thumbnailService)) {
     if (hash == null) {
       accu.skipped++;
       continue;
@@ -182,9 +183,9 @@ Iterable<(File f, int? h)> _getDifferenceHash(
 Future<void> loadNextThumbnails(
   ResourceSource<int, File> source,
   void Function() callback,
+  ThumbnailService thumbnailService,
+  CachedThumbs cachedThumbs,
 ) async {
-  final thumbnailService = ThumbnailService.db();
-
   var offset = 0;
   var count = 0;
   final List<Future<ThumbId>> thumbnails = [];
@@ -201,7 +202,7 @@ Future<void> loadNextThumbnails(
       if (thumbnailService.get(file.id) == null) {
         count++;
 
-        thumbnails.add(GalleryApi().thumbs.get(file.id));
+        thumbnails.add(cachedThumbs.get(file.id));
 
         if (thumbnails.length > 8) {
           thumbnailService.addAll(await thumbnails.wait);

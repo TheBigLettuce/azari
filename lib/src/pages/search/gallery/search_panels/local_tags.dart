@@ -10,7 +10,7 @@ class _LocalTagsPanel extends StatefulWidget {
     // super.key,
     required this.filteringEvents,
     required this.searchController,
-    required this.db,
+    required this.localTags,
     required this.source,
     required this.joinedDirectories,
   });
@@ -20,14 +20,14 @@ class _LocalTagsPanel extends StatefulWidget {
 
   final ResourceSource<int, Directory> source;
 
+  final LocalTagsService localTags;
+
   final void Function(
     String str,
     List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
   }) joinedDirectories;
-
-  final DbConn db;
 
   @override
   State<_LocalTagsPanel> createState() => __LocalTagsPanelState();
@@ -36,7 +36,7 @@ class _LocalTagsPanel extends StatefulWidget {
 class __LocalTagsPanelState extends State<_LocalTagsPanel> {
   String filteringValue = "";
   late final GenericListSource<BooruTag> source = GenericListSource(
-    () => widget.db.localTagDictionary.complete(filteringValue),
+    () => widget.localTags.complete(filteringValue),
   );
 
   late final StreamSubscription<String> filteringSubscr;

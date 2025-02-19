@@ -39,6 +39,24 @@ class _AppBar extends StatelessWidget {
       OverrideGridBackButton() => backButton.child,
     };
 
+    // final bottomWidgetWrapped = bottomWidget == null
+    //     ? PreferredSize(
+    //         preferredSize: const Size(double.infinity, 1),
+    //         child: AppBarDivider(
+    //           controller: GridScrollNotifier.of(context),
+    //         ),
+    //       )
+    //     : PreferredSize(
+    //         preferredSize: Size(
+    //           bottomWidget!.preferredSize.width,
+    //           bottomWidget!.preferredSize.height + 1,
+    //         ),
+    //         child: AppBarDivider(
+    //           controller: GridScrollNotifier.of(context),
+    //           child: bottomWidget,
+    //         ),
+    //       );
+
     return switch (search) {
       PageNameSearchWidget() => SliverAppBar.medium(
           backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
@@ -131,16 +149,92 @@ class _AppBar extends StatelessWidget {
           floating: true,
           scrolledUnderElevation: 0,
           automaticallyImplyLeading: false,
-          bottom: bottomWidget ??
-              const PreferredSize(
-                preferredSize: Size.zero,
-                child: SizedBox.shrink(),
-              ),
+          bottom: bottomWidget,
         ),
       RawSearchWidget() =>
         search.sliver(context, gridFunctionality.settingsButton, bottomWidget),
       NoSearchWidget() => const SliverPadding(padding: EdgeInsets.zero),
     };
+  }
+}
+
+class AppBarDivider extends StatefulWidget {
+  const AppBarDivider({
+    super.key,
+    required this.controller,
+    this.child,
+  });
+
+  final ScrollController controller;
+  final Widget? child;
+
+  @override
+  State<AppBarDivider> createState() => _AppBarDividerState();
+}
+
+class _AppBarDividerState extends State<AppBarDivider>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+
+  bool isOffsetZero = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.addListener(listener);
+
+    controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(listener);
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  void listener() {
+    final newOffsetZero = widget.controller.offset <= 60;
+    if (newOffsetZero != isOffsetZero) {
+      isOffsetZero = newOffsetZero;
+
+      if (isOffsetZero) {
+        controller.reverse();
+      } else {
+        controller.forward();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.child != null) widget.child!,
+        Animate(
+          controller: controller,
+          autoPlay: false,
+          effects: const [
+            FadeEffect(
+              begin: 0,
+              end: 1,
+            ),
+          ],
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            indent: 0,
+            endIndent: 0,
+            color: theme.dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+      ],
+    );
   }
 }
 

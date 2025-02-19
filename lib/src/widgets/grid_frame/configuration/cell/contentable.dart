@@ -91,13 +91,16 @@ class NavigationAction {
   const NavigationAction(
     this.icon,
     this.onPressed,
-    this.label,
-  );
+    this.label, [
+    this.overrideWidget,
+  ]);
 
   final String label;
   final IconData icon;
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+
+  final Widget? overrideWidget;
 }
 
 /// Displays an error page in the image view.

@@ -10,7 +10,7 @@ typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
   bool fire,
 ]);
 
-abstract interface class GridSettingsService {
+abstract interface class GridSettingsService implements ServiceMarker {
   WatchableGridSettingsData get booru;
   WatchableGridSettingsData get directories;
   WatchableGridSettingsData get favoritePosts;

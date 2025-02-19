@@ -6,7 +6,7 @@
 part of "services.dart";
 
 extension DirectoryMetadataDataExt on DirectoryMetadata {
-  void save() => _currentDb.directoryMetadata.add(this);
+  void maybeSave() => _currentDb.get<DirectoryMetadataService>()?.add(this);
 }
 
 abstract interface class DirectoryMetadataService implements ServiceMarker {
@@ -17,8 +17,6 @@ abstract interface class DirectoryMetadataService implements ServiceMarker {
 
   DirectoryMetadata? get(String id);
   DirectoryMetadata getOrCreate(String id);
-
-  Future<bool> canAuth(String id, String reason);
 
   void add(DirectoryMetadata data);
 

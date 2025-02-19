@@ -6,7 +6,7 @@
 part of "services.dart";
 
 extension VideoSettingsDataExt on VideoSettingsData {
-  void save() => _currentDb.videoSettings.add(this);
+  void maybeSave() => _currentDb.get<VideoSettingsService>()?.add(this);
 }
 
 abstract interface class VideoSettingsService implements ServiceMarker {
@@ -17,6 +17,35 @@ abstract interface class VideoSettingsService implements ServiceMarker {
   StreamSubscription<VideoSettingsData> watch(
     void Function(VideoSettingsData) f,
   );
+}
+
+mixin VideoSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
+  VideoSettingsService? get videoSettingsService;
+
+  StreamSubscription<VideoSettingsData>? _videoSettingsEvents;
+
+  late VideoSettingsData? videoSettings;
+
+  @override
+  void initState() {
+    super.initState();
+
+    videoSettings = videoSettingsService?.current;
+
+    _videoSettingsEvents?.cancel();
+    _videoSettingsEvents = videoSettingsService?.watch((newSettings) {
+      setState(() {
+        videoSettings = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _videoSettingsEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 abstract class VideoSettingsData {

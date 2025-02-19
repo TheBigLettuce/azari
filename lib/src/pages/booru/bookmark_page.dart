@@ -30,14 +30,22 @@ class BookmarkPage extends StatefulWidget {
   const BookmarkPage({
     super.key,
     required this.pagingRegistry,
-    required this.db,
     required this.saveSelectedPage,
+    required this.gridBookmarks,
+    required this.settingsService,
+    required this.gridDbs,
   });
 
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
 
-  final DbConn db;
+  final GridDbService? gridDbs;
+
+  final GridBookmarkService gridBookmarks;
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<GridBookmarkService>() != null;
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
@@ -45,7 +53,11 @@ class BookmarkPage extends StatefulWidget {
 
 class _BookmarkPageState extends State<BookmarkPage>
     with CommonGridData<Post, BookmarkPage> {
-  GridBookmarkService get gridStateBooru => widget.db.gridBookmarks;
+  GridBookmarkService get gridBookmarks => widget.gridBookmarks;
+  GridDbService? get gridDbs => widget.gridDbs;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final StreamSubscription<void> events;
 
@@ -59,7 +71,7 @@ class _BookmarkPageState extends State<BookmarkPage>
   String? currentPage;
 
   late final source = GenericListSource<GridBookmark>(
-    () => Future.value(gridStateBooru.all),
+    () => Future.value(gridBookmarks.all),
   );
 
   @override
@@ -68,7 +80,7 @@ class _BookmarkPageState extends State<BookmarkPage>
 
     watchSettings();
 
-    events = gridStateBooru.watch(
+    events = gridBookmarks.watch(
       (event) {
         source.clearRefresh();
       },
@@ -87,20 +99,14 @@ class _BookmarkPageState extends State<BookmarkPage>
   void launchGrid(BuildContext context, GridBookmark e) {
     currentPage = e.name;
 
-    Navigator.push<void>(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute(
-        builder: (context) {
-          return BooruRestoredPage(
-            booru: e.booru,
-            tags: e.tags,
-            name: e.name,
-            pagingRegistry: widget.pagingRegistry,
-            saveSelectedPage: widget.saveSelectedPage,
-            db: widget.db,
-          );
-        },
-      ),
+      booru: e.booru,
+      tags: e.tags,
+      name: e.name,
+      pagingRegistry: widget.pagingRegistry,
+      saveSelectedPage: widget.saveSelectedPage,
+      rootNavigator: false,
     ).whenComplete(() => currentPage = null);
   }
 
@@ -115,9 +121,10 @@ class _BookmarkPageState extends State<BookmarkPage>
         slivers: [
           _BookmarkBody(
             source: source.backingStorage,
-            db: widget.db,
             openBookmark: launchGrid,
             progress: source.progress,
+            gridBookmarks: gridBookmarks,
+            gridDbs: null,
           ),
         ],
         functionality: GridFunctionality(
@@ -154,9 +161,10 @@ class _BookmarkBody extends StatefulWidget {
   const _BookmarkBody({
     // super.key,
     required this.source,
-    required this.db,
     required this.openBookmark,
     required this.progress,
+    required this.gridBookmarks,
+    required this.gridDbs,
   });
 
   final ReadOnlyStorage<int, GridBookmark> source;
@@ -164,27 +172,31 @@ class _BookmarkBody extends StatefulWidget {
 
   final void Function(BuildContext context, GridBookmark e) openBookmark;
 
-  final DbConn db;
+  final GridBookmarkService gridBookmarks;
+  final GridDbService? gridDbs;
 
   @override
   State<_BookmarkBody> createState() => __BookmarkBodyState();
 }
 
 class __BookmarkBodyState extends State<_BookmarkBody> {
-  late final StreamSubscription<void> subsc;
+  GridDbService? get gridDbs => widget.gridDbs;
+  GridBookmarkService get gridBookmarks => widget.gridBookmarks;
+
+  late final StreamSubscription<void> sourceEvents;
 
   @override
   void initState() {
     super.initState();
 
-    subsc = widget.source.watch((_) {
+    sourceEvents = widget.source.watch((_) {
       setState(() {});
     });
   }
 
   @override
   void dispose() {
-    subsc.cancel();
+    sourceEvents.cancel();
 
     super.dispose();
   }
@@ -215,8 +227,9 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
             key: ValueKey(e.name),
             state: e,
             title: e.tags,
-            db: widget.db,
             subtitle: e.booru.string,
+            gridBookmarks: gridBookmarks,
+            gridDbs: gridDbs,
           ),
         ),
       );
@@ -245,7 +258,8 @@ class _BookmarkListTile extends StatefulWidget {
     required this.title,
     required this.state,
     required this.openBookmark,
-    required this.db,
+    required this.gridBookmarks,
+    required this.gridDbs,
   });
 
   final String title;
@@ -253,9 +267,10 @@ class _BookmarkListTile extends StatefulWidget {
 
   final GridBookmark state;
 
-  final void Function(BuildContext context, GridBookmark e) openBookmark;
+  final GridBookmarkService gridBookmarks;
+  final GridDbService? gridDbs;
 
-  final DbConn db;
+  final void Function(BuildContext context, GridBookmark e) openBookmark;
 
   @override
   State<_BookmarkListTile> createState() => __BookmarkListTileState();
@@ -263,6 +278,9 @@ class _BookmarkListTile extends StatefulWidget {
 
 class __BookmarkListTileState extends State<_BookmarkListTile>
     with SingleTickerProviderStateMixin {
+  GridDbService? get gridDbs => widget.gridDbs;
+  GridBookmarkService get gridBookmarks => widget.gridBookmarks;
+
   late final AnimationController animationController;
 
   @override
@@ -418,29 +436,32 @@ class __BookmarkListTileState extends State<_BookmarkListTile>
                                   ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () {
-                                        widget.db
-                                            .secondaryGrid(
-                                              widget.state.booru,
-                                              widget.state.name,
-                                              null,
-                                            )
-                                            .destroy()
-                                            .then(
-                                          (value) {
-                                            if (context.mounted) {
-                                              Navigator.pop(context);
-                                            }
+                                      onPressed: gridDbs != null
+                                          ? () {
+                                              gridDbs!
+                                                  .openSecondary(
+                                                    widget.state.booru,
+                                                    widget.state.name,
+                                                    null,
+                                                  )
+                                                  .destroy()
+                                                  .then(
+                                                (value) {
+                                                  if (context.mounted) {
+                                                    Navigator.pop(context);
+                                                  }
 
-                                            animationController
-                                                .forward()
-                                                .then((_) {
-                                              widget.db.gridBookmarks
-                                                  .delete(widget.state.name);
-                                            });
-                                          },
-                                        );
-                                      },
+                                                  animationController
+                                                      .forward()
+                                                      .then((_) {
+                                                    gridBookmarks.delete(
+                                                      widget.state.name,
+                                                    );
+                                                  });
+                                                },
+                                              );
+                                            }
+                                          : null,
                                       child: Text(l10n.yes),
                                     ),
                                     TextButton(

@@ -5,16 +5,16 @@
 
 import "dart:io" as io;
 
+import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery/android/android_gallery.dart";
 import "package:azari/src/platform/gallery/dummy.dart";
 import "package:azari/src/platform/gallery/linux/impl.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 
-GalleryApi getApi() {
+GalleryService getApi(LocalTagsService? localTagsService) {
   if (io.Platform.isAndroid) {
-    return const AndroidGalleryApi();
+    return AndroidGalleryApi(localTagsService: localTagsService);
   } else if (io.Platform.isLinux) {
     return const LinuxGalleryApi();
   }

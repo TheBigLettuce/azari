@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:io";
+import "dart:io" as io;
 
 import "package:azari/src/db/services/impl/isar/impl.dart";
 import "package:azari/src/db/services/impl_table/io.dart";
@@ -16,18 +16,23 @@ import "package:isar/isar.dart";
 import "package:path/path.dart" as path;
 
 void main() {
-  late final IoServicesImplTable services;
+  late final IoServices services;
 
   final dir =
-      Directory(Directory.systemTemp.path).createTempSync("azariDbTests");
+      io.Directory(io.Directory.systemTemp.path).createTempSync("azariDbTests");
 
-  final tempDir = Directory(path.join(dir.path, "temp"))..createSync();
+  final tempDir = io.Directory(path.join(dir.path, "temp"))..createSync();
 
   setUpAll(() async {
     await Isar.initializeIsarCore(download: true);
-    services = IoServicesImplTable();
+    services = IoServices();
 
-    await initalizeIsarDb(false, services, dir.path, tempDir.path);
+    await initalizeIsarDb(
+      AppInstanceType.full,
+      services,
+      dir.path,
+      tempDir.path,
+    );
   });
 
   tearDownAll(() {
@@ -51,11 +56,11 @@ void main() {
   });
 }
 
-void _miscSettingsServiceTests(IoServicesImplTable services) {
+void _miscSettingsServiceTests(IoServices services) {
   test("Combined MiscSettings test", () {});
 }
 
-void _settingsServiceTests(IoServicesImplTable services) {
+void _settingsServiceTests(IoServices services) {
   test("SettingsPath", tags: ["db"], () {
     const newPath = "path";
     const newPathDisplay = "display";
@@ -108,13 +113,6 @@ void _settingsServiceTests(IoServicesImplTable services) {
 
       comparePathsAndEmpty(services.settings.current.path, "", "");
     }
-  });
-
-  test("Settings.s.current and service.settings.current should be equal",
-      tags: ["db"], () {
-    final s = services.settings.current;
-
-    expect(services.settings.current, equals(s.s.current));
   });
 
   test("Combined Settings test", tags: ["db"], () {

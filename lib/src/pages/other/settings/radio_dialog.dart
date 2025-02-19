@@ -11,6 +11,7 @@ import "package:flutter/material.dart";
 
 extension SafeModeRadioDialogExt on BuildContext {
   void openSafeModeDialog(
+    SettingsService settingsService,
     void Function(SafeMode?) onPressed, [
     SafeMode? defaultValue,
   ]) {
@@ -36,7 +37,7 @@ extension SafeModeRadioDialogExt on BuildContext {
     radioDialog<SafeMode>(
       this,
       SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-      defaultValue ?? SettingsService.db().current.safeMode,
+      defaultValue ?? settingsService.current.safeMode,
       onPressed,
       title: l10n.chooseSafeMode,
       allowSingle: true,

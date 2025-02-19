@@ -23,12 +23,15 @@ import "package:flutter/material.dart";
 class BlacklistedDirectoriesPage extends StatefulWidget {
   const BlacklistedDirectoriesPage({
     super.key,
-    required this.db,
     required this.popScope,
+    required this.settingsService,
+    required this.blacklistedDirectories,
   });
 
-  final DbConn db;
   final void Function(bool) popScope;
+
+  final SettingsService settingsService;
+  final BlacklistedDirectoryService blacklistedDirectories;
 
   @override
   State<BlacklistedDirectoriesPage> createState() =>
@@ -38,7 +41,10 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
 class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
     with CommonGridData<Post, BlacklistedDirectoriesPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
-      widget.db.blacklistedDirectories;
+      widget.blacklistedDirectories;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;

@@ -7,8 +7,6 @@ import "dart:io" as io;
 import "dart:ui";
 
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart" as gallery;
-import "package:azari/src/platform/gallery_api.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:transparent_image/transparent_image.dart";
@@ -38,15 +36,10 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
   const GalleryThumbnailProvider(
     this.id,
     this.tryPinned,
-    // this.pinnedThumbnails,
-    this.thumbnails,
   );
 
   final int id;
   final bool tryPinned;
-
-  // final PinnedThumbnailService pinnedThumbnails;
-  final ThumbnailService thumbnails;
 
   @override
   Future<GalleryThumbnailProvider> obtainKey(
@@ -82,6 +75,9 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
         return io.File(cachedThumb.path);
       }
 
+      final thumbnails = Services.unsafeGet<ThumbnailService>()!;
+      final galleryService = Services.unsafeGet<GalleryService>()!;
+
       final thumb = thumbnails.get(id);
       if (thumb != null) {
         if (thumb.path.isEmpty || thumb.differenceHash == 0) {
@@ -111,8 +107,7 @@ class GalleryThumbnailProvider extends ImageProvider<GalleryThumbnailProvider> {
         return io.File(cachedThumb.path);
       }
 
-      _thumbLoadingStatus[id] =
-          gallery.GalleryApi().thumbs.get(id).whenComplete(() {
+      _thumbLoadingStatus[id] = galleryService.thumbs.get(id).whenComplete(() {
         _thumbLoadingStatus.remove(id);
       });
 

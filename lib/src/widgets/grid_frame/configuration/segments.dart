@@ -77,16 +77,16 @@ enum SegmentModifier {
 }
 
 abstract interface class SegmentCapability {
+  const factory SegmentCapability.empty() = _SegmentCapabilityEmpty;
+  const factory SegmentCapability.alwaysPinned() =
+      _SegmentCapabilityAlwaysPinned;
+
   Set<SegmentModifier> modifiersFor(String seg);
 
   bool get ignoreButtons;
 
   void addModifiers(List<String> segments, Set<SegmentModifier> m);
   void removeModifiers(List<String> segments, Set<SegmentModifier> m);
-
-  static SegmentCapability empty() => const _SegmentCapabilityEmpty();
-  static SegmentCapability alwaysPinned() =>
-      const _SegmentCapabilityAlwaysPinned();
 }
 
 class _SegmentCapabilityAlwaysPinned implements SegmentCapability {

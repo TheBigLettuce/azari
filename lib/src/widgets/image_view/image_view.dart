@@ -8,7 +8,7 @@ import "dart:async";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
@@ -63,7 +63,7 @@ class ImageViewStatistics {
 }
 
 abstract interface class ImageViewContentable {
-  Contentable content();
+  Contentable content(BuildContext context);
 }
 
 @immutable
@@ -182,6 +182,9 @@ class ImageView extends StatefulWidget {
     this.onExit,
     this.startingIndex = 0,
     required this.stateController,
+    required this.videoSettingsService,
+    required this.settingsService,
+    required this.galleryService,
   });
 
   final VoidCallback? onExit;
@@ -189,6 +192,10 @@ class ImageView extends StatefulWidget {
   final int startingIndex;
 
   final ImageViewStateController stateController;
+
+  final VideoSettingsService? videoSettingsService;
+  final GalleryService? galleryService;
+  final SettingsService settingsService;
 
   static Future<void> launchWrapped(
     BuildContext context,
@@ -205,6 +212,8 @@ class ImageView extends StatefulWidget {
   }) {
     addToVisited?.call(getContent(startingCell)!);
 
+    final db = Services.of(context);
+
     final stateController = DefaultStateController(
       getContent: getContent,
       count: cellCount,
@@ -217,6 +226,7 @@ class ImageView extends StatefulWidget {
         imageDesctipion?.pageChange?.call(state);
         addToVisited?.call(getContent(state.currentIndex)!);
       },
+      videoSettingsService: Services.getOf<VideoSettingsService>(context),
     );
 
     return Navigator.of(context, rootNavigator: true).push(
@@ -226,6 +236,9 @@ class ImageView extends StatefulWidget {
           startingIndex: startingCell,
           onExit: imageDesctipion?.onExit,
           stateController: stateController,
+          videoSettingsService: db.get<VideoSettingsService>(),
+          galleryService: db.get<GalleryService>(),
+          settingsService: db.require<SettingsService>(),
         ),
       ),
     )..whenComplete(() {
@@ -243,6 +256,7 @@ class ImageView extends StatefulWidget {
     NotifierWrapper? wrapNotifiers,
   }) {
     DefaultStateController? stateController;
+    final db = Services.of(context);
 
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
@@ -258,6 +272,7 @@ class ImageView extends StatefulWidget {
               tags: tags,
               watchTags: watchTags,
               download: download,
+              videoSettingsService: db.get<VideoSettingsService>(),
             );
 
             return stateController!;
@@ -265,6 +280,9 @@ class ImageView extends StatefulWidget {
           builder: (context, value) => ImageView(
             key: key,
             stateController: value,
+            galleryService: db.get<GalleryService>(),
+            videoSettingsService: db.get<VideoSettingsService>(),
+            settingsService: db.require<SettingsService>(),
           ),
         ),
       ),
@@ -281,7 +299,7 @@ class ImageView extends StatefulWidget {
     List<ImageTag> Function(ContentWidgets)? tags,
     WatchTagsCallback? watchTags,
     void Function(T)? addToVisited, {
-    FlutterGalleryDataImpl? galleryImpl,
+    PigeonGalleryDataImpl? galleryImpl,
   }) {
     final selection = SelectionActions.of(gridContext);
     selection.controller.setVisibility(false);
@@ -292,7 +310,7 @@ class ImageView extends StatefulWidget {
 
     final ImageViewStateController stateController = galleryImpl ??
         DefaultStateController(
-          getContent: (idx) => getCell(idx).content(),
+          getContent: (idx) => getCell(idx).content(gridContext),
           count: functionality.source.count,
           countEvents: functionality.source.backingStorage.countEvents,
           statistics: imageDesctipion.statistics,
@@ -310,17 +328,22 @@ class ImageView extends StatefulWidget {
             imageDesctipion.pageChange?.call(state);
             addToVisited?.call(getCell(state.currentIndex));
           },
+          videoSettingsService:
+              Services.getOf<VideoSettingsService>(gridContext),
         );
+
+    final db = Services.of(gridContext);
 
     return Navigator.of(gridContext, rootNavigator: true)
         .push(
       MaterialPageRoute<void>(
         builder: (context) => ImageView(
-          // watchTags: watchTags,
           onExit: imageDesctipion.onExit,
           startingIndex: startingCell,
-          // tags: tags,
           stateController: stateController,
+          galleryService: db.get<GalleryService>(),
+          videoSettingsService: db.get<VideoSettingsService>(),
+          settingsService: db.require<SettingsService>(),
         ),
       ),
     )
@@ -457,6 +480,7 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
         videoControls: videoControls,
         pauseVideoState: pauseVideoState,
         flipShowAppBar: _appBarFlipController.stream,
+        galleryService: widget.galleryService,
         child: ImageViewTheme(
           key: wrapThemeKey,
           child: ImageViewSkeleton(
@@ -465,6 +489,8 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             videoControls: videoControls,
             controller: animationController,
             pauseVideoState: pauseVideoState,
+            videoSettingsService: widget.videoSettingsService,
+            settingsService: widget.settingsService,
             child: Animate(
               controller: slideAnimationLeft,
               autoPlay: false,

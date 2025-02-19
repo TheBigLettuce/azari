@@ -6,21 +6,22 @@
 part of "services.dart";
 
 extension StatisticsGalleryDataExt on StatisticsGalleryData {
-  void save() => _currentDb.statisticsGallery.add(this);
+  void maybeSave() => _currentDb.get<StatisticsGalleryService>()?.add(this);
 }
 
 abstract interface class StatisticsGalleryService implements ServiceMarker {
-  factory StatisticsGalleryService.db() => _currentDb.statisticsGallery;
-
-  static ImageViewStatistics asImageViewStatistics() {
-    final db = _currentDb.statisticsGallery;
-    final daily = _currentDb.statisticsDaily;
+  static ImageViewStatistics? asImageViewStatistics() {
+    final gallery = _currentDb.get<StatisticsGalleryService>();
+    final daily = _currentDb.get<StatisticsDailyService>();
+    if (gallery == null || daily == null) {
+      return null;
+    }
 
     return ImageViewStatistics(
-      swiped: () => db.current.add(filesSwiped: 1).save(),
+      swiped: () => gallery.current.add(filesSwiped: 1).maybeSave(),
       viewed: () {
-        db.current.add(viewedFiles: 1).save();
-        daily.current.add(swipedBoth: 1).save();
+        gallery.current.add(viewedFiles: 1).maybeSave();
+        daily.current.add(swipedBoth: 1).maybeSave();
       },
     );
   }
@@ -33,6 +34,99 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
     void Function(StatisticsGalleryData d) f, [
     bool fire = false,
   ]);
+
+  static void addViewedDirectories(int v) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(viewedDirectories: v)
+        .maybeSave();
+  }
+
+  static void addViewedFiles(int v) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(viewedFiles: v)
+        .maybeSave();
+  }
+
+  static void addFilesSwiped(int f) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(filesSwiped: f)
+        .maybeSave();
+  }
+
+  static void addJoined(int j) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(joined: j)
+        .maybeSave();
+  }
+
+  static void addSameFiltered(int s) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(sameFiltered: s)
+        .maybeSave();
+  }
+
+  static void addDeleted(int d) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(deleted: d)
+        .maybeSave();
+  }
+
+  static void addCopied(int c) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(copied: c)
+        .maybeSave();
+  }
+
+  static void addMoved(int m) {
+    _currentDb
+        .get<StatisticsGalleryService>()
+        ?.current
+        .add(moved: m)
+        .maybeSave();
+  }
+}
+
+mixin StatisticsGalleryWatcherMixin<S extends StatefulWidget> on State<S> {
+  StatisticsGalleryService get statisticsGalleryService;
+
+  StreamSubscription<StatisticsGalleryData>? _statisticsGalleryEvents;
+
+  late StatisticsGalleryData statisticsGallery;
+
+  @override
+  void initState() {
+    super.initState();
+
+    statisticsGallery = statisticsGalleryService.current;
+
+    _statisticsGalleryEvents?.cancel();
+    _statisticsGalleryEvents = statisticsGalleryService.watch((newSettings) {
+      setState(() {
+        statisticsGallery = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statisticsGalleryEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 abstract class StatisticsGalleryData {

@@ -6,9 +6,11 @@
 import "dart:async";
 import "dart:math" as math;
 
+import "package:azari/init_main/app_info.dart";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
+import "package:azari/src/db/services/obj_impls/file_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -26,11 +28,13 @@ import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
 import "package:azari/src/widgets/empty_widget.dart";
+import "package:azari/src/widgets/file_action_chips.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
 import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
@@ -49,6 +53,7 @@ import "package:azari/src/widgets/selection_actions.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 
 part "files_actions.dart";
@@ -57,15 +62,28 @@ class FilesPage extends StatefulWidget {
   const FilesPage({
     super.key,
     required this.api,
-    this.callback,
     required this.dirName,
-    this.secure,
-    required this.db,
     required this.directories,
-    this.presetFilteringValue = "",
-    this.filteringMode,
     required this.navBarEvents,
     required this.scrollingState,
+    required this.favoritePosts,
+    required this.localTags,
+    required this.gridSettings,
+    required this.thumbnails,
+    required this.tagManager,
+    required this.directoryMetadata,
+    required this.directoryTags,
+    required this.videoSettings,
+    required this.downloadManager,
+    required this.settingsService,
+    required this.miscSettingsService,
+    // required this.galleryTrash,
+    // required this.cachedThumbs,
+    required this.galleryService,
+    this.secure,
+    this.callback,
+    this.presetFilteringValue = "",
+    this.filteringMode,
     this.addScaffold = false,
   });
 
@@ -85,17 +103,170 @@ class FilesPage extends StatefulWidget {
 
   final FilteringMode? filteringMode;
 
-  final DbConn db;
+  final FavoritePostSourceService? favoritePosts;
+  final LocalTagsService? localTags;
+  final ThumbnailService? thumbnails;
+  final TagManagerService? tagManager;
+  final DirectoryMetadataService? directoryMetadata;
+  final VideoSettingsService? videoSettings;
+  final MiscSettingsService? miscSettingsService;
+  final DownloadManager? downloadManager;
+  // final GalleryTrash? galleryTrash;
+  // final CachedThumbs? cachedThumbs;
+  final GalleryService galleryService;
+
+  final DirectoryTagService? directoryTags;
+  final GridSettingsService gridSettings;
+
+  final SettingsService settingsService;
+
+  static Future<void> openProtected({
+    required BuildContext context,
+    required Directory directory,
+    required AppLocalizations l10n,
+    required GalleryReturnCallback? callback,
+    required Directories api,
+    required String Function(Directory) segmentFnc,
+    required bool addScaffold,
+  }) {
+    if (callback?.isDirectory ?? false) {
+      Navigator.pop(context);
+
+      (callback! as ReturnDirectoryCallback)(
+        (
+          bucketId: directory.bucketId,
+          path: directory.relativeLoc,
+          volumeName: directory.volumeName
+        ),
+        false,
+      );
+
+      return Future.value();
+    } else {
+      bool requireAuth = false;
+
+      Future<void> onSuccess(bool success) {
+        if (!success || !context.mounted) {
+          return Future.value();
+        }
+
+        StatisticsGalleryService.addViewedDirectories(1);
+
+        return FilesPage.open(
+          context,
+          api: api,
+          directories: [directory],
+          secure: requireAuth,
+          addScaffold: addScaffold,
+          callback: callback?.toFileOrNull,
+          dirName: switch (directory.bucketId) {
+            "favorites" => l10n.galleryDirectoriesFavorites,
+            "trash" => l10n.galleryDirectoryTrash,
+            String() => directory.name,
+          },
+        );
+      }
+
+      requireAuth = Services.getOf<DirectoryMetadataService>(context)
+              ?.get(segmentFnc(directory))
+              ?.requireAuth ??
+          false;
+
+      if (AppInfo().canAuthBiometric && requireAuth) {
+        return LocalAuthentication()
+            .authenticate(
+              localizedReason: l10n.openDirectory,
+            )
+            .then(onSuccess);
+      } else {
+        return onSuccess(true);
+      }
+    }
+  }
+
+  static Future<void> open(
+    BuildContext context, {
+    required String dirName,
+    required List<Directory> directories,
+    required Directories api,
+    bool addScaffold = false,
+    String presetFilteringValue = "",
+    bool? secure,
+    ReturnFileCallback? callback,
+    FilteringMode? filteringMode,
+  }) {
+    final db = Services.of(context);
+    final (directoryTags, gridSettings, galleryService) = (
+      db.get<DirectoryTagService>(),
+      db.get<GridSettingsService>(),
+      db.get<GalleryService>()
+    );
+    if (directoryTags == null ||
+        gridSettings == null ||
+        galleryService == null) {
+      // TODO: change
+      showSnackbar(context, "Gallery functionality isn't available");
+
+      return Future.value();
+    }
+
+    return Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return FilesPage(
+            dirName: dirName,
+            directories: directories,
+            api: api,
+            addScaffold: addScaffold,
+            presetFilteringValue: presetFilteringValue,
+            secure: secure,
+            callback: callback,
+            filteringMode: filteringMode,
+            gridSettings: gridSettings,
+            directoryTags: directoryTags,
+            // galleryTrash: galleryService.trash,
+            // cachedThumbs: galleryService.thumbs,
+            galleryService: galleryService,
+            navBarEvents: NavigationButtonEvents.maybeOf(context),
+            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
+            favoritePosts: db.get<FavoritePostSourceService>(),
+            localTags: db.get<LocalTagsService>(),
+            thumbnails: db.get<ThumbnailService>(),
+            tagManager: db.get<TagManagerService>(),
+            directoryMetadata: db.get<DirectoryMetadataService>(),
+            videoSettings: db.get<VideoSettingsService>(),
+            downloadManager: DownloadManager.of(context),
+            miscSettingsService: db.get<MiscSettingsService>(),
+            settingsService: db.require<SettingsService>(),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   State<FilesPage> createState() => _FilesPageState();
 }
 
 class _FilesPageState extends State<FilesPage>
-    with CommonGridData<Post, FilesPage> {
-  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
-  LocalTagsService get localTags => widget.db.localTags;
-  WatchableGridSettingsData get gridSettings => widget.db.gridSettings.files;
+    with CommonGridData<Post, FilesPage>, MiscSettingsWatcherMixin {
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  LocalTagsService? get localTags => widget.localTags;
+  WatchableGridSettingsData get gridSettings => widget.gridSettings.files;
+  ThumbnailService? get thumbnails => widget.thumbnails;
+  TagManagerService? get tagManager => widget.tagManager;
+  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
+  DirectoryTagService? get directoryTags => widget.directoryTags;
+  VideoSettingsService? get videoSettings => widget.videoSettings;
+  DownloadManager? get downloadManager => widget.downloadManager;
+  GalleryService get galleryService => widget.galleryService;
+
+  @override
+  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   final GlobalKey<BarIconState> _favoriteButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
@@ -105,11 +276,6 @@ class _FilesPageState extends State<FilesPage>
 
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
-  late final StreamSubscription<MiscSettingsData?> _miscSettingsEvents;
-
-  MiscSettingsData miscSettings = MiscSettingsService.db().current;
-
-  late final postTags = PostTags(localTags, widget.db.localTagDictionary);
 
   late final ChainedFilterResourceSource<int, File> filter;
 
@@ -118,22 +284,19 @@ class _FilesPageState extends State<FilesPage>
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
-  late final FlutterGalleryDataImpl impl;
+  late final PigeonGalleryDataImpl impl;
+
+  @override
+  void onNewMiscSettings(MiscSettingsData newSettings) {
+    if (newSettings.filesExtendedActions !=
+        miscSettings!.filesExtendedActions) {
+      SelectionActions.of(context).controller.setCount(0);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-
-    _miscSettingsEvents = miscSettings.s.watch((newMiscSettings) {
-      if (newMiscSettings!.filesExtendedActions !=
-          miscSettings.filesExtendedActions) {
-        SelectionActions.of(context).controller.setCount(0);
-      }
-
-      setState(() {
-        miscSettings = newMiscSettings;
-      });
-    });
 
     if (widget.directories.length == 1) {
       final directory = widget.directories.first;
@@ -145,18 +308,18 @@ class _FilesPageState extends State<FilesPage>
           "trash" => GalleryFilesPageType.trash,
           String() => GalleryFilesPageType.normal,
         },
-        widget.db.directoryTags,
-        widget.db.directoryMetadata,
-        widget.db.favoritePosts,
-        widget.db.localTags,
+        directoryTags,
+        directoryMetadata,
+        favoritePosts,
+        localTags,
         name: directory.name,
         bucketId: directory.bucketId,
       );
     } else {
       api = widget.api.joinedFiles(
         widget.directories,
-        widget.db.directoryTags,
-        widget.db.directoryMetadata,
+        directoryTags,
+        directoryMetadata,
         favoritePosts,
         localTags,
       );
@@ -189,16 +352,18 @@ class _FilesPageState extends State<FilesPage>
         }
 
         if (filter.filteringMode == FilteringMode.same) {
-          StatisticsGalleryService.db().current.add(sameFiltered: 1).save();
+          StatisticsGalleryService.addSameFiltered(1);
         }
       },
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
-          FilteringMode.favorite => filters.favorite(
-              cells,
-              favoritePosts,
-              searchTextController.text,
-            ),
+          FilteringMode.favorite => favoritePosts != null
+              ? filters.favorite(
+                  cells,
+                  favoritePosts!,
+                  searchTextController.text,
+                )
+              : (cells, data),
           FilteringMode.untagged => filters.untagged(cells),
           FilteringMode.tag => filters.tag(cells, searchTextController.text),
           FilteringMode.tagReversed =>
@@ -207,41 +372,49 @@ class _FilesPageState extends State<FilesPage>
           FilteringMode.gif => filters.gif(cells),
           FilteringMode.duplicate => filters.duplicate(cells),
           FilteringMode.original => filters.original(cells),
-          FilteringMode.same => filters.same(
-              cells,
-              data,
-              onSkipped: () {
-                if (!context.mounted) {
-                  return;
-                }
+          FilteringMode.same => thumbnails != null
+              ? filters.same(
+                  cells,
+                  data,
+                  onSkipped: () {
+                    if (!context.mounted || thumbnails == null) {
+                      return;
+                    }
 
-                ScaffoldMessenger.of(context)
-                  ..removeCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(
-                      content: Text(context.l10n().resultsIncomplete),
-                      duration: const Duration(seconds: 20),
-                      action: SnackBarAction(
-                        label: context.l10n().loadMoreLabel,
-                        onPressed: () {
-                          filters.loadNextThumbnails(api.source, () {
-                            try {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(context.l10n().loaded),
-                                ),
+                    ScaffoldMessenger.of(context)
+                      ..removeCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(
+                          content: Text(context.l10n().resultsIncomplete),
+                          duration: const Duration(seconds: 20),
+                          action: SnackBarAction(
+                            label: context.l10n().loadMoreLabel,
+                            onPressed: () {
+                              filters.loadNextThumbnails(
+                                api.source,
+                                () {
+                                  try {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(context.l10n().loaded),
+                                      ),
+                                    );
+                                    api.source.clearRefreshSilent();
+                                  } catch (_) {}
+                                },
+                                thumbnails!,
+                                galleryService.thumbs,
                               );
-                              api.source.clearRefreshSilent();
-                            } catch (_) {}
-                          });
-                        },
-                      ),
-                    ),
-                  );
-              },
-              end: end,
-              source: api.source,
-            ),
+                            },
+                          ),
+                        ),
+                      );
+                  },
+                  end: end,
+                  source: api.source,
+                  thumbnailService: thumbnails!,
+                )
+              : (cells, data),
           FilteringMode() => (
               searchTextController.text.isEmpty
                   ? cells
@@ -253,10 +426,11 @@ class _FilesPageState extends State<FilesPage>
       },
       allowedFilteringModes: {
         FilteringMode.noFilter,
-        if (api.type != GalleryFilesPageType.favorites) FilteringMode.favorite,
+        if (api.type != GalleryFilesPageType.favorites && favoritePosts != null)
+          FilteringMode.favorite,
         FilteringMode.original,
         FilteringMode.duplicate,
-        FilteringMode.same,
+        if (thumbnails != null) FilteringMode.same,
         FilteringMode.tag,
         FilteringMode.tagReversed,
         FilteringMode.untagged,
@@ -271,11 +445,14 @@ class _FilesPageState extends State<FilesPage>
       initialSortingMode: SortingMode.none,
     );
 
-    impl = FlutterGalleryDataImpl(
+    impl = PigeonGalleryDataImpl(
       source: filter,
-      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
-      watchTags: (c, f) =>
-          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
+      tags: localTags != null && tagManager != null
+          ? (c) => FileImpl.imageTags(c, localTags!, tagManager!)
+          : null,
+      watchTags: localTags != null && tagManager != null
+          ? (c, f) => FileImpl.watchTags(c, f, localTags!, tagManager!.pinned)
+          : null,
       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
         callback: widget.callback,
         child: FilesDataNotifier(
@@ -289,15 +466,15 @@ class _FilesPageState extends State<FilesPage>
           ),
         ),
       ),
-      db: widget.db.videoSettings,
+      videoSettings: videoSettings,
     );
 
     watchSettings();
 
     final secure = widget.secure ??
         (widget.directories.length == 1
-            ? widget.db.directoryMetadata
-                    .get(_segmentCell(widget.directories.first))
+            ? directoryMetadata
+                    ?.get(_segmentCell(widget.directories.first))
                     ?.requireAuth ??
                 false
             : false);
@@ -335,8 +512,6 @@ class _FilesPageState extends State<FilesPage>
 
   @override
   void dispose() {
-    _miscSettingsEvents.cancel();
-
     FlutterGalleryData.setUp(null);
     GalleryVideoEvents.setUp(null);
 
@@ -359,7 +534,7 @@ class _FilesPageState extends State<FilesPage>
   String _segmentCell(Directory cell) => DirectoriesPage.segmentCell(
         cell.name,
         cell.bucketId,
-        widget.db.directoryTags,
+        directoryTags,
       );
 
   void _onBooruTagPressed(
@@ -371,20 +546,13 @@ class _FilesPageState extends State<FilesPage>
     if (overrideSafeMode != null) {
       PauseVideoNotifier.maybePauseOf(context, true);
 
-      Navigator.push(
+      BooruRestoredPage.open(
         context,
-        MaterialPageRoute<void>(
-          builder: (context) {
-            return BooruRestoredPage(
-              booru: booru,
-              tags: tag,
-              wrapScaffold: true,
-              saveSelectedPage: (e) {},
-              overrideSafeMode: overrideSafeMode,
-              db: widget.db,
-            );
-          },
-        ),
+        booru: booru,
+        tags: tag,
+        rootNavigator: true,
+        saveSelectedPage: (e) {},
+        overrideSafeMode: overrideSafeMode,
       ).then((value) {
         if (context.mounted) {
           PauseVideoNotifier.maybePauseOf(context, false);
@@ -440,7 +608,7 @@ class _FilesPageState extends State<FilesPage>
             filter: filter,
             child: Builder(
               builder: (context) => GridFrame<File>(
-                key: ValueKey(miscSettings.filesExtendedActions),
+                key: ValueKey(miscSettings?.filesExtendedActions),
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -597,7 +765,11 @@ class _FilesPageState extends State<FilesPage>
                   ),
                   settingsButton: GridSettingsButton.fromWatchable(
                     gridSettings,
-                    header: const _ShowAdditionalButtons(),
+                    header: miscSettingsService != null
+                        ? _ShowAdditionalButtons(
+                            miscSettingsService: miscSettingsService!,
+                          )
+                        : null,
                     localizeHideNames: (context) =>
                         l10n.hideNames(l10n.hideNamesFiles),
                   ),
@@ -631,7 +803,7 @@ class _FilesPageState extends State<FilesPage>
                     hintText: widget.dirName,
                     textEditingController: searchTextController,
                     focus: searchFocus,
-                    complete: widget.db.localTagDictionary.complete,
+                    complete: localTags?.complete,
                     trailingItems: [
                       if (widget.callback == null && api.type.isTrash())
                         IconButton(
@@ -653,7 +825,7 @@ class _FilesPageState extends State<FilesPage>
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          GalleryApi().trash.empty();
+                                          galleryService.trash.empty();
                                           Navigator.pop(context);
                                         },
                                         child: Text(l10n.yes),
@@ -688,7 +860,7 @@ class _FilesPageState extends State<FilesPage>
                                 final gridState = gridKey.currentState;
                                 if (gridState != null) {
                                   final cell = gridState.source.forIdxUnsafe(n);
-                                  cell.onPress(
+                                  cell.onPressed(
                                     context,
                                     gridState.widget.functionality,
                                     n,
@@ -720,50 +892,70 @@ class _FilesPageState extends State<FilesPage>
                       ? const <GridAction<File>>[]
                       : api.type.isTrash()
                           ? <GridAction<File>>[
-                              _restoreFromTrashAction(),
+                              _restoreFromTrashAction(galleryService.trash),
                             ]
                           : <GridAction<File>>[
-                              if (api.type.isFavorites())
+                              if (api.type.isFavorites() &&
+                                  miscSettingsService != null)
                                 _setFavoritesThumbnailAction(
-                                  widget.db.miscSettings,
+                                  miscSettingsService!,
                                 ),
-                              if (miscSettings.filesExtendedActions) ...[
-                                GridAction(
-                                  Icons.download_rounded,
-                                  (selected) {
-                                    redownloadFiles(context, selected);
-                                  },
-                                  true,
-                                ),
-                                _saveTagsAction(
-                                  context,
-                                  postTags,
-                                  localTags,
-                                  widget.db.localTagDictionary,
-                                ),
-                                _addTagAction(
-                                  context,
-                                  () => api.source.clearRefreshSilent(),
-                                  localTags,
-                                ),
+                              if (miscSettings?.filesExtendedActions ??
+                                  false) ...[
+                                if (downloadManager != null &&
+                                    localTags != null)
+                                  GridAction(
+                                    Icons.download_rounded,
+                                    (selected) {
+                                      redownloadFiles(
+                                        context,
+                                        selected,
+                                        downloadManager: downloadManager!,
+                                        localTags: localTags!,
+                                        settingsService: settingsService,
+                                        galleryService: galleryService,
+                                      );
+                                    },
+                                    true,
+                                  ),
+                                if (localTags != null)
+                                  _saveTagsAction(
+                                    context,
+                                    localTags: localTags!,
+                                    galleryService: galleryService,
+                                  ),
+                                if (localTags != null)
+                                  _addTagAction(
+                                    context,
+                                    () => api.source.clearRefreshSilent(),
+                                    localTags!,
+                                  ),
                               ],
-                              _deleteAction(context, toShowDelete),
-                              _copyAction(
+                              _deleteAction(
                                 context,
-                                api.bucketId,
-                                widget.db.tagManager,
-                                localTags,
-                                api.parent,
                                 toShowDelete,
+                                galleryService.trash,
                               ),
-                              _moveAction(
-                                context,
-                                api.bucketId,
-                                widget.db.tagManager,
-                                localTags,
-                                api.parent,
-                                toShowDelete,
-                              ),
+                              if (tagManager != null && localTags != null)
+                                _copyAction(
+                                  context,
+                                  api.bucketId,
+                                  api.parent,
+                                  toShowDelete,
+                                  galleryService: galleryService,
+                                  tagManager: tagManager!,
+                                  localTags: localTags!,
+                                ),
+                              if (tagManager != null && localTags != null)
+                                _moveAction(
+                                  context,
+                                  api.bucketId,
+                                  api.parent,
+                                  toShowDelete,
+                                  galleryService: galleryService,
+                                  tagManager: tagManager!,
+                                  localTags: localTags!,
+                                ),
                             ],
                   pageName: widget.dirName,
                   gridSeed: gridSeed,
@@ -779,48 +971,31 @@ class _FilesPageState extends State<FilesPage>
 
 class _ShowAdditionalButtons extends StatefulWidget {
   const _ShowAdditionalButtons({
-    super.key,
+    // super.key,
+    required this.miscSettingsService,
   });
+
+  final MiscSettingsService miscSettingsService;
 
   @override
   State<_ShowAdditionalButtons> createState() => __ShowAdditionalButtonsState();
 }
 
-class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons> {
-  late final StreamSubscription<MiscSettingsData?> _miscSettingsEvents;
-
-  MiscSettingsData miscSettings = MiscSettingsService.db().current;
-
+class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons>
+    with MiscSettingsWatcherMixin {
   @override
-  void initState() {
-    _miscSettingsEvents = miscSettings.s.watch((newMiscSettings) {
-      setState(() {
-        miscSettings = newMiscSettings!;
-      });
-    });
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _miscSettingsEvents.cancel();
-
-    super.dispose();
-  }
+  MiscSettingsService get miscSettingsService => widget.miscSettingsService;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    // final theme = Theme.of(context);
 
     return SwitchListTile(
-      value: miscSettings.filesExtendedActions,
+      value: miscSettings!.filesExtendedActions,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      onChanged: (value) => MiscSettingsService.db()
-          .current
+      onChanged: (value) => miscSettingsService.current
           .copy(filesExtendedActions: value)
-          .save(),
+          .maybeSave(),
       title: Text(l10n.extendedFilesGridActions),
     );
   }
@@ -833,9 +1008,9 @@ class FlutterGalleryDataNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final FlutterGalleryDataImpl galleryDataImpl;
+  final PigeonGalleryDataImpl galleryDataImpl;
 
-  static FlutterGalleryDataImpl of(BuildContext context) {
+  static PigeonGalleryDataImpl of(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
 
@@ -856,7 +1031,7 @@ class _TagsNotifier extends StatefulWidget {
   });
 
   final FilesSourceTags tagSource;
-  final TagManager tagManager;
+  final TagManagerService tagManager;
 
   final Widget child;
 
@@ -947,7 +1122,7 @@ class TagsRibbon extends StatefulWidget {
   final bool showPin;
   final bool sliver;
 
-  final TagManager tagManager;
+  final TagManagerService? tagManager;
   final ImageViewTags tagNotifier;
 
   final Widget emptyWidget;
@@ -964,15 +1139,17 @@ class TagsRibbon extends StatefulWidget {
 }
 
 class _TagsRibbonState extends State<TagsRibbon> {
+  TagManagerService? get tagManager => widget.tagManager;
+
   late final StreamSubscription<void>? pinnedSubscription;
   late final StreamSubscription<void> _events;
 
   final scrollController = ScrollController();
 
   late List<ImageTag> _list;
-  late List<ImageTag>? _pinnedList = !widget.showPin
+  late List<ImageTag>? _pinnedList = !widget.showPin || tagManager == null
       ? null
-      : widget.tagManager.pinned
+      : tagManager!.pinned
           .get(-1)
           .map(
             (e) => ImageTag(
@@ -995,11 +1172,11 @@ class _TagsRibbonState extends State<TagsRibbon> {
       setState(() {});
     });
 
-    pinnedSubscription = !widget.showPin
+    pinnedSubscription = !widget.showPin || tagManager == null
         ? null
-        : widget.tagManager.pinned.watch((_) {
+        : tagManager!.pinned.watch((_) {
             setState(() {
-              _pinnedList = widget.tagManager.pinned
+              _pinnedList = tagManager!.pinned
                   .get(-1)
                   .map(
                     (e) => ImageTag(
@@ -1085,19 +1262,21 @@ class _TagsRibbonState extends State<TagsRibbon> {
                   final elem = fromList[i];
 
                   final child = GestureDetector(
-                    onDoubleTap: () {
-                      if (widget.tagManager.pinned.exists(elem.tag)) {
-                        widget.tagManager.pinned.delete(elem.tag);
-                      } else {
-                        widget.tagManager.pinned.add(elem.tag);
-                      }
+                    onDoubleTap: tagManager != null
+                        ? () {
+                            if (tagManager!.pinned.exists(elem.tag)) {
+                              tagManager!.pinned.delete(elem.tag);
+                            } else {
+                              tagManager!.pinned.add(elem.tag);
+                            }
 
-                      scrollController.animateTo(
-                        0,
-                        duration: Durations.medium1,
-                        curve: Easing.standard,
-                      );
-                    },
+                            scrollController.animateTo(
+                              0,
+                              duration: Durations.medium1,
+                              curve: Easing.standard,
+                            );
+                          }
+                        : null,
                     child: TextButton(
                       onLongPress: widget.onLongPress == null
                           ? null

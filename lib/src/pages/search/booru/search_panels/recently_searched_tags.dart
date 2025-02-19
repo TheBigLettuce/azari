@@ -16,7 +16,7 @@ class _RecentlySearchedTagsPanel extends StatefulWidget {
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
-  final TagManager tagManager;
+  final TagManagerService tagManager;
 
   final StringCallback onTagPressed;
 

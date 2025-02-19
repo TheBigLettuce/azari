@@ -5,7 +5,11 @@
 
 part of "settings_page.dart";
 
-void selectBooru(BuildContext context, SettingsData settings, Booru value) {
+void selectBooru(
+  BuildContext context,
+  SettingsData settings,
+  Booru value,
+) {
   if (settings.selectedBooru == value) {
     return;
   }
@@ -13,7 +17,7 @@ void selectBooru(BuildContext context, SettingsData settings, Booru value) {
 
   settings.copy(selectedBooru: value).save();
 
-  StatisticsBooruService.db().current.add(booruSwitches: 1).save();
+  StatisticsBooruService.addBooruSwitches(1);
 
   RestartWidget.restartApp(context);
 }

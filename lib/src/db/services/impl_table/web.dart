@@ -5,19 +5,265 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/obj_impls/blacklisted_directory_data_impl.dart";
+import "package:azari/src/db/services/obj_impls/directory_impl.dart";
+import "package:azari/src/db/services/obj_impls/file_impl.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
+import "package:azari/src/db/services/posts_source.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:flutter/material.dart";
 
-Future<DownloadManager> init(ServicesImplTable db, bool temporary) =>
-    throw UnimplementedError();
+Future<DownloadManager?> init(Services db, AppInstanceType appType) =>
+    Future.value();
 
-ServicesImplTable getApi() => throw UnimplementedError();
+Services getApi() => const WebServices();
+
+class WebServices implements Services {
+  const WebServices();
+  @override
+  T? get<T extends ServiceMarker>() {
+    if (T == GridDbService) {
+      return const MemoryGridDbService() as T;
+    }
+    return null;
+  }
+
+  @override
+  T require<T extends RequiredService>() {
+    if (T == SettingsService) {
+      return MemorySettingsService() as T;
+    }
+
+    throw "unimpl";
+  }
+}
+
+class MemoryGridDbService implements GridDbService {
+  const MemoryGridDbService();
+
+  @override
+  MainGridHandle openMain(Booru booru) {
+    return MemoryMainGridHandle();
+  }
+
+  @override
+  SecondaryGridHandle openSecondary(
+    Booru booru,
+    String name,
+    SafeMode? safeMode, [
+    bool create = false,
+  ]) {
+    return MemorySecondaryGridHandle();
+  }
+}
+
+int _incr = 0;
+
+class MemorySecondaryGridHandle implements SecondaryGridHandle {
+  MemorySecondaryGridHandle() {
+    name = (_incr += 1).toString();
+  }
+
+  @override
+  late GridState currentState = GridState(
+    name: name,
+    offset: 0,
+    tags: "",
+    safeMode: SafeMode.normal,
+  );
+
+  @override
+  int page = 0;
+
+  @override
+  late String name;
+
+  @override
+  Future<void> close() {
+    return Future.value();
+  }
+
+  @override
+  Future<void> destroy() {
+    return Future.value();
+  }
+
+  @override
+  GridPostSource makeSource(
+    BooruAPI api,
+    PagingEntry entry,
+    String tags, {
+    required BooruTagging<Excluded>? excluded,
+    required HiddenBooruPostsService? hiddenBooruPosts,
+  }) {
+    return WebGridPostSource(
+      api,
+      entry,
+      [
+        if (hiddenBooruPosts != null)
+          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+      ],
+      tags,
+    );
+  }
+
+  @override
+  StreamSubscription<GridState> watch(
+    void Function(GridState s) f, [
+    bool fire = false,
+  ]) {
+    return const Stream<GridState>.empty().listen(f);
+  }
+}
+
+class MemoryMainGridHandle implements MainGridHandle {
+  MemoryMainGridHandle();
+
+  @override
+  GridState currentState = const GridState(
+    name: "main",
+    offset: 0,
+    tags: "",
+    safeMode: SafeMode.normal,
+  );
+
+  @override
+  int page = 0;
+
+  @override
+  DateTime time = DateTime.now();
+
+  @override
+  GridPostSource makeSource(
+    BooruAPI api,
+    PagingEntry entry, {
+    required BooruTagging<Excluded>? excluded,
+    required HiddenBooruPostsService? hiddenBooruPosts,
+  }) {
+    return WebGridPostSource(
+      api,
+      entry,
+      [
+        if (hiddenBooruPosts != null)
+          (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
+      ],
+      "",
+    );
+  }
+}
+
+class WebGridPostSource extends GridPostSource with GridPostSourceRefreshNext {
+  WebGridPostSource(
+    this.api,
+    this.entry,
+    this.filters,
+    this.tags,
+  );
+
+  @override
+  Post? get currentlyLast => backingStorage.last;
+
+  @override
+  String tags;
+
+  @override
+  final BooruAPI api;
+
+  @override
+  final SourceStorage<int, Post> backingStorage = ListStorage();
+
+  @override
+  final PagingEntry entry;
+
+  @override
+  BooruTagging<Excluded>? get excluded => null;
+
+  @override
+  bool get extraSafeFilters => false;
+
+  @override
+  final List<FilterFnc<Post>> filters;
+
+  @override
+  bool get hasNext => true;
+
+  @override
+  List<Post> get lastFive => backingStorage.reversed
+      .where((e) => e.rating == PostRating.general)
+      .take(5)
+      .toList();
+
+  @override
+  SafeMode get safeMode => SafeMode.normal;
+
+  @override
+  UpdatesAvailable updatesAvailable = const EmptyUpdatesAvailable();
+
+  @override
+  void destroy() {
+    backingStorage.destroy();
+  }
+}
+
+class EmptyUpdatesAvailable implements UpdatesAvailable {
+  const EmptyUpdatesAvailable();
+
+  @override
+  void setCount(int count) {
+    // TODO: implement setCount
+  }
+
+  @override
+  bool tryRefreshIfNeeded() {
+    // TODO: implement tryRefreshIfNeeded
+    return false;
+  }
+
+  @override
+  StreamSubscription<UpdatesAvailableStatus> watch(
+    void Function(UpdatesAvailableStatus p1) f,
+  ) {
+    return const Stream<UpdatesAvailableStatus>.empty().listen(f);
+  }
+}
+
+class MemorySettingsService implements SettingsService {
+  @override
+  void add(SettingsData data) {
+    // TODO: implement add
+  }
+
+  @override
+  SettingsData current = const $SettingsData(
+    sampleThumbnails: false,
+    path: $SettingsPath("", ""),
+    selectedBooru: Booru.danbooru,
+    quality: DisplayQuality.sample,
+    safeMode: SafeMode.normal,
+    showWelcomePage: false,
+    extraSafeFilters: false,
+  );
+
+  @override
+  StreamSubscription<SettingsData> watch(
+    void Function(SettingsData s) f, [
+    bool fire = false,
+  ]) {
+    return const Stream<SettingsData>.empty().map((e) => current).listen(f);
+  }
+}
 
 // class $PinnedThumbnailData implements PinnedThumbnailData {
 //   const $PinnedThumbnailData({
@@ -35,6 +281,110 @@ ServicesImplTable getApi() => throw UnimplementedError();
 //   @override
 //   final String path;
 // }
+
+class $Directory extends DirectoryImpl implements Directory {
+  const $Directory({
+    required this.bucketId,
+    required this.name,
+    required this.tag,
+    required this.volumeName,
+    required this.relativeLoc,
+    required this.lastModified,
+    required this.thumbFileId,
+  });
+
+  @override
+  final String bucketId;
+
+  @override
+  final int lastModified;
+
+  @override
+  final String name;
+
+  @override
+  final String relativeLoc;
+
+  @override
+  final String tag;
+
+  @override
+  final int thumbFileId;
+
+  @override
+  final String volumeName;
+
+  @override
+  void onPressed(
+    BuildContext context,
+    GridFunctionality<Directory> functionality,
+    int idx,
+  ) {}
+}
+
+class $File extends FileImpl implements File {
+  const $File({
+    required this.bucketId,
+    required this.height,
+    required this.id,
+    required this.isDuplicate,
+    required this.isGif,
+    required this.isVideo,
+    required this.lastModified,
+    required this.name,
+    required this.originalUri,
+    required this.res,
+    required this.size,
+    required this.tags,
+    required this.width,
+  });
+
+  @override
+  final String bucketId;
+
+  @override
+  final int height;
+
+  @override
+  final int id;
+
+  @override
+  final bool isDuplicate;
+
+  @override
+  final bool isGif;
+
+  @override
+  final bool isVideo;
+
+  @override
+  final int lastModified;
+
+  @override
+  final String name;
+
+  @override
+  final String originalUri;
+
+  @override
+  final (int, Booru)? res;
+
+  @override
+  final int size;
+
+  @override
+  final Map<String, void> tags;
+
+  @override
+  final int width;
+
+  @override
+  void onPressed(
+    BuildContext context,
+    GridFunctionality<File> functionality,
+    int idx,
+  ) {}
+}
 
 class $ThumbnailData implements ThumbnailData {
   const $ThumbnailData({
@@ -220,6 +570,13 @@ class $GridBookmark extends GridBookmarkImpl implements GridBookmark {
     required this.time,
     required this.tags,
     required this.booru,
+  }) : thumbnails = const [];
+
+  const $GridBookmark.required({
+    required this.name,
+    required this.time,
+    required this.tags,
+    required this.booru,
     required this.thumbnails,
   });
 
@@ -246,7 +603,7 @@ class $GridBookmark extends GridBookmarkImpl implements GridBookmark {
     DateTime? time,
     List<GridBookmarkThumbnail>? thumbnails,
   }) =>
-      $GridBookmark(
+      $GridBookmark.required(
         thumbnails: thumbnails?.cast() ?? this.thumbnails,
         tags: tags ?? this.tags,
         booru: booru ?? this.booru,
@@ -256,7 +613,7 @@ class $GridBookmark extends GridBookmarkImpl implements GridBookmark {
 }
 
 class $FavoritePost extends PostImpl
-    with DefaultPostPressable<FavoritePost>
+    with DefaultPostPressable<FavoritePost>, FavoritePostCopyMixin
     implements FavoritePost {
   const $FavoritePost({
     required this.height,
@@ -274,6 +631,7 @@ class $FavoritePost extends PostImpl
     required this.createdAt,
     required this.type,
     required this.size,
+    required this.stars,
   });
 
   @override
@@ -320,6 +678,9 @@ class $FavoritePost extends PostImpl
 
   @override
   final int width;
+
+  @override
+  final FavoriteStars stars;
 }
 
 class $GridState implements GridState {
@@ -431,17 +792,17 @@ class $TagData extends TagDataImpl implements TagData {
       );
 }
 
-class MemoryTagManager implements TagManager {
+class MemoryTagManager implements TagManagerService {
   MemoryTagManager();
 
   @override
-  final BooruTagging excluded = throw UnimplementedError();
+  final BooruTagging<Excluded> excluded = throw UnimplementedError();
 
   @override
-  final BooruTagging latest = throw UnimplementedError();
+  final BooruTagging<Latest> latest = throw UnimplementedError();
 
   @override
-  final BooruTagging pinned = throw UnimplementedError();
+  final BooruTagging<Pinned> pinned = throw UnimplementedError();
 }
 
 class $SettingsPath extends SettingsPath {
@@ -513,6 +874,12 @@ class $BooruTag extends BooruTag {
 class $HottestTag implements HottestTag {
   const $HottestTag({
     required this.tag,
+    required this.count,
+    required this.booru,
+  }) : thumbUrls = const [];
+
+  const $HottestTag.required({
+    required this.tag,
     required this.thumbUrls,
     required this.count,
     required this.booru,
@@ -537,7 +904,7 @@ class $HottestTag implements HottestTag {
     Booru? booru,
     List<ThumbUrlRating>? thumbUrls,
   }) =>
-      $HottestTag(
+      $HottestTag.required(
         tag: tag ?? this.tag,
         thumbUrls: thumbUrls ?? this.thumbUrls,
         count: count ?? this.count,
@@ -625,4 +992,49 @@ class $Post extends PostImpl with DefaultPostPressable<Post> implements Post {
 
   @override
   final int width;
+}
+
+class $VisitedPost
+    with VisitedPostImpl, DefaultBuildCellImpl
+    implements VisitedPost {
+  const $VisitedPost({
+    required this.booru,
+    required this.date,
+    required this.id,
+    required this.rating,
+    required this.thumbUrl,
+  });
+
+  @override
+  final Booru booru;
+
+  @override
+  final DateTime date;
+
+  @override
+  final int id;
+
+  @override
+  final PostRating rating;
+
+  @override
+  final String thumbUrl;
+}
+
+class $BlacklistedDirectoryData
+    with
+        BlacklistedDirectoryDataImpl,
+        DefaultBuildCellImpl,
+        DefaultBlacklistedDirectoryDataOnPress
+    implements BlacklistedDirectoryData {
+  const $BlacklistedDirectoryData({
+    required this.bucketId,
+    required this.name,
+  });
+
+  @override
+  final String bucketId;
+
+  @override
+  final String name;
 }

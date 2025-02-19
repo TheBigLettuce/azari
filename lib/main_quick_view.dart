@@ -12,7 +12,7 @@ Future<void> mainQuickView() async {
   final notificationStream =
       StreamController<NotificationRouteEvent>.broadcast();
 
-  await initMain(true, notificationStream);
+  await initMain(AppInstanceType.quickView, notificationStream);
 
   final accentColor = await PlatformApi().accentColor;
 
@@ -22,7 +22,7 @@ Future<void> mainQuickView() async {
 
   final files = (await platform.GalleryHostApi().getUriPicturesDirectly(uris))
       .map(
-        (e) => AndroidGalleryFile(
+        (e) => File(
           width: e.width,
           height: e.height,
           originalUri: e.uri,
@@ -46,19 +46,23 @@ Future<void> mainQuickView() async {
   await source.clearRefresh();
 
   runApp(
-    DbConn.inject(
+    Services.inject(
       Builder(
         builder: (context) {
+          final db = Services.of(context);
+
           return _GalleryDataHolder(
             source: source,
-            db: DbConn.of(context),
+            localTags: db.get<LocalTagsService>(),
+            tagManager: db.get<TagManagerService>(),
+            videoSettings: db.get<VideoSettingsService>(),
             child: (stateController) {
               return MaterialApp(
                 title: "Azari",
                 themeAnimationCurve: Easing.standard,
                 themeAnimationDuration: const Duration(milliseconds: 300),
-                darkTheme: buildTheme(Brightness.dark, accentColor),
-                theme: buildTheme(Brightness.light, accentColor),
+                darkTheme: buildTheme(context, Brightness.dark, accentColor),
+                theme: buildTheme(context, Brightness.light, accentColor),
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
                 home: WrapGridPage(
@@ -70,6 +74,9 @@ Future<void> mainQuickView() async {
                     },
                     child: ImageView(
                       stateController: stateController,
+                      videoSettingsService: db.get<VideoSettingsService>(),
+                      galleryService: db.get<GalleryService>(),
+                      settingsService: db.require<SettingsService>(),
                     ),
                   ),
                 ),
@@ -86,34 +93,46 @@ class _GalleryDataHolder extends StatefulWidget {
   const _GalleryDataHolder({
     // super.key,
     required this.source,
-    required this.db,
+    required this.localTags,
+    required this.tagManager,
+    required this.videoSettings,
     required this.child,
   });
 
   final GenericListSource<File> source;
 
-  final Widget Function(FlutterGalleryDataImpl impl) child;
+  final Widget Function(PigeonGalleryDataImpl impl) child;
 
-  final DbConn db;
+  final LocalTagsService? localTags;
+  final TagManagerService? tagManager;
+
+  final VideoSettingsService? videoSettings;
 
   @override
   State<_GalleryDataHolder> createState() => __GalleryDataHolderState();
 }
 
 class __GalleryDataHolderState extends State<_GalleryDataHolder> {
-  late final FlutterGalleryDataImpl impl;
+  LocalTagsService? get localTags => widget.localTags;
+  TagManagerService? get tagManager => widget.tagManager;
+  VideoSettingsService? get videoSettings => widget.videoSettings;
+
+  late final PigeonGalleryDataImpl impl;
 
   @override
   void initState() {
     super.initState();
 
-    impl = FlutterGalleryDataImpl(
+    impl = PigeonGalleryDataImpl(
       source: widget.source,
       wrapNotifiers: null,
-      watchTags: (c, f) =>
-          File.watchTags(c, f, widget.db.localTags, widget.db.tagManager),
-      tags: (c) => File.imageTags(c, widget.db.localTags, widget.db.tagManager),
-      db: widget.db.videoSettings,
+      watchTags: localTags != null && tagManager != null
+          ? (c, f) => FileImpl.watchTags(c, f, localTags!, tagManager!.pinned)
+          : null,
+      tags: localTags != null && tagManager != null
+          ? (c) => FileImpl.imageTags(c, localTags!, tagManager!)
+          : null,
+      videoSettings: videoSettings,
     );
 
     GalleryVideoEvents.setUp(impl);

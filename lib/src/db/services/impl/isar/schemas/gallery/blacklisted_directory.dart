@@ -6,13 +6,18 @@
 import "dart:async";
 
 import "package:azari/src/db/services/impl_table/io.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/db/services/obj_impls/blacklisted_directory_data_impl.dart";
+import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:isar/isar.dart";
 
 part "blacklisted_directory.g.dart";
 
 @collection
-class IsarBlacklistedDirectory extends BlacklistedDirectoryDataImpl
+class IsarBlacklistedDirectory
+    with
+        DefaultBlacklistedDirectoryDataOnPress,
+        BlacklistedDirectoryDataImpl,
+        DefaultBuildCellImpl
     implements $BlacklistedDirectoryData {
   const IsarBlacklistedDirectory({
     required this.isarId,

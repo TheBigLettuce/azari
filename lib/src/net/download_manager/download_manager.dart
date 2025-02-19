@@ -7,12 +7,11 @@ import "dart:async";
 import "dart:io" as io;
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
@@ -33,8 +32,13 @@ abstract class DownloadManager
     implements
         MapStorage<String, _DownloadEntry>,
         ResourceSource<String, _DownloadEntry> {
-  factory DownloadManager.of(BuildContext context) =>
-      DbConn.downloadManagerOf(context);
+  DownloadManager(this.files, this.settingsService);
+
+  static DownloadManager? of(BuildContext context) =>
+      Services.downloadManagerOf(context);
+
+  final FilesManagement files;
+  final SettingsService settingsService;
 
   Dio get client;
   String get downloadDir;
@@ -43,12 +47,11 @@ abstract class DownloadManager
 
   void addLocalTags(
     Iterable<DownloadEntryTags> downloads,
-    SettingsData settings,
-    PostTags postTags,
+    LocalTagsService localTags,
   );
 
-  void restartAll(Iterable<DownloadHandle> d, SettingsData settings);
-  void putAll(Iterable<DownloadEntry> downloads, SettingsData settings);
+  void restartAll(Iterable<DownloadHandle> d);
+  void putAll(Iterable<DownloadEntry> downloads);
 
   DownloadHandle? statusFor(String url);
 }
@@ -56,7 +59,14 @@ abstract class DownloadManager
 class MemoryOnlyDownloadManager extends MapStorage<String, _DownloadEntry>
     with DefaultDownloadManagerImpl
     implements DownloadManager {
-  MemoryOnlyDownloadManager(this.downloadDir) : super((e) => e.data.url);
+  MemoryOnlyDownloadManager(this.downloadDir, this.files, this.settingsService)
+      : super((e) => e.data.url);
+
+  @override
+  final FilesManagement files;
+
+  @override
+  final SettingsService settingsService;
 
   @override
   final client = Dio();
@@ -99,17 +109,24 @@ abstract class DownloadManagerHasPersistence {
 class PersistentDownloadManager extends MapStorage<String, _DownloadEntry>
     with DefaultDownloadManagerImpl
     implements DownloadManager, DownloadManagerHasPersistence {
-  PersistentDownloadManager(this.db, this.downloadDir)
-      : super((e) => e.data.url) {
+  PersistentDownloadManager(
+    this.db,
+    this.downloadDir,
+    this.files,
+    this.settingsService,
+  ) : super((e) => e.data.url) {
     _refresher = Stream<void>.periodic(1.seconds).listen((event) {
       if (_inWork != 0) {
-        StatisticsGeneralService.db()
-            .current
-            .add(timeDownload: 1.seconds.inMilliseconds)
-            .save();
+        StatisticsGeneralService.addTimeDownload(1.seconds.inMilliseconds);
       }
     });
   }
+
+  @override
+  final FilesManagement files;
+
+  @override
+  final SettingsService settingsService;
 
   @override
   final client = Dio();
@@ -172,6 +189,9 @@ class PersistentDownloadManager extends MapStorage<String, _DownloadEntry>
 
 mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
     implements DownloadManager {
+  @override
+  SettingsService get settingsService;
+
   static final _log = Logger("Download Manager");
   static const int maximum = 6;
 
@@ -216,19 +236,18 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
   @override
   void addLocalTags(
     Iterable<DownloadEntryTags> downloads,
-    SettingsData settings,
-    PostTags postTags,
+    LocalTagsService localTags,
   ) {
     for (final e in downloads) {
-      postTags.addTagsPost(e.name, e.tags, true);
+      localTags.addTagsPost(e.name, e.tags, true);
     }
 
-    putAll(downloads, settings);
+    putAll(downloads);
   }
 
   @override
-  void restartAll(Iterable<DownloadHandle> d, SettingsData settings) {
-    if (settings.path.isEmpty) {
+  void restartAll(Iterable<DownloadHandle> d) {
+    if (settingsService.current.path.isEmpty) {
       return;
     }
 
@@ -263,8 +282,8 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
   DownloadHandle? statusFor(String d) => map_[d];
 
   @override
-  void putAll(Iterable<DownloadEntry> downloads, SettingsData settings) {
-    if (settings.path.isEmpty) {
+  void putAll(Iterable<DownloadEntry> downloads) {
+    if (settingsService.current.path.isEmpty) {
       return;
     }
 
@@ -374,7 +393,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
   }
 
   void _complete(String url) {
-    StatisticsBooruService.db().current.add(downloaded: 1).save();
+    StatisticsBooruService.addDownloaded(1);
     _remove(url);
     _inWork -= 1;
     addAll([]);
@@ -405,7 +424,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
         await _ensureDownloadDirExists(dir: downloadDir, site: entry.data.site);
     final filePath = path.joinAll([dir, entry.data.name]);
 
-    if (await GalleryApi().files.exists(filePath)) {
+    if (await files.exists(filePath)) {
       _failed(entry);
       _tryAddNew();
       return;
@@ -461,21 +480,19 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, _DownloadEntry>
     _DownloadEntry entry, {
     required String filePath,
   }) async {
-    final settings = SettingsService.db().current;
-
     if (entry.data.thenMoveTo != null) {
-      await GalleryApi().files.copyMoveInternal(
+      await files.copyMoveInternal(
         relativePath: entry.data.thenMoveTo!.path,
         volume: entry.data.thenMoveTo!.volume,
         dirName: entry.data.thenMoveTo!.dirName,
         internalPaths: [filePath],
       );
     } else {
-      await GalleryApi().files.moveSingle(
-            source: filePath,
-            rootDir: settings.path.path,
-            targetDir: entry.data.site,
-          );
+      await files.moveSingle(
+        source: filePath,
+        rootDir: settingsService.current.path.path,
+        targetDir: entry.data.site,
+      );
     }
   }
 

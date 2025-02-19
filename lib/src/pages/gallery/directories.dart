@@ -46,12 +46,21 @@ import "package:logging/logging.dart";
 class DirectoriesPage extends StatefulWidget {
   const DirectoriesPage({
     super.key,
+    required this.l10n,
+    required this.gridSettings,
+    required this.directoryMetadata,
+    required this.directoryTags,
+    required this.favoritePosts,
+    required this.blacklistedDirectories,
+    required this.miscSettingsService,
+    required this.settingsService,
+    required this.gridDbs,
+    required this.localTagsService,
+    required this.galleryService,
     this.callback,
     this.wrapGridPage = false,
     this.showBackButton = false,
     this.providedApi,
-    required this.db,
-    required this.l10n,
     this.procPop,
   });
 
@@ -65,12 +74,27 @@ class DirectoriesPage extends StatefulWidget {
   final Directories? providedApi;
   final AppLocalizations l10n;
 
-  final DbConn db;
+  final DirectoryMetadataService? directoryMetadata;
+  final DirectoryTagService? directoryTags;
+  final FavoritePostSourceService? favoritePosts;
+  final BlacklistedDirectoryService? blacklistedDirectories;
+  final LocalTagsService? localTagsService;
+  final MiscSettingsService? miscSettingsService;
+
+  final GalleryService galleryService;
+  final GridDbService gridDbs;
+  final GridSettingsService gridSettings;
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<GridSettingsService>() != null &&
+      db.get<GridDbService>() != null &&
+      db.get<GalleryService>() != null;
 
   static String segmentCell(
     String name,
     String bucketId,
-    DirectoryTagService directoryTag,
+    DirectoryTagService? directoryTag,
   ) {
     for (final booru in Booru.values) {
       if (booru.url == name) {
@@ -78,7 +102,7 @@ class DirectoriesPage extends StatefulWidget {
       }
     }
 
-    final dirTag = directoryTag.get(bucketId);
+    final dirTag = directoryTag?.get(bucketId);
     if (dirTag != null) {
       return dirTag;
     }
@@ -86,37 +110,91 @@ class DirectoriesPage extends StatefulWidget {
     return name.split(" ").first.toLowerCase();
   }
 
+  static Future<void> open(
+    BuildContext context, {
+    required AppLocalizations l10n,
+    bool showBackButton = false,
+    bool wrapGridPage = false,
+    void Function(bool)? procPop,
+    GalleryReturnCallback? callback,
+    Directories? providedApi,
+  }) {
+    final db = Services.of(context);
+    final (gridSettings, gridDbs, galleryService) = (
+      db.get<GridSettingsService>(),
+      db.get<GridDbService>(),
+      db.get<GalleryService>(),
+    );
+    if (gridSettings == null || gridDbs == null || galleryService == null) {
+      // TODO: change
+      showSnackbar(context, "Gallery functionality isn't available");
+
+      return Future.value();
+    }
+
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => DirectoriesPage(
+          l10n: l10n,
+          showBackButton: showBackButton,
+          wrapGridPage: wrapGridPage,
+          procPop: procPop,
+          callback: callback,
+          providedApi: providedApi,
+          gridSettings: gridSettings,
+          gridDbs: gridDbs,
+          galleryService: galleryService,
+          directoryMetadata: db.get<DirectoryMetadataService>(),
+          directoryTags: db.get<DirectoryTagService>(),
+          favoritePosts: db.get<FavoritePostSourceService>(),
+          blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
+          miscSettingsService: db.get<MiscSettingsService>(),
+          localTagsService: db.get<LocalTagsService>(),
+          settingsService: db.require<SettingsService>(),
+        ),
+      ),
+    );
+  }
+
   @override
   State<DirectoriesPage> createState() => _DirectoriesPageState();
 }
 
 class _DirectoriesPageState extends State<DirectoriesPage>
-    with CommonGridData<Post, DirectoriesPage> {
-  WatchableGridSettingsData get gridSettings =>
-      widget.db.gridSettings.directories;
-  DirectoryMetadataService get directoryMetadata => widget.db.directoryMetadata;
-  DirectoryTagService get directoryTags => widget.db.directoryTags;
-  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
-  BlacklistedDirectoryService get blacklistedDirectories =>
-      widget.db.blacklistedDirectories;
+    with CommonGridData<Post, DirectoriesPage>, MiscSettingsWatcherMixin {
+  WatchableGridSettingsData get gridSettings => widget.gridSettings.directories;
+  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
+  DirectoryTagService? get directoryTags => widget.directoryTags;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  BlacklistedDirectoryService? get blacklistedDirectories =>
+      widget.blacklistedDirectories;
+  LocalTagsService? get localTagsService => widget.localTagsService;
 
-  late final StreamSubscription<MiscSettingsData?> miscSettingsWatcher;
-  late final StreamSubscription<void> blacklistedWatcher;
-  late final StreamSubscription<void> directoryTagWatcher;
+  GalleryService get galleryService => widget.galleryService;
+  GridDbService get gridDbs => widget.gridDbs;
+
+  @override
+  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
+
+  late final StreamSubscription<void>? blacklistedWatcher;
+  late final StreamSubscription<void>? directoryTagWatcher;
 
   late final AppLifecycleListener lifecycleListener;
-
-  MiscSettingsData miscSettings = MiscSettingsService.db().current;
 
   int galleryVersion = 0;
 
   late final ChainedFilterResourceSource<int, Directory> filter;
 
   late final api = widget.providedApi ??
-      GalleryApi().open(
-        widget.db.blacklistedDirectories,
-        widget.db.directoryTags,
+      galleryService.open(
         l10n: widget.l10n,
+        settingsService: settingsService,
+        blacklistedDirectory: blacklistedDirectories,
+        directoryTags: directoryTags,
+        galleryTrash: galleryService.trash,
       );
 
   bool isThumbsLoading = false;
@@ -128,11 +206,11 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   void initState() {
     super.initState();
 
-    GalleryApi().version.then((value) => galleryVersion = value);
+    galleryService.version.then((value) => galleryVersion = value);
 
     lifecycleListener = AppLifecycleListener(
       onShow: () {
-        GalleryApi().version.then((value) {
+        galleryService.version.then((value) {
           if (value != galleryVersion) {
             galleryVersion = value;
             _refresh();
@@ -143,17 +221,11 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
     watchSettings();
 
-    miscSettingsWatcher = miscSettings.s.watch((s) {
-      miscSettings = s!;
-
-      setState(() {});
-    });
-
-    directoryTagWatcher = directoryMetadata.watch((s) {
+    directoryTagWatcher = directoryMetadata?.watch((s) {
       api.source.backingStorage.addAll([]);
     });
 
-    blacklistedWatcher = blacklistedDirectories.backingStorage.watch((_) {
+    blacklistedWatcher = blacklistedDirectories?.backingStorage.watch((_) {
       api.source.clearRefresh();
     });
 
@@ -175,16 +247,15 @@ class _DirectoriesPageState extends State<DirectoriesPage>
     );
 
     if (widget.providedApi == null) {
-      api.trashCell.refresh();
+      api.trashCell?.refresh();
       api.source.clearRefresh();
     }
   }
 
   @override
   void dispose() {
-    directoryTagWatcher.cancel();
-    blacklistedWatcher.cancel();
-    miscSettingsWatcher.cancel();
+    directoryTagWatcher!.cancel();
+    blacklistedWatcher!.cancel();
     searchTextController.dispose();
 
     filter.destroy();
@@ -200,9 +271,9 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   }
 
   void _refresh() {
-    api.trashCell.refresh();
+    api.trashCell?.refresh();
     api.source.clearRefresh();
-    GalleryApi().version.then((value) => galleryVersion = value);
+    galleryService.version.then((value) => galleryVersion = value);
   }
 
   String _segmentCell(Directory cell) => DirectoriesPage.segmentCell(
@@ -211,18 +282,20 @@ class _DirectoriesPageState extends State<DirectoriesPage>
         directoryTags,
       );
 
-  Segments<Directory> _makeSegments(BuildContext context) {
+  Segments<Directory> _makeSegments(
+    BuildContext context, {
+    required DirectoryMetadataService? directoryMetadata,
+  }) {
     return Segments(
       widget.l10n.segmentsUncategorized,
       injectedLabel: widget.callback != null
           ? widget.l10n.suggestionsLabel
           : widget.l10n.segmentsSpecial,
       displayFirstCellInSpecial: widget.callback != null,
-      caps: directoryMetadata.caps(widget.l10n.segmentsSpecial),
+      caps: directoryMetadata?.caps(widget.l10n.segmentsSpecial) ??
+          const SegmentCapability.empty(),
       segment: _segmentCell,
-      injectedSegments: [
-        api.trashCell,
-      ],
+      injectedSegments: api.trashCell != null ? [api.trashCell!] : const [],
       onLabelPressed: widget.callback == null || widget.callback!.isFile
           ? (label, children) => actions.joinedDirectoriesFnc(
                 context,
@@ -231,11 +304,11 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                 api,
                 widget.callback?.toFile,
                 _segmentCell,
-                directoryMetadata,
-                directoryTags,
-                favoritePosts,
-                widget.db.localTags,
                 widget.l10n,
+                directoryMetadata: directoryMetadata,
+                directoryTags: directoryTags,
+                favoritePosts: favoritePosts,
+                localTags: localTagsService,
               )
           : null,
     );
@@ -246,8 +319,10 @@ class _DirectoriesPageState extends State<DirectoriesPage>
     List<Directory> selected,
     String value,
     bool toPin,
-    AppLocalizations l10n,
-  ) async {
+    AppLocalizations l10n, {
+    required DirectoryMetadataService directoryMetadata,
+    required DirectoryTagService directoryTags,
+  }) async {
     final requireAuth = <Directory>[];
     final noAuth = <Directory>[];
 
@@ -283,11 +358,14 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       );
 
       if (toPin) {
-        if (await directoryMetadata.canAuth(
+        if (await Directory.canAuth(
           value,
           l10n.unstickyStickyDirectory,
         )) {
-          directoryMetadata.getOrCreate(value).copyBools(sticky: true).save();
+          directoryMetadata
+              .getOrCreate(value)
+              .copyBools(sticky: true)
+              .maybeSave();
         }
       }
     }
@@ -377,13 +455,18 @@ class _DirectoriesPageState extends State<DirectoriesPage>
             SliverToBoxAdapter(
               child: _LatestImagesWidget(
                 selectionActions: SelectionActions.of(context),
-                db: widget.db,
                 parent: api,
                 callback: widget.callback?.toFile,
+                gallerySearch: galleryService.search,
+                directoryMetadata: directoryMetadata,
+                directoryTags: directoryTags,
+                favoritePosts: favoritePosts,
+                localTagsService: localTagsService,
               ),
             ),
           SegmentLayout(
-            segments: _makeSegments(context),
+            segments:
+                _makeSegments(context, directoryMetadata: directoryMetadata),
             gridSeed: 1,
             suggestionPrefix: (widget.callback?.isDirectory ?? false)
                 ? widget.callback!.toDirectory.suggestFor
@@ -425,7 +508,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                   trailingItems: [
                     if (widget.callback!.isDirectory)
                       IconButton(
-                        onPressed: () => GalleryApi()
+                        onPressed: () => galleryService
                             .chooseDirectory(l10n, temporary: true)
                             .then((value) {
                           widget.callback!.toDirectory(
@@ -482,18 +565,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                           ),
                       centerTitle: true,
                       title: IconButton(
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).push<void>(
-                            MaterialPageRoute(
-                              builder: (context) => GallerySearchPage(
-                                db: widget.db,
-                                l10n: l10n,
-                                procPop: (didPop) {},
-                                // onTagPressed: _onBooruTagPressed,
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => GallerySearchPage.open(context),
                         icon: const Icon(Icons.search_rounded),
                       ),
                       actions: [
@@ -521,47 +593,57 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                       api,
                       widget.callback?.toFileOrNull,
                       _segmentCell,
-                      directoryMetadata,
-                      directoryTags,
-                      favoritePosts,
-                      widget.db.localTags,
                       widget.l10n,
+                      directoryMetadata: directoryMetadata,
+                      directoryTags: directoryTags,
+                      favoritePosts: favoritePosts,
+                      localTags: localTagsService,
                     ),
                 ]
               : <GridAction<Directory>>[
-                  actions.addToGroup(
-                    context,
-                    (selected) {
-                      final t = selected.first.tag;
-                      for (final e in selected.skip(1)) {
-                        if (t != e.tag) {
-                          return null;
+                  if (directoryMetadata != null && directoryTags != null)
+                    actions.addToGroup(
+                      context,
+                      (selected) {
+                        final t = selected.first.tag;
+                        for (final e in selected.skip(1)) {
+                          if (t != e.tag) {
+                            return null;
+                          }
                         }
-                      }
 
-                      return t;
-                    },
-                    (s, v, t) => _addToGroup(context, s, v, t, l10n),
-                    true,
-                    completeDirectoryNameTag: _completeDirectoryNameTag,
-                  ),
-                  actions.blacklist(
-                    context,
-                    _segmentCell,
-                    directoryMetadata,
-                    blacklistedDirectories,
-                    widget.l10n,
-                  ),
+                        return t;
+                      },
+                      (s, v, t) => _addToGroup(
+                        context,
+                        s,
+                        v,
+                        t,
+                        l10n,
+                        directoryMetadata: directoryMetadata!,
+                        directoryTags: directoryTags!,
+                      ),
+                      true,
+                      completeDirectoryNameTag: _completeDirectoryNameTag,
+                    ),
+                  if (blacklistedDirectories != null)
+                    actions.blacklist(
+                      context,
+                      _segmentCell,
+                      widget.l10n,
+                      directoryMetadata: directoryMetadata,
+                      blacklistedDirectory: blacklistedDirectories!,
+                    ),
                   actions.joinedDirectories(
                     context,
                     api,
                     widget.callback?.toFileOrNull,
                     _segmentCell,
-                    directoryMetadata,
-                    directoryTags,
-                    favoritePosts,
-                    widget.db.localTags,
                     widget.l10n,
+                    directoryMetadata: directoryMetadata,
+                    directoryTags: directoryTags,
+                    favoritePosts: favoritePosts,
+                    localTags: localTagsService,
                   ),
                 ],
           footer: widget.callback?.preview,
@@ -597,22 +679,27 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                 )
               : child(context),
         ),
-      GallerySubPage.blacklisted => DirectoriesDataNotifier(
-          api: api,
-          callback: widget.callback,
-          segmentFnc: _segmentCell,
-          child: GridPopScope(
-            searchTextController: null,
-            filter: null,
-            rootNavigatorPop: widget.procPop,
-            child: BlacklistedDirectoriesPage(
-              popScope: widget.procPop ??
-                  (_) =>
-                      GallerySubPage.selectOf(context, GallerySubPage.gallery),
-              db: widget.db,
-            ),
-          ),
-        ),
+      GallerySubPage.blacklisted => blacklistedDirectories != null
+          ? DirectoriesDataNotifier(
+              api: api,
+              callback: widget.callback,
+              segmentFnc: _segmentCell,
+              child: GridPopScope(
+                searchTextController: null,
+                filter: null,
+                rootNavigatorPop: widget.procPop,
+                child: BlacklistedDirectoriesPage(
+                  popScope: widget.procPop ??
+                      (_) => GallerySubPage.selectOf(
+                            context,
+                            GallerySubPage.gallery,
+                          ),
+                  settingsService: settingsService,
+                  blacklistedDirectories: blacklistedDirectories!,
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
     };
   }
 }
@@ -623,34 +710,42 @@ class _LatestImagesWidget extends StatefulWidget {
     required this.parent,
     required this.callback,
     required this.selectionActions,
-    required this.db,
+    required this.gallerySearch,
+    required this.directoryMetadata,
+    required this.directoryTags,
+    required this.favoritePosts,
+    required this.localTagsService,
   });
 
   final Directories parent;
   final ReturnFileCallback? callback;
 
+  final Search gallerySearch;
   final SelectionActions selectionActions;
 
-  final DbConn db;
+  final DirectoryMetadataService? directoryMetadata;
+  final DirectoryTagService? directoryTags;
+  final FavoritePostSourceService? favoritePosts;
+  final LocalTagsService? localTagsService;
 
   @override
   State<_LatestImagesWidget> createState() => __LatestImagesWidgetState();
 }
 
 class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
-  late final StreamSubscription<void> _directoryCapsChanged;
+  Search get gallerySearch => widget.gallerySearch;
+
+  late final StreamSubscription<void>? _directoryCapsChanged;
 
   late final filesApi = Files.fake(
-    widget.db,
     clearRefresh: () {
       final c = <String, DirectoryMetadata>{};
 
-      return GalleryApi().search.filesByName("", 20).then((l) {
+      return gallerySearch.filesByName("", 20).then((l) {
         final ll = _fromDirectoryFileFiltered(l, c);
 
         if (ll.length < 10) {
-          return GalleryApi()
-              .search
+          return gallerySearch
               .filesByName("", 20)
               .then((e) => ll + _fromDirectoryFileFiltered(l, c));
         }
@@ -659,6 +754,10 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
       });
     },
     parent: widget.parent,
+    directoryMetadata: widget.directoryMetadata,
+    directoryTags: widget.directoryTags,
+    favoritePosts: widget.favoritePosts,
+    localTags: widget.localTagsService,
   );
 
   late final gridSelection = GridSelection<File>(
@@ -701,8 +800,8 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
           (e) => GalleryFilesPageType.filterAuthBlur(
             c,
             e,
-            widget.db.directoryTags,
-            widget.db.directoryMetadata,
+            directoryMetadata: widget.directoryMetadata,
+            directoryTag: widget.directoryTags,
           ),
         )
         .toList();
@@ -712,14 +811,14 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   void initState() {
     super.initState();
 
-    _directoryCapsChanged = widget.db.directoryMetadata.watch((_) {
+    _directoryCapsChanged = widget.directoryMetadata?.watch((_) {
       filesApi.source.clearRefresh();
     });
   }
 
   @override
   void dispose() {
-    _directoryCapsChanged.cancel();
+    _directoryCapsChanged?.cancel();
     focus.dispose();
     filesApi.close();
     scrollNotifier.dispose();
@@ -835,7 +934,7 @@ class __LatestListState extends State<_LatestList> {
                 final cell = source.backingStorage[i];
 
                 return InkWell(
-                  onTap: () => cell.onPress(context, widget.functionality, i),
+                  onTap: () => cell.onPressed(context, widget.functionality, i),
                   borderRadius: BorderRadius.circular(15),
                   child: SizedBox(
                     width: _LatestList.size.width,
@@ -984,14 +1083,14 @@ class _EmptyWidget extends StatefulWidget {
     required this.trashCell,
   });
 
-  final TrashCell trashCell;
+  final TrashCell? trashCell;
 
   @override
   State<_EmptyWidget> createState() => __EmptyWidgetState();
 }
 
 class __EmptyWidgetState extends State<_EmptyWidget> {
-  late final StreamSubscription<void> subscr;
+  late final StreamSubscription<void>? subscr;
 
   bool haveTrashCell = true;
 
@@ -999,7 +1098,7 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
   void initState() {
     super.initState();
 
-    subscr = widget.trashCell.watch(
+    subscr = widget.trashCell?.watch(
       (t) {
         setState(() {
           haveTrashCell = t != null;
@@ -1011,7 +1110,7 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
   @override
   void dispose() {
-    subscr.cancel();
+    subscr?.cancel();
 
     super.dispose();
   }

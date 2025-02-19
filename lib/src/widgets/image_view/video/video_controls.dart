@@ -9,7 +9,7 @@ class VideoControls extends StatefulWidget {
   const VideoControls({
     super.key,
     required this.videoControls,
-    required this.db,
+    required this.videoSettings,
     required this.seekTimeAnchor,
     required this.vertical,
     // this.content,
@@ -20,16 +20,18 @@ class VideoControls extends StatefulWidget {
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
 
-  final VideoSettingsService db;
+  final VideoSettingsService? videoSettings;
 
   @override
   State<VideoControls> createState() => _VideoControlsState();
 }
 
 class _VideoControlsState extends State<VideoControls>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, VideoSettingsWatcherMixin {
+  @override
+  VideoSettingsService? get videoSettingsService => widget.videoSettings;
+
   late final StreamSubscription<PlayerUpdate> playerUpdatesSubsc;
-  late final StreamSubscription<VideoSettingsData> videoSettingsSubsc;
 
   late final AnimationController animationController;
 
@@ -39,8 +41,6 @@ class _VideoControlsState extends State<VideoControls>
   VideoControlsControllerImpl get controls => widget.videoControls;
 
   bool appBarVisible = true;
-
-  late VideoSettingsData videoSettings = widget.db.current;
 
   @override
   void initState() {
@@ -60,16 +60,10 @@ class _VideoControlsState extends State<VideoControls>
           playButtonKey.currentState?._update();
           videoTimeKey.currentState?._update();
         case VolumeUpdate():
-          if (update.volume != videoSettings.volume) {
-            videoSettings.copy(volume: update.volume).save();
+          if (videoSettings != null && update.volume != videoSettings!.volume) {
+            videoSettings!.copy(volume: update.volume).maybeSave();
           }
       }
-    });
-
-    videoSettingsSubsc = widget.db.watch((settings) {
-      setState(() {
-        videoSettings = settings;
-      });
     });
   }
 
@@ -77,7 +71,6 @@ class _VideoControlsState extends State<VideoControls>
   void dispose() {
     super.dispose();
 
-    videoSettingsSubsc.cancel();
     playerUpdatesSubsc.cancel();
   }
 
@@ -118,19 +111,23 @@ class _VideoControlsState extends State<VideoControls>
             ),
           }),
         ),
-        isSelected: videoSettings.volume != 0,
-        onPressed: () {
-          controls._events.add(const VolumeButton());
-        },
-        icon: videoSettings.volume == 0
+        isSelected: videoSettings == null ? null : videoSettings?.volume != 0,
+        onPressed: videoSettings != null
+            ? () {
+                controls._events.add(const VolumeButton());
+              }
+            : null,
+        icon: videoSettings == null || videoSettings?.volume == 0
             ? const Icon(Icons.volume_off_outlined)
             : const Icon(Icons.volume_up_outlined),
       ),
       IconButton(
-        isSelected: videoSettings.looping,
-        onPressed: () {
-          controls._events.add(const LoopingButton());
-        },
+        isSelected: videoSettings?.looping,
+        onPressed: videoSettings != null
+            ? () {
+                controls._events.add(const LoopingButton());
+              }
+            : null,
         icon: const Icon(Icons.loop_outlined),
       ),
       _VideoTime(

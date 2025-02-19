@@ -41,7 +41,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   static const int _maxSteps = 10;
 
   late final AppLifecycleListener listener;
-  late final StreamSubscription<void> timeTicker;
+  late final StreamSubscription<void>? timeTicker;
   final StreamController<Duration> timeListener = StreamController.broadcast();
   Duration currentDuration = Duration.zero;
   DateTime timeNow = DateTime.now();
@@ -52,58 +52,60 @@ class _RestartWidgetState extends State<RestartWidget> {
   void initState() {
     super.initState();
 
-    StatisticsDailyData sts = StatisticsDailyService.db().current;
+    StatisticsDailyData? sts =
+        Services.unsafeGet<StatisticsDailyService>()?.current;
 
-    if (timeNow.day != sts.date.day ||
-        timeNow.month != sts.date.month ||
-        timeNow.year != sts.date.year) {
-      sts = sts.copy(durationMillis: 0, swipedBoth: 0, date: timeNow)..save();
-    }
+    if (sts != null) {
+      if (timeNow.day != sts.date.day ||
+          timeNow.month != sts.date.month ||
+          timeNow.year != sts.date.year) {
+        sts = sts.copy(durationMillis: 0, swipedBoth: 0, date: timeNow)
+          ..maybeSave();
+      }
 
-    currentDuration = Duration(milliseconds: sts.durationMillis);
+      currentDuration = Duration(milliseconds: sts.durationMillis);
 
-    timeTicker =
-        Stream<void>.periodic(const Duration(seconds: 1)).listen((event) {
-      if (!inBackground) {
-        bool switchDate = false;
+      timeTicker =
+          Stream<void>.periodic(const Duration(seconds: 1)).listen((event) {
+        if (!inBackground) {
+          bool switchDate = false;
 
-        stepsToSave += 1;
+          stepsToSave += 1;
 
-        currentDuration = currentDuration + const Duration(seconds: 1);
+          currentDuration = currentDuration + const Duration(seconds: 1);
 
-        final nextTime = DateTime.now();
+          final nextTime = DateTime.now();
 
-        if (timeNow.day != nextTime.day ||
-            timeNow.month != nextTime.month ||
-            timeNow.year != nextTime.year) {
-          timeNow = nextTime;
-          currentDuration = Duration.zero;
-          switchDate = true;
-        }
-
-        timeListener.sink.add(currentDuration);
-
-        if (stepsToSave >= _maxSteps || switchDate) {
-          if (switchDate) {
-            StatisticsDailyService.db()
-                .current
-                .copy(durationMillis: 1, swipedBoth: 0, date: timeNow)
-                .save();
-          } else {
-            StatisticsDailyService.db()
-                .current
-                .copy(durationMillis: currentDuration.inMilliseconds)
-                .save();
+          if (timeNow.day != nextTime.day ||
+              timeNow.month != nextTime.month ||
+              timeNow.year != nextTime.year) {
+            timeNow = nextTime;
+            currentDuration = Duration.zero;
+            switchDate = true;
           }
 
-          stepsToSave = 0;
-        }
+          timeListener.sink.add(currentDuration);
 
-        if (switchDate) {
-          setState(() {});
+          if (stepsToSave >= _maxSteps || switchDate) {
+            if (switchDate) {
+              StatisticsDailyService.reset();
+            } else {
+              StatisticsDailyService.setDurationMillis(
+                currentDuration.inMilliseconds,
+              );
+            }
+
+            stepsToSave = 0;
+          }
+
+          if (switchDate) {
+            setState(() {});
+          }
         }
-      }
-    });
+      });
+    } else {
+      timeTicker = null;
+    }
 
     listener = AppLifecycleListener(
       onHide: () {
@@ -119,7 +121,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   void dispose() {
     selectionEvents.dispose();
     timeListener.close();
-    timeTicker.cancel();
+    timeTicker?.cancel();
     listener.dispose();
 
     super.dispose();
@@ -135,33 +137,41 @@ class _RestartWidgetState extends State<RestartWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final d = buildTheme(Brightness.dark, widget.accentColor);
-    final l = buildTheme(Brightness.light, widget.accentColor);
-
     return selectionEvents.inject(
       progressTab.inject(
-        DbConn.inject(
+        Services.inject(
           Builder(
-            builder: (context) => PinnedTagsHolder(
-              tagManager: TagManager.of(context),
-              child: TimeSpentNotifier(
-                timeNow,
-                ticker: timeListener.stream,
-                current: _c,
-                child: KeyedSubtree(
-                  key: key,
-                  child: ColoredBox(
-                    color: MediaQuery.platformBrightnessOf(context) ==
-                            Brightness.dark
-                        ? d.colorScheme.surface
-                        : l.colorScheme.surface,
-                    child: widget
-                        .child(d, l, SettingsService.db().current)
-                        .animate(effects: [const FadeEffect()]),
+            builder: (context) {
+              final d =
+                  buildTheme(context, Brightness.dark, widget.accentColor);
+              final l =
+                  buildTheme(context, Brightness.light, widget.accentColor);
+
+              return PinnedTagsHolder(
+                pinnedTags: Services.getOf<TagManagerService>(context)?.pinned,
+                child: TimeSpentNotifier(
+                  timeNow,
+                  ticker: timeListener.stream,
+                  current: _c,
+                  child: KeyedSubtree(
+                    key: key,
+                    child: ColoredBox(
+                      color: MediaQuery.platformBrightnessOf(context) ==
+                              Brightness.dark
+                          ? d.colorScheme.surface
+                          : l.colorScheme.surface,
+                      child: widget
+                          .child(
+                        d,
+                        l,
+                        Services.requireOf<SettingsService>(context).current,
+                      )
+                          .animate(effects: [const FadeEffect()]),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -233,12 +243,12 @@ class TimeSpentNotifier extends InheritedWidget {
 
 class PinnedTagsHolder extends StatefulWidget {
   const PinnedTagsHolder({
-    // super.key,
-    required this.tagManager,
+    super.key,
+    required this.pinnedTags,
     required this.child,
   });
 
-  final TagManager tagManager;
+  final BooruTagging<Pinned>? pinnedTags;
 
   final Widget child;
 
@@ -247,7 +257,7 @@ class PinnedTagsHolder extends StatefulWidget {
 }
 
 class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
-  late final StreamSubscription<int> countEvents;
+  late final StreamSubscription<int>? countEvents;
 
   Map<String, void> pinnedTags = {};
   int count = 0;
@@ -256,12 +266,12 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
   void initState() {
     super.initState();
 
-    countEvents = widget.tagManager.pinned.watchCount(
+    countEvents = widget.pinnedTags?.watchCount(
       (newCount) {
         if (newCount != count) {
           count = newCount;
 
-          pinnedTags = widget.tagManager.pinned.get(-1).fold({}, (map, e) {
+          pinnedTags = (widget.pinnedTags?.get(-1) ?? []).fold({}, (map, e) {
             map[e.tag] = null;
 
             return map;
@@ -276,7 +286,7 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
 
   @override
   void dispose() {
-    countEvents.cancel();
+    countEvents?.cancel();
 
     super.dispose();
   }

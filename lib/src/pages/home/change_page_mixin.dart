@@ -17,6 +17,12 @@ enum CurrentRoute {
         int() => throw "no route",
       };
 
+  bool hasServices(Services db) => switch (this) {
+        CurrentRoute.home => BooruPage.hasServicesRequired(db),
+        CurrentRoute.discover => false,
+        CurrentRoute.gallery => DirectoriesPage.hasServicesRequired(db),
+      };
+
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
         home => HomeDestinationIcon(
             controller: mixin.homeIconController,
@@ -112,6 +118,15 @@ enum BooruSubPage {
 
   final IconData icon;
   final IconData selectedIcon;
+
+  bool hasServices(Services db) => switch (this) {
+        BooruSubPage.booru => BooruPage.hasServicesRequired(db),
+        BooruSubPage.favorites => FavoritePostsPage.hasServicesRequired(db),
+        BooruSubPage.bookmarks => BookmarkPage.hasServicesRequired(db),
+        BooruSubPage.hiddenPosts => HiddenPostsPage.hasServicesRequired(db),
+        BooruSubPage.downloads => DownloadsPage.hasServicesRequired(db),
+        BooruSubPage.visited => VisitedPostsPage.hasServicesRequired(db),
+      };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
         booru => l10n.booruLabel,
@@ -306,15 +321,25 @@ class _CurrentPageWidget extends StatelessWidget {
     // super.key,
     required this.icons,
     required this.changePage,
+    required this.settingsService,
   });
 
   final AnimatedIconsMixin icons;
   final ChangePageMixin changePage;
 
+  final SettingsService settingsService;
+
   @override
   Widget build(BuildContext context) {
     final galleryPage = changePage._galleryPageNotifier;
     final booruPage = changePage._booruPageNotifier;
+
+    final db = Services.of(context);
+    final (gridDbs, galleryService, gridSettings) = (
+      db.get<GridDbService>(),
+      db.get<GalleryService>(),
+      db.get<GridSettingsService>(),
+    );
 
     return Animate(
       target: 0,
@@ -324,27 +349,55 @@ class _CurrentPageWidget extends StatelessWidget {
       ],
       controller: icons.pageFadeAnimation,
       child: switch (changePage._routeNotifier.value) {
-        CurrentRoute.home => _NavigatorShell(
-            navigatorKey: changePage.mainKey,
-            child: BooruPage(
-              pagingRegistry: changePage.pagingRegistry,
-              procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-              db: DbConn.of(context),
-            ),
-          ),
-        CurrentRoute.gallery => _NavigatorShell(
-            navigatorKey: changePage.galleryKey,
-            child: DirectoriesPage(
-              procPop: (pop) => changePage._procPop(
-                galleryPage,
-                icons,
-                pop,
+        CurrentRoute.home => gridDbs == null
+            ? const SizedBox.shrink()
+            : _NavigatorShell(
+                navigatorKey: changePage.mainKey,
+                child: BooruPage(
+                  pagingRegistry: changePage.pagingRegistry,
+                  procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
+                  gridDbs: gridDbs,
+                  gridBookmarks: db.get<GridBookmarkService>(),
+                  hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
+                  favoritePosts: db.get<FavoritePostSourceService>(),
+                  tagManager: db.get<TagManagerService>(),
+                  downloadManager: DownloadManager.of(context),
+                  localTags: db.get<LocalTagsService>(),
+                  hottestTags: db.get<HottestTagsService>(),
+                  gridSettings: db.get<GridSettingsService>(),
+                  visitedPosts: db.get<VisitedPostsService>(),
+                  miscSettingsService: db.get<MiscSettingsService>(),
+                  settingsService: db.require<SettingsService>(),
+                ),
               ),
-              db: DbConn.of(context),
-              l10n: context.l10n(),
-            ),
+        CurrentRoute.gallery => gridDbs == null ||
+                gridSettings == null ||
+                galleryService == null
+            ? const SizedBox.shrink()
+            : _NavigatorShell(
+                navigatorKey: changePage.galleryKey,
+                child: DirectoriesPage(
+                  procPop: (pop) => changePage._procPop(
+                    galleryPage,
+                    icons,
+                    pop,
+                  ),
+                  l10n: context.l10n(),
+                  directoryMetadata: db.get<DirectoryMetadataService>(),
+                  directoryTags: db.get<DirectoryTagService>(),
+                  favoritePosts: db.get<FavoritePostSourceService>(),
+                  blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
+                  miscSettingsService: db.get<MiscSettingsService>(),
+                  localTagsService: db.get<LocalTagsService>(),
+                  galleryService: galleryService,
+                  gridDbs: gridDbs,
+                  gridSettings: gridSettings,
+                  settingsService: db.require<SettingsService>(),
+                ),
+              ),
+        CurrentRoute.discover => DiscoverPage(
+            settingsService: settingsService,
           ),
-        CurrentRoute.discover => const DiscoverPage(),
       },
     );
   }

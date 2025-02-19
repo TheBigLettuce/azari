@@ -6,13 +6,12 @@
 import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/actions.dart" as actions;
@@ -39,11 +38,13 @@ import "package:flutter/material.dart";
 class PopularRandomChips extends StatelessWidget {
   const PopularRandomChips({
     super.key,
-    required this.db,
     required this.safeMode,
     required this.booru,
     required this.onTagPressed,
     required this.listPadding,
+    required this.tagManager,
+    required this.visitedPosts,
+    required this.miscSettingsService,
     this.tags = "",
   });
 
@@ -57,20 +58,33 @@ class PopularRandomChips extends StatelessWidget {
 
   final SafeMode Function() safeMode;
 
-  final DbConn db;
+  final TagManagerService? tagManager;
+  final VisitedPostsService? visitedPosts;
+  final MiscSettingsService? miscSettingsService;
 
   void launchVideos(
     BuildContext gridContext,
     AppLocalizations l10n,
     ThemeData theme,
-    // bool longPress,
   ) {
     if (tags.isNotEmpty) {
-      db.tagManager.latest.add(tags);
+      tagManager?.latest.add(tags);
     }
 
-    final downloadManager = DownloadManager.of(gridContext);
-    final postTags = PostTags.fromContext(gridContext);
+    final db = Services.of(gridContext);
+    final (
+      downloadManager,
+      localTags,
+      settingsService,
+      videoSettingsService,
+      galleryService
+    ) = (
+      DownloadManager.of(gridContext),
+      db.get<LocalTagsService>(),
+      db.require<SettingsService>(),
+      db.get<VideoSettingsService>(),
+      db.get<GalleryService>(),
+    );
 
     final client = BooruAPI.defaultClientForBooru(booru);
     final api = BooruAPI.fromEnum(booru, client);
@@ -80,27 +94,37 @@ class PopularRandomChips extends StatelessWidget {
     bool canLoadMore = true;
 
     final stateController = DefaultStateController(
-      getContent: (i) => value[i].content(),
+      getContent: (i) => value[i].content(gridContext),
       count: 0,
       wrapNotifiers: (child) => OnBooruTagPressed(
         onPressed: onTagPressed,
         child: child,
       ),
       statistics: StatisticsBooruService.asImageViewStatistics(),
-      download: (i) => value[i].download(downloadManager, postTags),
-      tags: (c) => DefaultPostPressable.imageViewTags(
-        c,
-        db.tagManager,
-      ),
-      watchTags: (c, f) => DefaultPostPressable.watchTags(
-        c,
-        f,
-        db.tagManager,
-      ),
+      download: downloadManager != null && localTags != null
+          ? (i) => value[i].download(
+                downloadManager: downloadManager,
+                localTags: localTags,
+                settingsService: settingsService,
+              )
+          : null,
+      tags: tagManager != null
+          ? (c) => DefaultPostPressable.imageViewTags(
+                c,
+                tagManager!,
+              )
+          : null,
+      watchTags: tagManager != null
+          ? (c, f) => DefaultPostPressable.watchTags(
+                c,
+                f,
+                tagManager!.pinned,
+              )
+          : null,
       pageChange: (state) {
         final post = value[state.currentIndex];
 
-        db.visitedPosts.addAll([
+        visitedPosts?.addAll([
           VisitedPost(
             booru: post.booru,
             id: post.id,
@@ -118,18 +142,18 @@ class PopularRandomChips extends StatelessWidget {
         final List<Post> next;
 
         if (tags.isEmpty) {
-          final miscSettings = MiscSettingsService.db().current;
+          final miscSettings = miscSettingsService?.current;
           next = await api.randomPosts(
-            db.tagManager.excluded,
+            tagManager?.excluded,
             safeMode(),
             true,
             // order: RandomPostsOrder.random,
-            addTags: miscSettings.randomVideosAddTags,
+            addTags: miscSettings?.randomVideosAddTags ?? "",
             page: page + 1,
           );
         } else {
           next = await api.randomPosts(
-            db.tagManager.excluded,
+            tagManager?.excluded,
             safeMode(),
             true,
             // order: RandomPostsOrder.random,
@@ -146,6 +170,7 @@ class PopularRandomChips extends StatelessWidget {
 
         return value.length;
       },
+      videoSettingsService: videoSettingsService,
     );
 
     Navigator.of(gridContext, rootNavigator: true)
@@ -167,6 +192,9 @@ class PopularRandomChips extends StatelessWidget {
 
             return ImageView(
               stateController: stateController,
+              galleryService: galleryService,
+              videoSettingsService: videoSettingsService,
+              settingsService: settingsService,
             );
           },
           newStatus: () async {
@@ -177,18 +205,18 @@ class PopularRandomChips extends StatelessWidget {
             final List<Post> posts;
 
             if (tags.isEmpty) {
-              final miscSettings = MiscSettingsService.db().current;
+              final miscSettings = miscSettingsService?.current;
 
               posts = await api.randomPosts(
-                db.tagManager.excluded,
+                tagManager?.excluded,
                 safeMode(),
                 true,
                 // order: RandomPostsOrder.random,
-                addTags: miscSettings.randomVideosAddTags,
+                addTags: miscSettings?.randomVideosAddTags ?? "",
               );
             } else {
               posts = await api.randomPosts(
-                db.tagManager.excluded,
+                tagManager?.excluded,
                 safeMode(),
                 true,
                 // order: RandomPostsOrder.random,
@@ -200,7 +228,7 @@ class PopularRandomChips extends StatelessWidget {
 
             final post = value.first;
 
-            db.visitedPosts.addAll([
+            visitedPosts?.addAll([
               VisitedPost(
                 booru: post.booru,
                 id: post.id,
@@ -229,37 +257,59 @@ class PopularRandomChips extends StatelessWidget {
     ThemeData theme,
   ) {
     if (tags.isNotEmpty) {
-      db.tagManager.latest.add(tags);
+      tagManager?.latest.add(tags);
     }
 
     final client = BooruAPI.defaultClientForBooru(booru);
     final api = BooruAPI.fromEnum(booru, client);
 
-    final downloadManager = DownloadManager.of(gridContext);
-    final postTags = PostTags.fromContext(gridContext);
+    final db = Services.of(gridContext);
+    final (
+      downloadManager,
+      localTags,
+      settingsService,
+      videoSettingsService,
+      galleryService
+    ) = (
+      DownloadManager.of(gridContext),
+      db.get<LocalTagsService>(),
+      db.require<SettingsService>(),
+      db.get<VideoSettingsService>(),
+      db.get<GalleryService>(),
+    );
 
     final value = <Post>[];
     int page = 0;
     bool canLoadMore = true;
 
     final stateController = DefaultStateController(
-      getContent: (i) => value[i].content(),
+      getContent: (i) => value[i].content(gridContext),
       statistics: StatisticsBooruService.asImageViewStatistics(),
-      download: (i) => value[i].download(downloadManager, postTags),
-      tags: (c) => DefaultPostPressable.imageViewTags(
-        c,
-        db.tagManager,
-      ),
-      watchTags: (c, f) => DefaultPostPressable.watchTags(
-        c,
-        f,
-        db.tagManager,
-      ),
+      download: downloadManager != null && localTags != null
+          ? (i) => value[i].download(
+                downloadManager: downloadManager,
+                localTags: localTags,
+                settingsService: settingsService,
+              )
+          : null,
+      tags: tagManager != null
+          ? (c) => DefaultPostPressable.imageViewTags(
+                c,
+                tagManager!,
+              )
+          : null,
+      watchTags: tagManager != null
+          ? (c, f) => DefaultPostPressable.watchTags(
+                c,
+                f,
+                tagManager!.pinned,
+              )
+          : null,
       preloadNextPictures: true,
       pageChange: (state) {
         final post = value[state.currentIndex];
 
-        db.visitedPosts.addAll([
+        visitedPosts?.addAll([
           VisitedPost(
             booru: post.booru,
             id: post.id,
@@ -279,7 +329,7 @@ class PopularRandomChips extends StatelessWidget {
         }
 
         final ret = await api.randomPosts(
-          db.tagManager.excluded,
+          tagManager?.excluded,
           safeMode(),
           false,
           addTags: tags,
@@ -295,6 +345,7 @@ class PopularRandomChips extends StatelessWidget {
         return value.length;
       },
       count: 0,
+      videoSettingsService: videoSettingsService,
     );
 
     Navigator.of(gridContext, rootNavigator: true)
@@ -307,7 +358,7 @@ class PopularRandomChips extends StatelessWidget {
             canLoadMore = true;
 
             final ret = await api.randomPosts(
-              db.tagManager.excluded,
+              tagManager?.excluded,
               safeMode(),
               false,
               addTags: tags,
@@ -317,7 +368,7 @@ class PopularRandomChips extends StatelessWidget {
 
             final post = value.first;
 
-            db.visitedPosts.addAll([
+            visitedPosts?.addAll([
               VisitedPost(
                 booru: post.booru,
                 id: post.id,
@@ -334,6 +385,9 @@ class PopularRandomChips extends StatelessWidget {
           builder: (context, value) {
             return ImageView(
               stateController: stateController,
+              galleryService: galleryService,
+              videoSettingsService: videoSettingsService,
+              settingsService: settingsService,
             );
           },
         ),
@@ -362,24 +416,18 @@ class PopularRandomChips extends StatelessWidget {
             ActionChip(
               onPressed: () {
                 if (tags.isNotEmpty) {
-                  db.tagManager.latest.add(tags);
+                  tagManager?.latest.add(tags);
                 }
 
                 final client = BooruAPI.defaultClientForBooru(booru);
                 final api = BooruAPI.fromEnum(booru, client);
 
-                Navigator.of(gridContext, rootNavigator: true)
-                    .push<void>(
-                      MaterialPageRoute(
-                        builder: (context) => PopularPage(
-                          api: api,
-                          tags: tags,
-                          db: db,
-                          safeMode: safeMode,
-                        ),
-                      ),
-                    )
-                    .whenComplete(() => client.close(force: true));
+                PopularPage.open(
+                  gridContext,
+                  tags: tags,
+                  api: api,
+                  safeMode: safeMode,
+                ).whenComplete(() => client.close(force: true));
               },
               label: Text(
                 "${l10n.popularPosts}${tags.isEmpty ? '' : " #$tags"}",
@@ -413,17 +461,20 @@ class _VideosSettingsDialog extends StatefulWidget {
   const _VideosSettingsDialog({
     // super.key,
     required this.booru,
+    required this.miscSettingsService,
   });
 
   final Booru booru;
+  final MiscSettingsService miscSettingsService;
 
   @override
   State<_VideosSettingsDialog> createState() => __VideosSettingsDialogState();
 }
 
-class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
-  late final StreamSubscription<MiscSettingsData?> subscr;
-  MiscSettingsData miscSettings = MiscSettingsService.db().current;
+class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
+    with MiscSettingsWatcherMixin {
+  @override
+  MiscSettingsService get miscSettingsService => widget.miscSettingsService;
 
   late final TextEditingController textController;
   final focus = FocusNode();
@@ -438,24 +489,17 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
     api = BooruAPI.fromEnum(widget.booru, client);
 
     textController =
-        TextEditingController(text: miscSettings.randomVideosAddTags);
-
-    subscr = miscSettings.s.watch((settings) {
-      setState(() {
-        miscSettings = settings!;
-      });
-    });
+        TextEditingController(text: miscSettings!.randomVideosAddTags);
   }
 
   @override
   void dispose() {
-    subscr.cancel();
     focus.dispose();
 
     client.close(force: true);
 
-    if (miscSettings.randomVideosAddTags != textController.text) {
-      miscSettings.copy(randomVideosAddTags: textController.text).save();
+    if (miscSettings!.randomVideosAddTags != textController.text) {
+      miscSettings!.copy(randomVideosAddTags: textController.text).maybeSave();
     }
 
     textController.dispose();
@@ -473,25 +517,28 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog> {
       title: Text(l10n.settingsLabel),
       actions: [
         IconButton.filled(
-          onPressed: () => miscSettings
+          onPressed: () => miscSettings!
               .copy(randomVideosOrder: RandomPostsOrder.random)
-              .save(),
+              .maybeSave(),
           icon: const Icon(Icons.shuffle_rounded),
-          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.random,
+          isSelected:
+              miscSettings!.randomVideosOrder == RandomPostsOrder.random,
         ),
         IconButton.filled(
-          onPressed: () => miscSettings
+          onPressed: () => miscSettings!
               .copy(randomVideosOrder: RandomPostsOrder.rating)
-              .save(),
+              .maybeSave(),
           icon: const Icon(Icons.whatshot_rounded),
-          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.rating,
+          isSelected:
+              miscSettings!.randomVideosOrder == RandomPostsOrder.rating,
         ),
         IconButton.filled(
-          onPressed: () => miscSettings
+          onPressed: () => miscSettings!
               .copy(randomVideosOrder: RandomPostsOrder.latest)
-              .save(),
+              .maybeSave(),
           icon: const Icon(Icons.schedule_rounded),
-          isSelected: miscSettings.randomVideosOrder == RandomPostsOrder.latest,
+          isSelected:
+              miscSettings!.randomVideosOrder == RandomPostsOrder.latest,
         ),
       ],
       content: Padding(
@@ -539,9 +586,15 @@ class PopularPage extends StatefulWidget {
   const PopularPage({
     super.key,
     required this.api,
-    required this.db,
     required this.tags,
     required this.safeMode,
+    required this.gridBookmarks,
+    required this.hiddenBooruPosts,
+    required this.favoritePosts,
+    required this.tagManager,
+    required this.settingsService,
+    required this.downloadManager,
+    required this.localTags,
   });
 
   final String tags;
@@ -550,7 +603,40 @@ class PopularPage extends StatefulWidget {
 
   final SafeMode Function() safeMode;
 
-  final DbConn db;
+  final GridBookmarkService? gridBookmarks;
+  final HiddenBooruPostsService? hiddenBooruPosts;
+  final FavoritePostSourceService? favoritePosts;
+  final TagManagerService? tagManager;
+  final DownloadManager? downloadManager;
+  final LocalTagsService? localTags;
+
+  final SettingsService settingsService;
+
+  static Future<void> open(
+    BuildContext context, {
+    required String tags,
+    required BooruAPI api,
+    required SafeMode Function() safeMode,
+  }) {
+    final db = Services.of(context);
+
+    return Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute(
+        builder: (context) => PopularPage(
+          api: api,
+          tags: tags,
+          safeMode: safeMode,
+          gridBookmarks: db.get<GridBookmarkService>(),
+          hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
+          favoritePosts: db.get<FavoritePostSourceService>(),
+          tagManager: db.get<TagManagerService>(),
+          downloadManager: DownloadManager.of(context),
+          localTags: db.get<LocalTagsService>(),
+          settingsService: db.require<SettingsService>(),
+        ),
+      ),
+    );
+  }
 
   @override
   State<PopularPage> createState() => _PopularPageState();
@@ -558,9 +644,15 @@ class PopularPage extends StatefulWidget {
 
 class _PopularPageState extends State<PopularPage>
     with CommonGridData<Post, PopularPage> {
-  GridBookmarkService get gridBookmarks => widget.db.gridBookmarks;
-  HiddenBooruPostService get hiddenBooruPost => widget.db.hiddenBooruPost;
-  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
+  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
+  HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  TagManagerService? get tagManager => widget.tagManager;
+  DownloadManager? get downloadManager => widget.downloadManager;
+  LocalTagsService? get localTags => widget.localTags;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: true,
@@ -578,7 +670,7 @@ class _PopularPageState extends State<PopularPage>
       final ret = await widget.api.page(
         pageSaver.page,
         widget.tags,
-        widget.db.tagManager.excluded,
+        tagManager?.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
         pageSaver: pageSaver,
@@ -590,7 +682,7 @@ class _PopularPageState extends State<PopularPage>
       final ret = await widget.api.page(
         pageSaver.page + 1,
         widget.tags,
-        widget.db.tagManager.excluded,
+        tagManager?.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
         pageSaver: pageSaver,
@@ -608,9 +700,11 @@ class _PopularPageState extends State<PopularPage>
     super.dispose();
   }
 
-  void _download(int i) => source
-      .forIdx(i)
-      ?.download(DownloadManager.of(context), PostTags.fromContext(context));
+  void _download(int i) => source.forIdx(i)?.download(
+        downloadManager: downloadManager!,
+        localTags: localTags!,
+        settingsService: settingsService,
+      );
 
   void _onBooruTagPressed(
     BuildContext _,
@@ -618,20 +712,13 @@ class _PopularPageState extends State<PopularPage>
     String tag,
     SafeMode? safeMode,
   ) {
-    Navigator.push(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return BooruRestoredPage(
-            booru: booru,
-            tags: tag,
-            overrideSafeMode: safeMode,
-            db: widget.db,
-            wrapScaffold: true,
-            saveSelectedPage: (_) {},
-          );
-        },
-      ),
+      booru: booru,
+      tags: tag,
+      overrideSafeMode: safeMode,
+      rootNavigator: true,
+      saveSelectedPage: (_) {},
     );
   }
 
@@ -640,13 +727,22 @@ class _PopularPageState extends State<PopularPage>
     final l10n = context.l10n();
 
     final gridActions = <GridAction<Post>>[
-      actions.downloadPost(context, widget.api.booru, null),
-      actions.favorites(
-        context,
-        favoritePosts,
-        showDeleteSnackbar: true,
-      ),
-      actions.hide(context, hiddenBooruPost),
+      if (downloadManager != null && localTags != null)
+        actions.downloadPost(
+          context,
+          widget.api.booru,
+          null,
+          downloadManager: downloadManager!,
+          localTags: localTags!,
+          settingsService: settingsService,
+        ),
+      if (favoritePosts != null)
+        actions.favorites(
+          context,
+          favoritePosts!,
+          showDeleteSnackbar: true,
+        ),
+      if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
     ];
 
     return WrapGridPage(
@@ -655,7 +751,7 @@ class _PopularPageState extends State<PopularPage>
         searchTextController: null,
         filter: null,
         child: GridConfiguration(
-          watch: widget.db.gridSettings.booru.watch,
+          watch: gridSettings.watch,
           child: BooruAPINotifier(
             api: widget.api,
             child: OnBooruTagPressed(
@@ -701,7 +797,9 @@ class _PopularPageState extends State<PopularPage>
                       actions: [if (settingsButton != null) settingsButton],
                     ),
                   ),
-                  download: _download,
+                  download: downloadManager != null && localTags != null
+                      ? _download
+                      : null,
                   registerNotifiers: (child) => OnBooruTagPressed(
                     onPressed: (context, booru, value, safeMode) {
                       ExitOnPressRoute.maybeExitOf(context);

@@ -5,13 +5,11 @@
 
 part of "services.dart";
 
-extension HiddenBooruPostServiceExt on HiddenBooruPostService {
+extension HiddenBooruPostServiceExt on HiddenBooruPostsService {
   bool isHidden(int id, Booru booru) => cachedValues.containsKey((id, booru));
 }
 
-abstract interface class HiddenBooruPostService implements ServiceMarker {
-  factory HiddenBooruPostService.db() => _currentDb.hiddenBooruPost;
-
+abstract interface class HiddenBooruPostsService implements ServiceMarker {
   Map<(int, Booru), String> get cachedValues;
 
   void addAll(List<HiddenBooruPostData> booru);

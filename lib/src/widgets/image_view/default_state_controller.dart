@@ -56,6 +56,7 @@ class DefaultStateController extends ImageViewStateController {
   DefaultStateController({
     required this.getContent,
     required int count,
+    required this.videoSettingsService,
     Stream<int>? countEvents,
     this.scrollUntill,
     this.preloadNextPictures = false,
@@ -125,6 +126,8 @@ class DefaultStateController extends ImageViewStateController {
   final ContentGetter getContent;
   final List<ImageTag> Function(ContentWidgets)? tags;
   final Future<int> Function()? onNearEnd;
+
+  final VideoSettingsService? videoSettingsService;
 
   final void Function(DefaultStateController state)? pageChange;
   @override
@@ -447,7 +450,7 @@ class DefaultStateController extends ImageViewStateController {
           url: uri,
           networkThumb: networkThumb,
           localVideo: false,
-          db: DbConn.of(context).videoSettings,
+          videoSettings: videoSettingsService,
         ),
       );
 
@@ -543,6 +546,7 @@ class __CurrentIndexMetadataHolderState
     indexEvents = widget.indexEvents.listen((newIndex) {
       currentMetadata = _ContentToMetadata(
         indexEvents: widget.indexEvents,
+        countEvents: widget.countEvents,
         content: widget.getContent(newIndex)!,
         getContent: widget.getContent,
         wrapNotifiers: widget.wrapNotifiers,
@@ -558,7 +562,8 @@ class __CurrentIndexMetadataHolderState
     countEvents = widget.countEvents.listen((newCount) {
       currentMetadata = _ContentToMetadata(
         indexEvents: widget.indexEvents,
-        content: currentMetadata.content,
+        countEvents: widget.countEvents,
+        content: widget.getContent(currentMetadata.index)!,
         getContent: widget.getContent,
         wrapNotifiers: widget.wrapNotifiers,
         index: currentMetadata.index,
@@ -572,6 +577,7 @@ class __CurrentIndexMetadataHolderState
 
     currentMetadata = _ContentToMetadata(
       indexEvents: widget.indexEvents,
+      countEvents: widget.countEvents,
       content: widget.getContent(widget.currentIndex)!,
       getContent: widget.getContent,
       wrapNotifiers: widget.wrapNotifiers,
@@ -609,6 +615,7 @@ class _ContentToMetadata implements CurrentIndexMetadata {
     required this.content,
     required this.index,
     required this.getContent,
+    required this.countEvents,
     required this.indexEvents,
     required this.wrapNotifiers,
     required this.count,
@@ -617,6 +624,7 @@ class _ContentToMetadata implements CurrentIndexMetadata {
   final NotifierWrapper? wrapNotifiers;
   final ContentGetter getContent;
   final Stream<int> indexEvents;
+  final Stream<int> countEvents;
 
   @override
   final int count;
@@ -667,8 +675,10 @@ class _ContentToMetadata implements CurrentIndexMetadata {
                         firstContent: (CurrentIndexMetadata.of(context)
                                 as _ContentToMetadata)
                             .content,
+                        firstIndex: index,
                         getContent: getContent,
-                        stream: indexEvents,
+                        indexEvents: indexEvents,
+                        countEvents: countEvents,
                       ),
                     ),
                   ),
@@ -695,13 +705,17 @@ class _ContentToMetadata implements CurrentIndexMetadata {
 class _CellContent extends StatefulWidget {
   const _CellContent({
     // super.key,
-    required this.stream,
+    required this.indexEvents,
     required this.getContent,
+    required this.countEvents,
     required this.firstContent,
+    required this.firstIndex,
   });
 
   final Contentable firstContent;
-  final Stream<int> stream;
+  final int firstIndex;
+  final Stream<int> indexEvents;
+  final Stream<int> countEvents;
   final ContentGetter getContent;
 
   @override
@@ -709,32 +723,56 @@ class _CellContent extends StatefulWidget {
 }
 
 class __CellContentState extends State<_CellContent> {
-  late final StreamSubscription<int> events;
+  late final StreamSubscription<int> countEvents;
+  late final StreamSubscription<int> indexEvents;
 
   late Contentable content;
+
+  late int currentIndex;
+
+  int refreshes = 0;
 
   @override
   void initState() {
     super.initState();
 
+    currentIndex = widget.firstIndex;
+
     content = widget.firstContent;
 
-    events = widget.stream.listen((newContent) {
+    indexEvents = widget.indexEvents.listen((newContent) {
       setState(() {
         content = widget.getContent(newContent)!;
+        currentIndex = newContent;
+      });
+    });
+
+    countEvents = widget.countEvents.listen((newCount) {
+      final newContent = widget.getContent(currentIndex);
+      if (newContent == null) {
+        return;
+      }
+
+      setState(() {
+        content = newContent;
+        refreshes += 1;
       });
     });
   }
 
   @override
   void dispose() {
-    events.cancel();
+    countEvents.cancel();
+    indexEvents.cancel();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink();
+    return KeyedSubtree(
+      key: ValueKey(refreshes),
+      child: content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink(),
+    );
   }
 }

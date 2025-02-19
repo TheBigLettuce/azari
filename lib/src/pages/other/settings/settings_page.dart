@@ -19,12 +19,42 @@ part "select_theme.dart";
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
+    required this.settingsService,
+    required this.miscSettingsService,
+    required this.galleryService,
+    required this.thumbnailService,
   });
+
+  final MiscSettingsService? miscSettingsService;
+  final ThumbnailService? thumbnailService;
+  final GalleryService? galleryService;
+
+  final SettingsService settingsService;
+
+  static Future<void> open(BuildContext context) {
+    final db = Services.of(context);
+    final (settingsService, miscSettings, galleryService, thumbnailService) = (
+      db.require<SettingsService>(),
+      db.get<MiscSettingsService>(),
+      db.get<GalleryService>(),
+      db.get<ThumbnailService>(),
+    );
+
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (context) => SettingsPage(
+          settingsService: settingsService,
+          miscSettingsService: miscSettings,
+          galleryService: galleryService,
+          thumbnailService: thumbnailService,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    final db = DbConn.of(context);
 
     final padding =
         EdgeInsets.only(bottom: 8 + MediaQuery.paddingOf(context).bottom);
@@ -34,7 +64,10 @@ class SettingsPage extends StatelessWidget {
       child: SliverPadding(
         padding: padding,
         sliver: SettingsList(
-          db: db,
+          settingsService: settingsService,
+          miscSettingsService: miscSettingsService,
+          thumbnailService: thumbnailService,
+          galleryService: galleryService,
         ),
       ),
     );

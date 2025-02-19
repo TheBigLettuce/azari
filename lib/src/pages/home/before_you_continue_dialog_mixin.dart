@@ -6,9 +6,12 @@
 part of "home.dart";
 
 mixin _BeforeYouContinueDialogMixin {
+  SettingsService get settingsService;
+
   void maybeBeforeYouContinueDialog(
     BuildContext context,
     SettingsData settings,
+    GalleryService galleryService,
   ) {
     if (settings.path.isEmpty) {
       WidgetsBinding.instance.scheduleFrameCallback(
@@ -32,7 +35,11 @@ mixin _BeforeYouContinueDialogMixin {
                     ),
                     TextButton(
                       onPressed: () {
-                        SettingsService.db().chooseDirectory((e) {}, l10n);
+                        SettingsService.chooseDirectory(
+                          (e) {},
+                          l10n,
+                          galleryServices: galleryService,
+                        );
                         Navigator.pop(context);
                       },
                       child: Text(l10n.choose),

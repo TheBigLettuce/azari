@@ -26,6 +26,8 @@ class ImageViewSkeleton extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.stateControler,
+    required this.videoSettingsService,
+    required this.settingsService,
     required this.child,
   });
 
@@ -35,6 +37,9 @@ class ImageViewSkeleton extends StatefulWidget {
 
   final VideoControlsControllerImpl videoControls;
   final ImageViewStateController stateControler;
+
+  final VideoSettingsService? videoSettingsService;
+  final SettingsService settingsService;
 
   final Widget child;
 
@@ -77,8 +82,6 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
   @override
   Widget build(BuildContext context) {
     final metadata = CurrentIndexMetadata.of(context);
-    // final stickers = metadata.stickers(context);
-    final appBarButtons = metadata.appBarButtons(context);
 
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final theme = Theme.of(context);
@@ -159,25 +162,42 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  children: appBarButtons.reversed
-                                      .map(
-                                        (e) => Padding(
-                                          padding:
-                                              const EdgeInsets.only(left: 8),
-                                          child: IconButton(
-                                            onPressed: e.onPressed,
-                                            icon: Icon(e.icon),
-                                            style: ButtonStyle(
-                                              backgroundColor:
-                                                  WidgetStatePropertyAll(
-                                                colorScheme.surface,
+                                Builder(
+                                  builder: (context) {
+                                    final metadata =
+                                        CurrentIndexMetadata.of(context);
+                                    final appBarButtons =
+                                        metadata.appBarButtons(context);
+
+                                    return Row(
+                                      key: metadata.uniqueKey,
+                                      children: appBarButtons.reversed
+                                          .map(
+                                            (e) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8,
+                                              ),
+                                              child: IconButtonTheme(
+                                                data: IconButtonThemeData(
+                                                  style: ButtonStyle(
+                                                    backgroundColor:
+                                                        WidgetStatePropertyAll(
+                                                      colorScheme.surface,
+                                                    ),
+                                                  ),
+                                                ),
+                                                child: e.overrideWidget ??
+                                                    IconButton(
+                                                      onPressed: e.onPressed,
+                                                      icon: Icon(e.icon),
+                                                      // style: ,
+                                                    ),
                                               ),
                                             ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
+                                          )
+                                          .toList(),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -200,14 +220,15 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                   child: SizedBox.shrink(),
                 ),
               ),
-              if (appBarButtons.isNotEmpty)
-                _BottomIcons(
-                  videoControls: isWide ? null : widget.videoControls,
-                  viewPadding: viewPadding,
-                  visibilityController: visibilityController,
-                  seekTimeAnchor: seekTimeAnchor,
-                  pauseVideoState: widget.pauseVideoState,
-                ),
+              _BottomIcons(
+                videoControls: isWide ? null : widget.videoControls,
+                viewPadding: viewPadding,
+                visibilityController: visibilityController,
+                seekTimeAnchor: seekTimeAnchor,
+                pauseVideoState: widget.pauseVideoState,
+                videoSettingsService: widget.videoSettingsService,
+                settingsService: widget.settingsService,
+              ),
               SeekTimeAnchor(
                 key: seekTimeAnchor,
                 bottomPadding: viewPadding.top,
@@ -220,7 +241,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                     padding: EdgeInsets.only(bottom: viewPadding.bottom),
                     child: VideoControls(
                       videoControls: widget.videoControls,
-                      db: DbConn.of(context).videoSettings,
+                      videoSettings: widget.videoSettingsService,
                       seekTimeAnchor: seekTimeAnchor,
                       vertical: true,
                     ),
@@ -580,6 +601,8 @@ class _BottomIcons extends StatefulWidget {
     required this.videoControls,
     required this.seekTimeAnchor,
     required this.pauseVideoState,
+    required this.videoSettingsService,
+    required this.settingsService,
   });
 
   final EdgeInsets viewPadding;
@@ -589,6 +612,9 @@ class _BottomIcons extends StatefulWidget {
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
   final VideoControlsControllerImpl? videoControls;
   final PauseVideoState pauseVideoState;
+
+  final VideoSettingsService? videoSettingsService;
+  final SettingsService settingsService;
 
   @override
   State<_BottomIcons> createState() => __BottomIconsState();
@@ -618,68 +644,177 @@ class __BottomIconsState extends State<_BottomIcons>
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: widget.viewPadding.bottom + 18) +
-                const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: EdgeInsets.only(bottom: widget.viewPadding.bottom)
+            // + const EdgeInsets.symmetric(horizontal: 16)
+            ,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SizedBox(
-                    width: 56,
-                    child: Column(
-                      key: metadata.uniqueKey,
-                      mainAxisSize: MainAxisSize.min,
-                      children: actions.reversed
-                          .map(
-                            (e) => WrapGridActionButton(
-                              e.icon,
-                              e.onPress == null
-                                  ? null
-                                  : () {
-                                      AppBarVisibilityNotifier.maybeToggleOf(
-                                        context,
-                                        true,
-                                      );
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: SizedBox(
+                            width: 56,
+                            child: Column(
+                              key: metadata.uniqueKey,
+                              mainAxisSize: MainAxisSize.min,
+                              children: actions.reversed
+                                  .map(
+                                    (e) => WrapGridActionButton(
+                                      e.icon,
+                                      e.onPress == null
+                                          ? null
+                                          : () {
+                                              AppBarVisibilityNotifier
+                                                  .maybeToggleOf(
+                                                context,
+                                                true,
+                                              );
 
-                                      e.onPress!(metadata.index);
-                                    },
-                              onLongPress: null,
-                              play: e.play,
-                              animate: e.animate,
-                              color: e.color,
-                              watch: e.watch,
-                              animation: e.animation,
-                              notifier: e.longLoadingNotifier,
+                                              e.onPress!(metadata.index);
+                                            },
+                                      onLongPress: null,
+                                      play: e.play,
+                                      animate: e.animate,
+                                      color: e.color,
+                                      watch: e.watch,
+                                      animation: e.animation,
+                                      notifier: e.longLoadingNotifier,
+                                    ),
+                                  )
+                                  .toList(),
                             ),
-                          )
-                          .toList(),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Builder(
+                            builder: (context) {
+                              final theme = Theme.of(context);
+                              final colorScheme = theme.colorScheme;
+
+                              final stickers = CurrentIndexMetadata.of(context)
+                                  .stickers(context);
+
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: stickers
+                                      .map(
+                                        (e) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 8,
+                                          ),
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              color: theme.colorScheme.surface,
+                                            ),
+                                            child: Padding(
+                                              padding: e.subtitle != null
+                                                  ? const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 2,
+                                                    )
+                                                  : const EdgeInsets.all(4),
+                                              child: e.subtitle != null
+                                                  ? Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          e.icon,
+                                                          size: 10,
+                                                          color: e.important
+                                                              ? colorScheme
+                                                                  .secondary
+                                                              : colorScheme
+                                                                  .onSurface
+                                                                  .withValues(
+                                                                  alpha: 0.6,
+                                                                ),
+                                                        ),
+                                                        const Padding(
+                                                          padding:
+                                                              EdgeInsets.only(
+                                                            right: 4,
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          e.subtitle!,
+                                                          style: theme.textTheme
+                                                              .labelSmall
+                                                              ?.copyWith(
+                                                            color: e.important
+                                                                ? colorScheme
+                                                                    .secondary
+                                                                : colorScheme
+                                                                    .onSurface
+                                                                    .withValues(
+                                                                    alpha: 0.6,
+                                                                  ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : Icon(
+                                                      e.icon,
+                                                      size: 16,
+                                                      color: e.important
+                                                          ? colorScheme
+                                                              .secondary
+                                                          : colorScheme
+                                                              .onSurface
+                                                              .withValues(
+                                                              alpha: 0.6,
+                                                            ),
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (widget.videoControls != null)
+                                VideoControls(
+                                  videoControls: widget.videoControls!,
+                                  videoSettings: widget.videoSettingsService,
+                                  seekTimeAnchor: widget.seekTimeAnchor,
+                                  vertical: false,
+                                ),
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 8),
+                              ),
+                              if (openMenuButton != null) openMenuButton,
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const Expanded(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: _BottomRibbon(),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (widget.videoControls != null)
-                        VideoControls(
-                          videoControls: widget.videoControls!,
-                          db: DbConn.of(context).videoSettings,
-                          seekTimeAnchor: widget.seekTimeAnchor,
-                          vertical: false,
-                        ),
-                      const Padding(padding: EdgeInsets.only(bottom: 8)),
-                      if (openMenuButton != null) openMenuButton,
-                    ],
-                  ),
-                ),
+                _BottomRibbon(settingsService: widget.settingsService),
               ],
             ),
           ),
@@ -690,99 +825,24 @@ class __BottomIconsState extends State<_BottomIcons>
 }
 
 class _BottomRibbon extends StatelessWidget {
-  const _BottomRibbon(
-      // {super.key}
-      );
+  const _BottomRibbon({
+    // super.key,
+    required this.settingsService,
+  });
+
+  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final stickers = CurrentIndexMetadata.of(context).stickers(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PinnedTagsRow(
-            tags: ImageTagsNotifier.of(context),
-          ),
-          const Padding(padding: EdgeInsets.only(bottom: 16)),
-          if (stickers.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 8,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: stickers
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(
-                          right: 8,
-                        ),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: theme.colorScheme.surface,
-                          ),
-                          child: Padding(
-                            padding: e.subtitle != null
-                                ? const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  )
-                                : const EdgeInsets.all(4),
-                            child: e.subtitle != null
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        e.icon,
-                                        size: 10,
-                                        color: e.important
-                                            ? colorScheme.secondary
-                                            : colorScheme.onSurface.withValues(
-                                                alpha: 0.6,
-                                              ),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 4),
-                                      ),
-                                      Text(
-                                        e.subtitle!,
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: e.important
-                                              ? colorScheme.secondary
-                                              : colorScheme.onSurface
-                                                  .withValues(
-                                                  alpha: 0.6,
-                                                ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Icon(
-                                    e.icon,
-                                    size: 16,
-                                    color: e.important
-                                        ? colorScheme.secondary
-                                        : colorScheme.onSurface.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-        ],
+    return AnimatedSize(
+      curve: Easing.standard,
+      duration: Durations.medium1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: _PinnedTagsRow(
+          tags: ImageTagsNotifier.of(context),
+          settingsService: settingsService,
+        ),
       ),
     );
   }
@@ -792,9 +852,11 @@ class _PinnedTagsRow extends StatefulWidget {
   const _PinnedTagsRow({
     // super.key,
     required this.tags,
+    required this.settingsService,
   });
 
   final ImageViewTags tags;
+  final SettingsService settingsService;
 
   @override
   State<_PinnedTagsRow> createState() => __PinnedTagsRowState();
@@ -828,55 +890,58 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
   Widget build(BuildContext context) {
     final tagsRes = widget.tags;
 
-    final tagsReady = pinnedTagList
-        .map(
-          (e) => PinnedTagChip(
-            tag: e.tag,
-            onPressed: tagsRes.res == null
-                ? null
-                : () {
-                    OnBooruTagPressed.maybePressOf(
-                      context,
-                      e.tag,
-                      tagsRes.res!.booru,
-                    );
-                  },
-            onLongPressed: tagsRes.res == null
-                ? null
-                : () {
-                    context.openSafeModeDialog((value) {
-                      OnBooruTagPressed.maybePressOf(
-                        context,
-                        e.tag,
-                        tagsRes.res!.booru,
-                        overrideSafeMode: value,
-                      );
-                    });
-                  },
-          ),
-        )
-        .toList();
-
     return AnimatedSwitcher(
       duration: Durations.medium4,
       reverseDuration: Durations.medium1,
       switchInCurve: Easing.standardAccelerate,
       switchOutCurve: Easing.standardDecelerate,
-      child: Wrap(
+      child: KeyedSubtree(
         key: ValueKey(pinnedTagList),
-        runSpacing: 6,
-        spacing: 4,
-        children: tagsReady.isEmpty || tagsReady.length == 1
-            ? tagsReady
-            : [
-                ...tagsReady.take(tagsReady.length - 1).map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: e,
+        child: pinnedTagList.isEmpty
+            ? const SizedBox.shrink()
+            : SizedBox(
+                height: 24,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: pinnedTagList.length,
+                  itemBuilder: (context, index) {
+                    final tag = pinnedTagList[index];
+
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: index != pinnedTagList.length - 1 ? 8 : 0,
                       ),
-                    ),
-                tagsReady.last,
-              ],
+                      child: PinnedTagChip(
+                        letterCount: -1,
+                        tag: tag.tag,
+                        onPressed: tagsRes.res == null
+                            ? null
+                            : () {
+                                OnBooruTagPressed.maybePressOf(
+                                  context,
+                                  tag.tag,
+                                  tagsRes.res!.booru,
+                                );
+                              },
+                        onLongPressed: tagsRes.res == null
+                            ? null
+                            : () {
+                                context.openSafeModeDialog(
+                                    widget.settingsService, (value) {
+                                  OnBooruTagPressed.maybePressOf(
+                                    context,
+                                    tag.tag,
+                                    tagsRes.res!.booru,
+                                    overrideSafeMode: value,
+                                  );
+                                });
+                              },
+                      ),
+                    );
+                  },
+                ),
+              ),
       ),
     );
   }
@@ -915,7 +980,7 @@ class PinnedTagChip extends StatelessWidget {
         : theme.colorScheme.surfaceContainerHigh;
 
     final text = Text(
-      "#${tag.length > letterCount ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
+      "#${(tag.length > letterCount) && !letterCount.isNegative ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
       style: (tight ? theme.textTheme.labelSmall : theme.textTheme.labelMedium)
           ?.copyWith(
         color: textColor,

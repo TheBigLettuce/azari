@@ -27,12 +27,14 @@ class DownloadsPage extends StatefulWidget {
   const DownloadsPage({
     super.key,
     required this.downloadManager,
-    required this.db,
+    required this.settingsService,
   });
 
   final DownloadManager downloadManager;
 
-  final DbConn db;
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) => Services.hasDownloadManager;
 
   @override
   State<DownloadsPage> createState() => _DownloadsPageState();
@@ -41,6 +43,9 @@ class DownloadsPage extends StatefulWidget {
 class _DownloadsPageState extends State<DownloadsPage>
     with CommonGridData<Post, DownloadsPage> {
   DownloadManager get downloadManager => widget.downloadManager;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final ChainedFilterResourceSource<String, DownloadHandle> filter;
 
@@ -95,7 +100,7 @@ class _DownloadsPageState extends State<DownloadsPage>
         limitLabelChildren: 6,
         injectedLabel: "",
         segment: (e) => e.data.status.translatedString(l10n),
-        caps: SegmentCapability.alwaysPinned(),
+        caps: const SegmentCapability.alwaysPinned(),
       );
 
   GridAction<DownloadHandle> delete(BuildContext context) {
@@ -157,9 +162,7 @@ class _DownloadsPageState extends State<DownloadsPage>
               delete(context),
               GridAction(
                 Icons.restart_alt_rounded,
-                (selected) {
-                  downloadManager.restartAll(selected, settings);
-                },
+                downloadManager.restartAll,
                 false,
               ),
             ],

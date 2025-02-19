@@ -5,7 +5,7 @@
 
 import "dart:async";
 
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -13,7 +13,6 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/actions.dart" as booru_actions;
@@ -38,13 +37,29 @@ import "package:flutter/material.dart";
 class FavoritePostsPage extends StatefulWidget {
   const FavoritePostsPage({
     super.key,
-    required this.db,
     required this.rootNavigatorPop,
+    required this.gridSettings,
+    required this.favoritePosts,
+    required this.settingsService,
+    required this.downloadManager,
+    required this.localTags,
+    required this.miscSettingsService,
   });
 
   final void Function(bool)? rootNavigatorPop;
 
-  final DbConn db;
+  final DownloadManager? downloadManager;
+  final LocalTagsService? localTags;
+  final MiscSettingsService? miscSettingsService;
+
+  final GridSettingsService gridSettings;
+  final FavoritePostSourceService favoritePosts;
+
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<GridSettingsService>() != null &&
+      db.get<FavoritePostSourceService>() != null;
 
   @override
   State<FavoritePostsPage> createState() => _FavoritePostsPageState();
@@ -52,9 +67,16 @@ class FavoritePostsPage extends StatefulWidget {
 
 class _FavoritePostsPageState extends State<FavoritePostsPage>
     with CommonGridData<Post, FavoritePostsPage> {
-  FavoritePostSourceService get favoritePosts => widget.db.favoritePosts;
+  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
+  DownloadManager? get downloadManager => widget.downloadManager;
+  LocalTagsService? get localTags => widget.localTags;
+
+  FavoritePostSourceService get favoritePosts => widget.favoritePosts;
   WatchableGridSettingsData get gridSettings =>
-      widget.db.gridSettings.favoritePosts;
+      widget.gridSettings.favoritePosts;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final StreamSubscription<void> _safeModeWatcher;
 
@@ -91,6 +113,17 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     });
   }
 
+  Iterable<FavoritePost> _filterStars(
+    Iterable<FavoritePost> cells,
+    FilteringMode mode,
+  ) {
+    return cells.where(
+      (e) =>
+          safeModeState.current.inLevel(e.rating.asSafeMode) &&
+          (mode.toStars == e.stars),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +147,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
                 SortingMode.rating => e1.rating.asSafeMode.index
                     .compareTo(e2.rating.asSafeMode.index),
                 SortingMode.score => e1.score.compareTo(e2.score),
+                SortingMode.stars =>
+                  e1.stars.asNumber.compareTo(e2.stars.asNumber),
               };
             });
 
@@ -123,6 +158,23 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       ListStorage(reverse: true),
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
+          FilteringMode.fiveStars ||
+          FilteringMode.fourHalfStars ||
+          FilteringMode.fourStars ||
+          FilteringMode.threeHalfStars ||
+          FilteringMode.threeStars ||
+          FilteringMode.twoHalfStars ||
+          FilteringMode.twoStars ||
+          FilteringMode.oneHalfStars ||
+          FilteringMode.oneStars ||
+          FilteringMode.zeroHalfStars ||
+          FilteringMode.zeroStars =>
+            (
+              _filterTag(
+                _filterStars(cells, filteringMode),
+              ),
+              data,
+            ),
           FilteringMode.same => sameFavorites(
               cells,
               data,
@@ -169,23 +221,35 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
         };
       },
       prefilter: () {
-        MiscSettingsService.db()
-            .current
+        miscSettingsService?.current
             .copy(favoritesPageMode: filter.filteringMode)
-            .save();
+            .maybeSave();
       },
       allowedFilteringModes: const {
         FilteringMode.tag,
         FilteringMode.gif,
         FilteringMode.video,
         FilteringMode.same,
+        FilteringMode.fiveStars,
+        FilteringMode.fourHalfStars,
+        FilteringMode.fourStars,
+        FilteringMode.threeHalfStars,
+        FilteringMode.threeStars,
+        FilteringMode.twoHalfStars,
+        FilteringMode.twoStars,
+        FilteringMode.oneHalfStars,
+        FilteringMode.oneStars,
+        FilteringMode.zeroHalfStars,
+        FilteringMode.zeroStars,
       },
       allowedSortingModes: const {
         SortingMode.none,
         SortingMode.rating,
         SortingMode.score,
+        SortingMode.stars,
       },
-      initialFilteringMode: MiscSettingsService.db().current.favoritesPageMode,
+      initialFilteringMode:
+          miscSettingsService?.current.favoritesPageMode ?? FilteringMode.tag,
       initialSortingMode: SortingMode.none,
     );
 
@@ -218,6 +282,16 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       }
     }
   }
+
+  // static (Iterable<T>, dynamic) stars<T extends PostBase>(
+  //   Iterable<T> cells,
+  //   dynamic data_,
+  //   bool end,
+  //   Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
+  //   SafeMode currentSafeMode,
+  // ) {
+
+  // }
 
   static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
     Iterable<T> cells,
@@ -270,9 +344,11 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     gridKey.currentState?.tryScrollUp();
   }
 
-  void download(int i) => filter
-      .forIdxUnsafe(i)
-      .download(DownloadManager.of(context), PostTags.fromContext(context));
+  void _download(int i) => filter.forIdxUnsafe(i).download(
+        downloadManager: downloadManager!,
+        localTags: localTags!,
+        settingsService: settingsService,
+      );
 
   void _openDrawer() {
     Scaffold.of(context).openDrawer();
@@ -297,6 +373,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
               safeModeState: safeModeState,
               searchTextController: searchTextController,
               searchFocus: searchFocus,
+              settingsService: settingsService,
             ),
             Builder(
               builder: (context) {
@@ -337,18 +414,23 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
             ),
             registerNotifiers: (child) => OnBooruTagPressed(
               onPressed: _onPressed,
-              child: child,
+              child: filter.inject(child),
             ),
-            download: download,
+            download:
+                downloadManager != null && localTags != null ? _download : null,
             source: filter,
           ),
           description: GridDescription(
             actions: <GridAction<FavoritePost>>[
-              booru_actions.downloadFavoritePost(
-                context,
-                settings.selectedBooru,
-                null,
-              ),
+              if (downloadManager != null && localTags != null)
+                booru_actions.downloadFavoritePost(
+                  context,
+                  settings.selectedBooru,
+                  null,
+                  downloadManager: downloadManager!,
+                  localTags: localTags!,
+                  settingsService: settingsService,
+                ),
               booru_actions.favorites<FavoritePost>(
                 context,
                 favoritePosts,
@@ -373,6 +455,7 @@ class _SearchBarWidget extends StatelessWidget {
     required this.safeModeState,
     required this.searchTextController,
     required this.searchFocus,
+    required this.settingsService,
   });
 
   final TextEditingController searchTextController;
@@ -383,20 +466,19 @@ class _SearchBarWidget extends StatelessWidget {
   final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
   final SafeModeState safeModeState;
 
+  final SettingsService settingsService;
+
   void launchGrid(BuildContext context) {
     if (searchTextController.text.isNotEmpty) {
-      context.openSafeModeDialog((safeMode) {
-        Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            builder: (context) => BooruRestoredPage(
-              db: DbConn.of(context),
-              booru: api.booru,
-              tags: searchTextController.text.trim(),
-              saveSelectedPage: (_) {},
-              overrideSafeMode: safeMode,
-              // wrapScaffold: true,
-            ),
-          ),
+      context.openSafeModeDialog(settingsService, (safeMode) {
+        BooruRestoredPage.open(
+          context,
+          booru: api.booru,
+          tags: searchTextController.text.trim(),
+          rootNavigator: false,
+          saveSelectedPage: (_) {},
+          overrideSafeMode: safeMode,
+          // wrapScaffold: true,
         );
       });
     }

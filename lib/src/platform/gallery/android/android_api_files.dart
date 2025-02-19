@@ -11,7 +11,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required super.parent,
     required super.source,
     required super.directoryMetadata,
-    required super.directoryTag,
+    required super.directoryTags,
     required super.favoritePosts,
     required super.localTags,
     required super.sourceTags,
@@ -41,7 +41,7 @@ class _AndroidGalleryFiles implements Files {
     required this.localTags,
     required this.favoritePosts,
     required this.directoryMetadata,
-    required this.directoryTag,
+    required this.directoryTags,
     required this.source,
     required this.type,
     required this.parent,
@@ -72,16 +72,16 @@ class _AndroidGalleryFiles implements Files {
   }
 
   @override
-  final DirectoryMetadataService directoryMetadata;
+  final DirectoryMetadataService? directoryMetadata;
 
   @override
-  final DirectoryTagService directoryTag;
+  final DirectoryTagService? directoryTags;
 
   @override
-  final FavoritePostSourceService favoritePosts;
+  final FavoritePostSourceService? favoritePosts;
 
   @override
-  final LocalTagsService localTags;
+  final LocalTagsService? localTags;
 
   @override
   final MapFilesSourceTags sourceTags;
@@ -101,16 +101,16 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     this.sourceTags,
     this.localTags,
   ) {
-    _favoritesWatcher = favoritePosts.cache.countEvents.listen((_) {
+    _favoritesWatcher = favoritePosts?.cache.countEvents.listen((_) {
       backingStorage.addAll([]);
     });
   }
 
-  final LocalTagsService localTags;
+  final LocalTagsService? localTags;
+  final FavoritePostSourceService? favoritePosts;
 
   final List<Directory> directories;
   final GalleryFilesPageType type;
-  final FavoritePostSourceService favoritePosts;
   late final StreamSubscription<int>? _favoritesWatcher;
   final MapFilesSourceTags sourceTags;
 
@@ -156,11 +156,8 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
         GalleryFilesPageType.trash => platform.FilesCursorType.trashed,
       },
       sortingMode: switch (sortingMode) {
-        SortingMode.none ||
-        SortingMode.rating ||
-        SortingMode.score =>
-          platform.FilesSortingMode.none,
         SortingMode.size => platform.FilesSortingMode.size,
+        SortingMode() => platform.FilesSortingMode.none,
       },
       limit: 0,
     );
@@ -174,7 +171,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
 
         backingStorage.addAll(
           e.map((e) {
-            final tags = localTags.get(e.name);
+            final tags = localTags?.get(e.name) ?? <String>[];
             final f = e.toAndroidFile(
               tags.fold({}, (map, e) {
                 map[e] = null;

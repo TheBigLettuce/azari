@@ -12,85 +12,17 @@ abstract interface class BlacklistedDirectoryService
 
 @immutable
 abstract class BlacklistedDirectoryData
-    implements CellBase, Pressable<BlacklistedDirectoryData> {
+    implements
+        BlacklistedDirectoryDataBase,
+        BlacklistedDirectoryDataImpl,
+        Pressable<BlacklistedDirectoryData> {
   const factory BlacklistedDirectoryData({
     required String bucketId,
     required String name,
   }) = $BlacklistedDirectoryData;
-
-  String get bucketId;
-  String get name;
 }
 
-@immutable
-abstract class BlacklistedDirectoryDataImpl
-    with DefaultBuildCellImpl
-    implements BlacklistedDirectoryData {
-  const BlacklistedDirectoryDataImpl();
-
-  @override
-  Key uniqueKey() => ValueKey(bucketId);
-
-  @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
-  String alias(bool isList) => name;
-
-  @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<BlacklistedDirectoryData> functionality,
-    int idx,
-  ) {
-    final (api, _, _) = DirectoriesDataNotifier.of(context);
-    final db = DbConn.of(context);
-
-    // final filesApi = api.files(
-    //   PlainDirectory(
-    //     bucketId: bucketId,
-    //     name: name,
-    //     tag: "",
-    //     volumeName: "",
-    //     relativeLoc: "",
-    //     lastModified: 0,
-    //     thumbFileId: 0,
-    //   ),
-    //   GalleryFilesPageType.normal,
-    //   db.directoryTags,
-    //   db.directoryMetadata,
-    //   db.favoritePosts,
-    //   db.localTags,
-    //   name: name,
-    //   bucketId: bucketId,
-    // );
-
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return FilesPage(
-            api: api,
-            dirName: name,
-            directories: [
-              PlainDirectory(
-                bucketId: bucketId,
-                name: name,
-                tag: "",
-                volumeName: "",
-                relativeLoc: "",
-                lastModified: 0,
-                thumbFileId: 0,
-              ),
-            ],
-            // directory: null,
-            secure: true,
-            db: db,
-            navBarEvents: NavigationButtonEvents.maybeOf(context),
-            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-          );
-        },
-      ),
-    );
-  }
+abstract class BlacklistedDirectoryDataBase {
+  String get bucketId;
+  String get name;
 }

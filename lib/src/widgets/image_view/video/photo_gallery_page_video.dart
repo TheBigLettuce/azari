@@ -20,11 +20,11 @@ class PhotoGalleryPageVideo extends StatefulWidget {
     super.key,
     required this.url,
     required this.localVideo,
-    required this.db,
+    required this.videoSettings,
     required this.networkThumb,
   });
 
-  final VideoSettingsService db;
+  final VideoSettingsService? videoSettings;
 
   final String url;
   final ImageProvider? networkThumb;
@@ -35,6 +35,8 @@ class PhotoGalleryPageVideo extends StatefulWidget {
 }
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
+  VideoSettingsService? get videoSettings => widget.videoSettings;
+
   StreamSubscription<controls.VideoControlsEvent>? eventsSubscr;
 
   late VideoPlayerController controller;
@@ -71,7 +73,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
           controller.setVolume(newVolume);
 
-          widget.db.current.copy(volume: newVolume).save();
+          videoSettings?.current.copy(volume: newVolume).maybeSave();
         case controls.FullscreenButton():
           final orientation = MediaQuery.orientationOf(context);
           if (orientation == Orientation.landscape) {
@@ -101,7 +103,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
           final newLooping = !controller.value.isLooping;
 
           controller.setLooping(newLooping);
-          widget.db.current.copy(looping: newLooping).save();
+          videoSettings?.current.copy(looping: newLooping).maybeSave();
         case controls.AddDuration():
           controller.seekTo(
             controller.value.position +
@@ -135,16 +137,16 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
       if (!disposed) {
         controller.addListener(_listener);
 
-        final videoSettings = widget.db.current;
+        final videoSettings = this.videoSettings?.current;
 
-        controller.setVolume(videoSettings.volume);
+        controller.setVolume(videoSettings?.volume ?? 1);
 
         setState(() {
           chewieController?.dispose();
           chewieController = ChewieController(
             videoPlayerController: controller,
             aspectRatio: controller.value.aspectRatio,
-            looping: videoSettings.looping,
+            looping: videoSettings?.looping ?? true,
             allowPlaybackSpeedChanging: false,
             showOptions: false,
             showControls: false,

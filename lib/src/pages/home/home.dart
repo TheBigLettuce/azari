@@ -10,7 +10,13 @@ import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/booru/bookmark_page.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/booru/downloads.dart";
+import "package:azari/src/pages/booru/favorite_posts_page.dart";
+import "package:azari/src/pages/booru/hidden_posts.dart";
+import "package:azari/src/pages/booru/visited_posts.dart";
 import "package:azari/src/pages/discover/discover.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/home/home_skeleton.dart";
@@ -35,9 +41,19 @@ class Home extends StatefulWidget {
   const Home({
     super.key,
     required this.stream,
+    required this.settingsService,
+    required this.gridBookmarks,
+    required this.favoritePosts,
+    required this.galleryService,
   });
 
   final Stream<NotificationRouteEvent> stream;
+
+  final GridBookmarkService? gridBookmarks;
+  final FavoritePostSourceService? favoritePosts;
+  final GalleryService? galleryService;
+
+  final SettingsService settingsService;
 
   @override
   State<Home> createState() => _HomeState();
@@ -49,7 +65,14 @@ class _HomeState extends State<Home>
         ChangePageMixin,
         AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
-  final settings = SettingsService.db().current;
+  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+  GalleryService? get galleryService => widget.galleryService;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
+
+  late final SettingsData settings;
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
   final navBarEvents = StreamController<void>.broadcast();
@@ -60,6 +83,8 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
+
+    settings = settingsService.current;
 
     notificationEvents = widget.stream.listen((route) {
       final currentRoute = _routeNotifier.value;
@@ -74,7 +99,13 @@ class _HomeState extends State<Home>
       }
     });
 
-    maybeBeforeYouContinueDialog(context, settings);
+    if (galleryService != null) {
+      maybeBeforeYouContinueDialog(
+        context,
+        settings,
+        galleryService!,
+      );
+    }
 
     if (isRestart) {
       restartOver();
@@ -161,12 +192,19 @@ class _HomeState extends State<Home>
                 child: HomeSkeleton(
                   animatedIcons: this,
                   onDestinationSelected: onDestinationSelected,
-                  changePage: this,
                   booru: settings.selectedBooru,
                   scrollingState: scrollingState,
+                  drawer: HomeDrawer(
+                    changePage: this,
+                    animatedIcons: this,
+                    settingsService: settingsService,
+                    gridBookmarks: gridBookmarks,
+                    favoritePosts: favoritePosts,
+                  ),
                   child: _CurrentPageWidget(
                     icons: this,
                     changePage: this,
+                    settingsService: settingsService,
                   ),
                 ),
               ),

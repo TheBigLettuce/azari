@@ -14,7 +14,7 @@ class _ExcludedTagsPanel extends StatefulWidget {
   });
 
   final Stream<String> filteringEvents;
-  final TagManager tagManager;
+  final TagManagerService tagManager;
 
   final BooruAPI api;
 

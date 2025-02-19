@@ -6,9 +6,8 @@
 import "dart:async";
 
 import "package:azari/init_main/restart_widget.dart";
-import "package:azari/src/db/services/post_tags.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
@@ -23,11 +22,16 @@ class LoadTags extends StatelessWidget {
     super.key,
     required this.res,
     required this.filename,
+    required this.localTags,
+    required this.galleryService,
   });
 
   final String filename;
 
   final ParsedFilenameResult res;
+
+  final GalleryService? galleryService;
+  final LocalTagsService? localTags;
 
   @override
   Widget build(BuildContext context) {
@@ -51,22 +55,22 @@ class LoadTags extends StatelessWidget {
               listenable: notifier,
               builder: (context, _) {
                 return FilledButton(
-                  onPressed: notifier.value != null
+                  onPressed: notifier.value != null || localTags == null
                       ? null
                       : () {
-                          final postTags = PostTags.fromContext(context);
-                          final db = DbConn.of(context);
-
                           notifier.value = Future(() async {
-                            final tags = await postTags.loadFromDissassemble(
+                            final tags = await localTags!.loadFromDissassemble(
                               filename,
                               res,
-                              db.localTagDictionary,
                             );
 
-                            postTags.addTagsPost(filename, tags, true);
+                            localTags!.addTagsPost(
+                              filename,
+                              tags,
+                              true,
+                            );
 
-                            GalleryApi().notify(null);
+                            galleryService?.notify(null);
                           }).onError((e, _) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

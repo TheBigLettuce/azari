@@ -37,9 +37,11 @@ abstract class GridPostSource extends PostsSourceService<int, Post> {
 
 mixin GridPostSourceRefreshNext implements GridPostSource {
   BooruAPI get api;
-  BooruTagging get excluded;
+  BooruTagging<Excluded>? get excluded;
   PagingEntry get entry;
   SafeMode get safeMode;
+
+  bool get extraSafeFilters;
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -60,13 +62,11 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
 
     clear();
 
-    StatisticsGeneralService.db().current.add(refreshes: 1).save();
+    StatisticsGeneralService.addRefreshes(1);
 
     entry.updateTime();
 
     try {
-      final settings = SettingsService.db().current;
-
       final list = await api.page(
         0,
         tags,
@@ -80,9 +80,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       entry.setOffset(0);
       currentSkipped = list.$2;
       backingStorage.addAll(
-        settings.extraSafeFilters
-            ? filter(list.$1)
-            : filter(list.$1).where(_extraTags),
+        extraSafeFilters ? filter(list.$1) : filter(list.$1).where(_extraTags),
       );
     } catch (e) {
       progress.error = e;
@@ -117,8 +115,6 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
     }
 
     try {
-      final settings = SettingsService.db().current;
-
       final (List<Post>, int?) list;
       if (tags.isNotEmpty) {
         list = await api.page(
@@ -146,7 +142,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
         currentSkipped = list.$2;
         final oldCount = count;
         backingStorage.addAll(
-          settings.extraSafeFilters
+          extraSafeFilters
               ? filter(list.$1)
               : filter(list.$1).where(_extraTags),
         );

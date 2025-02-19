@@ -7,8 +7,8 @@ import "dart:async";
 
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
@@ -18,13 +18,19 @@ import "package:flutter/material.dart";
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({
     super.key,
+    required this.settingsService,
   });
+
+  final SettingsService settingsService;
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
 }
 
 class _DiscoverPageState extends State<DiscoverPage> with SettingsWatcherMixin {
+  @override
+  SettingsService get settingsService => widget.settingsService;
+
   late final BooruComunnityAPI api;
   late final Dio client;
 

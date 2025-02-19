@@ -107,13 +107,26 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
+    required this.statisticsDaily,
+    required this.statisticsGeneral,
   });
 
-  static Future<void> open(BuildContext context) => Navigator.push(
+  final StatisticsDailyService statisticsDaily;
+  final StatisticsGeneralService statisticsGeneral;
+
+  static Future<void> open(
+    BuildContext context, {
+    required StatisticsDailyService statisticsDaily,
+    required StatisticsGeneralService statisticsGeneral,
+  }) =>
+      Navigator.push(
         context,
         MaterialPageRoute<void>(
           builder: (context) {
-            return const DashboardPage();
+            return DashboardPage(
+              statisticsDaily: statisticsDaily,
+              statisticsGeneral: statisticsGeneral,
+            );
           },
         ),
       );
@@ -133,8 +146,8 @@ class _DashboardPageState extends State<DashboardPage> {
           SliverAppBar(
             title: Text(l10n.dashboardPage),
           ),
-          const _GeneralStatistics(),
-          const _DailyStatistics(),
+          _GeneralStatistics(statisticsGeneral: widget.statisticsGeneral),
+          _DailyStatistics(statisticsDaily: widget.statisticsDaily),
         ],
       ),
     );
@@ -142,38 +155,21 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 class _DailyStatistics extends StatefulWidget {
-  const _DailyStatistics(
-      // {super.key}
-      );
+  const _DailyStatistics({
+    // super.key,
+    required this.statisticsDaily,
+  });
+
+  final StatisticsDailyService statisticsDaily;
 
   @override
   State<_DailyStatistics> createState() => __DailyStatisticsState();
 }
 
-class __DailyStatisticsState extends State<_DailyStatistics> {
-  late final StreamSubscription<StatisticsDailyData> _events;
-
-  late StatisticsDailyData currentData;
-
+class __DailyStatisticsState extends State<_DailyStatistics>
+    with StatisticsDailyWatcherMixin {
   @override
-  void initState() {
-    super.initState();
-
-    currentData = StatisticsDailyService.db().current;
-
-    _events = StatisticsDailyService.db().watch((e) {
-      currentData = e;
-
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _events.cancel();
-
-    super.dispose();
-  }
+  StatisticsDailyService get statisticsDailyService => widget.statisticsDaily;
 
   @override
   Widget build(BuildContext context) {
@@ -187,18 +183,18 @@ class __DailyStatisticsState extends State<_DailyStatistics> {
         //   title: "Refreshes",
         // ),
         _DashboardCard(
-          value: l10n.dateSimple(currentData.date),
+          value: l10n.dateSimple(statisticsDaily.date),
           title: "Date",
         ),
         _DashboardCard(
           value: l10n.minutesShort(
-            Duration(milliseconds: currentData.durationMillis).inMinutes,
+            Duration(milliseconds: statisticsDaily.durationMillis).inMinutes,
           ),
           title: "Time spent",
         ),
         _DashboardCard(
           title: "Swiped",
-          value: currentData.swipedBoth.toString(),
+          value: statisticsDaily.swipedBoth.toString(),
         ),
       ],
     );
@@ -206,38 +202,22 @@ class __DailyStatisticsState extends State<_DailyStatistics> {
 }
 
 class _GeneralStatistics extends StatefulWidget {
-  const _GeneralStatistics(
-      // {super.key}
-      );
+  const _GeneralStatistics({
+    // super.key,
+    required this.statisticsGeneral,
+  });
+
+  final StatisticsGeneralService statisticsGeneral;
 
   @override
   State<_GeneralStatistics> createState() => __GeneralStatisticsState();
 }
 
-class __GeneralStatisticsState extends State<_GeneralStatistics> {
-  late final StreamSubscription<StatisticsGeneralData> _events;
-
-  late StatisticsGeneralData currentData;
-
+class __GeneralStatisticsState extends State<_GeneralStatistics>
+    with StatisticsGeneralWatcherMixin {
   @override
-  void initState() {
-    super.initState();
-
-    currentData = StatisticsGeneralService.db().current;
-
-    _events = StatisticsGeneralService.db().watch((e) {
-      currentData = e;
-
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _events.cancel();
-
-    super.dispose();
-  }
+  StatisticsGeneralService get statisticsGeneralService =>
+      widget.statisticsGeneral;
 
   @override
   Widget build(BuildContext context) {
@@ -247,23 +227,23 @@ class __GeneralStatisticsState extends State<_GeneralStatistics> {
       crossAxisCount: 3,
       children: [
         _DashboardCard(
-          value: currentData.refreshes.toString(),
+          value: statisticsGeneral.refreshes.toString(),
           title: "Refreshes",
         ),
         _DashboardCard(
-          value: currentData.scrolledUp.toString(),
+          value: statisticsGeneral.scrolledUp.toString(),
           title: "Scrolled up",
         ),
         _DashboardCard(
           value: l10n.minutesShort(
-            Duration(milliseconds: currentData.timeDownload).inMinutes,
+            Duration(milliseconds: statisticsGeneral.timeDownload).inMinutes,
           ),
           title: "Time downloaded",
         ),
         _DashboardCard(
           title: "Time spent",
           value: l10n.minutesShort(
-            Duration(milliseconds: currentData.timeSpent).inMinutes,
+            Duration(milliseconds: statisticsGeneral.timeSpent).inMinutes,
           ),
         ),
       ],

@@ -8,12 +8,17 @@ part of "android_gallery.dart";
 class _AndroidGallery implements Directories {
   _AndroidGallery(
     this.blacklistedDirectory,
-    this.directoryTag, {
+    this.directoryTag,
+    this.settingsService,
+    this.galleryTrash, {
     required this.localizations,
   });
 
-  final BlacklistedDirectoryService blacklistedDirectory;
-  final DirectoryTagService directoryTag;
+  final BlacklistedDirectoryService? blacklistedDirectory;
+  final DirectoryTagService? directoryTag;
+  final GalleryTrash? galleryTrash;
+
+  final SettingsService settingsService;
   final AppLocalizations localizations;
 
   final time = DateTime.now();
@@ -24,11 +29,11 @@ class _AndroidGallery implements Directories {
   _AndroidGalleryFiles? bindFiles;
 
   @override
-  TrashCell get trashCell => source.trashCell;
+  TrashCell? get trashCell => source.trashCell;
 
   @override
   late final _AndroidSource source = _AndroidSource(
-    TrashCell(localizations),
+    galleryTrash != null ? TrashCell(localizations, galleryTrash!) : null,
     blacklistedDirectory,
     directoryTag,
     localizations,
@@ -37,7 +42,7 @@ class _AndroidGallery implements Directories {
   @override
   void close() {
     source.destroy();
-    trashCell.dispose();
+    trashCell?.dispose();
     bindFiles = null;
     _GalleryImpl().liveInstances.removeWhere((e) => e == this);
     if (kDebugMode) {
@@ -49,10 +54,10 @@ class _AndroidGallery implements Directories {
   Files files(
     Directory directory,
     GalleryFilesPageType type,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags, {
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags, {
     required String bucketId,
     required String name,
   }) {
@@ -76,7 +81,7 @@ class _AndroidGallery implements Directories {
       type: type,
       parent: this,
       directoryMetadata: directoryMetadata,
-      directoryTag: directoryTag,
+      directoryTags: directoryTag,
       favoritePosts: favoritePosts,
       localTags: localTags,
       bucketId: bucketId,
@@ -86,10 +91,10 @@ class _AndroidGallery implements Directories {
   @override
   Files joinedFiles(
     List<Directory> directories,
-    DirectoryTagService directoryTag,
-    DirectoryMetadataService directoryMetadata,
-    FavoritePostSourceService favoritePosts,
-    LocalTagsService localTags,
+    DirectoryTagService? directoryTag,
+    DirectoryMetadataService? directoryMetadata,
+    FavoritePostSourceService? favoritePosts,
+    LocalTagsService? localTags,
   ) {
     if (bindFiles != null) {
       throw "already hosting files";
@@ -109,7 +114,7 @@ class _AndroidGallery implements Directories {
       directories: directories,
       parent: this,
       directoryMetadata: directoryMetadata,
-      directoryTag: directoryTag,
+      directoryTags: directoryTag,
       favoritePosts: favoritePosts,
       localTags: localTags,
     );
@@ -124,8 +129,9 @@ class _AndroidSource implements ResourceSource<int, Directory> {
     this.localizations,
   );
 
-  final BlacklistedDirectoryService blacklistedDirectory;
-  final DirectoryTagService directoryTag;
+  final TrashCell? trashCell;
+  final BlacklistedDirectoryService? blacklistedDirectory;
+  final DirectoryTagService? directoryTag;
   final AppLocalizations localizations;
 
   @override
@@ -137,8 +143,6 @@ class _AndroidSource implements ResourceSource<int, Directory> {
   @override
   final SourceStorage<int, Directory> backingStorage = ListStorage();
 
-  final TrashCell trashCell;
-
   final cursorApi = platform.DirectoriesCursor();
 
   @override
@@ -149,7 +153,7 @@ class _AndroidSource implements ResourceSource<int, Directory> {
     progress.inRefreshing = true;
 
     backingStorage.clear();
-    trashCell.refresh();
+    trashCell?.refresh();
 
     final token = await cursorApi.acquire();
     try {
@@ -160,7 +164,8 @@ class _AndroidSource implements ResourceSource<int, Directory> {
         }
 
         final blacklisted =
-            blacklistedDirectory.getAll(e.keys.map((e) => e).toList());
+            blacklistedDirectory?.getAll(e.keys.map((e) => e).toList()) ??
+                const [];
         for (final b in blacklisted) {
           e.remove(b.bucketId);
         }
@@ -168,10 +173,10 @@ class _AndroidSource implements ResourceSource<int, Directory> {
         backingStorage.addAll(
           e.values
               .map(
-                (e) => AndroidGalleryDirectory(
+                (e) => Directory(
                   bucketId: e.bucketId,
                   name: e.name,
-                  tag: directoryTag.get(e.bucketId) ?? "",
+                  tag: directoryTag?.get(e.bucketId) ?? "",
                   volumeName: e.volumeName,
                   relativeLoc: e.relativeLoc,
                   thumbFileId: e.thumbFileId,
@@ -199,7 +204,7 @@ class _AndroidSource implements ResourceSource<int, Directory> {
 
   @override
   void destroy() {
-    trashCell.dispose();
+    trashCell?.dispose();
     backingStorage.destroy();
     progress.close();
   }

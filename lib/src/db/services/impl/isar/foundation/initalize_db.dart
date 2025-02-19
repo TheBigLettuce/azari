@@ -8,8 +8,8 @@ part of "../impl.dart";
 bool _initalized = false;
 
 Future<DownloadManager> initalizeIsarDb(
-  bool temporary,
-  ServicesImplTable db,
+  AppInstanceType appType,
+  Services db,
   String appSupportDir,
   String temporaryDir,
 ) async {
@@ -18,6 +18,8 @@ Future<DownloadManager> initalizeIsarDb(
   }
 
   _initalized = true;
+
+  final temporary = appType != AppInstanceType.full;
 
   DbPaths.init(
     rootDirectory: appSupportDir,
@@ -40,7 +42,7 @@ Future<DownloadManager> initalizeIsarDb(
   // currently this is very fragile
   // favoritePosts.cache should be available before
   // the favorites Isolate is started
-  IoServicesImplTable().favoritePosts.cache;
+  IoServices().favoritePosts.cache;
   await Dbs().favorites.init();
 
   for (final e in IsarCollectionReverseIterable(
@@ -58,11 +60,20 @@ Future<DownloadManager> initalizeIsarDb(
           ..deleteSync(recursive: true)
           ..createSync();
 
-    downloader = MemoryOnlyDownloadManager(tempDownloaderPath.path);
+    downloader = MemoryOnlyDownloadManager(
+      tempDownloaderPath.path,
+      IoServices().galleryService.files,
+      IoServices().settings,
+    );
   } else {
-    downloader = PersistentDownloadManager(db.downloads, temporaryDir);
+    downloader = PersistentDownloadManager(
+      IoServices().downloads,
+      temporaryDir,
+      IoServices().galleryService.files,
+      IoServices().settings,
+    );
 
-    db.downloads.markInProgressAsFailed();
+    IoServices().downloads.markInProgressAsFailed();
 
     for (final e in IsarCollectionReverseIterable(
       IsarCollectionIterator(

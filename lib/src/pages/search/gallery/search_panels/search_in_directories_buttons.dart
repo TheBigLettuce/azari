@@ -8,11 +8,11 @@ part of "../gallery_search_page.dart";
 class _SearchInDirectoriesButtons extends StatelessWidget {
   const _SearchInDirectoriesButtons({
     // super.key,
-    required this.db,
     required this.filteringValue,
     required this.joinedDirectories,
     required this.source,
     required this.listPadding,
+    required this.directoryMetadata,
   });
 
   final String filteringValue;
@@ -20,6 +20,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   final ResourceSource<int, Directory> source;
 
   final EdgeInsets listPadding;
+  final DirectoryMetadataService? directoryMetadata;
 
   final void Function(
     String str,
@@ -28,36 +29,45 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     required FilteringMode? filteringMode,
   }) joinedDirectories;
 
-  final DbConn db;
-
-  void _launch(
-    BuildContext context,
-    AppLocalizations l10n, {
+  void _launchPinned(
+    BuildContext context, {
     required bool asTag,
-    required bool onlyPinned,
+    required DirectoryMetadataService directoryMetadata,
   }) {
-    final l10n = context.l10n();
-
     final List<Directory> directories = [];
 
-    if (onlyPinned) {
-      final toPin =
-          db.directoryMetadata.toPinAll.fold(<String, bool>{}, (map, e1) {
-        map[e1.categoryName] = e1.sticky;
+    final toPin = directoryMetadata.toPinAll.fold(<String, bool>{}, (map, e1) {
+      map[e1.categoryName] = e1.sticky;
 
-        return map;
-      });
+      return map;
+    });
 
-      for (final e in source.backingStorage) {
-        final segment = _segment(e);
+    for (final e in source.backingStorage) {
+      final segment = _segment(e);
 
-        if (toPin.containsKey(segment)) {
-          directories.add(e);
-        }
+      if (toPin.containsKey(segment)) {
+        directories.add(e);
       }
-    } else {
-      directories.addAll(source.backingStorage);
     }
+
+    _launchDirectories(context, directories, asTag);
+  }
+
+  void _launch(
+    BuildContext context, {
+    required bool asTag,
+  }) {
+    final directories = source.backingStorage.toList();
+
+    _launchDirectories(context, directories, asTag);
+  }
+
+  void _launchDirectories(
+    BuildContext context,
+    List<Directory> directories,
+    bool asTag,
+  ) {
+    final l10n = context.l10n();
 
     if (directories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,28 +127,30 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextButton.icon(
-                          onPressed: () {
-                            _launch(
-                              context,
-                              l10n,
-                              asTag: true,
-                              onlyPinned: true,
-                            );
-                          },
+                          onPressed: directoryMetadata != null
+                              ? () {
+                                  _launchPinned(
+                                    context,
+                                    directoryMetadata: directoryMetadata!,
+                                    asTag: true,
+                                  );
+                                }
+                              : null,
                           label: Text(
                             l10n.tagInPinnedDirectories(filteringValue),
                           ),
                           icon: const Icon(Icons.search_outlined),
                         ),
                         TextButton.icon(
-                          onPressed: () {
-                            _launch(
-                              context,
-                              l10n,
-                              asTag: false,
-                              onlyPinned: true,
-                            );
-                          },
+                          onPressed: directoryMetadata != null
+                              ? () {
+                                  _launchPinned(
+                                    context,
+                                    asTag: false,
+                                    directoryMetadata: directoryMetadata!,
+                                  );
+                                }
+                              : null,
                           label: Text(
                             l10n.namesInPinnedDirectories(filteringValue),
                           ),
@@ -148,9 +160,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                           onPressed: () {
                             _launch(
                               context,
-                              l10n,
                               asTag: true,
-                              onlyPinned: false,
                             );
                           },
                           label: Text(
@@ -162,9 +172,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                           onPressed: () {
                             _launch(
                               context,
-                              l10n,
                               asTag: false,
-                              onlyPinned: false,
                             );
                           },
                           label: Text(

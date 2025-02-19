@@ -5,8 +5,8 @@
 
 import "dart:async";
 
-import "package:azari/src/db/services/post_tags.dart";
-import "package:azari/src/platform/gallery_api.dart";
+import "package:azari/src/db/services/local_tags_helper.dart";
+import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
@@ -23,6 +23,7 @@ class ImageViewNotifiers extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.flipShowAppBar,
+    required this.galleryService,
     required this.child,
   });
 
@@ -32,6 +33,7 @@ class ImageViewNotifiers extends StatefulWidget {
   final PauseVideoState pauseVideoState;
   final VideoControlsController videoControls;
   final ImageViewStateController stateController;
+  final GalleryService? galleryService;
 
   final Widget child;
 
@@ -71,6 +73,7 @@ class _ImageViewNotifiersState extends State<ImageViewNotifiers> {
                   child: _AppBarShownHolder(
                     flipShowAppBar: widget.flipShowAppBar,
                     animationController: widget.controller,
+                    galleryService: widget.galleryService,
                     child: widget.child,
                   ),
                 ),
@@ -308,11 +311,13 @@ class _AppBarShownHolder extends StatefulWidget {
     required this.animationController,
     required this.flipShowAppBar,
     required this.child,
+    required this.galleryService,
   });
 
   final Stream<void> flipShowAppBar;
 
   final AnimationController animationController;
+  final GalleryService? galleryService;
 
   final Widget child;
 
@@ -347,7 +352,7 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   void initState() {
     super.initState();
 
-    subscription = GalleryApi().events.tapDown?.listen((_) {
+    subscription = widget.galleryService?.events.tapDown?.listen((_) {
       toggle(null);
     });
 

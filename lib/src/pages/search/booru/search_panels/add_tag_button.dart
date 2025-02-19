@@ -17,7 +17,7 @@ class _AddTagButton extends StatefulWidget {
     required this.onPressed,
   });
 
-  final TagManager tagManager;
+  final TagManagerService tagManager;
 
   final ReadOnlyStorage<dynamic, TagData> storage;
 

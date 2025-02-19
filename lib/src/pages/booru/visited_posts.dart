@@ -29,10 +29,15 @@ import "package:flutter/material.dart";
 class VisitedPostsPage extends StatefulWidget {
   const VisitedPostsPage({
     super.key,
-    required this.db,
+    required this.visitedPosts,
+    required this.settingsService,
   });
 
-  final VisitedPostsService db;
+  final VisitedPostsService visitedPosts;
+  final SettingsService settingsService;
+
+  static bool hasServicesRequired(Services db) =>
+      db.get<VisitedPostsService>() != null;
 
   @override
   State<VisitedPostsPage> createState() => _VisitedPostsPageState();
@@ -40,7 +45,10 @@ class VisitedPostsPage extends StatefulWidget {
 
 class _VisitedPostsPageState extends State<VisitedPostsPage>
     with CommonGridData<Post, VisitedPostsPage> {
-  VisitedPostsService get visitedPosts => widget.db;
+  VisitedPostsService get visitedPosts => widget.visitedPosts;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final StreamSubscription<void> events;
 
@@ -63,7 +71,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
   void initState() {
     super.initState();
 
-    events = widget.db.watch((_) {
+    events = widget.visitedPosts.watch((_) {
       source.clearRefresh();
     });
 
@@ -91,19 +99,13 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
 
     ExitOnPressRoute.maybeExitOf(imageViewContext);
 
-    Navigator.push(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return BooruRestoredPage(
-            booru: booru,
-            tags: tag,
-            overrideSafeMode: safeMode,
-            db: DbConn.of(context),
-            saveSelectedPage: (_) {},
-          );
-        },
-      ),
+      booru: booru,
+      tags: tag,
+      rootNavigator: false,
+      overrideSafeMode: safeMode,
+      saveSelectedPage: (_) {},
     );
   }
 

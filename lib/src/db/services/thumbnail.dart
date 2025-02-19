@@ -5,9 +5,7 @@
 
 part of "services.dart";
 
-abstract interface class ThumbnailService {
-  factory ThumbnailService.db() => _currentDb.thumbnails;
-
+abstract interface class ThumbnailService implements ServiceMarker {
   void clear();
 
   ThumbnailData? get(int id);

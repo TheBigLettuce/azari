@@ -4,9 +4,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/db/services/impl_table/io.dart";
+import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/post.dart";
 import "package:isar/isar.dart";
 import "package:meta/meta.dart";
 
@@ -15,7 +15,7 @@ part "favorite_post.g.dart";
 @immutable
 @collection
 class IsarFavoritePost extends PostImpl
-    with DefaultPostPressable<FavoritePost>
+    with DefaultPostPressable<FavoritePost>, FavoritePostCopyMixin
     implements $FavoritePost {
   const IsarFavoritePost({
     required this.size,
@@ -34,6 +34,7 @@ class IsarFavoritePost extends PostImpl
     required this.createdAt,
     required this.type,
     required this.isarId,
+    required this.stars,
   });
 
   const IsarFavoritePost.noId({
@@ -52,9 +53,14 @@ class IsarFavoritePost extends PostImpl
     required this.score,
     required this.createdAt,
     required this.type,
+    required this.stars,
   }) : isarId = null;
 
   final Id? isarId;
+
+  @override
+  @enumerated
+  final FavoriteStars stars;
 
   @override
   @enumerated

@@ -55,7 +55,7 @@ class _Fab extends StatelessWidget {
               curve: Easing.emphasizedAccelerate,
             );
 
-            StatisticsGeneralService.db().current.add(scrolledUp: 1).save();
+            StatisticsGeneralService.addScrolledUp(1);
           },
           child: const Icon(Icons.arrow_upward_rounded),
         ),

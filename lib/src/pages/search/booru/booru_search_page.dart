@@ -38,24 +38,43 @@ part "search_panels/tag_list.dart";
 class BooruSearchPage extends StatefulWidget {
   const BooruSearchPage({
     super.key,
-    required this.db,
     required this.l10n,
     required this.procPop,
+    required this.tagManager,
+    required this.gridBookmarks,
+    required this.settingsService,
   });
 
   final AppLocalizations l10n;
 
   final void Function(bool)? procPop;
 
-  final DbConn db;
+  final GridBookmarkService? gridBookmarks;
 
-  static void open(BuildContext context) {
+  final TagManagerService tagManager;
+  final SettingsService settingsService;
+
+  static void open(
+    BuildContext context, {
+    void Function(bool)? procPop,
+  }) {
+    final db = Services.of(context);
+    final tagManager = db.get<TagManagerService>();
+    if (tagManager == null) {
+      // TODO: change
+      showSnackbar(context, "Search functionality isn't available");
+
+      return;
+    }
+
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) => BooruSearchPage(
-          db: DbConn.of(context),
           l10n: context.l10n(),
-          procPop: null,
+          procPop: procPop,
+          tagManager: tagManager,
+          gridBookmarks: db.get<GridBookmarkService>(),
+          settingsService: db.require<SettingsService>(),
         ),
       ),
     );
@@ -65,13 +84,16 @@ class BooruSearchPage extends StatefulWidget {
   State<BooruSearchPage> createState() => _BooruSearchPageState();
 }
 
-class _BooruSearchPageState extends State<BooruSearchPage> {
-  SettingsData settings = SettingsService.db().current;
+class _BooruSearchPageState extends State<BooruSearchPage>
+    with SettingsWatcherMixin {
+  TagManagerService get tagManager => widget.tagManager;
+  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
 
   late final Dio client;
   late final BooruAPI api;
-
-  late final StreamSubscription<SettingsData?> settingsSubsc;
 
   final searchController = TextEditingController();
   final focusNode = FocusNode();
@@ -83,19 +105,12 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     super.initState();
 
     client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-    settingsSubsc = settings.s.watch((newSettings) {
-      setState(() {
-        settings = newSettings!;
-      });
-    });
-
     api = BooruAPI.fromEnum(settings.selectedBooru, client);
   }
 
   @override
   void dispose() {
     client.close(force: true);
-    settingsSubsc.cancel();
     _filteringEvents.close();
 
     focusNode.dispose();
@@ -118,18 +133,13 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     String tag,
     SafeMode? safeMode,
   ) {
-    Navigator.push<void>(
+    BooruRestoredPage.open(
       context,
-      MaterialPageRoute(
-        builder: (context) => BooruRestoredPage(
-          db: widget.db,
-          booru: booru,
-          tags: tag,
-          wrapScaffold: true,
-          overrideSafeMode: safeMode,
-          saveSelectedPage: (_) {},
-        ),
-      ),
+      booru: booru,
+      tags: tag,
+      rootNavigator: true,
+      overrideSafeMode: safeMode,
+      saveSelectedPage: (_) {},
     );
   }
 
@@ -145,7 +155,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     }
 
     if (dialog) {
-      context.openSafeModeDialog((value) {
+      context.openSafeModeDialog(settingsService, (value) {
         _onTagPressed(searchController.text.trim(), value);
       });
     } else {
@@ -204,24 +214,25 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
             _RecentlySearchedTagsPanel(
               filteringEvents: _filteringEvents,
               searchController: searchController,
-              tagManager: widget.db.tagManager,
+              tagManager: tagManager,
               onTagPressed: _onTagPressed,
             ),
             _PinnedTagsPanel(
               filteringEvents: _filteringEvents.stream,
-              tagManager: widget.db.tagManager,
+              tagManager: tagManager,
               api: api,
               onTagPressed: pinnedTagPressed,
             ),
             _ExcludedTagsPanel(
               filteringEvents: _filteringEvents.stream,
-              tagManager: widget.db.tagManager,
+              tagManager: tagManager,
               api: api,
             ),
-            _BookmarksPanel(
-              db: widget.db,
-              filteringEvents: _filteringEvents.stream,
-            ),
+            if (gridBookmarks != null)
+              _BookmarksPanel(
+                filteringEvents: _filteringEvents.stream,
+                gridBookmarks: gridBookmarks!,
+              ),
             _TagList(
               filteringEvents: _filteringEvents,
               searchController: searchController,

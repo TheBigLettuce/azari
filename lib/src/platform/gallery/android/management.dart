@@ -160,7 +160,7 @@ class AndroidGalleryTrash implements GalleryTrash {
       AndroidGalleryApi.appContext.invokeMethod("trashThumbId").then(
             (e) => e == null
                 ? null
-                : AndroidGalleryDirectory(
+                : Directory(
                     bucketId: "trash",
                     name: "Trash", // TODO: localize this somehow
                     tag: "",

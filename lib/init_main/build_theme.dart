@@ -9,8 +9,14 @@ import "package:azari/src/db/services/services.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
-ThemeData buildTheme(Brightness brightness, Color accentColor) {
-  final type = MiscSettingsService.db().current.themeType;
+ThemeData buildTheme(
+  BuildContext context,
+  Brightness brightness,
+  Color accentColor,
+) {
+  final type =
+      Services.getOf<MiscSettingsService>(context)?.current.themeType ??
+          ThemeType.systemAccent;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
       ..[TargetPlatform.android] = const FadeForwardsPageTransitionsBuilder()

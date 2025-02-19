@@ -6,28 +6,81 @@
 part of "services.dart";
 
 extension SettingsDataExt on SettingsData {
-  void save() => SettingsService.db().add(this);
-  SettingsService get s => _currentDb.settings;
+  void save() => _currentDb.require<SettingsService>().add(this);
 }
 
-abstract interface class SettingsService implements ServiceMarker {
+abstract interface class SettingsService implements RequiredService {
   const SettingsService();
-
-  factory SettingsService.db() => _currentDb.settings;
 
   SettingsData get current;
 
   void add(SettingsData data);
 
-  StreamSubscription<SettingsData?> watch(
-    void Function(SettingsData? s) f, [
+  StreamSubscription<SettingsData> watch(
+    void Function(SettingsData s) f, [
     bool fire = false,
   ]);
 
-  Future<bool> chooseDirectory(
+  /// Pick an operating system directory.
+  /// Calls [onError] in case of any error and resolves to false.
+  static Future<bool> chooseDirectory(
     void Function(String) onError,
-    AppLocalizations l10n,
-  );
+    AppLocalizations l10n, {
+    required GalleryService galleryServices,
+  }) async {
+    late final ({String formattedPath, String path}) resp;
+
+    try {
+      resp = (await galleryServices.chooseDirectory(l10n))!;
+    } catch (e, trace) {
+      Logger.root.severe("chooseDirectory", e, trace);
+      onError(l10n.emptyResult);
+      return false;
+    }
+
+    final current = _currentDb.require<SettingsService>().current;
+    current
+        .copy(
+          path: current.path
+              .copy(path: resp.path, pathDisplay: resp.formattedPath),
+        )
+        .save();
+
+    return Future.value(true);
+  }
+}
+
+mixin SettingsWatcherMixin<S extends StatefulWidget> on State<S> {
+  SettingsService get settingsService;
+
+  StreamSubscription<SettingsData>? _settingsEvents;
+
+  late SettingsData settings;
+
+  void onNewSettings(SettingsData newSettings) {}
+
+  @override
+  void initState() {
+    super.initState();
+
+    settings = settingsService.current;
+
+    _settingsEvents?.cancel();
+    _settingsEvents = settingsService.watch((newSettings) {
+      onNewSettings(newSettings);
+
+      setState(() {
+        settings = newSettings;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _settingsEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 extension SettingsPathEmptyExt on SettingsPath {
