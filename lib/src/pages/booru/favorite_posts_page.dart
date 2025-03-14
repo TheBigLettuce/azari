@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
@@ -24,14 +23,11 @@ import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
-import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/parts/shell_settings_button.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class FavoritePostsPage extends StatefulWidget {
@@ -43,14 +39,14 @@ class FavoritePostsPage extends StatefulWidget {
     required this.settingsService,
     required this.downloadManager,
     required this.localTags,
-    required this.miscSettingsService,
+    required this.selectionController,
   });
 
   final void Function(bool)? rootNavigatorPop;
+  final SelectionController selectionController;
 
   final DownloadManager? downloadManager;
   final LocalTagsService? localTags;
-  final MiscSettingsService? miscSettingsService;
 
   final GridSettingsService gridSettings;
   final FavoritePostSourceService favoritePosts;
@@ -65,72 +61,20 @@ class FavoritePostsPage extends StatefulWidget {
   State<FavoritePostsPage> createState() => _FavoritePostsPageState();
 }
 
-class _FavoritePostsPageState extends State<FavoritePostsPage>
-    with CommonGridData<Post, FavoritePostsPage> {
-  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  LocalTagsService? get localTags => widget.localTags;
-
-  FavoritePostSourceService get favoritePosts => widget.favoritePosts;
-  WatchableGridSettingsData get gridSettings =>
-      widget.gridSettings.favoritePosts;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
-  late final StreamSubscription<void> _safeModeWatcher;
+mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
+  FavoritePostSourceService get favoritePosts;
+  SettingsData get settings;
 
   final searchTextController = TextEditingController();
-  final searchFocus = FocusNode();
-
-  late final client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-  late final BooruAPI api;
-
-  late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
   late final SafeModeState safeModeState;
-
-  Iterable<FavoritePost> _filterTag(Iterable<FavoritePost> cells) {
-    final searchText = searchTextController.text.trim();
-    if (searchText.isEmpty) {
-      return cells;
-    }
-
-    final tags = searchText.split(" ");
-
-    return cells.where((e) {
-      final flags = tags.map((_) => false).toList();
-
-      for (final (index, tagsTo) in tags.indexed) {
-        for (final tag in e.tags) {
-          if (tag.startsWith(tagsTo)) {
-            flags[index] = true;
-            break;
-          }
-        }
-      }
-
-      return flags.fold(true, (v, e1) => v & e1);
-    });
-  }
-
-  Iterable<FavoritePost> _filterStars(
-    Iterable<FavoritePost> cells,
-    FilteringMode mode,
-  ) {
-    return cells.where(
-      (e) =>
-          safeModeState.current.inLevel(e.rating.asSafeMode) &&
-          (mode.toStars == e.stars),
-    );
-  }
+  late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
 
     safeModeState = SafeModeState(settings.safeMode);
-
-    api = BooruAPI.fromEnum(settings.selectedBooru, client);
 
     filter = ChainedFilterResourceSource(
       ResourceSource.external(
@@ -158,6 +102,22 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       ListStorage(reverse: true),
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
+          FilteringMode.onlyHalfStars => (
+              _filterTag(
+                cells.where(
+                  (e) => e.stars != FavoriteStars.zero && e.stars.isHalf,
+                ),
+              ),
+              data
+            ),
+          FilteringMode.onlyFullStars => (
+              _filterTag(
+                cells.where(
+                  (e) => e.stars != FavoriteStars.zero && !e.stars.isHalf,
+                ),
+              ),
+              data
+            ),
           FilteringMode.fiveStars ||
           FilteringMode.fourHalfStars ||
           FilteringMode.fourStars ||
@@ -220,11 +180,11 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
             )
         };
       },
-      prefilter: () {
-        miscSettingsService?.current
-            .copy(favoritesPageMode: filter.filteringMode)
-            .maybeSave();
-      },
+      // prefilter: () {
+      //   settingsService?.current
+      //       .copy(favoritesPageMode: filter.filteringMode)
+      //       .maybeSave();
+      // },
       allowedFilteringModes: const {
         FilteringMode.tag,
         FilteringMode.gif,
@@ -241,6 +201,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
         FilteringMode.oneStars,
         FilteringMode.zeroHalfStars,
         FilteringMode.zeroStars,
+        FilteringMode.onlyFullStars,
+        FilteringMode.onlyHalfStars,
       },
       allowedSortingModes: const {
         SortingMode.none,
@@ -248,29 +210,57 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
         SortingMode.score,
         SortingMode.stars,
       },
-      initialFilteringMode:
-          miscSettingsService?.current.favoritesPageMode ?? FilteringMode.tag,
+      initialFilteringMode: FilteringMode.tag,
       initialSortingMode: SortingMode.none,
     );
 
     filter.clearRefresh();
-
-    _safeModeWatcher = safeModeState.events.listen((_) {
-      filter.clearRefresh();
-    });
   }
 
   @override
   void dispose() {
+    searchTextController.dispose();
+    searchFocus.dispose();
     safeModeState.dispose();
-    client.close(force: true);
-    _safeModeWatcher.cancel();
+
     filter.destroy();
 
-    searchFocus.dispose();
-    searchTextController.dispose();
-
     super.dispose();
+  }
+
+  Iterable<FavoritePost> _filterTag(Iterable<FavoritePost> cells) {
+    final searchText = searchTextController.text.trim();
+    if (searchText.isEmpty) {
+      return cells;
+    }
+
+    final tags = searchText.split(" ");
+
+    return cells.where((e) {
+      final flags = tags.map((_) => false).toList();
+
+      for (final (index, tagsTo) in tags.indexed) {
+        for (final tag in e.tags) {
+          if (tag.startsWith(tagsTo)) {
+            flags[index] = true;
+            break;
+          }
+        }
+      }
+
+      return flags.fold(true, (v, e1) => v & e1);
+    });
+  }
+
+  Iterable<FavoritePost> _filterStars(
+    Iterable<FavoritePost> cells,
+    FilteringMode mode,
+  ) {
+    return cells.where(
+      (e) =>
+          safeModeState.current.inLevel(e.rating.asSafeMode) &&
+          (mode.toStars == e.stars),
+    );
   }
 
   Iterable<FavoritePost> _collector(
@@ -282,16 +272,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       }
     }
   }
-
-  // static (Iterable<T>, dynamic) stars<T extends PostBase>(
-  //   Iterable<T> cells,
-  //   dynamic data_,
-  //   bool end,
-  //   Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
-  //   SafeMode currentSafeMode,
-  // ) {
-
-  // }
 
   static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
     Iterable<T> cells,
@@ -325,6 +305,73 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
 
     return (const [], data);
   }
+}
+
+class _FavoritePostsPageState extends State<FavoritePostsPage>
+    with CommonGridData<FavoritePostsPage>, FavoritePostsPageLogic {
+  DownloadManager? get downloadManager => widget.downloadManager;
+  LocalTagsService? get localTags => widget.localTags;
+
+  @override
+  FavoritePostSourceService get favoritePosts => widget.favoritePosts;
+  WatchableGridSettingsData get gridSettings =>
+      widget.gridSettings.favoritePosts;
+
+  @override
+  SettingsService get settingsService => widget.settingsService;
+
+  late final StreamSubscription<void> _safeModeWatcher;
+
+  late final client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
+  late final BooruAPI api;
+
+  late final SourceShellElementState<FavoritePost> status;
+
+  @override
+  void initState() {
+    super.initState();
+
+    api = BooruAPI.fromEnum(settings.selectedBooru, client);
+
+    status = SourceShellElementState(
+      source: filter,
+      onEmpty: SourceOnEmptyInterface(
+        filter,
+        (context) => context.l10n().emptyFavoritedPosts,
+      ),
+      selectionController: widget.selectionController,
+      actions: <SelectionBarAction>[
+        if (downloadManager != null && localTags != null)
+          booru_actions.downloadPost(
+            context,
+            settings.selectedBooru,
+            null,
+            downloadManager: downloadManager!,
+            localTags: localTags!,
+            settingsService: settingsService,
+          ),
+        booru_actions.favorites(
+          context,
+          favoritePosts,
+          showDeleteSnackbar: true,
+        ),
+      ],
+      wrapRefresh: null,
+    );
+
+    _safeModeWatcher = safeModeState.events.listen((_) {
+      filter.clearRefresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    status.destroy();
+    client.close(force: true);
+    _safeModeWatcher.cancel();
+
+    super.dispose();
+  }
 
   void _onPressed(
     BuildContext context,
@@ -340,15 +387,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     if (safeMode != null) {
       safeModeState.setCurrent(safeMode);
     }
-
-    gridKey.currentState?.tryScrollUp();
   }
-
-  void _download(int i) => filter.forIdxUnsafe(i).download(
-        downloadManager: downloadManager!,
-        localTags: localTags!,
-        settingsService: settingsService,
-      );
 
   void _openDrawer() {
     Scaffold.of(context).openDrawer();
@@ -357,16 +396,30 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
+    final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     return GridPopScope(
       searchTextController: searchTextController,
       filter: filter,
       rootNavigatorPop: widget.rootNavigatorPop,
-      child: GridConfiguration(
-        watch: gridSettings.watch,
-        child: GridFrame<FavoritePost>(
-          key: gridKey,
-          slivers: [
+      child: ShellScope(
+        stackInjector: status,
+        configWatcher: gridSettings.watch,
+        appBar: TitleAppBarType(
+          title: l10n.favoritesLabel,
+          leading: IconButton(
+            onPressed: _openDrawer,
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ),
+        settingsButton: ShellSettingsButton.fromWatchable(
+          gridSettings,
+          header: SafeModeSegment(state: safeModeState),
+          buildHideName: false,
+          localizeHideNames: (_) => "",
+        ),
+        elements: [
+          ElementPriority(
             _SearchBarWidget(
               api: api,
               filter: filter,
@@ -375,73 +428,43 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
               searchFocus: searchFocus,
               settingsService: settingsService,
             ),
-            Builder(
-              builder: (context) {
-                final padding = MediaQuery.systemGestureInsetsOf(context);
-
-                return SliverPadding(
-                  padding: EdgeInsets.only(
-                    left: padding.left * 0.2,
-                    right: padding.right * 0.2,
-                  ),
-                  sliver: CurrentGridSettingsLayout<FavoritePost>(
-                    source: filter.backingStorage,
-                    progress: filter.progress,
-                    gridSeed: gridSeed,
-                  ),
-                );
-              },
-            ),
-          ],
-          functionality: GridFunctionality(
-            scrollUpOn: [(NavigationButtonEvents.maybeOf(context)!, null)],
-            selectionActions: SelectionActions.of(context),
-            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-            onEmptySource: EmptyWidgetBackground(
-              subtitle: l10n.emptyFavoritedPosts,
-            ),
-            search: PageNameSearchWidget(
-              leading: IconButton(
-                onPressed: _openDrawer,
-                icon: const Icon(Icons.menu_rounded),
-              ),
-            ),
-            settingsButton: GridSettingsButton.fromWatchable(
-              gridSettings,
-              header: SafeModeSegment(state: safeModeState),
-              buildHideName: false,
-              localizeHideNames: (_) => "",
-            ),
-            registerNotifiers: (child) => OnBooruTagPressed(
-              onPressed: _onPressed,
-              child: filter.inject(child),
-            ),
-            download:
-                downloadManager != null && localTags != null ? _download : null,
-            source: filter,
+            hideOnEmpty: false,
           ),
-          description: GridDescription(
-            actions: <GridAction<FavoritePost>>[
-              if (downloadManager != null && localTags != null)
-                booru_actions.downloadFavoritePost(
-                  context,
-                  settings.selectedBooru,
-                  null,
-                  downloadManager: downloadManager!,
-                  localTags: localTags!,
-                  settingsService: settingsService,
+          ElementPriority(
+            ShellElement(
+              state: status,
+              scrollUpOn:
+                  navBarEvents != null ? [(navBarEvents, null)] : const [],
+              scrollingState: ScrollingStateSinkProvider.maybeOf(context),
+              registerNotifiers: (child) => OnBooruTagPressed(
+                onPressed: _onPressed,
+                child: filter.inject(
+                  status.source.inject(child),
                 ),
-              booru_actions.favorites<FavoritePost>(
-                context,
-                favoritePosts,
-                showDeleteSnackbar: true,
               ),
-            ],
-            pullToRefresh: false,
-            pageName: l10n.favoritesLabel,
-            gridSeed: gridSeed,
+              slivers: [
+                Builder(
+                  builder: (context) {
+                    final padding = MediaQuery.systemGestureInsetsOf(context);
+
+                    return SliverPadding(
+                      padding: EdgeInsets.only(
+                        left: padding.left * 0.2,
+                        right: padding.right * 0.2,
+                      ),
+                      sliver: CurrentGridSettingsLayout<FavoritePost>(
+                        source: filter.backingStorage,
+                        progress: filter.progress,
+                        gridSeed: gridSeed,
+                        selection: status.selection,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -511,7 +534,7 @@ class _SearchBarWidget extends StatelessWidget {
         child: Padding(
           padding: padding,
           child: SearchBarAutocompleteWrapper(
-            search: BarSearchWidget(
+            search: SearchBarAppBarType(
               onChanged: onChanged,
               complete: api.searchTag,
               textEditingController: searchTextController,

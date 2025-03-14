@@ -14,15 +14,18 @@ import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/directories_actions.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/fading_panel.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
@@ -122,7 +125,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   final _filteringEvents = StreamController<String>.broadcast();
   late final Directories api;
 
-  late final Map<String, bool> blurMap;
+  // late final Map<String, bool> blurMap;
 
   @override
   void initState() {
@@ -136,11 +139,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       galleryTrash: galleryService.trash,
     );
 
-    blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
-      map[e.categoryName] = e.blur;
+    // blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
+    //   map[e.categoryName] = e.blur;
 
-      return map;
-    });
+    //   return map;
+    // });
 
     api.source.clearRefresh();
   }
@@ -237,12 +240,57 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
+  void search(bool dialog) {
+    if (searchController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.l10n.searchTextIsEmpty),
+        ),
+      );
+
+      return;
+    }
+
+    void onTag(
+      BuildContext context,
+      Booru booru,
+      String tag,
+      SafeMode? safeMode,
+    ) {
+      BooruRestoredPage.open(
+        context,
+        booru: booru,
+        tags: tag,
+        rootNavigator: true,
+        overrideSafeMode: safeMode,
+        saveSelectedPage: (_) {},
+      );
+    }
+
+    final settings = settingsService.current;
+
+    if (dialog) {
+      context.openSafeModeDialog(settingsService, (value) {
+        onTag(
+          context,
+          settings.selectedBooru,
+          searchController.text.trim(),
+          value ?? settings.safeMode,
+        );
+      });
+    } else {
+      onTag(
+        context,
+        settings.selectedBooru,
+        searchController.text.trim(),
+        settings.safeMode,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // final l10n = context.l10n();
-
     return Scaffold(
-      appBar: AppBar(),
       body: _SearchPagePopScope(
         searchController: searchController,
         sink: _filteringEvents.sink,
@@ -250,11 +298,22 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         procPop: widget.procPop,
         child: CustomScrollView(
           slivers: [
-            SearchPageSearchBar(
-              complete: null,
-              searchTextController: searchController,
-              searchFocus: focusNode,
-              sink: _filteringEvents.sink,
+            SliverAppBar(
+              forceMaterialTransparency: true,
+              floating: true,
+              automaticallyImplyLeading: false,
+              centerTitle: true,
+              toolbarHeight: 78,
+              title: SizedBox(
+                height: 48,
+                child: SearchPageSearchBar(
+                  complete: _completeDirectoryNameTag,
+                  onSubmit: search,
+                  sink: _filteringEvents.sink,
+                  searchTextController: searchController,
+                  searchFocus: focusNode,
+                ),
+              ),
             ),
             StreamBuilder(
               stream: _filteringEvents.stream,
@@ -293,7 +352,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               source: api.source,
               searchController: searchController,
               onDirectoryPressed: _onDirectoryPressed,
-              blurMap: blurMap,
+              directoryMetadatas: directoryMetadata,
             ),
             Builder(
               builder: (context) => SliverPadding(

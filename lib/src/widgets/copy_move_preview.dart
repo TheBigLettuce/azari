@@ -4,8 +4,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/db/services/services.dart" as gallery;
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:flutter/material.dart";
 
 class CopyMovePreview extends StatefulWidget {
@@ -33,82 +33,85 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SizedBox(
-      height: CopyMovePreview.size.toDouble(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: DecoratedBox(
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
-          ),
-          child: SizedBox(
-            height: 60,
-            child: Padding(
-              padding: const EdgeInsets.only(
-                left: 24,
-                bottom: 12,
-                top: 12,
-                right: 24,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: SizedBox(
+        height: CopyMovePreview.size.toDouble(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox.square(
-                      dimension: 36,
-                      child: widget.files != null
-                          ? Badge.count(
-                              count: widget.files!.length,
-                              alignment: Alignment.topRight,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  right: 4,
-                                  left: 4,
-                                  bottom: 4,
-                                ),
-                                child: GridCell(
-                                  data: widget.files!.first,
-                                  imageAlign: Alignment.topCenter,
-                                  hideTitle: true,
-                                  overrideDescription: const CellStaticData(
-                                    tightMode: true,
-                                    circle: true,
-                                    ignoreStickers: true,
+              color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
+            ),
+            child: SizedBox(
+              height: 60,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 24,
+                  bottom: 12,
+                  top: 12,
+                  right: 24,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SizedBox.square(
+                        dimension: 36,
+                        child: widget.files != null
+                            ? Badge.count(
+                                count: widget.files!.length,
+                                alignment: Alignment.topRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: 4,
+                                    left: 4,
+                                    bottom: 4,
+                                  ),
+                                  child: GridCell(
+                                    data: widget.files!.first,
+                                    imageAlign: Alignment.topCenter,
+                                    hideTitle: true,
+                                    overrideDescription: const CellStaticData(
+                                      tightMode: true,
+                                      circle: true,
+                                      ignoreStickers: true,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          : null,
-                    ),
-                    Text(
-                      widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                              )
+                            : null,
                       ),
-                    ),
-                    DecoratedBox(
-                      decoration: ShapeDecoration(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                      Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.8),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          widget.icon,
-                          size: 20,
-                          color: colorScheme.primary.withValues(alpha: 0.8),
+                      DecoratedBox(
+                        decoration: ShapeDecoration(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            widget.icon,
+                            size: 20,
+                            color: colorScheme.primary.withValues(alpha: 0.8),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

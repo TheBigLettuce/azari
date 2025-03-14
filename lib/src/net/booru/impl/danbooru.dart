@@ -196,6 +196,7 @@ class Danbooru implements BooruAPI {
           SafeMode.normal => "rating:g",
           SafeMode.none => "",
           SafeMode.relaxed => "rating:g,s",
+          SafeMode.explicit => "rating:q,e",
         };
 
     final query = <String, dynamic>{

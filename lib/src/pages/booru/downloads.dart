@@ -11,16 +11,13 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
-import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/segment_layout.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/layouts/segment_layout.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class DownloadsPage extends StatefulWidget {
@@ -28,7 +25,10 @@ class DownloadsPage extends StatefulWidget {
     super.key,
     required this.downloadManager,
     required this.settingsService,
+    required this.selectionController,
   });
+
+  final SelectionController selectionController;
 
   final DownloadManager downloadManager;
 
@@ -41,7 +41,7 @@ class DownloadsPage extends StatefulWidget {
 }
 
 class _DownloadsPageState extends State<DownloadsPage>
-    with CommonGridData<Post, DownloadsPage> {
+    with CommonGridData<DownloadsPage> {
   DownloadManager get downloadManager => widget.downloadManager;
 
   @override
@@ -50,6 +50,8 @@ class _DownloadsPageState extends State<DownloadsPage>
   late final ChainedFilterResourceSource<String, DownloadHandle> filter;
 
   final searchTextController = TextEditingController();
+
+  late final SourceShellElementState<DownloadHandle> status;
 
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
@@ -78,10 +80,28 @@ class _DownloadsPageState extends State<DownloadsPage>
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
+
+    status = SourceShellElementState(
+      source: filter,
+      onEmpty: SourceOnEmptyInterface(
+        filter,
+        (context) => context.l10n().emptyDownloadProgress,
+      ),
+      selectionController: widget.selectionController,
+      actions: <SelectionBarAction>[
+        delete(context),
+        SelectionBarAction(
+          Icons.restart_alt_rounded,
+          (selected) => downloadManager.restartAll(selected.cast()),
+          false,
+        ),
+      ],
+    );
   }
 
   @override
   void dispose() {
+    status.destroy();
     gridSettings.cancel();
     filter.destroy();
 
@@ -103,15 +123,16 @@ class _DownloadsPageState extends State<DownloadsPage>
         caps: const SegmentCapability.alwaysPinned(),
       );
 
-  GridAction<DownloadHandle> delete(BuildContext context) {
-    return GridAction(
+  SelectionBarAction delete(BuildContext context) {
+    return SelectionBarAction(
       Icons.remove,
       (selected) {
         if (selected.isEmpty) {
           return;
         }
 
-        downloadManager.removeAll(selected.map((e) => e.key));
+        downloadManager
+            .removeAll(selected.map((e) => (e as DownloadHandle).key));
       },
       true,
     );
@@ -121,55 +142,44 @@ class _DownloadsPageState extends State<DownloadsPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: WrapGridPage(
-        child: GridFrame<DownloadHandle>(
-          key: gridKey,
-          slivers: [
-            SegmentLayout<DownloadHandle>(
-              segments: _makeSegments(context, l10n),
-              localizations: l10n,
-              suggestionPrefix: const [],
-              progress: filter.progress,
-              gridSeed: gridSeed,
-              storage: filter.backingStorage,
+    return ScaffoldSelectionBar(
+      child: ShellScope(
+        stackInjector: status,
+        configWatcher: gridSettings.watch,
+        appBar: TitleAppBarType(
+          title: l10n.downloadsPageName,
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: const Icon(Icons.menu_rounded),
+          ),
+          trailingItems: [
+            IconButton(
+              onPressed: downloadManager.clear,
+              icon: const Icon(Icons.close),
             ),
           ],
-          functionality: GridFunctionality(
-            selectionActions: SelectionActions.of(context),
-            onEmptySource: EmptyWidgetBackground(
-              subtitle: l10n.emptyDownloadProgress,
-            ),
-            search: PageNameSearchWidget(
-              leading: IconButton(
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-                icon: const Icon(Icons.menu_rounded),
-              ),
-              trailingItems: [
-                IconButton(
-                  onPressed: downloadManager.clear,
-                  icon: const Icon(Icons.close),
+        ),
+        elements: [
+          ElementPriority(
+            ShellElement(
+              // key: gridKey,
+              state: status,
+              slivers: [
+                SegmentLayout<DownloadHandle>(
+                  segments: _makeSegments(context, l10n),
+                  localizations: l10n,
+                  suggestionPrefix: const [],
+                  progress: filter.progress,
+                  gridSeed: gridSeed,
+                  storage: filter.backingStorage,
+                  selection: status.selection,
                 ),
               ],
             ),
-            source: filter,
           ),
-          description: GridDescription(
-            actions: <GridAction<DownloadHandle>>[
-              delete(context),
-              GridAction(
-                Icons.restart_alt_rounded,
-                downloadManager.restartAll,
-                false,
-              ),
-            ],
-            pageName: l10n.downloadsPageName,
-            gridSeed: gridSeed,
-          ),
-        ),
+        ],
       ),
     );
   }

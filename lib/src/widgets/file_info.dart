@@ -29,7 +29,6 @@ class FileInfo extends StatefulWidget {
     required this.file,
     required this.tags,
     required this.tagManager,
-    required this.miscSettingsService,
     required this.localTags,
     required this.settingsService,
     required this.downloadManager,
@@ -40,7 +39,6 @@ class FileInfo extends StatefulWidget {
   final ImageViewTags tags;
 
   final TagManagerService? tagManager;
-  final MiscSettingsService? miscSettingsService;
   final DownloadManager? downloadManager;
   final LocalTagsService? localTags;
 
@@ -72,8 +70,7 @@ class _FileInfoState extends State<FileInfo> {
   void initState() {
     super.initState();
 
-    filesExtended =
-        widget.miscSettingsService?.current.filesExtendedActions ?? false;
+    filesExtended = widget.settingsService.current.filesExtendedActions;
 
     if (tags.list.indexWhere((e) => e.tag == "translated") != -1) {
       hasTranslation = true;
@@ -110,8 +107,6 @@ class _FileInfoState extends State<FileInfo> {
 
     final l10n = context.l10n();
     // final tagManager = TagManagerService.of(context);
-
-    print(localTags);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

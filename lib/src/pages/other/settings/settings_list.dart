@@ -21,13 +21,11 @@ class SettingsList extends StatefulWidget {
   const SettingsList({
     super.key,
     required this.settingsService,
-    required this.miscSettingsService,
     required this.thumbnailService,
     required this.galleryService,
   });
 
   final GalleryService? galleryService;
-  final MiscSettingsService? miscSettingsService;
   final ThumbnailService? thumbnailService;
 
   final SettingsService settingsService;
@@ -36,13 +34,9 @@ class SettingsList extends StatefulWidget {
   State<SettingsList> createState() => _SettingsListState();
 }
 
-class _SettingsListState extends State<SettingsList>
-    with MiscSettingsWatcherMixin, SettingsWatcherMixin {
+class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
   GalleryService? get galleryService => widget.galleryService;
   ThumbnailService? get thumbnailService => widget.thumbnailService;
-
-  @override
-  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
 
   @override
   SettingsService get settingsService => widget.settingsService;
@@ -183,23 +177,19 @@ class _SettingsListState extends State<SettingsList>
           ListTile(
             title: Text(l10n.settingsTheme),
             tileColor: theme.colorScheme.surfaceContainerHigh,
-            onTap: miscSettings != null
-                ? () => radioDialog(
-                      context,
-                      ThemeType.values
-                          .map((e) => (e, e.translatedString(l10n))),
-                      miscSettings!.themeType,
-                      (value) {
-                        if (value != null) {
-                          selectTheme(context, miscSettings!, value);
-                        }
-                      },
-                      title: l10n.settingsTheme,
-                    )
-                : null,
+            onTap: () => radioDialog(
+              context,
+              ThemeType.values.map((e) => (e, e.translatedString(l10n))),
+              settings.themeType,
+              (value) {
+                if (value != null) {
+                  selectTheme(context, settings, value);
+                }
+              },
+              title: l10n.settingsTheme,
+            ),
             subtitle: Text(
-              (miscSettings?.themeType ?? ThemeType.systemAccent)
-                  .translatedString(l10n),
+              settings.themeType.translatedString(l10n),
             ),
           ),
           // SwitchListTile(

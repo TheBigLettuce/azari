@@ -9,10 +9,10 @@ import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/post_info.dart";
+import "package:azari/src/widgets/shell/parts/sticker_widget.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 

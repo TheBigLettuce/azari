@@ -8,7 +8,7 @@ import "dart:async";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:meta/meta.dart";
 
 class GenericListSource<V> implements ResourceSource<int, V> {
@@ -26,7 +26,7 @@ class GenericListSource<V> implements ResourceSource<int, V> {
     }
   }
 
-  final Future<List<V>> Function() _clearRefresh;
+  final Future<List<V>> Function()? _clearRefresh;
   final Future<List<V>> Function()? _next;
 
   // final WatchFire<int>? watchCount;
@@ -44,7 +44,7 @@ class GenericListSource<V> implements ResourceSource<int, V> {
 
   @override
   Future<int> clearRefresh() async {
-    if (progress.inRefreshing) {
+    if (_clearRefresh == null || progress.inRefreshing) {
       return count;
     }
     progress.inRefreshing = true;
@@ -352,6 +352,9 @@ class ClosableRefreshProgress implements RefreshingProgress {
   final _events = StreamController<bool>.broadcast();
 
   bool _refresh = false;
+
+  @override
+  Stream<bool> get stream => _events.stream;
 
   @override
   Object? error;

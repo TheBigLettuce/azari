@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
@@ -22,17 +21,15 @@ import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/shell_fab_type.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/parts/shell_settings_button.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -51,6 +48,7 @@ class BooruRestoredPage extends StatefulWidget {
     required this.downloadManager,
     required this.localTags,
     required this.tagManager,
+    required this.selectionController,
     this.pagingRegistry,
     this.overrideSafeMode,
     this.name,
@@ -69,6 +67,8 @@ class BooruRestoredPage extends StatefulWidget {
 
   final PathVolume? thenMoveTo;
   final bool trySearchBookmarkByTags;
+
+  final SelectionController selectionController;
 
   final GridBookmarkService? gridBookmarks;
   final HiddenBooruPostsService? hiddenBooruPosts;
@@ -117,6 +117,7 @@ class BooruRestoredPage extends StatefulWidget {
           wrapScaffold: rootNavigator,
           trySearchBookmarkByTags: trySearchBookmarkByTags,
           gridDbs: gridDbs,
+          selectionController: SelectionActions.controllerOf(context),
           tagManager: db.get<TagManagerService>(),
           downloadManager: DownloadManager.of(context),
           localTags: db.get<LocalTagsService>(),
@@ -134,7 +135,7 @@ class BooruRestoredPage extends StatefulWidget {
 }
 
 class _BooruRestoredPageState extends State<BooruRestoredPage>
-    with CommonGridData<Post, BooruRestoredPage> {
+    with CommonGridData<BooruRestoredPage> {
   GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
   HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
   FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
@@ -185,6 +186,25 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       hiddenBooruPosts,
       gridBookmarks,
       addToBookmarks,
+      [
+        if (downloadManager != null && localTags != null)
+          actions.downloadPost(
+            context,
+            widget.booru,
+            widget.thenMoveTo,
+            downloadManager: downloadManager!,
+            localTags: localTags!,
+            settingsService: settingsService,
+          ),
+        if (favoritePosts != null)
+          actions.favorites(
+            context,
+            favoritePosts!,
+            showDeleteSnackbar: true,
+          ),
+        if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
+      ],
+      widget.selectionController,
     );
   }
 
@@ -259,20 +279,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       widget.saveSelectedPage(null);
       if (gridBookmarks != null && !pagingState.addToBookmarks) {
         gridBookmarks!.delete(pagingState.secondaryGrid.name);
-      } else if (gridBookmarks != null) {
-        gridBookmarks!
-            .get(pagingState.secondaryGrid.name)!
-            .copy(
-              thumbnails: source.lastFive
-                  .map(
-                    (e) => GridBookmarkThumbnail(
-                      url: e.previewUrl,
-                      rating: e.rating,
-                    ),
-                  )
-                  .toList(),
-            )
-            .maybeSave();
       }
       pagingState.dispose(pagingState.addToBookmarks);
     } else {
@@ -280,20 +286,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
         widget.saveSelectedPage(null);
         if (gridBookmarks != null && !pagingState.addToBookmarks) {
           gridBookmarks!.delete(pagingState.secondaryGrid.name);
-        } else if (gridBookmarks != null) {
-          gridBookmarks!
-              .get(pagingState.secondaryGrid.name)!
-              .copy(
-                thumbnails: source.lastFive
-                    .map(
-                      (e) => GridBookmarkThumbnail(
-                        url: e.previewUrl,
-                        rating: e.rating,
-                      ),
-                    )
-                    .toList(),
-              )
-              .maybeSave();
         }
         (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
                 as RestoredBooruPageState)
@@ -303,13 +295,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
     super.dispose();
   }
-
-  void _download(int i) => source.forIdx(i)?.download(
-        downloadManager: downloadManager!,
-        localTags: localTags!,
-        settingsService: settingsService,
-        thenMoveTo: widget.thenMoveTo,
-      );
 
   void _onTagPressed(
     BuildContext context,
@@ -338,157 +323,141 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     final l10n = context.l10n();
     final navigationButtonEvents = NavigationButtonEvents.maybeOf(context);
 
-    return GridConfiguration(
-      watch: gridSettings.watch,
-      child: WrapGridPage(
-        addScaffoldAndBar: widget.wrapScaffold,
-        child: Builder(
-          builder: (context) {
-            return BooruAPINotifier(
-              api: api,
-              child: GridPopScope(
-                searchTextController: null,
-                filter: null,
-                child: GridFrame<Post>(
-                  key: gridKey,
-                  slivers: [
-                    Builder(
-                      builder: (context) {
-                        final padding =
-                            MediaQuery.systemGestureInsetsOf(context);
-
-                        return SliverPadding(
-                          padding: EdgeInsets.only(
-                            left: padding.left * 0.2,
-                            right: padding.right * 0.2,
-                          ),
-                          sliver: CurrentGridSettingsLayout<Post>(
-                            source: source.backingStorage,
-                            progress: source.progress,
-                            gridSeed: gridSeed,
-                            unselectOnUpdate: false,
-                            buildEmpty: (e) => EmptyWidgetWithButton(
-                              error: e,
-                              buttonText: l10n.openInBrowser,
-                              onPressed: () {
-                                launchUrl(
-                                  Uri.https(api.booru.url),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Builder(
-                      builder: (context) {
-                        final padding =
-                            MediaQuery.systemGestureInsetsOf(context);
-
-                        return SliverPadding(
-                          padding: EdgeInsets.only(
-                            left: padding.left * 0.2,
-                            right: padding.right * 0.2,
-                          ),
-                          sliver: GridConfigPlaceholders(
-                            progress: source.progress,
-                            randomNumber: gridSeed,
-                          ),
-                        );
-                      },
-                    ),
-                    GridFooter<void>(
-                      storage: source.backingStorage,
-                      name: source.tags,
-                    ),
-                  ],
-                  initalScrollPosition: pagingState.offset,
-                  functionality: GridFunctionality(
-                    fab: navigationButtonEvents == null
-                        ? const DefaultGridFab()
-                        : const NoGridFab(),
-                    scrollUpOn: navigationButtonEvents == null
-                        ? const []
-                        : [(navigationButtonEvents, null)],
-                    selectionActions: SelectionActions.of(context),
-                    scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-                    updatesAvailable: source.updatesAvailable,
-                    settingsButton: GridSettingsButton.onlyHeader(
-                      SafeModeButton(
-                        secondaryGrid: pagingState.secondaryGrid,
-                      ),
-                    ),
-                    updateScrollPosition: pagingState.setOffset,
-                    download: downloadManager != null && localTags != null
-                        ? _download
-                        : null,
-                    source: source,
-                    search: RawSearchWidget(
-                      (context, settingsButton, bottomWidget) {
-                        return SliverAppBar(
-                          leading: const BackButton(),
-                          floating: true,
-                          pinned: true,
-                          snap: true,
-                          stretch: true,
-                          bottom: bottomWidget ??
-                              const PreferredSize(
-                                preferredSize: Size.zero,
-                                child: SizedBox.shrink(),
-                              ),
-                          title: _AppBarText(key: _textKey, source: source),
-                          actions: [
-                            IconButton(
-                              icon: pagingState.addToBookmarks
-                                  ? const Icon(Icons.bookmark_remove_rounded)
-                                  : const Icon(Icons.bookmark_add_rounded),
-                              onPressed: () {
-                                pagingState.addToBookmarks =
-                                    !pagingState.addToBookmarks;
-
-                                setState(() {});
-                              },
-                            ),
-                            if (settingsButton != null) settingsButton,
-                          ],
-                        );
-                      },
-                    ),
-                    registerNotifiers: (child) => OnBooruTagPressed(
-                      onPressed: _onTagPressed,
-                      child: BooruAPINotifier(api: api, child: child),
-                    ),
-                  ),
-                  description: GridDescription(
-                    actions: [
-                      if (downloadManager != null && localTags != null)
-                        actions.downloadPost(
-                          context,
-                          api.booru,
-                          widget.thenMoveTo,
-                          downloadManager: downloadManager!,
-                          localTags: localTags!,
-                          settingsService: settingsService,
-                        ),
-                      if (favoritePosts != null)
-                        actions.favorites(
-                          context,
-                          favoritePosts!,
-                          showDeleteSnackbar: true,
-                        ),
-                      if (hiddenBooruPosts != null)
-                        actions.hide(context, hiddenBooruPosts!),
-                    ],
-                    animationsOnSourceWatch: false,
-                    pageName: l10n.booruGridPageName,
-                    gridSeed: gridSeed,
+    return ScaffoldSelectionBar(
+      addScaffoldAndBar: widget.wrapScaffold,
+      child: Builder(
+        builder: (context) {
+          return BooruAPINotifier(
+            api: api,
+            child: GridPopScope(
+              searchTextController: null,
+              filter: null,
+              child: ShellScope(
+                fab: navigationButtonEvents == null
+                    ? const DefaultShellFab()
+                    : const NoShellFab(),
+                stackInjector: pagingState.status,
+                configWatcher: gridSettings.watch,
+                settingsButton: ShellSettingsButton.onlyHeader(
+                  SafeModeButton(
+                    secondaryGrid: pagingState.secondaryGrid,
                   ),
                 ),
+                appBar: RawAppBarType(
+                  (context, settingsButton, bottomWidget) {
+                    return SliverAppBar(
+                      leading: const BackButton(),
+                      floating: true,
+                      pinned: true,
+                      snap: true,
+                      stretch: true,
+                      bottom: bottomWidget ??
+                          const PreferredSize(
+                            preferredSize: Size.zero,
+                            child: SizedBox.shrink(),
+                          ),
+                      title: _AppBarText(key: _textKey, source: source),
+                      actions: [
+                        IconButton(
+                          icon: pagingState.addToBookmarks
+                              ? const Icon(Icons.bookmark_remove_rounded)
+                              : const Icon(Icons.bookmark_add_rounded),
+                          onPressed: () {
+                            pagingState.addToBookmarks =
+                                !pagingState.addToBookmarks;
+
+                            setState(() {});
+                          },
+                        ),
+                        if (settingsButton != null) settingsButton,
+                      ],
+                    );
+                  },
+                ),
+                elements: [
+                  ElementPriority(
+                    ShellElement(
+                      // key: gridKey,
+                      state: pagingState.status,
+                      initialScrollPosition: pagingState.offset,
+                      animationsOnSourceWatch: false,
+                      scrollUpOn: navigationButtonEvents == null
+                          ? const []
+                          : [(navigationButtonEvents, null)],
+                      scrollingState:
+                          ScrollingStateSinkProvider.maybeOf(context),
+                      updateScrollPosition: pagingState.setOffset,
+                      // download: downloadManager != null && localTags != null
+                      //     ? _download
+                      //     : null,
+                      registerNotifiers: (child) => OnBooruTagPressed(
+                        onPressed: _onTagPressed,
+                        child: pagingState.status.source.inject(
+                          BooruAPINotifier(
+                            api: api,
+                            child: child,
+                          ),
+                        ),
+                      ),
+                      slivers: [
+                        Builder(
+                          builder: (context) {
+                            final padding =
+                                MediaQuery.systemGestureInsetsOf(context);
+
+                            return SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: padding.left * 0.2,
+                                right: padding.right * 0.2,
+                              ),
+                              sliver: CurrentGridSettingsLayout<Post>(
+                                source: source.backingStorage,
+                                progress: source.progress,
+                                gridSeed: gridSeed,
+                                selection: null,
+                                buildEmpty: (e) => EmptyWidgetWithButton(
+                                  error: e,
+                                  buttonText: l10n.openInBrowser,
+                                  onPressed: () {
+                                    launchUrl(
+                                      Uri.https(api.booru.url),
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final padding =
+                                MediaQuery.systemGestureInsetsOf(context);
+
+                            return SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: padding.left * 0.2,
+                                right: padding.right * 0.2,
+                              ),
+                              sliver: GridConfigPlaceholders(
+                                progress: source.progress,
+                                randomNumber: gridSeed,
+                              ),
+                            );
+                          },
+                        ),
+                        GridFooter<void>(
+                          storage: source.backingStorage,
+                          name: source.tags,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -503,8 +472,26 @@ class RestoredBooruPageState implements PagingEntry {
     HiddenBooruPostsService? hiddenBooruPosts,
     this.gridBookmarks,
     this.addToBookmarks,
+    this.actions,
+    this.selectionController,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
     api = BooruAPI.fromEnum(booru, client);
+
+    void saveThumbnails(GridPostSource instance) {
+      gridBookmarks!
+          .get(secondaryGrid.name)!
+          .copy(
+            thumbnails: instance.lastFive
+                .map(
+                  (e) => GridBookmarkThumbnail(
+                    url: e.previewUrl,
+                    rating: e.rating,
+                  ),
+                )
+                .toList(),
+          )
+          .maybeSave();
+    }
 
     source = secondaryGrid.makeSource(
       api,
@@ -512,6 +499,19 @@ class RestoredBooruPageState implements PagingEntry {
       tags,
       hiddenBooruPosts: hiddenBooruPosts,
       excluded: tagManager?.excluded,
+      onNextCompleted: saveThumbnails,
+      onClearRefreshCompleted: saveThumbnails,
+    );
+
+    status = SourceShellElementState(
+      source: source,
+      onEmpty: SourceOnEmptyInterface(
+        source,
+        (context) => context.l10n().emptyNoPosts,
+      ),
+      selectionController: selectionController,
+      actions: actions,
+      updatesAvailable: source.updatesAvailable,
     );
   }
 
@@ -530,6 +530,9 @@ class RestoredBooruPageState implements PagingEntry {
   final SecondaryGridHandle secondaryGrid;
   final GridBookmarkService? gridBookmarks;
   late final GridPostSource source;
+  late final SourceShellElementState<Post> status;
+  final List<SelectionBarAction> actions;
+  final SelectionController selectionController;
 
   int? currentSkipped;
 
@@ -538,6 +541,7 @@ class RestoredBooruPageState implements PagingEntry {
 
   @override
   Future<void> dispose([bool closeGrid = true]) {
+    status.destroy();
     client.close();
     source.destroy();
 

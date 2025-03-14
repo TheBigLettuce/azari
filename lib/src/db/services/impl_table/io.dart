@@ -11,6 +11,7 @@ import "package:azari/src/db/services/impl/isar/schemas/booru/post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/bookmark.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
@@ -99,8 +100,6 @@ class IoServices implements Services {
       return hiddenBooruPosts as T;
     } else if (T == VideoSettingsService) {
       return videoSettings as T;
-    } else if (T == MiscSettingsService) {
-      return miscSettings as T;
     } else {
       return this as T;
     }
@@ -116,7 +115,6 @@ class IoServices implements Services {
   }
 
   final IsarSettingsService settings = IsarSettingsService();
-  IsarMiscSettingsService get miscSettings => const IsarMiscSettingsService();
   VideoSettingsService get videoSettings => const IsarVideoService();
   HiddenBooruPostsService get hiddenBooruPosts =>
       const IsarHiddenBooruPostService();
@@ -130,8 +128,8 @@ class IoServices implements Services {
       const IsarStatisticsBooruService();
   StatisticsDailyService get statisticsDaily =>
       const IsarDailyStatisticsService();
-  DirectoryMetadataService get directoryMetadata =>
-      const IsarDirectoryMetadataService();
+  final IsarDirectoryMetadataService directoryMetadata =
+      IsarDirectoryMetadataService();
   ThumbnailService get thumbnails => const IsarThumbnailService();
   LocalTagsService get localTags => const IsarLocalTagsService();
   GridBookmarkService get gridBookmarks => const IsarGridStateBooruService();
@@ -305,6 +303,13 @@ abstract class $VisitedPost extends VisitedPost {
     required DateTime date,
     required PostRating rating,
   }) = IsarVisitedPost.noId;
+}
+
+abstract class $DirectoryMetadata extends DirectoryMetadata {
+  const factory $DirectoryMetadata({
+    required String categoryName,
+    required DateTime time,
+  }) = IsarDirectoryMetadata.noIdFlags;
 }
 
 class $Directory extends DirectoryImpl

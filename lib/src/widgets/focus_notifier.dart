@@ -20,4 +20,10 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
       unfocus: widget.notifier?.previousFocus ?? () {},
     );
   }
+
+  static FocusNode nodeOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+
+    return widget.notifier!;
+  }
 }

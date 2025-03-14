@@ -6,8 +6,7 @@
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
 import "package:flutter/material.dart";
 
 @immutable
@@ -30,7 +29,6 @@ mixin DefaultBlacklistedDirectoryDataOnPress
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<BlacklistedDirectoryData> functionality,
     int idx,
   ) {
     final (api, _, _) = DirectoriesDataNotifier.of(context);

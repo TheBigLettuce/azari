@@ -6,7 +6,6 @@
 import "dart:async";
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
@@ -19,390 +18,35 @@ import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/gallery/directories.dart";
 import "package:azari/src/pages/gallery/files.dart";
+import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/image_view/default_state_controller.dart";
-import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/wrap_future_restartable.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class PopularRandomChips extends StatelessWidget {
   const PopularRandomChips({
     super.key,
-    required this.safeMode,
-    required this.booru,
-    required this.onTagPressed,
     required this.listPadding,
-    required this.tagManager,
-    required this.visitedPosts,
-    required this.miscSettingsService,
-    this.tags = "",
+    required this.state,
+    required this.onPressed,
   });
-
-  final String tags;
-
-  final Booru booru;
 
   final EdgeInsets listPadding;
 
-  final OnBooruTagPressedFunc onTagPressed;
-
-  final SafeMode Function() safeMode;
-
-  final TagManagerService? tagManager;
-  final VisitedPostsService? visitedPosts;
-  final MiscSettingsService? miscSettingsService;
-
-  void launchVideos(
-    BuildContext gridContext,
-    AppLocalizations l10n,
-    ThemeData theme,
-  ) {
-    if (tags.isNotEmpty) {
-      tagManager?.latest.add(tags);
-    }
-
-    final db = Services.of(gridContext);
-    final (
-      downloadManager,
-      localTags,
-      settingsService,
-      videoSettingsService,
-      galleryService
-    ) = (
-      DownloadManager.of(gridContext),
-      db.get<LocalTagsService>(),
-      db.require<SettingsService>(),
-      db.get<VideoSettingsService>(),
-      db.get<GalleryService>(),
-    );
-
-    final client = BooruAPI.defaultClientForBooru(booru);
-    final api = BooruAPI.fromEnum(booru, client);
-
-    final value = <Post>[];
-    int page = 0;
-    bool canLoadMore = true;
-
-    final stateController = DefaultStateController(
-      getContent: (i) => value[i].content(gridContext),
-      count: 0,
-      wrapNotifiers: (child) => OnBooruTagPressed(
-        onPressed: onTagPressed,
-        child: child,
-      ),
-      statistics: StatisticsBooruService.asImageViewStatistics(),
-      download: downloadManager != null && localTags != null
-          ? (i) => value[i].download(
-                downloadManager: downloadManager,
-                localTags: localTags,
-                settingsService: settingsService,
-              )
-          : null,
-      tags: tagManager != null
-          ? (c) => DefaultPostPressable.imageViewTags(
-                c,
-                tagManager!,
-              )
-          : null,
-      watchTags: tagManager != null
-          ? (c, f) => DefaultPostPressable.watchTags(
-                c,
-                f,
-                tagManager!.pinned,
-              )
-          : null,
-      pageChange: (state) {
-        final post = value[state.currentIndex];
-
-        visitedPosts?.addAll([
-          VisitedPost(
-            booru: post.booru,
-            id: post.id,
-            thumbUrl: post.previewUrl,
-            rating: post.rating,
-            date: DateTime.now(),
-          ),
-        ]);
-      },
-      onNearEnd: () async {
-        if (!canLoadMore) {
-          return value.length;
-        }
-
-        final List<Post> next;
-
-        if (tags.isEmpty) {
-          final miscSettings = miscSettingsService?.current;
-          next = await api.randomPosts(
-            tagManager?.excluded,
-            safeMode(),
-            true,
-            // order: RandomPostsOrder.random,
-            addTags: miscSettings?.randomVideosAddTags ?? "",
-            page: page + 1,
-          );
-        } else {
-          next = await api.randomPosts(
-            tagManager?.excluded,
-            safeMode(),
-            true,
-            // order: RandomPostsOrder.random,
-            addTags: tags,
-            page: page + 1,
-          );
-        }
-
-        page += 1;
-        value.addAll(next);
-        if (next.isEmpty) {
-          canLoadMore = false;
-        }
-
-        return value.length;
-      },
-      videoSettingsService: videoSettingsService,
-    );
-
-    Navigator.of(gridContext, rootNavigator: true)
-        .push<void>(
-      MaterialPageRoute(
-        builder: (context) => WrapFutureRestartable(
-          builder: (context, _) {
-            if (value.isEmpty) {
-              return Scaffold(
-                appBar: AppBar(),
-                body: Center(
-                  child: Text(
-                    l10n.emptyResult,
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
-              );
-            }
-
-            return ImageView(
-              stateController: stateController,
-              galleryService: galleryService,
-              videoSettingsService: videoSettingsService,
-              settingsService: settingsService,
-            );
-          },
-          newStatus: () async {
-            page = 0;
-            value.clear();
-            canLoadMore = true;
-
-            final List<Post> posts;
-
-            if (tags.isEmpty) {
-              final miscSettings = miscSettingsService?.current;
-
-              posts = await api.randomPosts(
-                tagManager?.excluded,
-                safeMode(),
-                true,
-                // order: RandomPostsOrder.random,
-                addTags: miscSettings?.randomVideosAddTags ?? "",
-              );
-            } else {
-              posts = await api.randomPosts(
-                tagManager?.excluded,
-                safeMode(),
-                true,
-                // order: RandomPostsOrder.random,
-                addTags: tags,
-              );
-            }
-
-            value.addAll(posts);
-
-            final post = value.first;
-
-            visitedPosts?.addAll([
-              VisitedPost(
-                booru: post.booru,
-                id: post.id,
-                thumbUrl: post.previewUrl,
-                rating: post.rating,
-                date: DateTime.now(),
-              ),
-            ]);
-
-            stateController.count = value.length;
-
-            return value;
-          },
-        ),
-      ),
-    )
-        .whenComplete(() {
-      stateController.dispose();
-      client.close(force: true);
-    });
-  }
-
-  void launchRandom(
-    BuildContext gridContext,
-    AppLocalizations l10n,
-    ThemeData theme,
-  ) {
-    if (tags.isNotEmpty) {
-      tagManager?.latest.add(tags);
-    }
-
-    final client = BooruAPI.defaultClientForBooru(booru);
-    final api = BooruAPI.fromEnum(booru, client);
-
-    final db = Services.of(gridContext);
-    final (
-      downloadManager,
-      localTags,
-      settingsService,
-      videoSettingsService,
-      galleryService
-    ) = (
-      DownloadManager.of(gridContext),
-      db.get<LocalTagsService>(),
-      db.require<SettingsService>(),
-      db.get<VideoSettingsService>(),
-      db.get<GalleryService>(),
-    );
-
-    final value = <Post>[];
-    int page = 0;
-    bool canLoadMore = true;
-
-    final stateController = DefaultStateController(
-      getContent: (i) => value[i].content(gridContext),
-      statistics: StatisticsBooruService.asImageViewStatistics(),
-      download: downloadManager != null && localTags != null
-          ? (i) => value[i].download(
-                downloadManager: downloadManager,
-                localTags: localTags,
-                settingsService: settingsService,
-              )
-          : null,
-      tags: tagManager != null
-          ? (c) => DefaultPostPressable.imageViewTags(
-                c,
-                tagManager!,
-              )
-          : null,
-      watchTags: tagManager != null
-          ? (c, f) => DefaultPostPressable.watchTags(
-                c,
-                f,
-                tagManager!.pinned,
-              )
-          : null,
-      preloadNextPictures: true,
-      pageChange: (state) {
-        final post = value[state.currentIndex];
-
-        visitedPosts?.addAll([
-          VisitedPost(
-            booru: post.booru,
-            id: post.id,
-            rating: post.rating,
-            thumbUrl: post.previewUrl,
-            date: DateTime.now(),
-          ),
-        ]);
-      },
-      wrapNotifiers: (child) => OnBooruTagPressed(
-        onPressed: onTagPressed,
-        child: child,
-      ),
-      onNearEnd: () async {
-        if (!canLoadMore) {
-          return value.length;
-        }
-
-        final ret = await api.randomPosts(
-          tagManager?.excluded,
-          safeMode(),
-          false,
-          addTags: tags,
-          page: page + 1,
-        );
-
-        page += 1;
-        value.addAll(ret);
-        if (ret.isEmpty) {
-          canLoadMore = false;
-        }
-
-        return value.length;
-      },
-      count: 0,
-      videoSettingsService: videoSettingsService,
-    );
-
-    Navigator.of(gridContext, rootNavigator: true)
-        .push<void>(
-      MaterialPageRoute(
-        builder: (context) => WrapFutureRestartable(
-          newStatus: () async {
-            page = 0;
-            value.clear();
-            canLoadMore = true;
-
-            final ret = await api.randomPosts(
-              tagManager?.excluded,
-              safeMode(),
-              false,
-              addTags: tags,
-            );
-
-            value.addAll(ret);
-
-            final post = value.first;
-
-            visitedPosts?.addAll([
-              VisitedPost(
-                booru: post.booru,
-                id: post.id,
-                rating: post.rating,
-                thumbUrl: post.previewUrl,
-                date: DateTime.now(),
-              ),
-            ]);
-
-            stateController.count = value.length;
-
-            return value;
-          },
-          builder: (context, value) {
-            return ImageView(
-              stateController: stateController,
-              galleryService: galleryService,
-              videoSettingsService: videoSettingsService,
-              settingsService: settingsService,
-            );
-          },
-        ),
-      ),
-    )
-        .whenComplete(() {
-      stateController.dispose();
-      client.close(force: true);
-    });
-  }
+  final BooruChipsState state;
+  final void Function(BooruChipsState state) onPressed;
 
   @override
   Widget build(BuildContext gridContext) {
     final l10n = AppLocalizations.of(gridContext)!;
-    final theme = Theme.of(gridContext);
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -413,41 +57,35 @@ class PopularRandomChips extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ActionChip(
-              onPressed: () {
-                if (tags.isNotEmpty) {
-                  tagManager?.latest.add(tags);
-                }
-
-                final client = BooruAPI.defaultClientForBooru(booru);
-                final api = BooruAPI.fromEnum(booru, client);
-
-                PopularPage.open(
-                  gridContext,
-                  tags: tags,
-                  api: api,
-                  safeMode: safeMode,
-                ).whenComplete(() => client.close(force: true));
-              },
-              label: Text(
-                "${l10n.popularPosts}${tags.isEmpty ? '' : " #$tags"}",
-              ),
+            ChoiceChip(
+              selected: state == BooruChipsState.latest,
+              showCheckmark: false,
+              onSelected: (_) => onPressed(BooruChipsState.latest),
+              label: const Text("Latest"), // TODO: change
+              avatar: const Icon(Icons.new_releases_outlined),
+            ),
+            const Padding(padding: EdgeInsets.only(right: 6)),
+            ChoiceChip(
+              selected: state == BooruChipsState.popular,
+              showCheckmark: false,
+              onSelected: (_) => onPressed(BooruChipsState.popular),
+              label: Text(l10n.popularPosts),
               avatar: const Icon(Icons.whatshot_outlined),
             ),
             const Padding(padding: EdgeInsets.only(right: 6)),
-            ActionChip(
-              onPressed: () => launchRandom(gridContext, l10n, theme),
-              label: Text(
-                "${l10n.randomPosts}${tags.isEmpty ? '' : " #$tags"}",
-              ),
+            ChoiceChip(
+              selected: state == BooruChipsState.random,
+              showCheckmark: false,
+              onSelected: (_) => onPressed(BooruChipsState.random),
+              label: Text(l10n.randomPosts),
               avatar: const Icon(Icons.shuffle_outlined),
             ),
             const Padding(padding: EdgeInsets.only(right: 6)),
-            ActionChip(
-              onPressed: () => launchVideos(gridContext, l10n, theme),
-              label: Text(
-                "${l10n.videosLabel}${tags.isEmpty ? '' : " #$tags"}",
-              ),
+            ChoiceChip(
+              selected: state == BooruChipsState.videos,
+              showCheckmark: false,
+              onSelected: (_) => onPressed(BooruChipsState.videos),
+              label: Text(l10n.videosLabel),
               avatar: const Icon(Icons.video_collection_outlined),
             ),
           ],
@@ -457,24 +95,31 @@ class PopularRandomChips extends StatelessWidget {
   }
 }
 
+enum BooruChipsState {
+  latest,
+  popular,
+  random,
+  videos;
+}
+
 class _VideosSettingsDialog extends StatefulWidget {
   const _VideosSettingsDialog({
     // super.key,
     required this.booru,
-    required this.miscSettingsService,
+    required this.settingsService,
   });
 
   final Booru booru;
-  final MiscSettingsService miscSettingsService;
+  final SettingsService settingsService;
 
   @override
   State<_VideosSettingsDialog> createState() => __VideosSettingsDialogState();
 }
 
 class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
-    with MiscSettingsWatcherMixin {
+    with SettingsWatcherMixin {
   @override
-  MiscSettingsService get miscSettingsService => widget.miscSettingsService;
+  SettingsService get settingsService => widget.settingsService;
 
   late final TextEditingController textController;
   final focus = FocusNode();
@@ -488,8 +133,7 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
 
     api = BooruAPI.fromEnum(widget.booru, client);
 
-    textController =
-        TextEditingController(text: miscSettings!.randomVideosAddTags);
+    textController = TextEditingController(text: settings.randomVideosAddTags);
   }
 
   @override
@@ -498,8 +142,8 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
 
     client.close(force: true);
 
-    if (miscSettings!.randomVideosAddTags != textController.text) {
-      miscSettings!.copy(randomVideosAddTags: textController.text).maybeSave();
+    if (settings.randomVideosAddTags != textController.text) {
+      settings.copy(randomVideosAddTags: textController.text).save();
     }
 
     textController.dispose();
@@ -517,34 +161,28 @@ class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
       title: Text(l10n.settingsLabel),
       actions: [
         IconButton.filled(
-          onPressed: () => miscSettings!
-              .copy(randomVideosOrder: RandomPostsOrder.random)
-              .maybeSave(),
+          onPressed: () =>
+              settings.copy(randomVideosOrder: RandomPostsOrder.random).save(),
           icon: const Icon(Icons.shuffle_rounded),
-          isSelected:
-              miscSettings!.randomVideosOrder == RandomPostsOrder.random,
+          isSelected: settings.randomVideosOrder == RandomPostsOrder.random,
         ),
         IconButton.filled(
-          onPressed: () => miscSettings!
-              .copy(randomVideosOrder: RandomPostsOrder.rating)
-              .maybeSave(),
+          onPressed: () =>
+              settings.copy(randomVideosOrder: RandomPostsOrder.rating).save(),
           icon: const Icon(Icons.whatshot_rounded),
-          isSelected:
-              miscSettings!.randomVideosOrder == RandomPostsOrder.rating,
+          isSelected: settings.randomVideosOrder == RandomPostsOrder.rating,
         ),
         IconButton.filled(
-          onPressed: () => miscSettings!
-              .copy(randomVideosOrder: RandomPostsOrder.latest)
-              .maybeSave(),
+          onPressed: () =>
+              settings.copy(randomVideosOrder: RandomPostsOrder.latest).save(),
           icon: const Icon(Icons.schedule_rounded),
-          isSelected:
-              miscSettings!.randomVideosOrder == RandomPostsOrder.latest,
+          isSelected: settings.randomVideosOrder == RandomPostsOrder.latest,
         ),
       ],
       content: Padding(
         padding: EdgeInsets.zero,
         child: SearchBarAutocompleteWrapper(
-          search: BarSearchWidget(
+          search: SearchBarAppBarType(
             onChanged: null,
             complete: (str) async {
               if (str == latestSearch?.$1) {
@@ -595,11 +233,13 @@ class PopularPage extends StatefulWidget {
     required this.settingsService,
     required this.downloadManager,
     required this.localTags,
+    required this.selectionController,
   });
 
   final String tags;
 
   final BooruAPI api;
+  final SelectionController selectionController;
 
   final SafeMode Function() safeMode;
 
@@ -626,6 +266,7 @@ class PopularPage extends StatefulWidget {
           api: api,
           tags: tags,
           safeMode: safeMode,
+          selectionController: SelectionActions.controllerOf(context),
           gridBookmarks: db.get<GridBookmarkService>(),
           hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
           favoritePosts: db.get<FavoritePostSourceService>(),
@@ -643,7 +284,7 @@ class PopularPage extends StatefulWidget {
 }
 
 class _PopularPageState extends State<PopularPage>
-    with CommonGridData<Post, PopularPage> {
+    with CommonGridData<PopularPage> {
   GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
   HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
   FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
@@ -660,6 +301,8 @@ class _PopularPageState extends State<PopularPage>
     columns: GridColumn.two,
     layoutType: GridLayoutType.gridQuilted,
   );
+
+  late final SourceShellElementState gridStatus;
 
   final pageSaver = PageSaver.noPersist();
 
@@ -693,18 +336,45 @@ class _PopularPageState extends State<PopularPage>
   );
 
   @override
+  void initState() {
+    super.initState();
+
+    gridStatus = SourceShellElementState(
+      source: source,
+      selectionController: widget.selectionController,
+      onEmpty: SourceOnEmptyInterface(
+        source,
+        (context) => context.l10n().emptyNoPosts,
+      ),
+      actions: <SelectionBarAction>[
+        if (downloadManager != null && localTags != null)
+          actions.downloadPost(
+            context,
+            widget.api.booru,
+            null,
+            downloadManager: downloadManager!,
+            localTags: localTags!,
+            settingsService: settingsService,
+          ),
+        if (favoritePosts != null)
+          actions.favorites(
+            context,
+            favoritePosts!,
+            showDeleteSnackbar: true,
+          ),
+        if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
+      ],
+    );
+  }
+
+  @override
   void dispose() {
     gridSettings.cancel();
     source.destroy();
+    gridStatus.destroy();
 
     super.dispose();
   }
-
-  void _download(int i) => source.forIdx(i)?.download(
-        downloadManager: downloadManager!,
-        localTags: localTags!,
-        settingsService: settingsService,
-      );
 
   void _onBooruTagPressed(
     BuildContext _,
@@ -726,104 +396,170 @@ class _PopularPageState extends State<PopularPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    final gridActions = <GridAction<Post>>[
-      if (downloadManager != null && localTags != null)
-        actions.downloadPost(
-          context,
-          widget.api.booru,
-          null,
-          downloadManager: downloadManager!,
-          localTags: localTags!,
-          settingsService: settingsService,
-        ),
-      if (favoritePosts != null)
-        actions.favorites(
-          context,
-          favoritePosts!,
-          showDeleteSnackbar: true,
-        ),
-      if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
-    ];
-
-    return WrapGridPage(
+    return ScaffoldSelectionBar(
       addScaffoldAndBar: true,
       child: GridPopScope(
         searchTextController: null,
         filter: null,
-        child: GridConfiguration(
-          watch: gridSettings.watch,
-          child: BooruAPINotifier(
-            api: widget.api,
-            child: OnBooruTagPressed(
-              onPressed: (context, booru, value, safeMode) {
-                ExitOnPressRoute.maybeExitOf(context);
+        child: ShellScope(
+          stackInjector: gridStatus,
+          configWatcher: gridSettings.watch,
+          appBar: RawAppBarType(
+            (context, settingsButton, bottomWidget) => SliverAppBar(
+              floating: true,
+              pinned: true,
+              snap: true,
+              stretch: true,
+              bottom: bottomWidget ??
+                  const PreferredSize(
+                    preferredSize: Size.zero,
+                    child: SizedBox.shrink(),
+                  ),
+              title: Text(
+                widget.tags.isNotEmpty
+                    ? "${l10n.popularPosts} #${widget.tags}"
+                    : l10n.popularPosts,
+              ),
+              actions: [if (settingsButton != null) settingsButton],
+            ),
+          ),
+          elements: [
+            ElementPriority(
+              BooruAPINotifier(
+                api: widget.api,
+                child: OnBooruTagPressed(
+                  onPressed: (context, booru, value, safeMode) {
+                    ExitOnPressRoute.maybeExitOf(context);
 
-                _onBooruTagPressed(context, booru, value, safeMode);
-              },
-              child: GridFrame<Post>(
-                key: gridKey,
-                slivers: [
-                  CurrentGridSettingsLayout<Post>(
-                    source: source.backingStorage,
-                    progress: source.progress,
-                    gridSeed: gridSeed,
-                    unselectOnUpdate: false,
-                  ),
-                  GridConfigPlaceholders(
-                    progress: source.progress,
-                    randomNumber: gridSeed,
-                  ),
-                  GridFooter<void>(storage: source.backingStorage),
-                ],
-                functionality: GridFunctionality(
-                  onEmptySource: _EmptyWidget(progress: source.progress),
-                  source: source,
-                  search: RawSearchWidget(
-                    (context, settingsButton, bottomWidget) => SliverAppBar(
-                      floating: true,
-                      pinned: true,
-                      snap: true,
-                      stretch: true,
-                      bottom: bottomWidget ??
-                          const PreferredSize(
-                            preferredSize: Size.zero,
-                            child: SizedBox.shrink(),
-                          ),
-                      title: Text(
-                        widget.tags.isNotEmpty
-                            ? "${l10n.popularPosts} #${widget.tags}"
-                            : l10n.popularPosts,
+                    _onBooruTagPressed(context, booru, value, safeMode);
+                  },
+                  child: ShellElement(
+                    // key: gridKey,
+                    state: gridStatus,
+                    animationsOnSourceWatch: false,
+                    registerNotifiers: (child) => OnBooruTagPressed(
+                      onPressed: (context, booru, value, safeMode) {
+                        ExitOnPressRoute.maybeExitOf(context);
+
+                        _onBooruTagPressed(context, booru, value, safeMode);
+                      },
+                      child: BooruAPINotifier(
+                        api: widget.api,
+                        child: child,
                       ),
-                      actions: [if (settingsButton != null) settingsButton],
                     ),
+                    slivers: [
+                      CurrentGridSettingsLayout<Post>(
+                        source: source.backingStorage,
+                        progress: source.progress,
+                        gridSeed: gridSeed,
+                        selection: ShellSelectionHolder.of(context),
+                        // unselectOnUpdate: false,
+                      ),
+                      GridConfigPlaceholders(
+                        progress: source.progress,
+                        randomNumber: gridSeed,
+                      ),
+                      GridFooter<void>(storage: source.backingStorage),
+                    ],
                   ),
-                  download: downloadManager != null && localTags != null
-                      ? _download
-                      : null,
-                  registerNotifiers: (child) => OnBooruTagPressed(
-                    onPressed: (context, booru, value, safeMode) {
-                      ExitOnPressRoute.maybeExitOf(context);
-
-                      _onBooruTagPressed(context, booru, value, safeMode);
-                    },
-                    child: BooruAPINotifier(
-                      api: widget.api,
-                      child: child,
-                    ),
-                  ),
-                ),
-                description: GridDescription(
-                  actions: gridActions,
-                  animationsOnSourceWatch: false,
-                  pageName: l10n.booruLabel,
-                  gridSeed: gridSeed,
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
+  }
+}
+
+class PostsShellElement extends StatelessWidget {
+  const PostsShellElement({
+    super.key,
+    required this.status,
+    this.overrideSlivers,
+    this.updateScrollPosition,
+    this.initialScrollPosition = 0,
+  });
+
+  final List<Widget>? overrideSlivers;
+  final SourceShellElementState<Post> status;
+  final ScrollOffsetFn? updateScrollPosition;
+  final double initialScrollPosition;
+
+  @override
+  Widget build(BuildContext context) {
+    const gridSeed = 1;
+    final navBarEvents = NavigationButtonEvents.maybeOf(context);
+
+    return status.source.inject(
+      ShellElement(
+        animationsOnSourceWatch: false,
+        state: status,
+        scrollUpOn: navBarEvents != null ? [(navBarEvents, null)] : const [],
+        updateScrollPosition: updateScrollPosition,
+        initialScrollPosition: initialScrollPosition,
+        scrollingState: ScrollingStateSinkProvider.maybeOf(context),
+        slivers: overrideSlivers ??
+            [
+              Builder(
+                builder: (context) {
+                  final padding = MediaQuery.systemGestureInsetsOf(context);
+
+                  return SliverPadding(
+                    padding: EdgeInsets.only(
+                      left: padding.left * 0.2,
+                      right: padding.right * 0.2,
+                    ),
+                    sliver: CurrentGridSettingsLayout<Post>(
+                      source: status.source.backingStorage,
+                      progress: status.source.progress,
+                      gridSeed: gridSeed,
+                      selection: status.selection,
+                      buildEmpty: (e) => EmptyWidget(
+                        error: e.toString(),
+                        gridSeed: gridSeed,
+                        // buttonText: l10n.openInBrowser,
+                        // onPressed: () {
+                        //   url.launchUrl(
+                        //     Uri.https(api.booru.url),
+                        //     mode: url.LaunchMode.externalApplication,
+                        //   );
+                        // },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final padding = MediaQuery.systemGestureInsetsOf(context);
+
+                  return SliverPadding(
+                    padding: EdgeInsets.only(
+                      left: padding.left * 0.2,
+                      right: padding.right * 0.2,
+                    ),
+                    sliver: GridConfigPlaceholders(
+                      progress: status.source.progress,
+                      randomNumber: gridSeed,
+                    ),
+                  );
+                },
+              ),
+              GridFooter<void>(storage: status.source.backingStorage),
+            ],
+      ),
+    );
+  }
+}
+
+class RandomPostsSliver extends StatelessWidget {
+  const RandomPostsSliver({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
   }
 }
 

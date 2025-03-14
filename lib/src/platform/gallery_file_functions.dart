@@ -6,7 +6,7 @@
 import "package:azari/src/db/services/obj_impls/file_impl.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
 import "package:flutter/material.dart";
 
 List<Sticker> defaultStickersFile(

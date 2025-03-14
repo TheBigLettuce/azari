@@ -11,27 +11,28 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:local_auth/local_auth.dart";
 
-GridAction<Directory> blacklist(
+SelectionBarAction blacklist(
   BuildContext context,
   String Function(Directory) segment,
   AppLocalizations l10n, {
   required DirectoryMetadataService? directoryMetadata,
   required BlacklistedDirectoryService blacklistedDirectory,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.hide_image_outlined,
     (selected) {
       final requireAuth = <BlacklistedDirectoryData>[];
       final noAuth = <BlacklistedDirectoryData>[];
 
-      for (final e in selected) {
-        final m = directoryMetadata?.get(segment(e));
+      for (final (e as Directory) in selected) {
+        final m = directoryMetadata?.cache.get(segment(e));
         if (m != null && m.requireAuth) {
           requireAuth.add(
             BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
@@ -81,7 +82,7 @@ GridAction<Directory> blacklist(
   );
 }
 
-GridAction<Directory> joinedDirectories(
+SelectionBarAction joinedDirectories(
   BuildContext context,
   Directories api,
   ReturnFileCallback? callback,
@@ -92,15 +93,15 @@ GridAction<Directory> joinedDirectories(
   required FavoritePostSourceService? favoritePosts,
   required LocalTagsService? localTags,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.merge_rounded,
     (selected) {
       joinedDirectoriesFnc(
         context,
         selected.length == 1
-            ? selected.first.name
+            ? (selected.first as Directory).name
             : "${selected.length} ${l10n.directoriesPlural}",
-        selected,
+        selected.cast(),
         api,
         callback,
         segment,
@@ -134,7 +135,7 @@ Future<void> joinedDirectoriesFnc(
   bool requireAuth = false;
 
   for (final e in dirs) {
-    final auth = directoryMetadata?.get(segment(e))?.requireAuth ?? false;
+    final auth = directoryMetadata?.cache.get(segment(e))?.requireAuth ?? false;
     if (auth) {
       requireAuth = true;
       break;
@@ -178,7 +179,7 @@ Future<void> joinedDirectoriesFnc(
   }
 }
 
-GridAction<T> addToGroup<T extends CellBase>(
+SelectionBarAction addToGroup<T extends CellBase>(
   BuildContext context,
   String? Function(List<T>) initalValue,
   Future<void Function(BuildContext)?> Function(List<T>, String, bool)
@@ -186,7 +187,7 @@ GridAction<T> addToGroup<T extends CellBase>(
   bool showPinButton, {
   Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.group_work_outlined,
     (selected) {
       if (selected.isEmpty) {
@@ -200,7 +201,7 @@ GridAction<T> addToGroup<T extends CellBase>(
             return _GroupDialogWidget<T>(
               initalValue: initalValue,
               onSubmitted: onSubmitted,
-              selected: selected,
+              selected: selected.cast(),
               showPinButton: showPinButton,
               completeDirectoryNameTag: completeDirectoryNameTag,
             );
@@ -268,7 +269,7 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SearchBarAutocompleteWrapper(
-            search: BarSearchWidget(
+            search: SearchBarAppBarType(
               textEditingController: controller,
               onChanged: null,
               complete: widget.completeDirectoryNameTag,

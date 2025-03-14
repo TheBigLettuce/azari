@@ -65,7 +65,7 @@ Future<void> mainQuickView() async {
                 theme: buildTheme(context, Brightness.light, accentColor),
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                home: WrapGridPage(
+                home: ScaffoldSelectionBar(
                   addScaffoldAndBar: true,
                   child: PopScope(
                     canPop: false,

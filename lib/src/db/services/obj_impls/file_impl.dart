@@ -9,9 +9,11 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/src/db/gallery_thumbnail_provider.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/gallery_file_functions.dart";
@@ -20,13 +22,13 @@ import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/file_cell.dart";
 import "package:azari/src/widgets/file_info.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/post_info.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart" as url;
@@ -44,14 +46,15 @@ abstract class FileImpl
         Stickerable {
   const FileImpl();
 
+  ResourceSource<int, File> getSource(BuildContext context) =>
+      ResourceSource.maybeOf<int, File>(context)!;
+
   @override
   Widget buildSelectionWrapper<T extends CellBase>({
     required BuildContext context,
     required int thisIndx,
     required List<int>? selectFrom,
-    required GridSelection<T>? selection,
     required CellStaticData description,
-    required GridFunctionality<T> functionality,
     required VoidCallback? onPressed,
     required Widget child,
   }) {
@@ -59,8 +62,6 @@ abstract class FileImpl
       thisIndx: thisIndx,
       description: description,
       selectFrom: selectFrom,
-      selection: selection,
-      functionality: functionality,
       onPressed: onPressed,
       child: child,
     );
@@ -122,6 +123,16 @@ abstract class FileImpl
         () => PlatformApi().shareMedia(originalUri),
         l10n.shareLabel,
       ),
+      if (res != null)
+        NavigationAction(
+          Icons.star,
+          null,
+          "",
+          StarsButton(
+            idBooru: res!,
+            favoritePosts: Services.getOf<FavoritePostSourceService>(context),
+          ),
+        ),
     ];
   }
 
@@ -134,7 +145,6 @@ abstract class FileImpl
       file: this as File,
       tags: ImageTagsNotifier.of(context),
       tagManager: db.get<TagManagerService>(),
-      miscSettingsService: db.get<MiscSettingsService>(),
       localTags: db.get<LocalTagsService>(),
       settingsService: db.require<SettingsService>(),
       downloadManager: DownloadManager.of(context),
@@ -392,13 +402,16 @@ abstract class FileImpl
       pinnedTags.watchImageLocal(c.alias(false), f, localTag: localTags);
 }
 
-mixin PigeonFilePressable implements Pressable<File> {
+mixin PigeonFilePressable implements Pressable<File>, FileImpl {
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<File> functionality,
     int idx,
   ) {
+    final api = FilesDataNotifier.maybeOf(context);
+    final fnc = OnBooruTagPressed.of(context);
+    final callback = ReturnFileCallbackNotifier.maybeOf(context);
+
     final db = Services.of(context);
     final (
       localTags,
@@ -415,8 +428,29 @@ mixin PigeonFilePressable implements Pressable<File> {
     );
 
     final impl = PigeonGalleryDataImpl(
-      source: functionality.source,
-      wrapNotifiers: functionality.registerNotifiers,
+      source: getSource(context),
+      wrapNotifiers: (child) {
+        Widget child_ = OnBooruTagPressed(
+          onPressed: fnc,
+          child: child,
+        );
+
+        if (api != null) {
+          child_ = FilesDataNotifier(
+            api: api,
+            child: child_,
+          );
+        }
+
+        if (callback != null) {
+          child_ = ReturnFileCallbackNotifier(
+            callback: callback,
+            child: child_,
+          );
+        }
+
+        return child_;
+      },
       watchTags: localTags != null && tagManager != null
           ? (c, f) => FileImpl.watchTags(c, f, localTags, tagManager.pinned)
           : null,

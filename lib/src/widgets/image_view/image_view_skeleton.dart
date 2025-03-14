@@ -8,8 +8,8 @@ import "dart:async";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
+import "package:azari/src/widgets/action_button.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
@@ -665,7 +665,7 @@ class __BottomIconsState extends State<_BottomIcons>
                               mainAxisSize: MainAxisSize.min,
                               children: actions.reversed
                                   .map(
-                                    (e) => WrapGridActionButton(
+                                    (e) => ActionButton(
                                       e.icon,
                                       e.onPress == null
                                           ? null
@@ -1065,7 +1065,7 @@ class OutlinedTagChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           child: Text(
             "#${tag.length > letterCount ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
-            style: theme.textTheme.labelSmall?.copyWith(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: textColor,
               overflow: TextOverflow.fade,
             ),

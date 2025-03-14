@@ -17,8 +17,8 @@ import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/autocomplete_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -119,10 +119,6 @@ class _BooruSearchPageState extends State<BooruSearchPage>
     super.dispose();
   }
 
-  // void _search(String str) {
-  //   _filteringEvents.add(str.trim());
-  // }
-
   void _onTagPressed(String str, [SafeMode? safeMode]) {
     _onTag(context, api.booru, str, safeMode ?? settings.safeMode);
   }
@@ -164,18 +160,6 @@ class _BooruSearchPageState extends State<BooruSearchPage>
   }
 
   void pinnedTagPressed(String str_) {
-    // final elements = str_.trim().split(" ");
-    // if (elements.isEmpty) {
-
-    // } else {
-    //   final last = elements.last;
-
-    //   final searchTextTags = searchController.text.trim().split(" ");
-    //   searchTextTags.remove(last);
-
-    //   searchController.text = "${searchTextTags.join(" ")} $last ";
-    //   // _filteringEvents.add(searchController.text.trim());
-    // }
     searchController.text = "$str_ ";
     _filteringEvents.add(searchController.text.trim());
   }
@@ -183,7 +167,6 @@ class _BooruSearchPageState extends State<BooruSearchPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
       body: _SearchPagePopScope(
         searchController: searchController,
         sink: _filteringEvents.sink,
@@ -191,26 +174,23 @@ class _BooruSearchPageState extends State<BooruSearchPage>
         searchFocus: focusNode,
         child: CustomScrollView(
           slivers: [
-            SearchPageSearchBar(
-              complete: null,
-              // filter: filter,
-              // safeModeState: safeModeState,
-              onSubmit: search,
-              sink: _filteringEvents.sink,
-              searchTextController: searchController,
-              searchFocus: focusNode,
+            SliverAppBar(
+              forceMaterialTransparency: true,
+              floating: true,
+              automaticallyImplyLeading: false,
+              centerTitle: true,
+              toolbarHeight: 78,
+              title: SizedBox(
+                height: 48,
+                child: SearchPageSearchBar(
+                  complete: null,
+                  onSubmit: search,
+                  sink: _filteringEvents.sink,
+                  searchTextController: searchController,
+                  searchFocus: focusNode,
+                ),
+              ),
             ),
-            // StreamBuilder(
-            //   stream: _filteringEvents.stream,
-            //   builder: (context, snapshot) => PopularRandomChips(
-            //     listPadding: _ChipsPanelBody.listPadding,
-            //     db: widget.db,
-            //     booru: api.booru,
-            //     onTagPressed: _onTag,
-            //     tags: snapshot.data ?? "",
-            //     safeMode: () => settings.safeMode,
-            //   ),
-            // ),
             _RecentlySearchedTagsPanel(
               filteringEvents: _filteringEvents,
               searchController: searchController,
@@ -286,59 +266,103 @@ class SearchPageSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    // final theme = Theme.of(context);
 
-    const padding = EdgeInsets.only(
-      right: 26,
-      left: 26,
-      top: 8,
-      bottom: 8,
-    );
-
-    return SliverToBoxAdapter(
-      child: Center(
-        child: Padding(
-          padding: padding,
-          child: SearchBarAutocompleteWrapper(
-            search: BarSearchWidget(
-              onChanged: onChanged,
-              // onSubmitted: (_) => onSubmit(),
-              complete: complete,
-              textEditingController: searchTextController,
-            ),
-            searchFocus: searchFocus,
-            child: (
-              context,
-              controller,
-              focus,
-              onSubmitted,
-            ) =>
-                SearchBar(
-              onSubmitted: (str) {
-                onSubmitted();
-                onSubmit(false);
-                // filter.clearRefresh();
-              },
-              elevation: const WidgetStatePropertyAll(0),
-              focusNode: focus,
-              controller: controller,
-              onTapOutside: (event) => focus.unfocus(),
-              onChanged: onChanged,
-              hintText: l10n.searchHint,
-              leading: IconButton(
-                onPressed: () => onSubmit(true),
-                icon: const Icon(Icons.search_rounded),
-              ),
-              trailing: [
-                IconButton(
-                  onPressed: clear,
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return SearchBarAutocompleteWrapper(
+      search: SearchBarAppBarType(
+        onChanged: onChanged,
+        complete: complete,
+        textEditingController: searchTextController,
       ),
+      searchFocus: searchFocus,
+      child: (
+        context,
+        controller,
+        focus,
+        onSubmitted,
+      ) =>
+          SearchBar(
+        onSubmitted: (str) {
+          onSubmitted();
+          onSubmit(false);
+        },
+        elevation: const WidgetStatePropertyAll(0),
+        focusNode: focus,
+        controller: controller,
+        onTapOutside: (event) => focus.unfocus(),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 16),
+        ),
+        onChanged: onChanged,
+        hintText: l10n.searchHint,
+        leading: _SearchBackIcon(
+          searchTextController: searchTextController,
+          onSubmit: onSubmit,
+        ),
+        trailing: [
+          IconButton(
+            onPressed: clear,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchBackIcon extends StatefulWidget {
+  const _SearchBackIcon({
+    super.key,
+    required this.searchTextController,
+    required this.onSubmit,
+  });
+
+  final TextEditingController searchTextController;
+  final void Function(bool dialog) onSubmit;
+
+  @override
+  State<_SearchBackIcon> createState() => __SearchBackIconState();
+}
+
+class __SearchBackIconState extends State<_SearchBackIcon> {
+  bool isEmpty = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.searchTextController.addListener(listener);
+  }
+
+  @override
+  void dispose() {
+    widget.searchTextController.removeListener(listener);
+
+    super.dispose();
+  }
+
+  void listener() {
+    final newIsEmpty = widget.searchTextController.text.trim().isEmpty;
+    if (newIsEmpty != isEmpty) {
+      setState(() {
+        isEmpty = newIsEmpty;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedCrossFade(
+      firstChild: IconButton(
+        onPressed: () => Navigator.of(context).pop(),
+        icon: const Icon(Icons.arrow_back),
+      ),
+      secondChild: IconButton(
+        onPressed: () => widget.onSubmit(true),
+        icon: const Icon(Icons.search_rounded),
+      ),
+      crossFadeState:
+          isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      duration: Durations.medium3,
     );
   }
 }

@@ -5,37 +5,40 @@
 
 import "dart:async";
 
+import "package:async/async.dart";
 import "package:azari/init_main/app_info.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
+import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/booru_api.dart";
+import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
+import "package:azari/src/pages/booru/favorite_posts_page.dart";
 import "package:azari/src/pages/gallery/blacklisted_directories.dart";
 import "package:azari/src/pages/gallery/directories_actions.dart" as actions;
-import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/pages/search/gallery/gallery_search_page.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
 import "package:azari/src/widgets/empty_widget.dart";
 import "package:azari/src/widgets/fading_panel.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_fab_type.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/segment_layout.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_settings_button.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/shell_fab_type.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/layouts/segment_layout.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
+import "package:azari/src/widgets/shell/parts/shell_settings_button.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/shimmer_placeholders.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
@@ -52,11 +55,11 @@ class DirectoriesPage extends StatefulWidget {
     required this.directoryTags,
     required this.favoritePosts,
     required this.blacklistedDirectories,
-    required this.miscSettingsService,
     required this.settingsService,
     required this.gridDbs,
     required this.localTagsService,
     required this.galleryService,
+    required this.selectionController,
     this.callback,
     this.wrapGridPage = false,
     this.showBackButton = false,
@@ -74,12 +77,13 @@ class DirectoriesPage extends StatefulWidget {
   final Directories? providedApi;
   final AppLocalizations l10n;
 
+  final SelectionController selectionController;
+
   final DirectoryMetadataService? directoryMetadata;
   final DirectoryTagService? directoryTags;
   final FavoritePostSourceService? favoritePosts;
   final BlacklistedDirectoryService? blacklistedDirectories;
   final LocalTagsService? localTagsService;
-  final MiscSettingsService? miscSettingsService;
 
   final GalleryService galleryService;
   final GridDbService gridDbs;
@@ -144,11 +148,11 @@ class DirectoriesPage extends StatefulWidget {
           gridSettings: gridSettings,
           gridDbs: gridDbs,
           galleryService: galleryService,
+          selectionController: SelectionActions.controllerOf(context),
           directoryMetadata: db.get<DirectoryMetadataService>(),
           directoryTags: db.get<DirectoryTagService>(),
           favoritePosts: db.get<FavoritePostSourceService>(),
           blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
-          miscSettingsService: db.get<MiscSettingsService>(),
           localTagsService: db.get<LocalTagsService>(),
           settingsService: db.require<SettingsService>(),
         ),
@@ -161,7 +165,7 @@ class DirectoriesPage extends StatefulWidget {
 }
 
 class _DirectoriesPageState extends State<DirectoriesPage>
-    with CommonGridData<Post, DirectoriesPage>, MiscSettingsWatcherMixin {
+    with CommonGridData<DirectoriesPage>, SingleTickerProviderStateMixin {
   WatchableGridSettingsData get gridSettings => widget.gridSettings.directories;
   DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
   DirectoryTagService? get directoryTags => widget.directoryTags;
@@ -174,9 +178,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   GridDbService get gridDbs => widget.gridDbs;
 
   @override
-  MiscSettingsService? get miscSettingsService => widget.miscSettingsService;
-
-  @override
   SettingsService get settingsService => widget.settingsService;
 
   late final StreamSubscription<void>? blacklistedWatcher;
@@ -187,6 +188,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   int galleryVersion = 0;
 
   late final ChainedFilterResourceSource<int, Directory> filter;
+  late final SourceShellElementState<Directory> status;
 
   late final api = widget.providedApi ??
       galleryService.open(
@@ -201,10 +203,13 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
   final searchTextController = TextEditingController();
   final searchFocus = FocusNode(canRequestFocus: false);
+  late final TabController tabController;
 
   @override
   void initState() {
     super.initState();
+
+    tabController = TabController(length: 2, vsync: this);
 
     galleryService.version.then((value) => galleryVersion = value);
 
@@ -221,7 +226,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
     watchSettings();
 
-    directoryTagWatcher = directoryMetadata?.watch((s) {
+    directoryTagWatcher = directoryMetadata?.cache.watch((s) {
       api.source.backingStorage.addAll([]);
     });
 
@@ -250,13 +255,86 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       api.trashCell?.refresh();
       api.source.clearRefresh();
     }
+
+    status = SourceShellElementState(
+      source: filter,
+      selectionController: widget.selectionController,
+      actions: widget.callback != null
+          ? <SelectionBarAction>[
+              if (widget.callback?.isFile ?? false)
+                actions.joinedDirectories(
+                  context,
+                  api,
+                  widget.callback?.toFileOrNull,
+                  _segmentCell,
+                  widget.l10n,
+                  directoryMetadata: directoryMetadata,
+                  directoryTags: directoryTags,
+                  favoritePosts: favoritePosts,
+                  localTags: localTagsService,
+                ),
+            ]
+          : <SelectionBarAction>[
+              if (directoryMetadata != null && directoryTags != null)
+                actions.addToGroup<Directory>(
+                  context,
+                  (selected) {
+                    final t = selected.first.tag;
+                    for (final e in selected.skip(1)) {
+                      if (t != e.tag) {
+                        return null;
+                      }
+                    }
+
+                    return t;
+                  },
+                  (s, v, t) => _addToGroup(
+                    context,
+                    s,
+                    v,
+                    t,
+                    widget.l10n,
+                    directoryMetadata: directoryMetadata!,
+                    directoryTags: directoryTags!,
+                  ),
+                  true,
+                  completeDirectoryNameTag: _completeDirectoryNameTag,
+                ),
+              if (blacklistedDirectories != null)
+                actions.blacklist(
+                  context,
+                  _segmentCell,
+                  widget.l10n,
+                  directoryMetadata: directoryMetadata,
+                  blacklistedDirectory: blacklistedDirectories!,
+                ),
+              actions.joinedDirectories(
+                context,
+                api,
+                widget.callback?.toFileOrNull,
+                _segmentCell,
+                widget.l10n,
+                directoryMetadata: directoryMetadata,
+                directoryTags: directoryTags,
+                favoritePosts: favoritePosts,
+                localTags: localTagsService,
+              ),
+            ],
+      onEmpty: _DirectoryOnEmpty(
+        api.trashCell,
+        api.source.backingStorage,
+      ),
+    );
   }
 
   @override
   void dispose() {
+    tabController.dispose();
     directoryTagWatcher!.cancel();
     blacklistedWatcher!.cancel();
     searchTextController.dispose();
+
+    status.destroy();
 
     filter.destroy();
 
@@ -292,8 +370,12 @@ class _DirectoriesPageState extends State<DirectoriesPage>
           ? widget.l10n.suggestionsLabel
           : widget.l10n.segmentsSpecial,
       displayFirstCellInSpecial: widget.callback != null,
-      caps: directoryMetadata?.caps(widget.l10n.segmentsSpecial) ??
-          const SegmentCapability.empty(),
+      caps: directoryMetadata != null
+          ? DirectoryMetadataSegments(
+              widget.l10n.segmentsSpecial,
+              directoryMetadata,
+            )
+          : const SegmentCapability.empty(),
       segment: _segmentCell,
       injectedSegments: api.trashCell != null ? [api.trashCell!] : const [],
       onLabelPressed: widget.callback == null || widget.callback!.isFile
@@ -327,7 +409,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
     final noAuth = <Directory>[];
 
     for (final e in selected) {
-      final m = directoryMetadata.get(_segmentCell(e));
+      final m = directoryMetadata.cache.get(_segmentCell(e));
       if (m != null && m.requireAuth) {
         requireAuth.add(e);
       } else {
@@ -358,7 +440,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       );
 
       if (toPin) {
-        if (await Directory.canAuth(
+        if (await directoryMetadata.canAuth(
           value,
           l10n.unstickyStickyDirectory,
         )) {
@@ -407,7 +489,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   }
 
   // ignore: use_setters_to_change_properties
-  void _add(GridSettingsData d) => gridSettings.current = d;
+  void _add(ShellConfigurationData d) => gridSettings.current = d;
 
   Future<List<BooruTag>> _completeDirectoryNameTag(String str) {
     final m = <String, void>{};
@@ -443,96 +525,120 @@ class _DirectoriesPageState extends State<DirectoriesPage>
     final l10n = context.l10n();
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
+    final settingsButton = ShellSettingsButton(
+      add: _add,
+      watch: gridSettings.watch,
+      localizeHideNames: (context) => l10n.hideNames(l10n.hideNamesDirectories),
+    );
+
+    // SliverAppBar(
+    //               actionsPadding: EdgeInsets.zero,
+    //               titleSpacing: 0,
+    //               floating: true,
+    //               snap: true,
+    //               centerTitle: true,
+    //               title: ConstrainedBox(
+    //                 constraints: BoxConstraints(maxWidth: 520),
+    //                 child: TabBar(
+    //                   dividerHeight: 0,
+    //                   controller: tabController,
+    //                   // indicatorSize: TabBarIndicatorSize.tab,
+    //                   // splashBorderRadius: BorderRadius.all(Radius.circular(19)),
+    //                   tabs: const [
+    //                     Tab(
+    //                       icon: Icon(Icons.photo_outlined),
+    //                     ),
+    //                     Tab(
+    //                       icon: Icon(Icons.photo_library_outlined),
+    //                     ),
+    //                   ],
+    //                 ),
+    //               ),
+    //             )
+
     return GridPopScope(
       filter: filter,
       rootNavigatorPopCond: widget.callback?.isFile ?? false,
       searchTextController: searchTextController,
       rootNavigatorPop: widget.procPop,
-      child: GridFrame<Directory>(
-        key: gridKey,
-        slivers: [
-          if (widget.callback?.isFile ?? false)
-            SliverToBoxAdapter(
-              child: _LatestImagesWidget(
-                selectionActions: SelectionActions.of(context),
-                parent: api,
-                callback: widget.callback?.toFile,
-                gallerySearch: galleryService.search,
-                directoryMetadata: directoryMetadata,
-                directoryTags: directoryTags,
-                favoritePosts: favoritePosts,
-                localTagsService: localTagsService,
-              ),
-            ),
-          SegmentLayout(
-            segments:
-                _makeSegments(context, directoryMetadata: directoryMetadata),
-            gridSeed: 1,
-            suggestionPrefix: (widget.callback?.isDirectory ?? false)
-                ? widget.callback!.toDirectory.suggestFor
-                : const [],
-            storage: filter.backingStorage,
-            progress: filter.progress,
-            localizations: widget.l10n,
-          ),
-        ],
-        functionality: GridFunctionality(
-          selectionActions: SelectionActions.of(context),
-          scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-          scrollUpOn: navBarEvents == null
-              ? const []
-              : [(navBarEvents, () => api.bindFiles == null)],
-          registerNotifiers: (child) => DirectoriesDataNotifier(
-            api: api,
-            callback: widget.callback,
-            segmentFnc: _segmentCell,
-            child: child,
-          ),
-          onEmptySource: _EmptyWidget(trashCell: api.trashCell),
-          source: filter,
-          fab: widget.callback == null
-              ? const NoGridFab()
-              : const DefaultGridFab(),
-          settingsButton: GridSettingsButton(
-            add: _add,
-            watch: gridSettings.watch,
-            localizeHideNames: (context) =>
-                l10n.hideNames(l10n.hideNamesDirectories),
-          ),
-          search: widget.callback != null
-              ? BarSearchWidget.fromFilter(
-                  filter,
-                  textEditingController: searchTextController,
-                  complete: _completeDirectoryNameTag,
-                  focus: searchFocus,
-                  trailingItems: [
-                    if (widget.callback!.isDirectory)
+      child: ShellScope(
+        stackInjector: status,
+        configWatcher: gridSettings.watch,
+        footer: widget.callback?.preview,
+        fab: widget.callback == null
+            ? const NoShellFab()
+            : const DefaultShellFab(),
+        settingsButton: widget.callback == null ? settingsButton : null,
+        appBar: widget.callback != null
+            ? SearchBarAppBarType.fromFilter(
+                filter,
+                textEditingController: searchTextController,
+                complete: _completeDirectoryNameTag,
+                focus: searchFocus,
+                trailingItems: [
+                  if (widget.callback!.isDirectory)
+                    IconButton(
+                      onPressed: () => galleryService
+                          .chooseDirectory(l10n, temporary: true)
+                          .then((value) {
+                        widget.callback!.toDirectory(
+                          (
+                            bucketId: "",
+                            path: value!.path,
+                            volumeName: "",
+                          ),
+                          true,
+                        );
+                      }).onError((e, trace) {
+                        Logger.root.severe(
+                          "new folder in android_directories",
+                          e,
+                          trace,
+                        );
+                      }).whenComplete(() {
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      }),
+                      icon: const Icon(Icons.create_new_folder_outlined),
+                    )
+                  else
+                    IconButton(
+                      onPressed: () {
+                        GallerySubPage.selectOf(
+                          context,
+                          GallerySubPage.blacklisted,
+                        );
+                      },
+                      icon: const Icon(Icons.folder_off_outlined),
+                    ),
+                ],
+              )
+            : RawAppBarType(
+                (context, settingsButton, bottomWidget) {
+                  final theme = Theme.of(context);
+
+                  return SliverAppBar(
+                    automaticallyImplyLeading: false,
+                    systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarIconBrightness:
+                          theme.brightness == Brightness.light
+                              ? Brightness.dark
+                              : Brightness.light,
+                      statusBarColor:
+                          theme.colorScheme.surface.withValues(alpha: 0.95),
+                    ),
+                    bottom: bottomWidget ??
+                        const PreferredSize(
+                          preferredSize: Size.zero,
+                          child: SizedBox.shrink(),
+                        ),
+                    title: const AppLogoTitle(),
+                    actions: [
                       IconButton(
-                        onPressed: () => galleryService
-                            .chooseDirectory(l10n, temporary: true)
-                            .then((value) {
-                          widget.callback!.toDirectory(
-                            (
-                              bucketId: "",
-                              path: value!.path,
-                              volumeName: "",
-                            ),
-                            true,
-                          );
-                        }).onError((e, trace) {
-                          Logger.root.severe(
-                            "new folder in android_directories",
-                            e,
-                            trace,
-                          );
-                        }).whenComplete(() {
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        }),
-                        icon: const Icon(Icons.create_new_folder_outlined),
-                      )
-                    else
+                        onPressed: () => GallerySearchPage.open(context),
+                        icon: const Icon(Icons.search_rounded),
+                      ),
                       IconButton(
                         onPressed: () {
                           GallerySubPage.selectOf(
@@ -542,114 +648,63 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                         },
                         icon: const Icon(Icons.folder_off_outlined),
                       ),
-                  ],
-                )
-              : RawSearchWidget(
-                  (context, settingsButton, bottomWidget) {
-                    final theme = Theme.of(context);
-
-                    return SliverAppBar(
-                      leading: const SizedBox.shrink(),
-                      systemOverlayStyle: SystemUiOverlayStyle(
-                        statusBarIconBrightness:
-                            theme.brightness == Brightness.light
-                                ? Brightness.dark
-                                : Brightness.light,
-                        statusBarColor:
-                            theme.colorScheme.surface.withValues(alpha: 0.95),
-                      ),
-                      bottom: bottomWidget ??
-                          const PreferredSize(
-                            preferredSize: Size.zero,
-                            child: SizedBox.shrink(),
-                          ),
-                      centerTitle: true,
-                      title: IconButton(
-                        onPressed: () => GallerySearchPage.open(context),
-                        icon: const Icon(Icons.search_rounded),
-                      ),
-                      actions: [
-                        IconButton(
-                          onPressed: () {
-                            GallerySubPage.selectOf(
-                              context,
-                              GallerySubPage.blacklisted,
-                            );
-                          },
-                          icon: const Icon(Icons.folder_off_outlined),
-                        ),
-                        if (settingsButton != null) settingsButton,
-                      ],
-                    );
-                  },
-                ),
-        ),
-        description: GridDescription(
-          actions: widget.callback != null
-              ? <GridAction<Directory>>[
-                  if (widget.callback?.isFile ?? false)
-                    actions.joinedDirectories(
-                      context,
-                      api,
-                      widget.callback?.toFileOrNull,
-                      _segmentCell,
-                      widget.l10n,
+                      if (settingsButton != null) settingsButton,
+                    ],
+                  );
+                },
+              ),
+        elements: [
+          // if (widget.callback != null)
+          //   ElementPriority(
+          //   ,
+          //     hideOnEmpty: false,
+          //   ),
+          ElementPriority(
+            ShellElement(
+              state: status,
+              scrollingState: ScrollingStateSinkProvider.maybeOf(context),
+              scrollUpOn: navBarEvents == null
+                  ? const []
+                  : [(navBarEvents, () => api.bindFiles == null)],
+              registerNotifiers: (child) => DirectoriesDataNotifier(
+                api: api,
+                callback: widget.callback,
+                segmentFnc: _segmentCell,
+                child: child,
+              ),
+              slivers: [
+                // TODO: latest suggestions widget is broken
+                if (widget.callback?.isFile ?? false)
+                  SliverToBoxAdapter(
+                    child: _LatestImagesWidget(
+                      selectionActions: SelectionActions.of(context),
+                      parent: api,
+                      callback: widget.callback?.toFile,
+                      gallerySearch: galleryService.search,
                       directoryMetadata: directoryMetadata,
                       directoryTags: directoryTags,
                       favoritePosts: favoritePosts,
-                      localTags: localTagsService,
+                      localTagsService: localTagsService,
                     ),
-                ]
-              : <GridAction<Directory>>[
-                  if (directoryMetadata != null && directoryTags != null)
-                    actions.addToGroup(
-                      context,
-                      (selected) {
-                        final t = selected.first.tag;
-                        for (final e in selected.skip(1)) {
-                          if (t != e.tag) {
-                            return null;
-                          }
-                        }
-
-                        return t;
-                      },
-                      (s, v, t) => _addToGroup(
-                        context,
-                        s,
-                        v,
-                        t,
-                        l10n,
-                        directoryMetadata: directoryMetadata!,
-                        directoryTags: directoryTags!,
-                      ),
-                      true,
-                      completeDirectoryNameTag: _completeDirectoryNameTag,
-                    ),
-                  if (blacklistedDirectories != null)
-                    actions.blacklist(
-                      context,
-                      _segmentCell,
-                      widget.l10n,
-                      directoryMetadata: directoryMetadata,
-                      blacklistedDirectory: blacklistedDirectories!,
-                    ),
-                  actions.joinedDirectories(
-                    context,
-                    api,
-                    widget.callback?.toFileOrNull,
-                    _segmentCell,
-                    widget.l10n,
-                    directoryMetadata: directoryMetadata,
-                    directoryTags: directoryTags,
-                    favoritePosts: favoritePosts,
-                    localTags: localTagsService,
                   ),
-                ],
-          footer: widget.callback?.preview,
-          pageName: widget.l10n.galleryLabel,
-          gridSeed: gridSeed,
-        ),
+                SegmentLayout(
+                  segments: _makeSegments(
+                    context,
+                    directoryMetadata: directoryMetadata,
+                  ),
+                  gridSeed: 1,
+                  suggestionPrefix: (widget.callback?.isDirectory ?? false)
+                      ? widget.callback!.toDirectory.suggestFor
+                      : const [],
+                  storage: filter.backingStorage,
+                  progress: filter.progress,
+                  localizations: widget.l10n,
+                  selection: status.selection,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -657,28 +712,20 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   @override
   Widget build(BuildContext context) {
     if (widget.callback != null) {
-      return GridConfiguration(
-        watch: gridSettings.watch,
-        child: widget.wrapGridPage
-            ? WrapGridPage(
-                addScaffoldAndBar: true,
-                child: Builder(builder: child),
-              )
-            : child(context),
+      return ScaffoldSelectionBar(
+        addScaffoldAndBar: true,
+        child: child(context),
       );
     }
 
     return switch (GallerySubPage.of(context)) {
-      GallerySubPage.gallery => GridConfiguration(
-          watch: gridSettings.watch,
-          child: widget.wrapGridPage
-              ? WrapGridPage(
-                  child: Builder(
-                    builder: child,
-                  ),
-                )
-              : child(context),
-        ),
+      GallerySubPage.gallery => widget.wrapGridPage
+          ? ScaffoldSelectionBar(
+              child: Builder(
+                builder: child,
+              ),
+            )
+          : child(context),
       GallerySubPage.blacklisted => blacklistedDirectories != null
           ? DirectoriesDataNotifier(
               api: api,
@@ -695,12 +742,115 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                             GallerySubPage.gallery,
                           ),
                   settingsService: settingsService,
+                  selectionController: widget.selectionController,
                   blacklistedDirectories: blacklistedDirectories!,
                 ),
               ),
             )
           : const SizedBox.shrink(),
     };
+  }
+}
+
+class _FavoritePostsElement extends StatefulWidget {
+  const _FavoritePostsElement({super.key});
+
+  @override
+  State<_FavoritePostsElement> createState() => __FavoritePostsElementState();
+}
+
+class __FavoritePostsElementState extends State<_FavoritePostsElement>
+    with FavoritePostsPageLogic {
+  @override
+  FavoritePostSourceService get favoritePosts => throw UnimplementedError();
+
+  @override
+  SettingsData get settings => throw UnimplementedError();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Placeholder();
+  }
+}
+
+class _SearchBarSliver extends StatelessWidget {
+  const _SearchBarSliver({
+    super.key,
+    required this.search,
+    required this.settingsButton,
+  });
+
+  final SearchBarAppBarType search;
+  final Widget settingsButton;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+    final theme = Theme.of(context);
+
+    return SliverAppBar(
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarIconBrightness: theme.brightness == Brightness.light
+            ? Brightness.dark
+            : Brightness.light,
+        statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
+      ),
+      toolbarHeight: 80,
+      backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
+      centerTitle: true,
+      title: Center(
+        child: SearchBarAutocompleteWrapper(
+          searchFocus: search.filterFocus,
+          search: search,
+          child: (
+            context,
+            textEditingController,
+            focusNode,
+            onFieldSubmitted,
+          ) =>
+              SearchBar(
+            onTap: search.onPressed == null
+                ? null
+                : () => search.onPressed!(context),
+            onTapOutside: (_) => focusNode.unfocus(),
+            onChanged: search.onChanged,
+            focusNode: focusNode,
+            controller: textEditingController,
+            elevation: const WidgetStatePropertyAll(0),
+            onSubmitted: (_) {
+              search.onSubmitted?.call(textEditingController.text);
+              onFieldSubmitted();
+            },
+            leading: search.leading ?? const Icon(Icons.search_rounded),
+            hintText: search.hintText ?? l10n.searchHint,
+            trailing: [
+              ...?search.trailingItems,
+              if (search.filterWidget != null) search.filterWidget!,
+              settingsButton,
+            ],
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
+        ),
+      ),
+      // stretch: true,
+      // snap: true,
+      // floating: true,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      bottom: search.bottomWidget,
+    );
   }
 }
 
@@ -760,33 +910,16 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
     localTags: widget.localTagsService,
   );
 
-  late final gridSelection = GridSelection<File>(
+  late final gridSelection = ShellSelectionHolder.source(
     widget.selectionActions.controller,
     const [],
-    noAppBar: true,
+    // noAppBar: true,
     source: filesApi.source.backingStorage,
   );
 
   final focus = FocusNode();
 
-  late final GridFunctionality<File> functionality = GridFunctionality(
-    registerNotifiers: (child) => GridExtrasNotifier(
-      data: GridExtrasData(
-        gridSelection,
-        functionality,
-        const GridDescription<File>(),
-        focus,
-      ),
-      child: ReturnFileCallbackNotifier(
-        callback: widget.callback,
-        child: FilesDataNotifier(
-          api: filesApi,
-          child: child,
-        ),
-      ),
-    ),
-    source: filesApi.source,
-  );
+  late final SourceShellElementState<File> status;
 
   final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
   final controller = ScrollController();
@@ -797,7 +930,7 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   ) {
     return l
         .where(
-          (e) => GalleryFilesPageType.filterAuthBlur(
+          (e) => filterAuthBlur(
             c,
             e,
             directoryMetadata: widget.directoryMetadata,
@@ -811,13 +944,21 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
   void initState() {
     super.initState();
 
-    _directoryCapsChanged = widget.directoryMetadata?.watch((_) {
+    _directoryCapsChanged = widget.directoryMetadata?.cache.watch((_) {
       filesApi.source.clearRefresh();
     });
+
+    status = SourceShellElementState(
+      source: filesApi.source,
+      onEmpty: SourceOnEmptyInterface(filesApi.source, (context) => ""),
+      selectionController: widget.selectionActions.controller,
+      actions: const [],
+    );
   }
 
   @override
   void dispose() {
+    status.destroy();
     _directoryCapsChanged?.cancel();
     focus.dispose();
     filesApi.close();
@@ -827,39 +968,56 @@ class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
     super.dispose();
   }
 
+  bool filterAuthBlur(
+    Map<String, DirectoryMetadata> m,
+    File? dir, {
+    required DirectoryTagService? directoryTag,
+    required DirectoryMetadataService? directoryMetadata,
+  }) {
+    final segment = DirectoriesPage.segmentCell(
+      dir!.name,
+      dir.bucketId,
+      directoryTag,
+    );
+
+    DirectoryMetadata? data = m[segment];
+    if (data == null) {
+      final d = directoryMetadata?.cache.get(segment);
+      if (d == null) {
+        return true;
+      }
+
+      data = d;
+      m[segment] = d;
+    }
+
+    return !data.requireAuth && !data.blur;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return GridExtrasNotifier(
-      data: GridExtrasData(
-        gridSelection,
-        functionality,
-        const GridDescription<File>(),
-        focus,
-      ),
-      child: GridScrollNotifier(
-        scrollNotifier: scrollNotifier,
-        controller: controller,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color:
-                  theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
-            ),
-            child: FadingPanel(
-              label: "",
-              source: filesApi.source,
-              enableHide: false,
-              horizontalPadding: _LatestList.listPadding,
-              childSize: _LatestList.size,
-              child: _LatestList(
-                source: filesApi.source,
-                functionality: functionality,
-              ),
-            ),
+    return ShellScrollNotifier(
+      saveScrollNotifier: scrollNotifier,
+      fabNotifier: scrollNotifier,
+      controller: controller,
+      scrollSizeCalculator: (contentSize, idx, layoutType, columns) =>
+          0, // TODO: change
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
+          ),
+          child: FadingPanel(
+            label: "",
+            source: filesApi.source,
+            enableHide: false,
+            horizontalPadding: _LatestList.listPadding,
+            childSize: _LatestList.size,
+            child: _LatestList(source: filesApi.source),
           ),
         ),
       ),
@@ -871,11 +1029,9 @@ class _LatestList extends StatefulWidget {
   const _LatestList({
     // super.key,
     required this.source,
-    required this.functionality,
   });
 
   final ResourceSource<int, File> source;
-  final GridFunctionality<File> functionality;
 
   static const size = Size(140 / 1.5, 140 + 16);
   static const listPadding = EdgeInsets.symmetric(horizontal: 12);
@@ -907,52 +1063,49 @@ class __LatestListState extends State<_LatestList> {
 
   @override
   Widget build(BuildContext context) {
-    return CellProvider<File>(
-      getCell: source.forIdxUnsafe,
-      child: SizedBox(
-        width: double.infinity,
-        height: _LatestList.size.height,
-        child: WrapFutureRestartable<int>(
-          bottomSheetVariant: true,
-          placeholder: const ShimmerPlaceholdersHorizontal(
-            childSize: _LatestList.size,
+    return SizedBox(
+      width: double.infinity,
+      height: _LatestList.size.height,
+      child: WrapFutureRestartable<int>(
+        bottomSheetVariant: true,
+        placeholder: const ShimmerPlaceholdersHorizontal(
+          childSize: _LatestList.size,
+          padding: _LatestList.listPadding,
+        ),
+        newStatus: () {
+          if (source.backingStorage.isNotEmpty) {
+            return Future.value(source.backingStorage.count);
+          }
+
+          return source.clearRefresh();
+        },
+        builder: (context, _) {
+          return ListView.builder(
             padding: _LatestList.listPadding,
-          ),
-          newStatus: () {
-            if (source.backingStorage.isNotEmpty) {
-              return Future.value(source.backingStorage.count);
-            }
+            scrollDirection: Axis.horizontal,
+            itemCount: source.backingStorage.count,
+            itemBuilder: (context, i) {
+              final cell = source.backingStorage[i];
 
-            return source.clearRefresh();
-          },
-          builder: (context, _) {
-            return ListView.builder(
-              padding: _LatestList.listPadding,
-              scrollDirection: Axis.horizontal,
-              itemCount: source.backingStorage.count,
-              itemBuilder: (context, i) {
-                final cell = source.backingStorage[i];
-
-                return InkWell(
-                  onTap: () => cell.onPressed(context, widget.functionality, i),
-                  borderRadius: BorderRadius.circular(15),
-                  child: SizedBox(
-                    width: _LatestList.size.width,
-                    child: GridCell(
-                      data: cell,
-                      hideTitle: false,
-                      imageAlign: Alignment.topCenter,
-                      overrideDescription: const CellStaticData(
-                        ignoreSwipeSelectGesture: true,
-                        alignStickersTopCenter: true,
-                      ),
+              return InkWell(
+                onTap: () => cell.onPressed(context, i),
+                borderRadius: BorderRadius.circular(15),
+                child: SizedBox(
+                  width: _LatestList.size.width,
+                  child: GridCell(
+                    data: cell,
+                    hideTitle: false,
+                    imageAlign: Alignment.topCenter,
+                    overrideDescription: const CellStaticData(
+                      ignoreSwipeSelectGesture: true,
+                      alignStickersTopCenter: true,
                     ),
                   ),
-                );
-              },
-            );
-          },
-        ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -1075,6 +1228,41 @@ class DirectoriesDataNotifier extends InheritedWidget {
       api != oldWidget.api ||
       callback != oldWidget.callback ||
       segmentFnc != oldWidget.segmentFnc;
+}
+
+class _DirectoryOnEmpty implements OnEmptyInterface {
+  _DirectoryOnEmpty(this.trashCell, this.storage);
+
+  final TrashCell? trashCell;
+  final ReadOnlyStorage<dynamic, dynamic> storage;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyWidgetBackground(
+      subtitle: context.l10n().emptyDevicePictures,
+    );
+  }
+
+  @override
+  bool get showEmpty {
+    if (trashCell == null) {
+      return storage.isEmpty;
+    }
+
+    return storage.isEmpty && !trashCell!.hasData;
+  }
+
+  @override
+  StreamSubscription<bool> watch(void Function(bool showEmpty) fn) {
+    if (trashCell == null) {
+      return storage.countEvents.map((e) => e == 0).listen(fn);
+    }
+
+    return StreamGroup.merge([
+      storage.countEvents,
+      trashCell!.stream,
+    ]).map((e) => showEmpty).listen(fn);
+  }
 }
 
 class _EmptyWidget extends StatefulWidget {

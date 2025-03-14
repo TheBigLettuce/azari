@@ -41,6 +41,9 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
   PagingEntry get entry;
   SafeMode get safeMode;
 
+  void Function(GridPostSource)? get onNextCompleted;
+  void Function(GridPostSource)? get onClearRefreshCompleted;
+
   bool get extraSafeFilters;
 
   @override
@@ -82,6 +85,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
       backingStorage.addAll(
         extraSafeFilters ? filter(list.$1) : filter(list.$1).where(_extraTags),
       );
+      onClearRefreshCompleted?.call(this);
     } catch (e) {
       progress.error = e;
     }
@@ -148,6 +152,7 @@ mixin GridPostSourceRefreshNext implements GridPostSource {
         );
 
         entry.updateTime();
+        onNextCompleted?.call(this);
 
         if (count - oldCount < 3) {
           return await next(repeatCount + 1);

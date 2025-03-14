@@ -93,29 +93,29 @@ Future<void> deleteFilesDialog(
   );
 }
 
-GridAction<File> _restoreFromTrashAction(GalleryTrash galleryTrash) {
-  return GridAction(
+SelectionBarAction _restoreFromTrashAction(GalleryTrash galleryTrash) {
+  return SelectionBarAction(
     Icons.restore_from_trash,
     (selected) {
       galleryTrash.removeAll(
-        selected.map((e) => e.originalUri).toList(),
+        selected.map((e) => (e as File).originalUri).toList(),
       );
     },
     false,
   );
 }
 
-GridAction<File> _saveTagsAction(
+SelectionBarAction _saveTagsAction(
   BuildContext context, {
   required LocalTagsService localTags,
   required GalleryService galleryService,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.tag_rounded,
     (selected) {
       _saveTags(
         context,
-        selected,
+        selected.cast(),
         context.l10n(),
         localTags: localTags,
         galleryService: galleryService,
@@ -125,21 +125,27 @@ GridAction<File> _saveTagsAction(
   );
 }
 
-GridAction<File> _addTagAction(
+SelectionBarAction _addTagAction(
   BuildContext context,
   void Function() refresh,
   LocalTagsService localTags,
 ) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.new_label_rounded,
     (selected) {
       openAddTagDialog(
         context,
         (v, delete) {
           if (delete) {
-            localTags.removeSingle(selected.map((e) => e.name).toList(), v);
+            localTags.removeSingle(
+              selected.map((e) => (e as File).name).toList(),
+              v,
+            );
           } else {
-            localTags.addMultiple(selected.map((e) => e.name).toList(), v);
+            localTags.addMultiple(
+              selected.map((e) => (e as File).name).toList(),
+              v,
+            );
           }
 
           refresh();
@@ -151,32 +157,32 @@ GridAction<File> _addTagAction(
   );
 }
 
-GridAction<File> _setFavoritesThumbnailAction(
-  MiscSettingsService miscSettings,
-) {
-  return GridAction(
-    Icons.image_outlined,
-    (selected) {
-      miscSettings.current
-          .copy(favoritesThumbId: selected.first.id)
-          .maybeSave();
-    },
-    true,
-    showOnlyWhenSingle: true,
-  );
-}
+// GridAction<File> _setFavoritesThumbnailAction(
+//   SettingsService settings,
+// ) {
+//   return GridAction(
+//     Icons.image_outlined,
+//     (selected) {
+//       settings.current
+//           .copy(favoritesThumbId: selected.first.id)
+//           .maybeSave();
+//     },
+//     true,
+//     showOnlyWhenSingle: true,
+//   );
+// }
 
-GridAction<File> _deleteAction(
+SelectionBarAction _deleteAction(
   BuildContext context,
   DeleteDialogShow toShow,
   GalleryTrash galleryTrash,
 ) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.delete,
     (selected) {
       deleteFilesDialog(
         context,
-        selected,
+        selected.cast(),
         toShow,
         galleryTrash,
       );
@@ -185,7 +191,7 @@ GridAction<File> _deleteAction(
   );
 }
 
-GridAction<File> _copyAction(
+SelectionBarAction _copyAction(
   BuildContext context,
   String bucketId,
   Directories providedApi,
@@ -194,13 +200,13 @@ GridAction<File> _copyAction(
   required TagManagerService tagManager,
   required LocalTagsService localTags,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.copy,
     (selected) {
       moveOrCopyFnc(
         context,
         bucketId,
-        selected,
+        selected.cast(),
         false,
         providedApi,
         toShow,
@@ -213,7 +219,7 @@ GridAction<File> _copyAction(
   );
 }
 
-GridAction<File> _moveAction(
+SelectionBarAction _moveAction(
   BuildContext context,
   String bucketId,
   Directories providedApi,
@@ -222,13 +228,13 @@ GridAction<File> _moveAction(
   required TagManagerService tagManager,
   required LocalTagsService localTags,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.forward_rounded,
     (selected) {
       moveOrCopyFnc(
         context,
         bucketId,
-        selected,
+        selected.cast(),
         true,
         providedApi,
         toShow,

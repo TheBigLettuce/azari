@@ -14,7 +14,6 @@ import "package:azari/src/db/services/impl/isar/schemas/gallery/blacklisted_dire
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
 import "package:azari/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
-import "package:azari/src/db/services/impl/isar/schemas/grid_settings/anime_discovery.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/directories.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_settings/favorites.dart";
@@ -25,7 +24,6 @@ import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_state.da
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/updates_available.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:azari/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/video_settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/statistics/daily_statistics.dart";
@@ -63,12 +61,10 @@ const mainSchemas = [
   IsarStatisticsBooruSchema,
   IsarDailyStatisticsSchema,
   IsarVideoSettingsSchema,
-  IsarMiscSettingsSchema,
   IsarGridSettingsBooruSchema,
   IsarGridSettingsDirectoriesSchema,
   IsarGridSettingsFavoritesSchema,
   IsarGridSettingsFilesSchema,
-  IsarGridSettingsAnimeDiscoverySchema,
 ];
 
 class DbPaths {

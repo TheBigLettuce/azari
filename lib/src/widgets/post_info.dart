@@ -17,10 +17,10 @@ import "package:azari/src/pages/gallery/files.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/translation_notes.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -348,18 +348,55 @@ class PostInfoTile extends StatelessWidget {
   }
 }
 
-class StarsButton extends StatelessWidget {
+class StarsButton extends StatefulWidget {
   const StarsButton({
     super.key,
-    required this.post,
-    required this.favoritePosts,
+    required this.idBooru,
+    this.favoritePosts,
   });
 
-  final FavoritePost post;
-  final FavoritePostSourceService favoritePosts;
+  final (int id, Booru booru) idBooru;
+  final FavoritePostSourceService? favoritePosts;
+
+  @override
+  State<StarsButton> createState() => _StarsButtonState();
+}
+
+class _StarsButtonState extends State<StarsButton> {
+  (int id, Booru booru) get idBooru => widget.idBooru;
+  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
+
+  late final StreamSubscription<void>? favoriteEvents;
+
+  FavoritePost? post;
+
+  @override
+  void initState() {
+    super.initState();
+
+    post = widget.favoritePosts?.cache.get(idBooru);
+
+    favoriteEvents =
+        favoritePosts?.cache.streamSingle(idBooru.$1, idBooru.$2).listen((e) {
+      setState(() {
+        post = widget.favoritePosts?.cache.get(idBooru);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    favoriteEvents?.cancel();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (post == null) {
+      return const SizedBox.shrink();
+    }
+
     return MenuAnchor(
       menuChildren: [
         Center(
@@ -367,21 +404,17 @@ class StarsButton extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () {
-                  if (post.stars == FavoriteStars.one) {
-                    post
-                        .copyWith(stars: FavoriteStars.zeroFive)
-                        .save(favoritePosts);
-                  } else if (post.stars == FavoriteStars.zeroFive) {
-                    post
-                        .copyWith(stars: FavoriteStars.zero)
-                        .save(favoritePosts);
+                  if (post!.stars == FavoriteStars.one) {
+                    post!.copyWith(stars: FavoriteStars.zeroFive).maybeSave();
+                  } else if (post!.stars == FavoriteStars.zeroFive) {
+                    post!.copyWith(stars: FavoriteStars.zero).maybeSave();
                   } else {
-                    post.copyWith(stars: FavoriteStars.one).save(favoritePosts);
+                    post!.copyWith(stars: FavoriteStars.one).maybeSave();
                   }
                 },
-                icon: post.stars.includes(FavoriteStars.one)
+                icon: post!.stars.includes(FavoriteStars.one)
                     ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post.stars.includes(FavoriteStars.zeroFive)
+                    : post!.stars.includes(FavoriteStars.zeroFive)
                         ? const Icon(
                             Icons.star_half_rounded,
                             color: Colors.yellow,
@@ -390,19 +423,17 @@ class StarsButton extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () {
-                  if (post.stars == FavoriteStars.two) {
-                    post
-                        .copyWith(stars: FavoriteStars.oneFive)
-                        .save(favoritePosts);
-                  } else if (post.stars == FavoriteStars.oneFive) {
-                    post.copyWith(stars: FavoriteStars.one).save(favoritePosts);
+                  if (post!.stars == FavoriteStars.two) {
+                    post!.copyWith(stars: FavoriteStars.oneFive).maybeSave();
+                  } else if (post!.stars == FavoriteStars.oneFive) {
+                    post!.copyWith(stars: FavoriteStars.one).maybeSave();
                   } else {
-                    post.copyWith(stars: FavoriteStars.two).save(favoritePosts);
+                    post!.copyWith(stars: FavoriteStars.two).maybeSave();
                   }
                 },
-                icon: post.stars.includes(FavoriteStars.two)
+                icon: post!.stars.includes(FavoriteStars.two)
                     ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post.stars.includes(FavoriteStars.oneFive)
+                    : post!.stars.includes(FavoriteStars.oneFive)
                         ? const Icon(
                             Icons.star_half_rounded,
                             color: Colors.yellow,
@@ -411,21 +442,17 @@ class StarsButton extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () {
-                  if (post.stars == FavoriteStars.three) {
-                    post
-                        .copyWith(stars: FavoriteStars.twoFive)
-                        .save(favoritePosts);
-                  } else if (post.stars == FavoriteStars.twoFive) {
-                    post.copyWith(stars: FavoriteStars.two).save(favoritePosts);
+                  if (post!.stars == FavoriteStars.three) {
+                    post!.copyWith(stars: FavoriteStars.twoFive).maybeSave();
+                  } else if (post!.stars == FavoriteStars.twoFive) {
+                    post!.copyWith(stars: FavoriteStars.two).maybeSave();
                   } else {
-                    post
-                        .copyWith(stars: FavoriteStars.three)
-                        .save(favoritePosts);
+                    post!.copyWith(stars: FavoriteStars.three).maybeSave();
                   }
                 },
-                icon: post.stars.includes(FavoriteStars.three)
+                icon: post!.stars.includes(FavoriteStars.three)
                     ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post.stars.includes(FavoriteStars.twoFive)
+                    : post!.stars.includes(FavoriteStars.twoFive)
                         ? const Icon(
                             Icons.star_half_rounded,
                             color: Colors.yellow,
@@ -434,23 +461,17 @@ class StarsButton extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () {
-                  if (post.stars == FavoriteStars.four) {
-                    post
-                        .copyWith(stars: FavoriteStars.threeFive)
-                        .save(favoritePosts);
-                  } else if (post.stars == FavoriteStars.threeFive) {
-                    post
-                        .copyWith(stars: FavoriteStars.three)
-                        .save(favoritePosts);
+                  if (post!.stars == FavoriteStars.four) {
+                    post!.copyWith(stars: FavoriteStars.threeFive).maybeSave();
+                  } else if (post!.stars == FavoriteStars.threeFive) {
+                    post!.copyWith(stars: FavoriteStars.three).maybeSave();
                   } else {
-                    post
-                        .copyWith(stars: FavoriteStars.four)
-                        .save(favoritePosts);
+                    post!.copyWith(stars: FavoriteStars.four).maybeSave();
                   }
                 },
-                icon: post.stars.includes(FavoriteStars.four)
+                icon: post!.stars.includes(FavoriteStars.four)
                     ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post.stars.includes(FavoriteStars.threeFive)
+                    : post!.stars.includes(FavoriteStars.threeFive)
                         ? const Icon(
                             Icons.star_half_rounded,
                             color: Colors.yellow,
@@ -459,23 +480,17 @@ class StarsButton extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () {
-                  if (post.stars == FavoriteStars.five) {
-                    post
-                        .copyWith(stars: FavoriteStars.fourFive)
-                        .save(favoritePosts);
-                  } else if (post.stars == FavoriteStars.fourFive) {
-                    post
-                        .copyWith(stars: FavoriteStars.four)
-                        .save(favoritePosts);
+                  if (post!.stars == FavoriteStars.five) {
+                    post!.copyWith(stars: FavoriteStars.fourFive).maybeSave();
+                  } else if (post!.stars == FavoriteStars.fourFive) {
+                    post!.copyWith(stars: FavoriteStars.four).maybeSave();
                   } else {
-                    post
-                        .copyWith(stars: FavoriteStars.five)
-                        .save(favoritePosts);
+                    post!.copyWith(stars: FavoriteStars.five).maybeSave();
                   }
                 },
-                icon: post.stars.includes(FavoriteStars.five)
+                icon: post!.stars.includes(FavoriteStars.five)
                     ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post.stars.includes(FavoriteStars.fourFive)
+                    : post!.stars.includes(FavoriteStars.fourFive)
                         ? const Icon(
                             Icons.star_half_rounded,
                             color: Colors.yellow,
@@ -494,12 +509,12 @@ class StarsButton extends StatelessWidget {
       ),
       builder: (context, controller, _) => IconButton(
         onLongPress: () {
-          post.copyWith(stars: FavoriteStars.zero).save(favoritePosts);
+          post!.copyWith(stars: FavoriteStars.zero).maybeSave();
         },
         onPressed: controller.open,
         icon: Badge(
           label: Text(
-            switch (post.stars) {
+            switch (post!.stars) {
               FavoriteStars.zero => 0,
               FavoriteStars.zeroFive => 0.5,
               FavoriteStars.one => 1,
@@ -514,8 +529,8 @@ class StarsButton extends StatelessWidget {
             }
                 .toString(),
           ),
-          isLabelVisible: post.stars != FavoriteStars.zero,
-          child: switch (post.stars) {
+          isLabelVisible: post!.stars != FavoriteStars.zero,
+          child: switch (post!.stars) {
             FavoriteStars.zero ||
             FavoriteStars.zeroFive ||
             FavoriteStars.one ||
@@ -799,10 +814,12 @@ class FavoritePostButton extends StatefulWidget {
     super.key,
     required this.post,
     required this.favoritePosts,
+    this.withBackground = true,
   });
 
   final PostImpl post;
   final FavoritePostSourceService favoritePosts;
+  final bool withBackground;
 
   @override
   State<FavoritePostButton> createState() => _FavoritePostButtonState();
@@ -827,6 +844,10 @@ class _FavoritePostButtonState extends State<FavoritePostButton>
     events = widget.favoritePosts.cache
         .streamSingle(widget.post.id, widget.post.booru)
         .listen((newFavorite) {
+      if (newFavorite == favorite) {
+        return;
+      }
+
       favorite = newFavorite;
 
       if (favorite) {
@@ -856,14 +877,16 @@ class _FavoritePostButtonState extends State<FavoritePostButton>
       ),
       duration: Durations.short3,
       builder: (context, value, child) => IconButton(
-        style: ButtonStyle(
-          foregroundColor: WidgetStatePropertyAll(
-            value,
-          ),
-          backgroundColor: WidgetStatePropertyAll(
-            theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-          ),
-        ),
+        style: widget.withBackground
+            ? ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(
+                  value,
+                ),
+                backgroundColor: WidgetStatePropertyAll(
+                  theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                ),
+              )
+            : null,
         onPressed: () {
           widget.favoritePosts.addRemove([widget.post]);
         },

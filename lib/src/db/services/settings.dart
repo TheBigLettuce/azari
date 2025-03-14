@@ -101,6 +101,20 @@ abstract class SettingsPath {
   });
 }
 
+enum ThemeType {
+  main,
+  systemAccent,
+  pink;
+
+  const ThemeType();
+
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        main => "Default", // TODO: change
+        ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
+        ThemeType.pink => l10n.enumThemeTypePink,
+      };
+}
+
 @immutable
 abstract class SettingsData {
   const SettingsData();
@@ -112,8 +126,16 @@ abstract class SettingsData {
   bool get showWelcomePage;
   bool get extraSafeFilters;
   bool get sampleThumbnails;
+  bool get filesExtendedActions;
+  ThemeType get themeType;
+  String get randomVideosAddTags;
+  RandomPostsOrder get randomVideosOrder;
 
   SettingsData copy({
+    bool? filesExtendedActions,
+    ThemeType? themeType,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
     bool? extraSafeFilters,
     SettingsPath? path,
     Booru? selectedBooru,

@@ -23,8 +23,9 @@ import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/copy_move_preview.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
+import "package:azari/src/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/widgets/selection_bar.dart";
 import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -33,6 +34,8 @@ part "main_pick_file.dart";
 part "main_quick_view.dart";
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final notificationStream =
       StreamController<NotificationRouteEvent>.broadcast();
 
@@ -42,66 +45,82 @@ void main() async {
 
   final restartKey = GlobalKey();
 
-  runApp(
-    RestartWidget(
-      accentColor: accentColor,
-      key: restartKey,
-      child: (d, l, settings) => MaterialApp(
-        title: "Azari",
-        themeAnimationCurve: Easing.standard,
-        themeAnimationDuration: const Duration(milliseconds: 300),
-        darkTheme: d,
-        theme: l,
-        home: Builder(
-          builder: (context) {
-            final db = Services.of(context);
-            final (
-              settingsSevice,
-              gridBookmarks,
-              favoritePosts,
-              galleryService
-            ) = (
-              db.require<SettingsService>(),
-              db.get<GridBookmarkService>(),
-              db.get<FavoritePostSourceService>(),
-              db.get<GalleryService>()
-            );
+  final progressTab = GlobalProgressTab();
+  final selectionEvents = SelectionActions();
 
-            return switch (settings.showWelcomePage) {
-              true => WelcomePage(
-                  galleryService: galleryService,
-                  settingsService: settingsSevice,
-                  onEnd: (context) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (context) {
-                          return Home(
-                            stream: notificationStream.stream,
-                            settingsService: settingsSevice,
-                            gridBookmarks: gridBookmarks,
-                            favoritePosts: favoritePosts,
-                            galleryService: galleryService,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              false => Home(
-                  stream: notificationStream.stream,
-                  settingsService: settingsSevice,
-                  gridBookmarks: gridBookmarks,
-                  favoritePosts: favoritePosts,
-                  galleryService: galleryService,
-                ),
-            };
-          },
+  runApp(
+    selectionEvents.inject(
+      progressTab.inject(
+        Services.inject(
+          TimeTickerStatistics(
+            child: RestartWidget(
+              accentColor: accentColor,
+              key: restartKey,
+              child: (d, l) => MaterialApp(
+                themeAnimationCurve: Easing.standard,
+                themeAnimationDuration: const Duration(milliseconds: 300),
+                darkTheme: d,
+                theme: l,
+                home: _HomeWidget(notificationStream: notificationStream),
+                debugShowCheckedModeBanner: false,
+                onGenerateTitle: (context) => "Azari",
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+              ),
+            ),
+          ),
         ),
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
       ),
     ),
   );
+}
+
+class _HomeWidget extends StatelessWidget {
+  const _HomeWidget({
+    // super.key,
+    required this.notificationStream,
+  });
+
+  final StreamController<NotificationRouteEvent> notificationStream;
+
+  @override
+  Widget build(BuildContext context) {
+    final db = Services.of(context);
+    final (settingsSevice, gridBookmarks, favoritePosts, galleryService) = (
+      db.require<SettingsService>(),
+      db.get<GridBookmarkService>(),
+      db.get<FavoritePostSourceService>(),
+      db.get<GalleryService>()
+    );
+
+    return switch (settingsSevice.current.showWelcomePage) {
+      true => WelcomePage(
+          galleryService: galleryService,
+          settingsService: settingsSevice,
+          onEnd: (context) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) {
+                  return Home(
+                    stream: notificationStream.stream,
+                    settingsService: settingsSevice,
+                    gridBookmarks: gridBookmarks,
+                    favoritePosts: favoritePosts,
+                    galleryService: galleryService,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      false => Home(
+          stream: notificationStream.stream,
+          settingsService: settingsSevice,
+          gridBookmarks: gridBookmarks,
+          favoritePosts: favoritePosts,
+          galleryService: galleryService,
+        ),
+    };
+  }
 }

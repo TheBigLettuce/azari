@@ -6,20 +6,20 @@
 import "package:azari/src/db/services/local_tags_helper.dart";
 import "package:azari/src/db/services/resource_source/chained_filter.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
+import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/post_cell.dart";
 import "package:azari/src/widgets/post_info.dart";
+import "package:azari/src/widgets/shell/parts/shell_configuration.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
@@ -113,14 +113,15 @@ abstract class PostImpl
         settingsService: Services.requireOf<SettingsService>(context),
       );
 
+  ResourceSource<int, T> getSource<T extends PostImpl>(BuildContext context) =>
+      ResourceSource.maybeOf<int, T>(context)!;
+
   @override
   Widget buildSelectionWrapper<T extends CellBase>({
     required BuildContext context,
     required int thisIndx,
     required List<int>? selectFrom,
-    required GridSelection<T>? selection,
     required CellStaticData description,
-    required GridFunctionality<T> functionality,
     required VoidCallback? onPressed,
     required Widget child,
   }) {
@@ -135,8 +136,6 @@ abstract class PostImpl
       thisIndx: thisIndx,
       description: description,
       selectFrom: selectFrom,
-      selection: selection,
-      functionality: functionality,
       onPressed: onPressed,
       onDoubleTap: downloadManager != null && localTags != null
           ? (context) {
@@ -198,7 +197,6 @@ abstract class PostImpl
   @override
   List<NavigationAction> appBarButtons(BuildContext context) {
     final l10n = context.l10n();
-    final favoritePosts = Services.getOf<FavoritePostSourceService>(context);
 
     return [
       NavigationAction(
@@ -218,27 +216,15 @@ abstract class PostImpl
         },
         l10n.shareLabel,
       ),
-      if (favoritePosts != null && this is FavoritePost)
-        NavigationAction(
-          Icons.star_rounded,
-          null,
-          "",
-          StarsButton(
-            favoritePosts: favoritePosts,
-            post: this as FavoritePost,
-          ),
-        )
-      else if (favoritePosts != null &&
-          favoritePosts.cache.isFavorite(id, booru))
-        NavigationAction(
-          Icons.star_rounded,
-          null,
-          "",
-          StarsButton(
-            favoritePosts: favoritePosts,
-            post: favoritePosts.cache[(id, booru)],
-          ),
+      NavigationAction(
+        Icons.star_rounded,
+        null,
+        "",
+        StarsButton(
+          favoritePosts: Services.getOf<FavoritePostSourceService>(context),
+          idBooru: (id, booru),
         ),
+      ),
     ];
   }
 
@@ -409,7 +395,7 @@ abstract class PostImpl
 
     final int columns = (context == null
             ? null
-            : GridConfiguration.maybeOf(context)?.columns.number) ??
+            : ShellConfiguration.maybeOf(context)?.columns.number) ??
         3;
 
     return CachedNetworkImageProvider(
@@ -477,7 +463,9 @@ abstract class PostImpl
             subtitle: score.toString(),
             important: score > 80,
           ),
-        if ((f?.sortingMode == SortingMode.stars && thisStars.asNumber != 0) ||
+        if (f?.filteringMode == FilteringMode.onlyHalfStars ||
+            f?.filteringMode == FilteringMode.onlyFullStars ||
+            (f?.sortingMode == SortingMode.stars && thisStars.asNumber != 0) ||
             stars != null)
           Sticker(
             thisStars.asNumber == 0

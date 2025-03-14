@@ -41,27 +41,6 @@ abstract class Directory
     required String volumeName,
     required String relativeLoc,
   }) = $Directory;
-
-  static Future<bool> canAuth(String id, String reason) async {
-    if (!AppInfo().canAuthBiometric) {
-      return true;
-    }
-
-    final directoryMetadata = _currentDb.get<DirectoryMetadataService>();
-    if (directoryMetadata == null) {
-      return true;
-    }
-
-    if (directoryMetadata.get(id)?.requireAuth ?? false) {
-      final success =
-          await LocalAuthentication().authenticate(localizedReason: reason);
-      if (!success) {
-        return false;
-      }
-    }
-
-    return true;
-  }
 }
 
 abstract class DirectoryBase {
@@ -378,32 +357,6 @@ enum GalleryFilesPageType {
 
   bool isFavorites() => this == favorites;
   bool isTrash() => this == trash;
-
-  static bool filterAuthBlur(
-    Map<String, DirectoryMetadata> m,
-    File? dir, {
-    required DirectoryTagService? directoryTag,
-    required DirectoryMetadataService? directoryMetadata,
-  }) {
-    final segment = DirectoriesPage.segmentCell(
-      dir!.name,
-      dir.bucketId,
-      directoryTag,
-    );
-
-    DirectoryMetadata? data = m[segment];
-    if (data == null) {
-      final d = directoryMetadata?.get(segment);
-      if (d == null) {
-        return true;
-      }
-
-      data = d;
-      m[segment] = d;
-    }
-
-    return !data.requireAuth && !data.blur;
-  }
 }
 
 abstract interface class FilesManagement {

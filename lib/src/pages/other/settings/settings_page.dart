@@ -20,12 +20,10 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     required this.settingsService,
-    required this.miscSettingsService,
     required this.galleryService,
     required this.thumbnailService,
   });
 
-  final MiscSettingsService? miscSettingsService;
   final ThumbnailService? thumbnailService;
   final GalleryService? galleryService;
 
@@ -33,9 +31,8 @@ class SettingsPage extends StatelessWidget {
 
   static Future<void> open(BuildContext context) {
     final db = Services.of(context);
-    final (settingsService, miscSettings, galleryService, thumbnailService) = (
+    final (settingsService, galleryService, thumbnailService) = (
       db.require<SettingsService>(),
-      db.get<MiscSettingsService>(),
       db.get<GalleryService>(),
       db.get<ThumbnailService>(),
     );
@@ -44,7 +41,6 @@ class SettingsPage extends StatelessWidget {
       MaterialPageRoute<void>(
         builder: (context) => SettingsPage(
           settingsService: settingsService,
-          miscSettingsService: miscSettings,
           galleryService: galleryService,
           thumbnailService: thumbnailService,
         ),
@@ -65,7 +61,6 @@ class SettingsPage extends StatelessWidget {
         padding: padding,
         sliver: SettingsList(
           settingsService: settingsService,
-          miscSettingsService: miscSettingsService,
           thumbnailService: thumbnailService,
           galleryService: galleryService,
         ),

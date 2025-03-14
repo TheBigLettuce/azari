@@ -16,7 +16,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/network_status.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:logging/logging.dart";

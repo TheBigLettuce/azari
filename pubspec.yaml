@@ -90,6 +90,7 @@ dependencies:
 
   video_player: ^2.9.2
 
+  web: ^1.1.0
   xml: ^6.3.0
 
   # The following adds the Cupertino Icons font to your application.
@@ -128,8 +129,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  #   - assets/waves4.png
+  #   - assets/images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -137,10 +138,13 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages
 
-  # fonts:
-  #   - family: ZenKurenaido
-  #     fonts:
-  #       - asset: fonts/ZenKurenaido-Regular.ttf
+  fonts:
+    - family: KiwiMaru
+      fonts:
+        - asset: assets/fonts/KiwiMaru_Regular_a_only.ttf
+    - family: NotoSerif
+      fonts:
+        - asset: assets/fonts/NotoSerif_Regular_Modified.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

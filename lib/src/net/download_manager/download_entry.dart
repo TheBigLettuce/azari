@@ -63,6 +63,11 @@ class DownloadEntry {
         site: site,
         date: DateTime.now(),
       );
+
+  @override
+  String toString() {
+    return "DownloadEntry(name: $name)";
+  }
 }
 
 class PathVolume {

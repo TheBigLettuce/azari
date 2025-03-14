@@ -7,14 +7,14 @@ import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 
-GridAction<Post> hide(
+SelectionBarAction hide(
   BuildContext context,
   HiddenBooruPostsService hiddenPost,
 ) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.hide_image_rounded,
     (selected) {
       if (selected.isEmpty) {
@@ -24,9 +24,9 @@ GridAction<Post> hide(
       final toDelete = <(int, Booru)>[];
       final toAdd = <HiddenBooruPostData>[];
 
-      final booru = selected.first.booru;
+      final booru = (selected.first as PostImpl).booru;
 
-      for (final cell in selected) {
+      for (final (cell as PostImpl) in selected) {
         if (hiddenPost.isHidden(cell.id, booru)) {
           toDelete.add((cell.id, booru));
         } else {
@@ -47,7 +47,7 @@ GridAction<Post> hide(
   );
 }
 
-GridAction<Post> downloadPost(
+SelectionBarAction downloadPost(
   BuildContext context,
   Booru booru,
   PathVolume? thenMoveTo, {
@@ -55,48 +55,48 @@ GridAction<Post> downloadPost(
   required LocalTagsService localTags,
   required SettingsService settingsService,
 }) {
-  return GridAction(
+  return SelectionBarAction(
     Icons.download,
-    (selected) => selected.downloadAll(
-      downloadManager: downloadManager,
-      localTags: localTags,
-      settingsService: settingsService,
-      thenMoveTo: thenMoveTo,
-    ),
+    (selected) => selected.cast<PostImpl>().downloadAll(
+          downloadManager: downloadManager,
+          localTags: localTags,
+          settingsService: settingsService,
+          thenMoveTo: thenMoveTo,
+        ),
     true,
     animate: true,
   );
 }
 
-GridAction<FavoritePost> downloadFavoritePost(
-  BuildContext context,
-  Booru booru,
-  PathVolume? thenMoveTo, {
-  required DownloadManager downloadManager,
-  required LocalTagsService localTags,
-  required SettingsService settingsService,
-}) {
-  return GridAction(
-    Icons.download,
-    (selected) => selected.downloadAll(
-      downloadManager: downloadManager,
-      localTags: localTags,
-      settingsService: settingsService,
-      thenMoveTo: thenMoveTo,
-    ),
-    true,
-    animate: true,
-  );
-}
+// GridAction downloadFavoritePost(
+//   BuildContext context,
+//   Booru booru,
+//   PathVolume? thenMoveTo, {
+//   required DownloadManager downloadManager,
+//   required LocalTagsService localTags,
+//   required SettingsService settingsService,
+// }) {
+//   return GridAction(
+//     Icons.download,
+//     (selected) => selected.cast<PostImpl>().downloadAll(
+//           downloadManager: downloadManager,
+//           localTags: localTags,
+//           settingsService: settingsService,
+//           thenMoveTo: thenMoveTo,
+//         ),
+//     true,
+//     animate: true,
+//   );
+// }
 
-GridAction<T> favorites<T extends PostImpl>(
+SelectionBarAction favorites(
   BuildContext context,
   FavoritePostSourceService favoritePost, {
   bool showDeleteSnackbar = false,
 }) {
-  return GridAction<T>(
+  return SelectionBarAction(
     Icons.favorite_border_rounded,
-    favoritePost.addRemove,
+    (selected) => favoritePost.addRemove(selected.cast()),
     true,
   );
 }

@@ -33,10 +33,11 @@ Future<void> mainPickfile() async {
               theme: buildTheme(context, Brightness.light, accentColor),
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
-              home: Builder(
-                builder: (context) => WrapGridPage(
-                  addScaffoldAndBar: true,
-                  child: DirectoriesPage(
+              home: ScaffoldSelectionBar(
+                addScaffoldAndBar: true,
+                child: Builder(
+                  builder: (context) => DirectoriesPage(
+                    selectionController: SelectionActions.controllerOf(context),
                     l10n: context.l10n(),
                     callback: ReturnFileCallback(
                       choose: (chosen, [_]) {
@@ -67,7 +68,6 @@ Future<void> mainPickfile() async {
                     favoritePosts: db.get<FavoritePostSourceService>(),
                     blacklistedDirectories:
                         db.get<BlacklistedDirectoryService>(),
-                    miscSettingsService: db.get<MiscSettingsService>(),
                     localTagsService: db.get<LocalTagsService>(),
                     galleryService: db.get<GalleryService>()!,
                     gridDbs: db.get<GridDbService>()!,

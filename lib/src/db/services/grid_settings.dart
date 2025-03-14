@@ -5,8 +5,9 @@
 
 part of "services.dart";
 
-typedef GridSettingsWatcher = StreamSubscription<GridSettingsData> Function(
-  void Function(GridSettingsData) f, [
+typedef ShellConfigurationWatcher = StreamSubscription<ShellConfigurationData>
+    Function(
+  void Function(ShellConfigurationData) f, [
   bool fire,
 ]);
 
@@ -18,11 +19,11 @@ abstract interface class GridSettingsService implements ServiceMarker {
 }
 
 abstract interface class WatchableGridSettingsData {
-  GridSettingsData get current;
-  set current(GridSettingsData d);
+  ShellConfigurationData get current;
+  set current(ShellConfigurationData d);
 
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData) f, [
     bool fire = false,
   ]);
 }
@@ -54,15 +55,15 @@ enum GridLayoutType {
 }
 
 @immutable
-abstract class GridSettingsData {
-  const GridSettingsData();
+abstract class ShellConfigurationData {
+  const ShellConfigurationData();
 
   bool get hideName;
   GridAspectRatio get aspectRatio;
   GridColumn get columns;
   GridLayoutType get layoutType;
 
-  GridSettingsData copy({
+  ShellConfigurationData copy({
     bool? hideName,
     GridAspectRatio? aspectRatio,
     GridColumn? columns,
@@ -70,7 +71,7 @@ abstract class GridSettingsData {
   });
 }
 
-class _UnsavableSettingsData implements GridSettingsData {
+class _UnsavableSettingsData implements ShellConfigurationData {
   const _UnsavableSettingsData({
     required this.aspectRatio,
     required this.columns,
@@ -91,7 +92,7 @@ class _UnsavableSettingsData implements GridSettingsData {
   final GridLayoutType layoutType;
 
   @override
-  GridSettingsData copy({
+  ShellConfigurationData copy({
     bool? hideName,
     GridAspectRatio? aspectRatio,
     GridColumn? columns,
@@ -119,28 +120,28 @@ class _InpersistentSettingsWatcher
           hideName: hideName,
         );
 
-  final _events = StreamController<GridSettingsData>.broadcast();
+  final _events = StreamController<ShellConfigurationData>.broadcast();
 
-  GridSettingsData _current;
-
-  @override
-  GridSettingsData get current => _current;
+  ShellConfigurationData _current;
 
   @override
-  set current(GridSettingsData d) {
+  ShellConfigurationData get current => _current;
+
+  @override
+  set current(ShellConfigurationData d) {
     _current = d;
 
     _events.add(_current);
   }
 
   @override
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData p1) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData p1) f, [
     bool fire = false,
   ]) {
-    return _events.stream.transform<GridSettingsData>(
+    return _events.stream.transform<ShellConfigurationData>(
       StreamTransformer((stream, cancelOnError) {
-        final controller = StreamController<GridSettingsData>(sync: true);
+        final controller = StreamController<ShellConfigurationData>(sync: true);
 
         controller.onListen = () {
           final subscription = stream.listen(

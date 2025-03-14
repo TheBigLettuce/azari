@@ -446,6 +446,7 @@ class _WrapPadding extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: navBarStyleForTheme(theme, transparent: false),
       child: Scaffold(
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.87),
         body: Padding(
           padding: EdgeInsets.only(
             top: 80,
@@ -462,7 +463,7 @@ class _WrapPadding extends StatelessWidget {
                     child: Icon(
                       const IconData(0x963F),
                       size: 78,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
                       applyTextScaling: true,
                     ),
                   ),

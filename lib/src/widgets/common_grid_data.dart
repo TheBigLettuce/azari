@@ -7,28 +7,29 @@ import "dart:async";
 import "dart:math" as math;
 
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:flutter/material.dart";
 
-mixin CommonGridData<T extends CellBase, S extends StatefulWidget> on State<S> {
+mixin CommonGridData<S extends StatefulWidget> on State<S> {
   SettingsService get settingsService;
 
   StreamSubscription<SettingsData?>? _settingsEvents;
 
   final gridSeed = math.Random().nextInt(948512342);
 
-  final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
+  // final GlobalKey<ShellElementState> gridKey = GlobalKey();
   late SettingsData settings;
 
   void watchSettings() {
     _settingsEvents?.cancel();
     _settingsEvents = settingsService.watch((newSettings) {
       setState(() {
+        onNewSettings(settings, newSettings);
         settings = newSettings;
       });
     });
   }
+
+  void onNewSettings(SettingsData prevSettings, SettingsData newSettings) {}
 
   @override
   void initState() {

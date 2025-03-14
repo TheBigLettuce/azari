@@ -6,6 +6,7 @@
 import "dart:ui" as ui;
 
 import "package:azari/src/db/services/services.dart";
+import "package:azari/theme.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
@@ -14,9 +15,7 @@ ThemeData buildTheme(
   Brightness brightness,
   Color accentColor,
 ) {
-  final type =
-      Services.getOf<MiscSettingsService>(context)?.current.themeType ??
-          ThemeType.systemAccent;
+  final type = Services.requireOf<SettingsService>(context).current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
       ..[TargetPlatform.android] = const FadeForwardsPageTransitionsBuilder()
@@ -40,6 +39,16 @@ ThemeData buildTheme(
   );
 
   var baseTheme = switch (type) {
+    ThemeType.main => ThemeData(
+        menuTheme: menuTheme,
+        popupMenuTheme: popupMenuTheme,
+        pageTransitionsTheme: pageTransition,
+        useMaterial3: true,
+        colorScheme: switch (brightness) {
+          ui.Brightness.dark => MaterialTheme.darkScheme(),
+          ui.Brightness.light => MaterialTheme.lightScheme(),
+        },
+      ),
     ThemeType.systemAccent => ThemeData(
         brightness: brightness,
         menuTheme: menuTheme,
@@ -70,7 +79,7 @@ ThemeData buildTheme(
   );
 
   switch (type) {
-    case ThemeType.systemAccent:
+    case ThemeType.systemAccent || ThemeType.main:
       baseTheme = baseTheme.copyWith(
         scrollbarTheme: scrollBarTheme,
         listTileTheme: baseTheme.listTileTheme.copyWith(

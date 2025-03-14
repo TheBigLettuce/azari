@@ -5,13 +5,13 @@
 
 import "dart:async";
 
+import "package:azari/src/db/services/impl/web/impl.dart" as web;
 import "package:azari/src/db/services/obj_impls/blacklisted_directory_data_impl.dart";
 import "package:azari/src/db/services/obj_impls/directory_impl.dart";
 import "package:azari/src/db/services/obj_impls/file_impl.dart";
 import "package:azari/src/db/services/obj_impls/post_impl.dart";
 import "package:azari/src/db/services/posts_source.dart";
 import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
 import "package:azari/src/db/services/services.dart";
@@ -21,17 +21,30 @@ import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/home/home.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:flutter/material.dart";
 
-Future<DownloadManager?> init(Services db, AppInstanceType appType) =>
-    Future.value();
+Future<DownloadManager?> init(Services db, AppInstanceType appType) {
+  web.init();
 
-Services getApi() => const WebServices();
+  return Future.value();
+}
+
+Services getApi() => WebServices();
 
 class WebServices implements Services {
-  const WebServices();
+  factory WebServices() {
+    if (_instance != null) {
+      return _instance!;
+    }
+
+    return _instance = WebServices._();
+  }
+
+  WebServices._();
+
+  static WebServices? _instance;
+
   @override
   T? get<T extends ServiceMarker>() {
     if (T == GridDbService) {
@@ -43,11 +56,13 @@ class WebServices implements Services {
   @override
   T require<T extends RequiredService>() {
     if (T == SettingsService) {
-      return MemorySettingsService() as T;
+      return settings as T;
     }
 
     throw "unimpl";
   }
+
+  final settings = MemorySettingsService();
 }
 
 class MemoryGridDbService implements GridDbService {
@@ -65,38 +80,45 @@ class MemoryGridDbService implements GridDbService {
     SafeMode? safeMode, [
     bool create = false,
   ]) {
-    return MemorySecondaryGridHandle();
+    return MemorySecondaryGridHandle(safeMode);
   }
 }
 
 int _incr = 0;
 
 class MemorySecondaryGridHandle implements SecondaryGridHandle {
-  MemorySecondaryGridHandle() {
+  MemorySecondaryGridHandle(
+    SafeMode? safeMode,
+  ) {
     name = (_incr += 1).toString();
+    currentState = GridState(
+      name: name,
+      offset: 0,
+      tags: "",
+      safeMode: safeMode ?? SafeMode.normal,
+    );
   }
 
+  final events = StreamController<GridState>.broadcast();
+
   @override
-  late GridState currentState = GridState(
-    name: name,
-    offset: 0,
-    tags: "",
-    safeMode: SafeMode.normal,
-  );
+  late GridState currentState;
 
   @override
   int page = 0;
 
   @override
-  late String name;
+  late final String name;
 
   @override
   Future<void> close() {
+    events.close();
     return Future.value();
   }
 
   @override
   Future<void> destroy() {
+    events.close();
     return Future.value();
   }
 
@@ -107,6 +129,8 @@ class MemorySecondaryGridHandle implements SecondaryGridHandle {
     String tags, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
   }) {
     return WebGridPostSource(
       api,
@@ -116,6 +140,11 @@ class MemorySecondaryGridHandle implements SecondaryGridHandle {
           (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
       ],
       tags,
+      () => currentState.safeMode,
+      excluded,
+      hiddenBooruPosts,
+      onNextCompleted,
+      onClearRefreshCompleted,
     );
   }
 
@@ -124,7 +153,15 @@ class MemorySecondaryGridHandle implements SecondaryGridHandle {
     void Function(GridState s) f, [
     bool fire = false,
   ]) {
-    return const Stream<GridState>.empty().listen(f);
+    final stream = StreamController<GridState>();
+
+    if (fire) {
+      stream.add(currentState);
+    }
+
+    stream.addStream(events.stream);
+
+    return stream.stream.listen(f);
   }
 }
 
@@ -151,6 +188,8 @@ class MemoryMainGridHandle implements MainGridHandle {
     PagingEntry entry, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
   }) {
     return WebGridPostSource(
       api,
@@ -160,6 +199,11 @@ class MemoryMainGridHandle implements MainGridHandle {
           (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),
       ],
       "",
+      () => WebServices().settings.current.safeMode,
+      excluded,
+      hiddenBooruPosts,
+      onNextCompleted,
+      onClearRefreshCompleted,
     );
   }
 }
@@ -170,7 +214,22 @@ class WebGridPostSource extends GridPostSource with GridPostSourceRefreshNext {
     this.entry,
     this.filters,
     this.tags,
+    this.safeMode_,
+    this.excluded,
+    this.hiddenBooruPosts,
+    this.onNextCompleted,
+    this.onClearRefreshCompleted,
   );
+
+  @override
+  final void Function(GridPostSource)? onNextCompleted;
+  @override
+  final void Function(GridPostSource)? onClearRefreshCompleted;
+
+  final SafeMode Function() safeMode_;
+  @override
+  final BooruTagging<Excluded>? excluded;
+  final HiddenBooruPostsService? hiddenBooruPosts;
 
   @override
   Post? get currentlyLast => backingStorage.last;
@@ -188,9 +247,6 @@ class WebGridPostSource extends GridPostSource with GridPostSourceRefreshNext {
   final PagingEntry entry;
 
   @override
-  BooruTagging<Excluded>? get excluded => null;
-
-  @override
   bool get extraSafeFilters => false;
 
   @override
@@ -206,7 +262,7 @@ class WebGridPostSource extends GridPostSource with GridPostSourceRefreshNext {
       .toList();
 
   @override
-  SafeMode get safeMode => SafeMode.normal;
+  SafeMode get safeMode => safeMode_();
 
   @override
   UpdatesAvailable updatesAvailable = const EmptyUpdatesAvailable();
@@ -240,9 +296,12 @@ class EmptyUpdatesAvailable implements UpdatesAvailable {
 }
 
 class MemorySettingsService implements SettingsService {
+  final events = StreamController<SettingsData>.broadcast();
+
   @override
   void add(SettingsData data) {
-    // TODO: implement add
+    current = data;
+    events.add(current);
   }
 
   @override
@@ -254,6 +313,10 @@ class MemorySettingsService implements SettingsService {
     safeMode: SafeMode.normal,
     showWelcomePage: false,
     extraSafeFilters: false,
+    filesExtendedActions: false,
+    themeType: ThemeType.systemAccent,
+    randomVideosAddTags: "",
+    randomVideosOrder: RandomPostsOrder.random,
   );
 
   @override
@@ -261,26 +324,17 @@ class MemorySettingsService implements SettingsService {
     void Function(SettingsData s) f, [
     bool fire = false,
   ]) {
-    return const Stream<SettingsData>.empty().map((e) => current).listen(f);
+    final stream = StreamController<SettingsData>();
+
+    if (fire) {
+      stream.add(current);
+    }
+
+    stream.addStream(events.stream);
+
+    return stream.stream.listen(f);
   }
 }
-
-// class $PinnedThumbnailData implements PinnedThumbnailData {
-//   const $PinnedThumbnailData({
-//     required this.id,
-//     required this.differenceHash,
-//     required this.path,
-//   });
-
-//   @override
-//   final int differenceHash;
-
-//   @override
-//   final int id;
-
-//   @override
-//   final String path;
-// }
 
 class $Directory extends DirectoryImpl implements Directory {
   const $Directory({
@@ -317,7 +371,6 @@ class $Directory extends DirectoryImpl implements Directory {
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<Directory> functionality,
     int idx,
   ) {}
 }
@@ -381,7 +434,6 @@ class $File extends FileImpl implements File {
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<File> functionality,
     int idx,
   ) {}
 }
@@ -409,6 +461,10 @@ class $ThumbnailData implements ThumbnailData {
 
 class $SettingsData extends SettingsData {
   const $SettingsData({
+    required this.filesExtendedActions,
+    required this.themeType,
+    required this.randomVideosAddTags,
+    required this.randomVideosOrder,
     required this.sampleThumbnails,
     required this.path,
     required this.selectedBooru,
@@ -440,6 +496,18 @@ class $SettingsData extends SettingsData {
   final SettingsPath path;
 
   @override
+  final bool filesExtendedActions;
+
+  @override
+  final ThemeType themeType;
+
+  @override
+  final String randomVideosAddTags;
+
+  @override
+  final RandomPostsOrder randomVideosOrder;
+
+  @override
   SettingsData copy({
     bool? extraSafeFilters,
     SettingsPath? path,
@@ -448,6 +516,10 @@ class $SettingsData extends SettingsData {
     SafeMode? safeMode,
     bool? showWelcomePage,
     bool? sampleThumbnails,
+    bool? filesExtendedActions,
+    ThemeType? themeType,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
   }) =>
       $SettingsData(
         selectedBooru: selectedBooru ?? this.selectedBooru,
@@ -457,6 +529,10 @@ class $SettingsData extends SettingsData {
         path: this.path,
         extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
         sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
+        filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
+        themeType: themeType ?? this.themeType,
+        randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
+        randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
       );
 }
 
@@ -818,53 +894,6 @@ class $SettingsPath extends SettingsPath {
   SettingsPath copy({String? path, String? pathDisplay}) {
     return $SettingsPath(path ?? this.path, pathDisplay ?? this.pathDisplay);
   }
-}
-
-class $MiscSettingsData extends MiscSettingsData {
-  const $MiscSettingsData({
-    required this.filesExtendedActions,
-    required this.favoritesThumbId,
-    required this.themeType,
-    required this.favoritesPageMode,
-    required this.randomVideosAddTags,
-    required this.randomVideosOrder,
-  });
-
-  @override
-  final FilteringMode favoritesPageMode;
-
-  @override
-  final int favoritesThumbId;
-
-  @override
-  final bool filesExtendedActions;
-
-  @override
-  final ThemeType themeType;
-
-  @override
-  final String randomVideosAddTags;
-
-  @override
-  final RandomPostsOrder randomVideosOrder;
-
-  @override
-  MiscSettingsData copy({
-    bool? filesExtendedActions,
-    int? favoritesThumbId,
-    ThemeType? themeType,
-    FilteringMode? favoritesPageMode,
-    String? randomVideosAddTags,
-    RandomPostsOrder? randomVideosOrder,
-  }) =>
-      $MiscSettingsData(
-        filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
-        favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId,
-        themeType: themeType ?? this.themeType,
-        favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
-        randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
-        randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
-      );
 }
 
 class $BooruTag extends BooruTag {

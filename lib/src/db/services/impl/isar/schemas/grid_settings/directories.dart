@@ -5,8 +5,8 @@
 
 import "package:azari/src/db/services/impl/isar/impl.dart";
 import "package:azari/src/db/services/services.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
 import "package:isar/isar.dart";
 
 part "directories.g.dart";

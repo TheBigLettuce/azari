@@ -7,14 +7,12 @@ import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
-import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/layouts/list_layout.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class HiddenPostsPage extends StatefulWidget {
@@ -22,7 +20,10 @@ class HiddenPostsPage extends StatefulWidget {
     super.key,
     required this.hiddenBooruPosts,
     required this.settingsService,
+    required this.selectionController,
   });
+
+  final SelectionController selectionController;
 
   final HiddenBooruPostsService hiddenBooruPosts;
   final SettingsService settingsService;
@@ -35,7 +36,7 @@ class HiddenPostsPage extends StatefulWidget {
 }
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
-    with CommonGridData<Post, HiddenPostsPage> {
+    with CommonGridData<HiddenPostsPage> {
   HiddenBooruPostsService get hiddenBooruPost => widget.hiddenBooruPosts;
 
   @override
@@ -57,6 +58,8 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
     ),
   );
 
+  late final SourceShellElementState<HiddenBooruPostData> status;
+
   final gridSettings = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
@@ -65,7 +68,24 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
   );
 
   @override
+  void initState() {
+    super.initState();
+
+    status = SourceShellElementState(
+      source: source,
+      onEmpty: SourceOnEmptyInterface(
+        source,
+        (context) => context.l10n().emptyHiddenPosts,
+      ),
+      selectionController: widget.selectionController,
+      actions: const [],
+      wrapRefresh: null,
+    );
+  }
+
+  @override
   void dispose() {
+    status.destroy();
     gridSettings.cancel();
     source.destroy();
 
@@ -78,72 +98,67 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
 
     return _HideBlacklistedImagesHolder(
       key: _hideKey,
-      child: GridConfiguration(
-        watch: gridSettings.watch,
-        child: GridFrame<HiddenBooruPostData>(
-          key: gridKey,
-          slivers: [
-            ListLayout<HiddenBooruPostData>(
-              hideThumbnails: false,
-              source: source.backingStorage,
-              progress: source.progress,
-              itemFactory: (context, index, cell) {
-                final extras =
-                    GridExtrasNotifier.of<HiddenBooruPostData>(context);
-
-                return DefaultListTile(
-                  functionality: extras.functionality,
-                  selection: extras.selection,
-                  index: index,
-                  cell: cell,
-                  trailing: Text(cell.booru.string),
-                  hideThumbnails: HideHiddenImagesThumbsNotifier.of(context),
-                  dismiss: TileDismiss(
-                    () {
-                      hiddenBooruPost.removeAll([(cell.postId, cell.booru)]);
-
-                      source.clearRefresh();
-                    },
-                    Icons.image_rounded,
-                  ),
+      child: ShellScope(
+        stackInjector: status,
+        configWatcher: gridSettings.watch,
+        appBar: TitleAppBarType(
+          title: l10n.hiddenPostsPageName,
+          trailingItems: [
+            Builder(
+              builder: (context) {
+                return IconButton(
+                  onPressed: () {
+                    _hideKey.currentState?.toggle();
+                  },
+                  icon: HideHiddenImagesThumbsNotifier.of(context)
+                      ? const Icon(Icons.image_rounded)
+                      : const Icon(Icons.hide_image_rounded),
                 );
               },
             ),
           ],
-          functionality: GridFunctionality(
-            onEmptySource: EmptyWidgetBackground(
-              subtitle: l10n.emptyHiddenPosts,
-            ),
-            search: PageNameSearchWidget(
-              trailingItems: [
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                      onPressed: () {
-                        _hideKey.currentState?.toggle();
-                      },
-                      icon: HideHiddenImagesThumbsNotifier.of(context)
-                          ? const Icon(Icons.image_rounded)
-                          : const Icon(Icons.hide_image_rounded),
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ),
+        elements: [
+          ElementPriority(
+            ShellElement(
+              // key: gridKey,
+              state: status,
+              slivers: [
+                ListLayout<HiddenBooruPostData>(
+                  hideThumbnails: false,
+                  source: source.backingStorage,
+                  progress: source.progress,
+                  selection: status.selection,
+                  itemFactory: (context, index, cell) {
+                    return DefaultListTile(
+                      selection: status.selection,
+                      index: index,
+                      cell: cell,
+                      trailing: Text(cell.booru.string),
+                      hideThumbnails:
+                          HideHiddenImagesThumbsNotifier.of(context),
+                      dismiss: TileDismiss(
+                        () {
+                          hiddenBooruPost
+                              .removeAll([(cell.postId, cell.booru)]);
+
+                          source.clearRefresh();
+                        },
+                        Icons.image_rounded,
+                      ),
                     );
                   },
                 ),
               ],
-              leading: IconButton(
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-                icon: const Icon(Icons.menu_rounded),
-              ),
             ),
-            source: source,
           ),
-          description: GridDescription(
-            pullToRefresh: false,
-            pageName: l10n.hiddenPostsPageName,
-            gridSeed: gridSeed,
-          ),
-        ),
+        ],
       ),
     );
   }

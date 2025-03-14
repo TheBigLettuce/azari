@@ -51,6 +51,15 @@ Future<DownloadManager> initalizeIsarDb(
     Dbs().hiddenBooruPostCachedValues[(e.postId, e.booru)] = e.thumbUrl;
   }
 
+  for (final e in IsarCollectionReverseIterable(
+    IsarCollectionIterator(
+      Dbs().blacklisted.isarDirectoryMetadatas,
+      reversed: false,
+    ),
+  )) {
+    IoServices().directoryMetadata.cache.add(e, true);
+  }
+
   final DownloadManager downloader;
 
   if (temporary) {

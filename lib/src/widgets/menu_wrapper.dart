@@ -71,10 +71,10 @@ class _MenuWrapperState extends State<MenuWrapper> {
           elevation: 6,
           clipBehavior: Clip.antiAlias,
           shape: const Border(),
-          popUpAnimationStyle: AnimationStyle(
+          popUpAnimationStyle: const AnimationStyle(
             curve: Easing.standardAccelerate,
             reverseCurve: Easing.standardDecelerate,
-            duration: const Duration(milliseconds: 280),
+            duration: Duration(milliseconds: 280),
           ),
           shadowColor: colorScheme.surface,
           surfaceTintColor: colorScheme.primary,

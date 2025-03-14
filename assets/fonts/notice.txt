@@ -1,0 +1,2 @@
+NotoSerif_Regular_Modified.ttf file includes "U+30A0-30FF,U+C544,U+C0AC,U+B9AC" glyphs from JP and KR merged together.
+KiwiMaru_Regular_a_only.ttf file includes only "U+963F" glyph.

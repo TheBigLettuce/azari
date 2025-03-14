@@ -9,17 +9,59 @@ import "package:animations/animations.dart";
 import "package:azari/init_main/build_theme.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/booru/booru_restored_page.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+
+// DecoratedBox(
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   begin: Alignment.topCenter,
+//                   end: Alignment.bottomCenter,
+//                   stops: [
+//                     0.2,
+//                     0.3,
+//                     0.5,
+//                     0.6,
+//                     0.7,
+//                     1,
+//                   ],
+//                   colors: [
+//                     theme.colorScheme.surface.withValues(alpha: 0.4),
+//                     theme.colorScheme.surface.withValues(alpha: 0.4),
+//                     theme.colorScheme.surface.withValues(alpha: 0.4),
+//                     theme.colorScheme.surface.withValues(alpha: 0.6),
+//                     theme.colorScheme.surface.withValues(alpha: 0.9),
+//                     theme.colorScheme.surface.withValues(alpha: 1),
+//                   ],
+//                 ),
+//               ),
+//               child: DecoratedBox(
+//                 decoration: BoxDecoration(
+//                   gradient: RadialGradient(
+//                     tileMode: TileMode.mirror,
+//                     center: Alignment.topLeft,
+//                     // transform: Gradient,
+//                     radius: 1,
+//                     colors: [
+//                       theme.colorScheme.surface.withValues(alpha: 0.2),
+//                       theme.colorScheme.surfaceBright.withValues(alpha: 0.25),
+//                       theme.colorScheme.surface.withValues(alpha: 0.3),
+//                       // theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+//                     ],
+//                   ),
+//                 ),
+//                 child: ,
+//               ),
+//             )
 
 class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton({
@@ -98,6 +140,7 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
         resizeToAvoidBottomInset: false,
         bottomNavigationBar: bottomNavigationBar,
         drawer: widget.drawer,
+        // backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
         body: switch (showRail) {
           true => Row(
               children: [
@@ -338,9 +381,9 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
 
   @override
   set isExpanded(bool e) {
-    if (e) {
+    if (e && scrollingAnimation.value == 0) {
       scrollingAnimation.forward();
-    } else {
+    } else if (!e && scrollingAnimation.value > 0) {
       scrollingAnimation.reverse();
     }
   }
@@ -453,164 +496,6 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
           );
         },
       ),
-    );
-  }
-}
-
-class SelectionBar extends StatefulWidget {
-  const SelectionBar({
-    super.key,
-    required this.selectionActions,
-    required this.actions,
-  });
-
-  final SelectionActions selectionActions;
-  final List<SelectionButton> actions;
-
-  @override
-  State<SelectionBar> createState() => _SelectionBarState();
-}
-
-class _SelectionBarState extends State<SelectionBar> {
-  late final StreamSubscription<void> _countEvents;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _countEvents = widget.selectionActions.controller.countEvents.listen((_) {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _countEvents.cancel();
-
-    super.dispose();
-  }
-
-  Widget _wrapped(SelectionButton e) => WrapGridActionButton(
-        e.icon,
-        e.consume,
-        animate: e.animate,
-        onLongPress: null,
-        play: e.play,
-        animation: const [],
-        addBorder: false,
-        notifier: null,
-      );
-
-  void _unselectAll() {
-    widget.selectionActions.controller.setCount(0);
-    HapticFeedback.mediumImpact();
-  }
-
-  List<PopupMenuEntry<void>> itemBuilderPopup(BuildContext context) {
-    return widget.actions
-        .getRange(0, widget.actions.length - 3)
-        .map(
-          (e) => PopupMenuItem<void>(
-            onTap: e.consume,
-            child: AbsorbPointer(
-              child: _wrapped(e),
-            ),
-          ),
-        )
-        .toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final bottomBarColor = colorScheme.surface.withValues(alpha: 0.95);
-    final textColor = colorScheme.onPrimary.withValues(alpha: 0.8);
-    final boxColor = colorScheme.primary.withValues(alpha: 0.8);
-
-    final textStyle = theme.textTheme.bodyMedium?.copyWith(
-      fontWeight: FontWeight.bold,
-      color: textColor,
-    );
-
-    final actions = widget.actions.length < 4
-        ? widget.actions.map(_wrapped).toList()
-        : widget.actions
-            .getRange(
-              widget.actions.length != 4
-                  ? widget.actions.length - 3
-                  : widget.actions.length - 3 - 1,
-              widget.actions.length,
-            )
-            .map(_wrapped)
-            .toList();
-
-    final count = widget.selectionActions.controller.count.toString();
-
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        const SizedBox(
-          height: 80,
-          child: AbsorbPointer(
-            child: SizedBox.shrink(),
-          ),
-        ),
-        BottomAppBar(
-          color: bottomBarColor,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (widget.actions.length > 4)
-                PopupMenuButton(
-                  icon: const Icon(Icons.more_vert_rounded),
-                  position: PopupMenuPosition.under,
-                  itemBuilder: itemBuilderPopup,
-                ),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Wrap(
-                    spacing: 4,
-                    children: actions,
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 28,
-                      minWidth: 28,
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: boxColor,
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8, right: 8),
-                          child: Text(
-                            count,
-                            style: textStyle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(right: 4)),
-                  IconButton.filledTonal(
-                    onPressed: _unselectAll,
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -763,12 +648,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
         onDestinationSelected: selectDestination,
         selectedIndex: selectedBooruPage.index,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-            child: Text(
-              l10n.booruLabel,
-              style: theme.textTheme.titleSmall,
-            ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(28, 16, 16, 10),
+            child: AppLogoTitle(),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(top: 8, bottom: 8),
+            child: Divider(),
           ),
           ...navigationDestinations,
           if (bookmarks.isNotEmpty) ...[
@@ -793,6 +679,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             label: l10n.settingsLabel,
             onPressed: openSettings,
           ),
+          const Padding(padding: EdgeInsets.only(bottom: 16)),
         ],
       ),
     );

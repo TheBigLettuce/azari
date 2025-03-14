@@ -57,7 +57,10 @@ enum FilteringMode {
   oneHalfStars(Icons.star_half_rounded),
   oneStars(Icons.star_rounded),
   zeroHalfStars(Icons.star_half_rounded),
-  zeroStars(Icons.star_rounded);
+  zeroStars(Icons.star_border_rounded),
+  onlyHalfStars(Icons.star_half_rounded),
+  onlyFullStars(Icons.star_rounded),
+  ;
 
   const FilteringMode(this.icon);
 
@@ -107,6 +110,8 @@ enum FilteringMode {
         FilteringMode.oneStars => "1 star",
         FilteringMode.zeroHalfStars => "0.5 star",
         FilteringMode.zeroStars => "No stars",
+        FilteringMode.onlyHalfStars => "Only half stars",
+        FilteringMode.onlyFullStars => "Only full stars",
       };
 }
 

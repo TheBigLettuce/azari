@@ -23,19 +23,18 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/pages/gallery/directories.dart";
+import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/post_cell.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/layouts/segment_layout.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:local_auth/local_auth.dart";
@@ -46,6 +45,7 @@ part "blacklisted_directory.dart";
 part "directory_metadata.dart";
 part "download_file.dart";
 part "favorite_post.dart";
+part "gallery_service.dart";
 part "grid_settings.dart";
 part "hidden_booru_post.dart";
 part "misc_settings.dart";
@@ -56,7 +56,6 @@ part "statistics_gallery.dart";
 part "statistics_general.dart";
 part "thumbnail.dart";
 part "video_settings.dart";
-part "gallery_service.dart";
 
 Future<void> initServices(AppInstanceType appType) async {
   _downloadManager ??= await init(_currentDb, appType);
@@ -159,14 +158,13 @@ mixin VisitedPostImpl implements VisitedPost {
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<VisitedPost> functionality,
     int idx,
   ) =>
       Post.imageViewSingle(
         context,
         booru,
         id,
-        wrapNotifiers: functionality.registerNotifiers,
+        // wrapNotifiers: functionality.registerNotifiers, // TODO: fix
       );
 }
 
@@ -449,6 +447,8 @@ abstract interface class MainGridHandle {
     PagingEntry entry, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
   });
 }
 
@@ -489,6 +489,8 @@ abstract interface class SecondaryGridHandle {
     String tags, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onClearRefreshCompleted,
+    void Function(GridPostSource)? onNextCompleted,
   });
 
   Future<void> destroy();
@@ -753,7 +755,6 @@ mixin DefaultPostPressable<T extends PostImpl>
   @override
   void onPressed(
     BuildContext context,
-    GridFunctionality<T> functionality,
     int idx,
   ) {
     final db = Services.of(context);
@@ -773,9 +774,10 @@ mixin DefaultPostPressable<T extends PostImpl>
       return;
     }
 
+    final fnc = OnBooruTagPressed.of(context);
+
     ImageView.defaultForGrid<T>(
       context,
-      functionality,
       ImageViewDescription(
         ignoreOnNearEnd: false,
         statistics: StatisticsBooruService.asImageViewStatistics(),
@@ -796,6 +798,11 @@ mixin DefaultPostPressable<T extends PostImpl>
                 ),
               ]);
             },
+      source: getSource(context),
+      wrapNotifiers: (child) => OnBooruTagPressed(
+        onPressed: fnc,
+        child: child,
+      ),
     );
   }
 

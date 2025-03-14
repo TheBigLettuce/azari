@@ -6,33 +6,73 @@
 part of "services.dart";
 
 extension DirectoryMetadataDataExt on DirectoryMetadata {
-  void maybeSave() => _currentDb.get<DirectoryMetadataService>()?.add(this);
+  void maybeSave() =>
+      _currentDb.get<DirectoryMetadataService>()?.addAll([this]);
+}
+
+extension GetOrCreateDirMetadataCacheExt on DirectoryMetadataService {
+  DirectoryMetadata getOrCreate(String id) {
+    final d = cache.get(id);
+    if (d != null) {
+      return d;
+    }
+
+    final newD = DirectoryMetadata(categoryName: id, time: DateTime.now());
+
+    addAll([newD]);
+
+    return newD;
+  }
+
+  Future<bool> canAuth(String id, String reason) async {
+    if (!AppInfo().canAuthBiometric) {
+      return true;
+    }
+
+    final directoryMetadata = _currentDb.get<DirectoryMetadataService>();
+    if (directoryMetadata == null) {
+      return true;
+    }
+
+    if (cache.get(id)?.requireAuth ?? false) {
+      final success =
+          await LocalAuthentication().authenticate(localizedReason: reason);
+      if (!success) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
+
+extension DirectoryMetadataCacheFindHelpersExt on DirectoryMetadataCache {
+  List<DirectoryMetadata?> getAllNulled(List<String> ids) {
+    final ret = <DirectoryMetadata?>[];
+
+    for (final id in ids) {
+      ret.add(get(id));
+    }
+
+    return ret;
+  }
 }
 
 abstract interface class DirectoryMetadataService implements ServiceMarker {
-  List<DirectoryMetadata> get toBlurAll;
-  List<DirectoryMetadata> get toPinAll;
+  DirectoryMetadataCache get cache;
 
-  SegmentCapability caps(String specialLabel);
-
-  DirectoryMetadata? get(String id);
-  DirectoryMetadata getOrCreate(String id);
-
-  void add(DirectoryMetadata data);
-
-  void put(
-    String id, {
-    required bool blur,
-    required bool auth,
-    required bool sticky,
-  });
-
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+  void addAll(List<DirectoryMetadata> data);
 }
+
+abstract class DirectoryMetadataCache
+    extends ReadOnlyStorage<String, DirectoryMetadata> {}
 
 @immutable
 abstract class DirectoryMetadata {
-  const DirectoryMetadata();
+  const factory DirectoryMetadata({
+    required String categoryName,
+    required DateTime time,
+  }) = $DirectoryMetadata;
 
   String get categoryName;
   DateTime get time;
@@ -46,4 +86,123 @@ abstract class DirectoryMetadata {
     bool? sticky,
     bool? requireAuth,
   });
+}
+
+class DirectoryMetadataSegments implements SegmentCapability {
+  const DirectoryMetadataSegments(this.specialLabel, this.db);
+
+  final DirectoryMetadataService db;
+
+  final String specialLabel;
+
+  @override
+  bool get ignoreButtons => false;
+
+  @override
+  Set<SegmentModifier> get(String seg) {
+    if (seg.isEmpty) {
+      return const {};
+    }
+
+    if (seg == "Booru" || seg == specialLabel) {
+      return const {SegmentModifier.sticky};
+    }
+
+    final m = db.cache.get(seg);
+    if (m == null) {
+      return const {};
+    }
+
+    final set = <SegmentModifier>{};
+
+    if (m.blur) {
+      set.add(SegmentModifier.blur);
+    }
+
+    if (m.requireAuth) {
+      set.add(SegmentModifier.auth);
+    }
+
+    if (m.sticky) {
+      set.add(SegmentModifier.sticky);
+    }
+
+    return set;
+  }
+
+  @override
+  void add(List<String> segments_, Set<SegmentModifier> m) {
+    final segments = segments_
+        .where((element) => element != "Booru" && element != specialLabel)
+        .toList();
+
+    if (segments.isEmpty || m.isEmpty) {
+      return;
+    }
+
+    final l = db.cache.getAllNulled(segments).indexed.map(
+          (element) =>
+              element.$2 ??
+              DirectoryMetadata(
+                categoryName: segments[element.$1],
+                time: DateTime.now(),
+              ),
+        );
+    final toUpdate = <DirectoryMetadata>[];
+
+    for (var seg in l) {
+      for (final e in m) {
+        switch (e) {
+          case SegmentModifier.blur:
+            seg = seg.copyBools(blur: true);
+          case SegmentModifier.auth:
+            seg = seg.copyBools(requireAuth: true);
+          case SegmentModifier.sticky:
+            seg = seg.copyBools(sticky: true);
+        }
+      }
+
+      toUpdate.add(seg);
+    }
+
+    db.addAll(toUpdate);
+  }
+
+  @override
+  void remove(List<String> segments_, Set<SegmentModifier> m) {
+    final segments = segments_
+        .where((element) => element != "Booru" && element != specialLabel)
+        .toList();
+
+    if (segments.isEmpty || m.isEmpty) {
+      return;
+    }
+
+    final l = db.cache.getAllNulled(segments).indexed.map(
+          (e) =>
+              e.$2 ??
+              DirectoryMetadata(
+                categoryName: segments[e.$1],
+                time: DateTime.now(),
+              ),
+        );
+    final toUpdate = <DirectoryMetadata>[];
+
+    for (var seg in l) {
+      for (final e in m) {
+        switch (e) {
+          case SegmentModifier.blur:
+            seg = seg.copyBools(blur: false);
+          case SegmentModifier.auth:
+            seg = seg.copyBools(requireAuth: false);
+          case SegmentModifier.sticky:
+            seg = seg.copyBools(sticky: false);
+        }
+      }
+
+      toUpdate.add(seg);
+    }
+
+    db.addAll(toUpdate);
+  }
 }

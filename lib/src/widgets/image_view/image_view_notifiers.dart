@@ -10,7 +10,7 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/focus_notifier.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:flutter/material.dart";
@@ -90,6 +90,7 @@ class ImageViewTagsProvider extends StatefulWidget {
   const ImageViewTagsProvider({
     super.key,
     required this.currentPage,
+    required this.countEvents,
     required this.watchTags,
     required this.tags,
     required this.currentCell,
@@ -97,6 +98,7 @@ class ImageViewTagsProvider extends StatefulWidget {
   });
 
   final Stream<int> currentPage;
+  final Stream<int> countEvents;
 
   final WatchTagsCallback? watchTags;
 
@@ -113,11 +115,11 @@ class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
   StreamSubscription<List<ImageTag>>? tagWatcher;
   final tags = ImageViewTags();
 
-  late final StreamSubscription<int> subscr;
+  late final StreamSubscription<int> indexEvents;
+  late final StreamSubscription<int> countEvents;
+
   late ContentWidgets content;
   late int currentCell;
-
-  // late final _cellStream = StreamController<ContentWidgets>.broadcast();
 
   @override
   void initState() {
@@ -128,12 +130,21 @@ class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
 
     _watchTags(content);
 
-    subscr = widget.currentPage.listen((i) {
+    indexEvents = widget.currentPage.listen((i) {
       final (c, cc) = widget.currentCell();
       content = c;
       currentCell = cc;
 
-      // _cellStream.add(c);
+      _watchTags(content);
+
+      setState(() {});
+    });
+
+    countEvents = widget.countEvents.listen((newCount) {
+      final (c, cc) = widget.currentCell();
+      content = c;
+      currentCell = cc;
+
       _watchTags(content);
 
       setState(() {});
@@ -143,7 +154,8 @@ class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
   @override
   void dispose() {
     tags.dispose();
-    subscr.cancel();
+    indexEvents.cancel();
+    countEvents.cancel();
     tagWatcher?.cancel();
 
     super.dispose();

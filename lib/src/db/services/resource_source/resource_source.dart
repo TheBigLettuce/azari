@@ -8,14 +8,37 @@ import "dart:async";
 import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
+import "package:flutter/material.dart";
 
 typedef FilterFnc<T> = bool Function(T);
+
+class _ResourceSourceNotifier<K, V> extends InheritedWidget {
+  const _ResourceSourceNotifier({
+    super.key,
+    required this.source,
+    required super.child,
+  });
+
+  final ResourceSource<K, V> source;
+
+  @override
+  bool updateShouldNotify(_ResourceSourceNotifier<K, V> oldWidget) {
+    return source != oldWidget.source;
+  }
+}
 
 extension ResourceSourceExt<K, V> on ResourceSource<K, V> {
   V? forIdx(K idx) => backingStorage.get(idx);
   V forIdxUnsafe(K idx) => backingStorage[idx];
 
   int get count => backingStorage.count;
+
+  Widget inject(Widget child) {
+    return _ResourceSourceNotifier(
+      source: this,
+      child: child,
+    );
+  }
 }
 
 /// [SortingResourceSource] exists as an optimization,
@@ -73,10 +96,19 @@ abstract interface class ResourceSource<K, V> {
   Future<int> next();
 
   void destroy();
+
+  static ResourceSource<K, V>? maybeOf<K, V>(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_ResourceSourceNotifier<K, V>>();
+
+    return widget?.source;
+  }
 }
 
 abstract class RefreshingProgress {
   const factory RefreshingProgress.empty() = _EmptyProgress;
+
+  Stream<bool> get stream;
 
   Object? get error;
 
@@ -171,6 +203,9 @@ class _EmptyProgress implements RefreshingProgress {
 
   @override
   Object? get error => null;
+
+  @override
+  Stream<bool> get stream => const Stream<bool>.empty();
 
   @override
   bool get inRefreshing => false;

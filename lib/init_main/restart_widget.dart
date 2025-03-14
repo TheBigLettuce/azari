@@ -8,11 +8,9 @@ import "dart:async";
 import "package:azari/init_main/build_theme.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/pages/home/home.dart";
-import "package:azari/src/widgets/selection_actions.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
-/// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
   const RestartWidget({
     super.key,
@@ -21,8 +19,7 @@ class RestartWidget extends StatefulWidget {
   });
 
   final Color accentColor;
-  final Widget Function(ThemeData dark, ThemeData light, SettingsData settings)
-      child;
+  final Widget Function(ThemeData dark, ThemeData light) child;
 
   static void restartApp(BuildContext context) {
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
@@ -35,18 +32,66 @@ class RestartWidget extends StatefulWidget {
 class _RestartWidgetState extends State<RestartWidget> {
   Key key = UniqueKey();
 
-  bool inBackground = false;
-  int stepsToSave = 0;
+  void restartApp() {
+    setState(() {
+      key = UniqueKey();
+    });
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        final d = buildTheme(context, Brightness.dark, widget.accentColor);
+        final l = buildTheme(context, Brightness.light, widget.accentColor);
+
+        return PinnedTagsHolder(
+          pinnedTags: Services.getOf<TagManagerService>(context)?.pinned,
+          child: KeyedSubtree(
+            key: key,
+            child: ColoredBox(
+              color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                  ? d.colorScheme.surface
+                  : l.colorScheme.surface,
+              child: widget
+                  .child(
+                d,
+                l,
+              )
+                  .animate(effects: [const FadeEffect()]),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class TimeTickerStatistics extends StatefulWidget {
+  const TimeTickerStatistics({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  State<TimeTickerStatistics> createState() => _TimeTickereStatisticsState();
+}
+
+class _TimeTickereStatisticsState extends State<TimeTickerStatistics> {
   static const int _maxSteps = 10;
 
   late final AppLifecycleListener listener;
+
   late final StreamSubscription<void>? timeTicker;
   final StreamController<Duration> timeListener = StreamController.broadcast();
   Duration currentDuration = Duration.zero;
+
   DateTime timeNow = DateTime.now();
-  final progressTab = GlobalProgressTab();
-  final selectionEvents = SelectionActions();
+
+  int stepsToSave = 0;
+  bool inBackground = false;
 
   @override
   void initState() {
@@ -117,64 +162,25 @@ class _RestartWidgetState extends State<RestartWidget> {
     );
   }
 
+  Duration _c() => currentDuration;
+
   @override
   void dispose() {
-    selectionEvents.dispose();
     timeListener.close();
     timeTicker?.cancel();
+
     listener.dispose();
 
     super.dispose();
   }
 
-  void restartApp() {
-    setState(() {
-      key = UniqueKey();
-    });
-  }
-
-  Duration _c() => currentDuration;
-
   @override
   Widget build(BuildContext context) {
-    return selectionEvents.inject(
-      progressTab.inject(
-        Services.inject(
-          Builder(
-            builder: (context) {
-              final d =
-                  buildTheme(context, Brightness.dark, widget.accentColor);
-              final l =
-                  buildTheme(context, Brightness.light, widget.accentColor);
-
-              return PinnedTagsHolder(
-                pinnedTags: Services.getOf<TagManagerService>(context)?.pinned,
-                child: TimeSpentNotifier(
-                  timeNow,
-                  ticker: timeListener.stream,
-                  current: _c,
-                  child: KeyedSubtree(
-                    key: key,
-                    child: ColoredBox(
-                      color: MediaQuery.platformBrightnessOf(context) ==
-                              Brightness.dark
-                          ? d.colorScheme.surface
-                          : l.colorScheme.surface,
-                      child: widget
-                          .child(
-                        d,
-                        l,
-                        Services.requireOf<SettingsService>(context).current,
-                      )
-                          .animate(effects: [const FadeEffect()]),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+    return TimeSpentNotifier(
+      timeNow,
+      ticker: timeListener.stream,
+      current: _c,
+      child: widget.child,
     );
   }
 }

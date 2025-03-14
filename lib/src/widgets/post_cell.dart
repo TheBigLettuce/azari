@@ -9,16 +9,16 @@ import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/booru/booru_page.dart";
 import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
-import "package:azari/src/widgets/grid_frame/parts/sticker_widget.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/widgets/post_info.dart";
 import "package:azari/src/widgets/post_info_simple.dart";
+import "package:azari/src/widgets/shell/parts/sticker_widget.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/shimmer_loading_indicator.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
@@ -27,7 +27,7 @@ import "package:photo_view/photo_view.dart";
 
 class PostCell extends StatefulWidget {
   const PostCell({
-    super.key,
+    required super.key,
     required this.post,
     required this.wrapSelection,
     required this.favoritePosts,
@@ -46,12 +46,12 @@ class PostCell extends StatefulWidget {
 
   final Widget Function(Widget child) wrapSelection;
 
-  static void openMaximizedImage(
+  static Future<void> openMaximizedImage(
     BuildContext context,
     PostImpl post,
     Contentable content,
   ) {
-    Navigator.of(context, rootNavigator: true).push<void>(
+    return Navigator.of(context, rootNavigator: true).push<void>(
       PageRouteBuilder(
         fullscreenDialog: true,
         opaque: false,
@@ -62,12 +62,13 @@ class PostCell extends StatefulWidget {
           animation,
           secondaryAnimation,
         ) {
-          final videoSettings = Services.getOf<VideoSettingsService>(context);
+          final db = Services.of(context);
 
           return _ExpandedImage(
             post: post,
             content: content,
-            videoSettings: videoSettings,
+            videoSettings: db.get<VideoSettingsService>(),
+            favoritePosts: db.get<FavoritePostSourceService>(),
           );
         },
       ),
@@ -224,7 +225,7 @@ class _CellWidgetState extends State<PostCell>
           children: [
             Expanded(child: card),
             SizedBox(
-              height: 21,
+              height: 25,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: ListView.builder(
@@ -235,38 +236,39 @@ class _CellWidgetState extends State<PostCell>
                   itemBuilder: (context, index) {
                     final e = tags[index];
 
-                    return OutlinedTagChip(
-                      tag: e.tag,
-                      letterCount: 8,
-                      isPinned: e.pinned,
-                      onDoublePressed: e.pinned || tagManager == null
-                          ? null
-                          : () {
-                              controller.animateTo(
-                                0,
-                                duration: Durations.medium3,
-                                curve: Easing.standard,
-                              );
-
-                              tagManager!.pinned.add(e.tag);
-                            },
-                      onLongPressed: widget.post is FavoritePost
-                          ? null
-                          : () {
-                              context.openSafeModeDialog(settingsService,
-                                  (safeMode) {
-                                OnBooruTagPressed.pressOf(
-                                  context,
-                                  e.tag,
-                                  widget.post.booru,
-                                  overrideSafeMode: safeMode,
+                    return Center(
+                      child: OutlinedTagChip(
+                        tag: e.tag,
+                        isPinned: e.pinned,
+                        onDoublePressed: e.pinned || tagManager == null
+                            ? null
+                            : () {
+                                controller.animateTo(
+                                  0,
+                                  duration: Durations.medium3,
+                                  curve: Easing.standard,
                                 );
-                              });
-                            },
-                      onPressed: () => OnBooruTagPressed.pressOf(
-                        context,
-                        e.tag,
-                        widget.post.booru,
+
+                                tagManager!.pinned.add(e.tag);
+                              },
+                        onLongPressed: widget.post is FavoritePost
+                            ? null
+                            : () {
+                                context.openSafeModeDialog(settingsService,
+                                    (safeMode) {
+                                  OnBooruTagPressed.pressOf(
+                                    context,
+                                    e.tag,
+                                    widget.post.booru,
+                                    overrideSafeMode: safeMode,
+                                  );
+                                });
+                              },
+                        onPressed: () => OnBooruTagPressed.pressOf(
+                          context,
+                          e.tag,
+                          widget.post.booru,
+                        ),
                       ),
                     );
                   },
@@ -292,12 +294,14 @@ class _ExpandedImage extends StatelessWidget {
     required this.post,
     required this.content,
     required this.videoSettings,
+    required this.favoritePosts,
   });
 
   final PostImpl post;
   final Contentable content;
 
   final VideoSettingsService? videoSettings;
+  final FavoritePostSourceService? favoritePosts;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +349,22 @@ class _ExpandedImage extends StatelessWidget {
           icon: const Icon(Icons.close_rounded),
         ),
         actions: [
+          IconButtonTheme(
+            data: IconButtonThemeData(style: buttonStyle),
+            child: StarsButton(
+              favoritePosts: favoritePosts,
+              idBooru: (post.id, post.booru),
+            ),
+          ),
+          if (favoritePosts != null)
+            IconButtonTheme(
+              data: IconButtonThemeData(style: buttonStyle),
+              child: FavoritePostButton(
+                post: post,
+                favoritePosts: favoritePosts!,
+                withBackground: false,
+              ),
+            ),
           IconButton(
             onPressed: () {
               showModalBottomSheet<void>(

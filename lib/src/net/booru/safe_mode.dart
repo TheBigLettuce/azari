@@ -8,7 +8,8 @@ import "package:azari/l10n/generated/app_localizations.dart";
 enum SafeMode {
   normal,
   relaxed,
-  none;
+  none,
+  explicit;
 
   const SafeMode();
 
@@ -16,11 +17,13 @@ enum SafeMode {
         SafeMode.normal => to == normal,
         SafeMode.none => to == none || to == relaxed || to == normal,
         SafeMode.relaxed => to == normal || to == relaxed,
+        SafeMode.explicit => true,
       };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
         SafeMode.normal => l10n.enumSafeModeNormal,
         SafeMode.none => l10n.enumSafeModeNone,
         SafeMode.relaxed => l10n.enumSafeModeRelaxed,
+        SafeMode.explicit => "Explicit", // TODO: change
       };
 }

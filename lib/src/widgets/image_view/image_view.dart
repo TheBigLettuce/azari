@@ -12,18 +12,17 @@ import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/platform/platform_api.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/gesture_dead_zones.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
 import "package:azari/src/widgets/image_view/default_state_controller.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/widgets/image_view/image_view_theme.dart";
 import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
 import "package:azari/src/widgets/load_tags.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:azari/src/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -176,6 +175,59 @@ class ThumbnailsNotifier extends InheritedWidget {
       provider != oldWidget.provider;
 }
 
+class ImageViewAction {
+  const ImageViewAction(
+    this.icon,
+    this.onPress, {
+    this.color,
+    this.animation = const [
+      ScaleEffect(
+        delay: Duration(milliseconds: 40),
+        duration: Durations.short3,
+        begin: Offset(1, 1),
+        end: Offset(2, 2),
+        curve: Easing.emphasizedDecelerate,
+      ),
+    ],
+    this.animate = false,
+    this.play = true,
+    this.watch,
+    this.longLoadingNotifier,
+  });
+
+  final bool animate;
+  final bool play;
+
+  /// Icon of the button.
+  final IconData icon;
+
+  /// [onPress] is called when the button gets pressed,
+  /// if [showOnlyWhenSingle] is true then this is guranteed to be called
+  /// with [selected] elements zero or one.
+  final void Function(int index)? onPress;
+
+  final Color? color;
+  final List<Effect<dynamic>> animation;
+
+  final ValueNotifier<Future<void>?>? longLoadingNotifier;
+
+  final WatchFire<(IconData?, Color?, bool?)>? watch;
+
+  ImageViewAction copy(
+    IconData? icon,
+    Color? color,
+    bool? play,
+    bool? animate,
+  ) =>
+      ImageViewAction(
+        icon ?? this.icon,
+        onPress,
+        color: color ?? this.color,
+        animate: animate ?? this.animate,
+        play: play ?? this.play,
+      );
+}
+
 class ImageView extends StatefulWidget {
   const ImageView({
     super.key,
@@ -293,40 +345,39 @@ class ImageView extends StatefulWidget {
 
   static Future<void> defaultForGrid<T extends ContentableCell>(
     BuildContext gridContext,
-    GridFunctionality<T> functionality,
     ImageViewDescription<T> imageDesctipion,
     int startingCell,
     List<ImageTag> Function(ContentWidgets)? tags,
     WatchTagsCallback? watchTags,
     void Function(T)? addToVisited, {
     PigeonGalleryDataImpl? galleryImpl,
+    required ResourceSource<int, T> source,
+    void Function(int)? download,
+    required NotifierWrapper? wrapNotifiers,
   }) {
     final selection = SelectionActions.of(gridContext);
     selection.controller.setVisibility(false);
 
-    final getCell = CellProvider.of<T>(gridContext);
-
-    addToVisited?.call(getCell(startingCell));
+    addToVisited?.call(source.forIdxUnsafe(startingCell));
 
     final ImageViewStateController stateController = galleryImpl ??
         DefaultStateController(
-          getContent: (idx) => getCell(idx).content(gridContext),
-          count: functionality.source.count,
-          countEvents: functionality.source.backingStorage.countEvents,
+          getContent: (idx) => source.forIdxUnsafe(idx).content(gridContext),
+          count: source.count,
+          countEvents: source.backingStorage.countEvents,
           statistics: imageDesctipion.statistics,
-          download: functionality.download,
+          download: download,
           watchTags: watchTags,
           tags: tags,
-          wrapNotifiers: functionality.registerNotifiers,
+          wrapNotifiers: wrapNotifiers,
           scrollUntill: (i) =>
-              GridScrollNotifier.maybeScrollToOf<T>(gridContext, i),
-          onNearEnd:
-              imageDesctipion.ignoreOnNearEnd || !functionality.source.hasNext
-                  ? null
-                  : functionality.source.next,
+              ShellScrollNotifier.maybeScrollToOf<T>(gridContext, i),
+          onNearEnd: imageDesctipion.ignoreOnNearEnd || !source.hasNext
+              ? null
+              : source.next,
           pageChange: (state) {
             imageDesctipion.pageChange?.call(state);
-            addToVisited?.call(getCell(state.currentIndex));
+            addToVisited?.call(source.backingStorage[state.currentIndex]);
           },
           videoSettingsService:
               Services.getOf<VideoSettingsService>(gridContext),

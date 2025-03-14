@@ -36,16 +36,10 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   }) {
     final List<Directory> directories = [];
 
-    final toPin = directoryMetadata.toPinAll.fold(<String, bool>{}, (map, e1) {
-      map[e1.categoryName] = e1.sticky;
-
-      return map;
-    });
-
     for (final e in source.backingStorage) {
       final segment = _segment(e);
 
-      if (toPin.containsKey(segment)) {
+      if (directoryMetadata.cache.get(segment)?.sticky ?? false) {
         directories.add(e);
       }
     }

@@ -6,7 +6,7 @@
 import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:azari/src/widgets/grid_cell_widget.dart";
 import "package:isar/isar.dart";
 
 part "visited_post.g.dart";

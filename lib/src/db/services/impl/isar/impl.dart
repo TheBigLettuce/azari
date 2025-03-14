@@ -27,7 +27,6 @@ import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_state.da
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/db/services/impl/isar/schemas/grid_state/updates_available.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
-import "package:azari/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/settings/video_settings.dart";
 import "package:azari/src/db/services/impl/isar/schemas/statistics/daily_statistics.dart";
@@ -42,6 +41,7 @@ import "package:azari/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:azari/src/db/services/impl_table/io.dart";
 import "package:azari/src/db/services/isolates/event_table.dart";
 import "package:azari/src/db/services/posts_source.dart";
+import "package:azari/src/db/services/resource_source/basic.dart";
 import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/resource_source/resource_source.dart";
 import "package:azari/src/db/services/resource_source/source_storage.dart";
@@ -51,10 +51,9 @@ import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/pages/home/home.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:isar/isar.dart";
@@ -64,9 +63,7 @@ import "package:path/path.dart" as path;
 part "foundation/initalize_db.dart";
 part "settings.dart";
 
-// final _futures = <(int, AnimeMetadata), Future<void>>{};
-
-abstract class IsarGridSettingsData implements GridSettingsData {
+abstract class IsarGridSettingsData implements ShellConfigurationData {
   const IsarGridSettingsData({
     required this.aspectRatio,
     required this.columns,
@@ -100,9 +97,16 @@ class IsarCurrentBooruSource extends GridPostSource
     required this.entry,
     required this.tags,
     required this.filters,
+    required this.onNextCompleted,
+    required this.onClearRefreshCompleted,
   })  : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
         updatesAvailable =
             IsarUpdatesAvailableImpl(db, api, safeMode_, () => tags);
+
+  @override
+  final void Function(GridPostSource)? onNextCompleted;
+  @override
+  final void Function(GridPostSource)? onClearRefreshCompleted;
 
   @override
   final BooruAPI api;
@@ -490,44 +494,44 @@ class IsarVideoService implements VideoSettingsService {
       collection.watchLazy().map((_) => current).listen(f);
 }
 
-class IsarMiscSettingsService implements MiscSettingsService {
-  const IsarMiscSettingsService();
+// class IsarMiscSettingsService implements MiscSettingsService {
+//   const IsarMiscSettingsService();
 
-  Isar get db => Dbs().main;
+//   Isar get db => Dbs().main;
 
-  @visibleForTesting
-  void clearStorageTest_() {
-    collection.clearSync();
-  }
+//   @visibleForTesting
+//   void clearStorageTest_() {
+//     collection.clearSync();
+//   }
 
-  IsarCollection<IsarMiscSettings> get collection => db.isarMiscSettings;
+//   IsarCollection<IsarMiscSettings> get collection => db.isarMiscSettings;
 
-  @override
-  MiscSettingsData get current =>
-      collection.getSync(0) ??
-      const IsarMiscSettings(
-        filesExtendedActions: false,
-        themeType: ThemeType.systemAccent,
-        favoritesThumbId: 0,
-        favoritesPageMode: FilteringMode.tag,
-        randomVideosAddTags: "",
-        randomVideosOrder: RandomPostsOrder.latest,
-      );
+//   @override
+//   MiscSettingsData get current =>
+//       collection.getSync(0) ??
+//       const IsarMiscSettings(
+//         filesExtendedActions: false,
+//         themeType: ThemeType.systemAccent,
+//         favoritesThumbId: 0,
+//         favoritesPageMode: FilteringMode.tag,
+//         randomVideosAddTags: "",
+//         randomVideosOrder: RandomPostsOrder.latest,
+//       );
 
-  @override
-  void add(MiscSettingsData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarMiscSettings),
-    );
-  }
+//   @override
+//   void add(MiscSettingsData data) {
+//     db.writeTxnSync(
+//       () => collection.putSync(data as IsarMiscSettings),
+//     );
+//   }
 
-  @override
-  StreamSubscription<MiscSettingsData> watch(
-    void Function(MiscSettingsData) f, [
-    bool fire = false,
-  ]) =>
-      collection.watchLazy(fireImmediately: fire).map((e) => current).listen(f);
-}
+//   @override
+//   StreamSubscription<MiscSettingsData> watch(
+//     void Function(MiscSettingsData) f, [
+//     bool fire = false,
+//   ]) =>
+//       collection.watchLazy(fireImmediately: fire).map((e) => current).listen(f);
+// }
 
 class IsarHiddenBooruPostService implements HiddenBooruPostsService {
   const IsarHiddenBooruPostService();
@@ -1071,8 +1075,68 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   void destroy() {}
 }
 
+class IsarDirectoryMetadataCache extends MapStorage<String, DirectoryMetadata>
+    implements DirectoryMetadataCache {
+  IsarDirectoryMetadataCache(super.getKey);
+
+  // @override
+  // DirectoryMetadata getOrCreate(String id) {
+  //   var d = get(id);
+  //   if (d == null) {
+  //     d = IsarDirectoryMetadata(
+  //       isarId: null,
+  //       categoryName: id,
+  //       time: DateTime.now(),
+  //       flags: 0,
+  //     );
+
+  //     db.writeTxnSync(
+  //       () => collection.putByCategoryNameSync(d! as IsarDirectoryMetadata),
+  //     );
+  //   }
+
+  //   return d;
+  // }
+
+  // @override
+  // void put(
+  //   String id, {
+  //   required bool blur,
+  //   required bool auth,
+  //   required bool sticky,
+  // }) {
+  //   if (id.isEmpty) {
+  //     return;
+  //   }
+
+  //   db.writeTxnSync(
+  //     () {
+  //       collection.putByCategoryNameSync(
+  //         IsarDirectoryMetadata(
+  //           categoryName: id,
+  //           time: DateTime.now(),
+  //           flags: IsarDirectoryMetadata.makeFlags(
+  //             requireAuth: auth,
+  //             sticky: sticky,
+  //             blur: blur,
+  //           ),
+  //           isarId: null,
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  // @override
+  // StreamSubscription<void> watch(
+  //   void Function(void p1) f, [
+  //   bool fire = false,
+  // ]) =>
+  //     collection.watchLazy(fireImmediately: fire).listen(f);
+}
+
 class IsarDirectoryMetadataService implements DirectoryMetadataService {
-  const IsarDirectoryMetadataService();
+  IsarDirectoryMetadataService();
 
   Isar get db => Dbs().blacklisted;
 
@@ -1080,212 +1144,16 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
       db.isarDirectoryMetadatas;
 
   @override
-  List<DirectoryMetadata> get toPinAll =>
-      collection.where().stickyEqualTo(true).findAllSync();
+  final IsarDirectoryMetadataCache cache =
+      IsarDirectoryMetadataCache((e) => e.categoryName);
 
   @override
-  List<DirectoryMetadata> get toBlurAll =>
-      collection.where().blurEqualTo(true).findAllSync();
-
-  @override
-  SegmentCapability caps(String specialLabel) =>
-      _DirectoryMetadataCap(specialLabel, this);
-
-  @override
-  DirectoryMetadata? get(String id) => collection.getByCategoryNameSync(id);
-
-  @override
-  DirectoryMetadata getOrCreate(String id) {
-    var d = get(id);
-    if (d == null) {
-      d = IsarDirectoryMetadata(
-        isarId: null,
-        categoryName: id,
-        time: DateTime.now(),
-        blur: false,
-        sticky: false,
-        requireAuth: false,
-      );
-
-      db.writeTxnSync(
-        () => collection.putByCategoryNameSync(d! as IsarDirectoryMetadata),
-      );
-    }
-
-    return d;
-  }
-
-  @override
-  void add(DirectoryMetadata data) {
+  void addAll(List<DirectoryMetadata> data) {
     db.writeTxnSync(
       () {
-        collection.putByCategoryNameSync(data as IsarDirectoryMetadata);
+        collection.putAllByCategoryNameSync(data.cast());
+        cache.addAll(data);
       },
-    );
-  }
-
-  @override
-  void put(
-    String id, {
-    required bool blur,
-    required bool auth,
-    required bool sticky,
-  }) {
-    if (id.isEmpty) {
-      return;
-    }
-
-    db.writeTxnSync(
-      () {
-        collection.putByCategoryNameSync(
-          IsarDirectoryMetadata(
-            categoryName: id,
-            time: DateTime.now(),
-            blur: blur,
-            requireAuth: auth,
-            sticky: sticky,
-            isarId: null,
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  StreamSubscription<void> watch(
-    void Function(void p1) f, [
-    bool fire = false,
-  ]) =>
-      collection.watchLazy(fireImmediately: fire).listen(f);
-}
-
-class _DirectoryMetadataCap implements SegmentCapability {
-  const _DirectoryMetadataCap(this.specialLabel, this.db);
-
-  final IsarDirectoryMetadataService db;
-
-  final String specialLabel;
-
-  @override
-  bool get ignoreButtons => false;
-
-  @override
-  Set<SegmentModifier> modifiersFor(String seg) {
-    if (seg.isEmpty) {
-      return const {};
-    }
-
-    if (seg == "Booru" || seg == specialLabel) {
-      return const {SegmentModifier.sticky};
-    }
-
-    final m = db.get(seg);
-    if (m == null) {
-      return const {};
-    }
-
-    final set = <SegmentModifier>{};
-
-    if (m.blur) {
-      set.add(SegmentModifier.blur);
-    }
-
-    if (m.requireAuth) {
-      set.add(SegmentModifier.auth);
-    }
-
-    if (m.sticky) {
-      set.add(SegmentModifier.sticky);
-    }
-
-    return set;
-  }
-
-  @override
-  void addModifiers(List<String> segments_, Set<SegmentModifier> m) {
-    final segments = segments_
-        .where((element) => element != "Booru" && element != specialLabel)
-        .toList();
-
-    if (segments.isEmpty || m.isEmpty) {
-      return;
-    }
-
-    final l = db.collection.getAllByCategoryNameSync(segments).indexed.map(
-          (element) =>
-              element.$2 ??
-              IsarDirectoryMetadata(
-                categoryName: segments[element.$1],
-                time: DateTime.now(),
-                blur: false,
-                sticky: false,
-                requireAuth: false,
-                isarId: null,
-              ),
-        );
-    final toUpdate = <IsarDirectoryMetadata>[];
-
-    for (var seg in l) {
-      for (final e in m) {
-        switch (e) {
-          case SegmentModifier.blur:
-            seg = seg.copyBools(blur: true);
-          case SegmentModifier.auth:
-            seg = seg.copyBools(requireAuth: true);
-          case SegmentModifier.sticky:
-            seg = seg.copyBools(sticky: true);
-        }
-      }
-
-      toUpdate.add(seg);
-    }
-
-    db.db.writeTxnSync(
-      () => db.collection.putAllByCategoryNameSync(toUpdate),
-    );
-  }
-
-  @override
-  void removeModifiers(List<String> segments_, Set<SegmentModifier> m) {
-    final segments = segments_
-        .where((element) => element != "Booru" && element != specialLabel)
-        .toList();
-
-    if (segments.isEmpty || m.isEmpty) {
-      return;
-    }
-
-    final l = db.collection.getAllByCategoryNameSync(segments).indexed.map(
-          (e) =>
-              e.$2 ??
-              IsarDirectoryMetadata(
-                categoryName: segments[e.$1],
-                time: DateTime.now(),
-                blur: false,
-                sticky: false,
-                requireAuth: false,
-                isarId: null,
-              ),
-        );
-    final toUpdate = <IsarDirectoryMetadata>[];
-
-    for (var seg in l) {
-      for (final e in m) {
-        switch (e) {
-          case SegmentModifier.blur:
-            seg = seg.copyBools(blur: false);
-          case SegmentModifier.auth:
-            seg = seg.copyBools(requireAuth: false);
-          case SegmentModifier.sticky:
-            seg = seg.copyBools(sticky: false);
-        }
-      }
-
-      toUpdate.add(seg);
-    }
-
-    db.db.writeTxnSync(
-      () => db.collection.putAllByCategoryNameSync(toUpdate),
     );
   }
 }
@@ -1358,7 +1226,7 @@ class IsarFilesGridSettingsData implements WatchableGridSettingsData {
       db.isarGridSettingsFiles;
 
   @override
-  GridSettingsData get current =>
+  ShellConfigurationData get current =>
       collection.getSync(0) ??
       IsarGridSettingsFiles(
         aspectRatio: GridAspectRatio.one,
@@ -1368,15 +1236,15 @@ class IsarFilesGridSettingsData implements WatchableGridSettingsData {
       );
 
   @override
-  set current(GridSettingsData d) {
+  set current(ShellConfigurationData d) {
     db.writeTxnSync(
       () => collection.putSync(d as IsarGridSettingsFiles),
     );
   }
 
   @override
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData p1) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData p1) f, [
     bool fire = false,
   ]) =>
       collection
@@ -1396,7 +1264,7 @@ class IsarFavoritesGridSettingsData implements WatchableGridSettingsData {
       db.isarGridSettingsFavorites;
 
   @override
-  GridSettingsData get current =>
+  ShellConfigurationData get current =>
       collection.getSync(0) ??
       const IsarGridSettingsFavorites(
         aspectRatio: GridAspectRatio.one,
@@ -1406,15 +1274,15 @@ class IsarFavoritesGridSettingsData implements WatchableGridSettingsData {
       );
 
   @override
-  set current(GridSettingsData d) {
+  set current(ShellConfigurationData d) {
     db.writeTxnSync(
       () => collection.putSync(d as IsarGridSettingsFavorites),
     );
   }
 
   @override
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData p1) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData p1) f, [
     bool fire = false,
   ]) =>
       collection
@@ -1432,7 +1300,7 @@ class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
       db.isarGridSettingsDirectories;
 
   @override
-  GridSettingsData get current =>
+  ShellConfigurationData get current =>
       collection.getSync(0) ??
       IsarGridSettingsDirectories(
         aspectRatio: GridAspectRatio.oneTwo,
@@ -1442,15 +1310,15 @@ class IsarDirectoriesGridSettingsData implements WatchableGridSettingsData {
       );
 
   @override
-  set current(GridSettingsData d) {
+  set current(ShellConfigurationData d) {
     db.writeTxnSync(
       () => collection.putSync(d as IsarGridSettingsDirectories),
     );
   }
 
   @override
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData p1) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData p1) f, [
     bool fire = false,
   ]) =>
       collection
@@ -1468,7 +1336,7 @@ class IsarBooruGridSettingsData implements WatchableGridSettingsData {
       db.isarGridSettingsBoorus;
 
   @override
-  GridSettingsData get current =>
+  ShellConfigurationData get current =>
       collection.getSync(0) ??
       IsarGridSettingsBooru(
         aspectRatio: GridAspectRatio.one,
@@ -1478,15 +1346,15 @@ class IsarBooruGridSettingsData implements WatchableGridSettingsData {
       );
 
   @override
-  set current(GridSettingsData d) {
+  set current(ShellConfigurationData d) {
     db.writeTxnSync(
       () => collection.putSync(d as IsarGridSettingsBooru),
     );
   }
 
   @override
-  StreamSubscription<GridSettingsData> watch(
-    void Function(GridSettingsData p1) f, [
+  StreamSubscription<ShellConfigurationData> watch(
+    void Function(ShellConfigurationData p1) f, [
     bool fire = false,
   ]) =>
       collection
@@ -2010,6 +1878,8 @@ class IsarSecondaryGridService implements SecondaryGridHandle {
     String tags, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
   }) =>
       IsarCurrentBooruSource(
         db: _secondaryGrid,
@@ -2017,6 +1887,8 @@ class IsarSecondaryGridService implements SecondaryGridHandle {
         excluded: excluded,
         entry: entry,
         tags: tags,
+        onClearRefreshCompleted: onClearRefreshCompleted,
+        onNextCompleted: onNextCompleted,
         safeMode_: () => currentState.safeMode,
         filters: [
           if (hiddenBooruPosts != null)
@@ -2100,6 +1972,8 @@ class IsarMainGridService implements MainGridHandle {
     PagingEntry entry, {
     required BooruTagging<Excluded>? excluded,
     required HiddenBooruPostsService? hiddenBooruPosts,
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
   }) =>
       IsarCurrentBooruSource(
         db: _mainGrid,
@@ -2108,6 +1982,8 @@ class IsarMainGridService implements MainGridHandle {
         entry: entry,
         tags: "",
         safeMode_: () => IoServices().settings.current.safeMode,
+        onClearRefreshCompleted: onClearRefreshCompleted,
+        onNextCompleted: onNextCompleted,
         filters: [
           if (hiddenBooruPosts != null)
             (p) => !hiddenBooruPosts.isHidden(p.id, p.booru),

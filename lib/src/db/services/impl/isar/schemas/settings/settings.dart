@@ -5,11 +5,17 @@
 
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
+import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
 import "package:isar/isar.dart";
 
 part "settings.g.dart";
+
+const int _safeFilters = 0x0001;
+const int _sampleThumbnails = 0x0002;
+const int _welcomePage = 0x0004;
+const int _filesExtendedActions = 0x0008;
 
 @embedded
 class IsarSettingsPath implements SettingsPath {
@@ -33,34 +39,49 @@ class IsarSettingsPath implements SettingsPath {
 @collection
 class IsarSettings extends SettingsData {
   const IsarSettings({
-    required this.sampleThumbnails,
+    required this.flags,
     required this.path,
     required this.selectedBooru,
     required this.quality,
     required this.safeMode,
-    required this.showWelcomePage,
-    required this.extraSafeFilters,
+    required this.themeType,
+    required this.randomVideosAddTags,
+    required this.randomVideosOrder,
   });
 
   const IsarSettings.empty()
-      : extraSafeFilters = true,
-        showWelcomePage = true,
+      : flags = _safeFilters | _welcomePage,
         path = const IsarSettingsPath(),
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
-        sampleThumbnails = false,
-        safeMode = SafeMode.normal;
+        safeMode = SafeMode.normal,
+        randomVideosAddTags = "",
+        randomVideosOrder = RandomPostsOrder.latest,
+        themeType = ThemeType.systemAccent;
 
   Id get id => 0;
 
   @override
+  @ignore
+  bool get extraSafeFilters => (flags & _safeFilters) == _safeFilters;
+
+  @override
+  @ignore
+  bool get sampleThumbnails => (flags & _sampleThumbnails) == _sampleThumbnails;
+
+  @override
+  @ignore
+  bool get showWelcomePage => (flags & _welcomePage) == _welcomePage;
+
+  @override
+  @ignore
+  bool get filesExtendedActions =>
+      (flags & _filesExtendedActions) == _filesExtendedActions;
+
+  final int flags;
+
+  @override
   final IsarSettingsPath path;
-
-  @override
-  final bool extraSafeFilters;
-
-  @override
-  final bool sampleThumbnails;
 
   @override
   @enumerated
@@ -75,7 +96,15 @@ class IsarSettings extends SettingsData {
   final Booru selectedBooru;
 
   @override
-  final bool showWelcomePage;
+  @enumerated
+  final ThemeType themeType;
+
+  @override
+  final String randomVideosAddTags;
+
+  @override
+  @enumerated
+  final RandomPostsOrder randomVideosOrder;
 
   @override
   IsarSettings copy({
@@ -86,15 +115,41 @@ class IsarSettings extends SettingsData {
     SafeMode? safeMode,
     bool? showWelcomePage,
     bool? sampleThumbnails,
+    bool? filesExtendedActions,
+    ThemeType? themeType,
+    String? randomVideosAddTags,
+    RandomPostsOrder? randomVideosOrder,
   }) {
+    final safeFiltersValue = (extraSafeFilters != null && extraSafeFilters) ||
+            (extraSafeFilters == null && this.extraSafeFilters)
+        ? _safeFilters
+        : 0;
+    final welcomePageValue = (showWelcomePage != null && showWelcomePage) ||
+            (showWelcomePage == null && this.showWelcomePage)
+        ? _welcomePage
+        : 0;
+    final sampleValue = (sampleThumbnails != null && sampleThumbnails) ||
+            (sampleThumbnails == null && this.sampleThumbnails)
+        ? _sampleThumbnails
+        : 0;
+    final filesExtendedActionsValue =
+        (filesExtendedActions != null && filesExtendedActions) ||
+                (filesExtendedActions == null && this.filesExtendedActions)
+            ? _filesExtendedActions
+            : 0;
+
     return IsarSettings(
-      extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
-      showWelcomePage: showWelcomePage ?? this.showWelcomePage,
+      flags: safeFiltersValue |
+          welcomePageValue |
+          sampleValue |
+          filesExtendedActionsValue,
       path: (path as IsarSettingsPath?) ?? this.path,
       selectedBooru: selectedBooru ?? this.selectedBooru,
       quality: quality ?? this.quality,
       safeMode: safeMode ?? this.safeMode,
-      sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
+      themeType: themeType ?? this.themeType,
+      randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
+      randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
     );
   }
 }

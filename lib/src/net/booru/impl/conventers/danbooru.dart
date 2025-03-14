@@ -130,7 +130,7 @@ class _DanbooruPost extends PostImpl
 
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  Booru get booru => Booru.danbooru;
+  Booru get booru => Booru.danbooru; // TODO: replace with value from API
 
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)

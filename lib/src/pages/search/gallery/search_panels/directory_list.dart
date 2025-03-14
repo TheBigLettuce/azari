@@ -11,7 +11,7 @@ class _DirectoryList extends StatefulWidget {
     required this.filteringEvents,
     required this.source,
     required this.searchController,
-    required this.blurMap,
+    required this.directoryMetadatas,
     required this.onDirectoryPressed,
   });
 
@@ -20,7 +20,7 @@ class _DirectoryList extends StatefulWidget {
 
   final ResourceSource<int, Directory> source;
 
-  final Map<String, bool> blurMap;
+  final DirectoryMetadataService? directoryMetadatas;
 
   final void Function(Directory) onDirectoryPressed;
 
@@ -83,10 +83,13 @@ class __DirectoryListState extends State<_DirectoryList> {
     }
 
     if (cell.tag.isNotEmpty) {
-      return widget.blurMap.containsKey(cell.tag);
+      return widget.directoryMetadatas?.cache.get(cell.tag)?.blur ?? false;
     }
 
-    return widget.blurMap[cell.name.split(" ").first.toLowerCase()] ?? false;
+    return widget.directoryMetadatas?.cache
+            .get(cell.name.split(" ").first.toLowerCase())
+            ?.blur ??
+        false;
   }
 
   @override

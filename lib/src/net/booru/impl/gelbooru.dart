@@ -147,6 +147,7 @@ class Gelbooru implements BooruAPI {
       SafeMode.none => "",
       SafeMode.normal => "rating:general",
       SafeMode.relaxed => "-rating:explicit -rating:questionable",
+      SafeMode.explicit => "rating:explicit",
     };
 
     final query = <String, dynamic>{

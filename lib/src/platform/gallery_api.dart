@@ -9,7 +9,7 @@ import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/shell/layouts/segment_layout.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
@@ -70,6 +70,9 @@ class TrashCell implements AsyncCell<Directory> {
 
   final AppLocalizations l10n;
   final GalleryTrash galleryTrash;
+
+  bool get hasData => _currentData != null;
+  Stream<Directory?> get stream => _events.stream;
 
   Directory? _currentData;
   Future<Directory?>? _trashFuture;

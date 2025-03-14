@@ -11,10 +11,9 @@ import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/cell.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/contentable.dart";
-import "package:azari/src/widgets/grid_frame/configuration/cell/sticker.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
+import "package:azari/src/widgets/grid_cell/cell.dart";
+import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/widgets/grid_cell/sticker.dart";
 import "package:azari/src/widgets/image_view/image_view.dart";
 import "package:azari/src/widgets/image_view/image_view_fab.dart";
 import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
@@ -124,6 +123,7 @@ class PigeonGalleryDataImpl
   Widget injectMetadataProvider(Widget child) {
     final ret = ImageViewTagsProvider(
       currentPage: indexEvents,
+      countEvents: countEvents,
       currentCell: () => (source.forIdxUnsafe(currentIndex), currentIndex),
       tags: tags,
       watchTags: watchTags,

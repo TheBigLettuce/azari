@@ -47,18 +47,18 @@ void main() {
     _settingsServiceTests(services);
   });
 
-  group("MiscSettings service tests", () {
-    setUp(() {
-      services.miscSettings.clearStorageTest_();
-    });
+  // group("MiscSettings service tests", () {
+  //   setUp(() {
+  //     services.settings.clearStorageTest_();
+  //   });
 
-    _miscSettingsServiceTests(services);
-  });
+  //   _miscSettingsServiceTests(services);
+  // });
 }
 
-void _miscSettingsServiceTests(IoServices services) {
-  test("Combined MiscSettings test", () {});
-}
+// void _miscSettingsServiceTests(IoServices services) {
+//   test("Combined MiscSettings test", () {});
+// }
 
 void _settingsServiceTests(IoServices services) {
   test("SettingsPath", tags: ["db"], () {

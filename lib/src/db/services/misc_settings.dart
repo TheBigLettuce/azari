@@ -5,83 +5,56 @@
 
 part of "services.dart";
 
-extension MiscSettingsDataExt on MiscSettingsData {
-  void maybeSave() => _currentDb.get<MiscSettingsService>()?.add(this);
-}
+// extension MiscSettingsDataExt on MiscSettingsData {
+//   void maybeSave() => _currentDb.get<MiscSettingsService>()?.add(this);
+// }
 
-abstract interface class MiscSettingsService implements ServiceMarker {
-  MiscSettingsData get current;
+// abstract interface class MiscSettingsService implements ServiceMarker {
+//   MiscSettingsData get current;
 
-  void add(MiscSettingsData data);
+//   void add(MiscSettingsData data);
 
-  StreamSubscription<MiscSettingsData> watch(
-    void Function(MiscSettingsData) f, [
-    bool fire = false,
-  ]);
-}
+//   StreamSubscription<MiscSettingsData> watch(
+//     void Function(MiscSettingsData) f, [
+//     bool fire = false,
+//   ]);
+// }
 
-mixin MiscSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
-  MiscSettingsService? get miscSettingsService;
+// mixin MiscSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
+//   MiscSettingsService? get miscSettingsService;
 
-  StreamSubscription<MiscSettingsData>? _miscSettingsEvents;
+//   StreamSubscription<MiscSettingsData>? _miscSettingsEvents;
 
-  late MiscSettingsData? miscSettings;
+//   late MiscSettingsData? miscSettings;
 
-  void onNewMiscSettings(MiscSettingsData newSettings) {}
+//   void onNewMiscSettings(MiscSettingsData newSettings) {}
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    miscSettings = miscSettingsService?.current;
+//     miscSettings = miscSettingsService?.current;
 
-    _miscSettingsEvents?.cancel();
-    _miscSettingsEvents = miscSettingsService?.watch((newSettings) {
-      onNewMiscSettings(newSettings);
+//     _miscSettingsEvents?.cancel();
+//     _miscSettingsEvents = miscSettingsService?.watch((newSettings) {
+//       onNewMiscSettings(newSettings);
 
-      setState(() {
-        miscSettings = newSettings;
-      });
-    });
-  }
+//       setState(() {
+//         miscSettings = newSettings;
+//       });
+//     });
+//   }
 
-  @override
-  void dispose() {
-    _miscSettingsEvents?.cancel();
+//   @override
+//   void dispose() {
+//     _miscSettingsEvents?.cancel();
 
-    super.dispose();
-  }
-}
+//     super.dispose();
+//   }
+// }
 
-enum ThemeType {
-  systemAccent(),
-  pink();
+// @immutable
+// abstract class MiscSettingsData {
+//   const MiscSettingsData();
 
-  const ThemeType();
-
-  String translatedString(AppLocalizations l10n) => switch (this) {
-        ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
-        ThemeType.pink => l10n.enumThemeTypePink,
-      };
-}
-
-@immutable
-abstract class MiscSettingsData {
-  const MiscSettingsData();
-
-  bool get filesExtendedActions;
-  int get favoritesThumbId;
-  ThemeType get themeType;
-  FilteringMode get favoritesPageMode;
-  String get randomVideosAddTags;
-  RandomPostsOrder get randomVideosOrder;
-
-  MiscSettingsData copy({
-    bool? filesExtendedActions,
-    int? favoritesThumbId,
-    ThemeType? themeType,
-    FilteringMode? favoritesPageMode,
-    String? randomVideosAddTags,
-    RandomPostsOrder? randomVideosOrder,
-  });
-}
+// }

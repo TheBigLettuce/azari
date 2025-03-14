@@ -6,8 +6,8 @@
 part of "services.dart";
 
 extension FavoritePostSaveExt on FavoritePost {
-  void save(FavoritePostSourceService favoritePosts) {
-    favoritePosts.addAll([
+  void maybeSave() {
+    _currentDb.get<FavoritePostSourceService>()?.addAll([
       this,
     ]);
   }

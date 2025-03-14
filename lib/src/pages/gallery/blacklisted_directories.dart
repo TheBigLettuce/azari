@@ -9,15 +9,12 @@ import "package:azari/src/db/services/resource_source/filtering_mode.dart";
 import "package:azari/src/db/services/services.dart";
 import "package:azari/src/typedefs.dart";
 import "package:azari/src/widgets/common_grid_data.dart";
-import "package:azari/src/widgets/empty_widget.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_column.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_functionality.dart";
-import "package:azari/src/widgets/grid_frame/configuration/grid_search_widget.dart";
-import "package:azari/src/widgets/grid_frame/grid_frame.dart";
-import "package:azari/src/widgets/grid_frame/layouts/list_layout.dart";
-import "package:azari/src/widgets/grid_frame/parts/grid_configuration.dart";
-import "package:azari/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:azari/src/widgets/selection_bar.dart";
+import "package:azari/src/widgets/shell/configuration/grid_aspect_ratio.dart";
+import "package:azari/src/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/widgets/shell/layouts/list_layout.dart";
+import "package:azari/src/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class BlacklistedDirectoriesPage extends StatefulWidget {
@@ -26,9 +23,11 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
     required this.popScope,
     required this.settingsService,
     required this.blacklistedDirectories,
+    required this.selectionController,
   });
 
   final void Function(bool) popScope;
+  final SelectionController selectionController;
 
   final SettingsService settingsService;
   final BlacklistedDirectoryService blacklistedDirectories;
@@ -39,7 +38,7 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
 }
 
 class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
-    with CommonGridData<Post, BlacklistedDirectoriesPage> {
+    with CommonGridData<BlacklistedDirectoriesPage> {
   BlacklistedDirectoryService get blacklistedDirectory =>
       widget.blacklistedDirectories;
 
@@ -49,6 +48,8 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;
   final searchTextController = TextEditingController();
+
+  late final SourceShellElementState<BlacklistedDirectoryData> status;
 
   final gridConfiguration = CancellableWatchableGridSettingsData.noPersist(
     hideName: false,
@@ -73,11 +74,22 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
     );
+
+    status = SourceShellElementState(
+      source: filter,
+      onEmpty: SourceOnEmptyInterface(
+        filter,
+        (context) => context.l10n().emptyHiddenDirectories,
+      ),
+      selectionController: widget.selectionController,
+      actions: const [],
+    );
   }
 
   @override
   void dispose() {
     searchTextController.dispose();
+    status.destroy();
 
     filter.destroy();
 
@@ -88,58 +100,55 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return GridConfiguration(
-      watch: gridConfiguration.watch,
-      child: WrapGridPage(
-        child: GridFrame<BlacklistedDirectoryData>(
-          key: gridKey,
-          slivers: [
-            ListLayout<BlacklistedDirectoryData>(
-              hideThumbnails: false,
-              source: filter.backingStorage,
-              progress: filter.progress,
-              itemFactory: (context, idx, cell) {
-                final extras =
-                    GridExtrasNotifier.of<BlacklistedDirectoryData>(context);
+    // WrapGridPage(
+    //   child: ,
+    // ),
 
-                return DefaultListTile(
-                  functionality: extras.functionality,
-                  selection: extras.selection,
-                  index: idx,
-                  cell: cell,
-                  hideThumbnails: false,
-                  dismiss: TileDismiss(
-                    () {
-                      blacklistedDirectory.backingStorage
-                          .removeAll([cell.bucketId]);
-                    },
-                    Icons.restore_page_rounded,
-                  ),
-                );
-              },
-            ),
-          ],
-          functionality: GridFunctionality(
-            onEmptySource: EmptyWidgetBackground(
-              subtitle: l10n.emptyHiddenDirectories,
-            ),
-            search: PageNameSearchWidget(
-              leading: IconButton(
-                onPressed: () {
-                  widget.popScope(false);
-                },
-                icon: const Icon(Icons.arrow_back),
-              ),
-            ),
-            source: filter,
-          ),
-          description: GridDescription(
-            animationsOnSourceWatch: false,
-            pageName: l10n.blacklistedFoldersPage,
-            gridSeed: gridSeed,
-          ),
+    return ShellScope(
+      stackInjector: status,
+      configWatcher: gridConfiguration.watch,
+      appBar: TitleAppBarType(
+        title: l10n.blacklistedFoldersPage,
+        leading: IconButton(
+          onPressed: () {
+            widget.popScope(false);
+          },
+          icon: const Icon(Icons.arrow_back),
         ),
       ),
+      // gridSeed: gridSeed,
+      elements: [
+        ElementPriority(
+          ShellElement(
+            // key: gridKey,
+            animationsOnSourceWatch: false,
+            state: status,
+            slivers: [
+              ListLayout<BlacklistedDirectoryData>(
+                hideThumbnails: false,
+                source: filter.backingStorage,
+                progress: filter.progress,
+                selection: status.selection,
+                itemFactory: (context, idx, cell) {
+                  return DefaultListTile(
+                    selection: status.selection,
+                    index: idx,
+                    cell: cell,
+                    hideThumbnails: false,
+                    dismiss: TileDismiss(
+                      () {
+                        blacklistedDirectory.backingStorage
+                            .removeAll([cell.bucketId]);
+                      },
+                      Icons.restore_page_rounded,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

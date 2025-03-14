@@ -24,7 +24,7 @@ import "package:azari/src/pages/other/settings/settings_page.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/selection_actions.dart";
+import "package:azari/src/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
