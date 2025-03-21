@@ -5,8 +5,8 @@
 
 import "dart:ui" as ui;
 
-import "package:azari/src/db/services/services.dart";
-import "package:azari/theme.dart";
+import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/theme.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 

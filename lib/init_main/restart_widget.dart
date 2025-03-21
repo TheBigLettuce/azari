@@ -6,8 +6,8 @@
 import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
-import "package:azari/src/db/services/services.dart";
-import "package:azari/src/pages/home/home.dart";
+import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -199,6 +199,14 @@ class GlobalProgressTab {
   }
 
   final Map<String, ValueNotifier<dynamic>> _notifiers = {};
+
+  void dispose() {
+    for (final e in _notifiers.values) {
+      e.dispose();
+    }
+
+    _notifiers.clear();
+  }
 
   Widget inject(Widget child) => _ProgressTab(tab: this, child: child);
 

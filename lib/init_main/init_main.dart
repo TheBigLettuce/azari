@@ -8,9 +8,9 @@ import "dart:developer";
 import "dart:ui" as ui;
 
 import "package:azari/init_main/app_info.dart";
-import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/network_status.dart";
 import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/services/services.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
@@ -19,7 +19,7 @@ import "package:logging/logging.dart";
 
 Future<void> initMain(
   AppInstanceType appType,
-  StreamController<NotificationRouteEvent> stream,
+  Sink<NotificationRouteEvent> sink,
 ) async {
   _initLogger();
 
@@ -27,7 +27,7 @@ Future<void> initMain(
 
   _changeExceptionErrorColors();
 
-  await initNotifications(stream);
+  await initNotifications(sink);
 
   await initServices(appType);
   await initAppInfo();

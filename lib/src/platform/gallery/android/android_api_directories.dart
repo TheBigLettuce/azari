@@ -10,16 +10,14 @@ class _AndroidGallery implements Directories {
     this.blacklistedDirectory,
     this.directoryTag,
     this.settingsService,
-    this.galleryTrash, {
-    required this.localizations,
-  });
+    this.galleryTrash,
+  );
 
   final BlacklistedDirectoryService? blacklistedDirectory;
   final DirectoryTagService? directoryTag;
   final GalleryTrash? galleryTrash;
 
   final SettingsService settingsService;
-  final AppLocalizations localizations;
 
   final time = DateTime.now();
 
@@ -33,10 +31,9 @@ class _AndroidGallery implements Directories {
 
   @override
   late final _AndroidSource source = _AndroidSource(
-    galleryTrash != null ? TrashCell(localizations, galleryTrash!) : null,
+    galleryTrash != null ? TrashCell(galleryTrash!) : null,
     blacklistedDirectory,
     directoryTag,
-    localizations,
   );
 
   @override
@@ -126,13 +123,11 @@ class _AndroidSource implements ResourceSource<int, Directory> {
     this.trashCell,
     this.blacklistedDirectory,
     this.directoryTag,
-    this.localizations,
   );
 
   final TrashCell? trashCell;
   final BlacklistedDirectoryService? blacklistedDirectory;
   final DirectoryTagService? directoryTag;
-  final AppLocalizations localizations;
 
   @override
   bool get hasNext => false;

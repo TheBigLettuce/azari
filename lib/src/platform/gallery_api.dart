@@ -6,10 +6,9 @@
 import "dart:async";
 
 import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
-import "package:azari/src/widgets/shell/layouts/segment_layout.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
@@ -64,11 +63,11 @@ extension FavoritePostsGlobalProgress on GlobalProgressTab {
 }
 
 class TrashCell implements AsyncCell<Directory> {
-  TrashCell(this.l10n, this.galleryTrash);
+  TrashCell(this.galleryTrash);
 
   final _events = StreamController<Directory?>.broadcast();
 
-  final AppLocalizations l10n;
+  // final AppLocalizations l10n;
   final GalleryTrash galleryTrash;
 
   bool get hasData => _currentData != null;

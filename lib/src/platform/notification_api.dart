@@ -45,9 +45,9 @@ abstract class NotificationHandle {
 }
 
 Future<void> initNotifications(
-  StreamController<NotificationRouteEvent> stream,
+  Sink<NotificationRouteEvent> sink,
 ) async {
-  OnNotificationPressed.setUp(await init(stream));
+  OnNotificationPressed.setUp(await init(sink));
 }
 
 class NotificationPressedImpl implements OnNotificationPressed {

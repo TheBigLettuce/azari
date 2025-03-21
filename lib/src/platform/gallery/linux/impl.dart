@@ -6,11 +6,11 @@
 import "dart:io" as io;
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/local_tags_helper.dart";
-import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/filtering_mode.dart";
-import "package:azari/src/db/services/resource_source/resource_source.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/local_tags_helper.dart";
+import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/platform/gallery/io.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:file_picker/file_picker.dart";
@@ -27,14 +27,12 @@ class LinuxGalleryApi implements GalleryService {
   Directories open({
     required BlacklistedDirectoryService? blacklistedDirectory,
     required DirectoryTagService? directoryTags,
-    required AppLocalizations l10n,
     required SettingsService settingsService,
     required GalleryTrash? galleryTrash,
   }) {
     return _Directories(
       blacklistedDirectory: blacklistedDirectory,
       directoryTag: directoryTags,
-      l10n: l10n,
       galleryTrash: galleryTrash,
       settingsService: settingsService,
     );
@@ -71,7 +69,6 @@ class LinuxGalleryApi implements GalleryService {
 
 class _Directories implements Directories {
   _Directories({
-    required this.l10n,
     required this.blacklistedDirectory,
     required this.directoryTag,
     required this.settingsService,
@@ -83,11 +80,10 @@ class _Directories implements Directories {
   final GalleryTrash? galleryTrash;
 
   final SettingsService settingsService;
-  final AppLocalizations l10n;
 
   @override
   late final TrashCell? trashCell =
-      galleryTrash != null ? TrashCell(l10n, galleryTrash!) : null;
+      galleryTrash != null ? TrashCell(galleryTrash!) : null;
 
   @override
   Files? bindFiles;

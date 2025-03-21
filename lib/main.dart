@@ -9,24 +9,24 @@ import "package:azari/init_main/build_theme.dart";
 import "package:azari/init_main/init_main.dart";
 import "package:azari/init_main/restart_widget.dart";
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/local_tags_helper.dart";
-import "package:azari/src/db/services/obj_impls/file_impl.dart";
-import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/services.dart";
-import "package:azari/src/pages/gallery/directories.dart";
-import "package:azari/src/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/pages/home/home.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/notification_api.dart";
 import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/services/local_tags_helper.dart";
+import "package:azari/src/services/obj_impls/file_impl.dart";
+import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/copy_move_preview.dart";
-import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/scaffold_selection_bar.dart";
-import "package:azari/src/widgets/selection_bar.dart";
-import "package:azari/welcome_pages.dart";
+import "package:azari/src/ui/app_adaptive.dart";
+import "package:azari/src/ui/material/pages/gallery/directories.dart";
+import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
+import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
@@ -39,88 +39,14 @@ void main() async {
   final notificationStream =
       StreamController<NotificationRouteEvent>.broadcast();
 
-  await initMain(AppInstanceType.full, notificationStream);
+  await initMain(AppInstanceType.full, notificationStream.sink);
 
   final accentColor = await PlatformApi().accentColor;
 
-  final restartKey = GlobalKey();
-
-  final progressTab = GlobalProgressTab();
-  final selectionEvents = SelectionActions();
-
   runApp(
-    selectionEvents.inject(
-      progressTab.inject(
-        Services.inject(
-          TimeTickerStatistics(
-            child: RestartWidget(
-              accentColor: accentColor,
-              key: restartKey,
-              child: (d, l) => MaterialApp(
-                themeAnimationCurve: Easing.standard,
-                themeAnimationDuration: const Duration(milliseconds: 300),
-                darkTheme: d,
-                theme: l,
-                home: _HomeWidget(notificationStream: notificationStream),
-                debugShowCheckedModeBanner: false,
-                onGenerateTitle: (context) => "Azari",
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-              ),
-            ),
-          ),
-        ),
-      ),
+    AppAdaptive(
+      color: accentColor,
+      notificationStream: notificationStream.stream,
     ),
   );
-}
-
-class _HomeWidget extends StatelessWidget {
-  const _HomeWidget({
-    // super.key,
-    required this.notificationStream,
-  });
-
-  final StreamController<NotificationRouteEvent> notificationStream;
-
-  @override
-  Widget build(BuildContext context) {
-    final db = Services.of(context);
-    final (settingsSevice, gridBookmarks, favoritePosts, galleryService) = (
-      db.require<SettingsService>(),
-      db.get<GridBookmarkService>(),
-      db.get<FavoritePostSourceService>(),
-      db.get<GalleryService>()
-    );
-
-    return switch (settingsSevice.current.showWelcomePage) {
-      true => WelcomePage(
-          galleryService: galleryService,
-          settingsService: settingsSevice,
-          onEnd: (context) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) {
-                  return Home(
-                    stream: notificationStream.stream,
-                    settingsService: settingsSevice,
-                    gridBookmarks: gridBookmarks,
-                    favoritePosts: favoritePosts,
-                    galleryService: galleryService,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      false => Home(
-          stream: notificationStream.stream,
-          settingsService: settingsSevice,
-          gridBookmarks: gridBookmarks,
-          favoritePosts: favoritePosts,
-          galleryService: galleryService,
-        ),
-    };
-  }
 }

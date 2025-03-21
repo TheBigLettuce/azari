@@ -21,7 +21,5 @@ NotificationApi getApi() {
   }
 }
 
-Future<NotificationPressedImpl> init(
-  StreamController<NotificationRouteEvent> stream,
-) =>
-    Future.value(NotificationPressedImpl(stream.sink));
+Future<NotificationPressedImpl> init(Sink<NotificationRouteEvent> sink) =>
+    Future.value(NotificationPressedImpl(sink));

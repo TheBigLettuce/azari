@@ -197,6 +197,21 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
       await cursorApi.destroy(cursor);
     }
 
+    if (sortingMode == SortingMode.stars && favoritePosts != null) {
+      backingStorage.list.sort((e1, e2) {
+        if (e1.res == null || e2.res == null) {
+          return 0;
+        }
+
+        final e1FavoriteStars =
+            favoritePosts!.cache.get(e1.res!)?.stars ?? FavoriteStars.zero;
+        final e2FavoriteStars =
+            favoritePosts!.cache.get(e2.res!)?.stars ?? FavoriteStars.zero;
+
+        return e2FavoriteStars.index.compareTo(e1FavoriteStars.index);
+      });
+    }
+
     backingStorage.addAll([]);
     sourceTags.notify();
     progress.inRefreshing = false;

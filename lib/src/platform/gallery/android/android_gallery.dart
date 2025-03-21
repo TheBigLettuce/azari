@@ -7,16 +7,16 @@ import "dart:async";
 import "dart:io" as io;
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/local_tags_helper.dart";
-import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/filtering_mode.dart";
-import "package:azari/src/db/services/resource_source/resource_source.dart";
-import "package:azari/src/db/services/resource_source/source_storage.dart";
-import "package:azari/src/db/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/platform/network_status.dart";
-import "package:azari/src/widgets/grid_cell/contentable.dart";
+import "package:azari/src/services/local_tags_helper.dart";
+import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:logging/logging.dart";
@@ -66,7 +66,6 @@ class AndroidGalleryApi implements GalleryService {
 
   @override
   Directories open({
-    required AppLocalizations l10n,
     required BlacklistedDirectoryService? blacklistedDirectory,
     required DirectoryTagService? directoryTags,
     required GalleryTrash? galleryTrash,
@@ -77,7 +76,6 @@ class AndroidGalleryApi implements GalleryService {
       directoryTags,
       settingsService,
       galleryTrash,
-      localizations: l10n,
     );
 
     _GalleryImpl().liveInstances.add(api);

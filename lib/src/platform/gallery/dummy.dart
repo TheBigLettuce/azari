@@ -4,9 +4,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/db/services/resource_source/basic.dart";
-import "package:azari/src/db/services/resource_source/resource_source.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 
 class DummyGalleryApi implements GalleryService {
@@ -20,7 +20,6 @@ class DummyGalleryApi implements GalleryService {
   Directories open({
     required BlacklistedDirectoryService? blacklistedDirectory,
     required DirectoryTagService? directoryTags,
-    required AppLocalizations l10n,
     required SettingsService settingsService,
     required GalleryTrash? galleryTrash,
     bool? temporaryDb,

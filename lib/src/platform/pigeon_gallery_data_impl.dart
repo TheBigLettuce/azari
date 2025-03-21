@@ -6,18 +6,18 @@
 import "dart:async";
 import "dart:io";
 
-import "package:azari/src/db/services/resource_source/resource_source.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
 import "package:azari/src/typedefs.dart";
-import "package:azari/src/widgets/grid_cell/cell.dart";
-import "package:azari/src/widgets/grid_cell/contentable.dart";
-import "package:azari/src/widgets/grid_cell/sticker.dart";
-import "package:azari/src/widgets/image_view/image_view.dart";
-import "package:azari/src/widgets/image_view/image_view_fab.dart";
-import "package:azari/src/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/widgets/image_view/video/video_controls_controller.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view_fab.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";

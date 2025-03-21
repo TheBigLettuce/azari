@@ -6,13 +6,13 @@
 import "dart:async";
 
 import "package:azari/init_main/build_theme.dart";
-import "package:azari/src/db/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/platform/platform_api.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/typedefs.dart";
+import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 

@@ -5,7 +5,7 @@
 
 import "dart:io" as io;
 
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/platform/gallery/android/android_gallery.dart";
 import "package:azari/src/platform/gallery/dummy.dart";
 import "package:azari/src/platform/gallery/linux/impl.dart";

@@ -5,9 +5,9 @@
 
 import "dart:io" as io;
 
-import "package:azari/src/db/services/impl/isar/impl.dart";
-import "package:azari/src/db/services/impl_table/io.dart";
-import "package:azari/src/db/services/services.dart";
+import "package:azari/src/services/impl/isar/impl.dart";
+import "package:azari/src/services/impl_table/io.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/net/booru/display_quality.dart";
 import "package:azari/src/net/booru/safe_mode.dart";

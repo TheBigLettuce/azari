@@ -5,14 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "gdb",
-            "request": "launch",
-            "name": "Launch Program",
-            "target": "${workspaceFolder}/build/linux/x64/debug/bundle/gallery",
-            "cwd": "${workspaceRoot}",
-            "valuesFormatting": "parseText"
-        },
-        {
             "name": "gallery",
             "request": "launch",
             "type": "dart"

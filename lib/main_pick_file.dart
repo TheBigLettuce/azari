@@ -25,54 +25,55 @@ Future<void> mainPickfile() async {
 
           return PinnedTagsHolder(
             pinnedTags: tagManager?.pinned,
-            child: MaterialApp(
-              title: "Azari",
-              themeAnimationCurve: Easing.standard,
-              themeAnimationDuration: const Duration(milliseconds: 300),
-              darkTheme: buildTheme(context, Brightness.dark, accentColor),
-              theme: buildTheme(context, Brightness.light, accentColor),
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: ScaffoldSelectionBar(
-                addScaffoldAndBar: true,
-                child: Builder(
-                  builder: (context) => DirectoriesPage(
-                    selectionController: SelectionActions.controllerOf(context),
-                    l10n: context.l10n(),
-                    callback: ReturnFileCallback(
-                      choose: (chosen, [_]) {
-                        PlatformApi().closeApp(chosen.originalUri);
+            child: _GalleryPageHolder(
+              child: MaterialApp(
+                title: "Azari",
+                themeAnimationCurve: Easing.standard,
+                themeAnimationDuration: const Duration(milliseconds: 300),
+                darkTheme: buildTheme(context, Brightness.dark, accentColor),
+                theme: buildTheme(context, Brightness.light, accentColor),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: ScaffoldSelectionBarInherited(
+                  child: Builder(
+                    builder: (context) => DirectoriesPage(
+                      selectionController:
+                          SelectionActions.controllerOf(context),
+                      callback: ReturnFileCallback(
+                        choose: (chosen, [_]) {
+                          PlatformApi().closeApp(chosen.originalUri);
 
-                        return Future.value();
-                      },
-                      preview: PreferredSize(
-                        preferredSize:
-                            Size.fromHeight(CopyMovePreview.size.toDouble()),
-                        child: IgnorePointer(
-                          child: Builder(
-                            builder: (context) {
-                              final l10n = context.l10n();
+                          return Future.value();
+                        },
+                        preview: PreferredSize(
+                          preferredSize:
+                              Size.fromHeight(CopyMovePreview.size.toDouble()),
+                          child: IgnorePointer(
+                            child: Builder(
+                              builder: (context) {
+                                final l10n = context.l10n();
 
-                              return CopyMovePreview(
-                                files: null,
-                                title: l10n.pickFileNotice,
-                                icon: Icons.file_open_rounded,
-                              );
-                            },
+                                return CopyMovePreview(
+                                  files: null,
+                                  title: l10n.pickFileNotice,
+                                  icon: Icons.file_open_rounded,
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
+                      directoryMetadata: db.get<DirectoryMetadataService>(),
+                      directoryTags: db.get<DirectoryTagService>(),
+                      favoritePosts: db.get<FavoritePostSourceService>(),
+                      blacklistedDirectories:
+                          db.get<BlacklistedDirectoryService>(),
+                      localTagsService: db.get<LocalTagsService>(),
+                      galleryService: db.get<GalleryService>()!,
+                      gridDbs: db.get<GridDbService>()!,
+                      gridSettings: db.get<GridSettingsService>()!,
+                      settingsService: db.require<SettingsService>(),
                     ),
-                    directoryMetadata: db.get<DirectoryMetadataService>(),
-                    directoryTags: db.get<DirectoryTagService>(),
-                    favoritePosts: db.get<FavoritePostSourceService>(),
-                    blacklistedDirectories:
-                        db.get<BlacklistedDirectoryService>(),
-                    localTagsService: db.get<LocalTagsService>(),
-                    galleryService: db.get<GalleryService>()!,
-                    gridDbs: db.get<GridDbService>()!,
-                    gridSettings: db.get<GridSettingsService>()!,
-                    settingsService: db.require<SettingsService>(),
                   ),
                 ),
               ),
@@ -82,4 +83,43 @@ Future<void> mainPickfile() async {
       ),
     ),
   );
+}
+
+class _GalleryPageHolder extends StatefulWidget {
+  const _GalleryPageHolder({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  State<_GalleryPageHolder> createState() => __GalleryPageHolderState();
+}
+
+class __GalleryPageHolderState extends State<_GalleryPageHolder>
+    with CurrentGalleryPageMixin {
+  late final SelectionActions _actions;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _actions = SelectionActions();
+  }
+
+  @override
+  void dispose() {
+    _actions.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GallerySubPage.wrap(
+      galleryPage,
+      _actions.inject(widget.child),
+    );
+  }
 }
