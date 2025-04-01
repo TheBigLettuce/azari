@@ -9,14 +9,24 @@ extension HiddenBooruPostServiceExt on HiddenBooruPostsService {
   bool isHidden(int id, Booru booru) => cachedValues.containsKey((id, booru));
 }
 
-abstract interface class HiddenBooruPostsService implements ServiceMarker {
-  Map<(int, Booru), String> get cachedValues;
+mixin class HiddenBooruPostsService implements ServiceMarker {
+  const HiddenBooruPostsService();
 
-  void addAll(List<HiddenBooruPostData> booru);
-  void removeAll(List<(int, Booru)> booru);
+  static bool get available => _instance != null;
+  static HiddenBooruPostsService? safe() => _instance;
 
-  StreamSubscription<void> watch(void Function(void) f);
-  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]);
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<HiddenBooruPostsService>();
+
+  Map<(int, Booru), String> get cachedValues => _instance!.cachedValues;
+
+  void addAll(List<HiddenBooruPostData> booru) => _instance!.addAll(booru);
+  void removeAll(List<(int, Booru)> booru) => _instance!.removeAll(booru);
+
+  StreamSubscription<void> watch(void Function(void) f) => _instance!.watch(f);
+
+  Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) =>
+      _instance!.streamSingle(id, booru, fire);
 }
 
 @immutable
@@ -30,24 +40,4 @@ abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
   String get thumbUrl;
   int get postId;
   Booru get booru;
-}
-
-@immutable
-abstract class HiddenBooruPostDataImpl
-    with DefaultBuildCellImpl
-    implements HiddenBooruPostData {
-  const HiddenBooruPostDataImpl();
-
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  Key uniqueKey() => ValueKey((postId, booru));
-
-  @override
-  String alias(bool isList) => "$postId";
-
-  @override
-  CellStaticData description() => const CellStaticData();
 }

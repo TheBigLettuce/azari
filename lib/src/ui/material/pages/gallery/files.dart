@@ -5,21 +5,21 @@
 
 import "dart:async";
 
-import "package:azari/init_main/app_info.dart";
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/local_tags_helper.dart";
-import "package:azari/src/services/obj_impls/file_impl.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
-import "package:azari/src/services/services.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/directories_mixin.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
@@ -27,12 +27,6 @@ import "package:azari/src/ui/material/pages/gallery/files_filters.dart"
     as filters;
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/notification_api.dart";
-import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
 import "package:azari/src/ui/material/widgets/file_action_chips.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
@@ -64,17 +58,6 @@ class FilesPage extends StatefulWidget {
     required this.directories,
     required this.navBarEvents,
     required this.scrollingState,
-    required this.favoritePosts,
-    required this.localTags,
-    required this.gridSettings,
-    required this.thumbnails,
-    required this.tagManager,
-    required this.directoryMetadata,
-    required this.directoryTags,
-    required this.videoSettings,
-    required this.downloadManager,
-    required this.settingsService,
-    required this.galleryService,
     this.secure,
     this.callback,
     this.presetFilteringValue = "",
@@ -100,20 +83,6 @@ class FilesPage extends StatefulWidget {
   final FilteringMode? filteringMode;
 
   final SelectionController selectionController;
-
-  final FavoritePostSourceService? favoritePosts;
-  final LocalTagsService? localTags;
-  final ThumbnailService? thumbnails;
-  final TagManagerService? tagManager;
-  final DirectoryMetadataService? directoryMetadata;
-  final VideoSettingsService? videoSettings;
-  final DownloadManager? downloadManager;
-  final GalleryService galleryService;
-
-  final DirectoryTagService? directoryTags;
-  final GridSettingsService gridSettings;
-
-  final SettingsService settingsService;
 
   static Future<void> openProtected({
     required BuildContext context,
@@ -162,13 +131,13 @@ class FilesPage extends StatefulWidget {
         );
       }
 
-      requireAuth = Services.getOf<DirectoryMetadataService>(context)
+      requireAuth = DirectoryMetadataService.safe()
               ?.cache
               .get(segmentFnc(directory))
               ?.requireAuth ??
           false;
 
-      if (AppInfo().canAuthBiometric && requireAuth) {
+      if (const AppApi().canAuthBiometric && requireAuth) {
         return LocalAuthentication()
             .authenticate(
               localizedReason: l10n.openDirectory,
@@ -179,6 +148,11 @@ class FilesPage extends StatefulWidget {
       }
     }
   }
+
+  static bool hasServicesRequired() =>
+      DirectoryTagService.available &&
+      GridSettingsService.available &&
+      GalleryService.available;
 
   static Future<void> open(
     BuildContext context, {
@@ -191,15 +165,7 @@ class FilesPage extends StatefulWidget {
     ReturnFileCallback? callback,
     FilteringMode? filteringMode,
   }) {
-    final db = Services.of(context);
-    final (directoryTags, gridSettings, galleryService) = (
-      db.get<DirectoryTagService>(),
-      db.get<GridSettingsService>(),
-      db.get<GalleryService>()
-    );
-    if (directoryTags == null ||
-        gridSettings == null ||
-        galleryService == null) {
+    if (!hasServicesRequired()) {
       // TODO: change
       showSnackbar(context, "Gallery functionality isn't available");
 
@@ -219,20 +185,9 @@ class FilesPage extends StatefulWidget {
             secure: secure,
             callback: callback,
             filteringMode: filteringMode,
-            gridSettings: gridSettings,
-            directoryTags: directoryTags,
-            galleryService: galleryService,
             selectionController: SelectionActions.controllerOf(context),
             navBarEvents: NavigationButtonEvents.maybeOf(context),
             scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-            favoritePosts: db.get<FavoritePostSourceService>(),
-            localTags: db.get<LocalTagsService>(),
-            thumbnails: db.get<ThumbnailService>(),
-            tagManager: db.get<TagManagerService>(),
-            directoryMetadata: db.get<DirectoryMetadataService>(),
-            videoSettings: db.get<VideoSettingsService>(),
-            downloadManager: DownloadManager.of(context),
-            settingsService: db.require<SettingsService>(),
           );
         },
       ),
@@ -243,21 +198,7 @@ class FilesPage extends StatefulWidget {
   State<FilesPage> createState() => _FilesPageState();
 }
 
-class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  LocalTagsService? get localTags => widget.localTags;
-  WatchableGridSettingsData get gridSettings => widget.gridSettings.files;
-  ThumbnailService? get thumbnails => widget.thumbnails;
-  TagManagerService? get tagManager => widget.tagManager;
-  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
-  DirectoryTagService? get directoryTags => widget.directoryTags;
-  VideoSettingsService? get videoSettings => widget.videoSettings;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  GalleryService get galleryService => widget.galleryService;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
+class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
   final GlobalKey<BarIconState> _favoriteButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
@@ -274,7 +215,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
-  late final PigeonGalleryDataImpl impl;
+  late final PlatformImageViewStateImpl impl;
 
   late final SourceShellElementState<File> status;
 
@@ -300,21 +241,11 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
           "trash" => GalleryFilesPageType.trash,
           String() => GalleryFilesPageType.normal,
         },
-        directoryTags,
-        directoryMetadata,
-        favoritePosts,
-        localTags,
         name: directory.name,
         bucketId: directory.bucketId,
       );
     } else {
-      api = widget.api.joinedFiles(
-        widget.directories,
-        directoryTags,
-        directoryMetadata,
-        favoritePosts,
-        localTags,
-      );
+      api = widget.api.joinedFiles(widget.directories);
     }
 
     filter = ChainedFilterResourceSource(
@@ -349,10 +280,9 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
       },
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         return switch (filteringMode) {
-          FilteringMode.favorite => favoritePosts != null
+          FilteringMode.favorite => FavoritePostSourceService.available
               ? filters.favorite(
                   cells,
-                  favoritePosts!,
                   searchTextController.text,
                 )
               : (cells, data),
@@ -364,12 +294,12 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
           FilteringMode.gif => filters.gif(cells),
           FilteringMode.duplicate => filters.duplicate(cells),
           FilteringMode.original => filters.original(cells),
-          FilteringMode.same => thumbnails != null
+          FilteringMode.same => ThumbnailService.available
               ? filters.same(
                   cells,
                   data,
                   onSkipped: () {
-                    if (!context.mounted || thumbnails == null) {
+                    if (!context.mounted || !ThumbnailService.available) {
                       return;
                     }
 
@@ -394,8 +324,6 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
                                     api.source.clearRefreshSilent();
                                   } catch (_) {}
                                 },
-                                thumbnails!,
-                                galleryService.thumbs,
                               );
                             },
                           ),
@@ -404,13 +332,10 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
                   },
                   end: end,
                   source: api.source,
-                  thumbnailService: thumbnails!,
                 )
               : (cells, data),
-          FilteringMode.onlyFullStars =>
-            filters.stars(cells, favoritePosts, false),
-          FilteringMode.onlyHalfStars =>
-            filters.stars(cells, favoritePosts, true),
+          FilteringMode.onlyFullStars => filters.stars(cells, false),
+          FilteringMode.onlyHalfStars => filters.stars(cells, true),
           FilteringMode() => (
               searchTextController.text.isEmpty
                   ? cells
@@ -422,11 +347,12 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
       },
       allowedFilteringModes: {
         FilteringMode.noFilter,
-        if (api.type != GalleryFilesPageType.favorites && favoritePosts != null)
+        if (api.type != GalleryFilesPageType.favorites &&
+            FavoritePostSourceService.available)
           FilteringMode.favorite,
         FilteringMode.original,
         FilteringMode.duplicate,
-        if (thumbnails != null) FilteringMode.same,
+        if (ThumbnailService.available) FilteringMode.same,
         FilteringMode.tag,
         FilteringMode.tagReversed,
         FilteringMode.untagged,
@@ -444,13 +370,13 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
       initialSortingMode: SortingMode.none,
     );
 
-    impl = PigeonGalleryDataImpl(
+    impl = PlatformImageViewStateImpl(
       source: filter,
-      tags: localTags != null && tagManager != null
-          ? (c) => FileImpl.imageTags(c, localTags!, tagManager!)
+      tags: LocalTagsService.available && TagManagerService.available
+          ? FileImpl.imageTags
           : null,
-      watchTags: localTags != null && tagManager != null
-          ? (c, f) => FileImpl.watchTags(c, f, localTags!, tagManager!.pinned)
+      watchTags: LocalTagsService.available && TagManagerService.available
+          ? FileImpl.watchTags
           : null,
       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
         callback: widget.callback,
@@ -465,7 +391,6 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
           ),
         ),
       ),
-      videoSettings: videoSettings,
     );
 
     status = SourceShellElementState(
@@ -479,71 +404,58 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
           ? const <SelectionBarAction>[]
           : api.type.isTrash()
               ? <SelectionBarAction>[
-                  _restoreFromTrashAction(galleryService.trash),
+                  _restoreFromTrashAction(const GalleryService().trash),
                 ]
               : <SelectionBarAction>[
                   if (settings.filesExtendedActions) ...[
-                    if (downloadManager != null && localTags != null)
+                    if (DownloadManager.available && LocalTagsService.available)
                       SelectionBarAction(
                         Icons.download_rounded,
                         (selected) {
-                          redownloadFiles(
-                            context,
-                            selected.cast(),
-                            downloadManager: downloadManager!,
-                            localTags: localTags!,
-                            settingsService: settingsService,
-                            galleryService: galleryService,
+                          const TasksService().add<DownloadManager>(
+                            () => redownloadFiles(
+                              context.l10n(),
+                              selected.cast(),
+                            ),
                           );
                         },
                         true,
+                        taskTag: DownloadManager,
                       ),
-                    if (localTags != null)
-                      _saveTagsAction(
-                        context,
-                        localTags: localTags!,
-                        galleryService: galleryService,
-                      ),
-                    if (localTags != null)
+                    if (LocalTagsService.available)
+                      _saveTagsAction(context.l10n()),
+                    if (LocalTagsService.available)
                       _addTagAction(
                         context,
                         () => api.source.clearRefreshSilent(),
-                        localTags!,
                       ),
                   ],
                   _deleteAction(
                     context,
                     toShowDelete,
-                    galleryService.trash,
+                    const GalleryService().trash,
                   ),
-                  if (tagManager != null && localTags != null)
+                  if (TagManagerService.available && LocalTagsService.available)
                     _copyAction(
                       context,
                       api.bucketId,
                       api.parent,
                       toShowDelete,
-                      galleryService: galleryService,
-                      tagManager: tagManager!,
-                      localTags: localTags!,
                     ),
-                  if (tagManager != null && localTags != null)
+                  if (TagManagerService.available && LocalTagsService.available)
                     _moveAction(
                       context,
                       api.bucketId,
                       api.parent,
                       toShowDelete,
-                      galleryService: galleryService,
-                      tagManager: tagManager!,
-                      localTags: localTags!,
                     ),
                 ],
     );
 
-    watchSettings();
-
     final secure = widget.secure ??
         (widget.directories.length == 1
-            ? directoryMetadata?.cache
+            ? DirectoryMetadataService.safe()
+                    ?.cache
                     .get(_segmentCell(widget.directories.first))
                     ?.requireAuth ??
                 false
@@ -571,19 +483,19 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
         },
       );
 
-      PlatformApi().window.setProtected(true);
+      const WindowApi().setProtected(true);
     }
 
     api.source.clearRefreshSilent();
 
-    FlutterGalleryData.setUp(impl);
-    GalleryVideoEvents.setUp(impl);
+    platform.FlutterGalleryData.setUp(impl);
+    platform.GalleryVideoEvents.setUp(impl);
   }
 
   @override
   void dispose() {
-    FlutterGalleryData.setUp(null);
-    GalleryVideoEvents.setUp(null);
+    platform.FlutterGalleryData.setUp(null);
+    platform.GalleryVideoEvents.setUp(null);
 
     status.destroy();
     impl.dispose();
@@ -597,16 +509,13 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
 
     api.close();
 
-    PlatformApi().window.setProtected(false);
+    const WindowApi().setProtected(false);
 
     super.dispose();
   }
 
-  String _segmentCell(Directory cell) => defaultSegmentCell(
-        cell.name,
-        cell.bucketId,
-        directoryTags,
-      );
+  String _segmentCell(Directory cell) =>
+      defaultSegmentCell(cell.name, cell.bucketId);
 
   void _onBooruTagPressed(
     BuildContext context,
@@ -667,6 +576,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n();
+    final gridSettings = GridSettingsData<FilesData>();
 
     return FlutterGalleryDataNotifier(
       galleryDataImpl: impl,
@@ -685,9 +595,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
             configWatcher: gridSettings.watch,
             settingsButton: ShellSettingsButton.fromWatchable(
               gridSettings,
-              header: _ShowAdditionalButtons(
-                settingsService: settingsService,
-              ),
+              header: const _ShowAdditionalButtons(),
               localizeHideNames: (context) =>
                   l10n.hideNames(l10n.hideNamesFiles),
             ),
@@ -705,7 +613,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
               hintText: widget.dirName,
               textEditingController: searchTextController,
               focus: searchFocus,
-              complete: localTags?.complete,
+              complete: LocalTagsService.safe()?.complete,
               trailingItems: [
                 if (widget.callback == null && api.type.isTrash())
                   IconButton(
@@ -727,7 +635,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    galleryService.trash.empty();
+                                    const GalleryService().trash.empty();
                                     Navigator.pop(context);
                                   },
                                   child: Text(l10n.yes),
@@ -937,7 +845,7 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
                       CurrentGridSettingsLayout<File>(
                         source: filter.backingStorage,
                         progress: filter.progress,
-                        gridSeed: gridSeed,
+                        // gridSeed: gridSeed,
                         selection: status.selection,
                       ),
                     ],
@@ -954,11 +862,8 @@ class _FilesPageState extends State<FilesPage> with CommonGridData<FilesPage> {
 
 class _ShowAdditionalButtons extends StatefulWidget {
   const _ShowAdditionalButtons({
-    // super.key,
-    required this.settingsService,
+    super.key,
   });
-
-  final SettingsService settingsService;
 
   @override
   State<_ShowAdditionalButtons> createState() => __ShowAdditionalButtonsState();
@@ -967,17 +872,16 @@ class _ShowAdditionalButtons extends StatefulWidget {
 class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons>
     with SettingsWatcherMixin {
   @override
-  SettingsService get settingsService => widget.settingsService;
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
     return SwitchListTile(
       value: settings.filesExtendedActions,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      onChanged: (value) =>
-          settingsService.current.copy(filesExtendedActions: value).save(),
+      onChanged: (value) => const SettingsService()
+          .current
+          .copy(filesExtendedActions: value)
+          .save(),
       title: Text(l10n.extendedFilesGridActions),
     );
   }
@@ -990,9 +894,9 @@ class FlutterGalleryDataNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final PigeonGalleryDataImpl galleryDataImpl;
+  final PlatformImageViewStateImpl galleryDataImpl;
 
-  static PigeonGalleryDataImpl of(BuildContext context) {
+  static PlatformImageViewStateImpl of(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
 
@@ -1092,7 +996,6 @@ class TagsRibbon extends StatefulWidget {
   const TagsRibbon({
     super.key,
     required this.selectTag,
-    required this.tagManager,
     this.onLongPress,
     this.items,
     this.showPin = true,
@@ -1104,7 +1007,6 @@ class TagsRibbon extends StatefulWidget {
   final bool showPin;
   final bool sliver;
 
-  final TagManagerService? tagManager;
   final ImageViewTags tagNotifier;
 
   final Widget emptyWidget;
@@ -1120,18 +1022,16 @@ class TagsRibbon extends StatefulWidget {
   State<TagsRibbon> createState() => _TagsRibbonState();
 }
 
-class _TagsRibbonState extends State<TagsRibbon> {
-  TagManagerService? get tagManager => widget.tagManager;
-
+class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
   late final StreamSubscription<void>? pinnedSubscription;
   late final StreamSubscription<void> _events;
 
   final scrollController = ScrollController();
 
   late List<ImageTag> _list;
-  late List<ImageTag>? _pinnedList = !widget.showPin || tagManager == null
+  late List<ImageTag>? _pinnedList = !widget.showPin
       ? null
-      : tagManager!.pinned
+      : pinned
           .get(-1)
           .map(
             (e) => ImageTag(
@@ -1154,11 +1054,11 @@ class _TagsRibbonState extends State<TagsRibbon> {
       setState(() {});
     });
 
-    pinnedSubscription = !widget.showPin || tagManager == null
+    pinnedSubscription = !widget.showPin
         ? null
-        : tagManager!.pinned.watch((_) {
+        : pinned.watch((_) {
             setState(() {
-              _pinnedList = tagManager!.pinned
+              _pinnedList = pinned
                   .get(-1)
                   .map(
                     (e) => ImageTag(
@@ -1244,21 +1144,19 @@ class _TagsRibbonState extends State<TagsRibbon> {
                   final elem = fromList[i];
 
                   final child = GestureDetector(
-                    onDoubleTap: tagManager != null
-                        ? () {
-                            if (tagManager!.pinned.exists(elem.tag)) {
-                              tagManager!.pinned.delete(elem.tag);
-                            } else {
-                              tagManager!.pinned.add(elem.tag);
-                            }
+                    onDoubleTap: () {
+                      if (pinned.exists(elem.tag)) {
+                        pinned.delete(elem.tag);
+                      } else {
+                        pinned.add(elem.tag);
+                      }
 
-                            scrollController.animateTo(
-                              0,
-                              duration: Durations.medium1,
-                              curve: Easing.standard,
-                            );
-                          }
-                        : null,
+                      scrollController.animateTo(
+                        0,
+                        duration: Durations.medium1,
+                        curve: Easing.standard,
+                      );
+                    },
                     child: TextButton(
                       onLongPress: widget.onLongPress == null
                           ? null
@@ -1548,7 +1446,7 @@ class CurrentGridSettingsLayout<T extends CellBase> extends StatelessWidget {
     super.key,
     required this.source,
     this.hideThumbnails = false,
-    required this.gridSeed,
+    this.gridSeed = 2,
     this.buildEmpty,
     required this.progress,
     required this.selection,

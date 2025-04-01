@@ -34,14 +34,13 @@ Future<void> deleteFilesDialog(
   BuildContext context,
   List<File> selected,
   DeleteDialogShow toShow,
-  GalleryTrash galleryTrash,
 ) {
   final l10n = context.l10n();
 
   void delete() {
-    galleryTrash.addAll(
-      selected.map((e) => e.originalUri).toList(),
-    );
+    const GalleryService().trash.addAll(
+          selected.map((e) => e.originalUri).toList(),
+        );
 
     StatisticsGalleryService.addDeleted(selected.length);
   }
@@ -105,30 +104,22 @@ SelectionBarAction _restoreFromTrashAction(GalleryTrash galleryTrash) {
   );
 }
 
-SelectionBarAction _saveTagsAction(
-  BuildContext context, {
-  required LocalTagsService localTags,
-  required GalleryService galleryService,
-}) {
+SelectionBarAction _saveTagsAction(AppLocalizations l10n) {
   return SelectionBarAction(
     Icons.tag_rounded,
     (selected) {
-      _saveTags(
-        context,
-        selected.cast(),
-        context.l10n(),
-        localTags: localTags,
-        galleryService: galleryService,
+      const TasksService().add<LocalTagsService>(
+        () => _saveTags(selected.cast(), l10n),
       );
     },
     true,
+    taskTag: LocalTagsService,
   );
 }
 
 SelectionBarAction _addTagAction(
   BuildContext context,
   void Function() refresh,
-  LocalTagsService localTags,
 ) {
   return SelectionBarAction(
     Icons.new_label_rounded,
@@ -137,12 +128,12 @@ SelectionBarAction _addTagAction(
         context,
         (v, delete) {
           if (delete) {
-            localTags.removeSingle(
+            const LocalTagsService().removeSingle(
               selected.map((e) => (e as File).name).toList(),
               v,
             );
           } else {
-            localTags.addMultiple(
+            const LocalTagsService().addMultiple(
               selected.map((e) => (e as File).name).toList(),
               v,
             );
@@ -157,21 +148,6 @@ SelectionBarAction _addTagAction(
   );
 }
 
-// GridAction<File> _setFavoritesThumbnailAction(
-//   SettingsService settings,
-// ) {
-//   return GridAction(
-//     Icons.image_outlined,
-//     (selected) {
-//       settings.current
-//           .copy(favoritesThumbId: selected.first.id)
-//           .maybeSave();
-//     },
-//     true,
-//     showOnlyWhenSingle: true,
-//   );
-// }
-
 SelectionBarAction _deleteAction(
   BuildContext context,
   DeleteDialogShow toShow,
@@ -184,7 +160,6 @@ SelectionBarAction _deleteAction(
         context,
         selected.cast(),
         toShow,
-        galleryTrash,
       );
     },
     false,
@@ -195,11 +170,8 @@ SelectionBarAction _copyAction(
   BuildContext context,
   String bucketId,
   Directories providedApi,
-  DeleteDialogShow toShow, {
-  required GalleryService galleryService,
-  required TagManagerService tagManager,
-  required LocalTagsService localTags,
-}) {
+  DeleteDialogShow toShow,
+) {
   return SelectionBarAction(
     Icons.copy,
     (selected) {
@@ -210,9 +182,6 @@ SelectionBarAction _copyAction(
         false,
         providedApi,
         toShow,
-        galleryService: galleryService,
-        tagManager: tagManager,
-        localTags: localTags,
       );
     },
     false,
@@ -223,11 +192,8 @@ SelectionBarAction _moveAction(
   BuildContext context,
   String bucketId,
   Directories providedApi,
-  DeleteDialogShow toShow, {
-  required GalleryService galleryService,
-  required TagManagerService tagManager,
-  required LocalTagsService localTags,
-}) {
+  DeleteDialogShow toShow,
+) {
   return SelectionBarAction(
     Icons.forward_rounded,
     (selected) {
@@ -238,9 +204,6 @@ SelectionBarAction _moveAction(
         true,
         providedApi,
         toShow,
-        galleryService: galleryService,
-        tagManager: tagManager,
-        localTags: localTags,
       );
     },
     false,
@@ -253,16 +216,17 @@ void moveOrCopyFnc(
   List<File> selected,
   bool move,
   Directories providedApi,
-  DeleteDialogShow toShow, {
-  required GalleryService galleryService,
-  required TagManagerService tagManager,
-  required LocalTagsService localTags,
-}) {
+  DeleteDialogShow toShow,
+) {
+  if (!FilesApi.available || !GalleryService.available) {
+    return;
+  }
+
   PauseVideoNotifier.maybePauseOf(topContext, true);
 
   final List<String> searchPrefix = [];
-  for (final tag in localTags.get(selected.first.name)) {
-    if (tagManager.pinned.exists(tag)) {
+  for (final tag in const LocalTagsService().get(selected.first.name)) {
+    if (const TagManagerService().pinned.exists(tag)) {
       searchPrefix.add(tag);
     }
   }
@@ -305,10 +269,9 @@ void moveOrCopyFnc(
             topContext,
             selected,
             toShow,
-            galleryService.trash,
           );
         } else {
-          galleryService.files
+          const FilesApi()
               .copyMove(
             value.path,
             value.volumeName,
@@ -356,58 +319,44 @@ void moveOrCopyFnc(
   });
 }
 
-extension SaveTagsGlobalNotifier on GlobalProgressTab {
-  ValueNotifier<Future<void>?> saveTags() {
-    return get("saveTags", () => ValueNotifier(null));
-  }
-}
-
 Future<void> _saveTags(
-  BuildContext context,
   List<File> selected,
-  AppLocalizations l10n, {
-  required LocalTagsService localTags,
-  required GalleryService galleryService,
-}) async {
-  final notifier = GlobalProgressTab.maybeOf(context)?.saveTags();
-  if (notifier == null) {
-    return;
-  } else if (notifier.value != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.tagSavingInProgress),
-      ),
-    );
-
+  AppLocalizations l10n,
+) async {
+  if (!LocalTagsService.available) {
     return;
   }
 
-  final notifi = await NotificationApi().show(
+  final handle = await const NotificationApi().show(
     title: l10n.savingTags,
-    id: NotificationApi.savingTagsId,
+    id: const NotificationChannels().savingTags,
     group: NotificationGroup.misc,
     channel: NotificationChannel.misc,
     body: "${l10n.savingTagsSaving}"
         " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
   );
 
-  return notifier.value = Future(() async {
-    notifi.setTotal(selected.length);
+  try {
+    handle?.setTotal(selected.length);
 
     for (final (i, elem) in selected.indexed) {
-      notifi.update(i, "$i/${selected.length}");
+      handle?.update(i, "$i/${selected.length}");
 
-      if (localTags.get(elem.name).isEmpty) {
-        await localTags.getOnlineAndSaveTags(elem.name);
+      if (const LocalTagsService().get(elem.name).isEmpty) {
+        await const LocalTagsService().getOnlineAndSaveTags(elem.name);
       }
     }
-  }).onError((e, trace) {
+  } catch (e, trace) {
     Logger.root.warning("Saving tags failed", e, trace);
-    return null;
-  }).whenComplete(() {
-    notifi.done();
-    galleryService.notify(null);
 
-    return notifier.value = null;
-  });
+    // TODO: add scaffold
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text(l10n.tagSavingInProgress),
+    //     ),
+    //   );
+  } finally {
+    handle?.done();
+    GalleryApi.safe()?.notify(null);
+  }
 }

@@ -5,12 +5,12 @@
 
 import "dart:async";
 
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/services/posts_source.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/posts_source.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
 import "package:azari/src/ui/material/pages/home/home.dart";
@@ -25,23 +25,14 @@ import "package:flutter/widgets.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
 mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
-  GridBookmarkService? get gridBookmarks;
-  HiddenBooruPostsService? get hiddenBooruPosts;
-  FavoritePostSourceService? get favoritePosts;
-  TagManagerService? get tagManager;
-  DownloadManager? get downloadManager;
-  LocalTagsService? get localTags;
-  GridDbService get gridDbs;
-
   SettingsData get settings;
-  SettingsService get settingsService;
 
   PagingStateRegistry get pagingRegistry;
   SelectionController get selectionController;
 
   BooruChipsState get currentSubpage => pagingState.currentSubpage;
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: true,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.two,
@@ -73,34 +64,25 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
     pagingState = pagingRegistry.getOrRegister(
       settings.selectedBooru.string,
       () {
-        final mainGrid = gridDbs.openMain(settings.selectedBooru);
+        final mainGrid = const GridDbService().openMain(settings.selectedBooru);
 
         return _MainGridPagingState.prototype(
           settings.selectedBooru,
           mainGrid,
-          gridBookmarks: gridBookmarks,
-          tagManager: tagManager,
-          hiddenBooruPosts: hiddenBooruPosts,
-          settingsService: settingsService,
           selectionController: selectionController,
           actions: [
-            if (downloadManager != null && localTags != null)
+            if (DownloadManager.available && LocalTagsService.available)
               actions.downloadPost(
                 context,
                 settings.selectedBooru,
                 null,
-                downloadManager: downloadManager!,
-                localTags: localTags!,
-                settingsService: settingsService,
               ),
-            if (favoritePosts != null)
+            if (FavoritePostSourceService.available)
               actions.favorites(
                 context,
-                favoritePosts!,
                 showDeleteSnackbar: true,
               ),
-            if (hiddenBooruPosts != null)
-              actions.hide(context, hiddenBooruPosts!),
+            if (HiddenBooruPostsService.available) actions.hide(context),
           ],
         );
       },
@@ -139,20 +121,23 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
       pagingState.updateTime();
     }
 
-    favoritesWatcher = favoritePosts?.cache.countEvents.listen((event) {
-      source.backingStorage.addAll([]);
+    favoritesWatcher =
+        FavoritePostSourceService.safe()?.cache.countEvents.listen((event) {
+      source.backingStorage.addAll(const []);
     });
 
-    hiddenPostWatcher = hiddenBooruPosts?.watch((_) {
+    hiddenPostWatcher = HiddenBooruPostsService.safe()?.watch((_) {
       source.backingStorage.addAll(const []);
       pagingState.randomStatus.source.backingStorage.addAll(const []);
       pagingState.videosStatus.source.backingStorage.addAll(const []);
       pagingState.popularStatus.source.backingStorage.addAll(const []);
     });
 
-    if (gridBookmarks != null && pagingState.restoreSecondaryGrid != null) {
+    if (GridBookmarkService.available &&
+        pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        final e = gridBookmarks!.get(pagingState.restoreSecondaryGrid!)!;
+        final e =
+            const GridBookmarkService().get(pagingState.restoreSecondaryGrid!)!;
 
         openSecondaryBooruPage(e);
       });
@@ -185,21 +170,12 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
 
 class _MainGridPagingState implements PagingEntry {
   _MainGridPagingState(
-    HiddenBooruPostsService? hiddenBooruPosts,
     this.booru,
-    this.tagManager,
     this.mainGrid,
-    this.gridBookmarks,
-    this.settingsService,
     this.actions,
     this.selectionController,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
-    source = mainGrid.makeSource(
-      api,
-      this,
-      hiddenBooruPosts: hiddenBooruPosts,
-      excluded: tagManager?.excluded,
-    );
+    source = mainGrid.makeSource(api, this);
 
     status = SourceShellElementState(
       onEmpty: const OnEmptyInterface.empty(),
@@ -222,20 +198,12 @@ class _MainGridPagingState implements PagingEntry {
   factory _MainGridPagingState.prototype(
     Booru booru,
     MainGridHandle mainGrid, {
-    required TagManagerService? tagManager,
-    required HiddenBooruPostsService? hiddenBooruPosts,
-    required GridBookmarkService? gridBookmarks,
-    required SettingsService settingsService,
     required SelectionController selectionController,
     required List<SelectionBarAction> actions,
   }) =>
       _MainGridPagingState(
-        hiddenBooruPosts,
         booru,
-        tagManager,
         mainGrid,
-        gridBookmarks,
-        settingsService,
         actions,
         selectionController,
       );
@@ -246,16 +214,12 @@ class _MainGridPagingState implements PagingEntry {
   bool reachedEnd = false;
 
   late final BooruAPI api = BooruAPI.fromEnum(booru, client);
-  final TagManagerService? tagManager;
   final Dio client;
   late final GridPostSource source;
   final MainGridHandle mainGrid;
-  final GridBookmarkService? gridBookmarks;
   final SelectionController selectionController;
   final List<SelectionBarAction> actions;
   late final BooruStackInjector stackInjector;
-
-  final SettingsService settingsService;
 
   final popularPageSaver = PageSaver.noPersist();
   final videosPageSaver = PageSaver.noPersist();
@@ -279,8 +243,7 @@ class _MainGridPagingState implements PagingEntry {
         final ret = await api.page(
           popularPageSaver.page,
           "",
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           order: BooruPostsOrder.score,
           pageSaver: popularPageSaver,
         );
@@ -291,8 +254,7 @@ class _MainGridPagingState implements PagingEntry {
         final ret = await api.page(
           popularPageSaver.page + 1,
           "",
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           order: BooruPostsOrder.score,
           pageSaver: popularPageSaver,
         );
@@ -311,11 +273,10 @@ class _MainGridPagingState implements PagingEntry {
         videosPageSaver.page = 0;
 
         final ret = await api.randomPosts(
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           true,
           // order: RandomPostsOrder.random,
-          addTags: settingsService.current.randomVideosAddTags,
+          addTags: const SettingsService().current.randomVideosAddTags,
           page: videosPageSaver.page,
         );
 
@@ -323,11 +284,10 @@ class _MainGridPagingState implements PagingEntry {
       },
       next: () async {
         final ret = await api.randomPosts(
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           true,
           // order: RandomPostsOrder.random,
-          addTags: settingsService.current.randomVideosAddTags,
+          addTags: const SettingsService().current.randomVideosAddTags,
           page: videosPageSaver.page + 1,
         );
 
@@ -347,8 +307,7 @@ class _MainGridPagingState implements PagingEntry {
         randomPageSaver.page = 0;
 
         final ret = await api.randomPosts(
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           false,
           page: randomPageSaver.page,
         );
@@ -357,8 +316,7 @@ class _MainGridPagingState implements PagingEntry {
       },
       next: () async {
         final ret = await api.randomPosts(
-          tagManager?.excluded,
-          settingsService.current.safeMode,
+          const SettingsService().current.safeMode,
           false,
           page: randomPageSaver.page + 1,
         );
@@ -494,7 +452,7 @@ class BooruStackInjector implements ShellScopeOverlayInjector {
 
 class _CurrentPageRefreshIndicator extends StatefulWidget {
   const _CurrentPageRefreshIndicator({
-    super.key,
+    // super.key,
     required this.initialValue,
     required this.stream,
     required this.latest,

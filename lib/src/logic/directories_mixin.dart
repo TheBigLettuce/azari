@@ -6,20 +6,20 @@
 import "dart:async";
 
 import "package:async/async.dart";
-import "package:azari/init_main/app_info.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/directory_metadata_segments.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/trash_cell.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/ui/material/pages/gallery/directories_actions.dart"
     as actions;
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
@@ -32,22 +32,12 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   GalleryReturnCallback? get callback;
   SelectionController get selectionController;
 
-  WatchableGridSettingsData get gridSettings;
-  DirectoryMetadataService? get directoryMetadata;
-  DirectoryTagService? get directoryTags;
-  FavoritePostSourceService? get favoritePosts;
-  BlacklistedDirectoryService? get blacklistedDirectories;
-  LocalTagsService? get localTagsService;
-
-  GalleryService get galleryService;
-  GridDbService get gridDbs;
-
-  SettingsService get settingsService;
+  final gridSettings = GridSettingsData<DirectoriesData>();
 
   late final StreamSubscription<void>? _blacklistedWatcher;
   late final StreamSubscription<void>? _directoryTagWatcher;
 
-  late final AppLifecycleListener _lifecycleListener;
+  late final AppLifecycleListener? _lifecycleListener;
 
   late final ChainedFilterResourceSource<int, Directory> filter;
   late final SourceShellElementState<Directory> status;
@@ -71,19 +61,18 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     searchTextController = TextEditingController();
     searchFocus = FocusNode(canRequestFocus: false);
 
-    api = providedApi ??
-        galleryService.open(
-          settingsService: settingsService,
-          blacklistedDirectory: blacklistedDirectories,
-          directoryTags: directoryTags,
-          galleryTrash: galleryService.trash,
-        );
+    api = providedApi ?? const GalleryService().open();
 
-    galleryService.version.then((value) => _galleryVersion = value);
+    if (providedApi == null) {
+      api.trashCell?.refresh();
+      api.source.clearRefresh();
+    }
+
+    GalleryApi.safe()?.version.then((value) => _galleryVersion = value);
 
     _lifecycleListener = AppLifecycleListener(
       onShow: () {
-        galleryService.version.then((value) {
+        GalleryApi.safe()?.version.then((value) {
           if (value != _galleryVersion) {
             _galleryVersion = value;
             _refresh();
@@ -92,11 +81,12 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
       },
     );
 
-    _directoryTagWatcher = directoryMetadata?.cache.watch((s) {
+    _directoryTagWatcher = DirectoryMetadataService.safe()?.cache.watch((s) {
       api.source.backingStorage.addAll([]);
     });
 
-    _blacklistedWatcher = blacklistedDirectories?.backingStorage.watch((_) {
+    _blacklistedWatcher =
+        BlacklistedDirectoryService.safe()?.backingStorage.watch((_) {
       api.source.clearRefresh();
     });
 
@@ -117,11 +107,6 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
       initialSortingMode: SortingMode.none,
     );
 
-    if (providedApi == null) {
-      api.trashCell?.refresh();
-      api.source.clearRefresh();
-    }
-
     status = SourceShellElementState(
       source: filter,
       selectionController: selectionController,
@@ -133,14 +118,11 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
                   api,
                   callback?.toFileOrNull,
                   segmentCell,
-                  directoryMetadata: directoryMetadata,
-                  directoryTags: directoryTags,
-                  favoritePosts: favoritePosts,
-                  localTags: localTagsService,
                 ),
             ]
           : <SelectionBarAction>[
-              if (directoryMetadata != null && directoryTags != null)
+              if (DirectoryMetadataService.available &&
+                  DirectoryTagService.available)
                 actions.addToGroup<Directory>(
                   context,
                   (selected) {
@@ -153,33 +135,17 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
                     return t;
                   },
-                  (s, v, t) => _addToGroup(
-                    context,
-                    s,
-                    v,
-                    t,
-                    directoryMetadata: directoryMetadata!,
-                    directoryTags: directoryTags!,
-                  ),
+                  _addToGroup,
                   true,
                   completeDirectoryNameTag: completeDirectoryNameTag,
                 ),
-              if (blacklistedDirectories != null)
-                actions.blacklist(
-                  context,
-                  segmentCell,
-                  directoryMetadata: directoryMetadata,
-                  blacklistedDirectory: blacklistedDirectories!,
-                ),
+              if (BlacklistedDirectoryService.available)
+                actions.blacklist(context, segmentCell),
               actions.joinedDirectories(
                 context,
                 api,
                 callback?.toFileOrNull,
                 segmentCell,
-                directoryMetadata: directoryMetadata,
-                directoryTags: directoryTags,
-                favoritePosts: favoritePosts,
-                localTags: localTagsService,
               ),
             ],
       onEmpty: _DirectoryOnEmpty(
@@ -204,7 +170,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     }
 
     searchFocus.dispose();
-    _lifecycleListener.dispose();
+    _lifecycleListener?.dispose();
 
     super.dispose();
   }
@@ -215,30 +181,26 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   void _refresh() {
     api.trashCell?.refresh();
     api.source.clearRefresh();
-    galleryService.version.then((value) => _galleryVersion = value);
+
+    GalleryApi.safe()?.version.then((value) => _galleryVersion = value);
   }
 
   String segmentCell(Directory cell) => defaultSegmentCell(
         cell.name,
         cell.bucketId,
-        directoryTags,
       );
 
   Segments<Directory> makeSegments(
     BuildContext context, {
     required AppLocalizations l10n,
-    required DirectoryMetadataService? directoryMetadata,
   }) {
     return Segments(
       l10n.segmentsUncategorized,
       injectedLabel:
           callback != null ? l10n.suggestionsLabel : l10n.segmentsSpecial,
       displayFirstCellInSpecial: callback != null,
-      caps: directoryMetadata != null
-          ? DirectoryMetadataSegments(
-              l10n.segmentsSpecial,
-              directoryMetadata,
-            )
+      caps: DirectoryMetadataService.available
+          ? DirectoryMetadataSegments(l10n.segmentsSpecial)
           : const SegmentCapability.empty(),
       segment: segmentCell,
       injectedSegments: api.trashCell != null ? [api.trashCell!] : const [],
@@ -250,24 +212,19 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
                 api,
                 callback?.toFile,
                 segmentCell,
-                directoryMetadata: directoryMetadata,
-                directoryTags: directoryTags,
-                favoritePosts: favoritePosts,
-                localTags: localTagsService,
               )
           : null,
     );
   }
 
   Future<void Function(BuildContext)?> _addToGroup(
-    BuildContext context,
     List<Directory> selected,
     String value,
-    bool toPin, {
-    required DirectoryMetadataService directoryMetadata,
-    required DirectoryTagService directoryTags,
-  }) async {
+    bool toPin,
+  ) async {
     final l10n = context.l10n();
+    const directoryTags = DirectoryTagService();
+    const directoryMetadata = DirectoryMetadataService();
 
     final requireAuth = <Directory>[];
     final noAuth = <Directory>[];
@@ -283,7 +240,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
     if (noAuth.isEmpty &&
         requireAuth.isNotEmpty &&
-        AppInfo().canAuthBiometric) {
+        const AppApi().canAuthBiometric) {
       final success = await LocalAuthentication()
           .authenticate(localizedReason: l10n.changeGroupReason);
       if (!success) {
@@ -411,18 +368,14 @@ class _DirectoryOnEmpty implements OnEmptyInterface {
   }
 }
 
-String defaultSegmentCell(
-  String name,
-  String bucketId,
-  DirectoryTagService? directoryTag,
-) {
+String defaultSegmentCell(String name, String bucketId) {
   for (final booru in Booru.values) {
     if (booru.url == name) {
       return "Booru";
     }
   }
 
-  final dirTag = directoryTag?.get(bucketId);
+  final dirTag = DirectoryTagService.safe()?.get(bucketId);
   if (dirTag != null) {
     return dirTag;
   }

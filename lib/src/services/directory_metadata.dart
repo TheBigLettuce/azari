@@ -7,61 +7,21 @@ part of "services.dart";
 
 extension DirectoryMetadataDataExt on DirectoryMetadata {
   void maybeSave() =>
-      _currentDb.get<DirectoryMetadataService>()?.addAll([this]);
+      _dbInstance.get<DirectoryMetadataService>()?.addAll([this]);
 }
 
-extension GetOrCreateDirMetadataCacheExt on DirectoryMetadataService {
-  DirectoryMetadata getOrCreate(String id) {
-    final d = cache.get(id);
-    if (d != null) {
-      return d;
-    }
+mixin class DirectoryMetadataService implements ServiceMarker {
+  const DirectoryMetadataService();
 
-    final newD = DirectoryMetadata(categoryName: id, time: DateTime.now());
+  static bool get available => _instance != null;
+  static DirectoryMetadataService? safe() => _instance;
 
-    addAll([newD]);
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<DirectoryMetadataService>();
 
-    return newD;
-  }
+  DirectoryMetadataCache get cache => _instance!.cache;
 
-  Future<bool> canAuth(String id, String reason) async {
-    if (!AppInfo().canAuthBiometric) {
-      return true;
-    }
-
-    final directoryMetadata = _currentDb.get<DirectoryMetadataService>();
-    if (directoryMetadata == null) {
-      return true;
-    }
-
-    if (cache.get(id)?.requireAuth ?? false) {
-      final success =
-          await LocalAuthentication().authenticate(localizedReason: reason);
-      if (!success) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-}
-
-extension DirectoryMetadataCacheFindHelpersExt on DirectoryMetadataCache {
-  List<DirectoryMetadata?> getAllNulled(List<String> ids) {
-    final ret = <DirectoryMetadata?>[];
-
-    for (final id in ids) {
-      ret.add(get(id));
-    }
-
-    return ret;
-  }
-}
-
-abstract interface class DirectoryMetadataService implements ServiceMarker {
-  DirectoryMetadataCache get cache;
-
-  void addAll(List<DirectoryMetadata> data);
+  void addAll(List<DirectoryMetadata> data) => _instance!.addAll(data);
 }
 
 abstract class DirectoryMetadataCache
@@ -88,121 +48,50 @@ abstract class DirectoryMetadata {
   });
 }
 
-class DirectoryMetadataSegments implements SegmentCapability {
-  const DirectoryMetadataSegments(this.specialLabel, this.db);
-
-  final DirectoryMetadataService db;
-
-  final String specialLabel;
-
-  @override
-  bool get ignoreButtons => false;
-
-  @override
-  Set<SegmentModifier> get(String seg) {
-    if (seg.isEmpty) {
-      return const {};
+extension GetOrCreateDirMetadataCacheExt on DirectoryMetadataService {
+  DirectoryMetadata getOrCreate(String id) {
+    final d = cache.get(id);
+    if (d != null) {
+      return d;
     }
 
-    if (seg == "Booru" || seg == specialLabel) {
-      return const {SegmentModifier.sticky};
-    }
+    final newD = DirectoryMetadata(categoryName: id, time: DateTime.now());
 
-    final m = db.cache.get(seg);
-    if (m == null) {
-      return const {};
-    }
+    addAll([newD]);
 
-    final set = <SegmentModifier>{};
-
-    if (m.blur) {
-      set.add(SegmentModifier.blur);
-    }
-
-    if (m.requireAuth) {
-      set.add(SegmentModifier.auth);
-    }
-
-    if (m.sticky) {
-      set.add(SegmentModifier.sticky);
-    }
-
-    return set;
+    return newD;
   }
 
-  @override
-  void add(List<String> segments_, Set<SegmentModifier> m) {
-    final segments = segments_
-        .where((element) => element != "Booru" && element != specialLabel)
-        .toList();
-
-    if (segments.isEmpty || m.isEmpty) {
-      return;
+  Future<bool> canAuth(String id, String reason) async {
+    if (!const AppApi().canAuthBiometric) {
+      return true;
     }
 
-    final l = db.cache.getAllNulled(segments).indexed.map(
-          (element) =>
-              element.$2 ??
-              DirectoryMetadata(
-                categoryName: segments[element.$1],
-                time: DateTime.now(),
-              ),
-        );
-    final toUpdate = <DirectoryMetadata>[];
+    final directoryMetadata = _dbInstance.get<DirectoryMetadataService>();
+    if (directoryMetadata == null) {
+      return true;
+    }
 
-    for (var seg in l) {
-      for (final e in m) {
-        switch (e) {
-          case SegmentModifier.blur:
-            seg = seg.copyBools(blur: true);
-          case SegmentModifier.auth:
-            seg = seg.copyBools(requireAuth: true);
-          case SegmentModifier.sticky:
-            seg = seg.copyBools(sticky: true);
-        }
+    if (cache.get(id)?.requireAuth ?? false) {
+      final success =
+          await LocalAuthentication().authenticate(localizedReason: reason);
+      if (!success) {
+        return false;
       }
-
-      toUpdate.add(seg);
     }
 
-    db.addAll(toUpdate);
+    return true;
   }
+}
 
-  @override
-  void remove(List<String> segments_, Set<SegmentModifier> m) {
-    final segments = segments_
-        .where((element) => element != "Booru" && element != specialLabel)
-        .toList();
+extension DirectoryMetadataCacheFindHelpersExt on DirectoryMetadataCache {
+  List<DirectoryMetadata?> getAllNulled(List<String> ids) {
+    final ret = <DirectoryMetadata?>[];
 
-    if (segments.isEmpty || m.isEmpty) {
-      return;
+    for (final id in ids) {
+      ret.add(get(id));
     }
 
-    final l = db.cache.getAllNulled(segments).indexed.map(
-          (e) =>
-              e.$2 ??
-              DirectoryMetadata(
-                categoryName: segments[e.$1],
-                time: DateTime.now(),
-              ),
-        );
-    final toUpdate = <DirectoryMetadata>[];
-
-    for (var seg in l) {
-      for (final e in m) {
-        switch (e) {
-          case SegmentModifier.blur:
-            seg = seg.copyBools(blur: false);
-          case SegmentModifier.auth:
-            seg = seg.copyBools(requireAuth: false);
-          case SegmentModifier.sticky:
-            seg = seg.copyBools(sticky: false);
-        }
-      }
-
-      toUpdate.add(seg);
-    }
-
-    db.addAll(toUpdate);
+    return ret;
   }
 }

@@ -46,8 +46,10 @@ app.*.map.json
 /android/app/release
 
 # generated code
-/lib/src/**/*.g.dart
-/lib/l10n/generated/*.dart
+/lib/src/services/**/*.g.dart
+/lib/src/logic/**/*.g.dart
+/lib/src/generated/l10n/*.dart
+/lib/src/generated/platform/**/*.g.dart
 
 /test/test_api.g.dart
 

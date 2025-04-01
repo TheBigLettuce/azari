@@ -11,7 +11,6 @@ class _DirectoryList extends StatefulWidget {
     required this.filteringEvents,
     required this.source,
     required this.searchController,
-    required this.directoryMetadatas,
     required this.onDirectoryPressed,
   });
 
@@ -19,8 +18,6 @@ class _DirectoryList extends StatefulWidget {
   final TextEditingController searchController;
 
   final ResourceSource<int, Directory> source;
-
-  final DirectoryMetadataService? directoryMetadatas;
 
   final void Function(Directory) onDirectoryPressed;
 
@@ -83,10 +80,12 @@ class __DirectoryListState extends State<_DirectoryList> {
     }
 
     if (cell.tag.isNotEmpty) {
-      return widget.directoryMetadatas?.cache.get(cell.tag)?.blur ?? false;
+      return DirectoryMetadataService.safe()?.cache.get(cell.tag)?.blur ??
+          false;
     }
 
-    return widget.directoryMetadatas?.cache
+    return DirectoryMetadataService.safe()
+            ?.cache
             .get(cell.name.split(" ").first.toLowerCase())
             ?.blur ??
         false;

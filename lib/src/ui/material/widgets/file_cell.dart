@@ -3,9 +3,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/obj_impls/file_impl.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
@@ -26,8 +26,6 @@ class FileCell extends StatelessWidget {
     required this.blur,
     required this.imageAlign,
     required this.wrapSelection,
-    required this.localTags,
-    required this.settingsService,
   });
 
   final FileImpl file;
@@ -38,10 +36,6 @@ class FileCell extends StatelessWidget {
   final bool blur;
   final Alignment imageAlign;
   final Widget Function(Widget child) wrapSelection;
-
-  final LocalTagsService? localTags;
-
-  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +94,7 @@ class FileCell extends StatelessWidget {
                           vertical: 4,
                         ),
                         child: VideoGifRow(
+                          uniqueKey: file.uniqueKey(),
                           isVideo: file.isVideo,
                           isGif: file.isGif,
                         ),
@@ -116,15 +111,11 @@ class FileCell extends StatelessWidget {
             ),
           ),
         ),
-        if (localTags != null &&
+        if (LocalTagsService.available &&
             filteringData != null &&
             (filteringData.filteringMode == FilteringMode.tag ||
                 filteringData.filteringMode == FilteringMode.tagReversed))
-          FileCellTagsList(
-            file: file,
-            localTags: localTags!,
-            settingsService: settingsService,
-          ),
+          FileCellTagsList(file: file),
       ],
     );
 
@@ -140,23 +131,16 @@ class FileCellTagsList extends StatefulWidget {
   const FileCellTagsList({
     super.key,
     required this.file,
-    required this.localTags,
-    required this.settingsService,
   });
 
   final FileImpl file;
-
-  final LocalTagsService localTags;
-  final SettingsService settingsService;
 
   @override
   State<FileCellTagsList> createState() => _FileCellTagsListState();
 }
 
 class _FileCellTagsListState extends State<FileCellTagsList>
-    with PinnedSortedTagsArrayMixin {
-  LocalTagsService get localTags => widget.localTags;
-
+    with PinnedSortedTagsArrayMixin, LocalTagsService {
   @override
   List<String> postTags = const [];
 
@@ -166,7 +150,7 @@ class _FileCellTagsListState extends State<FileCellTagsList>
 
     final res = widget.file.res;
     if (res != null) {
-      postTags = localTags.get(widget.file.name);
+      postTags = get(widget.file.name);
     }
   }
 
@@ -201,7 +185,7 @@ class _FileCellTagsListState extends State<FileCellTagsList>
               letterCount: 8,
               isPinned: e.pinned,
               onLongPressed: () {
-                context.openSafeModeDialog(widget.settingsService, (safeMode) {
+                context.openSafeModeDialog((safeMode) {
                   OnBooruTagPressed.pressOf(
                     context,
                     e.tag,

@@ -62,25 +62,26 @@ abstract class DownloadFileData implements CellBase, Thumbnailable {
   DownloadFileData toOnHold();
 }
 
-@immutable
-abstract class DownloadFileDataImpl
-    with DefaultBuildCellImpl
-    implements DownloadFileData {
-  const DownloadFileDataImpl();
+class PathVolume {
+  const PathVolume(
+    this.path,
+    this.volume,
+    this.dirName,
+  );
 
-  @override
-  String toString() => "Download${status.name}: $name, url: $url";
+  final String path;
+  final String volume;
+  final String dirName;
+}
 
-  @override
-  Key uniqueKey() => ValueKey(url);
+enum DownloadStatus {
+  onHold,
+  failed,
+  inProgress;
 
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  String alias(bool isList) => name;
-
-  @override
-  CellStaticData description() => const CellStaticData();
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        DownloadStatus.onHold => l10n.enumDownloadStatusOnHold,
+        DownloadStatus.failed => l10n.enumDownloadStatusFailed,
+        DownloadStatus.inProgress => l10n.enumDownloadStatusInProgress,
+      };
 }

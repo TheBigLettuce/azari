@@ -44,9 +44,12 @@ class SourceShellElementState<T extends CellBase>
     required this.selectionController,
     required this.actions,
     required this.onEmpty,
+    this.topPaddingHeight = 80,
     this.wrapRefresh = defaultRefreshIndicator,
     this.updatesAvailable,
   });
+
+  final double topPaddingHeight;
 
   final SelectionController selectionController;
   final List<SelectionBarAction> actions;
@@ -99,6 +102,9 @@ class SourceShellElementState<T extends CellBase>
   bool get isEmpty => source.backingStorage.isEmpty;
 
   @override
+  bool get isNotEmpty => source.backingStorage.isNotEmpty;
+
+  @override
   bool get isRefreshing => source.progress.inRefreshing;
 
   @override
@@ -142,9 +148,9 @@ class SourceShellElementState<T extends CellBase>
     GridColumn columns,
   ) {
     if (layoutType == GridLayoutType.list) {
-      return contentSize * idx / source.count;
+      return (contentSize - topPaddingHeight) * idx / source.count;
     } else {
-      return contentSize *
+      return (contentSize - topPaddingHeight) *
           (idx / columns.number - 1) /
           (source.count / columns.number);
     }
@@ -163,6 +169,7 @@ class SourceShellElementState<T extends CellBase>
 
 abstract class ShellElementState {
   bool get isEmpty;
+  bool get isNotEmpty => !isEmpty;
   bool get hasNext;
   bool get canLoadMore;
   bool get isRefreshing;
@@ -281,7 +288,7 @@ class _ShellElementState extends State<ShellElement> {
             final saveScroll =
                 ShellScrollNotifier.saveScrollNotifierOf(context);
 
-            return _ScrollingLogicHolder(
+            return ShellScrollingLogicHolder(
               offsetSaveNotifier: saveScroll,
               initalScrollPosition: widget.initialScrollPosition,
               controller: ShellScrollNotifier.of(context),
@@ -411,8 +418,8 @@ class SelectedGridPage extends InheritedWidget {
   bool updateShouldNotify(SelectedGridPage oldWidget) => page != oldWidget.page;
 }
 
-class _ScrollingLogicHolder extends StatefulWidget {
-  const _ScrollingLogicHolder({
+class ShellScrollingLogicHolder extends StatefulWidget {
+  const ShellScrollingLogicHolder({
     super.key,
     required this.controller,
     required this.initalScrollPosition,
@@ -436,10 +443,11 @@ class _ScrollingLogicHolder extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_ScrollingLogicHolder> createState() => _ScrollingLogicHolderState();
+  State<ShellScrollingLogicHolder> createState() =>
+      _ShellScrollingLogicHolderState();
 }
 
-class _ScrollingLogicHolderState extends State<_ScrollingLogicHolder> {
+class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
   ScrollController get controller => widget.controller;
 
   ShellElementState get state => widget.state;

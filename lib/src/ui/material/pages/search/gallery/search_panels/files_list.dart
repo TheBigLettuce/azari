@@ -10,20 +10,10 @@ class _FilesList extends StatefulWidget {
     // super.key,
     required this.filteringEvents,
     required this.searchController,
-    required this.localTags,
-    required this.tagManager,
-    required this.videoSettings,
-    required this.galleryService,
   });
 
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
-
-  final LocalTagsService? localTags;
-  final TagManagerService? tagManager;
-  final VideoSettingsService? videoSettings;
-
-  final GalleryService galleryService;
 
   static const size = Size(160 / 1.3, 160);
   static const listPadding = EdgeInsets.symmetric(horizontal: 18 + 4);
@@ -32,19 +22,15 @@ class _FilesList extends StatefulWidget {
   State<_FilesList> createState() => __FilesListState();
 }
 
-class __FilesListState extends State<_FilesList> {
-  LocalTagsService? get localTags => widget.localTags;
-  TagManagerService? get tagManager => widget.tagManager;
-  VideoSettingsService? get videoSettings => widget.videoSettings;
-
+class __FilesListState extends State<_FilesList> with GalleryApi {
   late final GenericListSource<File> fileSource;
 
-  late _FilesLoadingStatus search;
+  late _FilesLoadingStatus _search;
 
   late final StreamSubscription<String> subscr;
   late final StreamSubscription<void> refreshingEvents;
 
-  late final PigeonGalleryDataImpl impl;
+  late final PlatformImageViewStateImpl impl;
 
   @override
   void initState() {
@@ -52,38 +38,28 @@ class __FilesListState extends State<_FilesList> {
 
     fileSource = GenericListSource(
       () {
-        if (search.str.isEmpty) {
+        if (_search.str.isEmpty) {
           return Future.value(const []);
         }
 
-        return widget.galleryService.search.filesByName(search.str, 30);
+        return search.filesByName(_search.str, 30);
       },
     );
 
-    search = _FilesLoadingStatus(fileSource);
+    _search = _FilesLoadingStatus(fileSource);
 
-    impl = PigeonGalleryDataImpl(
-      source: search.source,
+    impl = PlatformImageViewStateImpl(
+      source: _search.source,
       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
         callback: null,
         child: child,
       ),
-      watchTags: localTags != null && tagManager != null
-          ? (c, f) => FileImpl.watchTags(
-                c,
-                f,
-                localTags!,
-                tagManager!.pinned,
-              )
+      watchTags: LocalTagsService.available && TagManagerService.available
+          ? FileImpl.watchTags
           : null,
-      tags: localTags != null && tagManager != null
-          ? (c) => FileImpl.imageTags(
-                c,
-                localTags!,
-                tagManager!,
-              )
+      tags: LocalTagsService.available && TagManagerService.available
+          ? FileImpl.imageTags
           : null,
-      videoSettings: videoSettings,
     );
 
     refreshingEvents = fileSource.progress.watch((_) {
@@ -92,23 +68,23 @@ class __FilesListState extends State<_FilesList> {
 
     subscr = widget.filteringEvents.stream.listen((str) {
       setState(() {
-        if (search.str == str || fileSource.progress.inRefreshing) {
+        if (_search.str == str || fileSource.progress.inRefreshing) {
           return;
         }
 
-        search = _FilesLoadingStatus(fileSource)..str = str;
+        _search = _FilesLoadingStatus(fileSource)..str = str;
         fileSource.clearRefresh();
       });
     });
 
-    FlutterGalleryData.setUp(impl);
-    GalleryVideoEvents.setUp(impl);
+    platform.FlutterGalleryData.setUp(impl);
+    platform.GalleryVideoEvents.setUp(impl);
   }
 
   @override
   void dispose() {
-    FlutterGalleryData.setUp(null);
-    GalleryVideoEvents.setUp(null);
+    platform.FlutterGalleryData.setUp(null);
+    platform.GalleryVideoEvents.setUp(null);
 
     impl.dispose();
 
@@ -149,7 +125,7 @@ class __FilesListState extends State<_FilesList> {
                   width: _FilesList.size.width,
                   child: _FilesCell(
                     file: cell,
-                    search: search,
+                    search: _search,
                     impl: impl,
                     idx: i,
                   ),
@@ -182,21 +158,16 @@ class _FilesCell extends StatelessWidget {
   final int idx;
 
   final _FilesLoadingStatus search;
-  final PigeonGalleryDataImpl impl;
+  final PlatformImageViewStateImpl impl;
   final File file;
 
   void onPressed(BuildContext context) {
-    final db = Services.of(context);
-
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) {
           return ImageView(
             startingIndex: idx,
             stateController: impl,
-            videoSettingsService: db.get<VideoSettingsService>(),
-            galleryService: db.get<GalleryService>(),
-            settingsService: db.require<SettingsService>(),
           );
         },
       ),

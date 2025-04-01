@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
 import "package:flutter/material.dart";
 
@@ -63,14 +63,14 @@ class SameFilterAccumulator {
 
 (Iterable<File>, dynamic) favorite(
   Iterable<File> cells,
-  FavoritePostSourceService favoritePosts,
   String searchText,
 ) {
   return (
     cells.where(
       (element) {
-        final isFavorite =
-            favoritePosts.cache.isFavorite(element.res!.$1, element.res!.$2);
+        final isFavorite = const FavoritePostSourceService()
+            .cache
+            .isFavorite(element.res!.$1, element.res!.$2);
 
         if (searchText.isNotEmpty) {
           return element.res != null &&
@@ -85,9 +85,7 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<File>, dynamic) untagged(
-  Iterable<File> cells,
-) {
+(Iterable<File>, dynamic) untagged(Iterable<File> cells) {
   return (
     cells.where(
       (element) => element.tags.isEmpty,
@@ -96,34 +94,28 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<File>, dynamic) video(
-  Iterable<File> cells,
-) {
+(Iterable<File>, dynamic) video(Iterable<File> cells) {
   return (cells.where((element) => element.isVideo), null);
 }
 
-(Iterable<File>, dynamic) gif(
-  Iterable<File> cells,
-) {
+(Iterable<File>, dynamic) gif(Iterable<File> cells) {
   return (cells.where((element) => element.isGif), null);
 }
 
-(Iterable<File>, dynamic) duplicate(
-  Iterable<File> cells,
-) {
+(Iterable<File>, dynamic) duplicate(Iterable<File> cells) {
   return (cells.where((element) => element.isDuplicate), null);
 }
 
 (Iterable<File>, dynamic) stars(
   Iterable<File> cells,
-  FavoritePostSourceService? favoritePosts,
   bool onlyHalf,
 ) {
   return (
     cells.where(
       (element) {
-        if (favoritePosts != null && element.res != null) {
-          final stars = favoritePosts.cache.get(element.res!)?.stars;
+        if (FavoritePostSourceService.available && element.res != null) {
+          final stars =
+              const FavoritePostSourceService().cache.get(element.res!)?.stars;
           if (stars != null) {
             return stars != FavoriteStars.zero && stars.isHalf == onlyHalf;
           }
@@ -136,9 +128,7 @@ class SameFilterAccumulator {
   );
 }
 
-(Iterable<File>, dynamic) original(
-  Iterable<File> cells,
-) {
+(Iterable<File>, dynamic) original(Iterable<File> cells) {
   return (
     cells.where(
       (element) => element.tags.containsKey("original"),
@@ -147,12 +137,9 @@ class SameFilterAccumulator {
   );
 }
 
-Iterable<(File f, int? h)> _getDifferenceHash(
-  Iterable<File> cells,
-  ThumbnailService thumbnailService,
-) sync* {
+Iterable<(File f, int? h)> _getDifferenceHash(Iterable<File> cells) sync* {
   for (final cell in cells) {
-    yield (cell, thumbnailService.get(cell.id)?.differenceHash);
+    yield (cell, const ThumbnailService().get(cell.id)?.differenceHash);
   }
 }
 
@@ -162,12 +149,11 @@ Iterable<(File f, int? h)> _getDifferenceHash(
   required bool end,
   required VoidCallback onSkipped,
   required ResourceSource<int, File> source,
-  required ThumbnailService thumbnailService,
 }) {
   final accu =
       (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
 
-  for (final (cell, hash) in _getDifferenceHash(cells, thumbnailService)) {
+  for (final (cell, hash) in _getDifferenceHash(cells)) {
     if (hash == null) {
       accu.skipped++;
       continue;
@@ -205,9 +191,10 @@ Iterable<(File f, int? h)> _getDifferenceHash(
 Future<void> loadNextThumbnails(
   ResourceSource<int, File> source,
   void Function() callback,
-  ThumbnailService thumbnailService,
-  CachedThumbs cachedThumbs,
 ) async {
+  if (!ThumbnailService.available || !ThumbsApi.available) {
+    return;
+  }
   var offset = 0;
   var count = 0;
   final List<Future<ThumbId>> thumbnails = [];
@@ -221,13 +208,13 @@ Future<void> loadNextThumbnails(
     }
 
     for (final file in elems) {
-      if (thumbnailService.get(file.id) == null) {
+      if (const ThumbnailService().get(file.id) == null) {
         count++;
 
-        thumbnails.add(cachedThumbs.get(file.id));
+        thumbnails.add(const ThumbsApi().get(file.id).then((e) => e!));
 
         if (thumbnails.length > 8) {
-          thumbnailService.addAll(await thumbnails.wait);
+          const ThumbnailService().addAll(await thumbnails.wait);
           thumbnails.clear();
         }
       }
@@ -239,7 +226,7 @@ Future<void> loadNextThumbnails(
   }
 
   if (thumbnails.isNotEmpty) {
-    thumbnailService.addAll(await thumbnails.wait);
+    const ThumbnailService().addAll(await thumbnails.wait);
   }
 
   callback();

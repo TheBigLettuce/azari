@@ -6,62 +6,19 @@
 import "dart:async";
 
 import "package:animations/animations.dart";
-import "package:azari/init_main/build_theme.dart";
+import "package:azari/src/init_main/build_theme.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
-import "package:azari/src/platform/network_status.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-
-// DecoratedBox(
-//               decoration: BoxDecoration(
-//                 gradient: LinearGradient(
-//                   begin: Alignment.topCenter,
-//                   end: Alignment.bottomCenter,
-//                   stops: [
-//                     0.2,
-//                     0.3,
-//                     0.5,
-//                     0.6,
-//                     0.7,
-//                     1,
-//                   ],
-//                   colors: [
-//                     theme.colorScheme.surface.withValues(alpha: 0.4),
-//                     theme.colorScheme.surface.withValues(alpha: 0.4),
-//                     theme.colorScheme.surface.withValues(alpha: 0.4),
-//                     theme.colorScheme.surface.withValues(alpha: 0.6),
-//                     theme.colorScheme.surface.withValues(alpha: 0.9),
-//                     theme.colorScheme.surface.withValues(alpha: 1),
-//                   ],
-//                 ),
-//               ),
-//               child: DecoratedBox(
-//                 decoration: BoxDecoration(
-//                   gradient: RadialGradient(
-//                     tileMode: TileMode.mirror,
-//                     center: Alignment.topLeft,
-//                     // transform: Gradient,
-//                     radius: 1,
-//                     colors: [
-//                       theme.colorScheme.surface.withValues(alpha: 0.2),
-//                       theme.colorScheme.surfaceBright.withValues(alpha: 0.25),
-//                       theme.colorScheme.surface.withValues(alpha: 0.3),
-//                       // theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
-//                     ],
-//                   ),
-//                 ),
-//                 child: ,
-//               ),
-//             )
 
 class HomeSkeleton extends StatefulWidget {
   const HomeSkeleton({
@@ -90,7 +47,8 @@ class HomeSkeleton extends StatefulWidget {
   State<HomeSkeleton> createState() => _HomeSkeletonState();
 }
 
-class _HomeSkeletonState extends State<HomeSkeleton> {
+class _HomeSkeletonState extends State<HomeSkeleton>
+    with NetworkStatusApi, NetworkStatusWatcher {
   bool showRail = false;
 
   @override
@@ -122,8 +80,12 @@ class _HomeSkeletonState extends State<HomeSkeleton> {
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          _SkeletonBody(bottomPadding: bottomPadding, child: widget.child),
-          if (!NetworkStatus.g.hasInternet) const _NoNetworkIndicator(),
+          _SkeletonBody(
+            bottomPadding: bottomPadding,
+            hasInternet: hasInternet,
+            child: widget.child,
+          ),
+          if (!hasInternet) const _NoNetworkIndicator(),
         ],
       ),
     );
@@ -164,10 +126,12 @@ class _SkeletonBody extends StatelessWidget {
   const _SkeletonBody({
     // super.key,
     required this.bottomPadding,
+    required this.hasInternet,
     required this.child,
   });
 
   final double bottomPadding;
+  final bool hasInternet;
 
   final Widget child;
 
@@ -175,9 +139,7 @@ class _SkeletonBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = MediaQuery.of(context);
 
-    final padding = EdgeInsets.only(
-      top: NetworkStatus.g.hasInternet ? 0 : 24,
-    );
+    final padding = EdgeInsets.only(top: hasInternet ? 0 : 24);
     final viewPadding =
         data.viewPadding + EdgeInsets.only(bottom: bottomPadding);
 
@@ -598,17 +560,11 @@ class _HomeDrawerState extends State<HomeDrawer> {
         ? Brightness.dark
         : Brightness.light;
 
-    final db = Services.of(context);
-    final (favoritePosts, gridBookmarks) = (
-      db.get<FavoritePostSourceService>(),
-      db.get<GridBookmarkService>(),
-    );
-
     final navigationDestinations = BooruSubPage.values.map(
       (e) => NavigationDrawerDestination(
         selectedIcon: Icon(e.selectedIcon),
         icon: Icon(e.icon),
-        enabled: e.hasServices(db),
+        enabled: e.hasServices(),
         label: Expanded(
           child: Align(
             alignment: Alignment.centerRight,
@@ -623,13 +579,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 if (e == BooruSubPage.favorites && favoritePosts != null)
                   _DrawerNavigationBadgeStyle(
                     child: _FavoritePostsCount(
-                      favoritePosts: favoritePosts,
+                      favoritePosts: favoritePosts!,
                     ),
                   )
                 else if (e == BooruSubPage.bookmarks && gridBookmarks != null)
                   _DrawerNavigationBadgeStyle(
                     child: _BookmarksCount(
-                      gridBookmarks: gridBookmarks,
+                      gridBookmarks: gridBookmarks!,
                     ),
                   ),
               ],

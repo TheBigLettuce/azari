@@ -6,21 +6,18 @@
 import "dart:async";
 
 import "package:azari/src/logic/directories_mixin.dart";
-import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/trash_cell.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/favorite_posts_page.dart";
 import "package:azari/src/ui/material/pages/gallery/blacklisted_directories.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/search/gallery/gallery_search_page.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
-import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
@@ -39,15 +36,6 @@ import "package:logging/logging.dart";
 class DirectoriesPage extends StatefulWidget {
   const DirectoriesPage({
     super.key,
-    required this.gridSettings,
-    required this.directoryMetadata,
-    required this.directoryTags,
-    required this.favoritePosts,
-    required this.blacklistedDirectories,
-    required this.settingsService,
-    required this.gridDbs,
-    required this.localTagsService,
-    required this.galleryService,
     required this.selectionController,
     this.callback,
     this.wrapGridPage = false,
@@ -67,21 +55,10 @@ class DirectoriesPage extends StatefulWidget {
 
   final SelectionController selectionController;
 
-  final DirectoryMetadataService? directoryMetadata;
-  final DirectoryTagService? directoryTags;
-  final FavoritePostSourceService? favoritePosts;
-  final BlacklistedDirectoryService? blacklistedDirectories;
-  final LocalTagsService? localTagsService;
-
-  final GalleryService galleryService;
-  final GridDbService gridDbs;
-  final GridSettingsService gridSettings;
-  final SettingsService settingsService;
-
-  static bool hasServicesRequired(Services db) =>
-      db.get<GridSettingsService>() != null &&
-      db.get<GridDbService>() != null &&
-      db.get<GalleryService>() != null;
+  static bool hasServicesRequired() =>
+      GridSettingsService.available &&
+      GridDbService.available &&
+      GalleryService.available;
 
   static Future<void> open(
     BuildContext context, {
@@ -91,13 +68,7 @@ class DirectoriesPage extends StatefulWidget {
     GalleryReturnCallback? callback,
     Directories? providedApi,
   }) {
-    final db = Services.of(context);
-    final (gridSettings, gridDbs, galleryService) = (
-      db.get<GridSettingsService>(),
-      db.get<GridDbService>(),
-      db.get<GalleryService>(),
-    );
-    if (gridSettings == null || gridDbs == null || galleryService == null) {
+    if (!hasServicesRequired()) {
       // TODO: change
       showSnackbar(context, "Gallery functionality isn't available");
 
@@ -113,16 +84,7 @@ class DirectoriesPage extends StatefulWidget {
           procPop: procPop,
           callback: callback,
           providedApi: providedApi,
-          gridSettings: gridSettings,
-          gridDbs: gridDbs,
-          galleryService: galleryService,
           selectionController: SelectionActions.controllerOf(context),
-          directoryMetadata: db.get<DirectoryMetadataService>(),
-          directoryTags: db.get<DirectoryTagService>(),
-          favoritePosts: db.get<FavoritePostSourceService>(),
-          blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
-          localTagsService: db.get<LocalTagsService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     );
@@ -134,7 +96,7 @@ class DirectoriesPage extends StatefulWidget {
 
 class _DirectoriesPageState extends State<DirectoriesPage>
     with
-        CommonGridData<DirectoriesPage>,
+        SettingsWatcherMixin,
         DirectoriesMixin,
         SingleTickerProviderStateMixin {
   @override
@@ -145,35 +107,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
   @override
   SelectionController get selectionController => widget.selectionController;
-
-  @override
-  WatchableGridSettingsData get gridSettings => widget.gridSettings.directories;
-  @override
-  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
-  @override
-  DirectoryTagService? get directoryTags => widget.directoryTags;
-  @override
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  @override
-  BlacklistedDirectoryService? get blacklistedDirectories =>
-      widget.blacklistedDirectories;
-  @override
-  LocalTagsService? get localTagsService => widget.localTagsService;
-
-  @override
-  GalleryService get galleryService => widget.galleryService;
-  @override
-  GridDbService get gridDbs => widget.gridDbs;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
-  @override
-  void initState() {
-    super.initState();
-
-    watchSettings();
-  }
 
   @override
   void onRequireAuth(BuildContext context, void Function() launchLocalAuth) {
@@ -247,8 +180,8 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                 trailingItems: [
                   if (widget.callback!.isDirectory)
                     IconButton(
-                      onPressed: () => galleryService
-                          .chooseDirectory(l10n, temporary: true)
+                      onPressed: () => FilesApi.safe()
+                          ?.chooseDirectory(l10n, temporary: true)
                           .then((value) {
                         widget.callback!.toDirectory(
                           (
@@ -343,24 +276,23 @@ class _DirectoriesPageState extends State<DirectoriesPage>
               ),
               slivers: [
                 // TODO: latest suggestions widget is broken
-                if (widget.callback?.isFile ?? false)
-                  SliverToBoxAdapter(
-                    child: _LatestImagesWidget(
-                      selectionActions: SelectionActions.of(context),
-                      parent: api,
-                      callback: widget.callback?.toFile,
-                      gallerySearch: galleryService.search,
-                      directoryMetadata: directoryMetadata,
-                      directoryTags: directoryTags,
-                      favoritePosts: favoritePosts,
-                      localTagsService: localTagsService,
-                    ),
-                  ),
+                // if (widget.callback?.isFile ?? false)
+                //   SliverToBoxAdapter(
+                //     child: _LatestImagesWidget(
+                //       selectionActions: SelectionActions.of(context),
+                //       parent: api,
+                //       callback: widget.callback?.toFile,
+                //       gallerySearch: const GalleryService().search,
+                //       directoryMetadata: DirectoryMetadataService.safe(),
+                //       directoryTags: DirectoryTagService.safe(),
+                //       favoritePosts: FavoritePostSourceService.safe(),
+                //       localTagsService: LocalTagsService.safe(),
+                //     ),
+                //   ),
                 SegmentLayout(
                   segments: makeSegments(
                     context,
                     l10n: l10n,
-                    directoryMetadata: directoryMetadata,
                   ),
                   gridSeed: 1,
                   suggestionPrefix: (widget.callback?.isDirectory ?? false)
@@ -401,7 +333,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
               ),
             )
           : child(context),
-      GallerySubPage.blacklisted => blacklistedDirectories != null
+      GallerySubPage.blacklisted => BlacklistedDirectoryService.available
           ? DirectoriesDataNotifier(
               api: api,
               callback: widget.callback,
@@ -417,9 +349,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                             context,
                             GallerySubPage.gallery,
                           ),
-                  settingsService: settingsService,
                   selectionController: widget.selectionController,
-                  blacklistedDirectories: blacklistedDirectories!,
                 ),
               ),
             )
@@ -428,280 +358,176 @@ class _DirectoriesPageState extends State<DirectoriesPage>
   }
 }
 
-class _FavoritePostsElement extends StatefulWidget {
-  const _FavoritePostsElement({
-    super.key,
-  });
+// class _LatestImagesWidget extends StatefulWidget {
+//   const _LatestImagesWidget({
+//     // super.key,
+//     required this.parent,
+//     required this.callback,
+//     required this.selectionActions,
+//     required this.gallerySearch,
+//     required this.directoryMetadata,
+//     required this.directoryTags,
+//     required this.favoritePosts,
+//     required this.localTagsService,
+//   });
 
-  @override
-  State<_FavoritePostsElement> createState() => __FavoritePostsElementState();
-}
+//   final Directories parent;
+//   final ReturnFileCallback? callback;
 
-class __FavoritePostsElementState extends State<_FavoritePostsElement>
-    with FavoritePostsPageLogic {
-  @override
-  FavoritePostSourceService get favoritePosts => throw UnimplementedError();
+//   final Search gallerySearch;
+//   final SelectionActions selectionActions;
 
-  @override
-  SettingsData get settings => throw UnimplementedError();
+//   final DirectoryMetadataService? directoryMetadata;
+//   final DirectoryTagService? directoryTags;
+//   final FavoritePostSourceService? favoritePosts;
+//   final LocalTagsService? localTagsService;
 
-  @override
-  void initState() {
-    super.initState();
-  }
+//   @override
+//   State<_LatestImagesWidget> createState() => __LatestImagesWidgetState();
+// }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+// class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
+//   Search get gallerySearch => widget.gallerySearch;
 
-  @override
-  Widget build(BuildContext context) {
-    return Placeholder();
-  }
-}
+//   late final StreamSubscription<void>? _directoryCapsChanged;
 
-class _SearchBarSliver extends StatelessWidget {
-  const _SearchBarSliver({
-    super.key,
-    required this.search,
-    required this.settingsButton,
-  });
+//   late final filesApi = Files.fake(
+//     clearRefresh: () {
+//       final c = <String, DirectoryMetadata>{};
 
-  final SearchBarAppBarType search;
-  final Widget settingsButton;
+//       return gallerySearch.filesByName("", 20).then((l) {
+//         final ll = _fromDirectoryFileFiltered(l, c);
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n();
-    final theme = Theme.of(context);
+//         if (ll.length < 10) {
+//           return gallerySearch
+//               .filesByName("", 20)
+//               .then((e) => ll + _fromDirectoryFileFiltered(l, c));
+//         }
 
-    return SliverAppBar(
-      systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarIconBrightness: theme.brightness == Brightness.light
-            ? Brightness.dark
-            : Brightness.light,
-        statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
-      ),
-      toolbarHeight: 80,
-      backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
-      centerTitle: true,
-      title: Center(
-        child: SearchBarAutocompleteWrapper(
-          searchFocus: search.filterFocus,
-          search: search,
-          child: (
-            context,
-            textEditingController,
-            focusNode,
-            onFieldSubmitted,
-          ) =>
-              SearchBar(
-            onTap: search.onPressed == null
-                ? null
-                : () => search.onPressed!(context),
-            onTapOutside: (_) => focusNode.unfocus(),
-            onChanged: search.onChanged,
-            focusNode: focusNode,
-            controller: textEditingController,
-            elevation: const WidgetStatePropertyAll(0),
-            onSubmitted: (_) {
-              search.onSubmitted?.call(textEditingController.text);
-              onFieldSubmitted();
-            },
-            leading: search.leading ?? const Icon(Icons.search_rounded),
-            hintText: search.hintText ?? l10n.searchHint,
-            trailing: [
-              ...?search.trailingItems,
-              if (search.filterWidget != null) search.filterWidget!,
-              settingsButton,
-            ],
-            padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 16),
-            ),
-          ),
-        ),
-      ),
-      // stretch: true,
-      // snap: true,
-      // floating: true,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      bottom: search.bottomWidget,
-    );
-  }
-}
+//         return ll;
+//       });
+//     },
+//     parent: widget.parent,
+//     directoryMetadata: widget.directoryMetadata,
+//     directoryTags: widget.directoryTags,
+//     favoritePosts: widget.favoritePosts,
+//     localTags: widget.localTagsService,
+//   );
 
-class _LatestImagesWidget extends StatefulWidget {
-  const _LatestImagesWidget({
-    // super.key,
-    required this.parent,
-    required this.callback,
-    required this.selectionActions,
-    required this.gallerySearch,
-    required this.directoryMetadata,
-    required this.directoryTags,
-    required this.favoritePosts,
-    required this.localTagsService,
-  });
+//   late final gridSelection = ShellSelectionHolder.source(
+//     widget.selectionActions.controller,
+//     const [],
+//     // noAppBar: true,
+//     source: filesApi.source.backingStorage,
+//   );
 
-  final Directories parent;
-  final ReturnFileCallback? callback;
+//   final focus = FocusNode();
 
-  final Search gallerySearch;
-  final SelectionActions selectionActions;
+//   late final SourceShellElementState<File> status;
 
-  final DirectoryMetadataService? directoryMetadata;
-  final DirectoryTagService? directoryTags;
-  final FavoritePostSourceService? favoritePosts;
-  final LocalTagsService? localTagsService;
+//   final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
+//   final controller = ScrollController();
 
-  @override
-  State<_LatestImagesWidget> createState() => __LatestImagesWidgetState();
-}
+//   List<File> _fromDirectoryFileFiltered(
+//     List<File> l,
+//     Map<String, DirectoryMetadata> c,
+//   ) {
+//     return l
+//         .where(
+//           (e) => filterAuthBlur(
+//             c,
+//             e,
+//             directoryMetadata: widget.directoryMetadata,
+//             directoryTag: widget.directoryTags,
+//           ),
+//         )
+//         .toList();
+//   }
 
-class __LatestImagesWidgetState extends State<_LatestImagesWidget> {
-  Search get gallerySearch => widget.gallerySearch;
+//   @override
+//   void initState() {
+//     super.initState();
 
-  late final StreamSubscription<void>? _directoryCapsChanged;
+//     _directoryCapsChanged = widget.directoryMetadata?.cache.watch((_) {
+//       filesApi.source.clearRefresh();
+//     });
 
-  late final filesApi = Files.fake(
-    clearRefresh: () {
-      final c = <String, DirectoryMetadata>{};
+//     status = SourceShellElementState(
+//       source: filesApi.source,
+//       onEmpty: SourceOnEmptyInterface(filesApi.source, (context) => ""),
+//       selectionController: widget.selectionActions.controller,
+//       actions: const [],
+//     );
+//   }
 
-      return gallerySearch.filesByName("", 20).then((l) {
-        final ll = _fromDirectoryFileFiltered(l, c);
+//   @override
+//   void dispose() {
+//     status.destroy();
+//     _directoryCapsChanged?.cancel();
+//     focus.dispose();
+//     filesApi.close();
+//     scrollNotifier.dispose();
+//     controller.dispose();
 
-        if (ll.length < 10) {
-          return gallerySearch
-              .filesByName("", 20)
-              .then((e) => ll + _fromDirectoryFileFiltered(l, c));
-        }
+//     super.dispose();
+//   }
 
-        return ll;
-      });
-    },
-    parent: widget.parent,
-    directoryMetadata: widget.directoryMetadata,
-    directoryTags: widget.directoryTags,
-    favoritePosts: widget.favoritePosts,
-    localTags: widget.localTagsService,
-  );
+//   bool filterAuthBlur(
+//     Map<String, DirectoryMetadata> m,
+//     File? dir, {
+//     required DirectoryTagService? directoryTag,
+//     required DirectoryMetadataService? directoryMetadata,
+//   }) {
+//     final segment = defaultSegmentCell(
+//       dir!.name,
+//       dir.bucketId,
+//       directoryTag,
+//     );
 
-  late final gridSelection = ShellSelectionHolder.source(
-    widget.selectionActions.controller,
-    const [],
-    // noAppBar: true,
-    source: filesApi.source.backingStorage,
-  );
+//     DirectoryMetadata? data = m[segment];
+//     if (data == null) {
+//       final d = directoryMetadata?.cache.get(segment);
+//       if (d == null) {
+//         return true;
+//       }
 
-  final focus = FocusNode();
+//       data = d;
+//       m[segment] = d;
+//     }
 
-  late final SourceShellElementState<File> status;
+//     return !data.requireAuth && !data.blur;
+//   }
 
-  final ValueNotifier<bool> scrollNotifier = ValueNotifier(false);
-  final controller = ScrollController();
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
 
-  List<File> _fromDirectoryFileFiltered(
-    List<File> l,
-    Map<String, DirectoryMetadata> c,
-  ) {
-    return l
-        .where(
-          (e) => filterAuthBlur(
-            c,
-            e,
-            directoryMetadata: widget.directoryMetadata,
-            directoryTag: widget.directoryTags,
-          ),
-        )
-        .toList();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _directoryCapsChanged = widget.directoryMetadata?.cache.watch((_) {
-      filesApi.source.clearRefresh();
-    });
-
-    status = SourceShellElementState(
-      source: filesApi.source,
-      onEmpty: SourceOnEmptyInterface(filesApi.source, (context) => ""),
-      selectionController: widget.selectionActions.controller,
-      actions: const [],
-    );
-  }
-
-  @override
-  void dispose() {
-    status.destroy();
-    _directoryCapsChanged?.cancel();
-    focus.dispose();
-    filesApi.close();
-    scrollNotifier.dispose();
-    controller.dispose();
-
-    super.dispose();
-  }
-
-  bool filterAuthBlur(
-    Map<String, DirectoryMetadata> m,
-    File? dir, {
-    required DirectoryTagService? directoryTag,
-    required DirectoryMetadataService? directoryMetadata,
-  }) {
-    final segment = defaultSegmentCell(
-      dir!.name,
-      dir.bucketId,
-      directoryTag,
-    );
-
-    DirectoryMetadata? data = m[segment];
-    if (data == null) {
-      final d = directoryMetadata?.cache.get(segment);
-      if (d == null) {
-        return true;
-      }
-
-      data = d;
-      m[segment] = d;
-    }
-
-    return !data.requireAuth && !data.blur;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ShellScrollNotifier(
-      saveScrollNotifier: scrollNotifier,
-      fabNotifier: scrollNotifier,
-      controller: controller,
-      scrollSizeCalculator: (contentSize, idx, layoutType, columns) =>
-          0, // TODO: change
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
-          ),
-          child: FadingPanel(
-            label: "",
-            source: filesApi.source,
-            enableHide: false,
-            horizontalPadding: _LatestList.listPadding,
-            childSize: _LatestList.size,
-            child: _LatestList(source: filesApi.source),
-          ),
-        ),
-      ),
-    );
-  }
-}
+//     return ShellScrollNotifier(
+//       saveScrollNotifier: scrollNotifier,
+//       fabNotifier: scrollNotifier,
+//       controller: controller,
+//       scrollSizeCalculator: (contentSize, idx, layoutType, columns) =>
+//           0, // TODO: change
+//       child: ClipRRect(
+//         borderRadius: BorderRadius.circular(15),
+//         child: DecoratedBox(
+//           decoration: BoxDecoration(
+//             borderRadius: BorderRadius.circular(15),
+//             color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
+//           ),
+//           child: FadingPanel(
+//             label: "",
+//             source: filesApi.source,
+//             enableHide: false,
+//             horizontalPadding: _LatestList.listPadding,
+//             childSize: _LatestList.size,
+//             child: _LatestList(source: filesApi.source),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _LatestList extends StatefulWidget {
   const _LatestList({

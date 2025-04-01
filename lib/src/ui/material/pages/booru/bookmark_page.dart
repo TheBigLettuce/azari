@@ -5,15 +5,15 @@
 
 import "dart:async";
 
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -29,9 +29,6 @@ class BookmarkPage extends StatefulWidget {
     super.key,
     required this.pagingRegistry,
     required this.saveSelectedPage,
-    required this.gridBookmarks,
-    required this.settingsService,
-    required this.gridDbs,
     required this.selectionController,
   });
 
@@ -40,31 +37,18 @@ class BookmarkPage extends StatefulWidget {
 
   final SelectionController selectionController;
 
-  final GridDbService? gridDbs;
-
-  final GridBookmarkService gridBookmarks;
-  final SettingsService settingsService;
-
-  static bool hasServicesRequired(Services db) =>
-      db.get<GridBookmarkService>() != null;
+  static bool hasServicesRequired() => GridBookmarkService.available;
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
 }
 
-class _BookmarkPageState extends State<BookmarkPage>
-    with CommonGridData<BookmarkPage> {
-  GridBookmarkService get gridBookmarks => widget.gridBookmarks;
-  GridDbService? get gridDbs => widget.gridDbs;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
+class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
   final PageController pageController = PageController(viewportFraction: 0.8);
   final StreamController<void> _updates = StreamController.broadcast();
   late final StreamSubscription<void> _updatesEvents;
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -83,14 +67,14 @@ class _BookmarkPageState extends State<BookmarkPage>
       setState(() {});
     });
 
+    const gridBookmarks = GridBookmarkService();
+
     source = _ClusteredSource(
       gridBookmarks,
-      settingsService,
+      const SettingsService(),
       _updates.sink,
       widget.selectionController,
     )..refresh(gridBookmarks);
-
-    watchSettings();
   }
 
   @override
@@ -191,8 +175,8 @@ class _BookmarkPageState extends State<BookmarkPage>
                           source: source.backingStorage,
                           openBookmark: launchGrid,
                           progress: source.progress,
-                          gridBookmarks: gridBookmarks,
-                          gridDbs: gridDbs,
+                          gridBookmarks: const GridBookmarkService(),
+                          gridDbs: GridDbService.safe(),
                         ),
                       ],
                     ),
@@ -382,243 +366,6 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
       padding: const EdgeInsets.only(bottom: 8),
       sliver: SliverList.list(
         children: makeList(context, theme),
-      ),
-    );
-  }
-}
-
-class _BookmarkListTile extends StatefulWidget {
-  const _BookmarkListTile({
-    super.key,
-    required this.subtitle,
-    required this.title,
-    required this.state,
-    required this.openBookmark,
-    required this.gridBookmarks,
-    required this.gridDbs,
-  });
-
-  final String title;
-  final String subtitle;
-
-  final GridBookmark state;
-
-  final GridBookmarkService gridBookmarks;
-  final GridDbService? gridDbs;
-
-  final void Function(BuildContext context, GridBookmark e) openBookmark;
-
-  @override
-  State<_BookmarkListTile> createState() => __BookmarkListTileState();
-}
-
-class __BookmarkListTileState extends State<_BookmarkListTile>
-    with SingleTickerProviderStateMixin {
-  GridDbService? get gridDbs => widget.gridDbs;
-  GridBookmarkService get gridBookmarks => widget.gridBookmarks;
-
-  late final AnimationController animationController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    animationController = AnimationController(vsync: this);
-  }
-
-  @override
-  void dispose() {
-    animationController.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context).longestSide * 0.2;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final l10n = context.l10n();
-
-    return Animate(
-      autoPlay: false,
-      value: 0,
-      controller: animationController,
-      effects: const [
-        FadeEffect(
-          delay: Duration(milliseconds: 80),
-          duration: Durations.medium4,
-          curve: Easing.standard,
-          begin: 1,
-          end: 0,
-        ),
-        SlideEffect(
-          duration: Durations.medium4,
-          curve: Easing.emphasizedDecelerate,
-          begin: Offset.zero,
-          end: Offset(1, 0),
-        ),
-      ],
-      child: GestureDetector(
-        onTap: () {
-          widget.openBookmark(context, widget.state);
-        },
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(25),
-                  bottomRight: Radius.circular(25),
-                ),
-              ),
-              child: SizedBox(
-                height: size,
-                width: double.infinity,
-              ),
-            ),
-            Column(
-              children: [
-                SizedBox(
-                  height: size,
-                  child: ClipPath.shape(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Row(
-                          children: List.generate(
-                            widget.state.thumbnails.length,
-                            (index) {
-                              final e = widget.state.thumbnails[index];
-
-                              return SizedBox(
-                                width: constraints.maxWidth / 5,
-                                height: double.infinity,
-                                child: Image(
-                                  frameBuilder: (
-                                    context,
-                                    child,
-                                    frame,
-                                    wasSynchronouslyLoaded,
-                                  ) {
-                                    if (wasSynchronouslyLoaded) {
-                                      return child;
-                                    }
-
-                                    return frame == null
-                                        ? const ShimmerLoadingIndicator()
-                                        : child.animate().fadeIn();
-                                  },
-                                  colorBlendMode: BlendMode.color,
-                                  color: colorScheme.primaryContainer
-                                      .withValues(alpha: 0.4),
-                                  image: CachedNetworkImageProvider(e.url),
-                                  fit: BoxFit.cover,
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(25),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.primary.withValues(alpha: 0.9),
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          Text(
-                            widget.subtitle,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.8),
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            DialogRoute<void>(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(
-                                    l10n.delete,
-                                  ),
-                                  content: ListTile(
-                                    title: Text(widget.state.tags),
-                                    subtitle:
-                                        Text(widget.state.time.toString()),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: gridDbs != null
-                                          ? () {
-                                              gridDbs!
-                                                  .openSecondary(
-                                                    widget.state.booru,
-                                                    widget.state.name,
-                                                    null,
-                                                  )
-                                                  .destroy()
-                                                  .then(
-                                                (value) {
-                                                  if (context.mounted) {
-                                                    Navigator.pop(context);
-                                                  }
-
-                                                  animationController
-                                                      .forward()
-                                                      .then((_) {
-                                                    gridBookmarks.delete(
-                                                      widget.state.name,
-                                                    );
-                                                  });
-                                                },
-                                              );
-                                            }
-                                          : null,
-                                      child: Text(l10n.yes),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(l10n.no),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.delete_outline_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

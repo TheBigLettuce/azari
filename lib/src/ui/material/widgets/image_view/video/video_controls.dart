@@ -9,7 +9,6 @@ class VideoControls extends StatefulWidget {
   const VideoControls({
     super.key,
     required this.videoControls,
-    required this.videoSettings,
     required this.seekTimeAnchor,
     required this.vertical,
     // this.content,
@@ -20,17 +19,12 @@ class VideoControls extends StatefulWidget {
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
 
-  final VideoSettingsService? videoSettings;
-
   @override
   State<VideoControls> createState() => _VideoControlsState();
 }
 
 class _VideoControlsState extends State<VideoControls>
     with TickerProviderStateMixin, VideoSettingsWatcherMixin {
-  @override
-  VideoSettingsService? get videoSettingsService => widget.videoSettings;
-
   late final StreamSubscription<PlayerUpdate> playerUpdatesSubsc;
 
   late final AnimationController animationController;
@@ -365,10 +359,7 @@ class __PlayButtonState extends State<_PlayButton> {
               PlayState.buffering => const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    year2023: false,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               PlayState.stopped => const Icon(Icons.play_arrow_rounded),
             },

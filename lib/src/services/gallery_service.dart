@@ -5,28 +5,18 @@
 
 part of "services.dart";
 
-abstract interface class GalleryService implements ServiceMarker {
-  Directories open({
-    required SettingsService settingsService,
-    required BlacklistedDirectoryService? blacklistedDirectory,
-    required DirectoryTagService? directoryTags,
-    required GalleryTrash? galleryTrash,
-  });
+mixin class GalleryService implements ServiceMarker {
+  const GalleryService();
 
-  GalleryTrash get trash;
-  CachedThumbs get thumbs;
-  FilesManagement get files;
-  Search get search;
+  static bool get available => _instance != null;
+  static GalleryService? safe() => _instance;
 
-  Future<({String formattedPath, String path})?> chooseDirectory(
-    AppLocalizations l10n, {
-    bool temporary = false,
-  });
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<GalleryService>();
 
-  void notify(String? target);
-  Future<int> get version;
+  GalleryTrash get trash => _instance!.trash;
 
-  Events get events;
+  Directories open() => _instance!.open();
 }
 
 abstract class Directory
@@ -102,41 +92,6 @@ abstract class FileBase {
   (int, Booru)? get res;
 }
 
-abstract class Search {
-  const factory Search.dummy() = _DummySearch;
-
-  Future<List<File>> filesByName(String name, int limit);
-  Future<List<File>> filesById(List<int> ids);
-}
-
-abstract class Events {
-  const factory Events.none() = _NoEvents;
-
-  Stream<void>? get tapDown;
-  Stream<GalleryPageChangeEvent>? get pageChange;
-}
-
-class _DummySearch implements Search {
-  const _DummySearch();
-
-  @override
-  Future<List<File>> filesById(List<int> ids) => Future.value(const []);
-
-  @override
-  Future<List<File>> filesByName(String name, int limit) =>
-      Future.value(const []);
-}
-
-class _NoEvents implements Events {
-  const _NoEvents();
-
-  @override
-  Stream<GalleryPageChangeEvent>? get pageChange => null;
-
-  @override
-  Stream<void>? get tapDown => null;
-}
-
 abstract class Directories {
   ResourceSource<int, Directory> get source;
   TrashCell? get trashCell;
@@ -145,131 +100,17 @@ abstract class Directories {
 
   Files files(
     Directory directory,
-    GalleryFilesPageType type,
-    DirectoryTagService? directoryTag,
-    DirectoryMetadataService? directoryMetadata,
-    FavoritePostSourceService? favoritePosts,
-    LocalTagsService? localTags, {
+    GalleryFilesPageType type, {
     required String bucketId,
     required String name,
   });
 
-  Files joinedFiles(
-    List<Directory> directories,
-    DirectoryTagService? directoryTag,
-    DirectoryMetadataService? directoryMetadata,
-    FavoritePostSourceService? favoritePosts,
-    LocalTagsService? localTags,
-  );
+  Files joinedFiles(List<Directory> directories);
 
   void close();
 }
 
-class _FakeFiles implements Files {
-  _FakeFiles(
-    Future<List<File>> Function() clearRefresh,
-    this.directoryMetadata,
-    this.directoryTags,
-    this.favoritePosts,
-    this.localTags,
-    this.parent,
-  ) : source = _GenericListSource(clearRefresh);
-
-  @override
-  List<Directory> get directories => const [
-        Directory(
-          bucketId: "latest",
-          name: "latest",
-          tag: "",
-          volumeName: "",
-          relativeLoc: "",
-          lastModified: 0,
-          thumbFileId: 0,
-        ),
-      ];
-
-  @override
-  final DirectoryMetadataService? directoryMetadata;
-
-  @override
-  final DirectoryTagService? directoryTags;
-
-  @override
-  final FavoritePostSourceService? favoritePosts;
-
-  @override
-  final LocalTagsService? localTags;
-
-  @override
-  final Directories parent;
-
-  @override
-  final SortingResourceSource<int, File> source;
-
-  @override
-  GalleryFilesPageType get type => GalleryFilesPageType.normal;
-
-  @override
-  void close() {
-    source.destroy();
-  }
-
-  @override
-  FilesSourceTags get sourceTags => const _FakeSourceTags();
-
-  @override
-  String get bucketId => "latest";
-}
-
-class _FakeSourceTags implements FilesSourceTags {
-  const _FakeSourceTags();
-
-  @override
-  List<String> get current => const [];
-
-  @override
-  StreamSubscription<List<String>> watch(void Function(List<String> p1) f) =>
-      const Stream<List<String>>.empty().listen(f);
-}
-
-class _GenericListSource extends GenericListSource<File>
-    implements SortingResourceSource<int, File> {
-  _GenericListSource(super.clearRefresh);
-
-  @override
-  Future<int> clearRefreshSilent() => clearRefresh();
-
-  @override
-  SortingMode get sortingMode => SortingMode.none;
-
-  @override
-  set sortingMode(SortingMode s) {}
-}
-
 abstract class Files {
-  factory Files.fake({
-    required Future<List<File>> Function() clearRefresh,
-    required DirectoryMetadataService? directoryMetadata,
-    required DirectoryTagService? directoryTags,
-    required FavoritePostSourceService? favoritePosts,
-    required LocalTagsService? localTags,
-    required Directories parent,
-  }) {
-    return _FakeFiles(
-      clearRefresh,
-      directoryMetadata,
-      directoryTags,
-      favoritePosts,
-      localTags,
-      parent,
-    );
-  }
-
-  DirectoryTagService? get directoryTags;
-  DirectoryMetadataService? get directoryMetadata;
-  FavoritePostSourceService? get favoritePosts;
-  LocalTagsService? get localTags;
-
   SortingResourceSource<int, File> get source;
   FilesSourceTags get sourceTags;
 
@@ -358,54 +199,7 @@ enum GalleryFilesPageType {
   bool isTrash() => this == trash;
 }
 
-abstract interface class FilesManagement {
-  const factory FilesManagement.dummy() = _DummyFilesManagement;
-
-  Future<void> rename(String uri, String newName, [bool notify = true]);
-
-  Future<bool> exists(String filePath);
-
-  Future<void> moveSingle({
-    required String source,
-    required String rootDir,
-    required String targetDir,
-  });
-
-  Future<void> copyMoveInternal({
-    required String relativePath,
-    required String volume,
-    required String dirName,
-    required List<String> internalPaths,
-  });
-
-  Future<void> copyMove(
-    String chosen,
-    String chosenVolumeName,
-    List<File> selected, {
-    required bool move,
-    required bool newDir,
-  });
-
-  void deleteAll(List<File> selected);
-}
-
-abstract interface class CachedThumbs {
-  const factory CachedThumbs.dummy() = _DummyCachedThumbs;
-
-  Future<int> size([bool fromPinned = false]);
-
-  Future<ThumbId> get(int id);
-
-  void clear([bool fromPinned = false]);
-
-  void removeAll(List<int> id, [bool fromPinned = false]);
-
-  Future<ThumbId> saveFromNetwork(String url, int id);
-}
-
 abstract interface class GalleryTrash {
-  const factory GalleryTrash.dummy() = _DummyGalleryTrash;
-
   Future<Directory?> get thumb;
 
   void addAll(List<String> uris);
@@ -413,63 +207,6 @@ abstract interface class GalleryTrash {
   void empty();
 
   void removeAll(List<String> uris);
-}
-
-class _DummyGalleryTrash implements GalleryTrash {
-  const _DummyGalleryTrash();
-
-  @override
-  void addAll(List<String> uris) {}
-
-  @override
-  void empty() {}
-
-  @override
-  void removeAll(List<String> uris) {}
-
-  @override
-  Future<Directory?> get thumb => Future.value();
-}
-
-class _DummyFilesManagement implements FilesManagement {
-  const _DummyFilesManagement();
-
-  @override
-  void deleteAll(List<File> selected) {}
-
-  @override
-  Future<bool> exists(String filePath) => Future.value(false);
-
-  @override
-  Future<void> moveSingle({
-    required String source,
-    required String rootDir,
-    required String targetDir,
-  }) =>
-      Future.value();
-
-  @override
-  Future<void> rename(String uri, String newName, [bool notify = true]) =>
-      Future.value();
-
-  @override
-  Future<void> copyMove(
-    String chosen,
-    String chosenVolumeName,
-    List<File> selected, {
-    required bool move,
-    required bool newDir,
-  }) =>
-      Future.value();
-
-  @override
-  Future<void> copyMoveInternal({
-    required String relativePath,
-    required String volume,
-    required String dirName,
-    required List<String> internalPaths,
-  }) =>
-      Future.value();
 }
 
 @immutable
@@ -484,25 +221,4 @@ class ThumbId {
   final int differenceHash;
 
   final String path;
-}
-
-class _DummyCachedThumbs implements CachedThumbs {
-  const _DummyCachedThumbs();
-
-  @override
-  void clear([bool fromPinned = false]) {}
-
-  @override
-  Future<ThumbId> get(int id) => throw UnimplementedError();
-
-  @override
-  void removeAll(List<int> id, [bool fromPinned = false]) {}
-
-  @override
-  Future<ThumbId> saveFromNetwork(String url, int id) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<int> size([bool fromPinned = false]) => Future.value(0);
 }

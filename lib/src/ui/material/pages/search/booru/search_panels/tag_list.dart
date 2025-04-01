@@ -94,9 +94,7 @@ class __TagListState extends State<_TagList> {
                 child: SizedBox(
                   height: 4,
                   width: 40,
-                  child: LinearProgressIndicator(
-                    year2023: false,
-                  ),
+                  child: LinearProgressIndicator(),
                 ),
               ),
             ),

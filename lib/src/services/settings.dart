@@ -6,72 +6,52 @@
 part of "services.dart";
 
 extension SettingsDataExt on SettingsData {
-  void save() => _currentDb.require<SettingsService>().add(this);
+  void save() => _dbInstance.require<SettingsService>().add(this);
 }
 
-abstract interface class SettingsService implements RequiredService {
+mixin class SettingsService implements RequiredService {
   const SettingsService();
 
-  SettingsData get current;
+  SettingsData get current => _dbInstance.require<SettingsService>().current;
 
-  void add(SettingsData data);
+  void add(SettingsData data) {
+    _dbInstance.require<SettingsService>().add(data);
+  }
 
   StreamSubscription<SettingsData> watch(
     void Function(SettingsData s) f, [
     bool fire = false,
-  ]);
-
-  /// Pick an operating system directory.
-  /// Calls [onError] in case of any error and resolves to false.
-  static Future<bool> chooseDirectory(
-    void Function(String) onError,
-    AppLocalizations l10n, {
-    required GalleryService galleryServices,
-  }) async {
-    late final ({String formattedPath, String path}) resp;
-
-    try {
-      resp = (await galleryServices.chooseDirectory(l10n))!;
-    } catch (e, trace) {
-      Logger.root.severe("chooseDirectory", e, trace);
-      onError(l10n.emptyResult);
-      return false;
-    }
-
-    final current = _currentDb.require<SettingsService>().current;
-    current
-        .copy(
-          path: current.path
-              .copy(path: resp.path, pathDisplay: resp.formattedPath),
-        )
-        .save();
-
-    return Future.value(true);
+  ]) {
+    return _dbInstance.require<SettingsService>().watch(f, fire);
   }
 }
 
 mixin SettingsWatcherMixin<S extends StatefulWidget> on State<S> {
-  SettingsService get settingsService;
-
   StreamSubscription<SettingsData>? _settingsEvents;
 
   late SettingsData settings;
 
-  void onNewSettings(SettingsData newSettings) {}
+  void onNewSettings({
+    required SettingsData newSettings,
+    required SettingsData oldSettings,
+  }) {}
 
   @override
   void initState() {
     super.initState();
 
+    const settingsService = SettingsService();
+
     settings = settingsService.current;
 
     _settingsEvents?.cancel();
     _settingsEvents = settingsService.watch((newSettings) {
-      onNewSettings(newSettings);
+      final oldSettings = settings;
+      settings = newSettings;
 
-      setState(() {
-        settings = newSettings;
-      });
+      onNewSettings(newSettings: newSettings, oldSettings: oldSettings);
+
+      setState(() {});
     });
   }
 
@@ -84,8 +64,8 @@ mixin SettingsWatcherMixin<S extends StatefulWidget> on State<S> {
 }
 
 extension SettingsPathEmptyExt on SettingsPath {
-  bool get isEmpty => path.isEmpty;
-  bool get isNotEmpty => path.isNotEmpty;
+  bool get isEmpty => this.path.isEmpty;
+  bool get isNotEmpty => this.path.isNotEmpty;
 }
 
 @immutable

@@ -6,18 +6,17 @@
 import "dart:async";
 import "dart:ui";
 
-import "package:azari/init_main/app_info.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
-import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/segment_label.dart";
+import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -145,7 +144,7 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
     super.key,
     required this.segments,
     required this.suggestionPrefix,
-    required this.gridSeed,
+    this.gridSeed = 2,
     required this.storage,
     required this.progress,
     required this.l10n,
@@ -886,7 +885,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     final isUnsegmented = segmentLabel.seg == segments.unsegmentedLabel;
 
     Future<void> sticky() async {
-      if (toAuth && AppInfo().canAuthBiometric) {
+      if (toAuth && const AppApi().canAuthBiometric) {
         final success = await LocalAuthentication().authenticate(
           localizedReason: l10n.unstickyStickyDirectory,
         );
@@ -912,7 +911,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
     }
 
     Future<void> blur() async {
-      if (toAuth && AppInfo().canAuthBiometric) {
+      if (toAuth && const AppApi().canAuthBiometric) {
         final success = await LocalAuthentication().authenticate(
           localizedReason: l10n.unblurDirectory,
         );
@@ -986,7 +985,7 @@ class SegmentCard<T extends CellBase> extends StatelessWidget {
                             onPressed: blur,
                             icon: const Icon(Icons.blur_on_rounded),
                           ),
-                          if (AppInfo().canAuthBiometric)
+                          if (const AppApi().canAuthBiometric)
                             IconButton.filled(
                               isSelected: toAuth,
                               onPressed: auth,

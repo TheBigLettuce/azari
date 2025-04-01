@@ -5,29 +5,27 @@
 
 import "dart:async";
 
-import "package:azari/src/services/posts_source.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/posts_source.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
-import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
+import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:dio/dio.dart";
@@ -40,14 +38,6 @@ class BooruRestoredPage extends StatefulWidget {
     required this.saveSelectedPage,
     required this.booru,
     required this.tags,
-    required this.gridBookmarks,
-    required this.hiddenBooruPosts,
-    required this.favoritePosts,
-    required this.settingsService,
-    required this.gridDbs,
-    required this.downloadManager,
-    required this.localTags,
-    required this.tagManager,
     required this.selectionController,
     this.pagingRegistry,
     this.overrideSafeMode,
@@ -70,15 +60,7 @@ class BooruRestoredPage extends StatefulWidget {
 
   final SelectionController selectionController;
 
-  final GridBookmarkService? gridBookmarks;
-  final HiddenBooruPostsService? hiddenBooruPosts;
-  final FavoritePostSourceService? favoritePosts;
-  final DownloadManager? downloadManager;
-  final LocalTagsService? localTags;
-  final TagManagerService? tagManager;
-
-  final GridDbService gridDbs;
-  final SettingsService settingsService;
+  static bool hasServicesRequired() => GridDbService.available;
 
   static Future<void> open(
     BuildContext context, {
@@ -93,9 +75,7 @@ class BooruRestoredPage extends StatefulWidget {
     // bool wrapScaffold = false,
     bool trySearchBookmarkByTags = false,
   }) {
-    final db = Services.of(context);
-    final gridDbs = db.get<GridDbService>();
-    if (gridDbs == null) {
+    if (!hasServicesRequired()) {
       showSnackbar(
         context,
         "Booru functionality isn't available", // TODO: change
@@ -116,15 +96,7 @@ class BooruRestoredPage extends StatefulWidget {
           thenMoveTo: thenMoveTo,
           wrapScaffold: rootNavigator,
           trySearchBookmarkByTags: trySearchBookmarkByTags,
-          gridDbs: gridDbs,
           selectionController: SelectionActions.controllerOf(context),
-          tagManager: db.get<TagManagerService>(),
-          downloadManager: DownloadManager.of(context),
-          localTags: db.get<LocalTagsService>(),
-          gridBookmarks: db.get<GridBookmarkService>(),
-          hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
-          favoritePosts: db.get<FavoritePostSourceService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     );
@@ -135,20 +107,8 @@ class BooruRestoredPage extends StatefulWidget {
 }
 
 class _BooruRestoredPageState extends State<BooruRestoredPage>
-    with CommonGridData<BooruRestoredPage> {
-  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
-  HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  LocalTagsService? get localTags => widget.localTags;
-  TagManagerService? get tagManager => widget.tagManager;
-
-  GridDbService get gridDbs => widget.gridDbs;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+    with SettingsWatcherMixin<BooruRestoredPage> {
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: true,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.two,
@@ -171,7 +131,23 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     SafeMode? safeMode,
     String tags,
   ) {
-    final secondary = gridDbs.openSecondary(
+    // final (
+    //   gridBookmarks,
+    //   favoritePosts,
+    //   hiddenBooruPosts,
+    //   tagManager,
+    //   gridDbs,
+    //   localTags,
+    // ) = (
+    //   S<GridBookmarkService>(),
+    //   S<FavoritePostSourceService>(),
+    //   S<HiddenBooruPostsService>(),
+    //   S<TagManagerService>(),
+    //   S<GridDbService>()!,
+    //   S<LocalTagsService>(),
+    // );
+
+    final secondary = const GridDbService().openSecondary(
       widget.booru,
       name,
       safeMode,
@@ -181,28 +157,21 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     return RestoredBooruPageState(
       widget.booru,
       tags,
-      tagManager,
       secondary,
-      hiddenBooruPosts,
-      gridBookmarks,
       addToBookmarks,
       [
-        if (downloadManager != null && localTags != null)
+        if (DownloadManager.available && LocalTagsService.available)
           actions.downloadPost(
             context,
             widget.booru,
             widget.thenMoveTo,
-            downloadManager: downloadManager!,
-            localTags: localTags!,
-            settingsService: settingsService,
           ),
-        if (favoritePosts != null)
+        if (FavoritePostSourceService.available)
           actions.favorites(
             context,
-            favoritePosts!,
             showDeleteSnackbar: true,
           ),
-        if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
+        if (HiddenBooruPostsService.available) actions.hide(context),
       ],
       widget.selectionController,
     );
@@ -214,10 +183,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
     final tagsTrimmed = widget.tags.trim();
 
-    final bookmarkByName =
-        widget.trySearchBookmarkByTags && gridBookmarks != null
-            ? gridBookmarks!.getFirstByTags(tagsTrimmed, widget.booru)
-            : null;
+    final bookmarkByName = widget.trySearchBookmarkByTags &&
+            GridBookmarkService.available
+        ? const GridBookmarkService().getFirstByTags(tagsTrimmed, widget.booru)
+        : null;
 
     final String name;
     if (bookmarkByName == null) {
@@ -244,11 +213,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
           bookmarkByName?.tags ?? tagsTrimmed,
         );
 
-    pagingState.tagManager?.latest.add(bookmarkByName?.tags ?? tagsTrimmed);
+    TagManagerService.safe()?.latest.add(bookmarkByName?.tags ?? tagsTrimmed);
 
-    if (gridBookmarks != null &&
-        gridBookmarks!.get(pagingState.secondaryGrid.name) == null) {
-      gridBookmarks!.add(
+    if (GridBookmarkService.available &&
+        const GridBookmarkService().get(pagingState.secondaryGrid.name) ==
+            null) {
+      const GridBookmarkService().add(
         GridBookmark(
           booru: widget.booru,
           name: pagingState.secondaryGrid.name,
@@ -258,13 +228,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       );
     }
 
-    watchSettings();
-
-    hiddenPostWatcher = widget.hiddenBooruPosts?.watch((_) {
+    hiddenPostWatcher = HiddenBooruPostsService.safe()?.watch((_) {
       source.backingStorage.addAll([]);
     });
 
-    favoritesWatcher = favoritePosts?.cache.countEvents.listen((event) {
+    favoritesWatcher =
+        FavoritePostSourceService.safe()?.cache.countEvents.listen((event) {
       source.backingStorage.addAll([]);
     });
   }
@@ -275,17 +244,19 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     favoritesWatcher?.cancel();
     hiddenPostWatcher?.cancel();
 
+    final gridBookmarks = GridBookmarkService.safe();
+
     if (widget.pagingRegistry == null) {
       widget.saveSelectedPage(null);
       if (gridBookmarks != null && !pagingState.addToBookmarks) {
-        gridBookmarks!.delete(pagingState.secondaryGrid.name);
+        gridBookmarks.delete(pagingState.secondaryGrid.name);
       }
       pagingState.dispose(pagingState.addToBookmarks);
     } else {
       if (!isRestart) {
         widget.saveSelectedPage(null);
         if (gridBookmarks != null && !pagingState.addToBookmarks) {
-          gridBookmarks!.delete(pagingState.secondaryGrid.name);
+          gridBookmarks.delete(pagingState.secondaryGrid.name);
         }
         (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
                 as RestoredBooruPageState)
@@ -413,7 +384,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                               sliver: CurrentGridSettingsLayout<Post>(
                                 source: source.backingStorage,
                                 progress: source.progress,
-                                gridSeed: gridSeed,
+                                // gridSeed: gridSeed,
                                 selection: null,
                                 buildEmpty: (e) => EmptyWidgetWithButton(
                                   error: e,
@@ -441,7 +412,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                               ),
                               sliver: GridConfigPlaceholders(
                                 progress: source.progress,
-                                randomNumber: gridSeed,
+                                // randomNumber: gridSeed,
                               ),
                             );
                           },
@@ -467,10 +438,7 @@ class RestoredBooruPageState implements PagingEntry {
   RestoredBooruPageState(
     Booru booru,
     String tags,
-    this.tagManager,
     this.secondaryGrid,
-    HiddenBooruPostsService? hiddenBooruPosts,
-    this.gridBookmarks,
     this.addToBookmarks,
     this.actions,
     this.selectionController,
@@ -478,7 +446,7 @@ class RestoredBooruPageState implements PagingEntry {
     api = BooruAPI.fromEnum(booru, client);
 
     void saveThumbnails(GridPostSource instance) {
-      gridBookmarks!
+      const GridBookmarkService()
           .get(secondaryGrid.name)!
           .copy(
             thumbnails: instance.lastFive
@@ -497,8 +465,6 @@ class RestoredBooruPageState implements PagingEntry {
       api,
       this,
       tags,
-      hiddenBooruPosts: hiddenBooruPosts,
-      excluded: tagManager?.excluded,
       onNextCompleted: saveThumbnails,
       onClearRefreshCompleted: saveThumbnails,
     );
@@ -518,17 +484,15 @@ class RestoredBooruPageState implements PagingEntry {
   bool addToBookmarks;
 
   @override
-  void updateTime() => gridBookmarks
-      ?.get(secondaryGrid.name)!
+  void updateTime() => const GridBookmarkService()
+      .get(secondaryGrid.name)!
       .copy(time: DateTime.now())
       .maybeSave();
 
   final Dio client;
-  final TagManagerService? tagManager;
   late final BooruAPI api;
 
   final SecondaryGridHandle secondaryGrid;
-  final GridBookmarkService? gridBookmarks;
   late final GridPostSource source;
   late final SourceShellElementState<Post> status;
   final List<SelectionBarAction> actions;

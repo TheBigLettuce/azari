@@ -3,14 +3,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
@@ -23,37 +22,26 @@ import "package:flutter/material.dart";
 class DownloadsPage extends StatefulWidget {
   const DownloadsPage({
     super.key,
-    required this.downloadManager,
-    required this.settingsService,
     required this.selectionController,
   });
 
   final SelectionController selectionController;
 
-  final DownloadManager downloadManager;
-
-  final SettingsService settingsService;
-
-  static bool hasServicesRequired(Services db) => Services.hasDownloadManager;
+  static bool hasServicesRequired() => DownloadManager.available;
 
   @override
   State<DownloadsPage> createState() => _DownloadsPageState();
 }
 
 class _DownloadsPageState extends State<DownloadsPage>
-    with CommonGridData<DownloadsPage> {
-  DownloadManager get downloadManager => widget.downloadManager;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
+    with SettingsWatcherMixin, DownloadManager {
   late final ChainedFilterResourceSource<String, DownloadHandle> filter;
 
   final searchTextController = TextEditingController();
 
   late final SourceShellElementState<DownloadHandle> status;
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -65,7 +53,7 @@ class _DownloadsPageState extends State<DownloadsPage>
     super.initState();
 
     filter = ChainedFilterResourceSource(
-      downloadManager,
+      source,
       ListStorage(),
       filter: (cells, filteringMode, sortingMode, end, [data]) {
         final text = searchTextController.text;
@@ -92,7 +80,7 @@ class _DownloadsPageState extends State<DownloadsPage>
         delete(context),
         SelectionBarAction(
           Icons.restart_alt_rounded,
-          (selected) => downloadManager.restartAll(selected.cast()),
+          (selected) => restartAll(selected.cast()),
           false,
         ),
       ],
@@ -131,8 +119,7 @@ class _DownloadsPageState extends State<DownloadsPage>
           return;
         }
 
-        downloadManager
-            .removeAll(selected.map((e) => (e as DownloadHandle).key));
+        storage.removeAll(selected.map((e) => (e as DownloadHandle).key));
       },
       true,
     );
@@ -156,7 +143,7 @@ class _DownloadsPageState extends State<DownloadsPage>
           ),
           trailingItems: [
             IconButton(
-              onPressed: downloadManager.clear,
+              onPressed: storage.clear,
               icon: const Icon(Icons.close),
             ),
           ],
@@ -172,7 +159,7 @@ class _DownloadsPageState extends State<DownloadsPage>
                   l10n: l10n,
                   suggestionPrefix: const [],
                   progress: filter.progress,
-                  gridSeed: gridSeed,
+                  // gridSeed: gridSeed,
                   storage: filter.backingStorage,
                   selection: status.selection,
                 ),

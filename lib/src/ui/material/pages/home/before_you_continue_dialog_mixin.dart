@@ -6,8 +6,6 @@
 part of "home.dart";
 
 mixin _BeforeYouContinueDialogMixin {
-  SettingsService get settingsService;
-
   void maybeBeforeYouContinueDialog(
     BuildContext context,
     SettingsData settings,
@@ -34,14 +32,13 @@ mixin _BeforeYouContinueDialogMixin {
                       child: Text(l10n.later),
                     ),
                     TextButton(
-                      onPressed: () {
-                        SettingsService.chooseDirectory(
-                          (e) {},
-                          l10n,
-                          galleryServices: galleryService,
-                        );
-                        Navigator.pop(context);
-                      },
+                      onPressed: FilesApi.available
+                          ? () {
+                              chooseDirectoryCallback((_) {}, l10n);
+
+                              Navigator.pop(context);
+                            }
+                          : null,
                       child: Text(l10n.choose),
                     ),
                   ],
@@ -53,4 +50,31 @@ mixin _BeforeYouContinueDialogMixin {
       );
     }
   }
+}
+
+/// Pick an operating system directory.
+/// Calls [onError] in case of any error and resolves to false.
+Future<bool> chooseDirectoryCallback(
+  void Function(String) onError,
+  AppLocalizations l10n,
+) async {
+  late final ({String formattedPath, String path}) resp;
+
+  try {
+    resp = (await const FilesApi().chooseDirectory(l10n))!;
+  } catch (e, trace) {
+    Logger.root.severe("chooseDirectory", e, trace);
+    onError(l10n.emptyResult);
+    return false;
+  }
+
+  final current = const SettingsService().current;
+  current
+      .copy(
+        path:
+            current.path.copy(path: resp.path, pathDisplay: resp.formattedPath),
+      )
+      .save();
+
+  return Future.value(true);
 }

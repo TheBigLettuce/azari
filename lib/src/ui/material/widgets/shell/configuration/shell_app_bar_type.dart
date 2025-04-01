@@ -5,10 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/typedefs.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";

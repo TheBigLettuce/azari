@@ -3,71 +3,90 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
+// ignore_for_file: unnecessary_late
 
-import "package:azari/init_main/app_info.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/impl_table/io.dart"
-    if (dart.library.html) "package:azari/src/db/services/impl_table/web.dart";
-import "package:azari/src/services/obj_impls/blacklisted_directory_data_impl.dart";
-import "package:azari/src/services/obj_impls/directory_impl.dart";
-import "package:azari/src/services/obj_impls/file_impl.dart";
-import "package:azari/src/services/obj_impls/post_impl.dart";
-import "package:azari/src/services/posts_source.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/display_quality.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
+import "dart:async";
+import "dart:math";
+
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/generated/platform/platform_api.g.dart" as platform
+    show
+        DirectoryFile,
+        FilesCursor,
+        GalleryPageChangeEvent,
+        NotificationChannel,
+        NotificationGroup,
+        NotificationRouteEvent;
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/posts_source.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/trash_cell.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/io.dart"
+    if (dart.library.html) "package:azari/src/services/impl/web.dart";
+import "package:azari/src/services/impl/obj/blacklisted_directory_data_impl.dart";
+import "package:azari/src/services/impl/obj/directory_impl.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/platform/gallery_api.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/post_cell.dart";
-import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
-import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
+import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:cached_network_image/cached_network_image.dart";
+import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:flutter/services.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:mime/mime.dart" as mime;
+import "package:path/path.dart" as path;
+
+export "package:azari/src/generated/platform/platform_api.g.dart"
+    show NotificationChannel, NotificationGroup, NotificationRouteEvent;
 
 part "blacklisted_directory.dart";
 part "directory_metadata.dart";
 part "download_file.dart";
+part "download_manager.dart";
 part "favorite_post.dart";
 part "gallery_service.dart";
 part "grid_settings.dart";
 part "hidden_booru_post.dart";
-part "misc_settings.dart";
+part "platform_api.dart";
 part "settings.dart";
 part "statistics_booru.dart";
 part "statistics_daily.dart";
 part "statistics_gallery.dart";
 part "statistics_general.dart";
+part "tasks.dart";
 part "thumbnail.dart";
 part "video_settings.dart";
 
-Future<void> initServices(AppInstanceType appType) async {
-  _downloadManager ??= await init(_currentDb, appType);
+Future<void> initServices(AppInstanceType appType) {
+  if (_isInit) {
+    return Future.value();
+  }
+  _isInit = true;
 
-  return Future.value();
+  return Future(() async {
+    _dbInstance = await init(appType);
+
+    return;
+  });
 }
 
-int refreshPostCountLimit() {
-  return 100;
-}
+Widget injectWidgetEvents(Widget child) =>
+    _dbInstance.injectWidgetEvents(child);
 
 enum AppInstanceType {
   full,
@@ -75,55 +94,33 @@ enum AppInstanceType {
   pickFile;
 }
 
-DownloadManager? _downloadManager;
-
 abstract interface class Services implements ServiceMarker {
   T? get<T extends ServiceMarker>();
   T require<T extends RequiredService>();
 
-  static T? getOf<T extends ServiceMarker>(BuildContext context) =>
-      of(context).get<T>();
-  static T requireOf<T extends RequiredService>(BuildContext context) =>
-      of(context).require<T>();
-
-  static T? unsafeGet<T extends ServiceMarker>() => _currentDb.get<T>();
-  static T unsafeRequire<T extends RequiredService>() =>
-      _currentDb.require<T>();
-
-  static Widget inject(Widget child) => _ServicesNotifier._(
-        downloadManager: _downloadManager,
-        db: _currentDb,
-        child: child,
-      );
-
-  static Services of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_ServicesNotifier>();
-
-    return widget!.db;
-  }
-
-  static DownloadManager? downloadManagerOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_ServicesNotifier>();
-
-    return widget!.downloadManager;
-  }
-
-  static bool get hasDownloadManager => _downloadManager != null;
+  Widget injectWidgetEvents(Widget child);
 }
 
-abstract interface class GridDbService implements ServiceMarker {
-  MainGridHandle openMain(Booru booru);
+mixin class GridDbService implements ServiceMarker {
+  const GridDbService();
+
+  static bool get available => _instance != null;
+  static GridDbService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<GridDbService>();
+
+  MainGridHandle openMain(Booru booru) => _instance!.openMain(booru);
   SecondaryGridHandle openSecondary(
     Booru booru,
     String name,
     SafeMode? safeMode, [
     bool create = false,
-  ]);
+  ]) =>
+      _instance!.openSecondary(booru, name, safeMode, create);
 }
 
-final Services _currentDb = getApi();
+bool _isInit = false;
+late final Services _dbInstance;
 
 @immutable
 abstract class VisitedPost
@@ -143,61 +140,31 @@ abstract class VisitedPost
   PostRating get rating;
 }
 
-mixin VisitedPostImpl implements VisitedPost {
-  @override
-  String alias(bool long) => id.toString();
+mixin class VisitedPostsService implements ServiceMarker {
+  const VisitedPostsService();
 
-  @override
-  CellStaticData description() => const CellStaticData();
+  static bool get available => _instance != null;
+  static VisitedPostsService? safe() => _instance;
 
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      CachedNetworkImageProvider(thumbUrl);
+  static late final VisitedPostsService? _instance =
+      _dbInstance.get<VisitedPostsService>();
 
-  @override
-  Key uniqueKey() => ValueKey((booru, id));
+  List<VisitedPost> get all => _instance!.all;
 
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) =>
-      Post.imageViewSingle(
-        context,
-        booru,
-        id,
-        // wrapNotifiers: functionality.registerNotifiers, // TODO: fix
-      );
+  void addAll(List<VisitedPost> visitedPosts) =>
+      _instance!.addAll(visitedPosts);
+
+  void removeAll(List<VisitedPost> visitedPosts) =>
+      _instance!.removeAll(visitedPosts);
+
+  void clear() => _instance!.clear();
+
+  StreamSubscription<void> watch(void Function(void) f) => _instance!.watch(f);
 }
 
-abstract interface class VisitedPostsService implements ServiceMarker {
-  List<VisitedPost> get all;
+sealed class ServiceMarker extends Object {}
 
-  void addAll(List<VisitedPost> visitedPosts);
-  void removeAll(List<VisitedPost> visitedPosts);
-
-  void clear();
-
-  StreamSubscription<void> watch(void Function(void) f);
-}
-
-class _ServicesNotifier extends InheritedWidget {
-  const _ServicesNotifier._({
-    required this.downloadManager,
-    required this.db,
-    required super.child,
-  });
-
-  final Services db;
-  final DownloadManager? downloadManager;
-
-  @override
-  bool updateShouldNotify(_ServicesNotifier oldWidget) => db != oldWidget.db;
-}
-
-sealed class ServiceMarker {}
-
-sealed class RequiredService {}
+sealed class RequiredService extends Object {}
 
 abstract class LocalTagsData {
   const factory LocalTagsData({
@@ -209,27 +176,39 @@ abstract class LocalTagsData {
   List<String> get tags;
 }
 
-abstract interface class LocalTagsService implements ServiceMarker {
-  int get count;
+mixin class LocalTagsService implements ServiceMarker {
+  const LocalTagsService();
 
-  List<String> get(String filename);
-  List<BooruTag> mostFrequent(int count);
+  static bool get available => _instance != null;
+  static LocalTagsService? safe() => _instance;
 
-  void add(String filename, List<String> tags);
-  void addAll(List<LocalTagsData> tags);
-  void addMultiple(List<String> filenames, String tag);
+  static late final LocalTagsService? _instance =
+      _dbInstance.get<LocalTagsService>();
 
-  void delete(String filename);
-  void removeSingle(List<String> filenames, String tag);
+  int get count => _instance!.count;
 
-  void addFrequency(List<String> tags);
+  List<String> get(String filename) => _instance!.get(filename);
+  List<BooruTag> mostFrequent(int count) => _instance!.mostFrequent(count);
 
-  Future<List<BooruTag>> complete(String string);
+  void add(String filename, List<String> tags) =>
+      _instance!.add(filename, tags);
+  void addAll(List<LocalTagsData> tags) => _instance!.addAll(tags);
+  void addMultiple(List<String> filenames, String tag) =>
+      _instance!.addMultiple(filenames, tag);
+
+  void delete(String filename) => _instance!.delete(filename);
+  void removeSingle(List<String> filenames, String tag) =>
+      _instance!.removeSingle(filenames, tag);
+
+  void addFrequency(List<String> tags) => _instance!.addFrequency(tags);
+
+  Future<List<BooruTag>> complete(String string) => _instance!.complete(string);
 
   StreamSubscription<LocalTagsData> watch(
     String filename,
     void Function(LocalTagsData) f,
-  );
+  ) =>
+      _instance!.watch(filename, f);
 }
 
 enum TagType {
@@ -238,11 +217,19 @@ enum TagType {
   excluded;
 }
 
-abstract interface class DirectoryTagService implements ServiceMarker {
-  String? get(String bucketId);
-  bool searchByTag(String tag);
-  void add(Iterable<String> bucketIds, String tag);
-  void delete(Iterable<String> buckedIds);
+mixin class DirectoryTagService implements ServiceMarker {
+  const DirectoryTagService();
+
+  static DirectoryTagService? safe() => _instance;
+  static bool get available => _instance != null;
+
+  static late final _instance = _dbInstance.get<DirectoryTagService>();
+
+  String? get(String bucketId) => _instance!.get(bucketId);
+  bool searchByTag(String tag) => _instance!.searchByTag(tag);
+  void add(Iterable<String> bucketIds, String tag) =>
+      _instance!.add(bucketIds, tag);
+  void delete(Iterable<String> buckedIds) => _instance!.delete(buckedIds);
 }
 
 @immutable
@@ -320,15 +307,21 @@ abstract class BooruTagging<T extends BooruTaggingType> {
   StreamSubscription<List<ImageTag>> watchImageLocal(
     String filename,
     void Function(List<ImageTag>) f, {
-    required LocalTagsService localTag,
     bool fire = false,
   });
 }
 
-abstract interface class TagManagerService implements ServiceMarker {
-  BooruTagging<Excluded> get excluded;
-  BooruTagging<Latest> get latest;
-  BooruTagging<Pinned> get pinned;
+mixin class TagManagerService implements ServiceMarker {
+  const TagManagerService();
+
+  static bool get available => _instance != null;
+  static TagManagerService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<TagManagerService>();
+
+  BooruTagging<Excluded> get excluded => _instance!.excluded;
+  BooruTagging<Latest> get latest => _instance!.latest;
+  BooruTagging<Pinned> get pinned => _instance!.pinned;
 }
 
 @immutable
@@ -356,25 +349,6 @@ abstract class GridBookmark implements CellBase {
 }
 
 @immutable
-abstract class GridBookmarkImpl
-    with DefaultBuildCellImpl
-    implements CellBase, GridBookmark {
-  const GridBookmarkImpl();
-
-  @override
-  String alias(bool long) => tags;
-
-  @override
-  Key uniqueKey() => ValueKey(name);
-
-  @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
-  String toString() => "GridBookmarkBase: $name $time";
-}
-
-@immutable
 abstract class GridBookmarkThumbnail {
   const factory GridBookmarkThumbnail({
     required String url,
@@ -386,7 +360,7 @@ abstract class GridBookmarkThumbnail {
 }
 
 extension GridStateBooruExt on GridBookmark {
-  void maybeSave() => _currentDb.get<GridBookmarkService>()?.add(this);
+  void maybeSave() => _dbInstance.get<GridBookmarkService>()?.add(this);
 }
 
 abstract class GridState {
@@ -410,23 +384,32 @@ abstract class GridState {
   });
 }
 
-abstract interface class GridBookmarkService implements ServiceMarker {
-  int get count;
+mixin class GridBookmarkService implements ServiceMarker {
+  const GridBookmarkService();
 
-  List<GridBookmark> get all;
+  static bool get available => _instance != null;
+  static GridBookmarkService? safe() => _instance;
 
-  GridBookmark? get(String name);
-  GridBookmark? getFirstByTags(String tags, Booru preferBooru);
+  static late final _instance = _dbInstance.get<GridBookmarkService>();
 
-  List<GridBookmark> complete(String str);
+  int get count => _instance!.count;
 
-  List<GridBookmark> firstNumber(int n);
+  List<GridBookmark> get all => _instance!.all;
 
-  void delete(String name);
+  GridBookmark? get(String name) => _instance!.get(name);
+  GridBookmark? getFirstByTags(String tags, Booru preferBooru) =>
+      _instance!.getFirstByTags(tags, preferBooru);
 
-  void add(GridBookmark state);
+  List<GridBookmark> complete(String str) => _instance!.complete(str);
 
-  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]);
+  List<GridBookmark> firstNumber(int n) => _instance!.firstNumber(n);
+
+  void delete(String name) => _instance!.delete(name);
+
+  void add(GridBookmark state) => _instance!.add(state);
+
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]) =>
+      _instance!.watch(f, fire);
 }
 
 extension GridStateExt on GridState {
@@ -447,15 +430,16 @@ abstract interface class MainGridHandle {
   GridPostSource makeSource(
     BooruAPI api,
     PagingEntry entry, {
-    required BooruTagging<Excluded>? excluded,
-    required HiddenBooruPostsService? hiddenBooruPosts,
     void Function(GridPostSource)? onNextCompleted,
     void Function(GridPostSource)? onClearRefreshCompleted,
   });
 }
 
 class UpdatesAvailableStatus {
-  const UpdatesAvailableStatus(this.hasUpdates, this.inRefresh);
+  const UpdatesAvailableStatus(
+    this.hasUpdates,
+    this.inRefresh,
+  );
 
   final bool hasUpdates;
   final bool inRefresh;
@@ -489,52 +473,12 @@ abstract interface class SecondaryGridHandle {
     BooruAPI api,
     PagingEntry entry,
     String tags, {
-    required BooruTagging<Excluded>? excluded,
-    required HiddenBooruPostsService? hiddenBooruPosts,
     void Function(GridPostSource)? onClearRefreshCompleted,
     void Function(GridPostSource)? onNextCompleted,
   });
 
   Future<void> destroy();
   Future<void> close();
-}
-
-class BufferedStorage<T> {
-  BufferedStorage(this.bufferLen);
-
-  final List<T> _buffer = [];
-  final int bufferLen;
-  int _offset = 0;
-  int _cursor = -1;
-  bool _done = false;
-
-  T get current => _buffer[_cursor];
-
-  bool moveNext(Iterable<T> Function(int offset, int limit) nextItems) {
-    if (_done) {
-      return false;
-    }
-
-    if (_buffer.isNotEmpty && _cursor != _buffer.length - 1) {
-      _cursor += 1;
-      return true;
-    }
-
-    final ret = nextItems(_offset, bufferLen);
-    if (ret.isEmpty) {
-      _cursor = -1;
-      _buffer.clear();
-      _offset = -1;
-      return !(_done = true);
-    }
-
-    _cursor = 0;
-    _buffer.clear();
-    _buffer.addAll(ret);
-    _offset += _buffer.length;
-
-    return true;
-  }
 }
 
 @immutable
@@ -572,14 +516,23 @@ abstract class ThumbUrlRating {
   PostRating get rating;
 }
 
-abstract interface class HottestTagsService implements ServiceMarker {
-  DateTime? refreshedAt(Booru booru);
+mixin class HottestTagsService implements ServiceMarker {
+  const HottestTagsService();
 
-  List<HottestTag> all(Booru booru);
+  static bool get available => _instance != null;
+  static HottestTagsService? safe() => _instance;
 
-  void replace(List<HottestTag> tags, Booru booru);
+  static late final _instance = _dbInstance.get<HottestTagsService>();
 
-  StreamSubscription<void> watch(Booru booru, void Function(void) f);
+  DateTime? refreshedAt(Booru booru) => _instance!.refreshedAt(booru);
+
+  List<HottestTag> all(Booru booru) => _instance!.all(booru);
+
+  void replace(List<HottestTag> tags, Booru booru) =>
+      _instance!.replace(tags, booru);
+
+  StreamSubscription<void> watch(Booru booru, void Function(void) f) =>
+      _instance!.watch(booru, f);
 }
 
 @immutable
@@ -603,8 +556,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
   }) = $Post;
 
   static String getUrl(PostBase p) {
-    var url = switch (
-        Services.unsafeRequire<SettingsService>().current.quality) {
+    var url = switch (const SettingsService().current.quality) {
       DisplayQuality.original => p.fileUrl,
       DisplayQuality.sample => p.sampleUrl
     };
@@ -631,11 +583,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
     int postId, {
     Widget Function(Widget)? wrapNotifiers,
   }) {
-    final db = Services.of(context);
-    final (tagManager, visitedPosts) =
-        (db.get<TagManagerService>(), db.get<VisitedPostsService>());
-
-    if (tagManager == null || visitedPosts == null) {
+    if (!TagManagerService.available || !VisitedPostsService.available) {
       showSnackbar(context, "Couldn't launch image view"); // TODO: change
 
       return;
@@ -656,7 +604,7 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
           dio.close(force: true);
         }
 
-        visitedPosts.addAll([
+        const VisitedPostsService().addAll([
           VisitedPost(
             booru: booru,
             id: postId,
@@ -669,9 +617,13 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
         return () => post.content(context);
       },
       wrapNotifiers: wrapNotifiers,
-      tags: (c) => DefaultPostPressable.imageViewTags(c, tagManager),
-      watchTags: (c, f) =>
-          DefaultPostPressable.watchTags(c, f, tagManager.pinned),
+      tags: (c) =>
+          DefaultPostPressable.imageViewTags(c, const TagManagerService()),
+      watchTags: (c, f) => DefaultPostPressable.watchTags(
+        c,
+        f,
+        const TagManagerService().pinned,
+      ),
     );
   }
 }
@@ -759,22 +711,8 @@ mixin DefaultPostPressable<T extends PostImpl>
     BuildContext context,
     int idx,
   ) {
-    final db = Services.of(context);
-    final (
-      tagManager,
-      visitedPosts,
-      settingsService,
-      favoritePosts,
-      localTags
-    ) = (
-      db.get<TagManagerService>(),
-      db.get<VisitedPostsService>(),
-      db.require<SettingsService>(),
-      db.get<FavoritePostSourceService>(),
-      db.get<LocalTagsService>(),
-    );
-
-    if (this is! FavoritePost && settingsService.current.sampleThumbnails) {
+    if (this is! FavoritePost &&
+        const SettingsService().current.sampleThumbnails) {
       PostCell.openMaximizedImage(
         context,
         this,
@@ -786,14 +724,12 @@ mixin DefaultPostPressable<T extends PostImpl>
 
     final fnc = OnBooruTagPressed.of(context);
 
-    final cont = content(context);
-    if (cont is NetImage) {
-      precacheImage(cont.provider, context);
-    }
-
     final source = this is FavoritePost
         ? getSource<FavoritePost>(context)
         : getSource<Post>(context);
+
+    void tryScrollTo(int i) =>
+        ShellScrollNotifier.maybeScrollToOf(context, i, true);
 
     Navigator.of(context, rootNavigator: true).push<void>(
       PageRouteBuilder(
@@ -806,12 +742,8 @@ mixin DefaultPostPressable<T extends PostImpl>
             onPressed: fnc,
             child: CardDialog(
               animation: animation,
-              settingsService: settingsService,
-              localTags: localTags,
-              downloadManager: DownloadManager.of(context),
-              favoritePosts: favoritePosts,
-              tagManager: tagManager,
               source: source,
+              tryScrollTo: tryScrollTo,
               idx: idx,
             ),
           );

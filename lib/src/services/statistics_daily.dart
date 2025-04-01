@@ -6,39 +6,48 @@
 part of "services.dart";
 
 extension StatisticsDailyDataExt on StatisticsDailyData {
-  void maybeSave() => _currentDb.get<StatisticsDailyService>()?.add(this);
+  void maybeSave() => _dbInstance.get<StatisticsDailyService>()?.add(this);
 }
 
-abstract interface class StatisticsDailyService implements ServiceMarker {
-  StatisticsDailyData get current;
+mixin class StatisticsDailyService implements ServiceMarker {
+  const StatisticsDailyService();
 
-  void add(StatisticsDailyData data);
+  static bool get available => _instance != null;
+  static StatisticsDailyService? safe() => _instance;
+
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<StatisticsDailyService>();
+
+  StatisticsDailyData get current => _instance!.current;
+
+  void add(StatisticsDailyData data) => _instance!.add(data);
 
   StreamSubscription<StatisticsDailyData> watch(
     void Function(StatisticsDailyData d) f, [
     bool fire = false,
-  ]);
+  ]) =>
+      _instance!.watch(f, fire);
 
   static void addSwipedBoth(int s) {
-    final current = _currentDb.get<StatisticsDailyService>()?.current;
+    final current = _dbInstance.get<StatisticsDailyService>()?.current;
 
     current?.copy(swipedBoth: current.swipedBoth + s).maybeSave();
   }
 
   static void addDurationMillis(int d) {
-    final current = _currentDb.get<StatisticsDailyService>()?.current;
+    final current = _dbInstance.get<StatisticsDailyService>()?.current;
 
     current?.copy(durationMillis: current.durationMillis + d).maybeSave();
   }
 
   static void setDurationMillis(int d) {
-    final current = _currentDb.get<StatisticsDailyService>()?.current;
+    final current = _dbInstance.get<StatisticsDailyService>()?.current;
 
     current?.copy(durationMillis: d).maybeSave();
   }
 
   static void addDate(DateTime d) {
-    final current = _currentDb.get<StatisticsDailyService>()?.current;
+    final current = _dbInstance.get<StatisticsDailyService>()?.current;
 
     current
         ?.copy(
@@ -50,7 +59,7 @@ abstract interface class StatisticsDailyService implements ServiceMarker {
   }
 
   static void reset() {
-    _currentDb
+    _dbInstance
         .get<StatisticsDailyService>()
         ?.current
         .copy(

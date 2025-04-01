@@ -5,40 +5,59 @@
 
 import "dart:async";
 
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/src/services/local_tags_helper.dart";
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
-
-extension LoadTagsGlobalNotifier on GlobalProgressTab {
-  ValueNotifier<Future<void>?> loadTags() {
-    return get("LoadTags", () => ValueNotifier<Future<void>?>(null));
-  }
-}
 
 class LoadTags extends StatelessWidget {
   const LoadTags({
     super.key,
     required this.res,
     required this.filename,
-    required this.localTags,
-    required this.galleryService,
   });
 
   final String filename;
 
   final ParsedFilenameResult res;
 
-  final GalleryService? galleryService;
-  final LocalTagsService? localTags;
+  Future<void> _load() async {
+    final localTags = LocalTagsService.safe();
+    if (localTags == null) {
+      return Future.value();
+    }
+
+    try {
+      final tags = await localTags.loadFromDissassemble(
+        filename,
+        res,
+      );
+
+      localTags.addTagsPost(
+        filename,
+        tags,
+        true,
+      );
+
+      GalleryApi.safe()?.notify(null);
+    } catch (e) {
+      // TODO: add snackbar somehow
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(
+      //       l10n.notValidFilename(e.toString()),
+      //     ),
+      //   ),
+      // );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n();
 
-    final notifier = GlobalProgressTab.maybeOf(context)?.loadTags();
+    final task = const TasksService().status<LoadTags>(context);
 
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -50,60 +69,21 @@ class LoadTags extends StatelessWidget {
             ),
             child: Text(l10n.loadTags),
           ),
-          if (notifier != null)
-            ListenableBuilder(
-              listenable: notifier,
-              builder: (context, _) {
-                return FilledButton(
-                  onPressed: notifier.value != null || localTags == null
-                      ? null
-                      : () {
-                          notifier.value = Future(() async {
-                            final tags = await localTags!.loadFromDissassemble(
-                              filename,
-                              res,
-                            );
-
-                            localTags!.addTagsPost(
-                              filename,
-                              tags,
-                              true,
-                            );
-
-                            galleryService?.notify(null);
-                          }).onError((e, _) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    l10n.notValidFilename(e.toString()),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return null;
-                          }).whenComplete(() => notifier.value = null);
-                        },
-                  child: notifier.value != null
-                      ? SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            year2023: false,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      : Text(l10n.fromBooru(res.booru.string)),
-                );
-              },
-            )
-          else
-            FilledButton(
-              onPressed: null,
-              child: Text(l10n.fromBooru(res.booru.string)),
-            ),
+          FilledButton(
+            onPressed: task == TaskStatus.waiting || !LocalTagsService.available
+                ? null
+                : () => const TasksService().add<LoadTags>(_load),
+            child: task == TaskStatus.waiting
+                ? SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : Text(l10n.fromBooru(res.booru.string)),
+          ),
         ],
       ),
     );

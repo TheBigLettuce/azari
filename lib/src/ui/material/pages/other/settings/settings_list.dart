@@ -5,42 +5,27 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/display_quality.dart";
+import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
-import "package:azari/welcome_pages.dart";
 import "package:flutter/material.dart";
 
 class SettingsList extends StatefulWidget {
   const SettingsList({
     super.key,
-    required this.settingsService,
-    required this.thumbnailService,
-    required this.galleryService,
   });
-
-  final GalleryService? galleryService;
-  final ThumbnailService? thumbnailService;
-
-  final SettingsService settingsService;
 
   @override
   State<SettingsList> createState() => _SettingsListState();
 }
 
 class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
-  GalleryService? get galleryService => widget.galleryService;
-  ThumbnailService? get thumbnailService => widget.thumbnailService;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   late Future<int> thumbnailCount;
 
   late Future<int> pinnedThumbnailCount;
@@ -49,8 +34,8 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
   void initState() {
     super.initState();
 
-    thumbnailCount = galleryService?.thumbs.size() ?? Future.value(0);
-    pinnedThumbnailCount = galleryService?.thumbs.size(true) ?? Future.value(0);
+    thumbnailCount = ThumbsApi.safe()?.size() ?? Future.value(0);
+    pinnedThumbnailCount = ThumbsApi.safe()?.size(true) ?? Future.value(0);
   }
 
   void showDialog(String s) {
@@ -82,6 +67,9 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
 
     return localizations.megabytes(i / (1000 * 1000));
   }
+
+  Future<void> onTap() async =>
+      await chooseDirectoryCallback(showDialog, context.l10n());
 
   @override
   Widget build(BuildContext context) {
@@ -163,15 +151,7 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
               tileColor: theme.colorScheme.surfaceContainerHigh,
               title: Text(l10n.downloadDirectorySetting),
               subtitle: Text(settings.path.pathDisplay),
-              onTap: galleryService != null
-                  ? () async {
-                      await SettingsService.chooseDirectory(
-                        showDialog,
-                        l10n,
-                        galleryServices: galleryService!,
-                      );
-                    }
-                  : null,
+              onTap: GalleryService.available ? onTap : null,
             ),
           ),
           ListTile(
@@ -217,13 +197,24 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
                     ? Text(_calculateMBSize(data.data!, l10n))
                     : Text(l10n.loadingPlaceholder),
                 trailing: PopupMenuButton(
-                  enabled: thumbnailService != null && galleryService != null,
+                  enabled:
+                      ThumbnailService.available && GalleryService.available,
                   itemBuilder: (context) {
                     return [
                       PopupMenuItem<void>(
                         enabled: false,
                         child: TextButton(
                           onPressed: () {
+                            void clear() {
+                              const ThumbnailService().clear();
+                              const ThumbsApi().clear();
+
+                              thumbnailCount = Future.value(0);
+
+                              setState(() {});
+                              Navigator.pop(context);
+                            }
+
                             Navigator.push(
                               context,
                               DialogRoute<void>(
@@ -239,19 +230,9 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
                                         child: Text(l10n.no),
                                       ),
                                       TextButton(
-                                        onPressed: thumbnailService != null &&
-                                                galleryService != null
-                                            ? () {
-                                                thumbnailService!.clear();
-
-                                                galleryService!.thumbs.clear();
-
-                                                thumbnailCount =
-                                                    Future.value(0);
-
-                                                setState(() {});
-                                                Navigator.pop(context);
-                                              }
+                                        onPressed: ThumbnailService.available &&
+                                                GalleryService.available
+                                            ? clear
                                             : null,
                                         child: Text(l10n.yes),
                                       ),
@@ -283,16 +264,14 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
           subtitle: const Text("GPL-2.0-only"),
         ),
       ),
-      ListTile(
-        title: Text(l10n.openWelcomePageSetting),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        onTap: () => WelcomePage.open(
-          context,
-          popBackOnEnd: true,
-          settingsService: settingsService,
-          galleryService: galleryService,
-        ),
-      ),
+      // ListTile(
+      //   title: Text(l10n.openWelcomePageSetting),
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      //   onTap: () => WelcomePage.open(
+      //     context,
+      //     popBackOnEnd: true,
+      //   ),
+      // ),
       // ListTile(
       //   title: Text(l10n.dashboardPage),
       //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

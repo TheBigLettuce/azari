@@ -6,14 +6,11 @@
 import "dart:async";
 import "dart:math" as math;
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/platform/network_status.dart";
-import "package:azari/src/platform/notification_api.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/pages/booru/bookmark_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/downloads.dart";
@@ -27,6 +24,7 @@ import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:logging/logging.dart";
 
 part "animated_icons_mixin.dart";
 part "before_you_continue_dialog_mixin.dart";
@@ -40,20 +38,7 @@ part "navigator_shell.dart";
 class Home extends StatefulWidget {
   const Home({
     super.key,
-    required this.stream,
-    required this.settingsService,
-    required this.gridBookmarks,
-    required this.favoritePosts,
-    required this.galleryService,
   });
-
-  final Stream<NotificationRouteEvent> stream;
-
-  final GridBookmarkService? gridBookmarks;
-  final FavoritePostSourceService? favoritePosts;
-  final GalleryService? galleryService;
-
-  final SettingsService settingsService;
 
   @override
   State<Home> createState() => _HomeState();
@@ -77,13 +62,6 @@ class _HomeState extends State<Home>
         AnimatedIconsMixin,
         CurrentGalleryPageMixin,
         _BeforeYouContinueDialogMixin {
-  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  GalleryService? get galleryService => widget.galleryService;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   late final SettingsData settings;
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
@@ -96,9 +74,9 @@ class _HomeState extends State<Home>
   void initState() {
     super.initState();
 
-    settings = settingsService.current;
+    settings = const SettingsService().current;
 
-    notificationEvents = widget.stream.listen((route) {
+    notificationEvents = const AppApi().notificationEvents.listen((route) {
       final currentRoute = _routeNotifier.value;
 
       switch (route) {
@@ -111,23 +89,17 @@ class _HomeState extends State<Home>
       }
     });
 
-    if (galleryService != null) {
+    if (GalleryService.available) {
       maybeBeforeYouContinueDialog(
         context,
         settings,
-        galleryService!,
+        const GalleryService(),
       );
     }
 
     if (isRestart) {
       restartOver();
     }
-
-    NetworkStatus.g.notify = () {
-      try {
-        setState(() {});
-      } catch (_) {}
-    };
   }
 
   @override
@@ -137,8 +109,6 @@ class _HomeState extends State<Home>
     notificationEvents.cancel();
 
     _booruPageNotifier.dispose();
-
-    NetworkStatus.g.notify = null;
 
     super.dispose();
   }
@@ -207,15 +177,15 @@ class _HomeState extends State<Home>
                   drawer: HomeDrawer(
                     changePage: this,
                     animatedIcons: this,
-                    settingsService: settingsService,
-                    gridBookmarks: gridBookmarks,
-                    favoritePosts: favoritePosts,
+                    settingsService: const SettingsService(),
+                    gridBookmarks: GridBookmarkService.safe(),
+                    favoritePosts: FavoritePostSourceService.safe(),
                   ),
                   child: _CurrentPageWidget(
                     icons: this,
                     changePage: this,
                     galleryPageNotifier: galleryPage,
-                    settingsService: settingsService,
+                    settingsService: const SettingsService(),
                   ),
                 ),
               ),

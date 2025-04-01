@@ -20,8 +20,8 @@ regenerate:
 	dart run build_runner build
 
 generate_dbus:
-	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobViewServer.xml -o lib/dbus/job_view_server.g.dart
-	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobView.xml -o lib/dbus/job_view.g.dart
+	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobViewServer.xml -o lib/src/generated/dbus/job_view_server.g.dart
+	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobView.xml -o lib/src/generated/dbus/job_view.g.dart
 
 web_server:
 	CHROME_EXECUTABLE=chromium flutter -d web-server run -v

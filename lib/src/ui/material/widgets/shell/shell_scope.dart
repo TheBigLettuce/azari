@@ -6,12 +6,12 @@
 import "dart:async";
 
 import "package:async/async.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/focus_notifier.dart";
@@ -413,7 +413,7 @@ class _MainBody extends StatelessWidget {
 
 class _OnEmptyListenerScrollView extends StatefulWidget {
   const _OnEmptyListenerScrollView({
-    super.key,
+    // super.key,
     required this.onEmpty,
     required this.build,
     required this.controller,
@@ -485,7 +485,7 @@ mixin _OnEmptyMixin<W extends StatefulWidget> on State<W> {
 
 class _OnEmptyListenerSlivers extends StatefulWidget {
   const _OnEmptyListenerSlivers({
-    super.key,
+    // super.key,
     required this.onEmpty,
     required this.slivers,
   });
@@ -694,7 +694,7 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
             padding: EdgeInsets.only(top: 4),
             child: SizedBox(),
           )
-        : const LinearProgressIndicator(year2023: false);
+        : const LinearProgressIndicator();
   }
 }
 
@@ -808,7 +808,6 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
     const circularProgress = SizedBox.square(
       dimension: 12,
       child: CircularProgressIndicator(
-        year2023: false,
         strokeWidth: 2,
       ),
     );
@@ -1083,7 +1082,11 @@ class ShellScrollNotifier extends InheritedWidget {
     return widget!.saveScrollNotifier;
   }
 
-  static void maybeScrollToOf<T extends CellBase>(BuildContext context, int i) {
+  static void maybeScrollToOf<T extends CellBase>(
+    BuildContext context,
+    int i, [
+    bool animate = false,
+  ]) {
     final notifier = _maybeOf(context);
     if (notifier == null || !notifier.controller.hasClients) {
       return;
@@ -1113,7 +1116,15 @@ class ShellScrollNotifier extends InheritedWidget {
       return;
     }
 
-    controller.jumpTo(target);
+    if (animate) {
+      controller.animateTo(
+        target,
+        curve: Easing.standard,
+        duration: Durations.medium3,
+      );
+    } else {
+      controller.jumpTo(target);
+    }
   }
 
   @override

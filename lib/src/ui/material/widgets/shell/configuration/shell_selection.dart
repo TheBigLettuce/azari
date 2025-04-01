@@ -100,6 +100,7 @@ class _SelectionHolder implements ShellSelectionHolder {
             e.icon,
             () => _use(e.onPress, e.closeOnPress),
             e.closeOnPress,
+            e.taskTag,
             animate: e.animate,
             play: e.play,
           ),

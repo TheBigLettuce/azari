@@ -6,22 +6,30 @@
 part of "services.dart";
 
 extension VideoSettingsDataExt on VideoSettingsData {
-  void maybeSave() => _currentDb.get<VideoSettingsService>()?.add(this);
+  void maybeSave() => _dbInstance.get<VideoSettingsService>()?.add(this);
 }
 
-abstract interface class VideoSettingsService implements ServiceMarker {
-  VideoSettingsData get current;
+mixin class VideoSettingsService implements ServiceMarker {
+  const VideoSettingsService();
 
-  void add(VideoSettingsData data);
+  static bool get available => _instance != null;
+  static VideoSettingsService? safe() => _instance;
+
+  // ignore: unnecessary_late
+  static late final VideoSettingsService? _instance =
+      _dbInstance.get<VideoSettingsService>();
+
+  VideoSettingsData get current => _instance!.current;
+
+  void add(VideoSettingsData data) => _instance!.add(data);
 
   StreamSubscription<VideoSettingsData> watch(
     void Function(VideoSettingsData) f,
-  );
+  ) =>
+      _instance!.watch(f);
 }
 
 mixin VideoSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
-  VideoSettingsService? get videoSettingsService;
-
   StreamSubscription<VideoSettingsData>? _videoSettingsEvents;
 
   late VideoSettingsData? videoSettings;
@@ -30,10 +38,10 @@ mixin VideoSettingsWatcherMixin<S extends StatefulWidget> on State<S> {
   void initState() {
     super.initState();
 
-    videoSettings = videoSettingsService?.current;
+    videoSettings = VideoSettingsService.safe()?.current;
 
     _videoSettingsEvents?.cancel();
-    _videoSettingsEvents = videoSettingsService?.watch((newSettings) {
+    _videoSettingsEvents = VideoSettingsService.safe()?.watch((newSettings) {
       setState(() {
         videoSettings = newSettings;
       });

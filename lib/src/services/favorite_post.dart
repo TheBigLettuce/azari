@@ -7,19 +7,29 @@ part of "services.dart";
 
 extension FavoritePostSaveExt on FavoritePost {
   void maybeSave() {
-    _currentDb.get<FavoritePostSourceService>()?.addAll([
+    _dbInstance.get<FavoritePostSourceService>()?.addAll([
       this,
     ]);
   }
 }
 
-abstract interface class FavoritePostSourceService implements ServiceMarker {
-  FavoritePostCache get cache;
+mixin class FavoritePostSourceService implements ServiceMarker {
+  const FavoritePostSourceService();
 
-  void addAll(List<FavoritePost> posts);
-  void removeAll(List<(int id, Booru booru)> idxs);
+  static bool get available => _instance != null;
+  static FavoritePostSourceService? safe() => _instance;
 
-  void addRemove(List<PostBase> posts);
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<FavoritePostSourceService>();
+
+  FavoritePostCache get cache => _instance!.cache;
+
+  void addAll(List<FavoritePost> posts) => _instance!.addAll(posts);
+
+  void removeAll(List<(int id, Booru booru)> idxs) =>
+      _instance!.removeAll(idxs);
+
+  void addRemove(List<PostBase> posts) => _instance!.addRemove(posts);
 }
 
 abstract class FavoritePostCache
@@ -164,17 +174,17 @@ enum FavoriteStars {
         FavoriteStars.five => 5,
       };
 
-  String translatedString(BuildContext context) => switch (this) {
-        FavoriteStars.zero => "5 stars", // TODO: change
-        FavoriteStars.zeroFive => "4.5 stars",
-        FavoriteStars.one => "4 stars",
-        FavoriteStars.oneFive => "3.5 stars",
-        FavoriteStars.two => "3 stars",
-        FavoriteStars.twoFive => "2.5 stars",
-        FavoriteStars.three => "2 stars",
-        FavoriteStars.threeFive => "1.5 stars",
-        FavoriteStars.four => "1 star",
-        FavoriteStars.fourFive => "0.5 star",
-        FavoriteStars.five => "No stars",
+  String translatedString(AppLocalizations l10n) => switch (this) {
+        FavoriteStars.zero => l10n.stars(0),
+        FavoriteStars.zeroFive => l10n.stars(0.5),
+        FavoriteStars.one => l10n.stars(1),
+        FavoriteStars.oneFive => l10n.stars(1.5),
+        FavoriteStars.two => l10n.stars(2),
+        FavoriteStars.twoFive => l10n.stars(2.5),
+        FavoriteStars.three => l10n.stars(3),
+        FavoriteStars.threeFive => l10n.stars(3.5),
+        FavoriteStars.four => l10n.stars(4),
+        FavoriteStars.fourFive => l10n.stars(4.5),
+        FavoriteStars.five => l10n.stars(5),
       };
 }

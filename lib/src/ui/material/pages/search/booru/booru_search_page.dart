@@ -5,16 +5,15 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
-import "package:azari/src/services/services.dart";
 import "package:azari/src/logic/booru_search_mixin.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
@@ -38,25 +37,17 @@ class BooruSearchPage extends StatefulWidget {
   const BooruSearchPage({
     super.key,
     required this.procPop,
-    required this.tagManager,
-    required this.gridBookmarks,
-    required this.settingsService,
   });
 
   final void Function(bool)? procPop;
 
-  final GridBookmarkService? gridBookmarks;
-
-  final TagManagerService tagManager;
-  final SettingsService settingsService;
+  static bool hasServicesRequired() => TagManagerService.available;
 
   static void open(
     BuildContext context, {
     void Function(bool)? procPop,
   }) {
-    final db = Services.of(context);
-    final tagManager = db.get<TagManagerService>();
-    if (tagManager == null) {
+    if (!hasServicesRequired()) {
       // TODO: change
       showSnackbar(context, "Search functionality isn't available");
 
@@ -67,9 +58,6 @@ class BooruSearchPage extends StatefulWidget {
       MaterialPageRoute(
         builder: (context) => BooruSearchPage(
           procPop: procPop,
-          tagManager: tagManager,
-          gridBookmarks: db.get<GridBookmarkService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     );
@@ -81,12 +69,6 @@ class BooruSearchPage extends StatefulWidget {
 
 class _BooruSearchPageState extends State<BooruSearchPage>
     with SettingsWatcherMixin, BooruSearchMixin {
-  TagManagerService get tagManager => widget.tagManager;
-  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   void _onTagPressed(String str, [SafeMode? safeMode]) {
     _onTag(context, api.booru, str, safeMode ?? settings.safeMode);
   }
@@ -103,7 +85,7 @@ class _BooruSearchPageState extends State<BooruSearchPage>
     }
 
     if (dialog) {
-      context.openSafeModeDialog(settingsService, (value) {
+      context.openSafeModeDialog((value) {
         _onTagPressed(searchController.text.trim(), value);
       });
     } else {
@@ -129,6 +111,8 @@ class _BooruSearchPageState extends State<BooruSearchPage>
 
   @override
   Widget build(BuildContext context) {
+    const tagManager = TagManagerService();
+
     return Scaffold(
       body: SearchPagePopScope(
         searchController: searchController,
@@ -171,10 +155,10 @@ class _BooruSearchPageState extends State<BooruSearchPage>
               tagManager: tagManager,
               api: api,
             ),
-            if (gridBookmarks != null)
+            if (GridBookmarkService.available)
               _BookmarksPanel(
                 filteringEvents: filteringEvents.stream,
-                gridBookmarks: gridBookmarks!,
+                gridBookmarks: const GridBookmarkService(),
               ),
             _TagList(
               filteringEvents: filteringEvents,
@@ -274,7 +258,7 @@ class SearchPageSearchBar extends StatelessWidget {
 
 class _SearchBackIcon extends StatefulWidget {
   const _SearchBackIcon({
-    super.key,
+    // super.key,
     required this.searchTextController,
     required this.onSubmit,
   });

@@ -47,7 +47,7 @@ mixin AnimatedIconsMixin on State<Home>, TickerProviderStateMixin<Home> {
   ) {
     NavigationRailDestination item(CurrentRoute e) => NavigationRailDestination(
           icon: e.icon(this),
-          disabled: !e.hasServices(Services.of(context)),
+          disabled: !e.hasServices(),
           label: Builder(
             builder: (context) {
               return Text(e.label(context, l10n, selectedBooru));
@@ -70,7 +70,7 @@ mixin AnimatedIconsMixin on State<Home>, TickerProviderStateMixin<Home> {
             builder: (context) {
               return NavigationDestination(
                 icon: e.icon(this),
-                enabled: e.hasServices(Services.of(context)),
+                enabled: e.hasServices(),
                 label: e.label(context, l10n, selectedBooru),
               );
             },

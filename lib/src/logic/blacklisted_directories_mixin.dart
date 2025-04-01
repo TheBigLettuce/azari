@@ -3,11 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -16,7 +17,6 @@ import "package:flutter/widgets.dart";
 
 mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
   SelectionController get selectionController;
-  BlacklistedDirectoryService get blacklistedDirectories;
 
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
       filter;
@@ -24,7 +24,7 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
 
   late final SourceShellElementState<BlacklistedDirectoryData> status;
 
-  final gridConfiguration = CancellableWatchableGridSettingsData.noPersist(
+  final gridConfiguration = CancellableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -36,7 +36,7 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
     super.initState();
 
     filter = ChainedFilterResourceSource(
-      blacklistedDirectories,
+      const BlacklistedDirectoryService(),
       ListStorage(),
       filter: (cells, filteringMode, sortingMode, end, [data]) => (
         cells.where((e) => e.name.contains(searchTextController.text)),

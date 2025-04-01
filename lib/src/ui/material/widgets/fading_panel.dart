@@ -5,7 +5,7 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 

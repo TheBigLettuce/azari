@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/action_button.dart";
@@ -26,8 +25,6 @@ class ImageViewSkeleton extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.stateControler,
-    required this.videoSettingsService,
-    required this.settingsService,
     required this.child,
   });
 
@@ -37,9 +34,6 @@ class ImageViewSkeleton extends StatefulWidget {
 
   final VideoControlsControllerImpl videoControls;
   final ImageViewStateController stateControler;
-
-  final VideoSettingsService? videoSettingsService;
-  final SettingsService settingsService;
 
   final Widget child;
 
@@ -81,7 +75,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    final metadata = CurrentIndexMetadata.of(context);
+    CurrentIndexMetadata.of(context);
 
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final theme = Theme.of(context);
@@ -226,8 +220,6 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                 visibilityController: visibilityController,
                 seekTimeAnchor: seekTimeAnchor,
                 pauseVideoState: widget.pauseVideoState,
-                videoSettingsService: widget.videoSettingsService,
-                settingsService: widget.settingsService,
               ),
               SeekTimeAnchor(
                 key: seekTimeAnchor,
@@ -241,7 +233,6 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                     padding: EdgeInsets.only(bottom: viewPadding.bottom),
                     child: VideoControls(
                       videoControls: widget.videoControls,
-                      videoSettings: widget.videoSettingsService,
                       seekTimeAnchor: seekTimeAnchor,
                       vertical: true,
                     ),
@@ -601,8 +592,6 @@ class _BottomIcons extends StatefulWidget {
     required this.videoControls,
     required this.seekTimeAnchor,
     required this.pauseVideoState,
-    required this.videoSettingsService,
-    required this.settingsService,
   });
 
   final EdgeInsets viewPadding;
@@ -612,9 +601,6 @@ class _BottomIcons extends StatefulWidget {
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
   final VideoControlsControllerImpl? videoControls;
   final PauseVideoState pauseVideoState;
-
-  final VideoSettingsService? videoSettingsService;
-  final SettingsService settingsService;
 
   @override
   State<_BottomIcons> createState() => __BottomIconsState();
@@ -684,7 +670,7 @@ class __BottomIconsState extends State<_BottomIcons>
                                       color: e.color,
                                       watch: e.watch,
                                       animation: e.animation,
-                                      notifier: e.longLoadingNotifier,
+                                      taskTag: e.taskTag,
                                     ),
                                   )
                                   .toList(),
@@ -799,7 +785,6 @@ class __BottomIconsState extends State<_BottomIcons>
                               if (widget.videoControls != null)
                                 VideoControls(
                                   videoControls: widget.videoControls!,
-                                  videoSettings: widget.videoSettingsService,
                                   seekTimeAnchor: widget.seekTimeAnchor,
                                   vertical: false,
                                 ),
@@ -814,7 +799,7 @@ class __BottomIconsState extends State<_BottomIcons>
                     ),
                   ),
                 ),
-                _BottomRibbon(settingsService: widget.settingsService),
+                const _BottomRibbon(),
               ],
             ),
           ),
@@ -826,11 +811,8 @@ class __BottomIconsState extends State<_BottomIcons>
 
 class _BottomRibbon extends StatelessWidget {
   const _BottomRibbon({
-    // super.key,
-    required this.settingsService,
+    super.key,
   });
-
-  final SettingsService settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -841,7 +823,6 @@ class _BottomRibbon extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: _PinnedTagsRow(
           tags: ImageTagsNotifier.of(context),
-          settingsService: settingsService,
         ),
       ),
     );
@@ -852,11 +833,9 @@ class _PinnedTagsRow extends StatefulWidget {
   const _PinnedTagsRow({
     // super.key,
     required this.tags,
-    required this.settingsService,
   });
 
   final ImageViewTags tags;
-  final SettingsService settingsService;
 
   @override
   State<_PinnedTagsRow> createState() => __PinnedTagsRowState();
@@ -927,8 +906,7 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
                         onLongPressed: tagsRes.res == null
                             ? null
                             : () {
-                                context.openSafeModeDialog(
-                                    widget.settingsService, (value) {
+                                context.openSafeModeDialog((value) {
                                   OnBooruTagPressed.maybePressOf(
                                     context,
                                     tag.tag,

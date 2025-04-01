@@ -3,12 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/init_main/build_theme.dart";
-import "package:azari/init_main/restart_widget.dart";
+import "package:azari/src/init_main/build_theme.dart";
+import "package:azari/src/init_main/restart_widget.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_list.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:flutter/material.dart";
 
@@ -30,19 +30,12 @@ class SettingsPage extends StatelessWidget {
   final SettingsService settingsService;
 
   static Future<void> open(BuildContext context) {
-    final db = Services.of(context);
-    final (settingsService, galleryService, thumbnailService) = (
-      db.require<SettingsService>(),
-      db.get<GalleryService>(),
-      db.get<ThumbnailService>(),
-    );
-
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
         builder: (context) => SettingsPage(
-          settingsService: settingsService,
-          galleryService: galleryService,
-          thumbnailService: thumbnailService,
+          settingsService: const SettingsService(),
+          galleryService: GalleryService.safe(),
+          thumbnailService: ThumbnailService.safe(),
         ),
       ),
     );
@@ -59,11 +52,7 @@ class SettingsPage extends StatelessWidget {
       l10n.settingsPageName,
       child: SliverPadding(
         padding: padding,
-        sliver: SettingsList(
-          settingsService: settingsService,
-          thumbnailService: thumbnailService,
-          galleryService: galleryService,
-        ),
+        sliver: const SettingsList(),
       ),
     );
   }

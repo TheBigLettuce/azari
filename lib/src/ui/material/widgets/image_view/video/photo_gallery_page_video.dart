@@ -20,11 +20,8 @@ class PhotoGalleryPageVideo extends StatefulWidget {
     super.key,
     required this.url,
     required this.localVideo,
-    required this.videoSettings,
     required this.networkThumb,
   });
-
-  final VideoSettingsService? videoSettings;
 
   final String url;
   final ImageProvider? networkThumb;
@@ -35,8 +32,6 @@ class PhotoGalleryPageVideo extends StatefulWidget {
 }
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
-  VideoSettingsService? get videoSettings => widget.videoSettings;
-
   StreamSubscription<controls.VideoControlsEvent>? eventsSubscr;
 
   late VideoPlayerController controller;
@@ -73,7 +68,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
           controller.setVolume(newVolume);
 
-          videoSettings?.current.copy(volume: newVolume).maybeSave();
+          VideoSettingsService.safe()
+              ?.current
+              .copy(volume: newVolume)
+              .maybeSave();
         case controls.FullscreenButton():
           final orientation = MediaQuery.orientationOf(context);
           if (orientation == Orientation.landscape) {
@@ -103,7 +101,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
           final newLooping = !controller.value.isLooping;
 
           controller.setLooping(newLooping);
-          videoSettings?.current.copy(looping: newLooping).maybeSave();
+          VideoSettingsService.safe()
+              ?.current
+              .copy(looping: newLooping)
+              .maybeSave();
         case controls.AddDuration():
           controller.seekTo(
             controller.value.position +
@@ -137,7 +138,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
       if (!disposed) {
         controller.addListener(_listener);
 
-        final videoSettings = this.videoSettings?.current;
+        final videoSettings = VideoSettingsService.safe()?.current;
 
         controller.setVolume(videoSettings?.volume ?? 1);
 
@@ -247,9 +248,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                         fit: BoxFit.contain,
                       )
                     : const Center(
-                        child: CircularProgressIndicator(
-                          year2023: false,
-                        ),
+                        child: CircularProgressIndicator(),
                       )
                 : GestureDetector(
                     onDoubleTap: () {

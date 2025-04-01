@@ -12,7 +12,6 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
     required this.joinedDirectories,
     required this.source,
     required this.listPadding,
-    required this.directoryMetadata,
   });
 
   final String filteringValue;
@@ -20,7 +19,6 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   final ResourceSource<int, Directory> source;
 
   final EdgeInsets listPadding;
-  final DirectoryMetadataService? directoryMetadata;
 
   final void Function(
     String str,
@@ -32,14 +30,14 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   void _launchPinned(
     BuildContext context, {
     required bool asTag,
-    required DirectoryMetadataService directoryMetadata,
   }) {
     final List<Directory> directories = [];
 
     for (final e in source.backingStorage) {
       final segment = _segment(e);
 
-      if (directoryMetadata.cache.get(segment)?.sticky ?? false) {
+      if (const DirectoryMetadataService().cache.get(segment)?.sticky ??
+          false) {
         directories.add(e);
       }
     }
@@ -121,14 +119,8 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextButton.icon(
-                          onPressed: directoryMetadata != null
-                              ? () {
-                                  _launchPinned(
-                                    context,
-                                    directoryMetadata: directoryMetadata!,
-                                    asTag: true,
-                                  );
-                                }
+                          onPressed: DirectoryMetadataService.available
+                              ? () => _launchPinned(context, asTag: true)
                               : null,
                           label: Text(
                             l10n.tagInPinnedDirectories(filteringValue),
@@ -136,14 +128,8 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
                           icon: const Icon(Icons.search_outlined),
                         ),
                         TextButton.icon(
-                          onPressed: directoryMetadata != null
-                              ? () {
-                                  _launchPinned(
-                                    context,
-                                    asTag: false,
-                                    directoryMetadata: directoryMetadata!,
-                                  );
-                                }
+                          onPressed: DirectoryMetadataService.available
+                              ? () => _launchPinned(context, asTag: false)
                               : null,
                           label: Text(
                             l10n.namesInPinnedDirectories(filteringValue),

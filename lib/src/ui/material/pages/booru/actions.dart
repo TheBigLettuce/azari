@@ -3,21 +3,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/obj_impls/post_impl.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 
 SelectionBarAction hide(
   BuildContext context,
-  HiddenBooruPostsService hiddenPost,
 ) {
   return SelectionBarAction(
     Icons.hide_image_rounded,
     (selected) {
-      if (selected.isEmpty) {
+      if (selected.isEmpty || HiddenBooruPostsService.available) {
         return;
       }
 
@@ -27,7 +25,7 @@ SelectionBarAction hide(
       final booru = (selected.first as PostImpl).booru;
 
       for (final (cell as PostImpl) in selected) {
-        if (hiddenPost.isHidden(cell.id, booru)) {
+        if (const HiddenBooruPostsService().isHidden(cell.id, booru)) {
           toDelete.add((cell.id, booru));
         } else {
           toAdd.add(
@@ -40,8 +38,9 @@ SelectionBarAction hide(
         }
       }
 
-      hiddenPost.addAll(toAdd);
-      hiddenPost.removeAll(toDelete);
+      const HiddenBooruPostsService()
+        ..addAll(toAdd)
+        ..removeAll(toDelete);
     },
     true,
   );
@@ -50,53 +49,23 @@ SelectionBarAction hide(
 SelectionBarAction downloadPost(
   BuildContext context,
   Booru booru,
-  PathVolume? thenMoveTo, {
-  required DownloadManager downloadManager,
-  required LocalTagsService localTags,
-  required SettingsService settingsService,
-}) {
+  PathVolume? thenMoveTo,
+) {
   return SelectionBarAction(
     Icons.download,
-    (selected) => selected.cast<PostImpl>().downloadAll(
-          downloadManager: downloadManager,
-          localTags: localTags,
-          settingsService: settingsService,
-          thenMoveTo: thenMoveTo,
-        ),
+    (selected) => selected.cast<PostImpl>().downloadAll(thenMoveTo: thenMoveTo),
     true,
     animate: true,
   );
 }
 
-// GridAction downloadFavoritePost(
-//   BuildContext context,
-//   Booru booru,
-//   PathVolume? thenMoveTo, {
-//   required DownloadManager downloadManager,
-//   required LocalTagsService localTags,
-//   required SettingsService settingsService,
-// }) {
-//   return GridAction(
-//     Icons.download,
-//     (selected) => selected.cast<PostImpl>().downloadAll(
-//           downloadManager: downloadManager,
-//           localTags: localTags,
-//           settingsService: settingsService,
-//           thenMoveTo: thenMoveTo,
-//         ),
-//     true,
-//     animate: true,
-//   );
-// }
-
 SelectionBarAction favorites(
-  BuildContext context,
-  FavoritePostSourceService favoritePost, {
+  BuildContext context, {
   bool showDeleteSnackbar = false,
 }) {
   return SelectionBarAction(
     Icons.favorite_border_rounded,
-    (selected) => favoritePost.addRemove(selected.cast()),
+    (selected) => FavoritePostSourceService.safe()?.addRemove(selected.cast()),
     true,
   );
 }

@@ -4,18 +4,15 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:math" as math;
 
-import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/platform/generated/platform_api.g.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/services/obj_impls/post_impl.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
@@ -29,7 +26,6 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
-import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:photo_view/photo_view.dart";
@@ -39,21 +35,9 @@ class PostCell extends StatefulWidget {
     required super.key,
     required this.post,
     required this.wrapSelection,
-    required this.favoritePosts,
-    required this.tagManager,
-    required this.downloadManager,
-    required this.settingsService,
-    required this.localTags,
   });
 
   final PostImpl post;
-
-  final FavoritePostSourceService? favoritePosts;
-  final TagManagerService? tagManager;
-  final DownloadManager? downloadManager;
-  final LocalTagsService? localTags;
-
-  final SettingsService settingsService;
 
   final Widget Function(Widget child) wrapSelection;
 
@@ -73,13 +57,9 @@ class PostCell extends StatefulWidget {
           animation,
           secondaryAnimation,
         ) {
-          final db = Services.of(context);
-
           return _ExpandedImage(
             post: post,
             content: content,
-            videoSettings: db.get<VideoSettingsService>(),
-            favoritePosts: db.get<FavoritePostSourceService>(),
           );
         },
       ),
@@ -93,14 +73,11 @@ class PostCell extends StatefulWidget {
 class CardAnimation extends StatefulWidget {
   const CardAnimation({
     super.key,
-    required this.favoritePosts,
     required this.animation,
     required this.source,
     required this.currentIndex,
     required this.syncr,
   });
-
-  final FavoritePostSourceService? favoritePosts;
 
   final ResourceSource<int, PostImpl> source;
 
@@ -142,7 +119,7 @@ class _CardAnimationState extends State<CardAnimation> {
                 SystemChrome.setEnabledSystemUIMode(
                   SystemUiMode.immersiveSticky,
                 );
-                PlatformApi().setWakelock(true);
+                const WindowApi().setWakelock(true);
 
                 Navigator.of(context, rootNavigator: true)
                     .push<void>(
@@ -157,17 +134,13 @@ class _CardAnimationState extends State<CardAnimation> {
                         child: _BigImageVideo(
                           post: post,
                           content: content,
-                          videoSettings: Services.getOf<VideoSettingsService>(
-                            context,
-                          ),
-                          favoritePosts: widget.favoritePosts,
                         ),
                       );
                     },
                   ),
                 )
                     .then((_) {
-                  PlatformApi().setWakelock(false);
+                  const WindowApi().setWakelock(false);
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                 });
               },
@@ -203,9 +176,12 @@ class _CardAnimationState extends State<CardAnimation> {
                           borderRadius:
                               const BorderRadius.all(Radius.circular(15)),
                         ),
-                        child: const SizedBox.expand(
+                        child: SizedBox.expand(
                           child: Center(
-                            child: Icon(Icons.play_arrow_rounded),
+                            child: Hero(
+                              tag: (post.uniqueKey(), "videoIcon"),
+                              child: const Icon(Icons.play_arrow_rounded),
+                            ),
                           ),
                         ),
                       ),
@@ -327,7 +303,6 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
         idx += 1;
       });
     });
-    print("Commit fwd");
   }
 
   void commitBackward([double? overrideFrom]) {
@@ -336,13 +311,12 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
     }
 
     controller.value = overrideFrom ?? 0.8;
-    controller.animateTo(1, curve: Easing.emphasizedAccelerate).then((_) {
+    controller.animateTo(1, curve: Easing.emphasizedDecelerate).then((_) {
       controller.value = 0;
       setState(() {
         idx -= 1;
       });
     });
-    print("Commit back");
   }
 
   @override
@@ -390,13 +364,21 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
                         if (animValue != null &&
                             animValue!.isNegative &&
                             animValue! <= -0.5) {
-                          commitForward(animValue?.roundToDouble());
+                          commitForward(
+                            animValue! < -0.95
+                                ? animValue?.roundToDouble()
+                                : animValue,
+                          );
 
                           return;
                         } else if (animValue != null &&
                             !animValue!.isNegative &&
                             animValue! >= 0.5) {
-                          commitBackward(animValue?.roundToDouble());
+                          commitBackward(
+                            animValue! > 0.95
+                                ? animValue?.roundToDouble()
+                                : animValue,
+                          );
 
                           return;
                         }
@@ -451,7 +433,7 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
 
                         setState(() {
                           animValue =
-                              ((animValue ?? 0) + (details.delta.dx * 0.017))
+                              ((animValue ?? 0) + (details.delta.dx * 0.0034))
                                   .clamp(-1.0, 1.0);
 
                           if (widget.source.count - 1 == idx &&
@@ -496,23 +478,14 @@ class CardDialog extends StatefulWidget {
   const CardDialog({
     super.key,
     required this.animation,
-    required this.settingsService,
-    required this.favoritePosts,
-    required this.tagManager,
-    required this.downloadManager,
-    required this.localTags,
     required this.idx,
     required this.source,
+    required this.tryScrollTo,
   });
 
-  final FavoritePostSourceService? favoritePosts;
-  final TagManagerService? tagManager;
-  final DownloadManager? downloadManager;
-  final LocalTagsService? localTags;
-
-  final SettingsService settingsService;
-
   final Animation<double> animation;
+
+  final void Function(int) tryScrollTo;
 
   final int idx;
   final ResourceSource<int, PostImpl> source;
@@ -522,13 +495,6 @@ class CardDialog extends StatefulWidget {
 }
 
 class _CardDialogState extends State<CardDialog> {
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  TagManagerService? get tagManager => widget.tagManager;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  LocalTagsService? get localTags => widget.localTags;
-
-  SettingsService get settingsService => widget.settingsService;
-
   Animation<double> get animation => widget.animation;
 
   int get idx => widget.idx;
@@ -548,15 +514,23 @@ class _CardDialogState extends State<CardDialog> {
       if (e.$1 != _oldIdx) {
         _oldIdx = e.$1;
 
+        widget.tryScrollTo(_oldIdx);
+
         if (context.mounted && source.count > 1) {
           if (_oldIdx != 0) {
             precacheImage(
-                source.forIdxUnsafe(_oldIdx - 1).thumbnail(null), context);
+              source.forIdxUnsafe(_oldIdx - 1).thumbnail(null),
+              // ignore: use_build_context_synchronously
+              context,
+            );
           }
 
           if (_oldIdx != source.count - 1) {
             precacheImage(
-                source.forIdxUnsafe(_oldIdx + 1).thumbnail(null), context);
+              source.forIdxUnsafe(_oldIdx + 1).thumbnail(null),
+              // ignore: use_build_context_synchronously
+              context,
+            );
           }
         }
       }
@@ -570,161 +544,162 @@ class _CardDialogState extends State<CardDialog> {
     super.dispose();
   }
 
+  void _exit() {
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 400.0.clamp(0, size.width),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CardAnimation(
-                  favoritePosts: favoritePosts,
-                  currentIndex: idx,
-                  syncr: syncr.sink,
-                  source: source,
-                  animation: animation,
-                ),
-                _TagsRow(
-                  tagManager: tagManager,
-                  settingsService: settingsService,
-                  idx: idx,
-                  syncr: syncr,
-                  source: source,
-                ),
-                ClipRRect(
-                  child: ReplaceAnimation(
-                    source: source,
-                    synchronizeRecv: syncr.stream,
+    return ExitOnPressRoute(
+      exit: _exit,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 400.0.clamp(0, size.width),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CardAnimation(
                     currentIndex: idx,
-                    type: ReplaceAnimationType.vertical,
-                    child: (context, idx) {
-                      final post = source.forIdxUnsafe(idx);
+                    syncr: syncr.sink,
+                    source: source,
+                    animation: animation,
+                  ),
+                  _TagsRow(
+                    idx: idx,
+                    syncr: syncr,
+                    animation: animation,
+                    source: source,
+                  ),
+                  ClipRRect(
+                    child: ReplaceAnimation(
+                      source: source,
+                      synchronizeRecv: syncr.stream,
+                      currentIndex: idx,
+                      type: ReplaceAnimationType.vertical,
+                      child: (context, idx) {
+                        final post = source.forIdxUnsafe(idx);
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 0),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 8,
-                            children: [
-                              AnimatedBuilder(
-                                animation: animation,
-                                builder: (context, child) => Opacity(
-                                  opacity: animation.value,
-                                  child: child,
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    showModalBottomSheet<void>(
-                                      context: context,
-                                      builder: (sheetContext) {
-                                        return Padding(
-                                          padding: EdgeInsets.only(
-                                            top: 8,
-                                            bottom: MediaQuery.viewPaddingOf(
-                                                  context,
-                                                ).bottom +
-                                                12,
-                                          ),
-                                          child: SizedBox(
-                                            width:
-                                                MediaQuery.sizeOf(sheetContext)
-                                                    .width,
-                                            child: PostInfoSimple(post: post),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  style: ButtonStyle(
-                                    foregroundColor: WidgetStatePropertyAll(
-                                      theme.colorScheme.surface,
-                                    ),
-                                    backgroundColor: WidgetStatePropertyAll(
-                                      theme.colorScheme.onSurfaceVariant,
-                                    ),
+                        return Padding(
+                          padding: EdgeInsets.zero,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              spacing: 8,
+                              children: [
+                                AnimatedBuilder(
+                                  animation: animation,
+                                  builder: (context, child) => Opacity(
+                                    opacity: animation.value,
+                                    child: child,
                                   ),
-                                  icon: const Icon(Icons.info_outline),
-                                ),
-                              ),
-                              Row(
-                                spacing: 8,
-                                children: [
-                                  AnimatedBuilder(
-                                    animation: animation,
-                                    builder: (context, child) => Opacity(
-                                      opacity: animation.value,
-                                      child: child,
+                                  child: IconButton(
+                                    onPressed: () {
+                                      showModalBottomSheet<void>(
+                                        context: context,
+                                        builder: (sheetContext) {
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                              top: 8,
+                                              bottom: MediaQuery.viewPaddingOf(
+                                                    context,
+                                                  ).bottom +
+                                                  12,
+                                            ),
+                                            child: SizedBox(
+                                              width: MediaQuery.sizeOf(
+                                                sheetContext,
+                                              ).width,
+                                              child: PostInfoSimple(post: post),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                    style: ButtonStyle(
+                                      foregroundColor: WidgetStatePropertyAll(
+                                        theme.colorScheme.surface,
+                                      ),
+                                      backgroundColor: WidgetStatePropertyAll(
+                                        theme.colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
-                                    child: StarsButton(
-                                      favoritePosts: favoritePosts,
-                                      addBackground: true,
-                                      idBooru: (post.id, post.booru),
-                                    ),
+                                    icon: const Icon(Icons.info_outline),
                                   ),
-                                  if (downloadManager != null &&
-                                      localTags != null)
-                                    AnimatedBuilder(
-                                      animation: animation,
-                                      builder: (context, child) => Opacity(
-                                        opacity: animation.value,
-                                        child: child,
+                                ),
+                                Row(
+                                  spacing: 8,
+                                  children: [
+                                    if (FavoritePostSourceService.available)
+                                      AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) => Opacity(
+                                          opacity: animation.value,
+                                          child: child,
+                                        ),
+                                        child: StarsButton(
+                                          addBackground: true,
+                                          idBooru: (post.id, post.booru),
+                                        ),
                                       ),
-                                      child: DownloadButton(
-                                        downloadManager: downloadManager!,
-                                        post: post,
-                                        secondVariant: true,
-                                        localTags: localTags!,
-                                        settingsService: settingsService,
+                                    if (DownloadManager.available &&
+                                        LocalTagsService.available)
+                                      AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) => Opacity(
+                                          opacity: animation.value,
+                                          child: child,
+                                        ),
+                                        child: DownloadButton(
+                                          post: post,
+                                          secondVariant: true,
+                                        ),
                                       ),
-                                    ),
-                                  if (favoritePosts != null &&
-                                      post is! FavoritePost)
-                                    FavoritePostButton(
-                                      heroKey: (
-                                        post.uniqueKey(),
-                                        "favoritePost"
-                                      ),
-                                      post: post,
-                                      backgroundAlpha: 1,
-                                      favoritePosts: favoritePosts!,
-                                    )
-                                  else
-                                    AnimatedBuilder(
-                                      animation: animation,
-                                      builder: (context, child) => Opacity(
-                                        opacity: animation.value,
-                                        child: child,
-                                      ),
-                                      child: FavoritePostButton(
+                                    if (FavoritePostSourceService.available &&
+                                        post is! FavoritePost)
+                                      FavoritePostButton(
+                                        heroKey: (
+                                          post.uniqueKey(),
+                                          "favoritePost"
+                                        ),
                                         post: post,
                                         backgroundAlpha: 1,
-                                        favoritePosts: favoritePosts!,
+                                      )
+                                    else if (FavoritePostSourceService
+                                        .available)
+                                      AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) => Opacity(
+                                          opacity: animation.value,
+                                          child: child,
+                                        ),
+                                        child: FavoritePostButton(
+                                          post: post,
+                                          backgroundAlpha: 1,
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -733,51 +708,18 @@ class _CardDialogState extends State<CardDialog> {
   }
 }
 
-// if (post is! FavoritePost &&
-//     post.type == PostContentType.image)
-//   Align(
-//     alignment: Alignment.topRight,
-//     child: Padding(
-//       padding: const EdgeInsets.all(8),
-//       child: IconButton(
-//         style: ButtonStyle(
-//           visualDensity: VisualDensity.compact,
-//           foregroundColor: WidgetStatePropertyAll(
-//             theme.colorScheme.surface
-//                 .withValues(alpha: 0.9),
-//           ),
-//           backgroundColor: WidgetStatePropertyAll(
-//             theme.colorScheme.onSurface
-//                 .withValues(alpha: 0.8),
-//           ),
-//         ),
-//         onPressed: () => PostCell.openMaximizedImage(
-//           context,
-//           post,
-//           settings.sampleThumbnails
-//               ? content
-//               : post.content(context, true),
-//         ),
-//         icon: const Icon(Icons.open_in_full),
-//       ),
-//     ),
-//   ),
-
 class _TagsRow extends StatefulWidget {
   const _TagsRow({
-    super.key,
-    required this.tagManager,
-    required this.settingsService,
+    // super.key,
     required this.idx,
     required this.syncr,
     required this.source,
+    required this.animation,
   });
 
-  final TagManagerService? tagManager;
-
-  final SettingsService settingsService;
-
   final int idx;
+
+  final Animation<double> animation;
 
   final StreamController<(int, double?)> syncr;
   final ResourceSource<int, PostImpl> source;
@@ -944,82 +886,90 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 25 + 16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: _CurrentTagsHero(
-            source: source,
-            initIdx: initIdx,
-            synchronizeRecv: syncr.stream,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 1),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: ReplaceAnimation(
-                    source: source,
-                    synchronizeRecv: widget.syncr.stream,
-                    currentIndex: widget.idx,
-                    child: (context, idx) {
-                      final post = source.forIdxUnsafe(idx);
-                      final tags = getTags(idx);
+    return AnimatedBuilder(
+      animation: widget.animation,
+      builder: (context, child) => Opacity(
+        opacity: widget.animation.value,
+        child: child,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 25 + 16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: _CurrentTagsHero(
+              source: source,
+              initIdx: initIdx,
+              synchronizeRecv: syncr.stream,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(16)),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 1),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: ReplaceAnimation(
+                      source: source,
+                      synchronizeRecv: widget.syncr.stream,
+                      currentIndex: widget.idx,
+                      child: (context, idx) {
+                        final post = source.forIdxUnsafe(idx);
+                        final tags = getTags(idx);
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.antiAlias,
-                        itemCount: tags.length,
-                        itemBuilder: (context, index) {
-                          final e = tags[index];
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.antiAlias,
+                          itemCount: tags.length,
+                          itemBuilder: (context, index) {
+                            final e = tags[index];
 
-                          return Center(
-                            child: OutlinedTagChip(
-                              tag: e.tag,
-                              isPinned: e.pinned,
-                              letterCount: -1,
-                              onDoublePressed:
-                                  e.pinned || widget.tagManager == null
-                                      ? null
-                                      : () {
-                                          // controller.animateTo(
-                                          //   0,
-                                          //   duration: Durations.medium3,
-                                          //   curve: Easing.standard,
-                                          // );
+                            return Center(
+                              child: OutlinedTagChip(
+                                tag: e.tag,
+                                isPinned: e.pinned,
+                                letterCount: -1,
+                                onDoublePressed:
+                                    e.pinned || !TagManagerService.available
+                                        ? null
+                                        : () {
+                                            // controller.animateTo(
+                                            //   0,
+                                            //   duration: Durations.medium3,
+                                            //   curve: Easing.standard,
+                                            // );
 
-                                          widget.tagManager!.pinned.add(e.tag);
-                                        },
-                              onLongPressed: post is FavoritePost
-                                  ? null
-                                  : () {
-                                      context.openSafeModeDialog(
-                                          widget.settingsService, (safeMode) {
-                                        OnBooruTagPressed.pressOf(
-                                          context,
-                                          e.tag,
-                                          post.booru,
-                                          overrideSafeMode: safeMode,
-                                        );
-                                      });
-                                    },
-                              onPressed: () => OnBooruTagPressed.pressOf(
-                                context,
-                                e.tag,
-                                post.booru,
+                                            const TagManagerService()
+                                                .pinned
+                                                .add(e.tag);
+                                          },
+                                onLongPressed: post is FavoritePost
+                                    ? null
+                                    : () {
+                                        context.openSafeModeDialog((safeMode) {
+                                          OnBooruTagPressed.pressOf(
+                                            context,
+                                            e.tag,
+                                            post.booru,
+                                            overrideSafeMode: safeMode,
+                                          );
+                                        });
+                                      },
+                                onPressed: () => OnBooruTagPressed.pressOf(
+                                  context,
+                                  e.tag,
+                                  post.booru,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -1033,7 +983,7 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
 
 class _CurrentTagsHero extends StatefulWidget {
   const _CurrentTagsHero({
-    super.key,
+    // super.key,
     required this.source,
     required this.synchronizeRecv,
     required this.initIdx,
@@ -1087,13 +1037,6 @@ class __CurrentTagsHeroState extends State<_CurrentTagsHero> {
 
 class _CellWidgetState extends State<PostCell>
     with PinnedSortedTagsArrayMixin, SettingsWatcherMixin {
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  TagManagerService? get tagManager => widget.tagManager;
-  DownloadManager? get downloadManager => widget.downloadManager;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   PostImpl get post => widget.post;
   @override
   List<String> get postTags => widget.post.tags;
@@ -1145,13 +1088,13 @@ class _CellWidgetState extends State<PostCell>
                           : thumbnail,
                       blur: false,
                     ),
-                    if (favoritePosts != null && widget.post is! FavoritePost)
+                    if (FavoritePostSourceService.available &&
+                        widget.post is! FavoritePost)
                       Padding(
                         padding: const EdgeInsets.all(4),
                         child: FavoritePostButton(
                           heroKey: (post.uniqueKey(), "favoritePost"),
                           post: post,
-                          favoritePosts: favoritePosts!,
                         ),
                       ),
                     if (stickers.isNotEmpty)
@@ -1174,16 +1117,16 @@ class _CellWidgetState extends State<PostCell>
                           vertical: 4,
                         ),
                         child: VideoGifRow(
+                          uniqueKey: widget.post.uniqueKey(),
                           isVideo: widget.post.type == PostContentType.video,
                           isGif: widget.post.type == PostContentType.gif,
                         ),
                       ),
                     ),
-                    if (downloadManager != null)
+                    if (DownloadManager.available)
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: LinearDownloadIndicator(
-                          downloadManager: downloadManager!,
                           post: post,
                         ),
                       ),
@@ -1194,74 +1137,11 @@ class _CellWidgetState extends State<PostCell>
           ),
         );
 
-        if (tags.isEmpty) {
-          return card;
-        }
+        // if (tags.isEmpty) {
+        //   return card;
+        // }
 
-        return Column(
-          children: [
-            Expanded(child: card),
-            SizedBox(
-              height: 25,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Hero(
-                  tag: (post.uniqueKey(), "tags"),
-                  child: DecoratedBox(
-                    decoration: const BoxDecoration(
-                      color: null,
-                    ),
-                    child: ListView.builder(
-                      controller: controller,
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.antiAlias,
-                      itemCount: tags.length,
-                      itemBuilder: (context, index) {
-                        final e = tags[index];
-
-                        return Center(
-                          child: OutlinedTagChip(
-                            tag: e.tag,
-                            isPinned: e.pinned,
-                            onDoublePressed: e.pinned || tagManager == null
-                                ? null
-                                : () {
-                                    controller.animateTo(
-                                      0,
-                                      duration: Durations.medium3,
-                                      curve: Easing.standard,
-                                    );
-
-                                    tagManager!.pinned.add(e.tag);
-                                  },
-                            onLongPressed: widget.post is FavoritePost
-                                ? null
-                                : () {
-                                    context.openSafeModeDialog(settingsService,
-                                        (safeMode) {
-                                      OnBooruTagPressed.pressOf(
-                                        context,
-                                        e.tag,
-                                        widget.post.booru,
-                                        overrideSafeMode: safeMode,
-                                      );
-                                    });
-                                  },
-                            onPressed: () => OnBooruTagPressed.pressOf(
-                              context,
-                              e.tag,
-                              widget.post.booru,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
+        return card;
       },
     );
 
@@ -1278,15 +1158,10 @@ class _BigImageVideo extends StatelessWidget {
     super.key,
     required this.post,
     required this.content,
-    required this.videoSettings,
-    required this.favoritePosts,
   });
 
   final PostImpl post;
   final Contentable content;
-
-  final VideoSettingsService? videoSettings;
-  final FavoritePostSourceService? favoritePosts;
 
   @override
   Widget build(BuildContext context) {
@@ -1296,12 +1171,10 @@ class _BigImageVideo extends StatelessWidget {
         ? Material(
             child: _ExpandedVideo(
               post: post,
-              videoSettings: videoSettings,
               child: PhotoGalleryPageVideo(
                 url: (content as NetVideo).uri,
                 networkThumb: post.thumbnail(context),
                 localVideo: false,
-                videoSettings: videoSettings,
               ),
             ),
           )
@@ -1346,7 +1219,6 @@ class _BigImageVideo extends StatelessWidget {
                   ),
                   Center(
                     child: CircularProgressIndicator(
-                      year2023: false,
                       color: theme.colorScheme.onSurfaceVariant,
                       backgroundColor: theme.colorScheme.surfaceContainer
                           .withValues(alpha: 0.4),
@@ -1390,15 +1262,10 @@ class _ExpandedImage extends StatelessWidget {
     // super.key,
     required this.post,
     required this.content,
-    required this.videoSettings,
-    required this.favoritePosts,
   });
 
   final PostImpl post;
   final Contentable content;
-
-  final VideoSettingsService? videoSettings;
-  final FavoritePostSourceService? favoritePosts;
 
   @override
   Widget build(BuildContext context) {
@@ -1412,12 +1279,10 @@ class _ExpandedImage extends StatelessWidget {
     final child = content is NetVideo
         ? _ExpandedVideo(
             post: post,
-            videoSettings: videoSettings,
             child: PhotoGalleryPageVideo(
               url: (content as NetVideo).uri,
               networkThumb: post.thumbnail(context),
               localVideo: false,
-              videoSettings: videoSettings,
             ),
           )
         : PhotoView(
@@ -1449,16 +1314,14 @@ class _ExpandedImage extends StatelessWidget {
           IconButtonTheme(
             data: IconButtonThemeData(style: buttonStyle),
             child: StarsButton(
-              favoritePosts: favoritePosts,
               idBooru: (post.id, post.booru),
             ),
           ),
-          if (favoritePosts != null)
+          if (FavoritePostSourceService.available)
             IconButtonTheme(
               data: IconButtonThemeData(style: buttonStyle),
               child: FavoritePostButton(
                 post: post,
-                favoritePosts: favoritePosts!,
                 withBackground: false,
               ),
             ),
@@ -1499,12 +1362,10 @@ class _ExpandedVideo extends StatefulWidget {
   const _ExpandedVideo({
     // super.key,
     required this.post,
-    required this.videoSettings,
     required this.child,
   });
 
   final PostImpl post;
-  final VideoSettingsService? videoSettings;
 
   final Widget child;
 
@@ -1555,7 +1416,6 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
                   padding: EdgeInsets.only(bottom: viewPadding.bottom + 20),
                   child: VideoControls(
                     videoControls: videoControls,
-                    videoSettings: widget.videoSettings,
                     seekTimeAnchor: seekTimeAnchor,
                     vertical: true,
                   ),

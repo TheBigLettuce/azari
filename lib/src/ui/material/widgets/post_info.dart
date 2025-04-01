@@ -5,18 +5,16 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/obj_impls/post_impl.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
@@ -31,25 +29,21 @@ class PostInfo extends StatefulWidget {
   const PostInfo({
     super.key,
     required this.post,
-    required this.tagManager,
-    required this.settingsService,
   });
 
   final PostImpl post;
-  final TagManagerService? tagManager;
-
-  final SettingsService settingsService;
 
   @override
   State<PostInfo> createState() => _PostInfoState();
 }
 
-class _PostInfoState extends State<PostInfo> {
-  TagManagerService? get tagManager => widget.tagManager;
+class _TagRibbon extends StatelessWidget with TagManagerService {
+  const _TagRibbon({
+    super.key,
+    required this.post,
+  });
 
-  SettingsService get settingsService => widget.settingsService;
-
-  late PostImpl post;
+  final PostImpl post;
 
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
     OnBooruTagPressed.pressOf(
@@ -61,10 +55,70 @@ class _PostInfoState extends State<PostInfo> {
   }
 
   @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return TagsRibbon(
+      tagNotifier: ImageTagsNotifier.of(context),
+      emptyWidget: const Padding(padding: EdgeInsets.zero),
+      sliver: false,
+      selectTag: (str, controller) {
+        HapticFeedback.mediumImpact();
+
+        _launchGrid(context, str);
+      },
+      showPin: false,
+      items: (tag, controller) => [
+        PopupMenuItem(
+          onTap: () {
+            if (pinned.exists(tag)) {
+              pinned.delete(tag);
+            } else {
+              pinned.add(tag);
+            }
+
+            ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+
+            controller.animateTo(
+              0,
+              duration: Durations.medium3,
+              curve: Easing.standard,
+            );
+          },
+          child: Text(
+            pinned.exists(tag) ? l10n.unpinTag : l10n.pinTag,
+          ),
+        ),
+        launchGridSafeModeItem(
+          context,
+          tag,
+          _launchGrid,
+          l10n,
+        ),
+        PopupMenuItem(
+          onTap: () {
+            if (excluded.exists(tag)) {
+              excluded.delete(tag);
+            } else {
+              excluded.add(tag);
+            }
+          },
+          child: Text(
+            excluded.exists(tag) ? l10n.removeFromExcluded : l10n.addToExcluded,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PostInfoState extends State<PostInfo> {
+  late PostImpl post;
+
+  @override
   void initState() {
     super.initState();
 
-    // settings = widget.settingsService.current;
     post = widget.post;
   }
 
@@ -80,66 +134,10 @@ class _PostInfoState extends State<PostInfo> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (tagManager != null)
+        if (TagManagerService.available)
           Padding(
             padding: const EdgeInsets.only(top: 10, bottom: 4),
-            child: TagsRibbon(
-              tagNotifier: ImageTagsNotifier.of(context),
-              emptyWidget: const Padding(padding: EdgeInsets.zero),
-              sliver: false,
-              selectTag: (str, controller) {
-                HapticFeedback.mediumImpact();
-
-                _launchGrid(context, str);
-              },
-              tagManager: tagManager,
-              showPin: false,
-              items: (tag, controller) => [
-                PopupMenuItem(
-                  onTap: () {
-                    if (tagManager!.pinned.exists(tag)) {
-                      tagManager!.pinned.delete(tag);
-                    } else {
-                      tagManager!.pinned.add(tag);
-                    }
-
-                    ImageViewInfoTilesRefreshNotifier.refreshOf(context);
-
-                    controller.animateTo(
-                      0,
-                      duration: Durations.medium3,
-                      curve: Easing.standard,
-                    );
-                  },
-                  child: Text(
-                    tagManager!.pinned.exists(tag)
-                        ? l10n.unpinTag
-                        : l10n.pinTag,
-                  ),
-                ),
-                launchGridSafeModeItem(
-                  context,
-                  tag,
-                  _launchGrid,
-                  l10n,
-                  settingsService: settingsService,
-                ),
-                PopupMenuItem(
-                  onTap: () {
-                    if (tagManager!.excluded.exists(tag)) {
-                      tagManager!.excluded.delete(tag);
-                    } else {
-                      tagManager!.excluded.add(tag);
-                    }
-                  },
-                  child: Text(
-                    tagManager!.excluded.exists(tag)
-                        ? l10n.removeFromExcluded
-                        : l10n.addToExcluded,
-                  ),
-                ),
-              ],
-            ),
+            child: _TagRibbon(post: post),
           ),
         ListBody(
           children: [
@@ -203,9 +201,7 @@ class ShareButton extends StatelessWidget {
     return GestureDetector(
       onLongPress: onLongPress,
       child: IconButton(
-        onPressed: () {
-          PlatformApi().shareMedia(url, url: true);
-        },
+        onPressed: () => const AppApi().shareMedia(url, url: true),
         icon: const Icon(Icons.share),
       ),
     );
@@ -352,13 +348,11 @@ class StarsButton extends StatefulWidget {
   const StarsButton({
     super.key,
     required this.idBooru,
-    this.favoritePosts,
     this.heroKey,
     this.addBackground = false,
   });
 
   final (int id, Booru booru) idBooru;
-  final FavoritePostSourceService? favoritePosts;
 
   final bool addBackground;
   final Object? heroKey;
@@ -367,9 +361,9 @@ class StarsButton extends StatefulWidget {
   State<StarsButton> createState() => _StarsButtonState();
 }
 
-class _StarsButtonState extends State<StarsButton> {
+class _StarsButtonState extends State<StarsButton>
+    with FavoritePostSourceService {
   (int id, Booru booru) get idBooru => widget.idBooru;
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
 
   late final StreamSubscription<void>? favoriteEvents;
 
@@ -379,12 +373,11 @@ class _StarsButtonState extends State<StarsButton> {
   void initState() {
     super.initState();
 
-    post = widget.favoritePosts?.cache.get(idBooru);
+    post = cache.get(idBooru);
 
-    favoriteEvents =
-        favoritePosts?.cache.streamSingle(idBooru.$1, idBooru.$2).listen((e) {
+    favoriteEvents = cache.streamSingle(idBooru.$1, idBooru.$2).listen((e) {
       setState(() {
-        post = widget.favoritePosts?.cache.get(idBooru);
+        post = cache.get(idBooru);
       });
     });
   }
@@ -641,7 +634,10 @@ class VideoGifRow extends StatelessWidget {
     super.key,
     required this.isVideo,
     required this.isGif,
+    required this.uniqueKey,
   });
+
+  final Key uniqueKey;
 
   final bool isVideo;
   final bool isGif;
@@ -654,11 +650,13 @@ class VideoGifRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isGif)
-          const _VideoGifIcon(
+          _VideoGifIcon(
+            uniqueKey: uniqueKey,
             icon: Icons.gif_rounded,
           ),
         if (isVideo)
-          const _VideoGifIcon(
+          _VideoGifIcon(
+            uniqueKey: uniqueKey,
             icon: Icons.play_arrow_rounded,
           ),
         // if (score > 10) _Score(score: score),
@@ -731,11 +729,13 @@ class _PostTagsWrapState extends State<PostTagsWrap> {
         spacing: 2,
         children: [
           if (hasGif)
-            const _VideoGifIcon(
+            _VideoGifIcon(
+              uniqueKey: widget.post.uniqueKey(),
               icon: Icons.gif_box_rounded,
             ),
           if (hasVideo)
-            const _VideoGifIcon(
+            _VideoGifIcon(
+              uniqueKey: widget.post.uniqueKey(),
               icon: Icons.play_arrow_rounded,
             ),
           ...pinnedTags.map(
@@ -802,8 +802,10 @@ class _VideoGifIcon extends StatelessWidget {
   const _VideoGifIcon({
     // super.key,
     required this.icon,
+    required this.uniqueKey,
   });
 
+  final Key uniqueKey;
   final IconData icon;
 
   @override
@@ -817,10 +819,13 @@ class _VideoGifIcon extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(2),
-        child: Icon(
-          icon,
-          size: 16,
-          color: theme.colorScheme.onSecondary.withValues(alpha: 0.9),
+        child: Hero(
+          tag: (uniqueKey, "videoIcon"),
+          child: Icon(
+            icon,
+            size: 16,
+            color: theme.colorScheme.onSecondary.withValues(alpha: 0.9),
+          ),
         ),
       ),
     );
@@ -831,14 +836,12 @@ class FavoritePostButton extends StatefulWidget {
   const FavoritePostButton({
     super.key,
     required this.post,
-    required this.favoritePosts,
     this.withBackground = true,
     this.heroKey,
     this.backgroundAlpha = 0.4,
   });
 
   final PostImpl post;
-  final FavoritePostSourceService favoritePosts;
   final bool withBackground;
 
   final double backgroundAlpha;
@@ -849,7 +852,7 @@ class FavoritePostButton extends StatefulWidget {
 }
 
 class _FavoritePostButtonState extends State<FavoritePostButton>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, FavoritePostSourceService {
   late final AnimationController controller;
   late final StreamSubscription<void> events;
 
@@ -861,10 +864,9 @@ class _FavoritePostButtonState extends State<FavoritePostButton>
 
     controller = AnimationController(vsync: this);
 
-    favorite = widget.favoritePosts.cache
-        .isFavorite(widget.post.id, widget.post.booru);
+    favorite = cache.isFavorite(widget.post.id, widget.post.booru);
 
-    events = widget.favoritePosts.cache
+    events = cache
         .streamSingle(widget.post.id, widget.post.booru)
         .listen((newFavorite) {
       if (newFavorite == favorite) {
@@ -912,9 +914,7 @@ class _FavoritePostButtonState extends State<FavoritePostButton>
                 ),
               )
             : null,
-        onPressed: () {
-          widget.favoritePosts.addRemove([widget.post]);
-        },
+        onPressed: () => addRemove([widget.post]),
         icon: Animate(
           controller: controller,
           value: 0,
@@ -949,11 +949,9 @@ class _FavoritePostButtonState extends State<FavoritePostButton>
 class LinearDownloadIndicator extends StatefulWidget {
   const LinearDownloadIndicator({
     super.key,
-    required this.downloadManager,
     required this.post,
   });
 
-  final DownloadManager downloadManager;
   final PostImpl post;
 
   @override
@@ -961,17 +959,17 @@ class LinearDownloadIndicator extends StatefulWidget {
       _LinearDownloadIndicatorState();
 }
 
-class _LinearDownloadIndicatorState extends State<LinearDownloadIndicator> {
+class _LinearDownloadIndicatorState extends State<LinearDownloadIndicator>
+    with DownloadManager {
   late final StreamSubscription<void> events;
   DownloadHandle? status;
 
   @override
   void initState() {
-    events = widget.downloadManager.watch(
+    events = storage.watch(
       (_) {
         setState(() {
-          status =
-              widget.downloadManager.statusFor(widget.post.fileDownloadUrl());
+          status = statusFor(widget.post.fileDownloadUrl());
         });
       },
       true,
@@ -989,9 +987,6 @@ class _LinearDownloadIndicatorState extends State<LinearDownloadIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    // final theme = Theme.of(context);
-    // final downloadStatus = status?.data.status;
-
     return status == null || status!.data.status == DownloadStatus.failed
         ? const SizedBox.shrink()
         : _LinearProgress(handle: status!);
@@ -1002,17 +997,10 @@ class DownloadButton extends StatefulWidget {
   const DownloadButton({
     super.key,
     required this.post,
-    required this.downloadManager,
-    required this.localTags,
-    required this.settingsService,
     this.secondVariant = false,
   });
 
   final PostImpl post;
-
-  final DownloadManager downloadManager;
-  final LocalTagsService localTags;
-  final SettingsService settingsService;
 
   final bool secondVariant;
 
@@ -1020,11 +1008,7 @@ class DownloadButton extends StatefulWidget {
   State<DownloadButton> createState() => _DownloadButtonState();
 }
 
-class _DownloadButtonState extends State<DownloadButton> {
-  DownloadManager get downloadManager => widget.downloadManager;
-  LocalTagsService get localTags => widget.localTags;
-  SettingsService get settingsService => widget.settingsService;
-
+class _DownloadButtonState extends State<DownloadButton> with DownloadManager {
   late final StreamSubscription<void> events;
   DownloadHandle? status;
 
@@ -1032,11 +1016,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   void initState() {
     super.initState();
 
-    events = widget.downloadManager.watch(
+    events = storage.watch(
       (_) {
         setState(() {
-          status =
-              widget.downloadManager.statusFor(widget.post.fileDownloadUrl());
+          status = statusFor(widget.post.fileDownloadUrl());
         });
       },
       true,
@@ -1056,8 +1039,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final downloadStatus = status?.data.status;
 
     final icon = switch (downloadStatus) {
-      null => const Icon(Icons.download_rounded),
-      DownloadStatus.onHold => const Icon(Icons.download_rounded),
+      DownloadStatus.onHold || null => const Icon(Icons.download_rounded),
       DownloadStatus.failed => const Icon(Icons.file_download_off_rounded),
       DownloadStatus.inProgress => const Icon(Icons.downloading_rounded),
     };
@@ -1071,13 +1053,9 @@ class _DownloadButtonState extends State<DownloadButton> {
               ? null
               : () {
                   if (downloadStatus == DownloadStatus.failed) {
-                    widget.downloadManager.restartAll([status!]);
+                    restartAll([status!]);
                   } else {
-                    widget.post.download(
-                      downloadManager: widget.downloadManager,
-                      localTags: localTags,
-                      settingsService: settingsService,
-                    );
+                    widget.post.download();
                     WrapperSelectionAnimation.tryPlayOf(context);
                   }
                 },
@@ -1177,7 +1155,6 @@ class __LinearProgressState extends State<_LinearProgress> {
       child: LinearProgressIndicator(
         borderRadius: const BorderRadius.all(Radius.circular(5)),
         minHeight: 2,
-        year2023: false,
         value: progress,
       ),
     );

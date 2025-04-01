@@ -5,17 +5,15 @@
 
 import "dart:async";
 
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/src/services/local_tags_helper.dart";
-import "package:azari/src/services/obj_impls/file_impl.dart";
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/gallery_file_functions.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/platform/gallery_file_functions.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/file_action_chips.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/load_tags.dart";
@@ -28,35 +26,16 @@ class FileInfo extends StatefulWidget {
     super.key,
     required this.file,
     required this.tags,
-    required this.tagManager,
-    required this.localTags,
-    required this.settingsService,
-    required this.downloadManager,
-    required this.galleryService,
   });
 
   final File file;
   final ImageViewTags tags;
-
-  final TagManagerService? tagManager;
-  final DownloadManager? downloadManager;
-  final LocalTagsService? localTags;
-
-  final GalleryService galleryService;
-  final SettingsService settingsService;
 
   @override
   State<FileInfo> createState() => _FileInfoState();
 }
 
 class _FileInfoState extends State<FileInfo> {
-  TagManagerService? get tagManager => widget.tagManager;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  LocalTagsService? get localTags => widget.localTags;
-
-  GalleryService get galleryService => widget.galleryService;
-  SettingsService get settingsService => widget.settingsService;
-
   File get file => widget.file;
   ImageViewTags get tags => widget.tags;
 
@@ -70,7 +49,7 @@ class _FileInfoState extends State<FileInfo> {
   void initState() {
     super.initState();
 
-    filesExtended = widget.settingsService.current.filesExtendedActions;
+    filesExtended = const SettingsService().current.filesExtendedActions;
 
     if (tags.list.indexWhere((e) => e.tag == "translated") != -1) {
       hasTranslation = true;
@@ -111,80 +90,79 @@ class _FileInfoState extends State<FileInfo> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 10, bottom: 4),
-          child: TagsRibbon(
-            tagNotifier: ImageTagsNotifier.of(context),
-            sliver: false,
-            emptyWidget: tags.res == null
-                ? const Padding(padding: EdgeInsets.zero)
-                : LoadTags(
-                    filename: filename,
-                    res: tags.res!,
-                    localTags: localTags,
-                    galleryService: galleryService,
-                  ),
-            selectTag: !GlobalProgressTab.presentInScope(context)
-                ? null
-                : (str, controller) {
-                    HapticFeedback.mediumImpact();
+        if (TagManagerService.available)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 4),
+            child: TagsRibbon(
+              tagNotifier: ImageTagsNotifier.of(context),
+              sliver: false,
+              emptyWidget: tags.res == null
+                  ? const Padding(padding: EdgeInsets.zero)
+                  : LoadTags(
+                      filename: filename,
+                      res: tags.res!,
+                      // galleryApi: ,
+                    ),
+              selectTag: (str, controller) {
+                HapticFeedback.mediumImpact();
 
-                    _launchGrid(context, str);
-                  },
-            tagManager: tagManager,
-            showPin: false,
-            items: (tag, controller) => [
-              PopupMenuItem(
-                onTap: tagManager != null
-                    ? () {
-                        if (tagManager!.pinned.exists(tag)) {
-                          tagManager!.pinned.delete(tag);
-                        } else {
-                          tagManager!.pinned.add(tag);
+                _launchGrid(context, str);
+              },
+              showPin: false,
+              items: (tag, controller) => [
+                PopupMenuItem(
+                  onTap: TagManagerService.available
+                      ? () {
+                          const tagManager = TagManagerService();
+
+                          if (tagManager.pinned.exists(tag)) {
+                            tagManager.pinned.delete(tag);
+                          } else {
+                            tagManager.pinned.add(tag);
+                          }
+
+                          ImageViewInfoTilesRefreshNotifier.refreshOf(context);
+
+                          controller.animateTo(
+                            0,
+                            duration: Durations.medium3,
+                            curve: Easing.standard,
+                          );
                         }
-
-                        ImageViewInfoTilesRefreshNotifier.refreshOf(context);
-
-                        controller.animateTo(
-                          0,
-                          duration: Durations.medium3,
-                          curve: Easing.standard,
-                        );
-                      }
-                    : null,
-                child: Text(
-                  (tagManager?.pinned.exists(tag) ?? false)
-                      ? l10n.unpinTag
-                      : l10n.pinTag,
+                      : null,
+                  child: Text(
+                    (TagManagerService.safe()?.pinned.exists(tag) ?? false)
+                        ? l10n.unpinTag
+                        : l10n.pinTag,
+                  ),
                 ),
-              ),
-              if (GlobalProgressTab.presentInScope(context))
                 launchGridSafeModeItem(
                   context,
                   tag,
                   _launchGrid,
                   l10n,
-                  settingsService: settingsService,
                 ),
-              PopupMenuItem(
-                onTap: tagManager != null
-                    ? () {
-                        if (tagManager!.excluded.exists(tag)) {
-                          tagManager!.excluded.delete(tag);
-                        } else {
-                          tagManager!.excluded.add(tag);
+                PopupMenuItem(
+                  onTap: TagManagerService.available
+                      ? () {
+                          const tagManager = TagManagerService();
+
+                          if (tagManager.excluded.exists(tag)) {
+                            tagManager.excluded.delete(tag);
+                          } else {
+                            tagManager.excluded.add(tag);
+                          }
                         }
-                      }
-                    : null,
-                child: Text(
-                  (tagManager?.excluded.exists(tag) ?? false)
-                      ? l10n.removeFromExcluded
-                      : l10n.addToExcluded,
+                      : null,
+                  child: Text(
+                    (TagManagerService.safe()?.excluded.exists(tag) ?? false)
+                        ? l10n.removeFromExcluded
+                        : l10n.addToExcluded,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         ListBody(
           children: [
             DimensionsName(
@@ -207,6 +185,7 @@ class _FileInfoState extends State<FileInfo> {
                           autofocus: true,
                           initialValue: filename,
                           autovalidateMode: AutovalidateMode.always,
+                          enabled: FilesApi.available,
                           decoration: const InputDecoration(
                             errorMaxLines: 2,
                           ),
@@ -225,8 +204,7 @@ class _FileInfoState extends State<FileInfo> {
                             return null;
                           },
                           onFieldSubmitted: (value) {
-                            galleryService.files
-                                .rename(file.originalUri, value);
+                            const FilesApi().rename(file.originalUri, value);
 
                             Navigator.pop(context);
                           },
@@ -254,10 +232,6 @@ class _FileInfoState extends State<FileInfo> {
               file: file,
               tags: tags,
               hasTranslation: hasTranslation,
-              downloadManager: downloadManager,
-              localTags: localTags,
-              galleryService: galleryService,
-              settingsService: settingsService,
             ),
           ],
         ),
@@ -278,18 +252,14 @@ class FileBooruInfoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final hasNotifiers = GlobalProgressTab.presentInScope(context);
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: ListTile(
-        onTap: !hasNotifiers
-            ? null
-            : () {
-                Navigator.pop(context);
+        onTap: () {
+          Navigator.pop(context);
 
-                Post.imageViewSingle(context, res.$2, res.$1);
-              },
+          Post.imageViewSingle(context, res.$2, res.$1);
+        },
         tileColor: theme.colorScheme.surfaceContainerHigh,
         leading: const Icon(Icons.description_outlined),
         title: Text(res.$2.string),

@@ -5,9 +5,37 @@
 
 part of "services.dart";
 
-abstract interface class BlacklistedDirectoryService
+mixin class BlacklistedDirectoryService
     implements ResourceSource<String, BlacklistedDirectoryData>, ServiceMarker {
-  List<BlacklistedDirectoryData> getAll(List<String> bucketIds);
+  const BlacklistedDirectoryService();
+
+  static bool get available => _instance != null;
+  static BlacklistedDirectoryService? safe() => _instance;
+
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<BlacklistedDirectoryService>();
+
+  List<BlacklistedDirectoryData> getAll(List<String> bucketIds) =>
+      _instance!.getAll(bucketIds);
+
+  @override
+  SourceStorage<String, BlacklistedDirectoryData> get backingStorage =>
+      _instance!.backingStorage;
+
+  @override
+  Future<int> clearRefresh() => _instance!.clearRefresh();
+
+  @override
+  void destroy() => _instance!.destroy();
+
+  @override
+  bool get hasNext => _instance!.hasNext;
+
+  @override
+  Future<int> next() => _instance!.next();
+
+  @override
+  RefreshingProgress get progress => _instance!.progress;
 }
 
 @immutable

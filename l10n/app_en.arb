@@ -1,0 +1,1330 @@
+{
+    "@@locale": "en",
+    "ok": "ok",
+    "@ok": {
+        "description": "Button in the modal dialog with info which dismisses it"
+    },
+    "refresh": "Refresh",
+    "@refresh": {
+        "description": "Keybinding key info, refreshes content"
+    },
+    "back": "Back",
+    "@back": {
+        "description": "Keybinding key info, goes back a page"
+    },
+    "searchHint": "Search",
+    "@searchHint": {
+        "description": "Text field hint, on tag search text field"
+    },
+    "goPostHint": "Go to a post",
+    "@goPostHint": {
+        "description": "Text field hint, on go to a single post search field"
+    },
+    "notANumber": "'{text}' is not a number.",
+    "@notANumber": {
+        "description": "Error message if text is not a number",
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "galleryLabel": "Gallery",
+    "@galleryLabel": {
+        "description": "Navigation destination, gallery page"
+    },
+    "settingsLabel": "Settings",
+    "@settingsLabel": {
+        "description": "Arbitrary settings"
+    },
+    "booruGridPageName": "Booru grid",
+    "@booruGridPageName": {
+        "description": "Booru grid page name"
+    },
+    "downloadsPageName": "Downloads",
+    "@downloadsPageName": {
+        "description": "Downloads page name"
+    },
+    "yes": "yes",
+    "@yes": {
+        "description": "Dialog button, to proceed with an operation"
+    },
+    "no": "no",
+    "@no": {
+        "description": "Dialog button, to dismiss the dialog"
+    },
+    "imageViewPageName": "Image view",
+    "@imageViewPageName": {
+        "description": "Image view page name"
+    },
+    "tagDeleteDialogTitle": "Do you want to delete",
+    "@tagDeleteDialogTitle": {
+        "description": "Tags page, tag deletion dialog. Can be either recent tag or excluded"
+    },
+    "settingsPageName": "Settings",
+    "@settingsPageName": {
+        "description": "Settings page name"
+    },
+    "downloadDirectorySetting": "Download directory",
+    "@downloadDirectorySetting": {
+        "description": "Settings, download directory"
+    },
+    "selectedBooruSetting": "Selected booru",
+    "@selectedBooruSetting": {
+        "description": "Settigns, selected booru"
+    },
+    "imageDisplayQualitySetting": "Image display quality",
+    "@imageDisplayQualitySetting": {
+        "description": "Settings, image display quality"
+    },
+    "imageDisplayQualityInfo": "Download quality is always Original.",
+    "@imageDisplayQualityInfo": {
+        "description": "Settings, image display quality's additional information"
+    },
+    "safeModeSetting": "Safe mode",
+    "@safeModeSetting": {
+        "description": "Settings, safe mode"
+    },
+    "licenseSetting": "License",
+    "@licenseSetting": {
+        "description": "Settings, license"
+    },
+    "widthInfoPage": "Width",
+    "@widthInfoPage": {
+        "description": "Image info, width of the image"
+    },
+    "heightInfoPage": "Height",
+    "@heightInfoPage": {
+        "description": "Image info, height of the image"
+    },
+    "sourceFileInfoPage": "Source",
+    "@sourceFileInfoPage": {
+        "description": "Image info, source URL of the image"
+    },
+    "ratingInfoPage": "Rating",
+    "@ratingInfoPage": {
+        "description": "Image info, rating of the image"
+    },
+    "scoreInfoPage": "Score",
+    "@scoreInfoPage": {
+        "description": "Image info, score of the image"
+    },
+    "createdAtInfoPage": "Created at",
+    "@createdAtInfoPage": {
+        "description": "Image info, created at time of the image"
+    },
+    "date": "{date}",
+    "@date": {
+        "description": "Arbitrary date",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMMMMd"
+            }
+        }
+    },
+    "delete": "Delete",
+    "@delete": {
+        "description": "Delete label"
+    },
+    "deleteImageConfirm": "Do you want to delete:",
+    "@deleteImageConfirm": {
+        "description": "Delete image conformation, title in dialog, the file is showed separately"
+    },
+    "emptyValue": "Empty",
+    "@emptyValue": {
+        "description": "Placeholder for empty value"
+    },
+    "dateModified": "Date modified",
+    "@dateModified": {
+        "description": "Time of last time the directory was modified"
+    },
+    "savedTagsCount": "Saved tags",
+    "@savedTagsCount": {
+        "description": "Number of the saved tags"
+    },
+    "nameTitle": "Name",
+    "@nameTitle": {
+        "description": "Image info, name of the image"
+    },
+    "directoriesHint": "Directories",
+    "@directoriesHint": {
+        "description": "Android gallery, filter bar hint"
+    },
+    "copiedClipboard": "Copied!",
+    "@copiedClipboard": {
+        "description": "Showed when post number gets copied to clipboard"
+    },
+    "aspectRatio": "Aspect ratio",
+    "@aspectRatio": {
+        "description": "Settings, grid cell aspect ratio"
+    },
+    "hideNames": "Hide {target} names",
+    "@hideNames": {
+        "description": "Grid settings, hide cell names on grid",
+        "placeholders": {
+            "target": {
+                "type": "String"
+            }
+        }
+    },
+    "gridColumns": "Grid columns",
+    "@gridColumns": {
+        "description": "Settings, columns on grid"
+    },
+    "metricsLabel": "Metrics",
+    "@metricsLabel": {
+        "description": "Settings, metrics settings group label"
+    },
+    "thumbnailsCSize": "Thumbnails cache size",
+    "@thumbnailsCSize": {
+        "description": "Settings, thumbnails cache size on disk"
+    },
+    "purgeThumbnails": "Purge",
+    "@purgeThumbnails": {
+        "description": "Uploader drawer label"
+    },
+    "areYouSure": "Are you sure?",
+    "@areYouSure": {
+        "description": "Settings, showed in the thumbnail db deletion dialog"
+    },
+    "booruLabel": "Booru",
+    "@booruLabel": {
+        "description": "Settings, booru settings group label"
+    },
+    "filterHint": "Filter",
+    "@filterHint": {
+        "description": "Filter hint in the filter bar"
+    },
+    "elementSingular": "element",
+    "@elementSingular": {
+        "description": "Element item singular"
+    },
+    "elementPlural": "elements",
+    "@elementPlural": {
+        "description": "Element item plural"
+    },
+    "moveTo": "Move to",
+    "@moveTo": {
+        "description": "Showed when moving files in Android gallery"
+    },
+    "copyTo": "Copy to",
+    "@copyTo": {
+        "description": "Showed when copying files in Android gallery"
+    },
+    "cantCopySameDest": "Can't copy to the same destination",
+    "@cantCopySameDest": {
+        "description": "Showed when the original folder from which the file is being copied is selected"
+    },
+    "cantMoveSameDest": "Can't move to the same destination",
+    "@cantMoveSameDest": {
+        "description": "Showed when the original folder from which the file is being moved is selected"
+    },
+    "pickFileNotice": "Pick a file",
+    "@pickFileNotice": {
+        "description": "Showed when the app is asked to pick a file"
+    },
+    "blacklistedFoldersPage": "Blacklisted Folders",
+    "@blacklistedFoldersPage": {
+        "description": "Blacklisted directories page"
+    },
+    "currentTagTitle": "Current tag",
+    "@currentTagTitle": {
+        "description": "Dialog title when editing a directory tag"
+    },
+    "enterNewTagTitle": "Enter new tag",
+    "@enterNewTagTitle": {
+        "description": "Dialog title when changing a directory tag"
+    },
+    "valueIsEmpty": "Value is empty",
+    "@valueIsEmpty": {
+        "description": "Displayed when directory tag field contains no text"
+    },
+    "directoryTagNone": "none",
+    "@directoryTagNone": {
+        "description": "Displayed as a placeholder when directory tag is not set"
+    },
+    "tagSavingInProgress": "Tag saving is already in progress",
+    "@tagSavingInProgress": {
+        "description": "Displayed when tag saving is already running"
+    },
+    "savingTagsSaving": "Saving",
+    "@savingTagsSaving": {
+        "description": "First half of the saving tags notification"
+    },
+    "savingTags": "Saving tags",
+    "@savingTags": {
+        "description": "Saving tags channel name"
+    },
+    "tagSingular": "tag",
+    "@tagSingular": {
+        "description": "Singular form of tag"
+    },
+    "tagPlural": "tags",
+    "@tagPlural": {
+        "description": "Plural form of tags"
+    },
+    "valueIsNull": "Value is null",
+    "@valueIsNull": {
+        "description": "Displayed when text field has null string"
+    },
+    "youCanRestoreFromTrash": "You can restore it from the trash",
+    "@youCanRestoreFromTrash": {
+        "description": "Dialog body text when deleting a file"
+    },
+    "resultsIncomplete": "Results are incomplete",
+    "@resultsIncomplete": {
+        "description": "Displayed when loading thumbnails for the 'same' filter option"
+    },
+    "loadMoreLabel": "Load more",
+    "@loadMoreLabel": {
+        "description": "Button label which loades more thumbnails for the 'same' filter option"
+    },
+    "loaded": "Loaded",
+    "@loaded": {
+        "description": "Displayed when finally loading all the thumbnails for the 'same' filter option"
+    },
+    "openInBrowser": "Open in browser",
+    "@openInBrowser": {
+        "description": "Button which opens the current booru landing page"
+    },
+    "enterNewNameTitle": "Enter new name",
+    "@enterNewNameTitle": {
+        "description": "Dialog title when renaming a file"
+    },
+    "loadTags": "Load tags",
+    "@loadTags": {
+        "description": "Displayed above buttons which load post tags"
+    },
+    "notValidFilename": "Not a valid filename: {filename}",
+    "@notValidFilename": {
+        "description": "Displayed when the filename is not valid, and the post tags from it cannot be loaded",
+        "placeholders": {
+            "filename": {
+                "type": "String"
+            }
+        }
+    },
+    "infoHeadline": "Info",
+    "@infoHeadline": {
+        "description": "Title of the info end drawer in the image view"
+    },
+    "error": "Error",
+    "@error": {
+        "description": "Showed on errors"
+    },
+    "favoritesLabel": "Favorites",
+    "@favoritesLabel": {
+        "description": "Grid actions, favorites"
+    },
+    "disassembleNoPrefix": "No prefix",
+    "@disassembleNoPrefix": {
+        "description": "Filename disassemble errors"
+    },
+    "disassemblePrefixNotRegistred": "Prefix not registred",
+    "@disassemblePrefixNotRegistred": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleNumbersAndHash": "Filename should include numbers and hash separated by a -, with one space to the left of the -, and one to the right of -",
+    "@disassembleNumbersAndHash": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleInvalidPostNumber": "Invalid post number",
+    "@disassembleInvalidPostNumber": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleNoExtension": "Filename doesn't include extension",
+    "@disassembleNoExtension": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleHashIsInvalid": "Hash is invalid",
+    "@disassembleHashIsInvalid": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleExtensionTooLong": "Extension is too long",
+    "@disassembleExtensionTooLong": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleHashIsnt32": "Hash is not 32 characters",
+    "@disassembleHashIsnt32": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleExtensionInvalid": "Extension is invalid",
+    "@disassembleExtensionInvalid": {
+        "description": "Filename disassemble errors"
+    },
+    "directoriesPlural": "directories",
+    "@directoriesPlural": {
+        "description": "Displayed in the filter hint when joining directories"
+    },
+    "choose": "Choose",
+    "@choose": {
+        "description": "Choose a download directory, button in the dialog"
+    },
+    "later": "Later",
+    "@later": {
+        "description": "Later button in the download directory dialog"
+    },
+    "needChooseDirectory": "You need to choose a download directory. Without it downloads will fail without error.",
+    "@needChooseDirectory": {
+        "description": "Download directory dialog body"
+    },
+    "beforeYouContinueTitle": "Before you continue...",
+    "@beforeYouContinueTitle": {
+        "description": "Download directory dialog title"
+    },
+    "deletedFromFavorites": "Deleted from favorites",
+    "@deletedFromFavorites": {
+        "description": "Showed when an booru image gets deleted from favorites"
+    },
+    "undoLabel": "Undo",
+    "@undoLabel": {
+        "description": "Button to undo an action"
+    },
+    "ungrouped": "Ungrouped",
+    "@ungrouped": {
+        "description": "Grid segment ungrouped"
+    },
+    "more": "More",
+    "@more": {
+        "description": "Nav bar destination"
+    },
+    "hasTranslations": "Has translations",
+    "@hasTranslations": {
+        "description": "Image view, has translations tile"
+    },
+    "tapToView": "Tap to view",
+    "@tapToView": {
+        "description": "Image view, has translations tile subtitle"
+    },
+    "translationTitle": "Translation",
+    "@translationTitle": {
+        "description": "Image view, translation title dialog title"
+    },
+    "miscLabel": "Misc",
+    "@miscLabel": {
+        "description": "Settings, misc title"
+    },
+    "loadingPlaceholder": "...",
+    "@loadingPlaceholder": {
+        "description": "Settings, thumbnail cache size placeholder"
+    },
+    "pinnedThumbnailsSize": "Pinned thumbnails size",
+    "@pinnedThumbnailsSize": {
+        "description": "Settings, pinned thumbnails size tile"
+    },
+    "extendedFilesGridActions": "Show extended files grid actions",
+    "@extendedFilesGridActions": {
+        "description": "Settings, additional buttons in the files page of the gallery"
+    },
+    "add": "Add",
+    "@add": {
+        "description": "Add button text"
+    },
+    "group": "Group",
+    "@group": {
+        "description": "Group feature title"
+    },
+    "bookmarked": "Bookmarked",
+    "@bookmarked": {
+        "description": "Booru grid, bookmarked snackbar text"
+    },
+    "dashboardPage": "Dashboard",
+    "@dashboardPage": {
+        "description": "Drawer destination, dashboard page"
+    },
+    "emptyTrashTitle": "Are you sure you want to empty the trash?",
+    "@emptyTrashTitle": {
+        "description": "Android gallery, add to trash text"
+    },
+    "thisIsPermanent": "This is permanent",
+    "@thisIsPermanent": {
+        "description": "Android gallery, add to trash subtitle"
+    },
+    "cantCopyToTrash": "Can't copy files to the trash. Use move.",
+    "@cantCopyToTrash": {
+        "description": "Android gallery, copy to trash error snackbar text"
+    },
+    "unknownSegmentsPlaceholder": "Unknown",
+    "@unknownSegmentsPlaceholder": {
+        "description": "Grid segments unknown segment"
+    },
+    "hoursShort": "{number} hrs",
+    "@hoursShort": {
+        "description": "Dashboard, hours time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "minutesShort": "{number} m",
+    "@minutesShort": {
+        "description": "Dashboard, minutes time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "secondsShort": "{number} s",
+    "@secondsShort": {
+        "description": "Dashboard, seconds time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "cardTimeSpent": "Tile spent",
+    "@cardTimeSpent": {
+        "description": "Dashboard, time spent on booru card"
+    },
+    "cardScrollerUp": "Scrolled up",
+    "@cardScrollerUp": {
+        "description": "Dashboard, grid scrolled up times card"
+    },
+    "cardTagsSaved": "Tags saved",
+    "@cardTagsSaved": {
+        "description": "Dashboard, tags saved times card"
+    },
+    "cardRefreshes": "Refreshes",
+    "@cardRefreshes": {
+        "description": "Dashboard, grid booru refreshes times card"
+    },
+    "cardDownloadTime": "Download time",
+    "@cardDownloadTime": {
+        "description": "Dashboard, download time card"
+    },
+    "cardPostsViewed": "Posts viewed",
+    "@cardPostsViewed": {
+        "description": "Dashboard, booru posts viewed times card"
+    },
+    "cardPostsDownloaded": "Posts downloaded",
+    "@cardPostsDownloaded": {
+        "description": "Dashboard, booru posts downloaded times card"
+    },
+    "cardPostsSwiped": "Posts swiped",
+    "@cardPostsSwiped": {
+        "description": "Dashboard, booru posts swiped times card"
+    },
+    "cardBooruSwitches": "Booru switches",
+    "@cardBooruSwitches": {
+        "description": "Dashboard, booru switches times card"
+    },
+    "cardDirectoriesViewed": "Directories viewed",
+    "@cardDirectoriesViewed": {
+        "description": "Dashboard, gallery directories viewed times card"
+    },
+    "cardFilesSwiped": "Files swiped",
+    "@cardFilesSwiped": {
+        "description": "Dashboard, files swaped times card"
+    },
+    "cardFilesViewed": "Files viewed",
+    "@cardFilesViewed": {
+        "description": "Dashboard, files viewed times card"
+    },
+    "cardJoinedTimes": "Joined times",
+    "@cardJoinedTimes": {
+        "description": "Dashboard, gallery directories joined times count card"
+    },
+    "cardSameFiltered": "Same filtered",
+    "@cardSameFiltered": {
+        "description": "Dashboard, same filtered times card"
+    },
+    "cardTrashed": "Trashed",
+    "@cardTrashed": {
+        "description": "Dashboard, files trashed times card"
+    },
+    "cardCopied": "Copied",
+    "@cardCopied": {
+        "description": "Dashboard, files copied times card"
+    },
+    "cardMoved": "Moved",
+    "@cardMoved": {
+        "description": "Dashboard, files moved times card"
+    },
+    "showNames": "Show names",
+    "@showNames": {
+        "description": "Grid settings, show names on grid"
+    },
+    "gridView": "Grid view",
+    "@gridView": {
+        "description": "Grid settings, grid view on the grid"
+    },
+    "listView": "List view",
+    "@listView": {
+        "description": "Grid settings, list view on the grid"
+    },
+    "hiddenPostsPageName": "Hidden Posts",
+    "@hiddenPostsPageName": {
+        "description": "Hidden posts page"
+    },
+    "tryAgain": "Try again",
+    "@tryAgain": {
+        "description": "Button label to retry fetching data from the internet"
+    },
+    "copyLabel": "Copy",
+    "@copyLabel": {
+        "description": "Copy piece of information"
+    },
+    "chooseSafeMode": "Choose safe mode",
+    "@chooseSafeMode": {
+        "description": "Dialog title to choose the safe mode with which the booru search page will be launched"
+    },
+    "searchWithSafeMode": "Search with safe mode",
+    "@searchWithSafeMode": {
+        "description": "Button label to open the choose the safe mode dialog"
+    },
+    "removeFromExcluded": "Remove from excluded",
+    "@removeFromExcluded": {
+        "description": "Button label to remove the booru tag from the excluded tags"
+    },
+    "addToExcluded": "Add to excluded",
+    "@addToExcluded": {
+        "description": "Button label to add the booru tag to the excluded tags"
+    },
+    "pinTag": "Pin",
+    "@pinTag": {
+        "description": "Button label to pin the booru tag to the top of the tag list"
+    },
+    "unpinTag": "Unpin",
+    "@unpinTag": {
+        "description": "Button label to unpin the booru tag from the top of the tag list"
+    },
+    "setAsWallpaper": "Set as wallpaper",
+    "@setAsWallpaper": {
+        "description": "Button label to set the gallery image as the device's wallpaper"
+    },
+    "noBooruTags": "No tags",
+    "@noBooruTags": {
+        "description": "Displayed in booru search page when no booru tags have been found, either latest tags or excluded"
+    },
+    "megabytes": "{number} MB",
+    "@megabytes": {
+        "description": "Megabytes",
+        "placeholders": {
+            "number": {
+                "type": "double",
+                "format": "decimalPatternDigits",
+                "optionalParameters": {
+                    "decimalDigits": 2
+                }
+            }
+        }
+    },
+    "settingsTheme": "Theme",
+    "@settingsTheme": {
+        "description": "Settings, choose theme list tile title"
+    },
+    "pinGroupLabel": "Pin",
+    "@pinGroupLabel": {
+        "description": "Button label to pin a segment"
+    },
+    "showExcludedTags": "Show excluded",
+    "@showExcludedTags": {
+        "description": "Button label to show the excluded booru tags"
+    },
+    "searchSinglePost": "Search single post",
+    "@searchSinglePost": {
+        "description": "Dialog title to search for a single booru post"
+    },
+    "searchTextIsEmpty": "Search text is empty",
+    "@searchTextIsEmpty": {
+        "description": "Displayed when trying to add a search page to bookmarks but the search text is empty"
+    },
+    "enumPostRatingGeneral": "General",
+    "@enumPostRatingGeneral": {
+        "description": "PostRating.general"
+    },
+    "enumPostRatingSensitive": "Sensitive",
+    "@enumPostRatingSensitive": {
+        "description": "PostRating.sensitive"
+    },
+    "enumPostRatingQuestionable": "Questionable",
+    "@enumPostRatingQuestionable": {
+        "description": "PostRating.questionable"
+    },
+    "enumPostRatingExplicit": "Explicit",
+    "@enumPostRatingExplicit": {
+        "description": "PostRating.explicit"
+    },
+    "enumSafeModeNormal": "Normal",
+    "@enumSafeModeNormal": {
+        "description": "SafeMode.normal"
+    },
+    "enumSafeModeNone": "None",
+    "@enumSafeModeNone": {
+        "description": "SafeMode.none"
+    },
+    "enumSafeModeRelaxed": "Relaxed",
+    "@enumSafeModeRelaxed": {
+        "description": "SafeMode.relaxed"
+    },
+    "enumSafeModeExplicit": "Explicit",
+    "@enumSafeModeExplicit": {
+        "description": "SafeMode.explicit"
+    },
+    "enumDisplayQualityOriginal": "Original",
+    "@enumDisplayQualityOriginal": {
+        "description": "DisplayQuality.original"
+    },
+    "enumDisplayQualitySample": "Sample",
+    "@enumDisplayQualitySample": {
+        "description": "DisplayQuality.sample"
+    },
+    "enumSortingModeNone": "None",
+    "@enumSortingModeNone": {
+        "description": "SortingMode.none"
+    },
+    "enumSortingModeSize": "Size",
+    "@enumSortingModeSize": {
+        "description": "SortingMode.size"
+    },
+    "enumSortingModeRating": "Rating",
+    "@enumSortingModeRating": {
+        "description": "SortingMode.rating"
+    },
+    "enumSortingModeScore": "Score",
+    "@enumSortingModeScore": {
+        "description": "SortingMode.score"
+    },
+    "enumSortingModeStars": "Stars",
+    "@enumSortingModeStars": {
+        "description": "SortingMode.stars"
+    },
+    "enumFilteringModeFavorite": "Favorite",
+    "@enumFilteringModeFavorite": {
+        "description": "FilteringMode.favorite"
+    },
+    "enumFilteringModeOriginal": "Original",
+    "@enumFilteringModeOriginal": {
+        "description": "FilteringMode.original"
+    },
+    "enumFilteringModeSame": "Same",
+    "@enumFilteringModeSame": {
+        "description": "FilteringMode.same"
+    },
+    "enumFilteringModeVideo": "Video",
+    "@enumFilteringModeVideo": {
+        "description": "FilteringMode.video"
+    },
+    "enumFilteringModeDuplicate": "Duplicate",
+    "@enumFilteringModeDuplicate": {
+        "description": "FilteringMode.duplicate"
+    },
+    "enumFilteringModeGif": "GIF",
+    "@enumFilteringModeGif": {
+        "description": "FilteringMode.gif"
+    },
+    "enumFilteringModeTag": "Tag",
+    "@enumFilteringModeTag": {
+        "description": "FilteringMode.tag"
+    },
+    "enumFilteringModeUntagged": "Untagged",
+    "@enumFilteringModeUntagged": {
+        "description": "FilteringMode.untagged"
+    },
+    "enumFilteringModeTagReversed": "Tag reversed",
+    "@enumFilteringModeTagReversed": {
+        "description": "FilteringMode.tagReversed"
+    },
+    "enumFilteringModeGroup": "Group",
+    "@enumFilteringModeGroup": {
+        "description": "FilteringMode.group"
+    },
+    "enumFilteringModeUngrouped": "Ungrouped",
+    "@enumFilteringModeUngrouped": {
+        "description": "FilteringMode.ungrouped"
+    },
+    "enumFilteringModeNoFilter": "No filter",
+    "@enumFilteringModeNoFilter": {
+        "description": "FilteringMode.noFilter"
+    },
+    "enumFilteringModeOnlyHalfStars": "Only half stars",
+    "@enumFilteringModeOnlyHalfStars": {
+        "description": "FilteringMode.onlyHalfStars"
+    },
+    "enumFilteringModeOnlyFullStars": "Only full stars",
+    "@enumFilteringModeOnlyFullStars": {
+        "description": "FilteringMode.onlyFullStars"
+    },
+    "filteringLabel": "Filtering",
+    "@filteringLabel": {
+        "description": "Displayed above filtering choices"
+    },
+    "sortingModesLabel": "Sorting modes",
+    "@sortingModesLabel": {
+        "description": "Displayed above sorting modes"
+    },
+    "filteringModesLabel": "Filtering modes",
+    "@filteringModesLabel": {
+        "description": "Displayed above filtering modes"
+    },
+    "todayLabel": "Today",
+    "@todayLabel": {
+        "description": "Today label for segmenting purposes"
+    },
+    "noInternet": "No Internet",
+    "@noInternet": {
+        "description": "Displayed when the app has no access to the internet"
+    },
+    "layoutLabel": "Layout",
+    "@layoutLabel": {
+        "description": "Displayed above layout choices"
+    },
+    "homePage": "Home",
+    "@homePage": {
+        "description": "Home page name"
+    },
+    "segmentsUncategorized": "Uncategorized",
+    "@segmentsUncategorized": {
+        "description": "Uncategorized segment label"
+    },
+    "segmentsSpecial": "Special",
+    "@segmentsSpecial": {
+        "description": "Special segment label"
+    },
+    "galleryDirectoriesFavorites": "Favorites",
+    "@galleryDirectoriesFavorites": {
+        "description": "Gallery directories favorite page"
+    },
+    "galleryDirectoryTrash": "Trash",
+    "@galleryDirectoryTrash": {
+        "description": "Gallery directories trash page"
+    },
+    "enumGridLayoutTypeGrid": "Grid",
+    "@enumGridLayoutTypeGrid": {
+        "description": "GridLayoutType.grid"
+    },
+    "enumGridLayoutTypeList": "List",
+    "@enumGridLayoutTypeList": {
+        "description": "GridLayoutType.list"
+    },
+    "enumGridLayoutTypeGridQuilted": "Quilted grid",
+    "@enumGridLayoutTypeGridQuilted": {
+        "description": "GridLayoutType.gridQuilted"
+    },
+    "enumGridLayoutTypeGridMasonry": "Masonry grid",
+    "@enumGridLayoutTypeGridMasonry": {
+        "description": "GridLayoutType.gridMasonry"
+    },
+    "enumThemeTypeSystemAccent": "System Accent",
+    "@enumThemeTypeSystemAccent": {
+        "description": "ThemeType.systemAccent"
+    },
+    "enumThemeTypePink": "Pink",
+    "@enumThemeTypePink": {
+        "description": "ThemeType.pink"
+    },
+    "sizeInfoPage": "Size",
+    "@sizeInfoPage": {
+        "description": "Image info, size of the image"
+    },
+    "pixels": "{number} px",
+    "@pixels": {
+        "description": "Pixels of one of the axis",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "kilobytes": "{number} KB",
+    "@kilobytes": {
+        "description": "Kilobytes",
+        "placeholders": {
+            "number": {
+                "type": "double",
+                "format": "decimalPatternDigits",
+                "optionalParameters": {
+                    "decimalDigits": 2
+                }
+            }
+        }
+    },
+    "dateSimple": "{date}",
+    "@dateSimple": {
+        "description": "Arbitrary date",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMd"
+            }
+        }
+    },
+    "netThumbnailLoader": "Thumbnail loader",
+    "@netThumbnailLoader": {
+        "description": "Notifications, loading thumbnail from net"
+    },
+    "loadingThumbnail": "Loading thumbnail",
+    "@loadingThumbnail": {
+        "description": "Notifications, loading thumbnail from net"
+    },
+    "emptyResult": "Empty result",
+    "@emptyResult": {
+        "description": "Picking directory error"
+    },
+    "chooseValidDirectory": "Please choose a valid directory",
+    "@chooseValidDirectory": {
+        "description": "Picking directory error"
+    },
+    "pickDirectory": "Pick a directory for downloads",
+    "@pickDirectory": {
+        "description": "Picking directory label"
+    },
+    "openWelcomePageSetting": "Open welcome page",
+    "@openWelcomePageSetting": {
+        "description": "Settings, open welcome page"
+    },
+    "tagsLabel": "Tags",
+    "@tagsLabel": {
+        "description": "Tags panel title"
+    },
+    "bookmarksPageName": "Bookmarks",
+    "@bookmarksPageName": {
+        "description": "Bookmarks page name"
+    },
+    "welcomePermissions": "Permissions",
+    "@welcomePermissions": {
+        "description": "Welcome page, permissions page title"
+    },
+    "welcomePermissionsExplanation": "Photos and videos are needed for the gallery to work",
+    "@welcomePermissionsExplanation": {
+        "description": "Welcome page, permissions page explanation"
+    },
+    "permissionsPhotosVideos": "Photos and videos",
+    "@permissionsPhotosVideos": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsManageMedia": "Manage media",
+    "@permissionsManageMedia": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsNotifications": "Notifications",
+    "@permissionsNotifications": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsMediaLocation": "Media location",
+    "@permissionsMediaLocation": {
+        "description": "Welcome page, permissions label"
+    },
+    "welcomeNextLabel": "Next",
+    "@welcomeNextLabel": {
+        "description": "Welcome page. next screen button label"
+    },
+    "welcomeWelcome": "Welcome",
+    "@welcomeWelcome": {
+        "description": "Welcome page, first page title"
+    },
+    "welcomeSomeSettings": "Some settings before you continue... 🛠️",
+    "@welcomeSomeSettings": {
+        "description": "Welcome page, first page body text"
+    },
+    "welcomeFinishLabel": "Finish",
+    "@welcomeFinishLabel": {
+        "description": "Welcome page, finish button label"
+    },
+    "welcomeFinishBody": "Enjoy using Azari 🥳",
+    "@welcomeFinishBody": {
+        "description": "Welcome page, finish page body text"
+    },
+    "welcomeDone": "Done",
+    "@welcomeDone": {
+        "description": "Welcome page, done page title"
+    },
+    "welcomeInitalSettings": "Inital settings",
+    "@welcomeInitalSettings": {
+        "description": "Welcome page. inital settings page title"
+    },
+    "welcomeInitalSettingsExplanation": "Download directory is used for multiple purposes",
+    "@welcomeInitalSettingsExplanation": {
+        "description": "Welcome page, inital page inital page explanation"
+    },
+    "usingApi": "Using {apiName}",
+    "@usingApi": {
+        "description": "Shown as the name of API used when searching",
+        "placeholders": {
+            "apiName": {
+                "type": "String"
+            }
+        }
+    },
+    "addTag": "Add tag",
+    "@addTag": {
+        "description": "Add post tag dialog title"
+    },
+    "valueTooShort": "Value is too short",
+    "@valueTooShort": {
+        "description": "Value validation error"
+    },
+    "tagValidationError": "Only characters allowed are A-Z, a-z, 0-9, _, (, ), and ' .",
+    "@tagValidationError": {
+        "description": "Tag validation error"
+    },
+    "unstickyStickyDirectory": "Unsticky/sticky directory",
+    "@unstickyStickyDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "unblurDirectory": "Unblur directory",
+    "@unblurDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "blur": "Blur",
+    "@blur": {
+        "description": "Group modifiers labels"
+    },
+    "unblur": "Unblur",
+    "@unblur": {
+        "description": "Group modifiers labels"
+    },
+    "lockDirectory": "Lock directory group",
+    "@lockDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "requireAuth": "Require auth",
+    "@requireAuth": {
+        "description": "Group modifiers labels"
+    },
+    "notRequireAuth": "Unauth",
+    "@notRequireAuth": {
+        "description": "Group modifiers labels"
+    },
+    "openDirectory": "Open directory",
+    "@openDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "redownloadLabel": "Redownload",
+    "@redownloadLabel": {
+        "description": "Redownload file button label"
+    },
+    "enumDownloadStatusOnHold": "On hold",
+    "@enumDownloadStatusOnHold": {
+        "description": "DownloadStatus.onHold"
+    },
+    "enumDownloadStatusFailed": "Failed",
+    "@enumDownloadStatusFailed": {
+        "description": "DownloadStatus.failed"
+    },
+    "enumDownloadStatusInProgress": "In progress",
+    "@enumDownloadStatusInProgress": {
+        "description": "DownloadStatus.inProgress"
+    },
+    "suggestionsLabel": "Suggestions",
+    "@suggestionsLabel": {
+        "description": "Segmented grid suggestions block"
+    },
+    "directoriesAuthMessage": "Some directories require authentication",
+    "@directoriesAuthMessage": {
+        "description": "Showed when trying to pin/unpin/blur/unblur/unlock locked directory mixed with unlocked ones"
+    },
+    "authLabel": "Auth",
+    "@authLabel": {
+        "description": "Auth for changes of the locked directories button label"
+    },
+    "changeGroupReason": "Change group on directories",
+    "@changeGroupReason": {
+        "description": "Auth reasons"
+    },
+    "hideDirectoryReason": "Hide directory",
+    "@hideDirectoryReason": {
+        "description": "Auth reasons"
+    },
+    "joinDirectoriesReason": "Join directories",
+    "@joinDirectoriesReason": {
+        "description": "Auth reasons"
+    },
+    "someFilesShownNotice": "Some files can't be shown",
+    "@someFilesShownNotice": {
+        "description": "Gallery favorites page notice when some files have been filtered"
+    },
+    "cardPicturesSeenToday": "Pictures seen today",
+    "@cardPicturesSeenToday": {
+        "description": "Statistics cards"
+    },
+    "cardTimeSpentToday": "Time spent today",
+    "@cardTimeSpentToday": {
+        "description": "Statistics cards"
+    },
+    "extraSafeModeFilters": "Extra safe mode filters",
+    "@extraSafeModeFilters": {
+        "description": "Settings, extra safe mode filters switch tile"
+    },
+    "blacklistsTags": "Blacklists {tags}.",
+    "@blacklistsTags": {
+        "description": "Blacklists tags subtitle of the extra safe mode switch tile",
+        "placeholders": {
+            "tags": {
+                "type": "String"
+            }
+        }
+    },
+    "latestBookmarks": "Latest bookmarks",
+    "@latestBookmarks": {
+        "description": "Latest bookmark label in the booru drawer"
+    },
+    "noBookmarks": "No bookmarks",
+    "@noBookmarks": {
+        "description": "Showed when no latest bookmarks in the booru drawer"
+    },
+    "emptyWidgetNotice": "But why?.. 🤔",
+    "@emptyWidgetNotice": {
+        "description": "Showed in empty widget as title"
+    },
+    "lastAdded": "Recents",
+    "@lastAdded": {
+        "description": "Label of the image suggestions in gallery"
+    },
+    "dismiss": "Dismiss",
+    "@dismiss": {
+        "description": "Dismiss the new posts button"
+    },
+    "hasNewPosts": "Has new posts",
+    "@hasNewPosts": {
+        "description": "Showed when there are new posts either on the main grid or restored one"
+    },
+    "fromBooru": "From {booru}",
+    "@fromBooru": {
+        "description": "Label of the load tags from booru button",
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
+    },
+    "redownloadInProgress": "Redownloading is already in progress",
+    "@redownloadInProgress": {
+        "description": "Showed when redownloading of files is in progress"
+    },
+    "redownloadFetchingUrls": "Fetching download urls",
+    "@redownloadFetchingUrls": {
+        "description": "Name in the redownloading notification"
+    },
+    "redownloadRedowloadingFiles": "Redownloading {length} files",
+    "@redownloadRedowloadingFiles": {
+        "description": "Body in the redownloading notification",
+        "placeholders": {
+            "length": {
+                "type": "int"
+            }
+        }
+    },
+    "visitedPage": "Visited",
+    "@visitedPage": {
+        "description": "Visited booru posts page"
+    },
+    "popularPosts": "Popular",
+    "@popularPosts": {
+        "description": "Button label to show popular posts on booru"
+    },
+    "randomPosts": "Random",
+    "@randomPosts": {
+        "description": "Button label to show random posts on booru"
+    },
+    "videosLabel": "Videos",
+    "@videosLabel": {
+        "description": "Popular random videos button labels"
+    },
+    "addTagsSearch": "Add tags to search",
+    "@addTagsSearch": {
+        "description": "Random videos button settings"
+    },
+    "linkLabel": "Link",
+    "@linkLabel": {
+        "description": "Button label to the post image"
+    },
+    "imageDimensions": "Dimensions",
+    "@imageDimensions": {
+        "description": "Image dimensions"
+    },
+    "startInputingText": "Start inputing text...",
+    "@startInputingText": {
+        "description": "Panel body text on empty"
+    },
+    "recentlySearched": "Recently Searched",
+    "@recentlySearched": {
+        "description": "Panel title of recently searched tags"
+    },
+    "directoryNames": "Directory Names",
+    "@directoryNames": {
+        "description": "Panel title of directory name chips"
+    },
+    "filesLabel": "Files",
+    "@filesLabel": {
+        "description": "Panel title of gallery files"
+    },
+    "noBooruDirectories": "No Booru directories found",
+    "@noBooruDirectories": {
+        "description": "Snackbar text on Booru directories not found in gallery"
+    },
+    "tagInBooru": "#{tag} in Booru",
+    "@tagInBooru": {
+        "description": "Search page button label to search only in Booru directories",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "noPinnedDirectories": "No pinned directories found",
+    "@noPinnedDirectories": {
+        "description": "Snackbar text pinned directories not found in gallery"
+    },
+    "tagInPinnedDirectories": "#{tag} in pinned directories",
+    "@tagInPinnedDirectories": {
+        "description": "Search page button label to search only in pinned directories directories",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "namesInPinnedDirectories": "'{name}' in pinned directories",
+    "@namesInPinnedDirectories": {
+        "description": "Search page button label to search only in pinned directories directories",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "tagInEverywhere": "#{tag} everywhere",
+    "@tagInEverywhere": {
+        "description": "Search page button label to search every directory",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "nameInEverywhere": "'{tag}' everywhere",
+    "@nameInEverywhere": {
+        "description": "Search page button label to search every directory",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "excludedTagsLabel": "Excluded Tags",
+    "@excludedTagsLabel": {
+        "description": "Search panel label of excluded tags"
+    },
+    "removeTag": "Remove #{tag}?",
+    "@removeTag": {
+        "description": "Dialog title on removing tags from excluded or pinned",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addTagToExcluded": "Add #{tag} to excluded",
+    "@addTagToExcluded": {
+        "description": "Search panel button label to add tag to excluded",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addExcludedTag": "Add excluded tag",
+    "@addExcludedTag": {
+        "description": "Search panel button label to add tag to excluded"
+    },
+    "pinnedTags": "Pinned Tags",
+    "@pinnedTags": {
+        "description": "Search panel label of pinned tags"
+    },
+    "addTagToPinned": "Add #{tag} to pinned",
+    "@addTagToPinned": {
+        "description": "Search panel button label to add tag to pinned",
+        "placeholders": {
+            "tag": {
+                "type": "String"
+            }
+        }
+    },
+    "addPinnedTag": "Add pinned tag",
+    "@addPinnedTag": {
+        "description": "Search panel button label to add tag to pinned"
+    },
+    "emptyBookmarkedSearches": "Bookmarked searches will appear here...",
+    "@emptyBookmarkedSearches": {
+        "description": "Empty widget body text"
+    },
+    "emptyFavoritedPosts": "Favorited posts will appear here...",
+    "@emptyFavoritedPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyHiddenPosts": "Hidden posts will appear here...",
+    "@emptyHiddenPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyNoPosts": "No posts found...",
+    "@emptyNoPosts": {
+        "description": "Empty widget body text"
+    },
+    "emptyPostsVisited": "Posts you visited will appear here...",
+    "@emptyPostsVisited": {
+        "description": "Empty widget body text"
+    },
+    "emptyHiddenDirectories": "Hidden directories will appear here...",
+    "@emptyHiddenDirectories": {
+        "description": "Empty widget body text"
+    },
+    "emptyDevicePictures": "On-device pictures will appear here...",
+    "@emptyDevicePictures": {
+        "description": "Empty widget body text"
+    },
+    "yesHide": "yes, hide",
+    "@yesHide": {
+        "description": "Button label"
+    },
+    "emptyNoMedia": "No media found...",
+    "@emptyNoMedia": {
+        "description": "Empty widget body text"
+    },
+    "emptyDownloadProgress": "Download progress will appear here...",
+    "@emptyDownloadProgress": {
+        "description": "Empty widget body text"
+    },
+    "discoverPage": "Discover",
+    "@discoverPage": {
+        "description": "Discover page name"
+    },
+    "hideNamesFiles": "files'",
+    "@hideNamesFiles": {
+        "description": "Hide names files"
+    },
+    "hideNamesDirectories": "directories'",
+    "@hideNamesDirectories": {
+        "description": "Hide names files"
+    },
+    "openOnBooru": "Open on {booru}",
+    "@openOnBooru": {
+        "description": "Chip button label to open post in browser",
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
+    },
+    "shareLabel": "Share",
+    "@shareLabel": {
+        "description": "Chip button label to shere content"
+    },
+    "latestLabel": "Latest",
+    "@latestLabel": {
+        "description": "Chip button label to switch pages on booru screen"
+    },
+    "stars": "{count, plural, =0{No tracks} =1{1 star} other{{count} stars}}",
+    "@stars": {
+        "description": "Stars count",
+        "placeholders": {
+            "count": {
+                "type": "num"
+            }
+        }
+    }
+}

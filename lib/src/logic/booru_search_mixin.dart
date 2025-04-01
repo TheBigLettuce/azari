@@ -5,16 +5,14 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:dio/dio.dart";
 import "package:flutter/widgets.dart";
 
 mixin BooruSearchMixin<W extends StatefulWidget> on State<W> {
-  SettingsService get settingsService;
-  SettingsData get settings;
   AppLocalizations? l10n;
 
   late final Dio client;
@@ -28,6 +26,8 @@ mixin BooruSearchMixin<W extends StatefulWidget> on State<W> {
   @override
   void initState() {
     super.initState();
+
+    final settings = const SettingsService().current;
 
     client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
     api = BooruAPI.fromEnum(settings.selectedBooru, client);

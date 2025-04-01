@@ -7,7 +7,7 @@ import "package:pigeon/pigeon.dart";
 
 @ConfigurePigeon(
   PigeonOptions(
-    dartOut: "lib/src/platform/generated/platform_api.g.dart",
+    dartOut: "lib/src/generated/platform/platform_api.g.dart",
     dartTestOut: "test/platform_api.g.dart",
     kotlinOut:
         "android/app/src/main/kotlin/com/github/thebiglettuce/azari/generated/Generated.kt",

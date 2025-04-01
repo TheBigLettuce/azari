@@ -5,12 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
@@ -20,7 +18,6 @@ import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.da
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_theme.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
-import "package:azari/src/ui/material/widgets/load_tags.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
@@ -152,7 +149,7 @@ class StaticContentIndexMetadata implements CurrentIndexMetadata {
     return content.widgets.tryAsStickerable(context, true);
   }
 
-@override
+  @override
   bool operator ==(Object other) {
     return other is StaticContentIndexMetadata && content == other.content;
   }
@@ -240,7 +237,7 @@ class ImageViewAction {
     this.animate = false,
     this.play = true,
     this.watch,
-    this.longLoadingNotifier,
+    this.taskTag,
   });
 
   final bool animate;
@@ -257,7 +254,7 @@ class ImageViewAction {
   final Color? color;
   final List<Effect<dynamic>> animation;
 
-  final ValueNotifier<Future<void>?>? longLoadingNotifier;
+  final Type? taskTag;
 
   final WatchFire<(IconData?, Color?, bool?)>? watch;
 
@@ -282,9 +279,6 @@ class ImageView extends StatefulWidget {
     this.onExit,
     this.startingIndex = 0,
     required this.stateController,
-    required this.videoSettingsService,
-    required this.settingsService,
-    required this.galleryService,
   });
 
   final VoidCallback? onExit;
@@ -292,10 +286,6 @@ class ImageView extends StatefulWidget {
   final int startingIndex;
 
   final ImageViewStateController stateController;
-
-  final VideoSettingsService? videoSettingsService;
-  final GalleryService? galleryService;
-  final SettingsService settingsService;
 
   static Future<void> launchWrapped(
     BuildContext context,
@@ -312,8 +302,6 @@ class ImageView extends StatefulWidget {
   }) {
     addToVisited?.call(getContent(startingCell)!);
 
-    final db = Services.of(context);
-
     final stateController = DefaultStateController(
       getContent: getContent,
       count: cellCount,
@@ -326,7 +314,6 @@ class ImageView extends StatefulWidget {
         imageDesctipion?.pageChange?.call(state);
         addToVisited?.call(getContent(state.currentIndex)!);
       },
-      videoSettingsService: Services.getOf<VideoSettingsService>(context),
     );
 
     return Navigator.of(context, rootNavigator: true).push(
@@ -336,9 +323,6 @@ class ImageView extends StatefulWidget {
           startingIndex: startingCell,
           onExit: imageDesctipion?.onExit,
           stateController: stateController,
-          videoSettingsService: db.get<VideoSettingsService>(),
-          galleryService: db.get<GalleryService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     )..whenComplete(() {
@@ -356,7 +340,6 @@ class ImageView extends StatefulWidget {
     NotifierWrapper? wrapNotifiers,
   }) {
     DefaultStateController? stateController;
-    final db = Services.of(context);
 
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
@@ -372,7 +355,6 @@ class ImageView extends StatefulWidget {
               tags: tags,
               watchTags: watchTags,
               download: download,
-              videoSettingsService: db.get<VideoSettingsService>(),
             );
 
             return stateController!;
@@ -380,9 +362,6 @@ class ImageView extends StatefulWidget {
           builder: (context, value) => ImageView(
             key: key,
             stateController: value,
-            galleryService: db.get<GalleryService>(),
-            videoSettingsService: db.get<VideoSettingsService>(),
-            settingsService: db.require<SettingsService>(),
           ),
         ),
       ),
@@ -398,7 +377,7 @@ class ImageView extends StatefulWidget {
     List<ImageTag> Function(ContentWidgets)? tags,
     WatchTagsCallback? watchTags,
     void Function(T)? addToVisited, {
-    PigeonGalleryDataImpl? galleryImpl,
+    PlatformImageViewStateImpl? galleryImpl,
     required ResourceSource<int, T> source,
     void Function(int)? download,
     required NotifierWrapper? wrapNotifiers,
@@ -427,11 +406,7 @@ class ImageView extends StatefulWidget {
             imageDesctipion.pageChange?.call(state);
             addToVisited?.call(source.backingStorage[state.currentIndex]);
           },
-          videoSettingsService:
-              Services.getOf<VideoSettingsService>(gridContext),
         );
-
-    final db = Services.of(gridContext);
 
     return Navigator.of(gridContext, rootNavigator: true)
         .push(
@@ -440,9 +415,6 @@ class ImageView extends StatefulWidget {
           onExit: imageDesctipion.onExit,
           startingIndex: startingCell,
           stateController: stateController,
-          galleryService: db.get<GalleryService>(),
-          videoSettingsService: db.get<VideoSettingsService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     )
@@ -482,8 +454,6 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
   int _incr = 0;
   bool popd = false;
 
-  GlobalProgressTab? globalProgressTab;
-
   @override
   void initState() {
     super.initState();
@@ -520,17 +490,7 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
       }
     });
 
-    PlatformApi().setWakelock(true);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (globalProgressTab != null) {
-      globalProgressTab = GlobalProgressTab.maybeOf(context);
-      globalProgressTab?.loadTags().addListener(_onTagRefresh);
-    }
+    const WindowApi().setWakelock(true);
   }
 
   @override
@@ -547,20 +507,18 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
 
     videoControls.dispose();
 
-    PlatformApi()
+    const WindowApi()
       ..setFullscreen(false)
       ..setWakelock(false);
 
     widget.onExit?.call();
 
-    globalProgressTab?.loadTags().removeListener(_onTagRefresh);
-
     super.dispose();
   }
 
-  void _onTagRefresh() {
-    setState(() {});
-  }
+  // void _onTagRefresh() {
+  //   setState(() {});
+  // }
 
   void _incrTiles() {
     _incr += 1;
@@ -579,7 +537,6 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
         videoControls: videoControls,
         pauseVideoState: pauseVideoState,
         flipShowAppBar: _appBarFlipController.stream,
-        galleryService: widget.galleryService,
         child: ImageViewTheme(
           key: wrapThemeKey,
           child: ImageViewSkeleton(
@@ -588,8 +545,6 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             videoControls: videoControls,
             controller: animationController,
             pauseVideoState: pauseVideoState,
-            videoSettingsService: widget.videoSettingsService,
-            settingsService: widget.settingsService,
             child: Animate(
               controller: slideAnimationLeft,
               autoPlay: false,

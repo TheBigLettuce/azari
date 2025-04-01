@@ -51,7 +51,7 @@ class _SelectionBarState extends State<SelectionBar> {
         play: e.play,
         animation: const [],
         addBorder: false,
-        notifier: null,
+        taskTag: e.taskTag,
       );
 
   void _unselectAll() {
@@ -180,6 +180,7 @@ class SelectionBarAction {
     this.color,
     this.animate = false,
     this.play = true,
+    this.taskTag,
   });
 
   /// If [showOnlyWhenSingle] is true, then this button will be only active if only a single
@@ -192,6 +193,8 @@ class SelectionBarAction {
 
   final bool animate;
   final bool play;
+
+  final Type? taskTag;
 
   /// Icon of the button.
   final IconData icon;
@@ -259,7 +262,8 @@ class SelectionButton {
   const SelectionButton(
     this.icon,
     this.consume,
-    this.closeOnPress, {
+    this.closeOnPress,
+    this.taskTag, {
     this.animate = false,
     this.play = true,
   });
@@ -272,6 +276,7 @@ class SelectionButton {
   final IconData icon;
 
   final VoidCallback consume;
+  final Type? taskTag;
 }
 
 mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {

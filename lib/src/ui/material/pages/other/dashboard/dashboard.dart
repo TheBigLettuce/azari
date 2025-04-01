@@ -5,9 +5,9 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
 class TimeSpentWidget extends StatefulWidget {

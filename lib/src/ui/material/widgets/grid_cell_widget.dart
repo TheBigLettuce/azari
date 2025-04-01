@@ -5,7 +5,7 @@
 
 import "dart:ui";
 
-import "package:azari/src/typedefs.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/loading_error_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";

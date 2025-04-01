@@ -3,13 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/init_main/app_info.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
@@ -19,10 +18,8 @@ import "package:local_auth/local_auth.dart";
 
 SelectionBarAction blacklist(
   BuildContext context,
-  String Function(Directory) segment, {
-  required DirectoryMetadataService? directoryMetadata,
-  required BlacklistedDirectoryService blacklistedDirectory,
-}) {
+  String Function(Directory) segment,
+) {
   return SelectionBarAction(
     Icons.hide_image_outlined,
     (selected) {
@@ -30,7 +27,7 @@ SelectionBarAction blacklist(
       final noAuth = <BlacklistedDirectoryData>[];
 
       for (final (e as Directory) in selected) {
-        final m = directoryMetadata?.cache.get(segment(e));
+        final m = DirectoryMetadataService.safe()?.cache.get(segment(e));
         if (m != null && m.requireAuth) {
           requireAuth.add(
             BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
@@ -43,18 +40,20 @@ SelectionBarAction blacklist(
       }
 
       if (noAuth.isNotEmpty) {
-        if (requireAuth.isNotEmpty && !AppInfo().canAuthBiometric) {
-          blacklistedDirectory.backingStorage.addAll(noAuth + requireAuth);
+        if (requireAuth.isNotEmpty && !const AppApi().canAuthBiometric) {
+          const BlacklistedDirectoryService()
+              .backingStorage
+              .addAll(noAuth + requireAuth);
           return;
         }
 
-        blacklistedDirectory.backingStorage.addAll(noAuth);
+        const BlacklistedDirectoryService().backingStorage.addAll(noAuth);
       }
 
       if (requireAuth.isNotEmpty) {
         final l10n = context.l10n();
 
-        if (AppInfo().canAuthBiometric) {
+        if (const AppApi().canAuthBiometric) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(l10n.directoriesAuthMessage),
@@ -68,13 +67,17 @@ SelectionBarAction blacklist(
                     return;
                   }
 
-                  blacklistedDirectory.backingStorage.addAll(requireAuth);
+                  const BlacklistedDirectoryService()
+                      .backingStorage
+                      .addAll(requireAuth);
                 },
               ),
             ),
           );
         } else {
-          blacklistedDirectory.backingStorage.addAll(requireAuth);
+          const BlacklistedDirectoryService()
+              .backingStorage
+              .addAll(requireAuth);
         }
       }
     },
@@ -86,12 +89,8 @@ SelectionBarAction joinedDirectories(
   BuildContext context,
   Directories api,
   ReturnFileCallback? callback,
-  String Function(Directory) segment, {
-  required DirectoryMetadataService? directoryMetadata,
-  required DirectoryTagService? directoryTags,
-  required FavoritePostSourceService? favoritePosts,
-  required LocalTagsService? localTags,
-}) {
+  String Function(Directory) segment,
+) {
   return SelectionBarAction(
     Icons.merge_rounded,
     (selected) {
@@ -104,10 +103,6 @@ SelectionBarAction joinedDirectories(
         api,
         callback,
         segment,
-        directoryMetadata: directoryMetadata,
-        directoryTags: directoryTags,
-        favoritePosts: favoritePosts,
-        localTags: localTags,
       );
     },
     true,
@@ -121,10 +116,6 @@ Future<void> joinedDirectoriesFnc(
   Directories api,
   ReturnFileCallback? callback,
   String Function(Directory) segment, {
-  required DirectoryMetadataService? directoryMetadata,
-  required DirectoryTagService? directoryTags,
-  required FavoritePostSourceService? favoritePosts,
-  required LocalTagsService? localTags,
   String tag = "",
   FilteringMode? filteringMode,
   bool addScaffold = false,
@@ -132,7 +123,9 @@ Future<void> joinedDirectoriesFnc(
   bool requireAuth = false;
 
   for (final e in dirs) {
-    final auth = directoryMetadata?.cache.get(segment(e))?.requireAuth ?? false;
+    final auth =
+        DirectoryMetadataService.safe()?.cache.get(segment(e))?.requireAuth ??
+            false;
     if (auth) {
       requireAuth = true;
       break;
@@ -159,7 +152,7 @@ Future<void> joinedDirectoriesFnc(
     );
   }
 
-  if (requireAuth && AppInfo().canAuthBiometric) {
+  if (requireAuth && const AppApi().canAuthBiometric) {
     final l10n = context.l10n();
 
     return LocalAuthentication()

@@ -5,10 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru_api.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
@@ -18,19 +18,13 @@ import "package:flutter/material.dart";
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({
     super.key,
-    required this.settingsService,
   });
-
-  final SettingsService settingsService;
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
 }
 
 class _DiscoverPageState extends State<DiscoverPage> with SettingsWatcherMixin {
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   late final BooruComunnityAPI api;
   late final Dio client;
 

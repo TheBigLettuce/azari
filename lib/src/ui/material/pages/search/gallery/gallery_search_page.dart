@@ -5,25 +5,23 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/obj_impls/file_impl.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/chained_filter.dart";
-import "package:azari/src/services/resource_source/filtering_mode.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/services.dart";
+import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/directories_mixin.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories_actions.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
-import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
@@ -42,41 +40,18 @@ part "search_panels/search_in_directories_buttons.dart";
 class GallerySearchPage extends StatefulWidget {
   const GallerySearchPage({
     super.key,
-    required this.l10n,
     required this.procPop,
-    required this.directoryMetadata,
-    required this.blacklistedDirectories,
-    required this.directoryTags,
-    required this.favoritePosts,
-    required this.localTags,
-    required this.tagManager,
-    required this.videoSettings,
-    required this.galleryService,
-    required this.settingsService,
   });
-
-  final AppLocalizations l10n;
 
   final void Function(bool)? procPop;
 
-  final DirectoryMetadataService? directoryMetadata;
-  final BlacklistedDirectoryService? blacklistedDirectories;
-  final DirectoryTagService? directoryTags;
-  final FavoritePostSourceService? favoritePosts;
-  final LocalTagsService? localTags;
-  final TagManagerService? tagManager;
-  final VideoSettingsService? videoSettings;
-
-  final GalleryService galleryService;
-  final SettingsService settingsService;
+  static bool hasServicesRequired() => GalleryService.available;
 
   static Future<void> open(
     BuildContext context, {
     void Function(bool)? procPop,
   }) {
-    final db = Services.of(context);
-    final (galleryService,) = (db.get<GalleryService>(),);
-    if (galleryService == null) {
+    if (!hasServicesRequired()) {
       // TODO: change
       showSnackbar(context, "Search functionality isn't available");
 
@@ -85,19 +60,7 @@ class GallerySearchPage extends StatefulWidget {
 
     return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
-        builder: (context) => GallerySearchPage(
-          l10n: context.l10n(),
-          procPop: procPop,
-          galleryService: galleryService,
-          directoryMetadata: db.get<DirectoryMetadataService>(),
-          blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
-          directoryTags: db.get<DirectoryTagService>(),
-          favoritePosts: db.get<FavoritePostSourceService>(),
-          localTags: db.get<LocalTagsService>(),
-          tagManager: db.get<TagManagerService>(),
-          videoSettings: db.get<VideoSettingsService>(),
-          settingsService: db.require<SettingsService>(),
-        ),
+        builder: (context) => GallerySearchPage(procPop: procPop),
       ),
     );
   }
@@ -106,19 +69,8 @@ class GallerySearchPage extends StatefulWidget {
   State<GallerySearchPage> createState() => _GallerySearchPageState();
 }
 
-class _GallerySearchPageState extends State<GallerySearchPage> {
-  DirectoryMetadataService? get directoryMetadata => widget.directoryMetadata;
-  BlacklistedDirectoryService? get blacklistedDirectories =>
-      widget.blacklistedDirectories;
-  DirectoryTagService? get directoryTags => widget.directoryTags;
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  LocalTagsService? get localTags => widget.localTags;
-  TagManagerService? get tagManager => widget.tagManager;
-  VideoSettingsService? get videoSettings => widget.videoSettings;
-  GalleryService get galleryService => widget.galleryService;
-
-  SettingsService get settingsService => widget.settingsService;
-
+class _GallerySearchPageState extends State<GallerySearchPage>
+    with GalleryService {
   final searchController = TextEditingController();
   final focusNode = FocusNode();
 
@@ -131,12 +83,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   void initState() {
     super.initState();
 
-    api = galleryService.open(
-      settingsService: settingsService,
-      blacklistedDirectory: blacklistedDirectories,
-      directoryTags: directoryTags,
-      galleryTrash: galleryService.trash,
-    );
+    api = open();
 
     // blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
     //   map[e.categoryName] = e.blur;
@@ -173,11 +120,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       addScaffold: true,
       api: api,
       directory: directory,
-      segmentFnc: (cell) => defaultSegmentCell(
-        cell.name,
-        cell.bucketId,
-        directoryTags,
-      ),
+      segmentFnc: (cell) => defaultSegmentCell(cell.name, cell.bucketId),
     );
   }
 
@@ -193,18 +136,10 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       list,
       api,
       null,
-      (cell) => defaultSegmentCell(
-        cell.name,
-        cell.bucketId,
-        directoryTags,
-      ),
+      (cell) => defaultSegmentCell(cell.name, cell.bucketId),
       tag: tag,
       filteringMode: filteringMode,
       addScaffold: true,
-      directoryMetadata: directoryMetadata,
-      directoryTags: directoryTags,
-      favoritePosts: favoritePosts,
-      localTags: localTags,
     );
   }
 
@@ -242,7 +177,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     if (searchController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.l10n.searchTextIsEmpty),
+          content: Text(context.l10n().searchTextIsEmpty),
         ),
       );
 
@@ -265,10 +200,10 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       );
     }
 
-    final settings = settingsService.current;
+    final settings = const SettingsService().current;
 
     if (dialog) {
-      context.openSafeModeDialog(settingsService, (value) {
+      context.openSafeModeDialog((value) {
         onTag(
           context,
           settings.selectedBooru,
@@ -320,7 +255,6 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 filteringValue: snapshot.data ?? "",
                 joinedDirectories: _joinedDirectories,
                 source: api.source,
-                directoryMetadata: directoryMetadata,
               ),
             ),
             _DirectoryNamesPanel(
@@ -329,28 +263,22 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               searchController: searchController,
               directoryComplete: _completeDirectoryNameTag,
             ),
-            if (localTags != null)
+            if (LocalTagsService.available)
               _LocalTagsPanel(
                 filteringEvents: _filteringEvents,
                 searchController: searchController,
                 joinedDirectories: _joinedDirectories,
                 source: api.source,
-                localTags: localTags!,
               ),
             _FilesList(
               filteringEvents: _filteringEvents,
               searchController: searchController,
-              localTags: localTags,
-              tagManager: tagManager,
-              videoSettings: videoSettings,
-              galleryService: galleryService,
             ),
             _DirectoryList(
               filteringEvents: _filteringEvents,
               source: api.source,
               searchController: searchController,
               onDirectoryPressed: _onDirectoryPressed,
-              directoryMetadatas: directoryMetadata,
             ),
             Builder(
               builder: (context) => SliverPadding(

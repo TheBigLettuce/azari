@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -19,11 +20,11 @@ class ActionButton extends StatefulWidget {
     required this.onLongPress,
     required this.play,
     required this.animate,
+    required this.taskTag,
     this.watch,
     required this.animation,
     this.iconOnly = false,
     this.addBorder = true,
-    required this.notifier,
   });
 
   final bool addBorder;
@@ -32,11 +33,12 @@ class ActionButton extends StatefulWidget {
   final bool play;
 
   final IconData icon;
-  final ValueNotifier<Future<void>?>? notifier;
 
   final Color? color;
 
   final List<Effect<dynamic>> animation;
+
+  final Type? taskTag;
 
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
@@ -69,21 +71,14 @@ class _ActionButtonState extends State<ActionButton>
       },
       true,
     );
-
-    widget.notifier?.addListener(_listener);
   }
 
   @override
   void dispose() {
-    widget.notifier?.removeListener(_listener);
     controller.dispose();
     _subscr?.cancel();
 
     super.dispose();
-  }
-
-  void _listener() {
-    setState(() {});
   }
 
   void onPressed() {
@@ -99,13 +94,14 @@ class _ActionButtonState extends State<ActionButton>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final icon = widget.notifier != null && widget.notifier?.value != null
+    final tag = widget.taskTag != null
+        ? const TasksService().statusUnsafe(context, widget.taskTag!)
+        : TaskStatus.done;
+
+    final icon = tag.isWaiting
         ? const SizedBox.square(
             dimension: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              year2023: false,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2),
           )
         : TweenAnimationBuilder(
             tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),

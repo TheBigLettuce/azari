@@ -6,13 +6,13 @@
 part of "services.dart";
 
 extension StatisticsGalleryDataExt on StatisticsGalleryData {
-  void maybeSave() => _currentDb.get<StatisticsGalleryService>()?.add(this);
+  void maybeSave() => _dbInstance.get<StatisticsGalleryService>()?.add(this);
 }
 
 abstract interface class StatisticsGalleryService implements ServiceMarker {
   static ImageViewStatistics? asImageViewStatistics() {
-    final gallery = _currentDb.get<StatisticsGalleryService>();
-    final daily = _currentDb.get<StatisticsDailyService>();
+    final gallery = _dbInstance.get<StatisticsGalleryService>();
+    final daily = _dbInstance.get<StatisticsDailyService>();
     if (gallery == null || daily == null) {
       return null;
     }
@@ -36,7 +36,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   ]);
 
   static void addViewedDirectories(int v) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(viewedDirectories: v)
@@ -44,7 +44,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addViewedFiles(int v) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(viewedFiles: v)
@@ -52,7 +52,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addFilesSwiped(int f) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(filesSwiped: f)
@@ -60,7 +60,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addJoined(int j) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(joined: j)
@@ -68,7 +68,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addSameFiltered(int s) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(sameFiltered: s)
@@ -76,7 +76,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addDeleted(int d) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(deleted: d)
@@ -84,7 +84,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addCopied(int c) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(copied: c)
@@ -92,7 +92,7 @@ abstract interface class StatisticsGalleryService implements ServiceMarker {
   }
 
   static void addMoved(int m) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGalleryService>()
         ?.current
         .add(moved: m)

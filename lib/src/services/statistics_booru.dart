@@ -6,13 +6,13 @@
 part of "services.dart";
 
 extension StatisticsBooruDataExt on StatisticsBooruData {
-  void maybeSave() => _currentDb.get<StatisticsBooruService>()?.add(this);
+  void maybeSave() => _dbInstance.get<StatisticsBooruService>()?.add(this);
 }
 
 abstract interface class StatisticsBooruService implements ServiceMarker {
   static ImageViewStatistics? asImageViewStatistics() {
-    final booru = _currentDb.get<StatisticsBooruService>();
-    final daily = _currentDb.get<StatisticsDailyService>();
+    final booru = _dbInstance.get<StatisticsBooruService>();
+    final daily = _dbInstance.get<StatisticsDailyService>();
     if (booru == null || daily == null) {
       return null;
     }
@@ -36,7 +36,7 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
   ]);
 
   static void addViewed(int v) {
-    _currentDb
+    _dbInstance
         .get<StatisticsBooruService>()
         ?.current
         .add(viewed: v)
@@ -44,7 +44,7 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
   }
 
   static void addDownloaded(int d) {
-    _currentDb
+    _dbInstance
         .get<StatisticsBooruService>()
         ?.current
         .add(downloaded: d)
@@ -52,7 +52,7 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
   }
 
   static void addSwiped(int s) {
-    _currentDb
+    _dbInstance
         .get<StatisticsBooruService>()
         ?.current
         .add(swiped: s)
@@ -60,7 +60,7 @@ abstract interface class StatisticsBooruService implements ServiceMarker {
   }
 
   static void addBooruSwitches(int b) {
-    _currentDb
+    _dbInstance
         .get<StatisticsBooruService>()
         ?.current
         .add(booruSwitches: b)

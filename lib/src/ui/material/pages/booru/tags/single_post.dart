@@ -5,12 +5,11 @@
 
 import "dart:async";
 
-import "package:azari/src/services/obj_impls/post_impl.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -21,29 +20,16 @@ import "package:logging/logging.dart";
 class SinglePost extends StatefulWidget {
   const SinglePost({
     super.key,
-    required this.settingsService,
-    required this.localTags,
-    required this.downloadManager,
     this.overrideLeading,
   });
 
   final Widget? overrideLeading;
-
-  final LocalTagsService? localTags;
-  final DownloadManager? downloadManager;
-
-  final SettingsService settingsService;
 
   @override
   State<SinglePost> createState() => _SinglePostState();
 }
 
 class _SinglePostState extends State<SinglePost> {
-  LocalTagsService? get localTags => widget.localTags;
-  DownloadManager? get downloadManager => widget.downloadManager;
-
-  SettingsService get settingsService => widget.settingsService;
-
   late final Dio client;
   late final BooruAPI booruApi;
 
@@ -59,7 +45,7 @@ class _SinglePostState extends State<SinglePost> {
   void initState() {
     super.initState();
 
-    final booru = widget.settingsService.current.selectedBooru;
+    final booru = const SettingsService().current.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
     booruApi = BooruAPI.fromEnum(booru, client);
   }
@@ -75,9 +61,6 @@ class _SinglePostState extends State<SinglePost> {
 
   Future<void> _launch(
     BuildContext context, {
-    required LocalTagsService localTags,
-    required DownloadManager downloadManager,
-    required SettingsService settingsService,
     Booru? replaceBooru,
     int? replaceId,
   }) {
@@ -103,11 +86,7 @@ class _SinglePostState extends State<SinglePost> {
         context,
         1,
         (__) => p.content(context),
-        download: (_) => p.download(
-          downloadManager: downloadManager,
-          localTags: localTags,
-          settingsService: settingsService,
-        ),
+        download: (_) => p.download(),
       );
     }
 
@@ -216,13 +195,8 @@ class _SinglePostState extends State<SinglePost> {
               effects: const [RotateEffect()],
               autoPlay: false,
             ),
-            onPressed: downloadManager != null && localTags != null
-                ? () => _launch(
-                      context,
-                      localTags: localTags!,
-                      downloadManager: downloadManager!,
-                      settingsService: settingsService,
-                    )
+            onPressed: DownloadManager.available && LocalTagsService.available
+                ? () => _launch(context)
                 : null,
           ),
         ],

@@ -3,19 +3,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/typedefs.dart";
 import "package:flutter/material.dart";
 
 extension SafeModeRadioDialogExt on BuildContext {
   void openSafeModeDialog(
-    SettingsService settingsService,
     void Function(SafeMode?) onPressed, [
     SafeMode? defaultValue,
   ]) {
-    final l10n = AppLocalizations.of(this)!;
+    final l10n = this.l10n();
 
     // void defaultOnPressed(SafeMode? value) {
     //   final db = DatabaseConnectionNotifier.of(this);
@@ -37,7 +35,7 @@ extension SafeModeRadioDialogExt on BuildContext {
     radioDialog<SafeMode>(
       this,
       SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-      defaultValue ?? settingsService.current.safeMode,
+      defaultValue ?? const SettingsService().current.safeMode,
       onPressed,
       title: l10n.chooseSafeMode,
       allowSingle: true,

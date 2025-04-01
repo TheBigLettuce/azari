@@ -12,13 +12,43 @@ typedef ShellConfigurationWatcher = StreamSubscription<ShellConfigurationData>
 ]);
 
 abstract interface class GridSettingsService implements ServiceMarker {
-  WatchableGridSettingsData get booru;
-  WatchableGridSettingsData get directories;
-  WatchableGridSettingsData get favoritePosts;
-  WatchableGridSettingsData get files;
+  const GridSettingsService();
+
+  static bool get available => _dbInstance.get<GridSettingsService>() != null;
+
+  GridSettingsData<BooruData> get booru;
+  GridSettingsData<DirectoriesData> get directories;
+  GridSettingsData<FavoritePostsData> get favoritePosts;
+  GridSettingsData<FilesData> get files;
 }
 
-abstract interface class WatchableGridSettingsData {
+sealed class GridSettingsType {
+  const GridSettingsType();
+}
+
+abstract class FilesData implements GridSettingsType {
+  const FilesData();
+}
+
+abstract class FavoritePostsData implements GridSettingsType {
+  const FavoritePostsData();
+}
+
+abstract class DirectoriesData implements GridSettingsType {
+  const DirectoriesData();
+}
+
+abstract class BooruData implements GridSettingsType {
+  const BooruData();
+}
+
+abstract class GridSettingsData<T extends GridSettingsType>
+    implements ServiceMarker {
+  factory GridSettingsData() => _dbInstance.get<GridSettingsData<T>>()!;
+
+  static GridSettingsData<T>? safe<T extends GridSettingsType>() =>
+      _dbInstance.get<GridSettingsData<T>>();
+
   ShellConfigurationData get current;
   set current(ShellConfigurationData d);
 
@@ -26,18 +56,6 @@ abstract interface class WatchableGridSettingsData {
     void Function(ShellConfigurationData) f, [
     bool fire = false,
   ]);
-}
-
-abstract class CancellableWatchableGridSettingsData
-    implements WatchableGridSettingsData {
-  factory CancellableWatchableGridSettingsData.noPersist({
-    required bool hideName,
-    required GridAspectRatio aspectRatio,
-    required GridColumn columns,
-    required GridLayoutType layoutType,
-  }) = _InpersistentSettingsWatcher;
-
-  void cancel();
 }
 
 enum GridLayoutType {
@@ -69,106 +87,4 @@ abstract class ShellConfigurationData {
     GridColumn? columns,
     GridLayoutType? layoutType,
   });
-}
-
-class _UnsavableSettingsData implements ShellConfigurationData {
-  const _UnsavableSettingsData({
-    required this.aspectRatio,
-    required this.columns,
-    required this.layoutType,
-    required this.hideName,
-  });
-
-  @override
-  final GridAspectRatio aspectRatio;
-
-  @override
-  final GridColumn columns;
-
-  @override
-  final bool hideName;
-
-  @override
-  final GridLayoutType layoutType;
-
-  @override
-  ShellConfigurationData copy({
-    bool? hideName,
-    GridAspectRatio? aspectRatio,
-    GridColumn? columns,
-    GridLayoutType? layoutType,
-  }) =>
-      _UnsavableSettingsData(
-        aspectRatio: aspectRatio ?? this.aspectRatio,
-        columns: columns ?? this.columns,
-        layoutType: layoutType ?? this.layoutType,
-        hideName: hideName ?? this.hideName,
-      );
-}
-
-class _InpersistentSettingsWatcher
-    implements CancellableWatchableGridSettingsData {
-  _InpersistentSettingsWatcher({
-    required bool hideName,
-    required GridAspectRatio aspectRatio,
-    required GridColumn columns,
-    required GridLayoutType layoutType,
-  }) : _current = _UnsavableSettingsData(
-          aspectRatio: aspectRatio,
-          columns: columns,
-          layoutType: layoutType,
-          hideName: hideName,
-        );
-
-  final _events = StreamController<ShellConfigurationData>.broadcast();
-
-  ShellConfigurationData _current;
-
-  @override
-  ShellConfigurationData get current => _current;
-
-  @override
-  set current(ShellConfigurationData d) {
-    _current = d;
-
-    _events.add(_current);
-  }
-
-  @override
-  StreamSubscription<ShellConfigurationData> watch(
-    void Function(ShellConfigurationData p1) f, [
-    bool fire = false,
-  ]) {
-    return _events.stream.transform<ShellConfigurationData>(
-      StreamTransformer((stream, cancelOnError) {
-        final controller = StreamController<ShellConfigurationData>(sync: true);
-
-        controller.onListen = () {
-          final subscription = stream.listen(
-            controller.add,
-            onError: controller.addError,
-            onDone: controller.close,
-            cancelOnError: cancelOnError,
-          );
-          controller
-            ..onPause = subscription.pause
-            ..onResume = subscription.resume
-            ..onCancel = subscription.cancel;
-        };
-
-        final l = controller.stream.listen(null);
-
-        if (fire) {
-          Timer.run(() {
-            controller.add(current);
-          });
-        }
-
-        return l;
-      }),
-    ).listen(f);
-  }
-
-  @override
-  void cancel() => _events.close();
 }

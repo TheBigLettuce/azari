@@ -5,20 +5,17 @@
 
 import "dart:async";
 
-import "package:azari/init_main/build_theme.dart";
-import "package:azari/init_main/init_main.dart";
-import "package:azari/init_main/restart_widget.dart";
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/platform/gallery_api.dart";
-import "package:azari/src/platform/generated/platform_api.g.dart" as platform;
-import "package:azari/src/platform/notification_api.dart";
-import "package:azari/src/platform/pigeon_gallery_data_impl.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/services/local_tags_helper.dart";
-import "package:azari/src/services/obj_impls/file_impl.dart";
-import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
+import "package:azari/src/init_main/build_theme.dart";
+import "package:azari/src/init_main/init_main.dart";
+import "package:azari/src/init_main/restart_widget.dart";
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
+import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/app_adaptive.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
@@ -34,19 +31,7 @@ part "main_pick_file.dart";
 part "main_quick_view.dart";
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  await initMain(AppInstanceType.full);
 
-  final notificationStream =
-      StreamController<NotificationRouteEvent>.broadcast();
-
-  await initMain(AppInstanceType.full, notificationStream.sink);
-
-  final accentColor = await PlatformApi().accentColor;
-
-  runApp(
-    AppAdaptive(
-      color: accentColor,
-      notificationStream: notificationStream.stream,
-    ),
-  );
+  runApp(const AppAdaptive());
 }

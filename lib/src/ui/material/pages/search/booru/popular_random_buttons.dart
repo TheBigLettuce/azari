@@ -5,22 +5,20 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
-import "package:azari/src/services/resource_source/basic.dart";
-import "package:azari/src/services/resource_source/resource_source.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/booru_api.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/net/download_manager/download_manager.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
@@ -61,7 +59,7 @@ class PopularRandomChips extends StatelessWidget {
               selected: state == BooruChipsState.latest,
               showCheckmark: false,
               onSelected: (_) => onPressed(BooruChipsState.latest),
-              label: const Text("Latest"), // TODO: change
+              label: Text(l10n.latestLabel),
               avatar: const Icon(Icons.new_releases_outlined),
             ),
             const Padding(padding: EdgeInsets.only(right: 6)),
@@ -104,13 +102,11 @@ enum BooruChipsState {
 
 class _VideosSettingsDialog extends StatefulWidget {
   const _VideosSettingsDialog({
-    // super.key,
+    super.key,
     required this.booru,
-    required this.settingsService,
   });
 
   final Booru booru;
-  final SettingsService settingsService;
 
   @override
   State<_VideosSettingsDialog> createState() => __VideosSettingsDialogState();
@@ -118,9 +114,6 @@ class _VideosSettingsDialog extends StatefulWidget {
 
 class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
     with SettingsWatcherMixin {
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
   late final TextEditingController textController;
   final focus = FocusNode();
 
@@ -226,13 +219,6 @@ class PopularPage extends StatefulWidget {
     required this.api,
     required this.tags,
     required this.safeMode,
-    required this.gridBookmarks,
-    required this.hiddenBooruPosts,
-    required this.favoritePosts,
-    required this.tagManager,
-    required this.settingsService,
-    required this.downloadManager,
-    required this.localTags,
     required this.selectionController,
   });
 
@@ -243,14 +229,7 @@ class PopularPage extends StatefulWidget {
 
   final SafeMode Function() safeMode;
 
-  final GridBookmarkService? gridBookmarks;
-  final HiddenBooruPostsService? hiddenBooruPosts;
-  final FavoritePostSourceService? favoritePosts;
-  final TagManagerService? tagManager;
-  final DownloadManager? downloadManager;
-  final LocalTagsService? localTags;
-
-  final SettingsService settingsService;
+  static bool hasServicesRequired(Services db) => true;
 
   static Future<void> open(
     BuildContext context, {
@@ -258,8 +237,6 @@ class PopularPage extends StatefulWidget {
     required BooruAPI api,
     required SafeMode Function() safeMode,
   }) {
-    final db = Services.of(context);
-
     return Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) => PopularPage(
@@ -267,13 +244,6 @@ class PopularPage extends StatefulWidget {
           tags: tags,
           safeMode: safeMode,
           selectionController: SelectionActions.controllerOf(context),
-          gridBookmarks: db.get<GridBookmarkService>(),
-          hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
-          favoritePosts: db.get<FavoritePostSourceService>(),
-          tagManager: db.get<TagManagerService>(),
-          downloadManager: DownloadManager.of(context),
-          localTags: db.get<LocalTagsService>(),
-          settingsService: db.require<SettingsService>(),
         ),
       ),
     );
@@ -283,19 +253,8 @@ class PopularPage extends StatefulWidget {
   State<PopularPage> createState() => _PopularPageState();
 }
 
-class _PopularPageState extends State<PopularPage>
-    with CommonGridData<PopularPage> {
-  GridBookmarkService? get gridBookmarks => widget.gridBookmarks;
-  HiddenBooruPostsService? get hiddenBooruPosts => widget.hiddenBooruPosts;
-  FavoritePostSourceService? get favoritePosts => widget.favoritePosts;
-  TagManagerService? get tagManager => widget.tagManager;
-  DownloadManager? get downloadManager => widget.downloadManager;
-  LocalTagsService? get localTags => widget.localTags;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: true,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.two,
@@ -313,7 +272,6 @@ class _PopularPageState extends State<PopularPage>
       final ret = await widget.api.page(
         pageSaver.page,
         widget.tags,
-        tagManager?.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
         pageSaver: pageSaver,
@@ -325,7 +283,6 @@ class _PopularPageState extends State<PopularPage>
       final ret = await widget.api.page(
         pageSaver.page + 1,
         widget.tags,
-        tagManager?.excluded,
         widget.safeMode(),
         order: BooruPostsOrder.score,
         pageSaver: pageSaver,
@@ -347,22 +304,18 @@ class _PopularPageState extends State<PopularPage>
         (context) => context.l10n().emptyNoPosts,
       ),
       actions: <SelectionBarAction>[
-        if (downloadManager != null && localTags != null)
+        if (DownloadManager.available && LocalTagsService.available)
           actions.downloadPost(
             context,
             widget.api.booru,
             null,
-            downloadManager: downloadManager!,
-            localTags: localTags!,
-            settingsService: settingsService,
           ),
-        if (favoritePosts != null)
+        if (FavoritePostSourceService.available)
           actions.favorites(
             context,
-            favoritePosts!,
             showDeleteSnackbar: true,
           ),
-        if (hiddenBooruPosts != null) actions.hide(context, hiddenBooruPosts!),
+        if (HiddenBooruPostsService.available) actions.hide(context),
       ],
     );
   }
@@ -452,13 +405,13 @@ class _PopularPageState extends State<PopularPage>
                       CurrentGridSettingsLayout<Post>(
                         source: source.backingStorage,
                         progress: source.progress,
-                        gridSeed: gridSeed,
+                        // gridSeed: gridSeed,
                         selection: ShellSelectionHolder.of(context),
                         // unselectOnUpdate: false,
                       ),
                       GridConfigPlaceholders(
                         progress: source.progress,
-                        randomNumber: gridSeed,
+                        // randomNumber: gridSeed,
                       ),
                       GridFooter<void>(storage: source.backingStorage),
                     ],

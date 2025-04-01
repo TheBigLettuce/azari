@@ -3,10 +3,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/services.dart";
 import "package:azari/src/logic/blacklisted_directories_mixin.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
+import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
@@ -17,17 +16,12 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
   const BlacklistedDirectoriesPage({
     super.key,
     required this.popScope,
-    required this.settingsService,
-    required this.blacklistedDirectories,
     required this.selectionController,
     required this.footer,
   });
 
   final void Function(bool) popScope;
   final SelectionController selectionController;
-
-  final SettingsService settingsService;
-  final BlacklistedDirectoryService blacklistedDirectories;
 
   final PreferredSizeWidget? footer;
 
@@ -38,17 +32,11 @@ class BlacklistedDirectoriesPage extends StatefulWidget {
 
 class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
     with
-        CommonGridData<BlacklistedDirectoriesPage>,
-        BlacklistedDirectoriesMixin {
+        SettingsWatcherMixin,
+        BlacklistedDirectoriesMixin,
+        BlacklistedDirectoryService {
   @override
   SelectionController get selectionController => widget.selectionController;
-
-  @override
-  BlacklistedDirectoryService get blacklistedDirectories =>
-      widget.blacklistedDirectories;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +72,7 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
                     hideThumbnails: false,
                     dismiss: TileDismiss(
                       () {
-                        blacklistedDirectories.backingStorage
-                            .removeAll([cell.bucketId]);
+                        backingStorage.removeAll([cell.bucketId]);
                       },
                       Icons.restore_page_rounded,
                     ),

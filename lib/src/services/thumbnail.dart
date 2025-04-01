@@ -5,14 +5,23 @@
 
 part of "services.dart";
 
-abstract interface class ThumbnailService implements ServiceMarker {
-  void clear();
+// TODO: merge PlatformApi.thumbs
+mixin class ThumbnailService implements ServiceMarker {
+  const ThumbnailService();
 
-  ThumbnailData? get(int id);
+  static bool get available => _instance != null;
+  static ThumbnailService? safe() => _instance;
 
-  void delete(int id);
+  // ignore: unnecessary_late
+  static late final _instance = _dbInstance.get<ThumbnailService>();
 
-  void addAll(List<ThumbId> l);
+  void clear() => _instance!.clear();
+
+  ThumbnailData? get(int id) => _instance!.get(id);
+
+  void delete(int id) => _instance!.delete(id);
+
+  void addAll(List<ThumbId> l) => _instance!.addAll(l);
 }
 
 @immutable

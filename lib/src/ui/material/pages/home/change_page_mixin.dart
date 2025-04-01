@@ -17,10 +17,10 @@ enum CurrentRoute {
         int() => throw "no route",
       };
 
-  bool hasServices(Services db) => switch (this) {
-        CurrentRoute.home => BooruPage.hasServicesRequired(db),
+  bool hasServices() => switch (this) {
+        CurrentRoute.home => BooruPage.hasServicesRequired(),
         CurrentRoute.discover => false,
-        CurrentRoute.gallery => DirectoriesPage.hasServicesRequired(db),
+        CurrentRoute.gallery => DirectoriesPage.hasServicesRequired(),
       };
 
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
@@ -119,13 +119,13 @@ enum BooruSubPage {
   final IconData icon;
   final IconData selectedIcon;
 
-  bool hasServices(Services db) => switch (this) {
-        BooruSubPage.booru => BooruPage.hasServicesRequired(db),
-        BooruSubPage.favorites => FavoritePostsPage.hasServicesRequired(db),
-        BooruSubPage.bookmarks => BookmarkPage.hasServicesRequired(db),
-        BooruSubPage.hiddenPosts => HiddenPostsPage.hasServicesRequired(db),
-        BooruSubPage.downloads => DownloadsPage.hasServicesRequired(db),
-        BooruSubPage.visited => VisitedPostsPage.hasServicesRequired(db),
+  bool hasServices() => switch (this) {
+        BooruSubPage.booru => BooruPage.hasServicesRequired(),
+        BooruSubPage.favorites => FavoritePostsPage.hasServicesRequired(),
+        BooruSubPage.bookmarks => BookmarkPage.hasServicesRequired(),
+        BooruSubPage.hiddenPosts => HiddenPostsPage.hasServicesRequired(),
+        BooruSubPage.downloads => DownloadsPage.hasServicesRequired(),
+        BooruSubPage.visited => VisitedPostsPage.hasServicesRequired(),
       };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
@@ -335,12 +335,12 @@ class _CurrentPageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final booruPage = changePage._booruPageNotifier;
 
-    final db = Services.of(context);
-    final (gridDbs, galleryService, gridSettings) = (
-      db.get<GridDbService>(),
-      db.get<GalleryService>(),
-      db.get<GridSettingsService>(),
-    );
+    // final db = Services.of(context);
+    // final (gridDbs, galleryService, gridSettings) = (
+    //   db.get<GridDbService>(),
+    //   db.get<GalleryService>(),
+    //   db.get<GridSettingsService>(),
+    // );
 
     return Animate(
       target: 0,
@@ -350,30 +350,19 @@ class _CurrentPageWidget extends StatelessWidget {
       ],
       controller: icons.pageFadeAnimation,
       child: switch (changePage._routeNotifier.value) {
-        CurrentRoute.home => gridDbs == null
+        CurrentRoute.home => !GridDbService.available
             ? const SizedBox.shrink()
             : _NavigatorShell(
                 navigatorKey: changePage.mainKey,
                 child: BooruPage(
                   pagingRegistry: changePage.pagingRegistry,
                   procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-                  gridDbs: gridDbs,
                   selectionController: SelectionActions.controllerOf(context),
-                  gridBookmarks: db.get<GridBookmarkService>(),
-                  hiddenBooruPosts: db.get<HiddenBooruPostsService>(),
-                  favoritePosts: db.get<FavoritePostSourceService>(),
-                  tagManager: db.get<TagManagerService>(),
-                  downloadManager: DownloadManager.of(context),
-                  localTags: db.get<LocalTagsService>(),
-                  hottestTags: db.get<HottestTagsService>(),
-                  gridSettings: db.get<GridSettingsService>(),
-                  visitedPosts: db.get<VisitedPostsService>(),
-                  settingsService: db.require<SettingsService>(),
                 ),
               ),
-        CurrentRoute.gallery => gridDbs == null ||
-                gridSettings == null ||
-                galleryService == null
+        CurrentRoute.gallery => !GridDbService.available ||
+                !GridSettingsService.available ||
+                !GalleryService.available
             ? const SizedBox.shrink()
             : _NavigatorShell(
                 navigatorKey: changePage.galleryKey,
@@ -383,21 +372,10 @@ class _CurrentPageWidget extends StatelessWidget {
                     icons,
                     pop,
                   ),
-                  galleryService: galleryService,
-                  gridDbs: gridDbs,
-                  gridSettings: gridSettings,
                   selectionController: SelectionActions.controllerOf(context),
-                  directoryMetadata: db.get<DirectoryMetadataService>(),
-                  directoryTags: db.get<DirectoryTagService>(),
-                  favoritePosts: db.get<FavoritePostSourceService>(),
-                  blacklistedDirectories: db.get<BlacklistedDirectoryService>(),
-                  localTagsService: db.get<LocalTagsService>(),
-                  settingsService: db.require<SettingsService>(),
                 ),
               ),
-        CurrentRoute.discover => DiscoverPage(
-            settingsService: settingsService,
-          ),
+        CurrentRoute.discover => const DiscoverPage(),
       },
     );
   }

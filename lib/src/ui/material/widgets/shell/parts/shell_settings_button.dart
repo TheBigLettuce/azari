@@ -5,10 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/l10n/generated/app_localizations.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/focus_notifier.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
@@ -27,7 +27,7 @@ class ShellSettingsButton extends StatelessWidget {
   });
 
   factory ShellSettingsButton.fromWatchable(
-    WatchableGridSettingsData w, {
+    GridSettingsData w, {
     Widget? header,
     required String Function(BuildContext) localizeHideNames,
     bool buildHideName = true,
@@ -679,7 +679,6 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
           Align(
             alignment: Alignment.centerRight,
             child: Slider(
-              year2023: false,
               value: aspectRatio.index.toDouble(),
               max: GridAspectRatio.values.length.toDouble() - 1,
               divisions: GridAspectRatio.values.length - 1,
@@ -733,7 +732,6 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
           Align(
             alignment: Alignment.centerRight,
             child: Slider(
-              year2023: false,
               value: columns.index.toDouble(),
               max: GridColumn.values.length.toDouble() - 1,
               divisions: GridColumn.values.length - 1,
@@ -808,9 +806,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
         child: Padding(
           padding: EdgeInsets.all(18),
           child: Center(
-            child: CircularProgressIndicator(
-              year2023: false,
-            ),
+            child: CircularProgressIndicator(),
           ),
         ),
       );

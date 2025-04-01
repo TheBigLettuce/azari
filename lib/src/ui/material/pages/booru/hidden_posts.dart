@@ -3,10 +3,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -18,35 +18,24 @@ import "package:flutter/material.dart";
 class HiddenPostsPage extends StatefulWidget {
   const HiddenPostsPage({
     super.key,
-    required this.hiddenBooruPosts,
-    required this.settingsService,
     required this.selectionController,
   });
 
   final SelectionController selectionController;
 
-  final HiddenBooruPostsService hiddenBooruPosts;
-  final SettingsService settingsService;
-
-  static bool hasServicesRequired(Services db) =>
-      db.get<HiddenBooruPostsService>() != null;
+  static bool hasServicesRequired() => HiddenBooruPostsService.available;
 
   @override
   State<HiddenPostsPage> createState() => HiddenPostsPageState();
 }
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
-    with CommonGridData<HiddenPostsPage> {
-  HiddenBooruPostsService get hiddenBooruPost => widget.hiddenBooruPosts;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
+    with SettingsWatcherMixin, HiddenBooruPostsService {
   final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
 
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
-      hiddenBooruPost.cachedValues.entries
+      cachedValues.entries
           .map(
             (e) => HiddenBooruPostData(
               booru: e.key.$2,
@@ -60,7 +49,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
 
   late final SourceShellElementState<HiddenBooruPostData> status;
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -145,8 +134,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
                           HideHiddenImagesThumbsNotifier.of(context),
                       dismiss: TileDismiss(
                         () {
-                          hiddenBooruPost
-                              .removeAll([(cell.postId, cell.booru)]);
+                          removeAll([(cell.postId, cell.booru)]);
 
                           source.clearRefresh();
                         },

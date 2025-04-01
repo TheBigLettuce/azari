@@ -5,10 +5,9 @@
 
 import "dart:async";
 
-import "package:azari/src/services/local_tags_helper.dart";
+import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/focus_notifier.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
@@ -23,7 +22,6 @@ class ImageViewNotifiers extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.flipShowAppBar,
-    required this.galleryService,
     required this.child,
   });
 
@@ -33,7 +31,6 @@ class ImageViewNotifiers extends StatefulWidget {
   final PauseVideoState pauseVideoState;
   final VideoControlsController videoControls;
   final ImageViewStateController stateController;
-  final GalleryService? galleryService;
 
   final Widget child;
 
@@ -73,7 +70,6 @@ class _ImageViewNotifiersState extends State<ImageViewNotifiers> {
                   child: _AppBarShownHolder(
                     flipShowAppBar: widget.flipShowAppBar,
                     animationController: widget.controller,
-                    galleryService: widget.galleryService,
                     child: widget.child,
                   ),
                 ),
@@ -323,13 +319,11 @@ class _AppBarShownHolder extends StatefulWidget {
     required this.animationController,
     required this.flipShowAppBar,
     required this.child,
-    required this.galleryService,
   });
 
   final Stream<void> flipShowAppBar;
 
   final AnimationController animationController;
-  final GalleryService? galleryService;
 
   final Widget child;
 
@@ -346,17 +340,15 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   bool _isAppbarShown = true;
 
   void toggle(bool? setTo) {
-    final platformApi = PlatformApi();
-
     setState(() => _isAppbarShown = setTo ?? !_isAppbarShown);
 
     if (_isAppbarShown) {
-      platformApi.setFullscreen(false);
+      const WindowApi().setFullscreen(false);
       widget.animationController.reverse();
     } else {
       widget.animationController
           .forward()
-          .then((value) => platformApi.setFullscreen(true));
+          .then((value) => const WindowApi().setFullscreen(true));
     }
   }
 
@@ -364,7 +356,7 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   void initState() {
     super.initState();
 
-    subscription = widget.galleryService?.events.tapDown?.listen((_) {
+    subscription = GalleryApi.safe()?.events.tapDown?.listen((_) {
       toggle(null);
     });
 

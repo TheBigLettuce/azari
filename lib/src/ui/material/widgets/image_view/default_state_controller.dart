@@ -5,9 +5,8 @@
 
 import "dart:async";
 
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/platform/platform_api.dart";
-import "package:azari/src/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
@@ -54,7 +53,6 @@ class DefaultStateController extends ImageViewStateController {
   DefaultStateController({
     required this.getContent,
     required int count,
-    required this.videoSettingsService,
     Stream<int>? countEvents,
     this.scrollUntill,
     this.preloadNextPictures = false,
@@ -124,8 +122,6 @@ class DefaultStateController extends ImageViewStateController {
   final ContentGetter getContent;
   final List<ImageTag> Function(ContentWidgets)? tags;
   final Future<int> Function()? onNearEnd;
-
-  final VideoSettingsService? videoSettingsService;
 
   final void Function(DefaultStateController state)? pageChange;
   @override
@@ -319,7 +315,6 @@ class DefaultStateController extends ImageViewStateController {
         ),
         Center(
           child: CircularProgressIndicator(
-            year2023: false,
             color: theme.colorScheme.onSurfaceVariant,
             backgroundColor:
                 theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
@@ -374,7 +369,7 @@ class DefaultStateController extends ImageViewStateController {
 
     final c = drawCell(index);
 
-    PlatformApi().window.setTitle(c.widgets.alias(false));
+    const WindowApi().setTitle(c.widgets.alias(false));
   }
 
   @override
@@ -449,7 +444,6 @@ class DefaultStateController extends ImageViewStateController {
           url: uri,
           networkThumb: networkThumb,
           localVideo: false,
-          videoSettings: videoSettingsService,
         ),
       );
 

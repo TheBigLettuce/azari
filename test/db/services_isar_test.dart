@@ -4,16 +4,69 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:io" as io;
+import "dart:ui";
 
-import "package:azari/src/services/impl/isar/impl.dart";
-import "package:azari/src/services/impl_table/io.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/services/impl/io.dart";
+import "package:azari/src/services/impl/io/isar/impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/display_quality.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:isar/isar.dart";
 import "package:path/path.dart" as path;
+
+class PlatformApiDummy implements PlatformApi {
+  const PlatformApiDummy();
+
+  @override
+  AppApi get app => const AppApiDummy();
+
+  @override
+  FilesApi? get files => null;
+
+  @override
+  GalleryApi? get gallery => null;
+
+  @override
+  NetworkStatusApi? get network => null;
+
+  @override
+  NotificationApi? get notifications => null;
+
+  @override
+  ThumbsApi? get thumbs => null;
+
+  @override
+  WindowApi? get window => null;
+}
+
+class AppApiDummy implements AppApi {
+  const AppApiDummy();
+  @override
+  Color get accentColor => const Color(0xff6d5e0f);
+
+  @override
+  bool get canAuthBiometric => false;
+
+  @override
+  void close([Object? returnValue]) {}
+
+  @override
+  Stream<NotificationRouteEvent> get notificationEvents => const Stream.empty();
+
+  @override
+  List<PermissionController> get requiredPermissions => const [];
+
+  @override
+  Future<void> setWallpaper(int id) => Future.value();
+
+  @override
+  Future<void> shareMedia(String originalUri, {bool url = false}) =>
+      Future.value();
+
+  @override
+  String get version => "";
+}
 
 void main() {
   late final IoServices services;
@@ -25,7 +78,7 @@ void main() {
 
   setUpAll(() async {
     await Isar.initializeIsarCore(download: true);
-    services = IoServices();
+    services = IoServices.newTests(const PlatformApiDummy());
 
     await initalizeIsarDb(
       AppInstanceType.full,

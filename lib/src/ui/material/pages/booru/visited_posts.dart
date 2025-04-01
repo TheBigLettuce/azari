@@ -5,16 +5,16 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/basic.dart";
+import "package:azari/src/logic/cancellable_grid_settings_data.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/net/booru/booru.dart";
-import "package:azari/src/net/booru/safe_mode.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/typedefs.dart";
-import "package:azari/src/ui/material/widgets/common_grid_data.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
@@ -26,43 +26,30 @@ import "package:flutter/material.dart";
 class VisitedPostsPage extends StatefulWidget {
   const VisitedPostsPage({
     super.key,
-    required this.visitedPosts,
-    required this.settingsService,
     required this.selectionController,
   });
 
   final SelectionController selectionController;
 
-  final VisitedPostsService visitedPosts;
-  final SettingsService settingsService;
-
-  static bool hasServicesRequired(Services db) =>
-      db.get<VisitedPostsService>() != null;
+  static bool hasServicesRequired() => VisitedPostsService.available;
 
   @override
   State<VisitedPostsPage> createState() => _VisitedPostsPageState();
 }
 
 class _VisitedPostsPageState extends State<VisitedPostsPage>
-    with CommonGridData<VisitedPostsPage> {
-  VisitedPostsService get visitedPosts => widget.visitedPosts;
-
-  @override
-  SettingsService get settingsService => widget.settingsService;
-
+    with SettingsWatcherMixin, VisitedPostsService {
   late final StreamSubscription<void> events;
 
   late final source = GenericListSource<VisitedPost>(
     () => Future.value(
-      visitedPosts.all
-          .where((e) => settings.safeMode.inLevel(e.rating.asSafeMode))
-          .toList(),
+      all.where((e) => settings.safeMode.inLevel(e.rating.asSafeMode)).toList(),
     ),
   );
 
   late final SourceShellElementState<VisitedPost> status;
 
-  final gridSettings = CancellableWatchableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: true,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -83,18 +70,16 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
       actions: [
         SelectionBarAction(
           Icons.remove_rounded,
-          (selected) => visitedPosts.removeAll(selected.cast()),
+          (selected) => removeAll(selected.cast()),
           true,
         ),
       ],
       wrapRefresh: null,
     );
 
-    events = widget.visitedPosts.watch((_) {
+    events = watch((_) {
       source.clearRefresh();
     });
-
-    watchSettings();
   }
 
   @override
@@ -146,7 +131,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
         ),
         trailingItems: [
           IconButton(
-            onPressed: visitedPosts.clear,
+            onPressed: clear,
             icon: const Icon(Icons.clear_all_rounded),
           ),
         ],
@@ -164,7 +149,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
             slivers: [
               CurrentGridSettingsLayout<VisitedPost>(
                 source: source.backingStorage,
-                gridSeed: gridSeed,
+                // gridSeed: gridSeed,
                 progress: source.progress,
                 selection: status.selection,
               ),

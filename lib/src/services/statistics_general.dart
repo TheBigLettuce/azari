@@ -6,7 +6,7 @@
 part of "services.dart";
 
 extension StatisticsGeneralDataExt on StatisticsGeneralData {
-  void maybeSave() => _currentDb.get<StatisticsGeneralService>()?.add(this);
+  void maybeSave() => _dbInstance.get<StatisticsGeneralService>()?.add(this);
 }
 
 abstract interface class StatisticsGeneralService implements ServiceMarker {
@@ -20,7 +20,7 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
   ]);
 
   static void addTimeSpent(int t) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGeneralService>()
         ?.current
         .add(timeSpent: t)
@@ -28,7 +28,7 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
   }
 
   static void addTimeDownload(int t) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGeneralService>()
         ?.current
         .add(timeDownload: t)
@@ -36,7 +36,7 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
   }
 
   static void addScrolledUp(int s) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGeneralService>()
         ?.current
         .add(scrolledUp: s)
@@ -44,7 +44,7 @@ abstract interface class StatisticsGeneralService implements ServiceMarker {
   }
 
   static void addRefreshes(int r) {
-    _currentDb
+    _dbInstance
         .get<StatisticsGeneralService>()
         ?.current
         .add(refreshes: r)

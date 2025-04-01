@@ -5,8 +5,8 @@
 
 import "dart:async";
 
-import "package:azari/src/services/resource_source/resource_source.dart";
-import "package:azari/src/services/resource_source/source_storage.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
