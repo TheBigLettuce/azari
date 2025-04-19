@@ -136,8 +136,9 @@ class _BooruPageState extends State<BooruPage>
         final data = source.forIdxUnsafe(index);
 
         return GridCell(
-          data: data,
-          hideTitle: true,
+          title: null,
+          uniqueKey: data.uniqueKey(),
+          thumbnail: data.thumbnail(),
         );
       },
     );

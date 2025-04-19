@@ -14,12 +14,15 @@ class ShimmerLoadingIndicator extends StatelessWidget {
     this.delay = const Duration(seconds: 1),
     this.duration = const Duration(milliseconds: 500),
     this.reverse = false,
+    this.backgroundAlpha = 0.5,
   });
 
   final bool reverse;
 
   final Duration delay;
   final Duration duration;
+
+  final double backgroundAlpha;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +43,8 @@ class ShimmerLoadingIndicator extends StatelessWidget {
         ),
       ],
       child: Container(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: colorScheme.surfaceContainerHighest
+            .withValues(alpha: backgroundAlpha),
       ),
     );
   }

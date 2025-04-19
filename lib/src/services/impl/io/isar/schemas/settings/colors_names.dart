@@ -3,50 +3,52 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/services/impl/io.dart";
-import "package:azari/src/services/impl/obj/visited_post.dart";
 import "package:azari/src/services/services.dart";
 import "package:isar/isar.dart";
 
-part "visited_post.g.dart";
+part "colors_names.g.dart";
 
 @collection
-class IsarVisitedPost extends VisitedPostImpl implements $VisitedPost {
-  const IsarVisitedPost({
-    required this.thumbUrl,
-    required this.id,
-    required this.booru,
-    required this.isarId,
-    required this.date,
-    required this.rating,
+class IsarColorsNamesData
+    with ColorsNamesDataCopyImpl
+    implements $ColorsNamesData {
+  const IsarColorsNamesData({
+    required this.red,
+    required this.blue,
+    required this.yellow,
+    required this.green,
+    required this.purple,
+    required this.orange,
+    required this.pink,
+    required this.white,
+    required this.brown,
+    required this.black,
   });
 
-  const IsarVisitedPost.noId({
-    required this.thumbUrl,
-    required this.id,
-    required this.booru,
-    required this.date,
-    required this.rating,
-  }) : isarId = null;
-
-  final Id? isarId;
+  Id get id => 0;
 
   @override
-  @enumerated
-  final Booru booru;
+  final String red;
+  @override
+  final String blue;
+  @override
+  final String yellow;
 
   @override
-  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
-  final int id;
+  final String green;
+  @override
+  final String purple;
+  @override
+  final String orange;
 
   @override
-  final String thumbUrl;
+  final String pink;
+  @override
+  final String white;
+  @override
+  final String brown;
 
   @override
-  final DateTime date;
-
-  @override
-  @enumerated
-  final PostRating rating;
+  final String black;
 }

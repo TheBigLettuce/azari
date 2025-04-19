@@ -29,7 +29,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
     () => Future.value(widget.tagManager.pinned.complete(filteringValue)),
-    watchCount: widget.tagManager.pinned.watchCount,
+    watchCount: (f, [_ = false]) => widget.tagManager.latest.events.listen(f),
   );
 
   late final StreamSubscription<String> filteringSubscr;

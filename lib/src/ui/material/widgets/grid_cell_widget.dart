@@ -6,38 +6,13 @@
 import "dart:ui";
 
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
 import "package:azari/src/ui/material/widgets/loading_error_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-
-mixin DefaultBuildCellImpl implements CellBase {
-  @override
-  Widget buildCell<T extends CellBase>(
-    BuildContext context,
-    int idx,
-    T cell, {
-    required bool isList,
-    required bool hideTitle,
-    bool animated = false,
-    bool blur = false,
-    required Alignment imageAlign,
-    required Widget Function(Widget child) wrapSelection,
-  }) =>
-      wrapSelection(
-        GridCell(
-          data: cell,
-          longTitle: isList,
-          hideTitle: hideTitle,
-          animate: animated,
-          blur: blur,
-          imageAlign: imageAlign,
-        ),
-      );
-}
 
 class GridCellName extends StatelessWidget {
   const GridCellName({
@@ -244,119 +219,119 @@ class _GridCellImageState extends State<GridCellImage> {
   }
 }
 
+enum TitleMode {
+  normal,
+  long,
+  topLeft,
+  atBottom;
+}
+
 /// The cell of [ShellElement].
 class GridCell extends StatelessWidget {
   const GridCell({
     super.key,
-    required this.data,
-    this.secondaryTitle,
-    required this.hideTitle,
-    this.overrideDescription,
-    this.animate = false,
-    this.longTitle = false,
+    required this.uniqueKey,
+    required this.title,
+    required this.thumbnail,
+    this.subtitle,
+    this.titleMode = TitleMode.normal,
     this.blur = false,
     this.imageAlign = Alignment.center,
+    this.stickers = const [],
+    this.tightMode = false,
+    this.titleLines = 1,
+    this.alignStickersTopCenter = false,
+    this.circle = false,
   });
 
-  final CellBase data;
+  final Key uniqueKey;
 
-  final bool longTitle;
-  final bool hideTitle;
-  final bool animate;
+  final ImageProvider? thumbnail;
+
+  final int titleLines;
+
+  final bool tightMode;
   final bool blur;
+  final bool circle;
+  final bool alignStickersTopCenter;
 
   final Alignment imageAlign;
+  final TitleMode titleMode;
 
-  final String? secondaryTitle;
-
-  final CellStaticData? overrideDescription;
+  final String? title;
+  final String? subtitle;
+  final List<Sticker> stickers;
 
   @override
   Widget build(BuildContext context) {
-    final description = overrideDescription ?? data.description();
-    final alias = hideTitle ? "" : data.alias(longTitle);
-
-    final stickers = description.ignoreStickers
-        ? null
-        : data.tryAsStickerable(context, false);
-    final thumbnail = data.tryAsThumbnailable(context);
-
-    if (alias.isEmpty &&
-        (stickers == null || stickers.isEmpty) &&
-        thumbnail == null) {
-      return const SizedBox.shrink();
-    }
+    final animate = PlayAnimations.maybeOf(context) ?? false;
 
     final theme = Theme.of(context);
 
     Widget card = Card(
-      margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
+      margin: tightMode ? const EdgeInsets.all(0.5) : null,
       elevation: 0,
       color: theme.cardColor.withValues(alpha: 0),
       child: ClipPath(
         clipper: ShapeBorderClipper(
-          shape: description.circle
+          shape: circle
               ? const CircleBorder()
               : RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
         ),
-        child: alias.isEmpty &&
-                thumbnail == null &&
-                (stickers == null || stickers.isEmpty)
-            ? null
-            : Stack(
-                children: [
-                  if (thumbnail != null)
-                    GridCellImage(
-                      imageAlign: imageAlign,
-                      thumbnail: thumbnail,
-                      blur: blur,
-                    ),
-                  if (stickers != null && stickers.isNotEmpty)
-                    Align(
-                      alignment: description.alignStickersTopCenter
-                          ? Alignment.topLeft
-                          : Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Wrap(
-                          textDirection: description.alignStickersTopCenter
-                              ? null
-                              : TextDirection.rtl,
-                          spacing: 2,
-                          runSpacing: 2,
-                          crossAxisAlignment: description.alignStickersTopCenter
-                              ? WrapCrossAlignment.center
-                              : WrapCrossAlignment.start,
-                          direction: description.alignStickersTopCenter
-                              ? Axis.horizontal
-                              : Axis.vertical,
-                          children: stickers.map(StickerWidget.new).toList(),
-                        ),
-                      ),
-                    ),
-                  if ((alias.isNotEmpty && !description.titleAtBottom) ||
-                      secondaryTitle != null)
-                    description.alignTitleToTopLeft
-                        ? _TopAlias(
-                            title: alias,
-                            secondaryTitle: secondaryTitle,
-                            lines: description.titleLines,
-                          )
-                        : GridCellName(
-                            title: alias,
-                            lines: description.titleLines,
-                          ),
-                ],
+        child: Stack(
+          children: [
+            if (thumbnail != null)
+              GridCellImage(
+                imageAlign: imageAlign,
+                thumbnail: thumbnail!,
+                blur: blur,
               ),
+            if (stickers.isNotEmpty)
+              Align(
+                alignment: alignStickersTopCenter
+                    ? Alignment.topLeft
+                    : Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Wrap(
+                    textDirection:
+                        alignStickersTopCenter ? null : TextDirection.rtl,
+                    spacing: 2,
+                    runSpacing: 2,
+                    crossAxisAlignment: alignStickersTopCenter
+                        ? WrapCrossAlignment.center
+                        : WrapCrossAlignment.start,
+                    direction: alignStickersTopCenter
+                        ? Axis.horizontal
+                        : Axis.vertical,
+                    children: stickers.map(StickerWidget.new).toList(),
+                  ),
+                ),
+              ),
+            if ((title == null ||
+                    title!.isNotEmpty && !(titleMode == TitleMode.atBottom)) ||
+                subtitle != null)
+              titleMode == TitleMode.topLeft
+                  ? _TopAlias(
+                      title: title ?? "",
+                      secondaryTitle: subtitle,
+                      lines: titleLines,
+                    )
+                  : GridCellName(
+                      title: title ?? "",
+                      lines: titleLines,
+                    ),
+          ],
+        ),
       ),
     );
     if (animate) {
-      card = card.animate(key: data.uniqueKey()).fadeIn();
+      card = card.animate(key: uniqueKey).fadeIn();
     }
 
-    if (!description.titleAtBottom || alias.isEmpty) {
+    if (!(titleMode == TitleMode.atBottom) || title == null || title!.isEmpty) {
       return card;
     }
 
@@ -370,12 +345,12 @@ class GridCell extends StatelessWidget {
         ),
         Expanded(
           child: Padding(
-            padding: description.tightMode
+            padding: tightMode
                 ? const EdgeInsets.only(left: 0.5, right: 0.5)
                 : const EdgeInsets.only(right: 4, left: 4),
             child: Text(
-              alias,
-              maxLines: description.titleLines,
+              title ?? "",
+              maxLines: titleLines,
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                 overflow: TextOverflow.fade,
@@ -391,18 +366,18 @@ class GridCell extends StatelessWidget {
 class GridCellPlaceholder extends StatelessWidget {
   const GridCellPlaceholder({
     super.key,
-    required this.description,
+    required this.circle,
+    required this.tightMode,
   });
 
-  final CellStaticData description;
+  final bool circle;
+  final bool tightMode;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: description.tightMode
-          ? const EdgeInsets.all(0.5)
-          : const EdgeInsets.all(4),
-      child: description.circle
+      padding: tightMode ? const EdgeInsets.all(0.5) : const EdgeInsets.all(4),
+      child: circle
           ? const ClipPath(
               clipper: ShapeBorderClipper(shape: CircleBorder()),
               child: ShimmerLoadingIndicator(reverse: true),

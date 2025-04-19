@@ -36,7 +36,7 @@ class SourceShellRefreshIndicator extends StatelessWidget {
   }
 }
 
-class SourceShellElementState<T extends CellBase>
+class SourceShellElementState<T extends CellBuilder>
     with DefaultInjectStack
     implements ShellScopeOverlayInjector, ShellElementState {
   SourceShellElementState({

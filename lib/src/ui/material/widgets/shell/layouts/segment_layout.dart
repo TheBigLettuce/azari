@@ -139,7 +139,7 @@ class _SegmentCapabilityEmpty implements SegmentCapability {
   void remove(List<String> segments, Set<SegmentModifier> m) {}
 }
 
-class SegmentLayout<T extends CellBase> extends StatefulWidget {
+class SegmentLayout<T extends CellBuilder> extends StatefulWidget {
   const SegmentLayout({
     super.key,
     required this.segments,
@@ -165,7 +165,7 @@ class SegmentLayout<T extends CellBase> extends StatefulWidget {
   State<SegmentLayout<T>> createState() => _SegmentLayoutState();
 }
 
-class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
+class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
     with ResetSelectionOnUpdate<T, SegmentLayout<T>> {
   Segments<T> get segments => widget.segments;
   List<String> get suggestionPrefix => widget.suggestionPrefix;
@@ -177,23 +177,29 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
   ShellSelectionHolder? get selection => widget.selection;
 
   @override
-  void Function()? get onUpdate => _makeSegments;
+  void Function()? get onUpdate => () => _makeSegments(l10n ?? context.l10n());
 
   List<_SegmentType> _data = [];
   List<int>? predefined;
 
-  @override
-  void initState() {
-    super.initState();
+  AppLocalizations? l10n;
 
-    _makeSegments();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newL10n = context.l10n();
+    if (l10n != newL10n) {
+      l10n = newL10n;
+      _makeSegments(l10n!);
+    }
   }
 
-  void _makeSegments() {
+  void _makeSegments(AppLocalizations l10n) {
     if (segments.prebuiltSegments != null) {
       _data = _genSegPredef();
     } else {
-      final ret = _genSegFnc();
+      final ret = _genSegFnc(l10n);
       _data = ret.$1;
       predefined = ret.$2;
     }
@@ -214,7 +220,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
     segments.onLabelPressed!(key, value.map((e) => source[e]).toList());
   }
 
-  (List<_SegmentType>, List<int>) _genSegFnc() {
+  (List<_SegmentType>, List<int>) _genSegFnc(AppLocalizations l10n) {
     final caps = segments.caps;
 
     final segRows = <_SegmentType>[];
@@ -236,7 +242,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
           if (!alias.indexOf("_").isNegative) {
             for (final e in alias.split("_")) {
               if (cell
-                  .alias(false)
+                  .title(l10n)
                   .startsWith(e.length <= 6 ? e : e.substring(0, 6))) {
                 suggestionCells.add(
                   (
@@ -250,7 +256,7 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
               }
             }
           } else {
-            if (cell.alias(false).startsWith(
+            if (cell.title(l10n).startsWith(
                   alias.length <= 6 ? alias : alias.substring(0, 6),
                 )) {
               suggestionCells.add(
@@ -270,8 +276,8 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
         suggestionCells.sort(
           (a, b) => (a.$1 as SyncCell<T>)
               .value
-              .alias(false)
-              .compareTo((b.$1 as SyncCell<T>).value.alias(false)),
+              .title(l10n)
+              .compareTo((b.$1 as SyncCell<T>).value.title(l10n)),
         );
       }
 
@@ -477,19 +483,21 @@ class _SegmentLayoutState<T extends CellBase> extends State<SegmentLayout<T>>
   Widget build(BuildContext context) {
     final config = ShellConfiguration.of(context);
 
-    return SegmentLayoutBody(
-      data: _data,
-      predefined: predefined,
-      gridSeed: widget.gridSeed,
-      selection: selection,
-      segments: segments,
-      config: config,
-      storage: source,
+    return TrackedIndex.wrap(
+      SegmentLayoutBody(
+        data: _data,
+        predefined: predefined,
+        gridSeed: widget.gridSeed,
+        selection: selection,
+        segments: segments,
+        config: config,
+        storage: source,
+      ),
     );
   }
 }
 
-class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
+class SegmentLayoutBody<T extends CellBuilder> extends StatelessWidget {
   const SegmentLayoutBody({
     super.key,
     required this.data,
@@ -532,7 +540,7 @@ class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
               val: e,
               segments: segments,
             ),
-          _HeaderWithCells<CellBase>() => throw UnimplementedError(),
+          _HeaderWithCells<CellBuilder>() => throw UnimplementedError(),
         },
       );
     }
@@ -541,7 +549,7 @@ class SegmentLayoutBody<T extends CellBase> extends StatelessWidget {
   }
 }
 
-class _SegRowHCell<T extends CellBase> extends StatefulWidget {
+class _SegRowHCell<T extends CellBuilder> extends StatefulWidget {
   const _SegRowHCell({
     super.key,
     required this.selection,
@@ -557,7 +565,7 @@ class _SegRowHCell<T extends CellBase> extends StatefulWidget {
   State<_SegRowHCell<T>> createState() => __SegRowHCellState();
 }
 
-class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
+class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
   final _addedCells = <(SyncCell<T>, bool)>[];
   late final List<StreamSubscription<T?>> _watchers;
 
@@ -602,6 +610,8 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
     late final items = widget.val.cells
             .where((e) => e.$1 is! AsyncCell<T>)
             .map((e) => (e.$1 as SyncCell<T>, e.$2))
@@ -629,39 +639,15 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
         itemBuilder: (context, idx) {
           final (cell, blur) = items[idx];
 
-          return cell.value.buildCell<T>(
-            context,
-            -1,
-            cell.value,
-            blur: blur,
-            isList: false,
-            imageAlign: Alignment.topCenter,
-            hideTitle: false,
-            animated: PlayAnimations.maybeOf(context) ?? false,
-            wrapSelection: (child) =>
-                cell.value
-                    .tryAsSelectionWrapperable()
-                    ?.buildSelectionWrapper<T>(
-                      context: context,
-                      description: cell.value.description(),
-                      onPressed: cell.value.tryAsPressable<T>(
-                        context,
-                        idx,
-                      ),
-                      selectFrom: null,
-                      thisIndx: -1,
-                      child: child,
-                    ) ??
-                WrapSelection<T>(
-                  description: cell.value.description(),
-                  onPressed: cell.value.tryAsPressable<T>(
-                    context,
-                    idx,
-                  ),
-                  selectFrom: null,
-                  thisIndx: -1,
-                  child: child,
-                ),
+          return ThisIndex(
+            idx: idx,
+            selectFrom: null,
+            child: cell.value.buildCell(
+              l10n,
+              hideName: false,
+              cellType: CellType.cell,
+              imageAlign: Alignment.topCenter,
+            ),
           );
         },
       ),
@@ -669,7 +655,32 @@ class __SegRowHCellState<T extends CellBase> extends State<_SegRowHCell<T>> {
   }
 }
 
-class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
+//  wrapSelection: (child) =>
+//               cell.value
+//                   .tryAsSelectionWrapperable()
+//                   ?.buildSelectionWrapper<T>(
+//                     context: context,
+//                     description: cell.value.description(),
+//                     onPressed: cell.value.tryAsPressable<T>(
+//                       context,
+//                       idx,
+//                     ),
+//                     selectFrom: null,
+//                     thisIndx: -1,
+//                     child: child,
+//                   ) ??
+//               WrapSelection<T>(
+//                 description: cell.value.description(),
+//                 onPressed: cell.value.tryAsPressable<T>(
+//                   context,
+//                   idx,
+//                 ),
+//                 selectFrom: null,
+//                 thisIndx: -1,
+//                 child: child,
+//               ),
+
+class _SegRowHIdx<T extends CellBuilder> extends StatelessWidget {
   const _SegRowHIdx({
     super.key,
     required this.selection,
@@ -691,41 +702,33 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
   final Segments<T> segments;
   final ShellConfigurationData config;
 
+  Widget buildItem(
+    BuildContext context,
+    int idx, [
+    CellType cellType = CellType.cell,
+  ]) {
+    final l10n = context.l10n();
+
+    final realIdx = val.list[idx];
+    final cell = storage[realIdx];
+
+    return ThisIndex(
+      idx: realIdx,
+      selectFrom: predefined,
+      child: Builder(
+        builder: (context) => cell.buildCell(
+          l10n,
+          hideName: config.hideName,
+          cellType: cellType,
+          imageAlign: Alignment.topCenter,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final toBlur = val.modifiers.contains(SegmentModifier.blur);
-
-    Widget buildItem(BuildContext context, int idx) {
-      final realIdx = val.list[idx];
-      final cell = storage[realIdx];
-
-      return cell.buildCell<T>(
-        context,
-        idx,
-        cell,
-        isList: false,
-        blur: toBlur,
-        imageAlign: Alignment.topCenter,
-        hideTitle: config.hideName,
-        animated: PlayAnimations.maybeOf(context) ?? false,
-        wrapSelection: (child) =>
-            cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-                  context: context,
-                  thisIndx: realIdx,
-                  description: cell.description(),
-                  selectFrom: predefined,
-                  onPressed: cell.tryAsPressable(context, idx),
-                  child: child,
-                ) ??
-            WrapSelection<T>(
-              thisIndx: realIdx,
-              description: cell.description(),
-              selectFrom: predefined,
-              onPressed: cell.tryAsPressable(context, idx),
-              child: child,
-            ),
-      );
-    }
+    // final toBlur = val.modifiers.contains(SegmentModifier.blur);
 
     return SegmentCard(
       selection: selection,
@@ -748,89 +751,8 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8, left: 8),
             sliver: SliverList.builder(
               itemCount: val.list.length,
-              itemBuilder: (context, idx) {
-                final realIdx = val.list[idx];
-                final cell = storage[realIdx];
-
-                final child = Builder(
-                  builder: (context) {
-                    final theme = Theme.of(context);
-                    SelectionCountNotifier.maybeCountOf(context);
-                    final isSelected = selection?.isSelected(realIdx) ?? false;
-
-                    return DecoratedBox(
-                      decoration: ShapeDecoration(
-                        shape: const StadiumBorder(),
-                        color: isSelected
-                            ? null
-                            : idx.isOdd
-                                ? theme.colorScheme.secondary
-                                    .withValues(alpha: 0.1)
-                                : theme.colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.1),
-                      ),
-                      child: ListTile(
-                        textColor: isSelected
-                            ? theme.colorScheme.inversePrimary
-                            : null,
-                        leading: toBlur
-                            ? ClipOval(
-                                child: ImageFiltered(
-                                  imageFilter: ImageFilter.compose(
-                                    outer: ImageFilter.blur(
-                                      sigmaX: 3.59,
-                                      sigmaY: 3.59,
-                                      tileMode: TileMode.mirror,
-                                    ),
-                                    inner: ImageFilter.dilate(
-                                      radiusX: 0.7,
-                                      radiusY: 0.7,
-                                    ),
-                                  ),
-                                  child: CircleAvatar(
-                                    backgroundColor: theme.colorScheme.surface
-                                        .withValues(alpha: 0),
-                                    backgroundImage:
-                                        cell.tryAsThumbnailable(context),
-                                  ),
-                                ),
-                              )
-                            : CircleAvatar(
-                                backgroundColor: theme.colorScheme.surface
-                                    .withValues(alpha: 0),
-                                backgroundImage:
-                                    cell.tryAsThumbnailable(context),
-                              ),
-                        title: Text(
-                          cell.alias(true),
-                          softWrap: false,
-                          style: TextStyle(
-                            color: isSelected
-                                ? theme.colorScheme.onPrimary
-                                    .withValues(alpha: 0.8)
-                                : idx.isOdd
-                                    ? theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.8)
-                                    : theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.9),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    );
-                  },
-                );
-
-                return WrapSelection(
-                  selectFrom: null,
-                  limitedSize: true,
-                  shape: const StadiumBorder(),
-                  description: cell.description(),
-                  onPressed: cell.tryAsPressable(context, idx),
-                  thisIndx: realIdx,
-                  child: child,
-                );
-              },
+              itemBuilder: (context, idx) =>
+                  buildItem(context, idx, CellType.list),
             ),
           ),
         GridLayoutType.gridQuilted => SliverGrid.builder(
@@ -847,7 +769,103 @@ class _SegRowHIdx<T extends CellBase> extends StatelessWidget {
   }
 }
 
-class SegmentCard<T extends CellBase> extends StatelessWidget {
+//  wrapSelection: (child) =>
+//         cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+//               context: context,
+//               thisIndx: realIdx,
+//               description: cell.description(),
+//               selectFrom: predefined,
+//               onPressed: cell.tryAsPressable(context, idx),
+//               child: child,
+//             ) ??
+//         WrapSelection<T>(
+//           thisIndx: realIdx,
+//           description: cell.description(),
+//           selectFrom: predefined,
+//           onPressed: cell.tryAsPressable(context, idx),
+//           child: child,
+//         ),
+
+// final child = Builder(
+//                 builder: (context) {
+//                   final theme = Theme.of(context);
+//                   SelectionCountNotifier.maybeCountOf(context);
+//                   final isSelected = selection?.isSelected(realIdx) ?? false;
+
+//                   return DecoratedBox(
+//                     decoration: ShapeDecoration(
+//                       shape: const StadiumBorder(),
+//                       color: isSelected
+//                           ? null
+//                           : idx.isOdd
+//                               ? theme.colorScheme.secondary
+//                                   .withValues(alpha: 0.1)
+//                               : theme.colorScheme.surfaceContainerHighest
+//                                   .withValues(alpha: 0.1),
+//                     ),
+//                     child: ListTile(
+//                       textColor: isSelected
+//                           ? theme.colorScheme.inversePrimary
+//                           : null,
+//                       leading: toBlur
+//                           ? ClipOval(
+//                               child: ImageFiltered(
+//                                 imageFilter: ImageFilter.compose(
+//                                   outer: ImageFilter.blur(
+//                                     sigmaX: 3.59,
+//                                     sigmaY: 3.59,
+//                                     tileMode: TileMode.mirror,
+//                                   ),
+//                                   inner: ImageFilter.dilate(
+//                                     radiusX: 0.7,
+//                                     radiusY: 0.7,
+//                                   ),
+//                                 ),
+//                                 child: CircleAvatar(
+//                                   backgroundColor: theme.colorScheme.surface
+//                                       .withValues(alpha: 0),
+//                                   backgroundImage:
+//                                       cell.tryAsThumbnailable(context),
+//                                 ),
+//                               ),
+//                             )
+//                           : CircleAvatar(
+//                               backgroundColor: theme.colorScheme.surface
+//                                   .withValues(alpha: 0),
+//                               backgroundImage:
+//                                   cell.tryAsThumbnailable(context),
+//                             ),
+//                       title: Text(
+//                         cell.alias(true),
+//                         softWrap: false,
+//                         style: TextStyle(
+//                           color: isSelected
+//                               ? theme.colorScheme.onPrimary
+//                                   .withValues(alpha: 0.8)
+//                               : idx.isOdd
+//                                   ? theme.colorScheme.onSurface
+//                                       .withValues(alpha: 0.8)
+//                                   : theme.colorScheme.onSurface
+//                                       .withValues(alpha: 0.9),
+//                         ),
+//                         overflow: TextOverflow.ellipsis,
+//                       ),
+//                     ),
+//                   );
+//                 },
+//               );
+
+//               return WrapSelection(
+//                 selectFrom: null,
+//                 limitedSize: true,
+//                 shape: const StadiumBorder(),
+//                 description: cell.description(),
+//                 onPressed: cell.tryAsPressable(context, idx),
+//                 thisIndx: realIdx,
+//                 child: child,
+//               );
+
+class SegmentCard<T extends CellBuilder> extends StatelessWidget {
   const SegmentCard({
     super.key,
     required this.selection,
@@ -1034,7 +1052,7 @@ sealed class _SegmentType {
   const _SegmentType();
 }
 
-class _HeaderWithCells<T extends CellBase> implements _SegmentType {
+class _HeaderWithCells<T extends CellBuilder> implements _SegmentType {
   const _HeaderWithCells(this.header, this.cells, this.modifiers);
 
   final List<(SegmentInjectedCellType<T>, bool)> cells;

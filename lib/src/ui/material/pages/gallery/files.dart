@@ -18,15 +18,13 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
-import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
-import "package:azari/src/ui/material/pages/gallery/files_filters.dart"
-    as filters;
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
 import "package:azari/src/ui/material/widgets/file_action_chips.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
@@ -47,8 +45,6 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
-
-part "files_actions.dart";
 
 class FilesPage extends StatefulWidget {
   const FilesPage({
@@ -167,7 +163,7 @@ class FilesPage extends StatefulWidget {
   }) {
     if (!hasServicesRequired()) {
       // TODO: change
-      showSnackbar(context, "Gallery functionality isn't available");
+      addAlert("FilesPage", "Gallery functionality isn't available");
 
       return Future.value();
     }
@@ -219,13 +215,26 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
   late final SourceShellElementState<File> status;
 
-  // @override
-  // void onNewMiscSettings(MiscSettingsData newSettings) {
-  //   if (newSettings.filesExtendedActions !=
-  //       miscSettings!.filesExtendedActions) {
-  //     SelectionActions.of(context).controller.setCount(0);
-  //   }
-  // }
+  Iterable<File> filterColors(Iterable<File> cell, FilteringColors? colors) {
+    return cell.where(
+      (e) {
+        if (colors == null || colors == FilteringColors.noColor) {
+          return true;
+        }
+
+        if (e.res == null) {
+          return false;
+        }
+
+        final favorite = FavoritePostSourceService.safe()?.cache.get(e.res!);
+        if (favorite == null) {
+          return false;
+        }
+
+        return favorite.filteringColors == colors;
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -278,25 +287,26 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
           StatisticsGalleryService.addSameFiltered(1);
         }
       },
-      filter: (cells, filteringMode, sortingMode, end, [data]) {
+      filter: (cells, filteringMode, sortingMode, colors, end, data) {
         return switch (filteringMode) {
           FilteringMode.favorite => FavoritePostSourceService.available
-              ? filters.favorite(
-                  cells,
+              ? favorite(
+                  filterColors(cells, colors),
                   searchTextController.text,
                 )
               : (cells, data),
-          FilteringMode.untagged => filters.untagged(cells),
-          FilteringMode.tag => filters.tag(cells, searchTextController.text),
+          FilteringMode.untagged => untagged(filterColors(cells, colors)),
+          FilteringMode.tag =>
+            tag(filterColors(cells, colors), searchTextController.text),
           FilteringMode.tagReversed =>
-            filters.tagReversed(cells, searchTextController.text),
-          FilteringMode.video => filters.video(cells),
-          FilteringMode.gif => filters.gif(cells),
-          FilteringMode.duplicate => filters.duplicate(cells),
-          FilteringMode.original => filters.original(cells),
+            tagReversed(filterColors(cells, colors), searchTextController.text),
+          FilteringMode.video => video(filterColors(cells, colors)),
+          FilteringMode.gif => gif(filterColors(cells, colors)),
+          FilteringMode.duplicate => duplicate(filterColors(cells, colors)),
+          FilteringMode.original => original(filterColors(cells, colors)),
           FilteringMode.same => ThumbnailService.available
-              ? filters.same(
-                  cells,
+              ? same(
+                  filterColors(cells, colors),
                   data,
                   onSkipped: () {
                     if (!context.mounted || !ThumbnailService.available) {
@@ -312,7 +322,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                           action: SnackBarAction(
                             label: context.l10n().loadMoreLabel,
                             onPressed: () {
-                              filters.loadNextThumbnails(
+                              loadNextThumbnails(
                                 api.source,
                                 () {
                                   try {
@@ -334,13 +344,19 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                   source: api.source,
                 )
               : (cells, data),
-          FilteringMode.onlyFullStars => filters.stars(cells, false),
-          FilteringMode.onlyHalfStars => filters.stars(cells, true),
+          FilteringMode.onlyFullStars =>
+            stars(filterColors(cells, colors), false),
+          FilteringMode.onlyHalfStars =>
+            stars(filterColors(cells, colors), true),
           FilteringMode() => (
               searchTextController.text.isEmpty
-                  ? cells
-                  : cells
-                      .where((e) => e.name.contains(searchTextController.text)),
+                  ? filterColors(cells, colors)
+                  : filterColors(
+                      cells.where(
+                        (e) => e.name.contains(searchTextController.text),
+                      ),
+                      colors,
+                    ),
               data
             ),
         };
@@ -368,16 +384,33 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       },
       initialFilteringMode: widget.filteringMode ?? FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
+      filteringColors: FilteringColors.noColor,
     );
 
     impl = PlatformImageViewStateImpl(
       source: filter,
-      tags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.imageTags
-          : null,
-      watchTags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.watchTags
-          : null,
+      onTagPressed: (context, tag) => _onBooruTagPressed(
+        context,
+        const SettingsService().current.selectedBooru,
+        tag,
+        null,
+      ),
+      onTagLongPressed: (context, tag) {
+        final l10n = context.l10n();
+
+        return radioDialog(
+          context,
+          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+          const SettingsService().current.safeMode,
+          (e) => _onBooruTagPressed(
+            context,
+            const SettingsService().current.selectedBooru,
+            tag,
+            e,
+          ),
+          title: l10n.chooseSafeMode,
+        );
+      },
       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
         callback: widget.callback,
         child: FilesDataNotifier(
@@ -553,21 +586,16 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
   FilteringMode? beforeButtons;
 
   PathVolume? makeThenMoveTo() {
-// ((widget.directory == null
-//                                               ? api.directories.length == 1
-//                                               : true)
-//                                           ? () {
-//                                               final dir = widget.directory ??
-//                                                   api.directories.first;
+    if (widget.directories.length == 1) {
+      final dir = widget.directories.first;
+      if (dir.relativeLoc.isEmpty ||
+          dir.name.isEmpty ||
+          dir.volumeName.isEmpty) {
+        return null;
+      }
 
-//                                               return PathVolume(
-//                                                 dir.relativeLoc,
-//                                                 dir.volumeName,
-//                                                 widget.dirName,
-//                                               );
-//                                             }
-//                                           : null)
-//                                       ?.call()
+      return PathVolume(dir.relativeLoc, dir.volumeName, dir.name);
+    }
 
     return null;
   }
@@ -896,11 +924,11 @@ class FlutterGalleryDataNotifier extends InheritedWidget {
 
   final PlatformImageViewStateImpl galleryDataImpl;
 
-  static PlatformImageViewStateImpl of(BuildContext context) {
+  static PlatformImageViewStateImpl? maybeOf(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
 
-    return widget!.galleryDataImpl;
+    return widget?.galleryDataImpl;
   }
 
   @override
@@ -908,89 +936,93 @@ class FlutterGalleryDataNotifier extends InheritedWidget {
       galleryDataImpl != oldWidget.galleryDataImpl;
 }
 
-class _TagsNotifier extends StatefulWidget {
-  const _TagsNotifier({
-    // super.key,
-    required this.tagManager,
-    required this.tagSource,
-    required this.child,
-  });
+// class _TagsNotifier extends StatefulWidget {
+//   const _TagsNotifier({
+//     // super.key,
+//     required this.tagManager,
+//     required this.tagSource,
+//     required this.child,
+//   });
 
-  final FilesSourceTags tagSource;
-  final TagManagerService tagManager;
+//   final FilesSourceTags tagSource;
+//   final TagManagerService tagManager;
 
-  final Widget child;
+//   final Widget child;
 
-  @override
-  State<_TagsNotifier> createState() => __TagsNotifierState();
-}
+//   @override
+//   State<_TagsNotifier> createState() => __TagsNotifierState();
+// }
 
-class __TagsNotifierState extends State<_TagsNotifier> {
-  late final StreamSubscription<List<String>> subscription;
-  late final StreamSubscription<void> subscr;
+// class __TagsNotifierState extends State<_TagsNotifier> {
+//   late final StreamSubscription<List<String>> subscription;
+//   late final StreamSubscription<void> subscr;
 
-  final _tags = ImageViewTags();
+//   final _tags = ImageViewTags();
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    _tags.update(
-      widget.tagSource.current
-          .map(
-            (e) => ImageTag(
-              e,
-              favorite: widget.tagManager.pinned.exists(e),
-              excluded: widget.tagManager.excluded.exists(e),
-            ),
-          )
-          .toList(),
-      null,
-    );
+//     _tags.update(
+//       widget.tagSource.current
+//           .map(
+//             (e) => ImageTag(
+//               e,
+//               type: widget.tagManager.pinned.exists(e)
+//                   ? ImageTagType.favorite
+//                   : widget.tagManager.excluded.exists(e)
+//                       ? ImageTagType.excluded
+//                       : ImageTagType.normal,
+//             ),
+//           )
+//           .toList(),
+//     );
 
-    subscription = widget.tagSource.watch((list) {
-      _refresh();
-    });
+//     subscription = widget.tagSource.watch((list) {
+//       _refresh();
+//     });
 
-    subscr = widget.tagManager.pinned.watch((_) {
-      _refresh();
-    });
-  }
+//     subscr = widget.tagManager.pinned.events.listen((_) {
+//       _refresh();
+//     });
+//   }
 
-  void _refresh() {
-    setState(() {
-      _tags.update(
-        widget.tagSource.current
-            .map(
-              (e) => ImageTag(
-                e,
-                favorite: widget.tagManager.pinned.exists(e),
-                excluded: widget.tagManager.excluded.exists(e),
-              ),
-            )
-            .toList(),
-        null,
-      );
-    });
-  }
+//   void _refresh() {
+//     setState(() {
+//       _tags.update(
+//         widget.tagSource.current
+//             .map(
+//               (e) => ImageTag(
+//                 e,
+//                 type: widget.tagManager.pinned.exists(e)
+//                     ? ImageTagType.favorite
+//                     : widget.tagManager.excluded.exists(e)
+//                         ? ImageTagType.excluded
+//                         : ImageTagType.normal,
+//               ),
+//             )
+//             .toList(),
+//       );
+//     });
+//   }
 
-  @override
-  void dispose() {
-    _tags.dispose();
-    subscription.cancel();
-    subscr.cancel();
+//   @override
+//   void dispose() {
+//     _tags.dispose();
+//     subscription.cancel();
+//     subscr.cancel();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ImageTagsNotifier(
-      tags: _tags,
-      child: widget.child,
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ImageTagsNotifier(
+//       tags: _tags,
+//       child: widget.child,
+//     );
+//   }
+// }
 
 class TagsRibbon extends StatefulWidget {
   const TagsRibbon({
@@ -1036,8 +1068,13 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
           .map(
             (e) => ImageTag(
               e.tag,
-              favorite: true,
-              excluded: false,
+              type: ImageTagType.favorite,
+              onTap: widget.selectTag != null
+                  ? (context) => widget.selectTag!(e.tag, scrollController)
+                  : null,
+              onLongTap: widget.selectTag != null
+                  ? (context) => widget.onLongPress!(e.tag, scrollController)
+                  : null,
             ),
           )
           .toList();
@@ -1056,15 +1093,22 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
 
     pinnedSubscription = !widget.showPin
         ? null
-        : pinned.watch((_) {
+        : pinned.events.listen((_) {
             setState(() {
               _pinnedList = pinned
                   .get(-1)
                   .map(
                     (e) => ImageTag(
                       e.tag,
-                      favorite: true,
-                      excluded: false,
+                      type: ImageTagType.excluded,
+                      onTap: widget.selectTag != null
+                          ? (context) =>
+                              widget.selectTag!(e.tag, scrollController)
+                          : null,
+                      onLongTap: widget.selectTag != null
+                          ? (context) =>
+                              widget.onLongPress!(e.tag, scrollController)
+                          : null,
                     ),
                   )
                   .toList();
@@ -1079,7 +1123,7 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
     final notPinned = <ImageTag>[];
 
     for (final e in tag) {
-      if (e.favorite) {
+      if (e.type == ImageTagType.favorite) {
         pinned.add(e);
       } else {
         notPinned.add(e);
@@ -1178,11 +1222,11 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
                       child: Text(
                         elem.tag,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: elem.excluded
-                              ? theme.disabledColor
-                              : elem.favorite
-                                  ? theme.colorScheme.primary
-                                  : null,
+                          color: switch (elem.type) {
+                            ImageTagType.favorite => theme.colorScheme.primary,
+                            ImageTagType.excluded => theme.disabledColor,
+                            ImageTagType.normal => null,
+                          },
                         ),
                       ),
                     ),
@@ -1441,7 +1485,7 @@ class __CountWatcherState extends State<_CountWatcher> {
   }
 }
 
-class CurrentGridSettingsLayout<T extends CellBase> extends StatelessWidget {
+class CurrentGridSettingsLayout<T extends CellBuilder> extends StatelessWidget {
   const CurrentGridSettingsLayout({
     super.key,
     required this.source,
@@ -1498,7 +1542,7 @@ class FilesDataNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final Files api;
+  final Files? api;
 
   static Files? maybeOf(BuildContext context) {
     final widget =
@@ -1735,4 +1779,585 @@ class StatisticsCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class DeleteDialogShow {
+  bool show = true;
+}
+
+class DeleteDialogShowNotifier extends InheritedWidget {
+  const DeleteDialogShowNotifier({
+    super.key,
+    required this.toShow,
+    required super.child,
+  });
+
+  final DeleteDialogShow toShow;
+
+  static DeleteDialogShow? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<DeleteDialogShowNotifier>();
+
+    return widget?.toShow;
+  }
+
+  @override
+  bool updateShouldNotify(DeleteDialogShowNotifier oldWidget) =>
+      toShow != oldWidget.toShow;
+}
+
+Future<void> deleteFilesDialog(
+  BuildContext context,
+  List<File> selected,
+  DeleteDialogShow toShow,
+) {
+  final l10n = context.l10n();
+
+  void delete() {
+    const GalleryService().trash.addAll(
+          selected.map((e) => e.originalUri).toList(),
+        );
+
+    StatisticsGalleryService.addDeleted(selected.length);
+  }
+
+  if (!toShow.show) {
+    delete();
+    return Future.value();
+  }
+
+  return Navigator.of(context, rootNavigator: true).push(
+    DialogRoute(
+      context: context,
+      builder: (context) {
+        final text = selected.length == 1
+            ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
+            : "${l10n.tagDeleteDialogTitle}"
+                " ${selected.length}"
+                " ${l10n.elementPlural}";
+
+        return AlertDialog(
+          title: Text(text),
+          content: Text(l10n.youCanRestoreFromTrash),
+          actions: [
+            TextButton(
+              onPressed: () {
+                delete();
+                toShow.show = false;
+                Navigator.pop(context);
+              },
+              child: Text(l10n.yesHide),
+            ),
+            TextButton(
+              onPressed: () {
+                delete();
+                Navigator.pop(context);
+              },
+              child: Text(l10n.yes),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(l10n.no),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+SelectionBarAction _restoreFromTrashAction(GalleryTrash galleryTrash) {
+  return SelectionBarAction(
+    Icons.restore_from_trash,
+    (selected) {
+      galleryTrash.removeAll(
+        selected.map((e) => (e as File).originalUri).toList(),
+      );
+    },
+    false,
+  );
+}
+
+SelectionBarAction _saveTagsAction(AppLocalizations l10n) {
+  return SelectionBarAction(
+    Icons.tag_rounded,
+    (selected) {
+      const TasksService().add<LocalTagsService>(
+        () => _saveTags(selected.cast(), l10n),
+      );
+    },
+    true,
+    taskTag: LocalTagsService,
+  );
+}
+
+SelectionBarAction _addTagAction(
+  BuildContext context,
+  void Function() refresh,
+) {
+  return SelectionBarAction(
+    Icons.new_label_rounded,
+    (selected) {
+      openAddTagDialog(
+        context,
+        (v, delete) {
+          if (delete) {
+            const LocalTagsService().removeSingle(
+              selected.map((e) => (e as File).name).toList(),
+              v,
+            );
+          } else {
+            const LocalTagsService().addMultiple(
+              selected.map((e) => (e as File).name).toList(),
+              v,
+            );
+          }
+
+          refresh();
+        },
+        context.l10n(),
+      );
+    },
+    false,
+  );
+}
+
+SelectionBarAction _deleteAction(
+  BuildContext context,
+  DeleteDialogShow toShow,
+  GalleryTrash galleryTrash,
+) {
+  return SelectionBarAction(
+    Icons.delete,
+    (selected) {
+      deleteFilesDialog(
+        context,
+        selected.cast(),
+        toShow,
+      );
+    },
+    false,
+  );
+}
+
+SelectionBarAction _copyAction(
+  BuildContext context,
+  String bucketId,
+  Directories providedApi,
+  DeleteDialogShow toShow,
+) {
+  return SelectionBarAction(
+    Icons.copy,
+    (selected) {
+      moveOrCopyFnc(
+        context,
+        bucketId,
+        selected.cast(),
+        false,
+        providedApi,
+        toShow,
+      );
+    },
+    false,
+  );
+}
+
+SelectionBarAction _moveAction(
+  BuildContext context,
+  String bucketId,
+  Directories providedApi,
+  DeleteDialogShow toShow,
+) {
+  return SelectionBarAction(
+    Icons.forward_rounded,
+    (selected) {
+      moveOrCopyFnc(
+        context,
+        bucketId,
+        selected.cast(),
+        true,
+        providedApi,
+        toShow,
+      );
+    },
+    false,
+  );
+}
+
+void moveOrCopyFnc(
+  BuildContext topContext,
+  String originalBucketId,
+  List<File> selected,
+  bool move,
+  Directories providedApi,
+  DeleteDialogShow toShow,
+) {
+  if (!FilesApi.available || !GalleryService.available) {
+    return;
+  }
+
+  PauseVideoNotifier.maybePauseOf(topContext, true);
+
+  final List<String> searchPrefix = [];
+  for (final tag in const LocalTagsService().get(selected.first.name)) {
+    if (const TagManagerService().pinned.exists(tag)) {
+      searchPrefix.add(tag);
+    }
+  }
+
+  final l10n = AppLocalizations.of(topContext)!;
+
+  DirectoriesPage.open(
+    topContext,
+    showBackButton: true,
+    wrapGridPage: true,
+    providedApi: providedApi,
+    callback: ReturnDirectoryCallback(
+      choose: (value, newDir) {
+        if (!newDir && value.bucketId == originalBucketId) {
+          ScaffoldMessenger.of(topContext).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(
+                move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
+              ),
+            ),
+          );
+          return Future.value();
+        }
+
+        if (value.bucketId == "trash") {
+          if (!move) {
+            ScaffoldMessenger.of(topContext).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text(
+                  l10n.cantCopyToTrash,
+                ),
+              ),
+            );
+            return Future.value();
+          }
+
+          return deleteFilesDialog(
+            topContext,
+            selected,
+            toShow,
+          );
+        } else {
+          const FilesApi()
+              .copyMove(
+            value.path,
+            value.volumeName,
+            selected,
+            move: move,
+            newDir: newDir,
+          )
+              .catchError((dynamic e) {
+            if (topContext.mounted) {
+              ScaffoldMessenger.of(topContext).showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  content: Text(
+                    e is PlatformException ? e.code : e.toString(),
+                  ),
+                ),
+              );
+            }
+          });
+
+          if (move) {
+            StatisticsGalleryService.addMoved(selected.length);
+          } else {
+            StatisticsGalleryService.addCopied(selected.length);
+          }
+        }
+
+        return Future.value();
+      },
+      preview: PreferredSize(
+        preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
+        child: CopyMovePreview(
+          files: selected,
+          icon: move ? Icons.forward_rounded : Icons.copy_rounded,
+          title: move ? l10n.moveTo : l10n.copyTo,
+        ),
+      ),
+      joinable: false,
+      suggestFor: searchPrefix,
+    ),
+  ).then((value) {
+    if (topContext.mounted) {
+      PauseVideoNotifier.maybePauseOf(topContext, false);
+    }
+  });
+}
+
+Future<void> _saveTags(
+  List<File> selected,
+  AppLocalizations l10n,
+) async {
+  if (!LocalTagsService.available) {
+    return;
+  }
+
+  final handle = await const NotificationApi().show(
+    title: l10n.savingTags,
+    id: const NotificationChannels().savingTags,
+    group: NotificationGroup.misc,
+    channel: NotificationChannel.misc,
+    body: "${l10n.savingTagsSaving}"
+        " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
+  );
+
+  try {
+    handle?.setTotal(selected.length);
+
+    for (final (i, elem) in selected.indexed) {
+      handle?.update(i, "$i/${selected.length}");
+
+      if (const LocalTagsService().get(elem.name).isEmpty) {
+        await const LocalTagsService().getOnlineAndSaveTags(elem.name);
+      }
+    }
+  } catch (e, trace) {
+    Logger.root.warning("Saving tags failed", e, trace);
+
+    // TODO: add scaffold
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text(l10n.tagSavingInProgress),
+    //     ),
+    //   );
+  } finally {
+    handle?.done();
+    GalleryApi.safe()?.notify(null);
+  }
+}
+
+/// Data for the [FilteringMode.same].
+class SameFilterAccumulator {
+  SameFilterAccumulator.empty()
+      : data = {},
+        skipped = 0;
+
+  final Map<int, Map<int, File>> data;
+  int skipped;
+}
+
+(Iterable<File>, dynamic) tag(
+  Iterable<File> cells,
+  String searchText,
+) {
+  if (searchText.isEmpty) {
+    return (cells, null);
+  }
+
+  return (
+    cells.where(
+      (element) {
+        for (final tag in searchText.split(" ")) {
+          if (!element.tags.containsKey(tag)) {
+            return false;
+          }
+        }
+
+        return true;
+      },
+    ),
+    null
+  );
+}
+
+(Iterable<File>, dynamic) tagReversed(
+  Iterable<File> cells,
+  String searchText,
+) {
+  return (
+    cells.where(
+      (element) {
+        for (final tag in searchText.split(" ")) {
+          if (element.tags.containsKey(tag)) {
+            return false;
+          }
+        }
+
+        return true;
+      },
+    ),
+    null
+  );
+}
+
+(Iterable<File>, dynamic) favorite(
+  Iterable<File> cells,
+  String searchText,
+) {
+  return (
+    cells.where(
+      (element) {
+        final isFavorite = const FavoritePostSourceService()
+            .cache
+            .isFavorite(element.res!.$1, element.res!.$2);
+
+        if (searchText.isNotEmpty) {
+          return element.res != null &&
+              isFavorite &&
+              element.tags.containsKey(searchText);
+        }
+
+        return element.res != null && isFavorite;
+      },
+    ),
+    null
+  );
+}
+
+(Iterable<File>, dynamic) untagged(Iterable<File> cells) {
+  return (
+    cells.where(
+      (element) => element.tags.isEmpty,
+    ),
+    null
+  );
+}
+
+(Iterable<File>, dynamic) video(Iterable<File> cells) {
+  return (cells.where((element) => element.isVideo), null);
+}
+
+(Iterable<File>, dynamic) gif(Iterable<File> cells) {
+  return (cells.where((element) => element.isGif), null);
+}
+
+(Iterable<File>, dynamic) duplicate(Iterable<File> cells) {
+  return (cells.where((element) => element.isDuplicate), null);
+}
+
+(Iterable<File>, dynamic) stars(
+  Iterable<File> cells,
+  bool onlyHalf,
+) {
+  return (
+    cells.where(
+      (element) {
+        if (FavoritePostSourceService.available && element.res != null) {
+          final stars =
+              const FavoritePostSourceService().cache.get(element.res!)?.stars;
+          if (stars != null) {
+            return stars != FavoriteStars.zero && stars.isHalf == onlyHalf;
+          }
+        }
+
+        return false;
+      },
+    ),
+    null
+  );
+}
+
+(Iterable<File>, dynamic) original(Iterable<File> cells) {
+  return (
+    cells.where(
+      (element) => element.tags.containsKey("original"),
+    ),
+    null
+  );
+}
+
+Iterable<(File f, int? h)> _getDifferenceHash(Iterable<File> cells) sync* {
+  for (final cell in cells) {
+    yield (cell, const ThumbnailService().get(cell.id)?.differenceHash);
+  }
+}
+
+(Iterable<File>, dynamic) same(
+  Iterable<File> cells,
+  dynamic data, {
+  required bool end,
+  required VoidCallback onSkipped,
+  required ResourceSource<int, File> source,
+}) {
+  final accu =
+      (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
+
+  for (final (cell, hash) in _getDifferenceHash(cells)) {
+    if (hash == null) {
+      accu.skipped++;
+      continue;
+    } else if (hash == 0) {
+      continue;
+    }
+
+    final prev = accu.data[hash] ?? {};
+
+    accu.data[hash] = {...prev, cell.id: cell};
+  }
+
+  if (end) {
+    if (accu.skipped != 0) {
+      onSkipped();
+    }
+
+    return (
+      () sync* {
+        for (final i in accu.data.values) {
+          if (i.length > 1) {
+            for (final v in i.values) {
+              yield v;
+            }
+          }
+        }
+      }(),
+      accu
+    );
+  }
+
+  return ([], accu);
+}
+
+Future<void> loadNextThumbnails(
+  ResourceSource<int, File> source,
+  void Function() callback,
+) async {
+  if (!ThumbnailService.available || !ThumbsApi.available) {
+    return;
+  }
+  var offset = 0;
+  var count = 0;
+  final List<Future<ThumbId>> thumbnails = [];
+
+  for (;;) {
+    final elems = source.backingStorage.skip(offset).take(40);
+    offset += elems.length;
+
+    if (elems.isEmpty) {
+      break;
+    }
+
+    for (final file in elems) {
+      if (const ThumbnailService().get(file.id) == null) {
+        count++;
+
+        thumbnails.add(const ThumbsApi().get(file.id).then((e) => e!));
+
+        if (thumbnails.length > 8) {
+          const ThumbnailService().addAll(await thumbnails.wait);
+          thumbnails.clear();
+        }
+      }
+    }
+
+    if (count >= 80) {
+      break;
+    }
+  }
+
+  if (thumbnails.isNotEmpty) {
+    const ThumbnailService().addAll(await thumbnails.wait);
+  }
+
+  callback();
 }

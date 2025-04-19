@@ -24,7 +24,7 @@ abstract interface class DownloadFileService implements ServiceMarker {
 }
 
 @immutable
-abstract class DownloadFileData implements CellBase, Thumbnailable {
+abstract class DownloadFileData implements CellBuilder {
   const factory DownloadFileData({
     required DownloadStatus status,
     required String name,

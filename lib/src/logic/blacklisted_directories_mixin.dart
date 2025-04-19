@@ -38,7 +38,7 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
     filter = ChainedFilterResourceSource(
       const BlacklistedDirectoryService(),
       ListStorage(),
-      filter: (cells, filteringMode, sortingMode, end, [data]) => (
+      filter: (cells, filteringMode, sortingMode, colors, end, data) => (
         cells.where((e) => e.name.contains(searchTextController.text)),
         null
       ),

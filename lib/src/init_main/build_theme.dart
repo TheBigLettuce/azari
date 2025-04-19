@@ -131,6 +131,7 @@ SystemUiOverlayStyle navBarStyleForTheme(
   bool highTone = true,
 }) =>
     SystemUiOverlayStyle(
+      systemNavigationBarContrastEnforced: false,
       statusBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,

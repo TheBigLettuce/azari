@@ -139,6 +139,30 @@ class ElementPriority {
   final bool hideOnEmpty;
 }
 
+class ThisIndex extends InheritedWidget {
+  const ThisIndex({
+    super.key,
+    required this.idx,
+    required this.selectFrom,
+    required super.child,
+  });
+
+  final int idx;
+  final List<int>? selectFrom;
+
+  static (int, List<int>?) of(BuildContext context) => maybeOf(context)!;
+
+  static (int, List<int>?)? maybeOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<ThisIndex>();
+
+    return widget != null ? (widget.idx, widget.selectFrom) : null;
+  }
+
+  @override
+  bool updateShouldNotify(ThisIndex oldWidget) =>
+      idx != oldWidget.idx || selectFrom != oldWidget.selectFrom;
+}
+
 class ShellScope extends StatefulWidget {
   const ShellScope({
     super.key,
@@ -364,9 +388,7 @@ class _MainBody extends StatelessWidget {
             build: (context, showEmpty) => CustomScrollView(
               scrollDirection: scrollDirection,
               controller: controller,
-              // physics: showEmpty
-              //     ? const NeverScrollableScrollPhysics()
-              //     : const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               slivers: bodySlivers(
                 context,
                 slivers: slivers,
@@ -1082,7 +1104,7 @@ class ShellScrollNotifier extends InheritedWidget {
     return widget!.saveScrollNotifier;
   }
 
-  static void maybeScrollToOf<T extends CellBase>(
+  static void maybeScrollToOf<T extends CellBuilder>(
     BuildContext context,
     int i, [
     bool animate = false,

@@ -30,7 +30,7 @@ class __RecentlySearchedTagsPanelState
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
     () => Future.value(widget.tagManager.latest.complete(filteringValue)),
-    watchCount: widget.tagManager.latest.watchCount,
+    watchCount: (f, [_ = false]) => widget.tagManager.latest.events.listen(f),
   );
 
   late final StreamSubscription<String> filteringSubscr;

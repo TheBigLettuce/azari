@@ -7,12 +7,11 @@
 
 part of "image_view.dart";
 
-class ImageViewBody extends StatefulWidget {
-  const ImageViewBody({
+class PhotoViewGalleryBody extends StatefulWidget {
+  const PhotoViewGalleryBody({
     super.key,
     required this.onPageChanged,
     required this.pageController,
-    required this.builder,
     required this.loadingBuilder,
     required this.itemCount,
     required this.onLongPress,
@@ -20,6 +19,7 @@ class ImageViewBody extends StatefulWidget {
     required this.onPressedLeft,
     required this.onPressedRight,
     required this.countEvents,
+    required this.loader,
   });
 
   final int itemCount;
@@ -34,14 +34,16 @@ class ImageViewBody extends StatefulWidget {
   final VoidCallback? onPressedRight;
   final VoidCallback? onPressedLeft;
 
-  final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
+  final DefaultImageViewLoader loader;
+
+  // final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
   final Widget Function(BuildContext, ImageChunkEvent?, int) loadingBuilder;
 
   @override
-  State<ImageViewBody> createState() => _ImageViewBodyState();
+  State<PhotoViewGalleryBody> createState() => _PhotoViewGalleryBodyState();
 }
 
-class _ImageViewBodyState extends State<ImageViewBody> {
+class _PhotoViewGalleryBodyState extends State<PhotoViewGalleryBody> {
   late final StreamSubscription<int> countEvents;
 
   int count = 0;
@@ -85,7 +87,7 @@ class _ImageViewBodyState extends State<ImageViewBody> {
           onPageChanged: widget.onPageChanged,
           pageController: widget.pageController,
           itemCount: count,
-          builder: widget.builder,
+          builder: (context, index) => widget.loader.drawOptions(index)!,
         ),
       ),
     );

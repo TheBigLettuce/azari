@@ -40,10 +40,8 @@ mixin class BlacklistedDirectoryService
 
 @immutable
 abstract class BlacklistedDirectoryData
-    implements
-        BlacklistedDirectoryDataBase,
-        BlacklistedDirectoryDataImpl,
-        Pressable<BlacklistedDirectoryData> {
+    with DefaultBuildCell
+    implements BlacklistedDirectoryDataBase, BlacklistedDirectoryDataImpl {
   const factory BlacklistedDirectoryData({
     required String bucketId,
     required String name,

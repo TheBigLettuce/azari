@@ -3,34 +3,35 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/widgets.dart";
 
-mixin VisitedPostImpl implements VisitedPost {
-  @override
-  String alias(bool long) => id.toString();
-
-  @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      CachedNetworkImageProvider(thumbUrl);
+abstract class VisitedPostImpl
+    with DefaultBuildCell, CellBuilderData
+    implements VisitedPost {
+  const VisitedPostImpl();
 
   @override
   Key uniqueKey() => ValueKey((booru, id));
 
   @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) =>
-      Post.imageViewSingle(
-        context,
-        booru,
-        id,
-        // wrapNotifiers: functionality.registerNotifiers, // TODO: fix
-      );
+  String title(AppLocalizations context) => id.toString();
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  // @override
+  // void onPressed(
+  //   BuildContext context,
+  //   int idx,
+  // ) =>
+  //     Post.imageViewSingle(
+  //       context,
+  //       booru,
+  //       id,
+  //       // wrapNotifiers: functionality.registerNotifiers, // TODO: fix
+  //     );
 }

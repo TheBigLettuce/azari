@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:animations/animations.dart";
+import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/platform_thumbnail_provider.dart";
 import "package:azari/src/services/services.dart";
@@ -12,39 +13,77 @@ import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:local_auth/local_auth.dart";
 
 abstract class DirectoryImpl
-    with DefaultBuildCellImpl
-    implements DirectoryBase, CellBase, Thumbnailable, SelectionWrapperBuilder {
+    with DefaultBuildCell, CellBuilderData
+    implements DirectoryBase, CellBuilder {
   const DirectoryImpl();
 
   @override
-  CellStaticData description() => const CellStaticData();
+  Key uniqueKey() => ValueKey(bucketId);
 
   @override
-  Widget buildSelectionWrapper<T extends CellBase>({
-    required BuildContext context,
-    required int thisIndx,
-    required List<int>? selectFrom,
-    required CellStaticData description,
-    required VoidCallback? onPressed,
-    required Widget child,
-  }) {
+  String title(AppLocalizations l10n) => name;
+
+  @override
+  ImageProvider<Object> thumbnail() => PlatformThumbnailProvider(thumbFileId);
+
+  @override
+  Widget buildCell(
+    AppLocalizations l10n, {
+    required bool hideName,
+    required CellType cellType,
+    Alignment imageAlign = Alignment.center,
+  }) =>
+      _Cell(
+        cellType: cellType,
+        hideName: hideName,
+        impl: this,
+        imageAlign: imageAlign,
+        superChild: super.buildCell(
+          l10n,
+          cellType: cellType,
+          imageAlign: imageAlign,
+          hideName: hideName,
+        ),
+      );
+}
+
+class _Cell extends StatelessWidget {
+  const _Cell({
+    super.key,
+    required this.impl,
+    required this.hideName,
+    required this.cellType,
+    required this.imageAlign,
+    required this.superChild,
+  });
+
+  final DirectoryImpl impl;
+
+  final bool hideName;
+  final CellType cellType;
+  final Alignment imageAlign;
+
+  final Widget superChild;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
     final theme = Theme.of(context);
 
     final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
-
-    final l10n = context.l10n();
 
     final scrollingState = ScrollingStateSinkProvider.maybeOf(context);
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
 
     final selectionController = SelectionActions.controllerOf(context);
+
+    final thisIdx = ThisIndex.maybeOf(context);
 
     return OpenContainer(
       tappable: false,
@@ -55,9 +94,7 @@ abstract class DirectoryImpl
       openColor: theme.colorScheme.surface.withValues(alpha: 0),
       closedColor: theme.colorScheme.surface.withValues(alpha: 1),
       closedBuilder: (containerContext, action) => WrapSelection(
-        thisIndx: thisIndx,
-        description: description,
-        selectFrom: selectFrom,
+        overrideIdx: thisIdx,
         onPressed: () {
           final (api, callback, segmentFnc) =
               DirectoriesDataNotifier.of(context);
@@ -66,7 +103,11 @@ abstract class DirectoryImpl
             Navigator.pop(containerContext);
 
             (callback! as ReturnDirectoryCallback)(
-              (bucketId: bucketId, path: relativeLoc, volumeName: volumeName),
+              (
+                bucketId: impl.bucketId,
+                path: impl.relativeLoc,
+                volumeName: impl.volumeName
+              ),
               false,
             );
           } else {
@@ -84,7 +125,7 @@ abstract class DirectoryImpl
 
             requireAuth = DirectoryMetadataService.safe()
                     ?.cache
-                    .get(segmentFnc(this as Directory))
+                    .get(segmentFnc(impl as Directory))
                     ?.requireAuth ??
                 false;
 
@@ -100,59 +141,24 @@ abstract class DirectoryImpl
           }
           // action();
         }, // onPressed
-        child: child,
+        child: superChild,
       ),
       openBuilder: (containerContext, action) {
         return FilesPage(
           api: api,
-          dirName: switch (bucketId) {
+          dirName: switch (impl.bucketId) {
             "favorites" => l10n.galleryDirectoriesFavorites,
             "trash" => l10n.galleryDirectoryTrash,
-            String() => name,
+            String() => impl.name,
           },
           // secure: secure,
           selectionController: selectionController,
-          directories: [this as Directory],
+          directories: [impl as Directory],
           scrollingState: scrollingState,
           navBarEvents: navBarEvents,
           callback: callback?.toFileOrNull,
         );
       },
-    );
-  }
-
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      PlatformThumbnailProvider(
-        thumbFileId,
-        true,
-      );
-
-  @override
-  Key uniqueKey() => ValueKey(bucketId);
-
-  @override
-  String alias(bool isList) => name;
-}
-
-mixin PigeonDirectoryPressable implements Directory, Pressable<Directory> {
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) {
-    final l10n = context.l10n();
-
-    final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
-
-    FilesPage.openProtected(
-      context: context,
-      l10n: l10n,
-      directory: this,
-      callback: callback,
-      api: api,
-      segmentFnc: segmentFnc,
-      addScaffold: false,
     );
   }
 }

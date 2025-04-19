@@ -5,22 +5,24 @@
 
 import "dart:async";
 
+import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
+import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/impl/gallery_file_functions.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/impl/io/platform_thumbnail_provider.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
+import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/file_cell.dart";
 import "package:azari/src/ui/material/widgets/file_info.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
@@ -31,108 +33,255 @@ import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart" as url;
 
 abstract class FileImpl
-    implements
-        FileBase,
-        CellBase,
-        ContentWidgets,
-        SelectionWrapperBuilder,
-        Thumbnailable,
-        Infoable,
-        ImageViewActionable,
-        AppBarButtonable,
-        Stickerable {
+    with CellBuilderData, FileImageViewWidgets
+    implements FileBase, CellBuilder, ImageViewWidgets {
   const FileImpl();
 
   ResourceSource<int, File> getSource(BuildContext context) =>
       ResourceSource.maybeOf<int, File>(context)!;
 
   @override
-  Widget buildSelectionWrapper<T extends CellBase>({
-    required BuildContext context,
-    required int thisIndx,
-    required List<int>? selectFrom,
-    required CellStaticData description,
-    required VoidCallback? onPressed,
-    required Widget child,
-  }) {
-    return WrapSelection(
-      thisIndx: thisIndx,
-      description: description,
-      selectFrom: selectFrom,
-      onPressed: onPressed,
-      child: child,
-    );
-  }
+  Key uniqueKey() => ValueKey(id);
 
   @override
-  Widget buildCell<T extends CellBase>(
-    BuildContext context,
-    int idx,
-    T cell, {
-    required bool isList,
-    required bool hideTitle,
-    bool animated = false,
-    bool blur = false,
-    required Alignment imageAlign,
-    required Widget Function(Widget child) wrapSelection,
-  }) {
-    return FileCell(
-      file: this,
-      isList: isList,
-      hideTitle: hideTitle,
-      animated: animated,
-      blur: blur,
-      imageAlign: imageAlign,
-      wrapSelection: wrapSelection,
-    );
-  }
+  ImageProvider<Object> thumbnail() => PlatformThumbnailProvider(id);
 
   @override
-  CellStaticData description() => const CellStaticData(
-        tightMode: true,
-      );
+  String title(AppLocalizations l10n) => name;
 
   @override
-  String alias(bool isList) => name;
+  List<Sticker> stickers(
+    BuildContext context, [
+    bool includeDuplicate = true,
+  ]) {
+    final favoritePosts = FavoritePostSourceService.safe();
+    final filteringData = ChainedFilter.maybeOf(context);
 
-  @override
-  List<NavigationAction> appBarButtons(BuildContext context) {
-    final l10n = context.l10n();
+    if (includeDuplicate) {
+      final stickers = <Sticker>[
+        ...defaultStickersFile(context, this),
+        if (filteringData != null &&
+            (filteringData.sortingMode == SortingMode.size ||
+                filteringData.filteringMode == FilteringMode.same)) ...[
+          Sticker(Icons.square_foot_rounded, subtitle: kbMbSize(context, size)),
+          if (res != null)
+            Sticker(Icons.arrow_outward_rounded, subtitle: res!.$2.string),
+        ],
+      ];
+
+      return stickers.isEmpty ? const [] : stickers;
+    }
 
     return [
+      ...defaultStickersFile(context, this),
+      if (res != null &&
+          favoritePosts != null &&
+          favoritePosts.cache.isFavorite(res!.$1, res!.$2))
+        const Sticker(Icons.favorite_rounded, important: true),
+    ];
+  }
+
+  @override
+  Widget buildCell(
+    AppLocalizations l10n, {
+    required CellType cellType,
+    required bool hideName,
+    Alignment imageAlign = Alignment.center,
+  }) =>
+      FileCell(
+        key: uniqueKey(),
+        file: this,
+        isList: cellType == CellType.list,
+        hideName: hideName,
+        imageAlign: imageAlign,
+      );
+
+  // static List<ImageTag> imageTags(BuildContext context, String filename) {
+  //   final postTags = const LocalTagsService().get(filename);
+  //   if (postTags.isEmpty) {
+  //     return const [];
+  //   }
+
+  //   final onBooruTagPressed = OnBooruTagPressed.of(context);
+  //   final booru = const SettingsService().current.selectedBooru;
+
+  //   return postTags
+  //       .map(
+  //         (e) => ImageTag(
+  //           e,
+  //           type: const TagManagerService().pinned.exists(e)
+  //               ? ImageTagType.favorite
+  //               : const TagManagerService().excluded.exists(e)
+  //                   ? ImageTagType.excluded
+  //                   : ImageTagType.normal,
+  //           onTap: () => onBooruTagPressed(context, booru, e, null),
+  //           onLongTap: () => onBooruTagPressed(context, booru, e, null),
+  //         ),
+  //       )
+  //       .toList();
+  // }
+
+  Future<void> openImage(BuildContext context) {
+    final thisIdx = ThisIndex.of(context);
+    final providedState = FlutterGalleryDataNotifier.maybeOf(context);
+    if (providedState != null) {
+      return ImageView.open(context, providedState, startingCell: thisIdx.$1);
+    }
+
+    final stateController = PlatformImageViewStateImpl(
+      source: getSource(context),
+      wrapNotifiers: (child) => child,
+      onTagLongPressed: (context, tag) => BooruRestoredPage.open(
+        context,
+        booru: const SettingsService().current.selectedBooru,
+        tags: tag,
+        saveSelectedPage: (_) {},
+        rootNavigator: true,
+      ),
+      onTagPressed: (context, tag) {
+        final l10n = context.l10n();
+
+        return radioDialog(
+          context,
+          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+          const SettingsService().current.safeMode,
+          (e) => BooruRestoredPage.open(
+            context,
+            booru: const SettingsService().current.selectedBooru,
+            tags: tag,
+            saveSelectedPage: (_) {},
+            rootNavigator: true,
+            overrideSafeMode: e,
+          ),
+          title: l10n.chooseSafeMode,
+        );
+      },
+    );
+
+    platform.FlutterGalleryData.setUp(stateController);
+    platform.GalleryVideoEvents.setUp(stateController);
+
+    return ImageView.open(context, stateController, startingCell: thisIdx.$1)
+        .whenComplete(() {
+      stateController.dispose();
+
+      platform.FlutterGalleryData.setUp(null);
+      platform.GalleryVideoEvents.setUp(null);
+    });
+  }
+}
+
+List<Sticker> defaultStickersFile(
+  BuildContext? context,
+  FileImpl file,
+) {
+  return [
+    if (file.tags.containsKey("original")) Sticker(FilteringMode.original.icon),
+    if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
+    if (file.tags.containsKey("translated"))
+      const Sticker(Icons.translate_outlined),
+  ];
+}
+
+Sticker sizeSticker(int size) {
+  if (size == 0) {
+    return const Sticker(IconData(0x4B));
+  }
+
+  final kb = size / 1000;
+  if (kb < 1000) {
+    if (kb > 500) {
+      return const Sticker(IconData(0x4B));
+    } else {
+      return const Sticker(IconData(0x6B));
+    }
+  } else {
+    final mb = kb / 1000;
+    if (mb > 2) {
+      return const Sticker(IconData(0x4D));
+    } else {
+      return const Sticker(IconData(0x6D));
+    }
+  }
+}
+
+String kbMbSize(BuildContext context, int bytes) {
+  if (bytes == 0) {
+    return "0";
+  }
+  final res = bytes / 1000;
+  if (res > 1000) {
+    return context.l10n().megabytes(res / 1000);
+  }
+
+  return context.l10n().kilobytes(res);
+}
+
+mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
+  @override
+  bool videoContent() => isVideo;
+
+  @override
+  List<Widget> appBarButtons(BuildContext context) {
+    return [
+      if (res != null && FavoritePostSourceService.available)
+        StarsButton(idBooru: res!),
+      IconButton(
+        icon: const Icon(Icons.share),
+        onPressed: () => const AppApi().shareMedia(originalUri),
+      ),
       if (res != null)
-        NavigationAction(
-          Icons.public,
-          () {
+        IconButton(
+          onPressed: () {
             url.launchUrl(
               res!.$2.browserLink(res!.$1),
               mode: url.LaunchMode.externalApplication,
             );
           },
-          l10n.openOnBooru(res!.$2.string),
-        ),
-      NavigationAction(
-        Icons.share,
-        () => const AppApi().shareMedia(originalUri),
-        l10n.shareLabel,
-      ),
-      if (res != null && FavoritePostSourceService.available)
-        NavigationAction(
-          Icons.star,
-          null,
-          "",
-          StarsButton(idBooru: res!),
+          icon: const Icon(Icons.public),
         ),
     ];
   }
 
   @override
-  Widget info(BuildContext context) {
-    return FileInfo(
-      key: uniqueKey(),
-      file: this as File,
-      tags: ImageTagsNotifier.of(context),
-    );
+  Future<void> Function(BuildContext context) openInfo() {
+    return (context) {
+      final imageTags = ImageTagsNotifier.of(context);
+      final onBooruTagPressed = OnBooruTagPressed.maybeOf(context) ??
+          (
+            BuildContext context,
+            Booru booru,
+            String tag,
+            SafeMode? safeMode,
+          ) {
+            BooruRestoredPage.open(
+              context,
+              booru: booru,
+              tags: tag,
+              saveSelectedPage: (_) {},
+              overrideSafeMode: safeMode,
+              rootNavigator: true,
+            );
+          };
+
+      void exit() => ExitOnPressRoute.maybeExitOf(context);
+
+      return showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => OnBooruTagPressed(
+          onPressed: onBooruTagPressed,
+          child: ExitOnPressRoute(
+            exit: exit,
+            child: FileInfo(
+              key: uniqueKey(),
+              file: this as File,
+              tags: imageTags,
+            ),
+          ),
+        ),
+      );
+    };
   }
 
   @override
@@ -142,7 +291,7 @@ abstract class FileImpl
     final favoriteAction = ImageViewAction(
       Icons.favorite_border_rounded,
       res != null && FavoritePostSourceService.available
-          ? (selected) {
+          ? () {
               if (const FavoritePostSourceService()
                   .cache
                   .isFavorite(res!.$1, res!.$2)) {
@@ -180,6 +329,7 @@ abstract class FileImpl
                         type: ret.type,
                         size: ret.size,
                         stars: FavoriteStars.zero,
+                        filteringColors: FilteringColors.noColor,
                       ),
                     ]);
                   } catch (e, trace) {
@@ -214,7 +364,7 @@ abstract class FileImpl
       return <ImageViewAction>[
         ImageViewAction(
           Icons.check,
-          (selected) {
+          () {
             callback(this as File);
             if (callback.returnBack) {
               Navigator.of(context)
@@ -240,7 +390,7 @@ abstract class FileImpl
         ? <ImageViewAction>[
             ImageViewAction(
               Icons.restore_from_trash,
-              (selected) {
+              () {
                 const GalleryService().trash.removeAll([originalUri]);
               },
             ),
@@ -249,7 +399,7 @@ abstract class FileImpl
             favoriteAction,
             ImageViewAction(
               Icons.delete,
-              (selected) {
+              () {
                 deleteFilesDialog(
                   context,
                   [this as File],
@@ -260,7 +410,7 @@ abstract class FileImpl
             if (TagManagerService.available && LocalTagsService.available)
               ImageViewAction(
                 Icons.copy,
-                (selected) {
+                () {
                   AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                   return moveOrCopyFnc(
@@ -278,7 +428,7 @@ abstract class FileImpl
             if (TagManagerService.available && LocalTagsService.available)
               ImageViewAction(
                 Icons.forward_rounded,
-                (selected) async {
+                () async {
                   AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                   return moveOrCopyFnc(
@@ -295,143 +445,129 @@ abstract class FileImpl
               ),
           ];
   }
-
-  @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      PlatformThumbnailProvider(
-        id,
-        isVideo,
-      );
-
-  @override
-  Key uniqueKey() => ValueKey(id);
-
-  @override
-  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
-    final favoritePosts = FavoritePostSourceService.safe();
-    final filteringData = ChainedFilter.maybeOf(context);
-
-    if (excludeDuplicate) {
-      final stickers = <Sticker>[
-        ...defaultStickersFile(context, this),
-        if (filteringData != null &&
-            (filteringData.sortingMode == SortingMode.size ||
-                filteringData.filteringMode == FilteringMode.same)) ...[
-          Sticker(Icons.square_foot_rounded, subtitle: kbMbSize(context, size)),
-          if (res != null)
-            Sticker(Icons.arrow_outward_rounded, subtitle: res!.$2.string),
-        ],
-      ];
-
-      return stickers.isEmpty ? const [] : stickers;
-    }
-
-    return [
-      ...defaultStickersFile(context, this),
-      if (res != null &&
-          favoritePosts != null &&
-          favoritePosts.cache.isFavorite(res!.$1, res!.$2))
-        const Sticker(Icons.favorite_rounded, important: true),
-    ];
-  }
-
-  static List<ImageTag> imageTags(ContentWidgets c) {
-    final postTags = const LocalTagsService().get(c.alias(false));
-    if (postTags.isEmpty) {
-      return const [];
-    }
-
-    return postTags
-        .map(
-          (e) => ImageTag(
-            e,
-            favorite: const TagManagerService().pinned.exists(e),
-            excluded: const TagManagerService().excluded.exists(e),
-          ),
-        )
-        .toList();
-  }
-
-  static StreamSubscription<List<ImageTag>> watchTags(
-    ContentWidgets c,
-    void Function(List<ImageTag> l) f,
-  ) =>
-      const TagManagerService().pinned.watchImageLocal(c.alias(false), f);
 }
 
-mixin PigeonFilePressable implements Pressable<File>, FileImpl {
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) {
-    final api = FilesDataNotifier.maybeOf(context);
-    final fnc = OnBooruTagPressed.of(context);
-    final callback = ReturnFileCallbackNotifier.maybeOf(context);
+// mixin PigeonFilePressable implements Pressable<File>, FileImpl {
+//   @override
+//   void onPressed(
+//     BuildContext context,
+//     int idx,
+//   ) {
+//     final api = FilesDataNotifier.maybeOf(context);
+//     final fnc = OnBooruTagPressed.of(context);
+//     final callback = ReturnFileCallbackNotifier.maybeOf(context);
 
-    // final db = Services.of(context);
-    // final (
-    //   localTags,
-    //   tagManager,
-    //   videoSettings,
-    //   settingsService,
-    //   galleryService
-    // ) = (
-    //   db.get<LocalTagsService>(),
-    //   db.get<TagManagerService>(),
-    //   db.get<VideoSettingsService>(),
-    //   db.require<SettingsService>(),
-    //   db.get<GalleryService>()
-    // );
+//     final impl = PlatformImageViewStateImpl(
+//       source: getSource(context),
+//       wrapNotifiers: (child) {
+//         Widget child_ = OnBooruTagPressed(
+//           onPressed: fnc,
+//           child: child,
+//         );
 
-    final impl = PlatformImageViewStateImpl(
-      source: getSource(context),
-      wrapNotifiers: (child) {
-        Widget child_ = OnBooruTagPressed(
-          onPressed: fnc,
-          child: child,
-        );
+//         if (api != null) {
+//           child_ = FilesDataNotifier(
+//             api: api,
+//             child: child_,
+//           );
+//         }
 
-        if (api != null) {
-          child_ = FilesDataNotifier(
-            api: api,
-            child: child_,
-          );
-        }
+//         if (callback != null) {
+//           child_ = ReturnFileCallbackNotifier(
+//             callback: callback,
+//             child: child_,
+//           );
+//         }
 
-        if (callback != null) {
-          child_ = ReturnFileCallbackNotifier(
-            callback: callback,
-            child: child_,
-          );
-        }
+//         return child_;
+//       },
+//       watchTags: LocalTagsService.available && TagManagerService.available
+//           ? FileImpl.watchTags
+//           : null,
+//       tags: LocalTagsService.available && TagManagerService.available
+//           ? FileImpl.imageTags
+//           : null,
+//     );
 
-        return child_;
-      },
-      watchTags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.watchTags
-          : null,
-      tags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.imageTags
-          : null,
-    );
+//     platform.FlutterGalleryData.setUp(impl);
+//     platform.GalleryVideoEvents.setUp(impl);
 
-    platform.FlutterGalleryData.setUp(impl);
-    platform.GalleryVideoEvents.setUp(impl);
+//     Navigator.of(context, rootNavigator: true).push<void>(
+//       MaterialPageRoute(
+//         builder: (context) {
+//           return ImageView(
+//             startingIndex: idx,
+//             stateController: impl,
+//           );
+//         },
+//       ),
+//     ).whenComplete(() {
+//       impl.dispose();
+//       platform.FlutterGalleryData.setUp(null);
+//       platform.GalleryVideoEvents.setUp(null);
+//     });
+//   }
+// }
 
-    Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        builder: (context) {
-          return ImageView(
-            startingIndex: idx,
-            stateController: impl,
-          );
-        },
-      ),
-    ).whenComplete(() {
-      impl.dispose();
-      platform.FlutterGalleryData.setUp(null);
-      platform.GalleryVideoEvents.setUp(null);
-    });
-  }
-}
+
+  // @override
+  // Widget buildSelectionWrapper<T extends CellBuilder>({
+  //   required BuildContext context,
+  //   required int thisIndx,
+  //   required List<int>? selectFrom,
+  //   required CellBuilderData description,
+  //   required VoidCallback? onPressed,
+  //   required Widget child,
+  // }) =>
+    
+
+
+// Future<void> loadNetworkThumb(
+//   BuildContext context,
+//   String filename,
+//   int id,
+//   ThumbnailService thumbnails,
+//   PinnedThumbnailService pinnedThumbnails, [
+//   bool addToPinned = true,
+// ]) {
+//   final notifier = GlobalProgressTab.maybeOf(context)
+//       ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
+//   if (notifier == null ||
+//       notifier.value != null ||
+//       pinnedThumbnails.get(id) != null) {
+//     return Future.value();
+//   }
+
+//   return notifier.value = Future(() async {
+//     final notif = await NotificationApi().show(
+//       id: NotificationApi.savingThumbId,
+//       title: "",
+//       channel: NotificationChannel.misc,
+//       group: NotificationGroup.misc,
+//     );
+
+//     notif.update(0, filename);
+
+//     final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
+//     if (res != null) {
+//       final client = BooruAPI.defaultClientForBooru(res.booru);
+//       final api = BooruAPI.fromEnum(res.booru, client);
+
+//       try {
+//         final post = await api.singlePost(res.id);
+
+//         final t =
+//             await GalleryApi().thumbs.saveFromNetwork(post.previewUrl, id);
+
+//         thumbnails.delete(id);
+//         pinnedThumbnails.add(id, t.path, t.differenceHash);
+//       } catch (e, trace) {
+//         Logger.root.warning("loadNetworkThumb", e, trace);
+//       }
+
+//       client.close(force: true);
+//     }
+
+//     notif.done();
+//   }).whenComplete(() => notifier.value = null);
+// }

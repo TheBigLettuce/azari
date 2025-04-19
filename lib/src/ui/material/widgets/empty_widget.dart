@@ -128,20 +128,18 @@ class _EmptyWidgetState extends State<EmptyWidget> {
       ),
     );
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8),
-        child: Text.rich(
-          TextSpan(
-            children: [
-              if (error == null) bodySpan else emptySpan,
-              if (error == null) emptySpan else bodySpan,
-            ],
-          ),
-          maxLines: error != null ? 4 : 2,
-          textAlign: TextAlign.center,
-          style: const TextStyle(overflow: TextOverflow.ellipsis),
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            if (error == null) bodySpan else emptySpan,
+            if (error == null) emptySpan else bodySpan,
+          ],
         ),
+        maxLines: error != null ? 4 : 2,
+        textAlign: TextAlign.center,
+        style: const TextStyle(overflow: TextOverflow.ellipsis),
       ),
     );
   }
@@ -166,6 +164,7 @@ class EmptyWidgetWithButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         EmptyWidget(

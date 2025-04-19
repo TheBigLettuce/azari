@@ -31,7 +31,7 @@ class HiddenPostsPage extends StatefulWidget {
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
     with SettingsWatcherMixin, HiddenBooruPostsService {
-  final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
+  // final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
 
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
@@ -45,6 +45,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
           )
           .toList(),
     ),
+    watchCount: const HiddenBooruPostsService().watch,
   );
 
   late final SourceShellElementState<HiddenBooruPostData> status;
@@ -81,122 +82,106 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
     super.dispose();
   }
 
+  //  _HideBlacklistedImagesHolder(
+  //     key: _hideKey,
+  //     child: ,
+  //   )
+
+  // trailingItems: [
+  //       Builder(
+  //         builder: (context) {
+  //           return IconButton(
+  //             onPressed: () {
+  //               _hideKey.currentState?.toggle();
+  //             },
+  //             icon: HideHiddenImagesThumbsNotifier.of(context)
+  //                 ? const Icon(Icons.image_rounded)
+  //                 : const Icon(Icons.hide_image_rounded),
+  //           );
+  //         },
+  //       ),
+  //     ],
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return _HideBlacklistedImagesHolder(
-      key: _hideKey,
-      child: ShellScope(
-        stackInjector: status,
-        configWatcher: gridSettings.watch,
-        appBar: TitleAppBarType(
-          title: l10n.hiddenPostsPageName,
-          trailingItems: [
-            Builder(
-              builder: (context) {
-                return IconButton(
-                  onPressed: () {
-                    _hideKey.currentState?.toggle();
-                  },
-                  icon: HideHiddenImagesThumbsNotifier.of(context)
-                      ? const Icon(Icons.image_rounded)
-                      : const Icon(Icons.hide_image_rounded),
-                );
-              },
-            ),
-          ],
-          leading: IconButton(
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-            icon: const Icon(Icons.menu_rounded),
+    return ShellScope(
+      stackInjector: status,
+      configWatcher: gridSettings.watch,
+      appBar: TitleAppBarType(
+        title: l10n.hiddenPostsPageName,
+        leading: IconButton(
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
+          icon: const Icon(Icons.menu_rounded),
+        ),
+      ),
+      elements: [
+        ElementPriority(
+          ShellElement(
+            state: status,
+            slivers: [
+              ListLayout<HiddenBooruPostData>(
+                hideThumbnails: false,
+                source: source.backingStorage,
+                progress: source.progress,
+                selection: status.selection,
+              ),
+            ],
           ),
         ),
-        elements: [
-          ElementPriority(
-            ShellElement(
-              // key: gridKey,
-              state: status,
-              slivers: [
-                ListLayout<HiddenBooruPostData>(
-                  hideThumbnails: false,
-                  source: source.backingStorage,
-                  progress: source.progress,
-                  selection: status.selection,
-                  itemFactory: (context, index, cell) {
-                    return DefaultListTile(
-                      selection: status.selection,
-                      index: index,
-                      cell: cell,
-                      trailing: Text(cell.booru.string),
-                      hideThumbnails:
-                          HideHiddenImagesThumbsNotifier.of(context),
-                      dismiss: TileDismiss(
-                        () {
-                          removeAll([(cell.postId, cell.booru)]);
-
-                          source.clearRefresh();
-                        },
-                        Icons.image_rounded,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _HideBlacklistedImagesHolder extends StatefulWidget {
-  const _HideBlacklistedImagesHolder({
-    required super.key,
-    required this.child,
-  });
+// class _HideBlacklistedImagesHolder extends StatefulWidget {
+//   const _HideBlacklistedImagesHolder({
+//     required super.key,
+//     required this.child,
+//   });
 
-  final Widget child;
+//   final Widget child;
 
-  @override
-  State<_HideBlacklistedImagesHolder> createState() =>
-      _HideBlacklistedImagesHolderState();
-}
+//   @override
+//   State<_HideBlacklistedImagesHolder> createState() =>
+//       _HideBlacklistedImagesHolderState();
+// }
 
-class _HideBlacklistedImagesHolderState
-    extends State<_HideBlacklistedImagesHolder> {
-  bool show = true;
+// class _HideBlacklistedImagesHolderState
+//     extends State<_HideBlacklistedImagesHolder> {
+//   bool show = true;
 
-  void toggle() {
-    setState(() {
-      show = !show;
-    });
-  }
+//   void toggle() {
+//     setState(() {
+//       show = !show;
+//     });
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return HideHiddenImagesThumbsNotifier(hiding: show, child: widget.child);
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return HideHiddenImagesThumbsNotifier(hiding: show, child: widget.child);
+//   }
+// }
 
-class HideHiddenImagesThumbsNotifier extends InheritedWidget {
-  const HideHiddenImagesThumbsNotifier({
-    super.key,
-    required this.hiding,
-    required super.child,
-  });
-  final bool hiding;
+// class HideHiddenImagesThumbsNotifier extends InheritedWidget {
+//   const HideHiddenImagesThumbsNotifier({
+//     super.key,
+//     required this.hiding,
+//     required super.child,
+//   });
+//   final bool hiding;
 
-  static bool of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<HideHiddenImagesThumbsNotifier>();
+//   static bool of(BuildContext context) {
+//     final widget = context
+//         .dependOnInheritedWidgetOfExactType<HideHiddenImagesThumbsNotifier>();
 
-    return widget!.hiding;
-  }
+//     return widget!.hiding;
+//   }
 
-  @override
-  bool updateShouldNotify(HideHiddenImagesThumbsNotifier oldWidget) =>
-      hiding != oldWidget.hiding;
-}
+//   @override
+//   bool updateShouldNotify(HideHiddenImagesThumbsNotifier oldWidget) =>
+//       hiding != oldWidget.hiding;
+// }

@@ -13,34 +13,11 @@ import "package:transparent_image/transparent_image.dart";
 
 final _thumbLoadingStatus = <int, Future<ThumbId?>>{};
 
-// ListTile addInfoTile({
-//   required String title,
-//   required String? subtitle,
-//   void Function()? onPressed,
-//   Widget? trailing,
-// }) =>
-//     ListTile(
-//       title: Center(
-//         child: Text(title),
-//       ),
-//       trailing: trailing,
-//       onTap: onPressed,
-//       subtitle: subtitle != null
-//           ? Center(
-//               child: Text(subtitle),
-//             )
-//           : null,
-//     );
-
 class PlatformThumbnailProvider
     extends ImageProvider<PlatformThumbnailProvider> {
-  const PlatformThumbnailProvider(
-    this.id,
-    this.tryPinned,
-  );
+  const PlatformThumbnailProvider(this.id);
 
   final int id;
-  final bool tryPinned;
 
   @override
   Future<PlatformThumbnailProvider> obtainKey(

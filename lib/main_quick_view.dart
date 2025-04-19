@@ -95,13 +95,9 @@ class __GalleryDataHolderState extends State<_GalleryDataHolder> {
 
     impl = PlatformImageViewStateImpl(
       source: widget.source,
-      wrapNotifiers: null,
-      watchTags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.watchTags
-          : null,
-      tags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.imageTags
-          : null,
+      wrapNotifiers: (child) => child,
+      onTagPressed: null,
+      onTagLongPressed: null,
     );
 
     platform.GalleryVideoEvents.setUp(impl);

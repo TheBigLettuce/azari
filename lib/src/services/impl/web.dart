@@ -9,6 +9,7 @@ import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/posts_source.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/services/impl/obj/blacklisted_directory_data_impl.dart";
@@ -22,8 +23,8 @@ import "package:azari/src/services/impl/obj/visited_post.dart";
 import "package:azari/src/services/impl/web/impl.dart" as web;
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
-import "package:flutter/material.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:flutter/widgets.dart";
 
 Future<Services> init(AppInstanceType appType) {
   web.init();
@@ -355,12 +356,6 @@ class $Directory extends DirectoryImpl implements Directory {
 
   @override
   final String volumeName;
-
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) {}
 }
 
 class $File extends FileImpl implements File {
@@ -418,12 +413,6 @@ class $File extends FileImpl implements File {
 
   @override
   final int width;
-
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) {}
 }
 
 class $ThumbnailData implements ThumbnailData {
@@ -677,7 +666,7 @@ class $GridBookmark extends GridBookmarkImpl implements GridBookmark {
 }
 
 class $FavoritePost extends PostImpl
-    with DefaultPostPressable<FavoritePost>, FavoritePostCopyMixin
+    with FavoritePostCopyMixin
     implements FavoritePost {
   const $FavoritePost({
     required this.height,
@@ -696,6 +685,7 @@ class $FavoritePost extends PostImpl
     required this.type,
     required this.size,
     required this.stars,
+    required this.filteringColors,
   });
 
   @override
@@ -745,6 +735,9 @@ class $FavoritePost extends PostImpl
 
   @override
   final FavoriteStars stars;
+
+  @override
+  final FilteringColors filteringColors;
 }
 
 class $GridState implements GridState {
@@ -946,7 +939,7 @@ class $ThumbUrlRating implements ThumbUrlRating {
   final String url;
 }
 
-class $Post extends PostImpl with DefaultPostPressable<Post> implements Post {
+class $Post extends PostImpl implements Post {
   const $Post({
     required this.height,
     required this.id,
@@ -1011,8 +1004,8 @@ class $Post extends PostImpl with DefaultPostPressable<Post> implements Post {
   final int width;
 }
 
-class $VisitedPost
-    with VisitedPostImpl, DefaultBuildCellImpl
+class $VisitedPost extends VisitedPostImpl
+    with DefaultBuildCell
     implements VisitedPost {
   const $VisitedPost({
     required this.booru,
@@ -1038,11 +1031,8 @@ class $VisitedPost
   final String thumbUrl;
 }
 
-class $BlacklistedDirectoryData
-    with
-        BlacklistedDirectoryDataImpl,
-        DefaultBuildCellImpl,
-        DefaultBlacklistedDirectoryDataOnPress
+class $BlacklistedDirectoryData extends BlacklistedDirectoryDataImpl
+    with DefaultBuildCell
     implements BlacklistedDirectoryData {
   const $BlacklistedDirectoryData({
     required this.bucketId,

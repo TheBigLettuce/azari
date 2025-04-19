@@ -87,12 +87,17 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
         },
       ),
       ListStorage(reverse: true),
-      filter: (cells, filteringMode, sortingMode, end, [data]) {
+      filter: (cells, filteringMode, sortingMode, colors, end, data) {
         return switch (filteringMode) {
           FilteringMode.onlyHalfStars => (
               _filterTag(
                 cells.where(
-                  (e) => e.stars != FavoriteStars.zero && e.stars.isHalf,
+                  (e) =>
+                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
+                      e.stars != FavoriteStars.zero &&
+                      e.stars.isHalf &&
+                      (colors == FilteringColors.noColor ||
+                          e.filteringColors == colors),
                 ),
               ),
               data
@@ -100,7 +105,12 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
           FilteringMode.onlyFullStars => (
               _filterTag(
                 cells.where(
-                  (e) => e.stars != FavoriteStars.zero && !e.stars.isHalf,
+                  (e) =>
+                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
+                      e.stars != FavoriteStars.zero &&
+                      !e.stars.isHalf &&
+                      (colors == FilteringColors.noColor ||
+                          e.filteringColors == colors),
                 ),
               ),
               data
@@ -118,7 +128,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
           FilteringMode.zeroStars =>
             (
               _filterTag(
-                _filterStars(cells, filteringMode),
+                _filterStars(cells, filteringMode, colors),
               ),
               data,
             ),
@@ -132,7 +142,10 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
           FilteringMode.tag => (
               _filterTag(
                 cells.where(
-                  (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
+                  (e) =>
+                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
+                      (colors == FilteringColors.noColor ||
+                          e.filteringColors == colors),
                 ),
               ),
               data
@@ -142,7 +155,10 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
                 cells.where(
                   (element) =>
                       element.type == PostContentType.gif &&
-                      safeModeState.current.inLevel(element.rating.asSafeMode),
+                      safeModeState.current
+                          .inLevel(element.rating.asSafeMode) &&
+                      (colors == FilteringColors.noColor ||
+                          element.filteringColors == colors),
                 ),
               ),
               data
@@ -152,7 +168,10 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
                 cells.where(
                   (element) =>
                       element.type == PostContentType.video &&
-                      safeModeState.current.inLevel(element.rating.asSafeMode),
+                      safeModeState.current
+                          .inLevel(element.rating.asSafeMode) &&
+                      (colors == FilteringColors.noColor ||
+                          element.filteringColors == colors),
                 ),
               ),
               data
@@ -160,7 +179,10 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
           FilteringMode() => (
               _filterTag(
                 cells.where(
-                  (e) => safeModeState.current.inLevel(e.rating.asSafeMode),
+                  (e) =>
+                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
+                      (colors == FilteringColors.noColor ||
+                          e.filteringColors == colors),
                 ),
               ),
               data
@@ -199,6 +221,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
       },
       initialFilteringMode: FilteringMode.tag,
       initialSortingMode: SortingMode.none,
+      filteringColors: FilteringColors.noColor,
     );
 
     filter.clearRefresh();
@@ -242,11 +265,13 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
   Iterable<FavoritePost> _filterStars(
     Iterable<FavoritePost> cells,
     FilteringMode mode,
+    FilteringColors? colors,
   ) {
     return cells.where(
       (e) =>
           safeModeState.current.inLevel(e.rating.asSafeMode) &&
-          (mode.toStars == e.stars),
+          (mode.toStars == e.stars) &&
+          (colors == FilteringColors.noColor || e.filteringColors == colors),
     );
   }
 
@@ -296,9 +321,6 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
 
 class _FavoritePostsPageState extends State<FavoritePostsPage>
     with SettingsWatcherMixin, FavoritePostsPageLogic {
-  // WatchableGridSettingsData get gridSettings =>
-  //     widget.gridSettings.favoritePosts;
-
   late final StreamSubscription<void> _safeModeWatcher;
 
   late final client = BooruAPI.defaultClientForBooru(settings.selectedBooru);

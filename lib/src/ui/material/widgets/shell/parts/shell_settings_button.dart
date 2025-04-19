@@ -136,11 +136,13 @@ class SegmentedButtonValue<T> {
     this.value,
     this.label, {
     this.icon,
+    this.iconColor,
   });
 
   final T value;
   final String label;
   final IconData? icon;
+  final Color? iconColor;
 }
 
 enum SegmentedButtonVariant {
@@ -160,6 +162,7 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     this.enableFilter = false,
     this.showSelectedIcon = true,
     this.reorder = true,
+    this.onLongPress,
   });
 
   final bool allowUnselect;
@@ -176,6 +179,7 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
   final SegmentedButtonVariant variant;
 
   final void Function(T?) select;
+  final void Function(T)? onLongPress;
 
   @override
   State<SegmentedButtonGroup<T>> createState() => _SegmentedButtonGroupState();
@@ -316,7 +320,9 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                           (e) => ButtonSegment(
                             value: e.value,
                             label: Text(e.label),
-                            icon: e.icon != null ? Icon(e.icon) : null,
+                            icon: e.icon != null
+                                ? Icon(e.icon, color: e.iconColor)
+                                : null,
                           ),
                         )
                         .toList(),
@@ -342,26 +348,33 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                       padding: EdgeInsets.only(
                         right: index == newValues.length - 1 ? 0 : 8,
                       ),
-                      child: ChoiceChip(
-                        showCheckmark: false,
-                        selected: e.value == widget.selected,
-                        avatar: e.icon != null ? Icon(e.icon) : null,
-                        label: Text(e.label),
-                        onSelected:
-                            newValues.length == 1 && !widget.allowUnselect
-                                ? null
-                                : (_) {
-                                    if (e.value == widget.selected) {
-                                      if (!widget.allowUnselect) {
+                      child: GestureDetector(
+                        onLongPress: widget.onLongPress == null
+                            ? null
+                            : () => widget.onLongPress!(e.value),
+                        child: ChoiceChip(
+                          showCheckmark: false,
+                          selected: e.value == widget.selected,
+                          avatar: e.icon != null
+                              ? Icon(e.icon, color: e.iconColor)
+                              : null,
+                          label: Text(e.label),
+                          onSelected:
+                              newValues.length == 1 && !widget.allowUnselect
+                                  ? null
+                                  : (_) {
+                                      if (e.value == widget.selected) {
+                                        if (!widget.allowUnselect) {
+                                          return;
+                                        }
+
+                                        select({});
                                         return;
                                       }
 
-                                      select({});
-                                      return;
-                                    }
-
-                                    select({e.value});
-                                  },
+                                      select({e.value});
+                                    },
+                        ),
                       ),
                     );
                   },

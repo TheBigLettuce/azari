@@ -23,14 +23,20 @@ mixin class HiddenBooruPostsService implements ServiceMarker {
   void addAll(List<HiddenBooruPostData> booru) => _instance!.addAll(booru);
   void removeAll(List<(int, Booru)> booru) => _instance!.removeAll(booru);
 
-  StreamSubscription<void> watch(void Function(void) f) => _instance!.watch(f);
+  StreamSubscription<int> watch(
+    void Function(int) f, [
+    bool fire = false,
+  ]) =>
+      _instance!.watch(f, fire);
 
   Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) =>
       _instance!.streamSingle(id, booru, fire);
 }
 
 @immutable
-abstract class HiddenBooruPostData implements CellBase, Thumbnailable {
+abstract class HiddenBooruPostData
+    with DefaultBuildCell
+    implements CellBuilder {
   const factory HiddenBooruPostData({
     required Booru booru,
     required int postId,

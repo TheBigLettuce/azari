@@ -55,7 +55,7 @@ class _DownloadsPageState extends State<DownloadsPage>
     filter = ChainedFilterResourceSource(
       source,
       ListStorage(),
-      filter: (cells, filteringMode, sortingMode, end, [data]) {
+      filter: (cells, filteringMode, sortingMode, colors, end, data) {
         final text = searchTextController.text;
         if (text.isEmpty) {
           return (cells, null);
@@ -144,7 +144,7 @@ class _DownloadsPageState extends State<DownloadsPage>
           trailingItems: [
             IconButton(
               onPressed: storage.clear,
-              icon: const Icon(Icons.close),
+              icon: const Icon(Icons.clear_all_rounded),
             ),
           ],
         ),

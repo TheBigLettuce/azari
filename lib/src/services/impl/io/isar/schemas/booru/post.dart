@@ -14,9 +14,7 @@ import "package:isar/isar.dart";
 part "post.g.dart";
 
 @collection
-class PostIsar extends PostImpl
-    with DefaultPostPressable<Post>
-    implements $Post {
+class PostIsar extends PostImpl implements $Post {
   const PostIsar({
     required this.size,
     required this.height,

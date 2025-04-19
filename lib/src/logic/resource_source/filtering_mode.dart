@@ -3,8 +3,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:io";
+
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
+import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 
 /// Filtering modes.
@@ -13,59 +16,135 @@ import "package:flutter/material.dart";
 /// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
 enum FilteringMode {
   /// Filter by the favorite.
-  favorite(Icons.favorite_border_outlined),
+  favorite(),
 
   /// Filter by the  "original" tag.
-  original(Icons.circle_outlined),
+  original(),
 
   /// Filter by filenames, which have (1).ext format.
-  duplicate(Icons.mode_standby_outlined),
+  duplicate(),
 
   /// Filter by similarity.
-  same(Icons.drag_handle),
+  same(),
 
   /// Filter by video.
-  video(Icons.play_circle),
+  video(),
 
   /// Filter by GIF.
-  gif(Icons.gif_outlined),
+  gif(),
 
   /// Filter by tag.
-  tag(Icons.tag),
+  tag(),
 
   /// No filter.
-  noFilter(Icons.filter_list_outlined),
+  noFilter(),
 
   /// Filter by not tag not included.
-  tagReversed(Icons.label_off_outlined),
+  tagReversed(),
 
   /// Filter by no tags on image.
-  untagged(Icons.label_off),
+  untagged(),
 
   /// Filter by segments.
-  group(Icons.group_work_outlined),
+  group(),
 
-  ungrouped(Icons.fiber_manual_record_rounded),
+  ungrouped(),
 
-  fiveStars(Icons.star_rounded),
-  fourHalfStars(Icons.star_half_rounded),
-  fourStars(Icons.star_rounded),
-  threeHalfStars(Icons.star_half_rounded),
-  threeStars(Icons.star_rounded),
-  twoHalfStars(Icons.star_half_rounded),
-  twoStars(Icons.star_rounded),
-  oneHalfStars(Icons.star_half_rounded),
-  oneStars(Icons.star_rounded),
-  zeroHalfStars(Icons.star_half_rounded),
-  zeroStars(Icons.star_border_rounded),
-  onlyHalfStars(Icons.star_half_rounded),
-  onlyFullStars(Icons.star_rounded),
+  fiveStars(),
+  fourHalfStars(),
+  fourStars(),
+  threeHalfStars(),
+  threeStars(),
+  twoHalfStars(),
+  twoStars(),
+  oneHalfStars(),
+  oneStars(),
+  zeroHalfStars(),
+  zeroStars(),
+  onlyHalfStars(),
+  onlyFullStars(),
   ;
 
-  const FilteringMode(this.icon);
+  const FilteringMode();
 
   /// Icon displayed in search bar.
-  final IconData icon;
+  IconData get icon => switch (this) {
+        FilteringMode.favorite => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.heart
+            : Icons.favorite_border_outlined,
+        FilteringMode.original => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.circle
+            : Icons.circle_outlined,
+        FilteringMode.duplicate => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.doc_on_doc
+            : Icons.mode_standby_outlined,
+        FilteringMode.same => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.equal_circle
+            : Icons.drag_handle,
+        FilteringMode.video => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.play_circle
+            : Icons.play_circle,
+        FilteringMode.gif => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.play_circle
+            : Icons.gif_outlined,
+        FilteringMode.tag => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.tag_circle
+            : Icons.tag,
+        FilteringMode.noFilter => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.sort_up
+            : Icons.filter_list_outlined,
+        FilteringMode.tagReversed => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.tag_circle_fill
+            : Icons.label_off_outlined,
+        FilteringMode.untagged => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.tag_solid
+            : Icons.label_off,
+        FilteringMode.group => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.group
+            : Icons.group_work_outlined,
+        FilteringMode.ungrouped => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.group_solid
+            : Icons.fiber_manual_record_rounded,
+        FilteringMode.fiveStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+        FilteringMode.fourHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.fourStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+        FilteringMode.threeHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.threeStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+        FilteringMode.twoHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.twoStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+        FilteringMode.oneHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.oneStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+        FilteringMode.zeroHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.zeroStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_border_rounded,
+        FilteringMode.onlyHalfStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star_lefthalf_fill
+            : Icons.star_half_rounded,
+        FilteringMode.onlyFullStars => Platform.isMacOS || Platform.isIOS
+            ? CupertinoIcons.star
+            : Icons.star_rounded,
+      };
 
   FavoriteStars get toStars => toStarsOrNull ?? FavoriteStars.zero;
 
@@ -112,6 +191,40 @@ enum FilteringMode {
         FilteringMode.zeroStars => l10n.stars(0),
         FilteringMode.onlyHalfStars => l10n.enumFilteringModeOnlyHalfStars,
         FilteringMode.onlyFullStars => l10n.enumFilteringModeOnlyFullStars,
+      };
+}
+
+enum FilteringColors {
+  noColor(Colors.transparent),
+  red(Colors.red),
+  blue(Colors.blue),
+  yellow(Colors.yellow),
+  green(Colors.green),
+  purple(Colors.purple),
+  orange(Colors.orange),
+  pink(Colors.pink),
+  white(Colors.white),
+  brown(Colors.brown),
+  black(Colors.black);
+
+  const FilteringColors(this.color);
+
+  final Color color;
+
+  String translatedString(AppLocalizations l10n, ColorsNamesData data) =>
+      switch (this) {
+        FilteringColors.noColor => "No color",
+        FilteringColors.red => data.red.isEmpty ? "Red" : data.red,
+        FilteringColors.blue => data.blue.isEmpty ? "Blue" : data.blue,
+        FilteringColors.yellow => data.yellow.isEmpty ? "Yellow" : data.yellow,
+        FilteringColors.green => data.green.isEmpty ? "Green" : data.green,
+        FilteringColors.purple => data.purple.isEmpty ? "Purple" : data.purple,
+        FilteringColors.orange => data.orange.isEmpty ? "Orange" : data.orange,
+        FilteringColors.pink => data.pink.isEmpty ? "Pink" : data.pink,
+        FilteringColors.white => data.white.isEmpty ? "White" : data.white,
+        FilteringColors.brown => data.brown.isEmpty ? "Brown" : data.brown,
+        FilteringColors.black =>
+          data.black.isEmpty ? "Black" : data.black, // TODO: change
       };
 }
 

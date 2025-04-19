@@ -16,7 +16,7 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 
-mixin ResetSelectionOnUpdate<T extends CellBase, W extends StatefulWidget>
+mixin ResetSelectionOnUpdate<T extends CellBuilder, W extends StatefulWidget>
     on State<W> {
   ReadOnlyStorage<int, T> get source;
   ShellSelectionHolder? get selection;
@@ -46,12 +46,7 @@ mixin ResetSelectionOnUpdate<T extends CellBase, W extends StatefulWidget>
 }
 
 class ListLayoutPlaceholder extends StatelessWidget {
-  const ListLayoutPlaceholder({
-    super.key,
-    required this.description,
-  });
-
-  final CellStaticData description;
+  const ListLayoutPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -101,13 +96,15 @@ class DefaultListTilePlaceholder extends StatelessWidget {
 class GridQuiltedLayoutPlaceholder extends StatelessWidget {
   const GridQuiltedLayoutPlaceholder({
     super.key,
-    required this.description,
     required this.randomNumber,
+    required this.circle,
+    required this.tightMode,
   });
 
-  final int randomNumber;
+  final bool circle;
+  final bool tightMode;
 
-  final CellStaticData description;
+  final int randomNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +118,10 @@ class GridQuiltedLayoutPlaceholder extends StatelessWidget {
       ),
       itemCount: config.columns.number * 20,
       itemBuilder: (context, idx) {
-        return GridCellPlaceholder(description: description);
+        return GridCellPlaceholder(
+          circle: circle,
+          tightMode: tightMode,
+        );
       },
     );
   }
@@ -131,9 +131,14 @@ class GridLayoutPlaceholder extends StatelessWidget {
   const GridLayoutPlaceholder({
     super.key,
     required this.description,
+    required this.circle,
+    required this.tightMode,
   });
 
-  final CellStaticData description;
+  final bool circle;
+  final bool tightMode;
+
+  final CellBuilderData description;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +151,10 @@ class GridLayoutPlaceholder extends StatelessWidget {
       ),
       itemCount: config.columns.number * 20,
       itemBuilder: (context, idx) {
-        return GridCellPlaceholder(description: description);
+        return GridCellPlaceholder(
+          circle: circle,
+          tightMode: tightMode,
+        );
       },
     );
   }
@@ -207,10 +215,90 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ) ??
                   const TextStyle(),
-              child:
-                  widget.buildEmpty!(widget.progress.error).animate().fadeIn(),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: widget.buildEmpty!(widget.progress.error)
+                    .animate()
+                    .fadeIn(),
+              ),
             ),
           )
         : widget.child;
   }
+}
+
+class _TrackedIndexWrapper extends StatefulWidget {
+  const _TrackedIndexWrapper({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  State<_TrackedIndexWrapper> createState() => __TrackedIndexWrapperState();
+}
+
+class __TrackedIndexWrapperState extends State<_TrackedIndexWrapper> {
+  int? idx;
+
+  final _controller = StreamController<int?>.broadcast();
+  late final StreamSubscription<int?> _events;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _events = _controller.stream.listen((e) {
+      setState(() {
+        idx = e;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TrackedIndex(
+      idx: idx,
+      idxSink: _controller.sink,
+      child: widget.child,
+    );
+  }
+}
+
+class TrackedIndex extends InheritedWidget {
+  const TrackedIndex({
+    super.key,
+    required this.idx,
+    required this.idxSink,
+    required super.child,
+  });
+
+  final int? idx;
+  final Sink<int?> idxSink;
+
+  static Widget wrap(Widget child) => _TrackedIndexWrapper(child: child);
+
+  static int? of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
+
+    return widget!.idx;
+  }
+
+  static Sink<int?> sinkOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
+
+    return widget!.idxSink;
+  }
+
+  @override
+  bool updateShouldNotify(TrackedIndex oldWidget) =>
+      idx != oldWidget.idx || idxSink != oldWidget.idxSink;
 }

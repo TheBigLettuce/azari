@@ -26,7 +26,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
     () => Future.value(widget.tagManager.excluded.complete(filteringValue)),
-    watchCount: widget.tagManager.excluded.watchCount,
+    watchCount: (f, [_ = false]) => widget.tagManager.latest.events.listen(f),
   );
 
   late final StreamSubscription<String> filteringSubscr;

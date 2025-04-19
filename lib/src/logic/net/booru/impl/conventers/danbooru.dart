@@ -51,9 +51,7 @@ List<BooruComments> fromListComments(List<dynamic> l) {
 }
 
 @JsonSerializable()
-class _DanbooruPost extends PostImpl
-    with DefaultPostPressable<Post>
-    implements Post {
+class _DanbooruPost extends PostImpl implements Post {
   const _DanbooruPost({
     required this.height,
     required this.id,

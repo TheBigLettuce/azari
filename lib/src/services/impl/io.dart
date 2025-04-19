@@ -12,6 +12,7 @@ import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/services/impl/io/android/gallery/android_gallery.dart";
@@ -25,6 +26,7 @@ import "package:azari/src/services/impl/io/isar/schemas/gallery/blacklisted_dire
 import "package:azari/src/services/impl/io/isar/schemas/gallery/directory_metadata.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/bookmark.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
+import "package:azari/src/services/impl/io/isar/schemas/settings/colors_names.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/hidden_booru_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/hottest_tag.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/local_tags.dart";
@@ -38,7 +40,7 @@ import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter/foundation.dart";
-import "package:flutter/material.dart";
+import "package:flutter/widgets.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
@@ -81,7 +83,7 @@ Future<Services> init(AppInstanceType appType) async {
             try {
               return (await DynamicColorPlugin.getAccentColor())!;
             } catch (_) {
-              return Colors.limeAccent;
+              return const Color(0xff6d5e0f);
             }
           }(),
           version: await () async {
@@ -337,6 +339,10 @@ class IoServices implements Services {
       return gridSettings.favoritePosts as T;
     } else if (T == GridSettingsData<FilesData>) {
       return gridSettings.files as T;
+    } else if (T == AlertService) {
+      return message as T;
+    } else if (T == ColorsNamesService) {
+      return colorsNames as T;
     } else if (T == PlatformApi) {
       return platformApi as T;
     }
@@ -355,6 +361,8 @@ class IoServices implements Services {
     throw "Unimplemented: $T";
   }
 
+  final IsarColorsNamesService colorsNames = IsarColorsNamesService();
+  final IoMessageService message = IoMessageService();
   final IoTasksService tasks = IoTasksService();
   final IsarSettingsService settings = IsarSettingsService();
   VideoSettingsService get videoSettings => const IsarVideoService();
@@ -402,9 +410,19 @@ class IoServices implements Services {
   }
 }
 
+class IoMessageService implements AlertService {
+  final _events = StreamController<AlertData>.broadcast();
+
+  @override
+  void add(AlertData data) => _events.add(data);
+
+  @override
+  Stream<AlertData> get events => _events.stream;
+}
+
 class _TasksEventsHolder extends StatefulWidget {
   const _TasksEventsHolder({
-    super.key,
+    // super.key,
     required this.services,
     required this.child,
   });
@@ -607,6 +625,7 @@ abstract class $FavoritePost extends FavoritePost {
     required PostContentType type,
     required int size,
     required FavoriteStars stars,
+    required FilteringColors filteringColors,
   }) = IsarFavoritePost.noId;
 }
 
@@ -627,9 +646,7 @@ abstract class $DirectoryMetadata extends DirectoryMetadata {
   }) = IsarDirectoryMetadata.noIdFlags;
 }
 
-class $Directory extends DirectoryImpl
-    with PigeonDirectoryPressable
-    implements Directory {
+class $Directory extends DirectoryImpl implements Directory {
   const $Directory({
     required this.bucketId,
     required this.name,
@@ -662,7 +679,7 @@ class $Directory extends DirectoryImpl
   final String volumeName;
 }
 
-class $File extends FileImpl with PigeonFilePressable implements File {
+class $File extends FileImpl implements File {
   const $File({
     required this.bucketId,
     required this.height,
@@ -865,4 +882,43 @@ class PersistentDownloadManager extends MapStorage<String, DownloadHandle>
 
     return dirpath;
   }
+}
+
+abstract class $ColorsNamesData implements ColorsNamesData {
+  const factory $ColorsNamesData({
+    required String red,
+    required String blue,
+    required String yellow,
+    required String green,
+    required String purple,
+    required String orange,
+    required String pink,
+    required String white,
+    required String brown,
+    required String black,
+  }) = IsarColorsNamesData;
+
+  @override
+  String get red;
+  @override
+  String get blue;
+  @override
+  String get yellow;
+
+  @override
+  String get green;
+  @override
+  String get purple;
+  @override
+  String get orange;
+
+  @override
+  String get pink;
+  @override
+  String get white;
+  @override
+  String get brown;
+
+  @override
+  String get black;
 }

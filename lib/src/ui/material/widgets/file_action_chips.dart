@@ -10,7 +10,6 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/translation_notes.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
@@ -20,14 +19,12 @@ class FileActionChips extends StatelessWidget {
   const FileActionChips({
     super.key,
     required this.file,
-    required this.tags,
     required this.hasTranslation,
   });
 
   final bool hasTranslation;
 
   final File file;
-  final ImageViewTags tags;
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +34,16 @@ class FileActionChips extends StatelessWidget {
         spacing: 8,
         runSpacing: 4,
         children: [
-          if (tags.res != null)
+          if (file.res != null)
             RedownloadChip(
               key: file.uniqueKey(),
               file: file,
-              res: tags.res,
             ),
           if (!file.isVideo && !file.isGif) SetWallpaperChip(id: file.id),
-          if (tags.res != null && hasTranslation)
+          if (file.res != null && hasTranslation)
             TranslationNotesChip(
-              postId: tags.res!.id,
-              booru: tags.res!.booru,
+              postId: file.res!.$1,
+              booru: file.res!.$2,
             ),
         ],
       ),
@@ -59,11 +55,9 @@ class RedownloadChip extends StatelessWidget {
   const RedownloadChip({
     super.key,
     required this.file,
-    required this.res,
   });
 
   final File file;
-  final ParsedFilenameResult? res;
 
   @override
   Widget build(BuildContext context) {
@@ -136,13 +130,21 @@ Future<void> redownloadFiles(AppLocalizations l10n, List<File> files) async {
     const FilesApi().deleteAll(actualFiles);
 
     posts.downloadAll();
-  } catch (e) {
-    // TODO: add scaffold
-    //   ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-    //     SnackBar(
-    //       content: Text(l10n.redownloadInProgress),
-    //     ),
-    //   );
+  } catch (e, stackTrace) {
+    AlertService.safe()?.add(
+      AlertData(
+        e.toString(),
+        stackTrace.toString(),
+        (
+          () {
+            const TasksService().add<RedownloadChip>(
+              () => redownloadFiles(l10n, files),
+            );
+          },
+          const Icon(Icons.restart_alt_rounded)
+        ),
+      ),
+    );
   } finally {
     for (final client in clients.values) {
       client.close();

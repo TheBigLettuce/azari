@@ -19,8 +19,7 @@ mixin class GalleryService implements ServiceMarker {
   Directories open() => _instance!.open();
 }
 
-abstract class Directory
-    implements DirectoryBase, DirectoryImpl, Pressable<Directory> {
+abstract class Directory implements DirectoryBase, DirectoryImpl {
   const factory Directory({
     required int lastModified,
     required int thumbFileId,
@@ -49,7 +48,7 @@ abstract class DirectoryBase {
   String get tag;
 }
 
-abstract class File implements FileBase, FileImpl, Pressable<File> {
+abstract class File implements FileBase, FileImpl {
   const factory File({
     required Map<String, void> tags,
     required int id,

@@ -13,8 +13,6 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/trash_cell.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
-import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:logging/logging.dart";
 

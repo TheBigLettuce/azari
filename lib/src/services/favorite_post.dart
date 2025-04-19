@@ -39,9 +39,40 @@ abstract class FavoritePostCache
   Stream<bool> streamSingle(int postId, Booru booru, [bool fire = false]);
 }
 
+mixin FavoritePostsWatcherMixin<S extends StatefulWidget> on State<S> {
+  StreamSubscription<int>? _favoritePostsEvents;
+
+  void onFavoritePostsUpdate() {
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    const favoritePosts = FavoritePostSourceService();
+
+    _favoritePostsEvents?.cancel();
+    _favoritePostsEvents = favoritePosts.cache.watch((_) {
+      // final oldSettings = settings;
+      // settings = newSettings;
+
+      onFavoritePostsUpdate();
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _favoritePostsEvents?.cancel();
+
+    super.dispose();
+  }
+}
+
 @immutable
-abstract class FavoritePost
-    implements PostBase, PostImpl, Pressable<FavoritePost> {
+abstract class FavoritePost implements PostBase, PostImpl {
   const factory FavoritePost({
     required int id,
     required String md5,
@@ -59,15 +90,14 @@ abstract class FavoritePost
     required PostContentType type,
     required int size,
     required FavoriteStars stars,
+    required FilteringColors filteringColors,
   }) = $FavoritePost;
 
   FavoriteStars get stars;
+  FilteringColors get filteringColors;
 
   @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
-  String toString() => "FavoritePostData: $id";
+  String toString() => "FavoritePost: $id";
 
   FavoritePost copyWith({
     int? id,
@@ -86,6 +116,7 @@ abstract class FavoritePost
     PostContentType? type,
     int? size,
     FavoriteStars? stars,
+    FilteringColors? filteringColors,
   });
 }
 
@@ -108,6 +139,7 @@ mixin FavoritePostCopyMixin implements FavoritePost {
     PostContentType? type,
     int? size,
     FavoriteStars? stars,
+    FilteringColors? filteringColors,
   }) =>
       FavoritePost(
         id: id ?? this.id,
@@ -126,6 +158,7 @@ mixin FavoritePostCopyMixin implements FavoritePost {
         type: type ?? this.type,
         size: size ?? this.size,
         stars: stars ?? this.stars,
+        filteringColors: filteringColors ?? this.filteringColors,
       );
 }
 

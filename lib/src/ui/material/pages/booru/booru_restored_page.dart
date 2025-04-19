@@ -76,8 +76,8 @@ class BooruRestoredPage extends StatefulWidget {
     bool trySearchBookmarkByTags = false,
   }) {
     if (!hasServicesRequired()) {
-      showSnackbar(
-        context,
+      addAlert(
+        "BooruRestoredPage",
         "Booru functionality isn't available", // TODO: change
       );
 

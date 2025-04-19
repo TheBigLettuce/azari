@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/src/logic/directories_mixin.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
@@ -14,6 +15,7 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/gallery/blacklisted_directories.dart";
+import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/search/gallery/gallery_search_page.dart";
@@ -31,6 +33,7 @@ import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 
 class DirectoriesPage extends StatefulWidget {
@@ -70,7 +73,7 @@ class DirectoriesPage extends StatefulWidget {
   }) {
     if (!hasServicesRequired()) {
       // TODO: change
-      showSnackbar(context, "Gallery functionality isn't available");
+      addAlert("DirectoriesPage", "Gallery functionality isn't available");
 
       return Future.value();
     }
@@ -567,6 +570,8 @@ class __LatestListState extends State<_LatestList> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
     return SizedBox(
       width: double.infinity,
       height: _LatestList.size.height,
@@ -592,18 +597,16 @@ class __LatestListState extends State<_LatestList> {
               final cell = source.backingStorage[i];
 
               return InkWell(
-                onTap: () => cell.onPressed(context, i),
+                onTap: () => cell.openImage(context),
                 borderRadius: BorderRadius.circular(15),
                 child: SizedBox(
                   width: _LatestList.size.width,
                   child: GridCell(
-                    data: cell,
-                    hideTitle: false,
+                    uniqueKey: cell.uniqueKey(),
+                    title: cell.title(l10n),
+                    thumbnail: cell.thumbnail(),
                     imageAlign: Alignment.topCenter,
-                    overrideDescription: const CellStaticData(
-                      ignoreSwipeSelectGesture: true,
-                      alignStickersTopCenter: true,
-                    ),
+                    alignStickersTopCenter: true,
                   ),
                 ),
               );
@@ -820,6 +823,277 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
 
     return EmptyWidgetBackground(
       subtitle: l10n.emptyDevicePictures,
+    );
+  }
+}
+
+SelectionBarAction blacklist(
+  BuildContext context,
+  String Function(Directory) segment,
+) {
+  return SelectionBarAction(
+    Icons.hide_image_outlined,
+    (selected) {
+      final requireAuth = <BlacklistedDirectoryData>[];
+      final noAuth = <BlacklistedDirectoryData>[];
+
+      for (final (e as Directory) in selected) {
+        final m = DirectoryMetadataService.safe()?.cache.get(segment(e));
+        if (m != null && m.requireAuth) {
+          requireAuth.add(
+            BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
+          );
+        } else {
+          noAuth.add(
+            BlacklistedDirectoryData(bucketId: e.bucketId, name: e.name),
+          );
+        }
+      }
+
+      if (noAuth.isNotEmpty) {
+        if (requireAuth.isNotEmpty && !const AppApi().canAuthBiometric) {
+          const BlacklistedDirectoryService()
+              .backingStorage
+              .addAll(noAuth + requireAuth);
+          return;
+        }
+
+        const BlacklistedDirectoryService().backingStorage.addAll(noAuth);
+      }
+
+      if (requireAuth.isNotEmpty) {
+        final l10n = context.l10n();
+
+        if (const AppApi().canAuthBiometric) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.directoriesAuthMessage),
+              action: SnackBarAction(
+                label: l10n.authLabel,
+                onPressed: () async {
+                  final success = await LocalAuthentication().authenticate(
+                    localizedReason: l10n.hideDirectoryReason,
+                  );
+                  if (!success) {
+                    return;
+                  }
+
+                  const BlacklistedDirectoryService()
+                      .backingStorage
+                      .addAll(requireAuth);
+                },
+              ),
+            ),
+          );
+        } else {
+          const BlacklistedDirectoryService()
+              .backingStorage
+              .addAll(requireAuth);
+        }
+      }
+    },
+    true,
+  );
+}
+
+SelectionBarAction joinedDirectories(
+  BuildContext context,
+  Directories api,
+  ReturnFileCallback? callback,
+  String Function(Directory) segment,
+) {
+  return SelectionBarAction(
+    Icons.merge_rounded,
+    (selected) {
+      joinedDirectoriesFnc(
+        context,
+        selected.length == 1
+            ? (selected.first as Directory).name
+            : "${selected.length} ${context.l10n().directoriesPlural}",
+        selected.cast(),
+        api,
+        callback,
+        segment,
+      );
+    },
+    true,
+  );
+}
+
+Future<void> joinedDirectoriesFnc(
+  BuildContext context,
+  String label,
+  List<Directory> dirs,
+  Directories api,
+  ReturnFileCallback? callback,
+  String Function(Directory) segment, {
+  String tag = "",
+  FilteringMode? filteringMode,
+  bool addScaffold = false,
+}) {
+  bool requireAuth = false;
+
+  for (final e in dirs) {
+    final auth =
+        DirectoryMetadataService.safe()?.cache.get(segment(e))?.requireAuth ??
+            false;
+    if (auth) {
+      requireAuth = true;
+      break;
+    }
+  }
+
+  Future<void> onSuccess(bool success) {
+    if (!success || !context.mounted) {
+      return Future.value();
+    }
+
+    StatisticsGalleryService.addJoined(1);
+
+    return FilesPage.open(
+      context,
+      secure: requireAuth,
+      api: api,
+      directories: dirs,
+      callback: callback,
+      addScaffold: addScaffold,
+      dirName: label,
+      presetFilteringValue: tag,
+      filteringMode: filteringMode,
+    );
+  }
+
+  if (requireAuth && const AppApi().canAuthBiometric) {
+    final l10n = context.l10n();
+
+    return LocalAuthentication()
+        .authenticate(localizedReason: l10n.joinDirectoriesReason)
+        .then(onSuccess);
+  } else {
+    return onSuccess(true);
+  }
+}
+
+SelectionBarAction addToGroup<T extends CellBuilder>(
+  BuildContext context,
+  String? Function(List<T>) initalValue,
+  Future<void Function(BuildContext)?> Function(List<T>, String, bool)
+      onSubmitted,
+  bool showPinButton, {
+  Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag,
+}) {
+  return SelectionBarAction(
+    Icons.group_work_outlined,
+    (selected) {
+      if (selected.isEmpty) {
+        return;
+      }
+
+      Navigator.of(context, rootNavigator: true).push(
+        DialogRoute<void>(
+          context: context,
+          builder: (context) {
+            return _GroupDialogWidget<T>(
+              initalValue: initalValue,
+              onSubmitted: onSubmitted,
+              selected: selected.cast(),
+              showPinButton: showPinButton,
+              completeDirectoryNameTag: completeDirectoryNameTag,
+            );
+          },
+        ),
+      );
+    },
+    false,
+  );
+}
+
+class _GroupDialogWidget<T> extends StatefulWidget {
+  const _GroupDialogWidget({
+    super.key,
+    required this.initalValue,
+    required this.onSubmitted,
+    required this.selected,
+    required this.showPinButton,
+    required this.completeDirectoryNameTag,
+  });
+
+  final List<T> selected;
+  final String? Function(List<T>) initalValue;
+  final Future<void Function(BuildContext)?> Function(List<T>, String, bool)
+      onSubmitted;
+  final Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag;
+  final bool showPinButton;
+
+  @override
+  State<_GroupDialogWidget<T>> createState() => __GroupDialogWidgetState();
+}
+
+class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
+  bool toPin = false;
+
+  final focus = FocusNode();
+  final controller = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return AlertDialog(
+      title: Text(l10n.group),
+      actions: [
+        IconButton.filled(
+          onPressed: () {
+            toPin = !toPin;
+
+            setState(() {});
+          },
+          icon: const Icon(Icons.push_pin_rounded),
+          isSelected: toPin,
+        ),
+      ],
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SearchBarAutocompleteWrapper(
+            search: SearchBarAppBarType(
+              textEditingController: controller,
+              onChanged: null,
+              complete: widget.completeDirectoryNameTag,
+            ),
+            child: (context, controller, focus, onSubmitted) {
+              return TextFormField(
+                autofocus: true,
+                focusNode: focus,
+                controller: controller,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  prefixIcon: Icon(Icons.tag_rounded),
+                ),
+                onFieldSubmitted: (value) {
+                  onSubmitted();
+                  widget.onSubmitted(widget.selected, value, toPin).then((e) {
+                    if (context.mounted) {
+                      e?.call(context);
+
+                      Navigator.pop(context);
+                    }
+                  });
+                },
+              );
+            },
+            searchFocus: focus,
+          ),
+        ],
+      ),
     );
   }
 }

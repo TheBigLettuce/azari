@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/services/services.dart" as gallery;
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:flutter/material.dart";
 
@@ -73,14 +72,12 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                                     bottom: 4,
                                   ),
                                   child: GridCell(
-                                    data: widget.files!.first,
+                                    uniqueKey: widget.files!.first.uniqueKey(),
+                                    thumbnail: widget.files!.first.thumbnail(),
+                                    title: null,
+                                    circle: true,
                                     imageAlign: Alignment.topCenter,
-                                    hideTitle: true,
-                                    overrideDescription: const CellStaticData(
-                                      tightMode: true,
-                                      circle: true,
-                                      ignoreStickers: true,
-                                    ),
+                                    tightMode: true,
                                   ),
                                 ),
                               )

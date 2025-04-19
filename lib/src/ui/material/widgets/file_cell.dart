@@ -5,6 +5,7 @@
 
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
@@ -13,6 +14,7 @@ import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";
+import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -21,30 +23,25 @@ class FileCell extends StatelessWidget {
     super.key,
     required this.file,
     required this.isList,
-    required this.hideTitle,
-    required this.animated,
-    required this.blur,
     required this.imageAlign,
-    required this.wrapSelection,
+    required this.hideName,
   });
 
   final FileImpl file;
 
   final bool isList;
-  final bool hideTitle;
-  final bool animated;
-  final bool blur;
+  final bool hideName;
+
   final Alignment imageAlign;
-  final Widget Function(Widget child) wrapSelection;
 
   @override
   Widget build(BuildContext context) {
-    final description = file.description();
-    final alias = hideTitle ? "" : file.alias(isList);
+    final l10n = context.l10n();
+    final alias = hideName ? null : file.title(l10n);
 
-    final stickers =
-        description.ignoreStickers ? null : file.stickers(context, false);
-    final thumbnail = file.thumbnail(context);
+    final animate = PlayAnimations.maybeOf(context) ?? false;
+
+    final thumbnail = file.thumbnail();
 
     final theme = Theme.of(context);
 
@@ -55,37 +52,29 @@ class FileCell extends StatelessWidget {
       children: [
         Expanded(
           child: Card(
-            margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
+            margin: const EdgeInsets.all(0.5),
             elevation: 0,
             color: theme.cardColor.withValues(alpha: 0),
             child: ClipPath(
               clipper: ShapeBorderClipper(
-                shape: description.circle
-                    ? const CircleBorder()
-                    : RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
-              child: wrapSelection(
-                Stack(
+              child: WrapSelection(
+                // thisIndx: thisIndx,
+                // description: description,
+                // selectFrom: selectFrom,
+                // onPressed: file.onPressed,
+                onPressed: () => file.openImage(context),
+                child: Stack(
                   children: [
                     GridCellImage(
                       imageAlign: imageAlign,
                       thumbnail: thumbnail,
-                      blur: blur,
+                      blur: false,
                     ),
-                    if (stickers != null && stickers.isNotEmpty)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.end,
-                            direction: Axis.vertical,
-                            children: stickers.map(StickerWidget.new).toList(),
-                          ),
-                        ),
-                      ),
+                    _Stickers(file: file),
                     Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
@@ -100,10 +89,10 @@ class FileCell extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (alias.isNotEmpty)
+                    if (alias != null && alias.isNotEmpty)
                       GridCellName(
                         title: alias,
-                        lines: description.titleLines,
+                        lines: file.titleLines(),
                       ),
                   ],
                 ),
@@ -119,11 +108,46 @@ class FileCell extends StatelessWidget {
       ],
     );
 
-    if (animated) {
+    if (animate) {
       child = child.animate(key: file.uniqueKey()).fadeIn();
     }
 
     return child;
+  }
+}
+
+class _Stickers extends StatefulWidget {
+  const _Stickers({
+    super.key,
+    required this.file,
+  });
+
+  final FileImpl file;
+
+  @override
+  State<_Stickers> createState() => __StickersState();
+}
+
+class __StickersState extends State<_Stickers> with FavoritePostsWatcherMixin {
+  @override
+  Widget build(BuildContext context) {
+    final stickers = widget.file.stickers(context, false);
+
+    if (stickers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Align(
+      alignment: Alignment.topRight,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          direction: Axis.vertical,
+          children: stickers.map(StickerWidget.new).toList(),
+        ),
+      ),
+    );
   }
 }
 

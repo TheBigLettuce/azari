@@ -28,13 +28,13 @@ extension LocalTagsHelperExt on LocalTagsService {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
     String filename,
-    ParsedFilenameResult dissassembled,
+    (int, Booru) res,
   ) async {
-    final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
-    final api = BooruAPI.fromEnum(dissassembled.booru, client);
+    final client = BooruAPI.defaultClientForBooru(res.$2);
+    final api = BooruAPI.fromEnum(res.$2, client);
 
     try {
-      final post = await api.singlePost(dissassembled.id);
+      final post = await api.singlePost(res.$1);
       if (post.tags.isEmpty) {
         return [];
       }
@@ -61,9 +61,11 @@ extension LocalTagsHelperExt on LocalTagsService {
       return const [];
     }
 
+    final val = dissassembled.asValue();
+
     return loadFromDissassemble(
       filename,
-      dissassembled.asValue(),
+      (val.id, val.booru),
     );
   }
 

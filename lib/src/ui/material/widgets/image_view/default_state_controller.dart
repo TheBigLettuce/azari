@@ -5,32 +5,24 @@
 
 import "dart:async";
 
-import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
+import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view_fab.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/image_view/video/photo_gallery_page_video.dart";
-import "package:azari/src/ui/material/widgets/loading_error_widget.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:photo_view/photo_view.dart";
 import "package:photo_view/photo_view_gallery.dart";
 
 class _StateContainer {
   _StateContainer({
     required this.context,
-    required this.preloadNextPictures,
+    // required this.preloadNextPictures,
     required this.flipShowAppBar,
     required int initialPage,
     required this.playAnimationLeft,
     required this.playAnimationRight,
   }) : pageController = PageController(initialPage: initialPage);
 
-  final bool preloadNextPictures;
+  // final bool preloadNextPictures;
 
   final PageController pageController;
 
@@ -49,138 +41,206 @@ class _StateContainer {
   }
 }
 
-class DefaultStateController extends ImageViewStateController {
-  DefaultStateController({
-    required this.getContent,
-    required int count,
-    Stream<int>? countEvents,
-    this.scrollUntill,
-    this.preloadNextPictures = false,
-    this.ignoreLoadingBuilder = false,
-    this.pageChange,
-    this.statistics,
-    this.download,
-    this.onNearEnd,
-    this.tags,
-    this.watchTags,
-    this.wrapNotifiers,
-  }) : _count = count {
-    countEventsController = StreamController.broadcast();
+// {
+//   countEventsController = StreamController.broadcast();
 
-    if (countEvents == null) {
-      this.countEvents = countEventsController.stream;
-    } else {
-      this.countEvents = countEventsController.stream;
-      upstreamCountEvents = countEvents.listen((count) {
-        countEventsController.add(count);
-      });
-    }
+//   // if (countEvents == null) {
+//   //   this.countEvents = countEventsController.stream;
+//   // } else {
+//   countEvents = countEventsController.stream;
+//   upstreamCountEvents = countEvents.listen((count) {
+//     countEventsController.add(count);
+//   });
+//   // }
 
-    _updates = this.countEvents.listen((newCount) {
-      final shiftCurrentIndex = newCount - count;
+//   _updates = countEvents.listen((newCount) {
+//     final shiftCurrentIndex = newCount - count;
 
-      _count = newCount;
-      if (onNearEnd != null) {
-        return;
-      }
+//     _count = newCount;
+//     if (onNearEnd != null) {
+//       return;
+//     }
 
-      final prevIndex = currentIndex;
-      currentIndex = (prevIndex +
-              (shiftCurrentIndex.isNegative || prevIndex == 0
-                  ? 0
-                  : shiftCurrentIndex))
-          .clamp(0, count - 1);
+//     final prevIndex = currentIndex;
+//     currentIndex = (prevIndex +
+//             (shiftCurrentIndex.isNegative || prevIndex == 0
+//                 ? 0
+//                 : shiftCurrentIndex))
+//         .clamp(0, count - 1);
 
-      if (currentIndex != prevIndex && prevIndex != 0) {
-        _indexStreamController.add(currentIndex);
+//     if (currentIndex != prevIndex && prevIndex != 0) {
+//       _indexStreamController.add(currentIndex);
 
-        _container?.pageController.jumpToPage(currentIndex);
-      } else {
-        if (count != newCount) {
-          statistics?.viewed();
-        }
+//       _container?.pageController.jumpToPage(currentIndex);
+//     } else {
+//       if (count != newCount) {
+//         statistics?.viewed();
+//       }
 
-        loadCells(currentIndex, count);
-      }
-    });
+//       loadCells(currentIndex, count);
+//     }
+//   });
+// }
+
+abstract class DefaultImageViewLoader<T extends ImageViewWidgets>
+    implements ImageViewLoader {
+  DefaultImageViewLoader({
+    required this.precacheThumbs,
+  }) {
+    initCountEvents(_countEventsController.sink);
   }
 
-  final bool preloadNextPictures;
-  final bool ignoreLoadingBuilder;
+  ResourceSource<dynamic, T> get resource;
 
-  final ImageViewStatistics? statistics;
-
-  final ContentIdxCallback? scrollUntill;
-  final ContentIdxCallback? download;
-
-  final WatchTagsCallback? watchTags;
-  final NotifierWrapper? wrapNotifiers;
-
-  // final VoidCallback? onRightSwitchPageEnd;
-  // final VoidCallback? onLeftSwitchPageEnd;
-
-  final ContentGetter getContent;
-  final List<ImageTag> Function(ContentWidgets)? tags;
-  final Future<int> Function()? onNearEnd;
-
-  final void Function(DefaultStateController state)? pageChange;
-  @override
-  late final Stream<int> countEvents;
-
-  late final StreamController<int> countEventsController;
-  StreamSubscription<int>? upstreamCountEvents;
-
-  _StateContainer? _container;
-
-  int _count;
-
-  @override
-  int get count => _count;
-  set count(int c) {
-    _count = c;
-
-    countEventsController.add(c);
-  }
-
-  @override
-  int currentIndex = 0;
+  final bool precacheThumbs;
 
   final _indexStreamController = StreamController<int>.broadcast();
+  final _countEventsController = StreamController<int>.broadcast();
+
+  int refreshTries = 0;
+
+  int _index = 0;
+
+  @override
+  int get count => resource.count;
+
+  @override
+  int get index => _index;
+  set index(int i) {
+    _index = 0;
+    _indexStreamController.add(i);
+  }
 
   @override
   Stream<int> get indexEvents => _indexStreamController.stream;
 
-  late final StreamSubscription<void> _updates;
+  @override
+  Stream<int> get countEvents => _countEventsController.stream;
 
-  (Contentable, int)? _currentCell;
-  // ignore: use_late_for_private_fields_and_variables
-  (Contentable, int)? _previousCell;
-  (Contentable, int)? _nextCell;
-
-  int refreshTries = 0;
-  bool refreshing = false;
-
-  (Contentable, int) currentCell() => _currentCell!;
-  (ContentWidgets, int) currentContentWidgets() =>
-      (_currentCell!.$1.widgets, _currentCell!.$2);
+  PhotoViewGalleryPageOptions? drawOptions(int i);
 
   @override
-  void refreshImage() {
-    loadCells(currentIndex, count);
+  List<ImageTag> tagsFor(int i);
 
-    final c = drawCell(currentIndex, true);
-    if (c is NetImage) {
-      c.provider.evict();
-    } else if (c is NetGif) {
-      c.provider.evict();
+  @override
+  Stream<void> tagsEventsFor(int i);
+
+  void initCountEvents(Sink<int> sink);
+
+  @override
+  ImageViewWidgets? get(int i) => resource.forIdx(i);
+
+  void tryPrecacheThumb(BuildContext context, ImageViewWidgets widgets) {
+    if (precacheThumbs) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        if (!context.mounted) {
+          return;
+        }
+
+        final thumb = widgets.thumbnail();
+        if (thumb != null) {
+          precacheImage(thumb, context);
+        }
+      });
     }
   }
 
+  // void loadCells(BuildContext context, int i) {
+  //   _currentCell = (resource.forIdxUnsafe(i), i);
+
+  //   if (i != 0 && !i.isNegative) {
+  //     final c2 = resource.forIdx(i - 1);
+
+  //     if (c2 != null) {
+  //       _previousCell = (c2, i - 1);
+
+  //       tryPrecacheThumb(context, c2);
+  //     }
+  //   }
+
+  //   if (count != i + 1) {
+  //     final c3 = resource.forIdx(i + 1);
+
+  //     if (c3 != null) {
+  //       _nextCell = (c3, i + 1);
+
+  //       tryPrecacheThumb(context, c3);
+  //     }
+  //   }
+  // }
+
+  void loadNext(int index) {
+    if (!resource.hasNext || resource.progress.inRefreshing) {
+      return;
+    }
+
+    resource.next();
+  }
+
+  @mustCallSuper
   void dispose() {
-    _updates.cancel();
+    _countEventsController.close();
     _indexStreamController.close();
-    upstreamCountEvents?.cancel();
-    countEventsController.close();
+  }
+}
+
+//   static List<ImageTag> imageViewTags(
+//     ContentWidgets c,
+//     TagManagerService tagManager,
+//   ) =>
+//       (c as PostBase)
+//           .tags
+//           .map(
+//             (e) => ImageTag(
+//               e,
+//               favorite: tagManager.pinned.exists(e),
+//               excluded: tagManager.excluded.exists(e),
+//             ),
+//           )
+//           .toList();
+
+//   static StreamSubscription<List<ImageTag>> watchTags(
+//     ContentWidgets c,
+//     void Function(List<ImageTag> l) f,
+//     BooruTagging<Pinned> pinnedTags,
+//   ) =>
+//       pinnedTags.watchImage((c as PostBase).tags, f);
+// }
+
+class DefaultStateController extends ImageViewStateController {
+  DefaultStateController({
+    required this.loader,
+    // this.scrollUntill,
+    // this.preloadNextPictures = false,
+    this.ignoreLoadingBuilder = false,
+    this.pageChange,
+    this.statistics,
+    this.download,
+    // this.watchTags,
+    this.wrapNotifiers,
+  });
+
+  // final bool preloadNextPictures;
+  final bool ignoreLoadingBuilder;
+
+  final ImageViewStatistics? statistics;
+
+  // final ContentIdxCallback? scrollUntill;
+  final ContentIdxCallback? download;
+
+  // final WatchTagsCallback? watchTags;
+  final NotifierWrapper? wrapNotifiers;
+
+  @override
+  final DefaultImageViewLoader loader;
+
+  final void Function(DefaultStateController state)? pageChange;
+
+  _StateContainer? _container;
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
   }
 
   @override
@@ -191,21 +251,18 @@ class DefaultStateController extends ImageViewStateController {
     required VoidCallback playAnimationRight,
     required VoidCallback flipShowAppBar,
   }) {
-    // if (startingIndex != 0) {
-    currentIndex = startingIndex;
-    _indexStreamController.add(currentIndex);
-    // }
+    loader.index = startingIndex;
 
     _container = _StateContainer(
       initialPage: startingIndex,
       playAnimationLeft: playAnimationLeft,
       playAnimationRight: playAnimationRight,
-      preloadNextPictures: preloadNextPictures,
+      // preloadNextPictures: preloadNextPictures,
       flipShowAppBar: flipShowAppBar,
       context: context,
     );
 
-    loadCells(currentIndex, count);
+    // loader.loadCells(context, startingIndex);
 
     statistics?.viewed();
   }
@@ -220,80 +277,16 @@ class DefaultStateController extends ImageViewStateController {
     _container?.pageController.jumpToPage(i);
   }
 
-  void loadCells(int i, int maxCells) {
-    _currentCell = (getContent(i)!, i);
-
-    if (i != 0 && !i.isNegative) {
-      final c2 = getContent(i - 1);
-
-      if (c2 != null) {
-        _previousCell = (c2, i - 1);
-
-        final content = c2;
-        if (preloadNextPictures && content is NetImage) {
-          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-            final context = _container?.context;
-            if (context == null || !context.mounted) {
-              return;
-            }
-
-            precacheImage(content.provider, context);
-            final thumb = content.widgets.tryAsThumbnailable(context);
-            if (thumb != null) {
-              precacheImage(thumb, context);
-            }
-          });
-        }
-      }
-    }
-
-    if (maxCells != i + 1) {
-      final c3 = getContent(i + 1);
-
-      if (c3 != null) {
-        _nextCell = (c3, i + 1);
-
-        final content = c3;
-        if (preloadNextPictures && content is NetImage) {
-          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-            final context = _container?.context;
-            if (context == null || !context.mounted) {
-              return;
-            }
-
-            precacheImage(content.provider, context);
-            final thumb = content.widgets.tryAsThumbnailable(context);
-            if (thumb != null) {
-              precacheImage(thumb, context);
-            }
-          });
-        }
-      }
-    }
-  }
-
   Widget loadingBuilder(
     BuildContext context,
     ImageChunkEvent? event,
     int index,
-    int currentPage,
-    Contentable Function(int) drawCell,
   ) {
     final theme = Theme.of(context);
 
-    final cell = drawCell(index);
-    // try {
-    //   final p =
-    //       switch (_container!.pageController.position.userScrollDirection) {
-    //     ScrollDirection.idle => _container!.pageController.page?.round(),
-    //     ScrollDirection.forward => _container!.pageController.page?.floor(),
-    //     ScrollDirection.reverse => _container!.pageController.page?.ceil(),
-    //   };
+    final cell = loader.get(index);
 
-    //   cell = drawCell(p ?? currentPage);
-    // } catch (_) {}
-
-    final t = cell.widgets.tryAsThumbnailable(context);
+    final t = cell?.thumbnail();
     if (t == null) {
       return const SizedBox.shrink();
     }
@@ -325,148 +318,84 @@ class DefaultStateController extends ImageViewStateController {
     );
   }
 
-  @override
-  Widget injectMetadataProvider(Widget child) {
-    final ret = ImageViewTagsProvider(
-      currentPage: indexEvents,
-      countEvents: countEvents,
-      currentCell: currentContentWidgets,
-      tags: tags,
-      watchTags: watchTags,
-      child: ContentIndexMetadataHolder(
-        getContent: getContent,
-        currentIndex: currentIndex,
-        indexEvents: indexEvents,
-        currentCount: _count,
-        countEvents: countEvents,
-        wrapNotifiers: wrapNotifiers,
-        child: child,
-      ),
-    );
+  // @override
+  // Widget injectMetadataProvider(Widget child) {
+  //   final ret = ImageViewTagsProvider(
+  //     currentPage: indexEvents,
+  //     countEvents: countEvents,
+  //     currentCell: currentContentWidgets,
+  //     tags: tags,
+  //     watchTags: watchTags,
+  //     child: ContentIndexMetadataHolder(
+  //       getContent: getContent,
+  //       currentIndex: currentIndex,
+  //       indexEvents: indexEvents,
+  //       currentCount: _count,
+  //       countEvents: countEvents,
+  //       wrapNotifiers: wrapNotifiers,
+  //       child: child,
+  //     ),
+  //   );
 
-    if (wrapNotifiers == null) {
-      return ret;
-    }
+  //   if (wrapNotifiers == null) {
+  //     return ret;
+  //   }
 
-    return wrapNotifiers!(ret);
-  }
+  //   return wrapNotifiers!(ret);
+  // }
 
   void _onPageChanged(int index) {
     statistics?.viewed();
     statistics?.swiped();
 
-    refreshTries = 0;
+    loader.refreshTries = 0;
 
-    currentIndex = index;
-    _indexStreamController.add(currentIndex);
+    loader.index = index;
 
     pageChange?.call(this);
-    _loadNext(index);
+    loader.loadNext(index);
 
-    scrollUntill?.call(index);
+    // scrollUntill?.call(index);
 
-    loadCells(index, count);
+    // loader.loadCells(_container!.context, index);
 
-    final c = drawCell(index);
+    // final c = loader.drawCell(index);
 
-    const WindowApi().setTitle(c.widgets.alias(false));
+    // const WindowApi().setTitle(c.widgets.alias(false));
+  }
+
+  @override
+  Widget inject(Widget child) {
+    if (wrapNotifiers != null) {
+      return wrapNotifiers!(child);
+    }
+
+    return child;
   }
 
   @override
   Widget buildBody(BuildContext context) {
     assert(_container != null);
 
-    return ImageViewBody(
+    final child = PhotoViewGalleryBody(
       key: _container!.bodyKey,
       onPressedLeft: null,
       onPressedRight: null,
       onPageChanged: _onPageChanged,
       onLongPress: _onLongPress,
       pageController: _container!.pageController,
-      countEvents: countEvents,
+      countEvents: loader.countEvents,
       loadingBuilder: (context, event, index) => loadingBuilder(
         context,
         event,
         index,
-        currentIndex,
-        drawCell,
       ),
-      itemCount: count,
+      loader: loader,
+      itemCount: loader.count,
       onTap: _container!.flipShowAppBar,
-      builder: galleryBuilder,
-    );
-  }
-
-  Contentable drawCell(int i, [bool currentCellOnly = false]) {
-    if (currentCellOnly) {
-      return _currentCell!.$1;
-    }
-
-    if (_currentCell != null && _currentCell!.$2 == i) {
-      return _currentCell!.$1;
-    } else if (_nextCell != null && _nextCell!.$2 == i) {
-      return _nextCell!.$1;
-    } else {
-      return _previousCell!.$1;
-    }
-  }
-
-  PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int i) {
-    final cell = drawCell(i);
-    final content = cell;
-    final key = cell.widgets.uniqueKey();
-
-    return switch (content) {
-      NetGif() => _makeNetImage(key, content.provider),
-      NetImage() => _makeNetImage(key, content.provider),
-      NetVideo() => _makeVideo(
-          context,
-          key,
-          content.uri,
-          cell.widgets.tryAsThumbnailable(context),
-        ),
-      EmptyContent() =>
-        PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
-    };
-  }
-
-  PhotoViewGalleryPageOptions _makeVideo(
-    BuildContext context,
-    Key key,
-    String uri,
-    ImageProvider? networkThumb,
-  ) =>
-      PhotoViewGalleryPageOptions.customChild(
-        disableGestures: true,
-        tightMode: true,
-        child: PhotoGalleryPageVideo(
-          key: key,
-          url: uri,
-          networkThumb: networkThumb,
-          localVideo: false,
-        ),
-      );
-
-  PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {
-    final options = PhotoViewGalleryPageOptions(
-      key: ValueKey((key, refreshTries)),
-      minScale: PhotoViewComputedScale.contained * 0.8,
-      maxScale: PhotoViewComputedScale.covered * 1.8,
-      initialScale: PhotoViewComputedScale.contained,
-      filterQuality: FilterQuality.high,
-      imageProvider: provider,
-      errorBuilder: (context, error, stackTrace) {
-        return LoadingErrorWidget(
-          error: error.toString(),
-          short: false,
-          refresh: () {
-            ReloadImageNotifier.of(context);
-          },
-        );
-      },
     );
 
-    return options;
+    return child;
   }
 
   void _onLongPress() {
@@ -475,297 +404,281 @@ class DefaultStateController extends ImageViewStateController {
     }
 
     HapticFeedback.vibrate();
-    download!(currentIndex);
-  }
-
-  void _loadNext(int index) {
-    if (onNearEnd == null) {
-      return;
-    }
-
-    if (index >= count - 3 && !refreshing) {
-      refreshing = true;
-
-      onNearEnd!().then((i) {
-        count = i;
-      }).whenComplete(() {
-        refreshing = false;
-      });
-    }
+    download!(loader.index);
   }
 }
 
-class ContentIndexMetadataHolder extends StatefulWidget {
-  const ContentIndexMetadataHolder({
-    super.key,
-    required this.getContent,
-    required this.currentIndex,
-    required this.indexEvents,
-    required this.wrapNotifiers,
-    required this.countEvents,
-    required this.currentCount,
-    required this.child,
-  });
+// class ContentIndexMetadataHolder extends StatefulWidget {
+//   const ContentIndexMetadataHolder({
+//     super.key,
+//     required this.getContent,
+//     required this.currentIndex,
+//     required this.indexEvents,
+//     required this.wrapNotifiers,
+//     required this.countEvents,
+//     required this.currentCount,
+//     required this.child,
+//   });
 
-  final ContentGetter getContent;
+//   final ContentGetter getContent;
 
-  final int currentIndex;
-  final int currentCount;
+//   final int currentIndex;
+//   final int currentCount;
 
-  final Stream<int> indexEvents;
-  final Stream<int> countEvents;
+//   final Stream<int> indexEvents;
+//   final Stream<int> countEvents;
 
-  final NotifierWrapper? wrapNotifiers;
+//   final NotifierWrapper? wrapNotifiers;
 
-  final Widget child;
+//   final Widget child;
 
-  @override
-  State<ContentIndexMetadataHolder> createState() =>
-      _ContentIndexMetadataHolderState();
-}
+//   @override
+//   State<ContentIndexMetadataHolder> createState() =>
+//       _ContentIndexMetadataHolderState();
+// }
 
-class _ContentIndexMetadataHolderState
-    extends State<ContentIndexMetadataHolder> {
-  late final StreamSubscription<int> indexEvents;
-  late final StreamSubscription<int> countEvents;
+// class _ContentIndexMetadataHolderState
+//     extends State<ContentIndexMetadataHolder> {
+//   late final StreamSubscription<int> indexEvents;
+//   late final StreamSubscription<int> countEvents;
 
-  late _ContentToMetadata currentMetadata;
-  int refreshCounts = 0;
+//   late _ContentToMetadata currentMetadata;
+//   int refreshCounts = 0;
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    indexEvents = widget.indexEvents.listen((newIndex) {
-      currentMetadata = _ContentToMetadata(
-        indexEvents: widget.indexEvents,
-        countEvents: widget.countEvents,
-        content: widget.getContent(newIndex)!,
-        getContent: widget.getContent,
-        wrapNotifiers: widget.wrapNotifiers,
-        index: newIndex,
-        count: currentMetadata.count,
-      );
+//     indexEvents = widget.indexEvents.listen((newIndex) {
+//       currentMetadata = _ContentToMetadata(
+//         indexEvents: widget.indexEvents,
+//         countEvents: widget.countEvents,
+//         content: widget.getContent(newIndex)!,
+//         getContent: widget.getContent,
+//         wrapNotifiers: widget.wrapNotifiers,
+//         index: newIndex,
+//         count: currentMetadata.count,
+//       );
 
-      refreshCounts += 1;
+//       refreshCounts += 1;
 
-      setState(() {});
-    });
+//       setState(() {});
+//     });
 
-    countEvents = widget.countEvents.listen((newCount) {
-      currentMetadata = _ContentToMetadata(
-        indexEvents: widget.indexEvents,
-        countEvents: widget.countEvents,
-        content: widget.getContent(currentMetadata.index)!,
-        getContent: widget.getContent,
-        wrapNotifiers: widget.wrapNotifiers,
-        index: currentMetadata.index,
-        count: newCount,
-      );
+//     countEvents = widget.countEvents.listen((newCount) {
+//       currentMetadata = _ContentToMetadata(
+//         indexEvents: widget.indexEvents,
+//         countEvents: widget.countEvents,
+//         content: widget.getContent(currentMetadata.index)!,
+//         getContent: widget.getContent,
+//         wrapNotifiers: widget.wrapNotifiers,
+//         index: currentMetadata.index,
+//         count: newCount,
+//       );
 
-      refreshCounts += 1;
+//       refreshCounts += 1;
 
-      setState(() {});
-    });
+//       setState(() {});
+//     });
 
-    currentMetadata = _ContentToMetadata(
-      indexEvents: widget.indexEvents,
-      countEvents: widget.countEvents,
-      content: widget.getContent(widget.currentIndex)!,
-      getContent: widget.getContent,
-      wrapNotifiers: widget.wrapNotifiers,
-      count: widget.currentCount,
-      index: widget.currentIndex,
-    );
-  }
+//     currentMetadata = _ContentToMetadata(
+//       indexEvents: widget.indexEvents,
+//       countEvents: widget.countEvents,
+//       content: widget.getContent(widget.currentIndex)!,
+//       getContent: widget.getContent,
+//       wrapNotifiers: widget.wrapNotifiers,
+//       count: widget.currentCount,
+//       index: widget.currentIndex,
+//     );
+//   }
 
-  @override
-  void dispose() {
-    indexEvents.cancel();
-    countEvents.cancel();
+//   @override
+//   void dispose() {
+//     indexEvents.cancel();
+//     countEvents.cancel();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  ImageProvider? _getThumbnail(int i) =>
-      widget.getContent(i)?.widgets.tryAsThumbnailable(null);
+//   // ImageProvider? _getThumbnail(int i) =>
+//   //     widget.getContent(i)?.widgets.tryAsThumbnailable(null);
 
-  @override
-  Widget build(BuildContext context) {
-    return ThumbnailsNotifier(
-      provider: _getThumbnail,
-      child: CurrentIndexMetadataNotifier(
-        metadata: currentMetadata,
-        refreshTimes: refreshCounts,
-        child: widget.child,
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ThumbnailsNotifier(
+//       provider: _getThumbnail,
+//       child: CurrentIndexMetadataNotifier(
+//         metadata: currentMetadata,
+//         refreshTimes: refreshCounts,
+//         child: widget.child,
+//       ),
+//     );
+//   }
+// }
 
-class _ContentToMetadata implements CurrentIndexMetadata {
-  const _ContentToMetadata({
-    required this.content,
-    required this.index,
-    required this.getContent,
-    required this.countEvents,
-    required this.indexEvents,
-    required this.wrapNotifiers,
-    required this.count,
-  });
+// class _ContentToMetadata implements CurrentIndexMetadata {
+//   const _ContentToMetadata({
+//     required this.content,
+//     required this.index,
+//     required this.getContent,
+//     required this.countEvents,
+//     required this.indexEvents,
+//     required this.wrapNotifiers,
+//     required this.count,
+//   });
 
-  final NotifierWrapper? wrapNotifiers;
-  final ContentGetter getContent;
-  final Stream<int> indexEvents;
-  final Stream<int> countEvents;
+//   final NotifierWrapper? wrapNotifiers;
+//   final ContentGetter getContent;
+//   final Stream<int> indexEvents;
+//   final Stream<int> countEvents;
 
-  @override
-  final int count;
+//   @override
+//   final int count;
 
-  @override
-  bool get isVideo => content is NetVideo;
+//   @override
+//   bool get isVideo => content is NetVideo;
 
-  @override
-  Key get uniqueKey => content.widgets.uniqueKey();
+//   @override
+//   Key get uniqueKey => content.widgets.uniqueKey();
 
-  @override
-  final int index;
-  final Contentable content;
+//   @override
+//   final int index;
+//   final Contentable content;
 
-  @override
-  List<ImageViewAction> actions(BuildContext context) =>
-      content.widgets.tryAsActionable(context);
+//   @override
+//   List<ImageViewAction> actions(BuildContext context) =>
+//       content.widgets.tryAsActionable(context);
 
-  @override
-  List<NavigationAction> appBarButtons(BuildContext context) =>
-      content.widgets.tryAsAppBarButtonable(context);
+//   @override
+//   List<NavigationAction> appBarButtons(BuildContext context) =>
+//       content.widgets.tryAsAppBarButtonable(context);
 
-  @override
-  Widget? openMenuButton(BuildContext context) {
-    return ImageViewFab(
-      openBottomSheet: (context) {
-        return showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          builder: (sheetContext) {
-            final child = ExitOnPressRoute(
-              exit: () {
-                Navigator.of(sheetContext).pop();
-                ExitOnPressRoute.exitOf(context);
-              },
-              child: PauseVideoNotifierHolder(
-                state: PauseVideoNotifier.stateOf(context),
-                child: ImageTagsNotifier(
-                  tags: ImageTagsNotifier.of(context),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: 8,
-                      bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-                    ),
-                    child: SizedBox(
-                      width: MediaQuery.sizeOf(sheetContext).width,
-                      child: _CellContent(
-                        firstContent: (CurrentIndexMetadata.of(context)
-                                as _ContentToMetadata)
-                            .content,
-                        firstIndex: index,
-                        getContent: getContent,
-                        indexEvents: indexEvents,
-                        countEvents: countEvents,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
+//   @override
+//   Widget? openMenuButton(BuildContext context) {
+//     return ImageViewFab(
+//       openBottomSheet: (context) {
+//         return showModalBottomSheet<void>(
+//           context: context,
+//           isScrollControlled: true,
+//           builder: (sheetContext) {
+//             final child = ExitOnPressRoute(
+//               exit: () {
+//                 Navigator.of(sheetContext).pop();
+//                 ExitOnPressRoute.exitOf(context);
+//               },
+//               child: PauseVideoNotifierHolder(
+//                 state: PauseVideoNotifier.stateOf(context),
+//                 child: ImageTagsNotifier(
+//                   tags: ImageTagsNotifier.of(context),
+//                   child: Padding(
+//                     padding: EdgeInsets.only(
+//                       top: 8,
+//                       bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+//                     ),
+//                     child: SizedBox(
+//                       width: MediaQuery.sizeOf(sheetContext).width,
+//                       child: _CellContent(
+//                         firstContent: (CurrentIndexMetadata.of(context)
+//                                 as _ContentToMetadata)
+//                             .content,
+//                         firstIndex: index,
+//                         getContent: getContent,
+//                         indexEvents: indexEvents,
+//                         countEvents: countEvents,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             );
 
-            if (wrapNotifiers != null) {
-              return wrapNotifiers!(child);
-            }
+//             if (wrapNotifiers != null) {
+//               return wrapNotifiers!(child);
+//             }
 
-            return child;
-          },
-        );
-      },
-    );
-  }
+//             return child;
+//           },
+//         );
+//       },
+//     );
+//   }
 
-  @override
-  List<Sticker> stickers(BuildContext context) =>
-      content.widgets.tryAsStickerable(context, true);
-}
+//   // @override
+//   // List<Sticker> stickers(BuildContext context) =>
+//   //     content.widgets.tryAsStickerable(context, true);
+// }
 
-class _CellContent extends StatefulWidget {
-  const _CellContent({
-    // super.key,
-    required this.indexEvents,
-    required this.getContent,
-    required this.countEvents,
-    required this.firstContent,
-    required this.firstIndex,
-  });
+// class _CellContent extends StatefulWidget {
+//   const _CellContent({
+//     // super.key,
+//     required this.indexEvents,
+//     required this.getContent,
+//     required this.countEvents,
+//     required this.firstContent,
+//     required this.firstIndex,
+//   });
 
-  final Contentable firstContent;
-  final int firstIndex;
-  final Stream<int> indexEvents;
-  final Stream<int> countEvents;
-  final ContentGetter getContent;
+//   final Contentable firstContent;
+//   final int firstIndex;
+//   final Stream<int> indexEvents;
+//   final Stream<int> countEvents;
+//   final ContentGetter getContent;
 
-  @override
-  State<_CellContent> createState() => __CellContentState();
-}
+//   @override
+//   State<_CellContent> createState() => __CellContentState();
+// }
 
-class __CellContentState extends State<_CellContent> {
-  late final StreamSubscription<int> countEvents;
-  late final StreamSubscription<int> indexEvents;
+// class __CellContentState extends State<_CellContent> {
+//   late final StreamSubscription<int> countEvents;
+//   late final StreamSubscription<int> indexEvents;
 
-  late Contentable content;
+//   late Contentable content;
 
-  late int currentIndex;
+//   late int currentIndex;
 
-  int refreshes = 0;
+//   int refreshes = 0;
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    currentIndex = widget.firstIndex;
+//     currentIndex = widget.firstIndex;
 
-    content = widget.firstContent;
+//     content = widget.firstContent;
 
-    indexEvents = widget.indexEvents.listen((newContent) {
-      setState(() {
-        content = widget.getContent(newContent)!;
-        currentIndex = newContent;
-      });
-    });
+//     indexEvents = widget.indexEvents.listen((newContent) {
+//       setState(() {
+//         content = widget.getContent(newContent)!;
+//         currentIndex = newContent;
+//       });
+//     });
 
-    countEvents = widget.countEvents.listen((newCount) {
-      final newContent = widget.getContent(currentIndex);
-      if (newContent == null) {
-        return;
-      }
+//     countEvents = widget.countEvents.listen((newCount) {
+//       final newContent = widget.getContent(currentIndex);
+//       if (newContent == null) {
+//         return;
+//       }
 
-      setState(() {
-        content = newContent;
-        refreshes += 1;
-      });
-    });
-  }
+//       setState(() {
+//         content = newContent;
+//         refreshes += 1;
+//       });
+//     });
+//   }
 
-  @override
-  void dispose() {
-    countEvents.cancel();
-    indexEvents.cancel();
+//   @override
+//   void dispose() {
+//     countEvents.cancel();
+//     indexEvents.cancel();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: ValueKey(refreshes),
-      child: content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink(),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return KeyedSubtree(
+//       key: ValueKey(refreshes),
+//       child: content.widgets.tryAsInfoable(context) ?? const SizedBox.shrink(),
+//     );
+//   }
+// }

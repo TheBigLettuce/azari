@@ -9,13 +9,11 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 
-SelectionBarAction hide(
-  BuildContext context,
-) {
+SelectionBarAction hide(BuildContext context) {
   return SelectionBarAction(
     Icons.hide_image_rounded,
     (selected) {
-      if (selected.isEmpty || HiddenBooruPostsService.available) {
+      if (selected.isEmpty || !HiddenBooruPostsService.available) {
         return;
       }
 

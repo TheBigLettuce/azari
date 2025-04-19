@@ -22,6 +22,7 @@ import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/posts_source.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/trash_cell.dart";
@@ -32,20 +33,17 @@ import "package:azari/src/services/impl/obj/blacklisted_directory_data_impl.dart
 import "package:azari/src/services/impl/obj/directory_impl.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/theme.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
-import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
+import "package:flutter/scheduler.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:mime/mime.dart" as mime;
@@ -123,8 +121,7 @@ bool _isInit = false;
 late final Services _dbInstance;
 
 @immutable
-abstract class VisitedPost
-    implements CellBase, Thumbnailable, Pressable<VisitedPost> {
+abstract class VisitedPost with DefaultBuildCell implements CellBuilder {
   const factory VisitedPost({
     required Booru booru,
     required int id,
@@ -233,7 +230,7 @@ mixin class DirectoryTagService implements ServiceMarker {
 }
 
 @immutable
-abstract class TagData implements CellBase {
+abstract class TagData implements CellBuilder {
   const factory TagData({
     required String tag,
     required TagType type,
@@ -248,15 +245,12 @@ abstract class TagData implements CellBase {
 }
 
 abstract class TagDataImpl
-    with DefaultBuildCellImpl
-    implements TagData, CellBase {
+    with DefaultBuildCell, CellBuilderData
+    implements TagData, CellBuilder {
   const TagDataImpl();
 
   @override
-  String alias(bool long) => tag;
-
-  @override
-  CellStaticData description() => const CellStaticData();
+  String title(AppLocalizations l10n) => tag;
 
   @override
   Key uniqueKey() => ValueKey((tag, type));
@@ -277,6 +271,10 @@ abstract class Pinned implements BooruTaggingType {}
 abstract class BooruTagging<T extends BooruTaggingType> {
   const BooruTagging();
 
+  int get count;
+
+  Stream<int> get events;
+
   bool exists(String tag);
 
   List<TagData> complete(String string);
@@ -295,20 +293,20 @@ abstract class BooruTagging<T extends BooruTaggingType> {
   /// Delete all the tags from the DB.
   void clear();
 
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
-  StreamSubscription<int> watchCount(void Function(int) f, [bool fire = false]);
+  // StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
+  // StreamSubscription<int> watchCount(void Function(int) f, [bool fire = false]);
 
-  StreamSubscription<List<ImageTag>> watchImage(
-    List<String> tags,
-    void Function(List<ImageTag>) f, {
-    bool fire = false,
-  });
+  // StreamSubscription<List<ImageTag>> watchImage(
+  //   List<String> tags,
+  //   void Function(List<ImageTag>) f, {
+  //   bool fire = false,
+  // });
 
-  StreamSubscription<List<ImageTag>> watchImageLocal(
-    String filename,
-    void Function(List<ImageTag>) f, {
-    bool fire = false,
-  });
+  // StreamSubscription<List<ImageTag>> watchImageLocal(
+  //   String filename,
+  //   void Function(List<ImageTag>) f, {
+  //   bool fire = false,
+  // });
 }
 
 mixin class TagManagerService implements ServiceMarker {
@@ -325,7 +323,7 @@ mixin class TagManagerService implements ServiceMarker {
 }
 
 @immutable
-abstract class GridBookmark implements CellBase {
+abstract class GridBookmark implements CellBuilder {
   const factory GridBookmark({
     required String tags,
     required Booru booru,
@@ -536,7 +534,7 @@ mixin class HottestTagsService implements ServiceMarker {
 }
 
 @immutable
-abstract class Post implements PostBase, PostImpl, Pressable<Post> {
+abstract class Post implements PostBase, PostImpl {
   const factory Post({
     required int id,
     required String md5,
@@ -575,56 +573,6 @@ abstract class Post implements PostBase, PostImpl, Pressable<Post> {
     final url = getUrl(p);
 
     return PostContentType.fromUrl(url);
-  }
-
-  static void imageViewSingle(
-    BuildContext context,
-    Booru booru,
-    int postId, {
-    Widget Function(Widget)? wrapNotifiers,
-  }) {
-    if (!TagManagerService.available || !VisitedPostsService.available) {
-      showSnackbar(context, "Couldn't launch image view"); // TODO: change
-
-      return;
-    }
-
-    ImageView.launchWrappedAsyncSingle(
-      context,
-      () async {
-        final dio = BooruAPI.defaultClientForBooru(booru);
-        final api = BooruAPI.fromEnum(booru, dio);
-
-        final Post post;
-        try {
-          post = await api.singlePost(postId);
-        } catch (e) {
-          rethrow;
-        } finally {
-          dio.close(force: true);
-        }
-
-        const VisitedPostsService().addAll([
-          VisitedPost(
-            booru: booru,
-            id: postId,
-            thumbUrl: post.previewUrl,
-            rating: post.rating,
-            date: DateTime.now(),
-          ),
-        ]);
-
-        return () => post.content(context);
-      },
-      wrapNotifiers: wrapNotifiers,
-      tags: (c) =>
-          DefaultPostPressable.imageViewTags(c, const TagManagerService()),
-      watchTags: (c, f) => DefaultPostPressable.watchTags(
-        c,
-        f,
-        const TagManagerService().pinned,
-      ),
-    );
   }
 }
 
@@ -704,81 +652,499 @@ abstract class PostBase {
   PostContentType get type;
 }
 
-mixin DefaultPostPressable<T extends PostImpl>
-    implements PostImpl, Pressable<T> {
-  @override
-  void onPressed(
-    BuildContext context,
-    int idx,
-  ) {
-    if (this is! FavoritePost &&
-        const SettingsService().current.sampleThumbnails) {
-      PostCell.openMaximizedImage(
-        context,
-        this,
-        content(context),
-      );
+void addAlert(String title, String body) {
+  AlertService.safe()?.add(AlertData(title, body, null));
+}
 
+abstract class AlertData {
+  const factory AlertData(
+    String title,
+    String? expandedInfo,
+    (VoidCallback, Icon)? onPressed,
+  ) = _AlertData;
+
+  String title();
+  String? expandedInfo();
+
+  (VoidCallback, Icon)? get onPressed;
+}
+
+class _AlertData implements AlertData {
+  const _AlertData(
+    String title,
+    String? expandedInfo,
+    this.onPressed,
+  )   : title_ = title,
+        expandedInfo_ = expandedInfo;
+
+  final String title_;
+  final String? expandedInfo_;
+
+  @override
+  final (VoidCallback, Icon)? onPressed;
+
+  @override
+  String? expandedInfo() => expandedInfo_;
+
+  @override
+  String title() => title_;
+}
+
+mixin class AlertService implements ServiceMarker {
+  static bool get available => _instance != null;
+  static AlertService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<AlertService>();
+
+  Stream<AlertData> get events => _instance!.events;
+
+  void add(AlertData data) => _instance!.add(data);
+}
+
+class AlertServiceUI extends StatefulWidget {
+  const AlertServiceUI({
+    super.key,
+    required this.navigatorKey,
+    required this.child,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  final Widget child;
+
+  @override
+  State<AlertServiceUI> createState() => _AlertServiceUIState();
+}
+
+class _AlertServiceUIState extends State<AlertServiceUI> {
+  final ThemeData theme = ThemeData.from(
+    colorScheme: MaterialTheme.darkScheme(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        widget.child,
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Theme(
+            data: theme,
+            child: AlertsStack(navigatorKey: widget.navigatorKey),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AlertsStack extends StatefulWidget {
+  const AlertsStack({
+    super.key,
+    required this.navigatorKey,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  @override
+  State<AlertsStack> createState() => _AlertsStackState();
+}
+
+class _AlertsStackState extends State<AlertsStack>
+    with AlertService, TickerProviderStateMixin {
+  late final StreamSubscription<AlertData> _events;
+
+  late final AnimationController controller;
+  late final AnimationController dismissController;
+
+  final _outstanding = <AlertData>[];
+  AlertData? currentMessage;
+
+  @override
+  void initState() {
+    super.initState();
+
+    dismissController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    );
+
+    controller = AnimationController(
+      vsync: this,
+      duration: Durations.long4,
+      reverseDuration: Durations.medium1,
+    );
+
+    _events = events.listen((e) {
+      if (_outstanding.isEmpty && controller.isDismissed) {
+        _schedule(e);
+
+        return;
+      }
+
+      _outstanding.add(e);
+    });
+  }
+
+  void _schedule(AlertData e) {
+    currentMessage = e;
+
+    controller.forward().then((_) {
+      dismissController.value = 0;
+      dismissController.forward().then((_) {
+        controller.reverse().then((_) {
+          dismissController.value = 0;
+
+          if (_outstanding.isEmpty) {
+            currentMessage = null;
+
+            setState(() {});
+            return;
+          }
+
+          final e2 = _outstanding.removeLast();
+          _schedule(e2);
+        });
+      });
+    });
+
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    dismissController.dispose();
+    controller.dispose();
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  void _dismissCurrent() {
+    dismissController.value = 0;
+    controller.reverse().then((_) {
+      if (_outstanding.isEmpty) {
+        currentMessage = null;
+
+        setState(() {});
+        return;
+      }
+
+      _schedule(_outstanding.removeLast());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = MediaQuery.viewPaddingOf(context);
+
+    if (currentMessage == null) {
+      return const SizedBox.shrink();
+    }
+
+    return ListenableBuilder(
+      listenable: controller.view,
+      builder: (context, child) {
+        return Opacity(
+          opacity: controller.value,
+          child: child,
+        );
+      },
+      child: SingleAlert(
+        dismissController: dismissController,
+        navigatorKey: widget.navigatorKey,
+        data: currentMessage!,
+        padding: padding,
+        dismissThis: _dismissCurrent,
+      ),
+    );
+  }
+}
+
+class SingleAlert extends StatelessWidget {
+  const SingleAlert({
+    super.key,
+    required this.padding,
+    required this.data,
+    required this.navigatorKey,
+    required this.dismissController,
+    required this.dismissThis,
+  });
+
+  final AlertData data;
+  final EdgeInsets padding;
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final AnimationController dismissController;
+
+  final VoidCallback dismissThis;
+
+  void _onPressed() {
+    final context = navigatorKey.currentContext;
+    if (context == null) {
       return;
     }
 
-    final fnc = OnBooruTagPressed.of(context);
-
-    final source = this is FavoritePost
-        ? getSource<FavoritePost>(context)
-        : getSource<Post>(context);
-
-    void tryScrollTo(int i) =>
-        ShellScrollNotifier.maybeScrollToOf(context, i, true);
-
-    Navigator.of(context, rootNavigator: true).push<void>(
-      PageRouteBuilder(
-        barrierDismissible: true,
-        fullscreenDialog: true,
-        opaque: false,
-        barrierColor: Colors.black.withValues(alpha: 0.2),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return OnBooruTagPressed(
-            onPressed: fnc,
-            child: CardDialog(
-              animation: animation,
-              source: source,
-              tryScrollTo: tryScrollTo,
-              idx: idx,
-            ),
+    navigatorKey.currentState?.push(
+      DialogRoute<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            scrollable: true,
+            title: Text(data.title()),
+            content: Text(data.expandedInfo()!),
           );
         },
       ),
     );
   }
 
-  static List<ImageTag> imageViewTags(
-    ContentWidgets c,
-    TagManagerService tagManager,
-  ) =>
-      (c as PostBase)
-          .tags
-          .map(
-            (e) => ImageTag(
-              e,
-              favorite: tagManager.pinned.exists(e),
-              excluded: tagManager.excluded.exists(e),
-            ),
-          )
-          .toList();
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
-  static StreamSubscription<List<ImageTag>> watchTags(
-    ContentWidgets c,
-    void Function(List<ImageTag> l) f,
-    BooruTagging<Pinned> pinnedTags,
-  ) =>
-      pinnedTags.watchImage((c as PostBase).tags, f);
+    final onPressed = data.onPressed;
+    final subtitle = data.expandedInfo();
+
+    return Padding(
+      padding:
+          padding + const EdgeInsets.symmetric(vertical: 20, horizontal: 28),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxHeight: 58,
+          maxWidth: 380,
+        ),
+        child: Material(
+          clipBehavior: Clip.antiAlias,
+          shape: StadiumBorder(
+            side: BorderSide(
+              width: 0.8,
+              color: theme.colorScheme.inverseSurface.withValues(alpha: 0.2),
+              strokeAlign: BorderSide.strokeAlignOutside,
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 20, left: 20),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: dismissThis,
+                      icon: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                    const Padding(padding: EdgeInsets.only(right: 8)),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: DecoratedBox(
+                              decoration: subtitle == null
+                                  ? const BoxDecoration()
+                                  : BoxDecoration(
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(8)),
+                                      color: theme
+                                          .colorScheme.surfaceContainerHigh
+                                          .withValues(alpha: 0.6),
+                                    ),
+                              child: InkWell(
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(8)),
+                                onTap: subtitle != null ? _onPressed : null,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
+                                  child: Text.rich(
+                                    TextSpan(
+                                      children: [
+                                        if (subtitle != null)
+                                          const WidgetSpan(
+                                            alignment:
+                                                PlaceholderAlignment.middle,
+                                            child: Padding(
+                                              padding:
+                                                  EdgeInsets.only(right: 6),
+                                              child: Icon(
+                                                Icons.open_in_full_rounded,
+                                                size: 14,
+                                              ),
+                                            ),
+                                          ),
+                                        TextSpan(
+                                          text: data.title(),
+                                          style: theme.textTheme.bodyMedium,
+                                        ),
+                                      ],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: onPressed == null
+                                ? const Padding(
+                                    padding: EdgeInsets.only(right: 24),
+                                  )
+                                : IconButton.filledTonal(
+                                    onPressed: onPressed.$1,
+                                    icon: onPressed.$2,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ListenableBuilder(
+                  listenable: dismissController.view,
+                  builder: (context, child) => LinearProgressIndicator(
+                    value: dismissController.value,
+                    year2023: false,
+                    minHeight: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-void showSnackbar(BuildContext context, String body) {
-  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-    SnackBar(
-      content: Text(body),
-    ),
-  );
+extension ColorsNamesDataExt on ColorsNamesData {
+  void maybeSave() => ColorsNamesService.safe()?.add(this);
+}
+
+abstract class ColorsNamesData {
+  const factory ColorsNamesData({
+    required String red,
+    required String blue,
+    required String yellow,
+    required String green,
+    required String purple,
+    required String orange,
+    required String pink,
+    required String white,
+    required String brown,
+    required String black,
+  }) = $ColorsNamesData;
+
+  String get red;
+  String get blue;
+  String get yellow;
+
+  String get green;
+  String get purple;
+  String get orange;
+
+  String get pink;
+  String get white;
+  String get brown;
+
+  String get black;
+
+  ColorsNamesData copy({
+    String? red,
+    String? blue,
+    String? yellow,
+    String? green,
+    String? purple,
+    String? orange,
+    String? pink,
+    String? white,
+    String? brown,
+    String? black,
+  });
+}
+
+mixin ColorsNamesDataCopyImpl implements ColorsNamesData {
+  @override
+  ColorsNamesData copy({
+    String? red,
+    String? blue,
+    String? yellow,
+    String? green,
+    String? purple,
+    String? orange,
+    String? pink,
+    String? white,
+    String? brown,
+    String? black,
+  }) =>
+      ColorsNamesData(
+        red: red ?? this.red,
+        blue: blue ?? this.blue,
+        yellow: yellow ?? this.yellow,
+        green: green ?? this.green,
+        purple: purple ?? this.purple,
+        orange: orange ?? this.orange,
+        pink: pink ?? this.pink,
+        white: white ?? this.white,
+        brown: brown ?? this.brown,
+        black: black ?? this.black,
+      );
+}
+
+mixin ColorsNamesWatcherMixin<S extends StatefulWidget> on State<S> {
+  StreamSubscription<ColorsNamesData>? _colorsNamesEvents;
+
+  late ColorsNamesData colorsNames;
+
+  void onNewColorsNames() {}
+
+  @override
+  void initState() {
+    super.initState();
+
+    const colorsNamesService = ColorsNamesService();
+
+    colorsNames = colorsNamesService.current;
+
+    _colorsNamesEvents?.cancel();
+    _colorsNamesEvents = colorsNamesService.events.listen((newColorsNames) {
+      colorsNames = newColorsNames;
+
+      onNewColorsNames();
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _colorsNamesEvents?.cancel();
+
+    super.dispose();
+  }
+}
+
+mixin class ColorsNamesService implements ServiceMarker {
+  const ColorsNamesService();
+
+  static bool get available => _instance != null;
+  static ColorsNamesService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<ColorsNamesService>();
+
+  Stream<ColorsNamesData> get events => _instance!.events;
+
+  ColorsNamesData get current => _instance!.current;
+
+  void add(ColorsNamesData data) => _instance!.add(data);
 }

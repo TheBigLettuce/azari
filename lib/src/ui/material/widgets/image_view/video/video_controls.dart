@@ -11,10 +11,11 @@ class VideoControls extends StatefulWidget {
     required this.videoControls,
     required this.seekTimeAnchor,
     required this.vertical,
-    // this.content,
+    this.forceShow = false,
   });
 
   final bool vertical;
+  final bool forceShow;
 
   final VideoControlsControllerImpl videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
@@ -40,8 +41,11 @@ class _VideoControlsState extends State<VideoControls>
   void initState() {
     super.initState();
 
-    animationController =
-        AnimationController(vsync: this, duration: Durations.medium1);
+    animationController = AnimationController(
+      vsync: this,
+      duration: Durations.medium1,
+      value: widget.forceShow ? 1 : null,
+    );
 
     playerUpdatesSubsc = controls._playerEvents.stream.listen((update) {
       switch (update) {
@@ -72,9 +76,9 @@ class _VideoControlsState extends State<VideoControls>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final newContent = CurrentIndexMetadata.maybeOf(context);
-    if (newContent != null) {
-      if (newContent.isVideo) {
+    if (!widget.forceShow) {
+      final newContent = ImageViewWidgetsNotifier.of(context);
+      if (newContent.videoContent()) {
         animationController.forward();
       } else {
         animationController.reverse();

@@ -84,9 +84,7 @@ class GelbooruPostRet {
 }
 
 @JsonSerializable()
-class _GelbooruPost extends PostImpl
-    with DefaultPostPressable<Post>
-    implements Post {
+class _GelbooruPost extends PostImpl implements Post {
   const _GelbooruPost({
     required this.height,
     required this.id,

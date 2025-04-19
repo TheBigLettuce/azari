@@ -205,9 +205,9 @@ class SelectionBarAction {
   /// [onPress] is called when the button gets pressed,
   /// if [showOnlyWhenSingle] is true then this is guranteed to be called
   /// with [selected] elements zero or one.
-  final void Function(List<CellBase> selected) onPress;
+  final void Function(List<CellBuilder> selected) onPress;
 
-  final void Function(List<CellBase> selected)? onLongPress;
+  final void Function(List<CellBuilder> selected)? onLongPress;
 }
 
 abstract class SelectionActions {

@@ -15,10 +15,9 @@ import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
-import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/gallery/directories_actions.dart";
+import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
@@ -53,7 +52,7 @@ class GallerySearchPage extends StatefulWidget {
   }) {
     if (!hasServicesRequired()) {
       // TODO: change
-      showSnackbar(context, "Search functionality isn't available");
+      addAlert("GallerySearchPage", "Search functionality isn't available");
 
       return Future.value();
     }

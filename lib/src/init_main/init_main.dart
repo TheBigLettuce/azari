@@ -33,6 +33,8 @@ void _initLogger() {
 
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((r) {
+    AlertService.safe()?.add(_LogMessage(r));
+
     log(
       r.message,
       time: r.time,
@@ -49,4 +51,23 @@ void _initLogger() {
 void _changeExceptionErrorColors() {
   RenderErrorBox.backgroundColor = Colors.blue.shade800;
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
+}
+
+class _LogMessage implements AlertData {
+  _LogMessage(this.r);
+
+  @override
+  final (VoidCallback, Icon)? onPressed = null;
+
+  final LogRecord r;
+
+  @override
+  String title() {
+    return "Log: ${r.message}";
+  }
+
+  @override
+  String? expandedInfo() {
+    return r.stackTrace?.toString();
+  }
 }

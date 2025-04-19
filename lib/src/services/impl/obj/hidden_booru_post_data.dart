@@ -3,28 +3,33 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:cached_network_image/cached_network_image.dart";
-import "package:flutter/widgets.dart";
+import "package:flutter/material.dart";
 
 @immutable
 abstract class HiddenBooruPostDataImpl
-    with DefaultBuildCellImpl
+    with DefaultBuildCell, CellBuilderData
     implements HiddenBooruPostData {
   const HiddenBooruPostDataImpl();
 
   @override
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
-      CachedNetworkImageProvider(thumbUrl);
+  TileDismiss dismiss() => TileDismiss(
+        () {
+          const HiddenBooruPostsService().removeAll([(postId, booru)]);
+        },
+        Icons.image_rounded,
+      );
 
   @override
   Key uniqueKey() => ValueKey((postId, booru));
 
   @override
-  String alias(bool isList) => "$postId";
+  String title(AppLocalizations l10n) => "$postId";
 
   @override
-  CellStaticData description() => const CellStaticData();
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
 }

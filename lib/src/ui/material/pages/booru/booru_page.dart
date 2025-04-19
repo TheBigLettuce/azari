@@ -13,6 +13,7 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/bookmark_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
@@ -64,8 +65,8 @@ class BooruPage extends StatefulWidget {
     required void Function(bool) procPop,
   }) {
     if (!hasServicesRequired()) {
-      showSnackbar(
-        context,
+      addAlert(
+        "BooruPage",
         "Booru functionality isn't available", // TODO: change
       );
 
@@ -516,11 +517,10 @@ class GridConfigPlaceholders extends StatefulWidget {
   const GridConfigPlaceholders({
     super.key,
     required this.progress,
-    this.description = const CellStaticData(),
     this.randomNumber = 2,
   });
 
-  final CellStaticData description;
+  // final CellBuilderData description;
   final int randomNumber;
   final RefreshingProgress progress;
 
@@ -558,10 +558,11 @@ class _GridConfigPlaceholdersState extends State<GridConfigPlaceholders> {
     return switch (gridConfig.layoutType) {
       GridLayoutType.grid ||
       GridLayoutType.list =>
-        ListLayoutPlaceholder(description: widget.description),
+        const ListLayoutPlaceholder(),
       GridLayoutType.gridQuilted => GridQuiltedLayoutPlaceholder(
-          description: widget.description,
           randomNumber: widget.randomNumber,
+          circle: false,
+          tightMode: false,
         ),
     };
   }
@@ -576,11 +577,13 @@ class OnBooruTagPressed extends InheritedWidget {
 
   final OnBooruTagPressedFunc onPressed;
 
-  static OnBooruTagPressedFunc of(BuildContext context) {
+  static OnBooruTagPressedFunc of(BuildContext context) => maybeOf(context)!;
+
+  static OnBooruTagPressedFunc? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
 
-    return widget!.onPressed;
+    return widget?.onPressed;
   }
 
   static void pressOf(
@@ -820,10 +823,10 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
                         overrideSafeMode:
                             const SettingsService().current.safeMode,
                       ),
-                      onLongPress: () => Post.imageViewSingle(
+                      onLongPress: () => openPostAsync(
                         context,
-                        widget.api.booru,
-                        tag.postId,
+                        booru: widget.api.booru,
+                        postId: tag.postId,
                       ),
                       overlayColor: WidgetStateProperty.resolveWith(
                           (Set<WidgetState> states) {

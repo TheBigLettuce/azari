@@ -5,13 +5,14 @@
 
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
-class GridLayout<T extends CellBase> extends StatefulWidget {
+class GridLayout<T extends CellBuilder> extends StatefulWidget {
   const GridLayout({
     super.key,
     required this.source,
@@ -31,7 +32,7 @@ class GridLayout<T extends CellBase> extends StatefulWidget {
   State<GridLayout<T>> createState() => _GridLayoutState();
 }
 
-class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>>
+class _GridLayoutState<T extends CellBuilder> extends State<GridLayout<T>>
     with ResetSelectionOnUpdate<T, GridLayout<T>> {
   @override
   ReadOnlyStorage<int, T> get source => widget.source;
@@ -42,50 +43,75 @@ class _GridLayoutState<T extends CellBase> extends State<GridLayout<T>>
   @override
   Widget build(BuildContext context) {
     final config = ShellConfiguration.of(context);
+    final l10n = context.l10n();
 
     return EmptyWidgetOrContent(
       source: source,
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
-      child: SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          childAspectRatio: config.aspectRatio.value,
-          crossAxisCount: config.columns.number,
-        ),
-        itemCount: source.count,
-        itemBuilder: (context, idx) {
-          final cell = widget.source[idx];
+      child: TrackedIndex.wrap(
+        SliverGrid.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            childAspectRatio: config.aspectRatio.value,
+            crossAxisCount: config.columns.number,
+          ),
+          itemCount: source.count,
+          itemBuilder: (context, idx) {
+            final cell = widget.source[idx];
 
-          return cell.buildCell<T>(
-            context,
-            idx,
-            cell,
-            hideTitle: config.hideName,
-            isList: false,
-            imageAlign: Alignment.center,
-            animated: PlayAnimations.maybeOf(context) ?? false,
-            wrapSelection: (child) =>
-                cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-                      context: context,
-                      thisIndx: idx,
-                      onPressed: cell.tryAsPressable(
-                        context,
-                        idx,
-                      ),
-                      description: cell.description(),
-                      selectFrom: null,
-                      child: child,
-                    ) ??
-                WrapSelection<T>(
-                  thisIndx: idx,
-                  onPressed: cell.tryAsPressable(context, idx),
-                  description: cell.description(),
-                  selectFrom: null,
-                  child: child,
+            return TrackingIndexHolder(
+              idx: idx,
+              child: ThisIndex(
+                idx: idx,
+                selectFrom: null,
+                child: Builder(
+                  builder: (context) => cell.buildCell(
+                    l10n,
+                    hideName: config.hideName,
+                    cellType: CellType.cell,
+                  ),
                 ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
+  }
+}
+
+class TrackingIndexHolder extends StatefulWidget {
+  const TrackingIndexHolder({
+    super.key,
+    required this.idx,
+    required this.child,
+  });
+
+  final int idx;
+  final Widget child;
+
+  @override
+  State<TrackingIndexHolder> createState() => _TrackingIndexHolderState();
+}
+
+class _TrackingIndexHolderState extends State<TrackingIndexHolder> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newI = TrackedIndex.of(context);
+
+    if (newI == widget.idx) {
+      Scrollable.ensureVisible(
+        context,
+        duration: Durations.medium3, curve: Easing.standard,
+        // alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }

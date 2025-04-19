@@ -5,10 +5,10 @@
 
 import "dart:async";
 
+import "package:azari/src/init_main/build_theme.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
 
 class RestartWidget extends StatefulWidget {
   const RestartWidget({
@@ -26,27 +26,82 @@ class RestartWidget extends StatefulWidget {
   State<RestartWidget> createState() => _RestartWidgetState();
 }
 
-class _RestartWidgetState extends State<RestartWidget> {
+class _RestartWidgetState extends State<RestartWidget>
+    with SingleTickerProviderStateMixin {
   Key key = UniqueKey();
+  late final AnimationController controller;
 
-  void restartApp() {
-    setState(() {
-      key = UniqueKey();
-    });
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(
+      value: 1,
+      vsync: this,
+      duration: Durations.extralong3,
+      reverseDuration: Durations.long1,
+    );
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  void restartApp() {
+    controller.reverse().then((_) {
+      setState(() {
+        key = UniqueKey();
+      });
+
+      controller.forward();
+    });
+  }
+
+  final _tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+  final _accelTween = CurveTween(curve: Easing.emphasizedAccelerate);
+  final _decelTween = CurveTween(curve: Easing.emphasizedDecelerate);
+
+  @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (context) {
-        return PinnedTagsHolder(
+    final accentColor = const AppApi().accentColor;
+
+    final d = buildTheme(Brightness.dark, accentColor);
+    final l = buildTheme(Brightness.light, accentColor);
+
+    return KeyedSubtree(
+      key: key,
+      child: ColoredBox(
+        color: switch (MediaQuery.platformBrightnessOf(context)) {
+          Brightness.dark => d.colorScheme.surface,
+          Brightness.light => l.colorScheme.surface,
+        },
+        child: PinnedTagsHolder(
           pinnedTags: TagManagerService.safe()?.pinned,
-          child: KeyedSubtree(
-            key: key,
-            child: widget.child.animate(effects: [const FadeEffect()]),
+          child: AnimatedBuilder(
+            animation: controller.view,
+            builder: (context, child) => Opacity(
+              opacity: controller.value,
+              child: FractionalTranslation(
+                translation: _tween.evaluate(
+                  switch (controller.status) {
+                    AnimationStatus.completed ||
+                    AnimationStatus.dismissed ||
+                    AnimationStatus.forward =>
+                      _decelTween.animate(controller.view),
+                    AnimationStatus.reverse =>
+                      _accelTween.animate(controller.view),
+                  },
+                ),
+                child: child,
+              ),
+            ),
+            child: widget.child,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -263,7 +318,15 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
   void initState() {
     super.initState();
 
-    countEvents = widget.pinnedTags?.watchCount(
+    count = widget.pinnedTags?.count ?? 0;
+
+    pinnedTags = (widget.pinnedTags?.get(-1) ?? []).fold({}, (map, e) {
+      map[e.tag] = null;
+
+      return map;
+    });
+
+    countEvents = widget.pinnedTags?.events.listen(
       (newCount) {
         if (newCount != count) {
           count = newCount;
@@ -277,7 +340,6 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
           setState(() {});
         }
       },
-      true,
     );
   }
 

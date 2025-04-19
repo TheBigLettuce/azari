@@ -29,8 +29,6 @@ class GenericListSource<V> implements ResourceSource<int, V> {
   final Future<List<V>> Function()? _clearRefresh;
   final Future<List<V>> Function()? _next;
 
-  // final WatchFire<int>? watchCount;
-
   late final StreamSubscription<int>? _subscription;
 
   @override

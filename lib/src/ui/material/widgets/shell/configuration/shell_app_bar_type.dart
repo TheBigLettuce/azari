@@ -9,8 +9,11 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
+import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -162,7 +165,8 @@ class ChainedFilterIcon extends StatelessWidget {
                 // onChange: onChange,
                 onChange: null,
                 controller: controller,
-                focusNode: focusNode,
+                focusNode: focusNode, selectColors: filter.setColors,
+                currentColors: filter.filteringColors,
               ),
             );
           },
@@ -256,6 +260,8 @@ class _FilteringWidget extends StatefulWidget {
     required this.controller,
     required this.complete,
     required this.focusNode,
+    required this.selectColors,
+    required this.currentColors,
   });
 
   final void Function(String?)? onChange;
@@ -263,9 +269,11 @@ class _FilteringWidget extends StatefulWidget {
   final FocusNode focusNode;
   final FilteringMode currentFilter;
   final SortingMode currentSorting;
+  final FilteringColors? currentColors;
   final Set<FilteringMode> enabledModes;
   final Set<SortingMode> enabledSorting;
   final FilteringMode Function(FilteringMode) select;
+  final void Function(FilteringColors)? selectColors;
   final void Function(SortingMode) selectSorting;
   final Future<List<BooruTag>> Function(String string)? complete;
 
@@ -273,9 +281,11 @@ class _FilteringWidget extends StatefulWidget {
   State<_FilteringWidget> createState() => __FilteringWidgetState();
 }
 
-class __FilteringWidgetState extends State<_FilteringWidget> {
+class __FilteringWidgetState extends State<_FilteringWidget>
+    with ColorsNamesWatcherMixin {
   late FilteringMode currentFilter = widget.currentFilter;
   late SortingMode currentSorting = widget.currentSorting;
+  late FilteringColors? currentColors = widget.currentColors;
 
   void _selectFilter(FilteringMode? mode) {
     if (mode == null) {
@@ -303,118 +313,152 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
     }
   }
 
+  void _selectColors(FilteringColors? colors) {
+    currentColors = colors;
+
+    widget.selectColors!(colors ?? FilteringColors.noColor);
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
+    final theme = Theme.of(context);
 
     return Padding(
       padding: MediaQuery.viewInsetsOf(context),
       child: SizedBox(
         width: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.filteringLabel,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            if (widget.onChange != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                child: widget.complete != null
-                    ? SearchBarAutocompleteWrapper(
-                        search: SearchBarAppBarType(
-                          onChanged: widget.onChange,
-                          complete: widget.complete,
-                          textEditingController: widget.controller,
-                        ),
-                        searchFocus: widget.focusNode,
-                        child: (
-                          context,
-                          controller,
-                          focus,
-                          onSubmitted,
-                        ) =>
-                            SearchBar(
-                          onSubmitted: (str) {
-                            onSubmitted();
-                            widget.onChange?.call(str);
-                          },
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.filteringLabel,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (widget.onChange != null)
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: widget.complete != null
+                      ? SearchBarAutocompleteWrapper(
+                          search: SearchBarAppBarType(
+                            onChanged: widget.onChange,
+                            complete: widget.complete,
+                            textEditingController: widget.controller,
+                          ),
+                          searchFocus: widget.focusNode,
+                          child: (
+                            context,
+                            controller,
+                            focus,
+                            onSubmitted,
+                          ) =>
+                              SearchBar(
+                            onSubmitted: (str) {
+                              onSubmitted();
+                              widget.onChange?.call(str);
+                            },
+                            elevation: const WidgetStatePropertyAll(0),
+                            focusNode: focus,
+                            controller: controller,
+                            onChanged: widget.onChange,
+                            hintText: l10n.filterHint,
+                            leading: const Icon(Icons.search_rounded),
+                            trailing: [
+                              IconButton(
+                                onPressed: () {
+                                  controller.text = "";
+                                  widget.onChange?.call("");
+                                },
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
+                          ),
+                        )
+                      : SearchBar(
                           elevation: const WidgetStatePropertyAll(0),
-                          focusNode: focus,
-                          controller: controller,
+                          controller: widget.controller,
                           onChanged: widget.onChange,
                           hintText: l10n.filterHint,
                           leading: const Icon(Icons.search_rounded),
                           trailing: [
                             IconButton(
                               onPressed: () {
-                                controller.text = "";
+                                widget.controller.text = "";
                                 widget.onChange?.call("");
                               },
                               icon: const Icon(Icons.close_rounded),
                             ),
                           ],
                         ),
-                      )
-                    : SearchBar(
-                        elevation: const WidgetStatePropertyAll(0),
-                        controller: widget.controller,
-                        onChanged: widget.onChange,
-                        hintText: l10n.filterHint,
-                        leading: const Icon(Icons.search_rounded),
-                        trailing: [
-                          IconButton(
-                            onPressed: () {
-                              widget.controller.text = "";
-                              widget.onChange?.call("");
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
+                ),
+              if (widget.selectColors != null)
+                SegmentedButtonGroup<FilteringColors>(
+                  variant: SegmentedButtonVariant.chip,
+                  select: _selectColors,
+                  selected: currentColors,
+                  allowUnselect: true,
+                  reorder: false,
+                  onLongPress: (e) =>
+                      StarsButton.openChangeColorNameDialog(context, e),
+                  values: FilteringColors.values
+                      .where((e) => e != FilteringColors.noColor)
+                      .map(
+                        (e) => SegmentedButtonValue(
+                          e,
+                          e.translatedString(l10n, colorsNames),
+                          icon: Icons.circle_rounded,
+                          iconColor:
+                              e.color.harmonizeWith(theme.colorScheme.primary),
+                        ),
                       ),
-              ),
-            SegmentedButtonGroup<FilteringMode>(
-              variant: SegmentedButtonVariant.chip,
-              select: _selectFilter,
-              selected: currentFilter,
-              allowUnselect: true,
-              reorder: false,
-              values: widget.enabledModes
-                  .where((element) => element != FilteringMode.noFilter)
-                  .map(
-                    (e) => SegmentedButtonValue(
-                      e,
-                      e.translatedString(l10n),
-                      icon: e.icon,
-                    ),
-                  ),
-              title: l10n.filteringModesLabel,
-            ),
-            SegmentedButtonGroup<SortingMode>(
-              variant: SegmentedButtonVariant.chip,
-              select: _selectSorting,
-              selected: currentSorting,
-              showSelectedIcon: false,
-              reorder: false,
-              values: widget.enabledSorting.isEmpty
-                  ? <SegmentedButtonValue<SortingMode>>[
-                      SegmentedButtonValue(
-                        currentSorting,
-                        currentSorting.translatedString(l10n),
-                      ),
-                    ]
-                  : widget.enabledSorting.map(
+                  title: "Color tags", // TODO: change
+                ),
+              SegmentedButtonGroup<FilteringMode>(
+                variant: SegmentedButtonVariant.chip,
+                select: _selectFilter,
+                selected: currentFilter,
+                allowUnselect: true,
+                reorder: false,
+                values: widget.enabledModes
+                    .where((element) => element != FilteringMode.noFilter)
+                    .map(
                       (e) => SegmentedButtonValue(
                         e,
                         e.translatedString(l10n),
-                        icon: e.icons(currentSorting),
+                        icon: e.icon,
                       ),
                     ),
-              title: l10n.sortingModesLabel,
-            ),
-            const Padding(padding: EdgeInsets.only(bottom: 8)),
-          ],
+                title: l10n.filteringModesLabel,
+              ),
+              SegmentedButtonGroup<SortingMode>(
+                variant: SegmentedButtonVariant.chip,
+                select: _selectSorting,
+                selected: currentSorting,
+                showSelectedIcon: false,
+                reorder: false,
+                values: widget.enabledSorting.isEmpty
+                    ? <SegmentedButtonValue<SortingMode>>[
+                        SegmentedButtonValue(
+                          currentSorting,
+                          currentSorting.translatedString(l10n),
+                        ),
+                      ]
+                    : widget.enabledSorting.map(
+                        (e) => SegmentedButtonValue(
+                          e,
+                          e.translatedString(l10n),
+                          icon: e.icons(currentSorting),
+                        ),
+                      ),
+                title: l10n.sortingModesLabel,
+              ),
+              const Padding(padding: EdgeInsets.only(bottom: 8)),
+            ],
+          ),
         ),
       ),
     );

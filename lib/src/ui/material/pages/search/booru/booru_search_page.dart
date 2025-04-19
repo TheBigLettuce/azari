@@ -49,7 +49,7 @@ class BooruSearchPage extends StatefulWidget {
   }) {
     if (!hasServicesRequired()) {
       // TODO: change
-      showSnackbar(context, "Search functionality isn't available");
+      addAlert("BooruSearchPage", "Search functionality isn't available");
 
       return;
     }

@@ -50,16 +50,34 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
 
     impl = PlatformImageViewStateImpl(
       source: _search.source,
+      onTagPressed: (context, tag) => BooruRestoredPage.open(
+        context,
+        booru: const SettingsService().current.selectedBooru,
+        tags: tag,
+        saveSelectedPage: (_) {},
+        rootNavigator: true,
+      ),
+      onTagLongPressed: (context, tag) {
+        final l10n = context.l10n();
+
+        return radioDialog(
+          context,
+          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+          const SettingsService().current.safeMode,
+          (e) => BooruRestoredPage.open(
+            context,
+            booru: const SettingsService().current.selectedBooru,
+            tags: tag,
+            saveSelectedPage: (_) {},
+            rootNavigator: true,
+          ),
+          title: l10n.chooseSafeMode,
+        );
+      },
       wrapNotifiers: (child) => ReturnFileCallbackNotifier(
         callback: null,
         child: child,
       ),
-      watchTags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.watchTags
-          : null,
-      tags: LocalTagsService.available && TagManagerService.available
-          ? FileImpl.imageTags
-          : null,
     );
 
     refreshingEvents = fileSource.progress.watch((_) {
@@ -76,16 +94,10 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
         fileSource.clearRefresh();
       });
     });
-
-    platform.FlutterGalleryData.setUp(impl);
-    platform.GalleryVideoEvents.setUp(impl);
   }
 
   @override
   void dispose() {
-    platform.FlutterGalleryData.setUp(null);
-    platform.GalleryVideoEvents.setUp(null);
-
     impl.dispose();
 
     subscr.cancel();
@@ -162,6 +174,9 @@ class _FilesCell extends StatelessWidget {
   final File file;
 
   void onPressed(BuildContext context) {
+    platform.FlutterGalleryData.setUp(impl);
+    platform.GalleryVideoEvents.setUp(impl);
+
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         builder: (context) {
@@ -171,7 +186,10 @@ class _FilesCell extends StatelessWidget {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      platform.FlutterGalleryData.setUp(null);
+      platform.GalleryVideoEvents.setUp(null);
+    });
   }
 
   @override
@@ -198,7 +216,7 @@ class _FilesCell extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: GridCellImage(
                 imageAlign: Alignment.topCenter,
-                thumbnail: file.thumbnail(context),
+                thumbnail: file.thumbnail(),
                 blur: false,
               ),
             ),

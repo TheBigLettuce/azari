@@ -39,7 +39,7 @@ class __DirectoryListState extends State<_DirectoryList> {
     filter = ChainedFilterResourceSource.basic(
       widget.source,
       ListStorage(),
-      filter: (e, filteringMode, sortingMode, end, [data]) {
+      filter: (e, filteringMode, sortingMode, colors, end, data) {
         if (filteringValue.isEmpty) {
           return (const [], null);
         }
@@ -182,7 +182,7 @@ class _DirectoryCell extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: GridCellImage(
                 imageAlign: Alignment.topCenter,
-                thumbnail: directory.thumbnail(context),
+                thumbnail: directory.thumbnail(),
                 blur: toBlur,
               ),
             ),

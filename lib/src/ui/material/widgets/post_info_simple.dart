@@ -44,7 +44,7 @@ class PostInfoSimple extends StatelessWidget {
             PostInfoTile(post: post),
             const Padding(padding: EdgeInsets.only(top: 4)),
             const Divider(indent: 24, endIndent: 24),
-            PostActionChips(post: post, addAppBarActions: true),
+            PostActionChips(post: post),
           ],
         ),
       ],

@@ -365,17 +365,9 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
   });
 }
 
-// abstract interface class DownloadHandle implements CellBase, Thumbnailable {
-//   String get key;
-
-//   DownloadEntry get data;
-
-//   void cancel();
-
-//   StreamSubscription<double> watchProgress(PercentageCallback f);
-// }
-
-class DownloadHandle with DefaultBuildCellImpl {
+class DownloadHandle
+    with DefaultBuildCell, CellBuilderData
+    implements CellBuilder {
   DownloadHandle({
     required this.data,
     required this.token,
@@ -401,13 +393,28 @@ class DownloadHandle with DefaultBuildCellImpl {
   void cancel() => token.cancel();
 
   @override
-  CellStaticData description() => const CellStaticData();
+  Widget buildCell(
+    AppLocalizations l10n, {
+    required CellType cellType,
+    required bool hideName,
+    Alignment imageAlign = Alignment.center,
+  }) =>
+      WrapSelection(
+        onPressed: null,
+        child: super.buildCell(
+          l10n,
+          cellType: cellType,
+          hideName: hideName,
+          imageAlign: imageAlign,
+        ),
+      );
 
   @override
-  String alias(bool long) => data.name;
-
-  ImageProvider<Object> thumbnail(BuildContext? context) =>
+  ImageProvider<Object> thumbnail() =>
       CachedNetworkImageProvider(data.thumbUrl);
+
+  @override
+  String title(AppLocalizations l10n) => data.name;
 
   @override
   Key uniqueKey() => ValueKey(data.url);

@@ -5,45 +5,45 @@
 
 part of "../shell_scope.dart";
 
-class WrapSelection<T extends CellBase> extends StatelessWidget {
+class WrapSelection extends StatelessWidget {
   const WrapSelection({
     super.key,
-    required this.thisIndx,
-    required this.description,
-    required this.selectFrom,
+    // required this.selectFrom,
     required this.onPressed,
     this.onDoubleTap,
     this.limitedSize = false,
     this.shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(15)),
     ),
+    this.ignoreSwipeSelectGesture = false,
+    this.overrideIdx,
     required this.child,
   });
 
   final bool limitedSize;
+  final bool ignoreSwipeSelectGesture;
 
-  final int thisIndx;
-
-  final List<int>? selectFrom;
-
-  final CellStaticData description;
+  // final List<int>? selectFrom;
 
   final ShapeBorder shape;
 
   final VoidCallback? onPressed;
   final ContextCallback? onDoubleTap;
 
+  final (int, List<int>?)? overrideIdx;
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final thisIdx = overrideIdx ?? ThisIndex.maybeOf(context);
     SelectionCountNotifier.maybeCountOf(context);
     final selection = ShellSelectionHolder.maybeOf(context);
 
     if (selection == null) {
       return _WrappedSelectionCore(
-        thisIndx: thisIndx,
-        selectFrom: selectFrom,
+        thisIndx: thisIdx?.$1 ?? -1,
+        selectFrom: thisIdx?.$2,
         onDoubleTap: onDoubleTap,
         shape: shape,
         selection: null,
@@ -53,8 +53,8 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       );
     } else if (selection.actions.isEmpty) {
       return _WrappedSelectionCore(
-        thisIndx: thisIndx,
-        selectFrom: selectFrom,
+        thisIndx: thisIdx?.$1 ?? -1,
+        selectFrom: thisIdx?.$2,
         onDoubleTap: onDoubleTap,
         shape: shape,
         selection: null,
@@ -64,38 +64,40 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
       );
     }
 
-    if (thisIndx.isNegative || description.ignoreSwipeSelectGesture) {
+    if (thisIdx != null && thisIdx.$1.isNegative || ignoreSwipeSelectGesture) {
       return _WrappedSelectionCore(
+        thisIndx: thisIdx?.$1 ?? -1,
+        selectFrom: thisIdx?.$2,
         selection: selection,
         onDoubleTap: onDoubleTap,
-        selectFrom: selectFrom,
         shape: shape,
         onPressed: onPressed,
-        thisIndx: thisIndx,
         limitedSize: limitedSize,
         child: child,
       );
     }
 
     return DragTarget(
-      onAcceptWithDetails: (data) {
-        selection.selectOrUnselect(
-          thisIndx,
-        );
-      },
-      onLeave: (data) {
-        final c = ShellScrollNotifier.of(context);
-        if (!c.hasClients) {
-          return;
-        }
+      onAcceptWithDetails: thisIdx == null
+          ? null
+          : (data) {
+              selection.selectOrUnselect(thisIdx.$1);
+            },
+      onLeave: thisIdx == null
+          ? null
+          : (data) {
+              final c = ShellScrollNotifier.of(context);
+              if (!c.hasClients) {
+                return;
+              }
 
-        if (c.position.isScrollingNotifier.value &&
-            selection.isSelected(thisIndx)) {
-          return;
-        }
+              if (c.position.isScrollingNotifier.value &&
+                  selection.isSelected(thisIdx.$1)) {
+                return;
+              }
 
-        selection.selectOrUnselect(thisIndx);
-      },
+              selection.selectOrUnselect(thisIdx.$1);
+            },
       onWillAcceptWithDetails: (data) => true,
       builder: (context, _, __) {
         if (selection.isNotEmpty) {
@@ -104,11 +106,11 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
             affinity: Axis.horizontal,
             feedback: const SizedBox(),
             child: _WrappedSelectionCore(
-              thisIndx: thisIndx,
+              thisIndx: thisIdx?.$1 ?? -1,
+              selectFrom: thisIdx?.$2,
               shape: shape,
               onPressed: onPressed,
               onDoubleTap: onDoubleTap,
-              selectFrom: selectFrom,
               selection: selection,
               limitedSize: limitedSize,
               child: child,
@@ -120,11 +122,11 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
           data: 1,
           feedback: const SizedBox(),
           child: _WrappedSelectionCore(
-            thisIndx: thisIndx,
+            thisIndx: thisIdx?.$1 ?? -1,
+            selectFrom: thisIdx?.$2,
             shape: shape,
             onPressed: onPressed,
             onDoubleTap: onDoubleTap,
-            selectFrom: selectFrom,
             selection: selection,
             limitedSize: limitedSize,
             child: child,

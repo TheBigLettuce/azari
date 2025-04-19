@@ -5,11 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/action_button.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view_fab.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
@@ -75,7 +74,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    CurrentIndexMetadata.of(context);
+    // CurrentIndexMetadata.of(context);
 
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final theme = Theme.of(context);
@@ -92,6 +91,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
               : Brightness.dark,
       systemNavigationBarColor: colorScheme.surface.withValues(alpha: 0.4),
     );
+
+    final loader = ImageViewLoaderProvider.of(context);
 
     return _ExitOnPressRoute(
       scaffoldKey: widget.scaffoldKey,
@@ -151,54 +152,20 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                                       padding: EdgeInsets.only(left: 8),
                                     ),
                                     _CountButton(
+                                      loader: loader,
                                       showThumbnailsBar: () =>
                                           thumbnailsBarShowEvents.add(null),
                                     ),
                                   ],
                                 ),
-                                Builder(
-                                  builder: (context) {
-                                    final metadata =
-                                        CurrentIndexMetadata.of(context);
-                                    final appBarButtons =
-                                        metadata.appBarButtons(context);
-
-                                    return Row(
-                                      key: metadata.uniqueKey,
-                                      children: appBarButtons.reversed
-                                          .map(
-                                            (e) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 8,
-                                              ),
-                                              child: IconButtonTheme(
-                                                data: IconButtonThemeData(
-                                                  style: ButtonStyle(
-                                                    backgroundColor:
-                                                        WidgetStatePropertyAll(
-                                                      colorScheme.surface,
-                                                    ),
-                                                  ),
-                                                ),
-                                                child: e.overrideWidget ??
-                                                    IconButton(
-                                                      onPressed: e.onPressed,
-                                                      icon: Icon(e.icon),
-                                                      // style: ,
-                                                    ),
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
-                                    );
-                                  },
-                                ),
+                                const _AppBarButtons(),
                               ],
                             ),
                           ),
                         ),
                         Expanded(
                           child: _ThumbnailsBar(
+                            loader: loader,
                             events: thumbnailsBarShowEvents.stream,
                             stateControler: widget.stateControler,
                           ),
@@ -217,9 +184,9 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
               _BottomIcons(
                 videoControls: isWide ? null : widget.videoControls,
                 viewPadding: viewPadding,
-                visibilityController: visibilityController,
+                // visibilityController: visibilityController,
                 seekTimeAnchor: seekTimeAnchor,
-                pauseVideoState: widget.pauseVideoState,
+                // pauseVideoState: widget.pauseVideoState,
               ),
               SeekTimeAnchor(
                 key: seekTimeAnchor,
@@ -246,12 +213,39 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
   }
 }
 
+class _AppBarButtons extends StatelessWidget {
+  const _AppBarButtons({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final widgets = ImageViewWidgetsNotifier.of(context);
+
+    return IconButtonTheme(
+      data: IconButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            theme.colorScheme.surface,
+          ),
+        ),
+      ),
+      child: Row(
+        key: widgets.uniqueKey(),
+        children: widgets.appBarButtons(context),
+      ),
+    );
+  }
+}
+
 class _ThumbnailsBar extends StatefulWidget {
   const _ThumbnailsBar({
     // super.key,
     required this.events,
     required this.stateControler,
+    required this.loader,
   });
+
+  final ImageViewLoader loader;
 
   final ImageViewStateController stateControler;
   final Stream<void> events;
@@ -261,15 +255,16 @@ class _ThumbnailsBar extends StatefulWidget {
 }
 
 class __ThumbnailsBarState extends State<_ThumbnailsBar>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, ImageViewLoaderWatcher {
+  @override
+  ImageViewLoader get loader => widget.loader;
+
   late final AnimationController controller;
   late final StreamSubscription<void> _events;
   final itemPositionListener = ItemPositionsListener.create();
   final itemScrollController = ItemScrollController();
 
   bool isExpanded = false;
-
-  int currentIndex = 0;
 
   @override
   void initState() {
@@ -285,7 +280,7 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
         controller.reverse();
       } else {
         controller.forward().then((_) {
-          scrollTo(CurrentIndexMetadata.of(context).index);
+          scrollTo(loader.index);
         });
       }
     });
@@ -297,19 +292,6 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
     controller.dispose();
 
     super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final newIndex = CurrentIndexMetadata.of(context).index;
-    if (newIndex != currentIndex) {
-      currentIndex = newIndex;
-      if (itemScrollController.isAttached) {
-        scrollTo(currentIndex, true);
-      }
-    }
   }
 
   void scrollTo(int idx, [bool force = false]) {
@@ -346,9 +328,6 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
 
   @override
   Widget build(BuildContext context) {
-    final thumbnailsProvider = CurrentIndexMetadata.thumbnailsOf(context);
-    final metadata = CurrentIndexMetadata.of(context);
-
     return Animate(
       autoPlay: false,
       controller: controller,
@@ -370,18 +349,18 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
                   itemPositionsListener: itemPositionListener,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   scrollDirection: Axis.horizontal,
-                  itemCount: controller.isDismissed ? 0 : metadata.count,
+                  itemCount: controller.isDismissed ? 0 : loader.count,
                   itemBuilder: (context, index) {
-                    final thumbnail = thumbnailsProvider(index);
+                    final widgets = loader.get(index)!;
 
                     return _ThumbnailBarChild(
-                      index: index,
-                      thumbnail: thumbnail,
+                      thisIdx: index,
+                      isSelected: loader.index == index,
+                      widgets: widgets,
                       seekTo: (i) {
                         widget.stateControler.seekTo(index);
                         // scrollTo(index, true);
                       },
-                      metadata: metadata,
                     );
                   },
                 ),
@@ -410,29 +389,30 @@ class _NoBallisticScrollBehaviour extends MaterialScrollBehavior {
 class _ThumbnailBarChild extends StatelessWidget {
   const _ThumbnailBarChild({
     // super.key,
-    required this.index,
-    required this.thumbnail,
+    required this.isSelected,
+    required this.widgets,
     required this.seekTo,
-    required this.metadata,
+    required this.thisIdx,
   });
 
-  final int index;
+  final bool isSelected;
+  final int thisIdx;
 
-  final ImageProvider<Object>? thumbnail;
+  final ImageViewWidgets widgets;
 
   final void Function(int i) seekTo;
-  final CurrentIndexMetadata metadata;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final thumbnail = widgets.thumbnail();
 
     return InkWell(
       borderRadius: const BorderRadius.all(Radius.circular(15)),
-      onTap: metadata.index == index
+      onTap: isSelected
           ? null
           : () {
-              seekTo(index);
+              seekTo(thisIdx);
             },
       child: SizedBox(
         width: 100,
@@ -442,15 +422,15 @@ class _ThumbnailBarChild extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             color: theme.colorScheme.surface,
             shadowColor: Colors.black,
-            borderRadius: metadata.index == index
+            borderRadius: isSelected
                 ? const BorderRadius.all(Radius.circular(15))
                 : BorderRadius.zero,
-            elevation: metadata.index == index ? 3 : 1,
+            elevation: isSelected ? 3 : 1,
             duration: Durations.medium3,
             child: AnimatedContainer(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                borderRadius: metadata.index == index
+                borderRadius: isSelected
                     ? const BorderRadius.all(Radius.circular(15))
                     : BorderRadius.zero,
               ),
@@ -476,7 +456,7 @@ class _ThumbnailBarChild extends StatelessWidget {
                             ? const ShimmerLoadingIndicator()
                             : child.animate().fadeIn();
                       },
-                      image: thumbnail!,
+                      image: thumbnail,
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                     ),
@@ -515,7 +495,7 @@ class _ThumbnailBarChild extends StatelessWidget {
                         vertical: 4,
                       ),
                       child: Text(
-                        (index + 1).toString(),
+                        (thisIdx + 1).toString(),
                         style: theme.textTheme.labelLarge,
                       ),
                     ),
@@ -530,19 +510,30 @@ class _ThumbnailBarChild extends StatelessWidget {
   }
 }
 
-class _CountButton extends StatelessWidget {
+class _CountButton extends StatefulWidget {
   const _CountButton({
-    // super.key,
+    super.key,
     required this.showThumbnailsBar,
+    required this.loader,
   });
 
-  final void Function() showThumbnailsBar;
+  final ImageViewLoader loader;
+  final VoidCallback showThumbnailsBar;
+
+  @override
+  State<_CountButton> createState() => __CountButtonState();
+}
+
+class __CountButtonState extends State<_CountButton>
+    with ImageViewLoaderWatcher {
+  @override
+  ImageViewLoader get loader => widget.loader;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final metadata = CurrentIndexMetadata.of(context);
+    // final metadata = CurrentIndexMetadata.of(context);
 
     return SizedBox(
       height: 40,
@@ -550,7 +541,7 @@ class _CountButton extends StatelessWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.all(Radius.circular(10)),
           child: GestureDetector(
-            onTap: showThumbnailsBar,
+            onTap: widget.showThumbnailsBar,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerLowest,
@@ -559,10 +550,10 @@ class _CountButton extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Text.rich(
                   TextSpan(
-                    text: "${metadata.index + 1}",
+                    text: "${loader.index + 1}",
                     children: [
                       TextSpan(
-                        text: "/${metadata.count}",
+                        text: "/${loader.count}",
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.6),
@@ -584,35 +575,22 @@ class _CountButton extends StatelessWidget {
   }
 }
 
-class _BottomIcons extends StatefulWidget {
+class _BottomIcons extends StatelessWidget {
   const _BottomIcons({
     // super.key,
     required this.viewPadding,
-    required this.visibilityController,
     required this.videoControls,
     required this.seekTimeAnchor,
-    required this.pauseVideoState,
   });
 
   final EdgeInsets viewPadding;
 
-  final AnimationController visibilityController;
-
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
   final VideoControlsControllerImpl? videoControls;
-  final PauseVideoState pauseVideoState;
 
-  @override
-  State<_BottomIcons> createState() => __BottomIconsState();
-}
-
-class __BottomIconsState extends State<_BottomIcons>
-    with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
-    final metadata = CurrentIndexMetadata.of(context);
-    final actions = metadata.actions(context);
-    final openMenuButton = metadata.openMenuButton(context);
+    final openInfo = ImageViewWidgetsNotifier.of(context).openInfo();
 
     return Animate(
       value: 1,
@@ -630,7 +608,7 @@ class __BottomIconsState extends State<_BottomIcons>
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: widget.viewPadding.bottom)
+            padding: EdgeInsets.only(bottom: viewPadding.bottom)
             // + const EdgeInsets.symmetric(horizontal: 16)
             ,
             child: Column(
@@ -642,156 +620,30 @@ class __BottomIconsState extends State<_BottomIcons>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Align(
+                        const Align(
                           alignment: Alignment.bottomCenter,
-                          child: SizedBox(
-                            width: 56,
-                            child: Column(
-                              key: metadata.uniqueKey,
-                              mainAxisSize: MainAxisSize.min,
-                              children: actions.reversed
-                                  .map(
-                                    (e) => ActionButton(
-                                      e.icon,
-                                      e.onPress == null
-                                          ? null
-                                          : () {
-                                              AppBarVisibilityNotifier
-                                                  .maybeToggleOf(
-                                                context,
-                                                true,
-                                              );
-
-                                              e.onPress!(metadata.index);
-                                            },
-                                      onLongPress: null,
-                                      play: e.play,
-                                      animate: e.animate,
-                                      color: e.color,
-                                      watch: e.watch,
-                                      animation: e.animation,
-                                      taskTag: e.taskTag,
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
+                          child: _Actions(),
                         ),
-                        Align(
+                        const Align(
                           alignment: Alignment.bottomCenter,
-                          child: Builder(
-                            builder: (context) {
-                              final theme = Theme.of(context);
-                              final colorScheme = theme.colorScheme;
-
-                              final stickers = CurrentIndexMetadata.of(context)
-                                  .stickers(context);
-
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 8,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: stickers
-                                      .map(
-                                        (e) => Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 8,
-                                          ),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              color: theme.colorScheme.surface,
-                                            ),
-                                            child: Padding(
-                                              padding: e.subtitle != null
-                                                  ? const EdgeInsets.symmetric(
-                                                      horizontal: 4,
-                                                      vertical: 2,
-                                                    )
-                                                  : const EdgeInsets.all(4),
-                                              child: e.subtitle != null
-                                                  ? Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          e.icon,
-                                                          size: 10,
-                                                          color: e.important
-                                                              ? colorScheme
-                                                                  .secondary
-                                                              : colorScheme
-                                                                  .onSurface
-                                                                  .withValues(
-                                                                  alpha: 0.6,
-                                                                ),
-                                                        ),
-                                                        const Padding(
-                                                          padding:
-                                                              EdgeInsets.only(
-                                                            right: 4,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          e.subtitle!,
-                                                          style: theme.textTheme
-                                                              .labelSmall
-                                                              ?.copyWith(
-                                                            color: e.important
-                                                                ? colorScheme
-                                                                    .secondary
-                                                                : colorScheme
-                                                                    .onSurface
-                                                                    .withValues(
-                                                                    alpha: 0.6,
-                                                                  ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  : Icon(
-                                                      e.icon,
-                                                      size: 16,
-                                                      color: e.important
-                                                          ? colorScheme
-                                                              .secondary
-                                                          : colorScheme
-                                                              .onSurface
-                                                              .withValues(
-                                                              alpha: 0.6,
-                                                            ),
-                                                    ),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              );
-                            },
-                          ),
+                          child: _Stickers(),
                         ),
                         Align(
                           alignment: Alignment.bottomCenter,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              if (widget.videoControls != null)
+                              if (videoControls != null)
                                 VideoControls(
-                                  videoControls: widget.videoControls!,
-                                  seekTimeAnchor: widget.seekTimeAnchor,
+                                  videoControls: videoControls!,
+                                  seekTimeAnchor: seekTimeAnchor,
                                   vertical: false,
                                 ),
                               const Padding(
                                 padding: EdgeInsets.only(bottom: 8),
                               ),
-                              if (openMenuButton != null) openMenuButton,
+                              if (openInfo != null)
+                                ImageViewFab(openBottomSheet: openInfo),
                             ],
                           ),
                         ),
@@ -809,10 +661,135 @@ class __BottomIconsState extends State<_BottomIcons>
   }
 }
 
+class _Actions extends StatelessWidget {
+  const _Actions({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final widgets = ImageViewWidgetsNotifier.of(context);
+    final actions = widgets.actions(context);
+
+    return SizedBox(
+      width: 56,
+      child: Column(
+        key: widgets.uniqueKey(),
+        mainAxisSize: MainAxisSize.min,
+        children: actions.reversed
+            .map(
+              (e) => ActionButton(
+                e.icon,
+                e.onPress == null
+                    ? null
+                    : () {
+                        AppBarVisibilityNotifier.maybeToggleOf(
+                          context,
+                          true,
+                        );
+
+                        e.onPress!();
+                      },
+                onLongPress: null,
+                play: e.play,
+                animate: e.animate,
+                color: e.color,
+                watch: e.watch,
+                animation: e.animation,
+                taskTag: e.taskTag,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _Stickers extends StatelessWidget {
+  const _Stickers({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final widgets = ImageViewWidgetsNotifier.of(context);
+    final stickers = widgets.stickers(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 8,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: stickers
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(
+                  right: 8,
+                ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: theme.colorScheme.surface,
+                  ),
+                  child: Padding(
+                    padding: e.subtitle != null
+                        ? const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          )
+                        : const EdgeInsets.all(4),
+                    child: e.subtitle != null
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                e.icon,
+                                size: 10,
+                                color: e.important
+                                    ? colorScheme.secondary
+                                    : colorScheme.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(
+                                  right: 4,
+                                ),
+                              ),
+                              Text(
+                                e.subtitle!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: e.important
+                                      ? colorScheme.secondary
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Icon(
+                            e.icon,
+                            size: 16,
+                            color: e.important
+                                ? colorScheme.secondary
+                                : colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
+                          ),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
 class _BottomRibbon extends StatelessWidget {
-  const _BottomRibbon({
-    super.key,
-  });
+  const _BottomRibbon({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -850,10 +827,20 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
   void initState() {
     super.initState();
 
-    pinnedTagList = widget.tags.list.where((e) => e.favorite).toList();
+    pinnedTagList = widget.tags.list
+        .where((e) => e.type == ImageTagType.favorite)
+        // .followedBy(
+        //   widget.tags.list.where((e) => e.type != ImageTagType.favorite),
+        // )
+        .toList();
 
     events = widget.tags.stream.listen((_) {
-      pinnedTagList = widget.tags.list.where((e) => e.favorite).toList();
+      pinnedTagList = widget.tags.list
+          .where((e) => e.type == ImageTagType.favorite)
+          // .followedBy(
+          //   widget.tags.list.where((e) => e.type != ImageTagType.favorite),
+          // )
+          .toList();
       setState(() {});
     });
   }
@@ -867,8 +854,6 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
 
   @override
   Widget build(BuildContext context) {
-    final tagsRes = widget.tags;
-
     return AnimatedSwitcher(
       duration: Durations.medium4,
       reverseDuration: Durations.medium1,
@@ -879,7 +864,7 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
         child: pinnedTagList.isEmpty
             ? const SizedBox.shrink()
             : SizedBox(
-                height: 24,
+                height: 26,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -894,27 +879,12 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
                       child: PinnedTagChip(
                         letterCount: -1,
                         tag: tag.tag,
-                        onPressed: tagsRes.res == null
-                            ? null
-                            : () {
-                                OnBooruTagPressed.maybePressOf(
-                                  context,
-                                  tag.tag,
-                                  tagsRes.res!.booru,
-                                );
-                              },
-                        onLongPressed: tagsRes.res == null
-                            ? null
-                            : () {
-                                context.openSafeModeDialog((value) {
-                                  OnBooruTagPressed.maybePressOf(
-                                    context,
-                                    tag.tag,
-                                    tagsRes.res!.booru,
-                                    overrideSafeMode: value,
-                                  );
-                                });
-                              },
+                        onPressed: tag.onTap != null
+                            ? () => tag.onTap!(context)
+                            : null,
+                        onLongPressed: tag.onLongTap != null
+                            ? () => tag.onLongTap!(context)
+                            : null,
                       ),
                     );
                   },
@@ -924,6 +894,15 @@ class __PinnedTagsRowState extends State<_PinnedTagsRow>
     );
   }
 }
+
+//  context.openSafeModeDialog((value) {
+//                                 OnBooruTagPressed.maybePressOf(
+//                                   context,
+//                                   tag.tag,
+//                                   tagsRes.res!.booru,
+//                                   overrideSafeMode: value,
+//                                 );
+//                               });
 
 class PinnedTagChip extends StatelessWidget {
   const PinnedTagChip({

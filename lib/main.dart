@@ -14,7 +14,6 @@ import "package:azari/src/logic/local_tags_helper.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
-import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/app_adaptive.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
@@ -31,7 +30,30 @@ part "main_pick_file.dart";
 part "main_quick_view.dart";
 
 void main() async {
-  await initMain(AppInstanceType.full);
+  await runZonedGuarded(
+    () async {
+      await initMain(AppInstanceType.full);
 
-  runApp(const AppAdaptive());
+      runApp(const AppAdaptive());
+    },
+    (error, stackTrace) {
+      AlertService.safe()?.add(_ExcMessage(error, stackTrace));
+    },
+  );
+}
+
+class _ExcMessage implements AlertData {
+  _ExcMessage(this.e, this.trace);
+
+  final Object e;
+  final StackTrace trace;
+
+  @override
+  (VoidCallback, Icon)? get onPressed => null;
+
+  @override
+  String title() => "Exception: $e";
+
+  @override
+  String? expandedInfo() => trace.toString();
 }

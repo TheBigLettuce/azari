@@ -64,20 +64,6 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
                 source: filter.backingStorage,
                 progress: filter.progress,
                 selection: status.selection,
-                itemFactory: (context, idx, cell) {
-                  return DefaultListTile(
-                    selection: status.selection,
-                    index: idx,
-                    cell: cell,
-                    hideThumbnails: false,
-                    dismiss: TileDismiss(
-                      () {
-                        backingStorage.removeAll([cell.bucketId]);
-                      },
-                      Icons.restore_page_rounded,
-                    ),
-                  );
-                },
               ),
             ],
           ),

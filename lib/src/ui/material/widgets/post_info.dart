@@ -20,6 +20,7 @@ import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.da
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/translation_notes.dart";
+import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -227,17 +228,16 @@ class PostActionChips extends StatelessWidget {
   const PostActionChips({
     super.key,
     required this.post,
-    this.addAppBarActions = false,
+    this.appButtons = const [],
   });
 
   final PostImpl post;
 
-  final bool addAppBarActions;
+  final List<Widget> appButtons;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    final appBarActions = post.appBarButtons(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -245,14 +245,7 @@ class PostActionChips extends StatelessWidget {
         spacing: 8,
         runSpacing: 4,
         children: [
-          if (addAppBarActions)
-            ...appBarActions.where((e) => e.onPressed != null).map(
-                  (e) => ActionChip(
-                    onPressed: e.onPressed,
-                    avatar: Icon(e.icon),
-                    label: Text(e.label),
-                  ),
-                ),
+          ...appButtons,
           ActionChip(
             onPressed: () => url.launchUrl(
               Uri.parse(post.fileDownloadUrl()),
@@ -357,15 +350,67 @@ class StarsButton extends StatefulWidget {
   final bool addBackground;
   final Object? heroKey;
 
+  static Future<void> openChangeColorNameDialog(
+    BuildContext context,
+    FilteringColors e,
+  ) {
+    return Navigator.of(context, rootNavigator: true).push(
+      DialogRoute<void>(
+        context: context,
+        builder: (context) {
+          final l10n = context.l10n();
+          final colorsNames = const ColorsNamesService().current;
+
+          return AlertDialog(
+            title: Text(
+              "Change ${e.translatedString(l10n, colorsNames)} to",
+            ),
+            content: TextField(
+              onSubmitted: (value) {
+                switch (e) {
+                  case FilteringColors.red:
+                    colorsNames.copy(red: value).maybeSave();
+                  case FilteringColors.blue:
+                    colorsNames.copy(blue: value).maybeSave();
+                  case FilteringColors.yellow:
+                    colorsNames.copy(yellow: value).maybeSave();
+                  case FilteringColors.green:
+                    colorsNames.copy(green: value).maybeSave();
+                  case FilteringColors.purple:
+                    colorsNames.copy(purple: value).maybeSave();
+                  case FilteringColors.orange:
+                    colorsNames.copy(orange: value).maybeSave();
+                  case FilteringColors.pink:
+                    colorsNames.copy(pink: value).maybeSave();
+                  case FilteringColors.white:
+                    colorsNames.copy(white: value).maybeSave();
+                  case FilteringColors.brown:
+                    colorsNames.copy(brown: value).maybeSave();
+                  case FilteringColors.black:
+                    colorsNames.copy(black: value).maybeSave();
+                  case FilteringColors.noColor:
+                }
+
+                Navigator.of(context, rootNavigator: true).pop();
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   State<StarsButton> createState() => _StarsButtonState();
 }
 
 class _StarsButtonState extends State<StarsButton>
-    with FavoritePostSourceService {
+    with FavoritePostSourceService, ColorsNamesWatcherMixin {
   (int id, Booru booru) get idBooru => widget.idBooru;
 
   late final StreamSubscription<void>? favoriteEvents;
+
+  final MenuController menuController = MenuController();
 
   FavoritePost? post;
 
@@ -395,112 +440,186 @@ class _StarsButtonState extends State<StarsButton>
       return const SizedBox.shrink();
     }
 
+    final l10n = context.l10n();
+
     final theme = Theme.of(context);
+    final color = post!.filteringColors == FilteringColors.noColor
+        ? null
+        : post!.filteringColors.color.harmonizeWith(theme.colorScheme.primary);
 
     return MenuAnchor(
       menuChildren: [
         Center(
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  if (post!.stars == FavoriteStars.one) {
-                    post!.copyWith(stars: FavoriteStars.zeroFive).maybeSave();
-                  } else if (post!.stars == FavoriteStars.zeroFive) {
-                    post!.copyWith(stars: FavoriteStars.zero).maybeSave();
-                  } else {
-                    post!.copyWith(stars: FavoriteStars.one).maybeSave();
-                  }
-                },
-                icon: post!.stars.includes(FavoriteStars.one)
-                    ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post!.stars.includes(FavoriteStars.zeroFive)
-                        ? const Icon(
-                            Icons.star_half_rounded,
-                            color: Colors.yellow,
-                          )
-                        : const Icon(Icons.star_border_rounded),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (post!.stars == FavoriteStars.two) {
-                    post!.copyWith(stars: FavoriteStars.oneFive).maybeSave();
-                  } else if (post!.stars == FavoriteStars.oneFive) {
-                    post!.copyWith(stars: FavoriteStars.one).maybeSave();
-                  } else {
-                    post!.copyWith(stars: FavoriteStars.two).maybeSave();
-                  }
-                },
-                icon: post!.stars.includes(FavoriteStars.two)
-                    ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post!.stars.includes(FavoriteStars.oneFive)
-                        ? const Icon(
-                            Icons.star_half_rounded,
-                            color: Colors.yellow,
-                          )
-                        : const Icon(Icons.star_border_rounded),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (post!.stars == FavoriteStars.three) {
-                    post!.copyWith(stars: FavoriteStars.twoFive).maybeSave();
-                  } else if (post!.stars == FavoriteStars.twoFive) {
-                    post!.copyWith(stars: FavoriteStars.two).maybeSave();
-                  } else {
-                    post!.copyWith(stars: FavoriteStars.three).maybeSave();
-                  }
-                },
-                icon: post!.stars.includes(FavoriteStars.three)
-                    ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post!.stars.includes(FavoriteStars.twoFive)
-                        ? const Icon(
-                            Icons.star_half_rounded,
-                            color: Colors.yellow,
-                          )
-                        : const Icon(Icons.star_border_rounded),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (post!.stars == FavoriteStars.four) {
-                    post!.copyWith(stars: FavoriteStars.threeFive).maybeSave();
-                  } else if (post!.stars == FavoriteStars.threeFive) {
-                    post!.copyWith(stars: FavoriteStars.three).maybeSave();
-                  } else {
-                    post!.copyWith(stars: FavoriteStars.four).maybeSave();
-                  }
-                },
-                icon: post!.stars.includes(FavoriteStars.four)
-                    ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post!.stars.includes(FavoriteStars.threeFive)
-                        ? const Icon(
-                            Icons.star_half_rounded,
-                            color: Colors.yellow,
-                          )
-                        : const Icon(Icons.star_border_rounded),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (post!.stars == FavoriteStars.five) {
-                    post!.copyWith(stars: FavoriteStars.fourFive).maybeSave();
-                  } else if (post!.stars == FavoriteStars.fourFive) {
-                    post!.copyWith(stars: FavoriteStars.four).maybeSave();
-                  } else {
-                    post!.copyWith(stars: FavoriteStars.five).maybeSave();
-                  }
-                },
-                icon: post!.stars.includes(FavoriteStars.five)
-                    ? const Icon(Icons.star_rounded, color: Colors.yellow)
-                    : post!.stars.includes(FavoriteStars.fourFive)
-                        ? const Icon(
-                            Icons.star_half_rounded,
-                            color: Colors.yellow,
-                          )
-                        : const Icon(Icons.star_border_rounded),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (post!.stars == FavoriteStars.one) {
+                          post!
+                              .copyWith(stars: FavoriteStars.zeroFive)
+                              .maybeSave();
+                        } else if (post!.stars == FavoriteStars.zeroFive) {
+                          post!.copyWith(stars: FavoriteStars.zero).maybeSave();
+                        } else {
+                          post!.copyWith(stars: FavoriteStars.one).maybeSave();
+                        }
+                      },
+                      icon: post!.stars.includes(FavoriteStars.one)
+                          ? Icon(Icons.star_rounded, color: color)
+                          : post!.stars.includes(FavoriteStars.zeroFive)
+                              ? Icon(
+                                  Icons.star_half_rounded,
+                                  color: color,
+                                )
+                              : Icon(Icons.star_border_rounded, color: color),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (post!.stars == FavoriteStars.two) {
+                          post!
+                              .copyWith(stars: FavoriteStars.oneFive)
+                              .maybeSave();
+                        } else if (post!.stars == FavoriteStars.oneFive) {
+                          post!.copyWith(stars: FavoriteStars.one).maybeSave();
+                        } else {
+                          post!.copyWith(stars: FavoriteStars.two).maybeSave();
+                        }
+                      },
+                      icon: post!.stars.includes(FavoriteStars.two)
+                          ? Icon(Icons.star_rounded, color: color)
+                          : post!.stars.includes(FavoriteStars.oneFive)
+                              ? Icon(
+                                  Icons.star_half_rounded,
+                                  color: color,
+                                )
+                              : Icon(Icons.star_border_rounded, color: color),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (post!.stars == FavoriteStars.three) {
+                          post!
+                              .copyWith(stars: FavoriteStars.twoFive)
+                              .maybeSave();
+                        } else if (post!.stars == FavoriteStars.twoFive) {
+                          post!.copyWith(stars: FavoriteStars.two).maybeSave();
+                        } else {
+                          post!
+                              .copyWith(stars: FavoriteStars.three)
+                              .maybeSave();
+                        }
+                      },
+                      icon: post!.stars.includes(FavoriteStars.three)
+                          ? Icon(Icons.star_rounded, color: color)
+                          : post!.stars.includes(FavoriteStars.twoFive)
+                              ? Icon(
+                                  Icons.star_half_rounded,
+                                  color: color,
+                                )
+                              : Icon(Icons.star_border_rounded, color: color),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (post!.stars == FavoriteStars.four) {
+                          post!
+                              .copyWith(stars: FavoriteStars.threeFive)
+                              .maybeSave();
+                        } else if (post!.stars == FavoriteStars.threeFive) {
+                          post!
+                              .copyWith(stars: FavoriteStars.three)
+                              .maybeSave();
+                        } else {
+                          post!.copyWith(stars: FavoriteStars.four).maybeSave();
+                        }
+                      },
+                      icon: post!.stars.includes(FavoriteStars.four)
+                          ? Icon(Icons.star_rounded, color: color)
+                          : post!.stars.includes(FavoriteStars.threeFive)
+                              ? Icon(
+                                  Icons.star_half_rounded,
+                                  color: color,
+                                )
+                              : Icon(Icons.star_border_rounded, color: color),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (post!.stars == FavoriteStars.five) {
+                          post!
+                              .copyWith(stars: FavoriteStars.fourFive)
+                              .maybeSave();
+                        } else if (post!.stars == FavoriteStars.fourFive) {
+                          post!.copyWith(stars: FavoriteStars.four).maybeSave();
+                        } else {
+                          post!.copyWith(stars: FavoriteStars.five).maybeSave();
+                        }
+                      },
+                      icon: post!.stars.includes(FavoriteStars.five)
+                          ? Icon(Icons.star_rounded, color: color)
+                          : post!.stars.includes(FavoriteStars.fourFive)
+                              ? Icon(
+                                  Icons.star_half_rounded,
+                                  color: color,
+                                )
+                              : Icon(Icons.star_border_rounded, color: color),
+                    ),
+                  ],
+                ),
+                const Padding(padding: EdgeInsets.only(top: 4)),
+                SizedBox(
+                  height: 32,
+                  width: 240,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: FilteringColors.values.length - 1,
+                    itemBuilder: (context, idx) {
+                      final e = FilteringColors.values[idx + 1];
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: FilterChip(
+                          deleteButtonTooltipMessage: "Change", // TODO: change
+                          onDeleted: () {
+                            menuController.close();
+
+                            StarsButton.openChangeColorNameDialog(context, e)
+                                .whenComplete(() => menuController.open());
+                          },
+                          deleteIcon: const Icon(Icons.mode_rounded),
+                          showCheckmark: false,
+                          selected: post!.filteringColors == e,
+                          avatar: Icon(
+                            Icons.circle_rounded,
+                            color: e.color
+                                .harmonizeWith(theme.colorScheme.primary),
+                          ),
+                          label: Text(e.translatedString(l10n, colorsNames)),
+                          onSelected: (selected) {
+                            if (!selected) {
+                              post!
+                                  .copyWith(
+                                    filteringColors: FilteringColors.noColor,
+                                  )
+                                  .maybeSave();
+                            } else {
+                              post!.copyWith(filteringColors: e).maybeSave();
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ).animate().fadeIn(),
       ],
+      controller: menuController,
       consumeOutsideTap: true,
       alignmentOffset: const Offset(0, 40),
       style: const MenuStyle(
@@ -547,19 +666,16 @@ class _StarsButtonState extends State<StarsButton>
             FavoriteStars.one ||
             FavoriteStars.oneFive ||
             FavoriteStars.two =>
-              const Icon(Icons.star_outline_rounded),
+              Icon(Icons.star_outline_rounded, color: color),
             FavoriteStars.twoFive ||
             FavoriteStars.three ||
             FavoriteStars.threeFive ||
             FavoriteStars.four ||
             FavoriteStars.fourFive =>
-              Icon(
-                Icons.star_half_rounded,
-                color: Colors.yellow.shade500,
-              ),
-            FavoriteStars.five => const Icon(
+              Icon(Icons.star_half_rounded, color: color),
+            FavoriteStars.five => Icon(
                 Icons.star_rounded,
-                color: Colors.yellowAccent,
+                color: color,
               ),
           },
         ),

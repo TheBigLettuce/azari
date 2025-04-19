@@ -6,11 +6,12 @@
 import "dart:async";
 
 import "package:azari/src/logic/local_tags_helper.dart";
+import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:flutter/material.dart";
 
-class LoadTags extends StatelessWidget {
+class LoadTags extends StatefulWidget {
   const LoadTags({
     super.key,
     required this.res,
@@ -19,7 +20,21 @@ class LoadTags extends StatelessWidget {
 
   final String filename;
 
-  final ParsedFilenameResult res;
+  final (int, Booru) res;
+
+  @override
+  State<LoadTags> createState() => _LoadTagsState();
+}
+
+class _LoadTagsState extends State<LoadTags> {
+  bool isConforming = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    isConforming = ParsedFilenameResult.fromFilename(widget.filename).hasValue;
+  }
 
   Future<void> _load() async {
     final localTags = LocalTagsService.safe();
@@ -29,26 +44,30 @@ class LoadTags extends StatelessWidget {
 
     try {
       final tags = await localTags.loadFromDissassemble(
-        filename,
-        res,
+        widget.filename,
+        widget.res,
       );
 
       localTags.addTagsPost(
-        filename,
+        widget.filename,
         tags,
         true,
       );
 
       GalleryApi.safe()?.notify(null);
-    } catch (e) {
-      // TODO: add snackbar somehow
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text(
-      //       l10n.notValidFilename(e.toString()),
-      //     ),
-      //   ),
-      // );
+    } catch (e, stackTrace) {
+      AlertService.safe()?.add(
+        AlertData(
+          e.toString(),
+          stackTrace.toString(),
+          (
+            () {
+              const TasksService().add<LoadTags>(_load);
+            },
+            const Icon(Icons.restart_alt_rounded)
+          ),
+        ),
+      );
     }
   }
 
@@ -70,7 +89,9 @@ class LoadTags extends StatelessWidget {
             child: Text(l10n.loadTags),
           ),
           FilledButton(
-            onPressed: task == TaskStatus.waiting || !LocalTagsService.available
+            onPressed: task == TaskStatus.waiting ||
+                    !LocalTagsService.available ||
+                    !isConforming
                 ? null
                 : () => const TasksService().add<LoadTags>(_load),
             child: task == TaskStatus.waiting
@@ -82,7 +103,7 @@ class LoadTags extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   )
-                : Text(l10n.fromBooru(res.booru.string)),
+                : Text(l10n.fromBooru(widget.res.$2.string)),
           ),
         ],
       ),

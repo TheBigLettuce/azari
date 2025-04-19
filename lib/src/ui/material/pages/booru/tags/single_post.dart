@@ -5,12 +5,10 @@
 
 import "dart:async";
 
-import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -59,72 +57,15 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  Future<void> _launch(
-    BuildContext context, {
-    Booru? replaceBooru,
-    int? replaceId,
-  }) {
-    if (inProcessLoading) {
-      return Future.value();
-    }
-
+  Future<void> _launch(BuildContext context) {
     final l10n = context.l10n();
 
-    inProcessLoading = true;
-
-    BooruAPI booru;
-    if (replaceBooru != null) {
-      booru = BooruAPI.fromEnum(replaceBooru, client);
-    } else {
-      booru = booruApi;
+    final n = int.tryParse(controller.text);
+    if (n == null) {
+      throw l10n.notANumber(controller.text);
     }
 
-    unawaited(arrowSpinningController?.repeat());
-
-    void onThen(Post p) {
-      ImageView.launchWrapped(
-        context,
-        1,
-        (__) => p.content(context),
-        download: (_) => p.download(),
-      );
-    }
-
-    void onError(dynamic e, StackTrace trace) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-
-      Logger.root.warning("SinglePost _launch", e, trace);
-    }
-
-    void onWhenComplete() {
-      arrowSpinningController
-        ?..stop()
-        ..reverse();
-
-      inProcessLoading = false;
-    }
-
-    if (replaceId != null) {
-      return booru
-          .singlePost(replaceId)
-          .then(onThen)
-          .onError(onError)
-          .whenComplete(onWhenComplete);
-    } else {
-      final n = int.tryParse(controller.text);
-      if (n == null) {
-        throw l10n.notANumber(controller.text);
-      }
-
-      return booru
-          .singlePost(n)
-          .then(onThen)
-          .onError(onError)
-          .whenComplete(onWhenComplete);
-    }
+    return openPostAsync(context, booru: booruApi.booru, postId: n);
   }
 
   Future<void> _tryClipboard() async {

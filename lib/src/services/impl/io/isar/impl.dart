@@ -6,7 +6,6 @@
 import "dart:async";
 import "dart:io" as io;
 
-import "package:async/async.dart";
 import "package:azari/src/logic/buffered_storage.dart";
 import "package:azari/src/logic/event_table.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
@@ -36,6 +35,7 @@ import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pa
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/updates_available.dart";
+import "package:azari/src/services/impl/io/isar/schemas/settings/colors_names.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/hidden_booru_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/settings.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/video_settings.dart";
@@ -50,7 +50,6 @@ import "package:azari/src/services/impl/io/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/tags.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:flutter/foundation.dart";
@@ -578,8 +577,11 @@ class IsarHiddenBooruPostService implements HiddenBooruPostsService {
   }
 
   @override
-  StreamSubscription<void> watch(void Function(void) f) =>
-      collection.watchLazy().listen(f);
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]) =>
+      collection
+          .watchLazy(fireImmediately: fire)
+          .map((e) => collection.countSync())
+          .listen(f);
 
   @override
   Stream<bool> streamSingle(int id, Booru booru, [bool fire = false]) =>
@@ -624,6 +626,7 @@ class IsarFavoritePostService implements FavoritePostSourceService {
                   size: post.size,
                   isarId: null,
                   stars: FavoriteStars.zero,
+                  filteringColors: FilteringColors.noColor,
                 ),
         );
       } else {
@@ -1657,75 +1660,85 @@ class IsarBooruTagging<T extends BooruTaggingType> implements BooruTagging<T> {
   }
 
   @override
-  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
-    return tagDb.isarTags.watchLazy(fireImmediately: fire).listen(f);
-  }
+  Stream<int> get events => tagDb.isarTags
+      .watchLazy()
+      .map((_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync());
 
   @override
-  StreamSubscription<int> watchCount(
-    void Function(int) f, [
-    bool fire = false,
-  ]) {
-    return tagDb.isarTags
-        .watchLazy(fireImmediately: fire)
-        .map((_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync())
-        .listen(f);
-  }
+  int get count => tagDb.isarTags.filter().typeEqualTo(mode).countSync();
 
-  @override
-  StreamSubscription<List<ImageTag>> watchImage(
-    List<String> tags,
-    void Function(List<ImageTag> l) f, {
-    bool fire = false,
-  }) {
-    return tagDb.isarTags.watchLazy().map<List<ImageTag>>((event) {
-      return tags
-          .map(
-            (e) => ImageTag(
-              e,
-              favorite:
-                  tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
-              excluded:
-                  tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null,
-            ),
-          )
-          .toList();
-    }).listen(f);
-  }
+  // @override
+  // StreamSubscription<void> watch(void Function(void) f, [bool fire = false]) {
+  //   return tagDb.isarTags.watchLazy(fireImmediately: fire).listen(f);
+  // }
 
-  @override
-  StreamSubscription<List<ImageTag>> watchImageLocal(
-    String filename,
-    void Function(List<ImageTag> l) f, {
-    bool fire = false,
-  }) {
-    return StreamGroup.merge<void>([
-      Dbs()
-          .localTags
-          .isarLocalTags
-          .where()
-          .filenameEqualTo(filename)
-          .watchLazy(),
-      tagDb.isarTags.watchLazy(),
-    ]).map<List<ImageTag>>((event) {
-      final t = Dbs().localTags.isarLocalTags.getByFilenameSync(filename)?.tags;
-      if (t == null) {
-        return const [];
-      }
+  // @override
+  // StreamSubscription<int> watchCount(
+  //   void Function(int) f, [
+  //   bool fire = false,
+  // ]) {
+  //   return tagDb.isarTags
+  //       .watchLazy(fireImmediately: fire)
+  //       .map((_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync())
+  //       .listen(f);
+  // }
 
-      return t
-          .map(
-            (e) => ImageTag(
-              e,
-              favorite:
-                  tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null,
-              excluded:
-                  tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null,
-            ),
-          )
-          .toList();
-    }).listen(f);
-  }
+  // @override
+  // StreamSubscription<List<ImageTag>> watchImage(
+  //   List<String> tags,
+  //   void Function(List<ImageTag> l) f, {
+  //   bool fire = false,
+  // }) {
+  //   return tagDb.isarTags.watchLazy().map<List<ImageTag>>((event) {
+  //     return tags
+  //         .map(
+  //           (e) => ImageTag(
+  //             e,
+  //             type: tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null
+  //                 ? ImageTagType.favorite
+  //                 : tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null
+  //                     ? ImageTagType.excluded
+  //                     : ImageTagType.normal,
+  //           ),
+  //         )
+  //         .toList();
+  //   }).listen(f);
+  // }
+
+  // @override
+  // StreamSubscription<List<ImageTag>> watchImageLocal(
+  //   String filename,
+  //   void Function(List<ImageTag> l) f, {
+  //   bool fire = false,
+  // }) {
+  //   return StreamGroup.merge<void>([
+  //     Dbs()
+  //         .localTags
+  //         .isarLocalTags
+  //         .where()
+  //         .filenameEqualTo(filename)
+  //         .watchLazy(),
+  //     tagDb.isarTags.watchLazy(),
+  //   ]).map<List<ImageTag>>((event) {
+  //     final t = Dbs().localTags.isarLocalTags.getByFilenameSync(filename)?.tags;
+  //     if (t == null) {
+  //       return const [];
+  //     }
+
+  //     return t
+  //         .map(
+  //           (e) => ImageTag(
+  //             e,
+  //             type: tagDb.isarTags.getByTagTypeSync(e, TagType.pinned) != null
+  //                 ? ImageTagType.favorite
+  //                 : tagDb.isarTags.getByTagTypeSync(e, TagType.excluded) != null
+  //                     ? ImageTagType.excluded
+  //                     : ImageTagType.normal,
+  //           ),
+  //         )
+  //         .toList();
+  //   }).listen(f);
+  // }
 }
 
 class IsarGridStateBooruService implements GridBookmarkService {
@@ -2084,4 +2097,40 @@ class IsarHottestTagsService implements HottestTagsService {
   @override
   StreamSubscription<void> watch(Booru booru, void Function(void p1) f) =>
       collection.where().booruEqualTo(booru).watchLazy().listen(f);
+}
+
+class IsarColorsNamesService implements ColorsNamesService {
+  IsarColorsNamesService();
+
+  Isar get db => Dbs().main;
+
+  IsarCollection<IsarColorsNamesData> get collection => db.isarColorsNamesDatas;
+
+  @override
+  late IsarColorsNamesData current = collection.getSync(0) ??
+      const IsarColorsNamesData(
+        red: "",
+        blue: "",
+        yellow: "",
+        green: "",
+        purple: "",
+        orange: "",
+        pink: "",
+        white: "",
+        brown: "",
+        black: "",
+      );
+
+  @override
+  Stream<ColorsNamesData> get events =>
+      collection.watchObjectLazy(0).map((_) => current);
+
+  @override
+  void add(ColorsNamesData data) {
+    current = data as IsarColorsNamesData;
+
+    db.writeTxnSync(() {
+      collection.putSync(data);
+    });
+  }
 }

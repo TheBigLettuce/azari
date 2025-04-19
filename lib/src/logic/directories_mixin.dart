@@ -17,7 +17,7 @@ import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/trash_cell.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/gallery/directories_actions.dart"
+import "package:azari/src/ui/material/pages/gallery/directories.dart"
     as actions;
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
@@ -93,7 +93,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
-      filter: (cells, mode, sorting, end, [data]) => (
+      filter: (cells, mode, sorting, colors, end, data) => (
         cells.where(
           (e) =>
               e.name.contains(searchTextController.text) ||

@@ -21,7 +21,7 @@ class AppMaterial extends StatefulWidget {
 }
 
 class _AppMaterialState extends State<AppMaterial> {
-  final restartKey = GlobalKey();
+  final navigatorKey = GlobalKey<NavigatorState>();
 
   final selectionEvents = SelectionActions();
 
@@ -39,11 +39,13 @@ class _AppMaterialState extends State<AppMaterial> {
     final d = buildTheme(Brightness.dark, accentColor);
     final l = buildTheme(Brightness.light, accentColor);
 
-    return selectionEvents.inject(
-      TimeTickerStatistics(
-        child: RestartWidget(
-          key: restartKey,
+    return AlertServiceUI(
+      navigatorKey: navigatorKey,
+      child: selectionEvents.inject(
+        TimeTickerStatistics(
           child: MaterialApp(
+            navigatorKey: navigatorKey,
+            color: accentColor,
             themeAnimationCurve: Easing.standard,
             themeAnimationDuration: const Duration(milliseconds: 300),
             darkTheme: d,

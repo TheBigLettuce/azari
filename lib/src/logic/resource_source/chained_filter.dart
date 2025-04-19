@@ -15,9 +15,10 @@ typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
   Iterable<V> e,
   FilteringMode filteringMode,
   SortingMode sortingMode,
-  bool end, [
+  FilteringColors? filteringColors,
+  bool end,
   dynamic data,
-]);
+);
 
 typedef ChainedFilter<K, V> = ChainedFilterResourceSource<K, V>;
 
@@ -28,12 +29,15 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     this._filterStorage, {
     this.prefilter = _doNothing,
     this.onCompletelyEmpty = _doNothing,
+    FilteringColors? filteringColors,
     required this.filter,
     required this.allowedFilteringModes,
     required this.allowedSortingModes,
     required FilteringMode initialFilteringMode,
     required SortingMode initialSortingMode,
-  })  : assert(
+  })  : _colors = filteringColors,
+        enableColors = filteringColors != null,
+        assert(
           allowedFilteringModes.isEmpty ||
               allowedFilteringModes.contains(initialFilteringMode),
         ),
@@ -86,14 +90,28 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final VoidCallback prefilter;
   final VoidCallback onCompletelyEmpty;
 
+  final bool enableColors;
+
   FilteringMode _mode;
   SortingMode _sorting;
+  FilteringColors? _colors;
 
   final StreamController<FilteringData> _filterEvents =
       StreamController.broadcast();
 
   FilteringMode get filteringMode => _mode;
   SortingMode get sortingMode => _sorting;
+  FilteringColors? get filteringColors => _colors;
+
+  void Function(FilteringColors c)? get setColors =>
+      enableColors ? _setColors : null;
+
+  void _setColors(FilteringColors c) {
+    _colors = c;
+    _filterEvents.add(FilteringData(_mode, _sorting, _colors));
+
+    clearRefresh();
+  }
 
   @override
   final ClosableRefreshProgress progress = ClosableRefreshProgress();
@@ -112,7 +130,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     }
 
     _mode = f;
-    _filterEvents.add(FilteringData(_mode, _sorting));
+    _filterEvents.add(FilteringData(_mode, _sorting, _colors));
 
     clearRefresh();
   }
@@ -131,7 +149,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     }
 
     _sorting = s;
-    _filterEvents.add(FilteringData(_mode, _sorting));
+    _filterEvents.add(FilteringData(_mode, _sorting, _colors));
 
     if (_original is SortingResourceSource<K, V>) {
       _original.sortingMode = sortingMode;
@@ -184,15 +202,15 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
         if (buffer.length == 40) {
           final Iterable<V> filtered;
           (filtered, data) =
-              filter(buffer, filteringMode, sortingMode, false, data);
+              filter(buffer, filteringMode, sortingMode, _colors, false, data);
 
           backingStorage.addAll(filtered, true);
           buffer.clear();
         }
       }
 
-      backingStorage
-          .addAll(filter(buffer, filteringMode, sortingMode, true, data).$1);
+      backingStorage.addAll(
+          filter(buffer, filteringMode, sortingMode, _colors, true, data).$1);
     } catch (e) {
       progress.error = e;
     } finally {
@@ -234,10 +252,15 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
 @immutable
 class FilteringData {
-  const FilteringData(this.filteringMode, this.sortingMode);
+  const FilteringData(
+    this.filteringMode,
+    this.sortingMode,
+    this.filteringColors,
+  );
 
   final FilteringMode filteringMode;
   final SortingMode sortingMode;
+  final FilteringColors? filteringColors;
 
   @override
   bool operator ==(Object other) {
@@ -246,11 +269,12 @@ class FilteringData {
     }
 
     return filteringMode == other.filteringMode &&
-        sortingMode == other.sortingMode;
+        sortingMode == other.sortingMode &&
+        filteringColors == other.filteringColors;
   }
 
   @override
-  int get hashCode => Object.hash(filteringMode, sortingMode);
+  int get hashCode => Object.hash(filteringMode, sortingMode, filteringColors);
 }
 
 class _FilteringDataNotifier extends InheritedWidget {
@@ -294,6 +318,7 @@ class __FilteringDataHolderState extends State<_FilteringDataHolder> {
     data = FilteringData(
       widget.instance.filteringMode,
       widget.instance.sortingMode,
+      widget.instance.filteringColors,
     );
 
     events = widget.instance._filterEvents.stream.listen((e) {

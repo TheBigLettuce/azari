@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:ui";
 
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
@@ -11,9 +12,7 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
@@ -21,9 +20,10 @@ import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dar
 import "package:azari/src/ui/material/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/post_info_simple.dart";
-import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -34,87 +34,213 @@ class PostCell extends StatefulWidget {
   const PostCell({
     required super.key,
     required this.post,
-    required this.wrapSelection,
   });
 
   final PostImpl post;
 
-  final Widget Function(Widget child) wrapSelection;
+  @override
+  State<PostCell> createState() => _PostCellState();
+}
 
-  static Future<void> openMaximizedImage(
-    BuildContext context,
-    PostImpl post,
-    Contentable content,
-  ) {
-    return Navigator.of(context, rootNavigator: true).push<void>(
-      PageRouteBuilder(
-        fullscreenDialog: true,
-        opaque: false,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: 0.5),
-        pageBuilder: (
-          context,
-          animation,
-          secondaryAnimation,
-        ) {
-          return _ExpandedImage(
-            post: post,
-            content: content,
-          );
-        },
-      ),
-    );
+class _PostCellState extends State<PostCell>
+    with PinnedSortedTagsArrayMixin, SettingsWatcherMixin {
+  PostImpl get post => widget.post;
+  @override
+  List<String> get postTags => widget.post.tags;
+
+  final controller = ScrollController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
   }
 
   @override
-  State<PostCell> createState() => _CellWidgetState();
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final thumbnail = post.thumbnail();
+
+    final animate = PlayAnimations.maybeOf(context) ?? false;
+
+    // final stickers = post.stickers(context);
+    final child = WrapSelection(
+      onPressed: () {
+        final fnc = OnBooruTagPressed.of(context);
+        final idx = ThisIndex.of(context);
+
+        final source = post.getSource(context);
+
+        void tryScrollTo(int i) {}
+
+        final sink = TrackedIndex.sinkOf(context);
+
+        Navigator.of(context, rootNavigator: true)
+            .push<void>(
+          PageRouteBuilder(
+            barrierDismissible: true,
+            fullscreenDialog: true,
+            opaque: false,
+            barrierColor: Colors.black.withValues(alpha: 0.2),
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return OnBooruTagPressed(
+                onPressed: fnc,
+                child: CardDialog(
+                  animation: animation,
+                  source: source,
+                  indexSink: sink,
+                  tryScrollTo: tryScrollTo,
+                  idx: idx.$1,
+                ),
+              );
+            },
+          ),
+        )
+            .whenComplete(() {
+          sink.add(null);
+        });
+
+        // final source = post.getSource(context);
+        // final loader = PostImageViewLoader(resource: source);
+        // final stateController = DefaultStateController(loader: loader);
+
+        // ImageView.open(context, stateController).whenComplete(() {
+        //   loader.dispose();
+        //   stateController.dispose();
+        // });
+      },
+      onDoubleTap: DownloadManager.available && LocalTagsService.available
+          ? (context) {
+              const downloadManager = DownloadManager();
+              final status = downloadManager.statusFor(post.fileDownloadUrl());
+              final downloadStatus = status?.data.status;
+
+              if (downloadStatus == DownloadStatus.failed) {
+                downloadManager.restartAll([status!]);
+              } else {
+                post.download();
+              }
+              WrapperSelectionAnimation.tryPlayOf(context);
+            }
+          : null,
+      child: Builder(
+        builder: (context) => GestureDetector(
+          child: Card(
+            elevation: 0,
+            clipBehavior: Clip.antiAlias,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+            ),
+            color: theme.cardColor.withValues(alpha: 0),
+            child: Stack(
+              children: [
+                GridCellImage(
+                  heroTag: post.uniqueKey(),
+                  imageAlign: Alignment.topCenter,
+                  thumbnail: post.type == PostContentType.gif &&
+                          post.size != 0 &&
+                          !post.size.isNegative &&
+                          post.size < 524288
+                      ? CachedNetworkImageProvider(
+                          post.sampleUrl.isEmpty
+                              ? post.fileUrl
+                              : post.sampleUrl,
+                        )
+                      : thumbnail,
+                  blur: false,
+                ),
+                if (FavoritePostSourceService.available &&
+                    widget.post is! FavoritePost)
+                  Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: FavoritePostButton(
+                      heroKey: (post.uniqueKey(), "favoritePost"),
+                      post: post,
+                    ),
+                  ),
+                // if (stickers.isNotEmpty)
+                //   Align(
+                //     alignment: Alignment.topRight,
+                //     child: Padding(
+                //       padding: const EdgeInsets.all(8),
+                //       child: Wrap(
+                //         crossAxisAlignment: WrapCrossAlignment.end,
+                //         direction: Axis.vertical,
+                //         children: stickers.map(StickerWidget.new).toList(),
+                //       ),
+                //     ),
+                //   ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    child: VideoGifRow(
+                      uniqueKey: widget.post.uniqueKey(),
+                      isVideo: widget.post.type == PostContentType.video,
+                      isGif: widget.post.type == PostContentType.gif,
+                    ),
+                  ),
+                ),
+                if (DownloadManager.available)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: LinearDownloadIndicator(
+                      post: post,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (animate) {
+      return child.animate(key: post.uniqueKey()).fadeIn();
+    }
+
+    return child;
+  }
 }
 
-class CardAnimation extends StatefulWidget {
-  const CardAnimation({
+class CardAnimationChild extends StatelessWidget {
+  const CardAnimationChild({
     super.key,
+    required this.post,
     required this.animation,
-    required this.source,
-    required this.currentIndex,
-    required this.syncr,
+    required this.buttonsRow,
   });
-
-  final ResourceSource<int, PostImpl> source;
-
-  final Sink<(int, double?)> syncr;
-
-  final int currentIndex;
 
   final Animation<double> animation;
 
-  @override
-  State<CardAnimation> createState() => _CardAnimationState();
-}
+  final PostImpl post;
 
-class _CardAnimationState extends State<CardAnimation> {
+  final Widget buttonsRow;
+
   @override
   Widget build(BuildContext context) {
+    final thumbnail = post.thumbnail();
     final theme = Theme.of(context);
 
-    return ClipRRect(
-      child: ReplaceAnimation(
-        source: widget.source,
-        synchronizeSnd: widget.syncr,
-        addScale: true,
-        currentIndex: widget.currentIndex,
-        child: (context, idx) {
-          final post = widget.source.forIdxUnsafe(idx);
-
-          final thumbnail = post.thumbnail(context);
-
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: (360 * (post.height / post.width)).clamp(0, 420),
-            ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: clampDouble(
+          360 * (post.height / post.width),
+          240 * (post.height / post.width),
+          420 * (post.height / post.width),
+        ).clamp(0, 460),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
             child: GestureDetector(
               onTap: () {
-                final post = widget.source.forIdxUnsafe(idx);
-                final content = post.content(context);
+                // final content = post.content(context);
 
                 SystemChrome.setEnabledSystemUIMode(
                   SystemUiMode.immersiveSticky,
@@ -128,14 +254,7 @@ class _CardAnimationState extends State<CardAnimation> {
                     fullscreenDialog: true,
                     barrierColor: Colors.black.withValues(alpha: 1),
                     pageBuilder: (context, animation, animationSecond) {
-                      return CurrentIndexMetadataNotifier(
-                        metadata: StaticContentIndexMetadata(content: content),
-                        refreshTimes: 0,
-                        child: _BigImageVideo(
-                          post: post,
-                          content: content,
-                        ),
-                      );
+                      return _BigImageVideo(post: post);
                     },
                   ),
                 )
@@ -165,9 +284,9 @@ class _CardAnimationState extends State<CardAnimation> {
                   ),
                   if (post.type == PostContentType.video)
                     AnimatedBuilder(
-                      animation: widget.animation,
+                      animation: animation,
                       builder: (context, child) => Opacity(
-                        opacity: widget.animation.value,
+                        opacity: animation.value,
                         child: child,
                       ),
                       child: DecoratedBox(
@@ -189,8 +308,9 @@ class _CardAnimationState extends State<CardAnimation> {
                 ],
               ),
             ),
-          );
-        },
+          ),
+          buttonsRow,
+        ],
       ),
     );
   }
@@ -474,6 +594,124 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
   }
 }
 
+class CardDialogStatic extends StatelessWidget {
+  const CardDialogStatic({
+    super.key,
+    required this.getPost,
+    required this.animation,
+  });
+
+  final Animation<double> animation;
+
+  final Future<PostImpl> Function() getPost;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+
+    void exit() {
+      Navigator.of(context).pop();
+    }
+
+    return ExitOnPressRoute(
+      exit: exit,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 400.0.clamp(0, size.width),
+          ),
+          child: AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) => Opacity(
+              opacity: animation.value,
+              child: child,
+            ),
+            child: WrapFutureRestartable(
+              newStatus: getPost,
+              bottomSheetVariant: true,
+              errorBuilder: (error, refresh) => Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 400.0.clamp(0, size.width),
+                      maxHeight: 400.0.clamp(0, size.height),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(15)),
+                      child: Material(
+                        type: MaterialType.card,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 38,
+                          ),
+                          child: WrapFutureRestartable.defaultError(
+                            error,
+                            refresh,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              placeholder: Center(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 400.0.clamp(0, size.width),
+                      maxHeight: 400.0.clamp(0, size.height),
+                    ),
+                    child: const ClipRRect(
+                      borderRadius: BorderRadius.all(Radius.circular(15)),
+                      child: ShimmerLoadingIndicator(backgroundAlpha: 1),
+                    ),
+                  ),
+                ),
+              ),
+              builder: (context, post) => SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 24,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        child: CardAnimationChild(
+                          animation: animation,
+                          post: post,
+                          buttonsRow: ClipRRect(
+                            child: _ButtonsCol(
+                              animation: animation,
+                              post: post,
+                            ),
+                          ),
+                        ),
+                      ),
+                      _TagsRowBorder(
+                        animation: animation,
+                        child: _TagsRowSingle(
+                          post: post,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class CardDialog extends StatefulWidget {
   const CardDialog({
     super.key,
@@ -481,6 +719,7 @@ class CardDialog extends StatefulWidget {
     required this.idx,
     required this.source,
     required this.tryScrollTo,
+    required this.indexSink,
   });
 
   final Animation<double> animation;
@@ -489,6 +728,8 @@ class CardDialog extends StatefulWidget {
 
   final int idx;
   final ResourceSource<int, PostImpl> source;
+
+  final Sink<int?> indexSink;
 
   @override
   State<CardDialog> createState() => _CardDialogState();
@@ -514,12 +755,14 @@ class _CardDialogState extends State<CardDialog> {
       if (e.$1 != _oldIdx) {
         _oldIdx = e.$1;
 
+        widget.indexSink.add(_oldIdx);
+
         widget.tryScrollTo(_oldIdx);
 
         if (context.mounted && source.count > 1) {
           if (_oldIdx != 0) {
             precacheImage(
-              source.forIdxUnsafe(_oldIdx - 1).thumbnail(null),
+              source.forIdxUnsafe(_oldIdx - 1).thumbnail(),
               // ignore: use_build_context_synchronously
               context,
             );
@@ -527,7 +770,7 @@ class _CardDialogState extends State<CardDialog> {
 
           if (_oldIdx != source.count - 1) {
             precacheImage(
-              source.forIdxUnsafe(_oldIdx + 1).thumbnail(null),
+              source.forIdxUnsafe(_oldIdx + 1).thumbnail(),
               // ignore: use_build_context_synchronously
               context,
             );
@@ -551,7 +794,6 @@ class _CardDialogState extends State<CardDialog> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final theme = Theme.of(context);
 
     return ExitOnPressRoute(
       exit: _exit,
@@ -567,13 +809,35 @@ class _CardDialogState extends State<CardDialog> {
                 vertical: 24,
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                // mainAxisSize: MainAxisSize.max,
                 children: [
-                  CardAnimation(
-                    currentIndex: idx,
-                    syncr: syncr.sink,
-                    source: source,
-                    animation: animation,
+                  ClipRRect(
+                    child: ReplaceAnimation(
+                      source: source,
+                      synchronizeSnd: syncr.sink,
+                      addScale: true,
+                      currentIndex: idx,
+                      child: (context, idx) {
+                        return CardAnimationChild(
+                          post: source.forIdxUnsafe(idx),
+                          animation: animation,
+                          buttonsRow: ClipRRect(
+                            child: ReplaceAnimation(
+                              source: source,
+                              synchronizeRecv: syncr.stream,
+                              currentIndex: idx,
+                              type: ReplaceAnimationType.vertical,
+                              child: (context, idx) {
+                                return _ButtonsCol(
+                                  animation: animation,
+                                  post: source.forIdxUnsafe(idx),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   _TagsRow(
                     idx: idx,
@@ -581,127 +845,139 @@ class _CardDialogState extends State<CardDialog> {
                     animation: animation,
                     source: source,
                   ),
-                  ClipRRect(
-                    child: ReplaceAnimation(
-                      source: source,
-                      synchronizeRecv: syncr.stream,
-                      currentIndex: idx,
-                      type: ReplaceAnimationType.vertical,
-                      child: (context, idx) {
-                        final post = source.forIdxUnsafe(idx);
-
-                        return Padding(
-                          padding: EdgeInsets.zero,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              spacing: 8,
-                              children: [
-                                AnimatedBuilder(
-                                  animation: animation,
-                                  builder: (context, child) => Opacity(
-                                    opacity: animation.value,
-                                    child: child,
-                                  ),
-                                  child: IconButton(
-                                    onPressed: () {
-                                      showModalBottomSheet<void>(
-                                        context: context,
-                                        builder: (sheetContext) {
-                                          return Padding(
-                                            padding: EdgeInsets.only(
-                                              top: 8,
-                                              bottom: MediaQuery.viewPaddingOf(
-                                                    context,
-                                                  ).bottom +
-                                                  12,
-                                            ),
-                                            child: SizedBox(
-                                              width: MediaQuery.sizeOf(
-                                                sheetContext,
-                                              ).width,
-                                              child: PostInfoSimple(post: post),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                    style: ButtonStyle(
-                                      foregroundColor: WidgetStatePropertyAll(
-                                        theme.colorScheme.surface,
-                                      ),
-                                      backgroundColor: WidgetStatePropertyAll(
-                                        theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.info_outline),
-                                  ),
-                                ),
-                                Row(
-                                  spacing: 8,
-                                  children: [
-                                    if (FavoritePostSourceService.available)
-                                      AnimatedBuilder(
-                                        animation: animation,
-                                        builder: (context, child) => Opacity(
-                                          opacity: animation.value,
-                                          child: child,
-                                        ),
-                                        child: StarsButton(
-                                          addBackground: true,
-                                          idBooru: (post.id, post.booru),
-                                        ),
-                                      ),
-                                    if (DownloadManager.available &&
-                                        LocalTagsService.available)
-                                      AnimatedBuilder(
-                                        animation: animation,
-                                        builder: (context, child) => Opacity(
-                                          opacity: animation.value,
-                                          child: child,
-                                        ),
-                                        child: DownloadButton(
-                                          post: post,
-                                          secondVariant: true,
-                                        ),
-                                      ),
-                                    if (FavoritePostSourceService.available &&
-                                        post is! FavoritePost)
-                                      FavoritePostButton(
-                                        heroKey: (
-                                          post.uniqueKey(),
-                                          "favoritePost"
-                                        ),
-                                        post: post,
-                                        backgroundAlpha: 1,
-                                      )
-                                    else if (FavoritePostSourceService
-                                        .available)
-                                      AnimatedBuilder(
-                                        animation: animation,
-                                        builder: (context, child) => Opacity(
-                                          opacity: animation.value,
-                                          child: child,
-                                        ),
-                                        child: FavoritePostButton(
-                                          post: post,
-                                          backgroundAlpha: 1,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ButtonsCol extends StatelessWidget {
+  const _ButtonsCol({
+    super.key,
+    required this.animation,
+    required this.post,
+  });
+
+  final Animation<double> animation;
+  final PostImpl post;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // spacing: 8,
+          children: [
+            // const SizedBox.shrink(),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 8,
+                    children: [
+                      if (FavoritePostSourceService.available)
+                        AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, child) => Opacity(
+                            opacity: animation.value,
+                            child: child,
+                          ),
+                          child: StarsButton(
+                            addBackground: true,
+                            idBooru: (post.id, post.booru),
+                          ),
+                        ),
+                      if (DownloadManager.available &&
+                          LocalTagsService.available)
+                        AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, child) => Opacity(
+                            opacity: animation.value,
+                            child: child,
+                          ),
+                          child: DownloadButton(
+                            post: post,
+                            secondVariant: true,
+                          ),
+                        ),
+                      if (FavoritePostSourceService.available &&
+                          post is! FavoritePost)
+                        FavoritePostButton(
+                          heroKey: (post.uniqueKey(), "favoritePost"),
+                          post: post,
+                          backgroundAlpha: 1,
+                        )
+                      else if (FavoritePostSourceService.available)
+                        AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, child) => Opacity(
+                            opacity: animation.value,
+                            child: child,
+                          ),
+                          child: FavoritePostButton(
+                            post: post,
+                            backgroundAlpha: 1,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) => Opacity(
+                  opacity: animation.value,
+                  child: child,
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (sheetContext) {
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            top: 8,
+                            bottom: MediaQuery.viewPaddingOf(
+                                  context,
+                                ).bottom +
+                                12,
+                          ),
+                          child: SizedBox(
+                            width: MediaQuery.sizeOf(
+                              sheetContext,
+                            ).width,
+                            child: PostInfoSimple(post: post),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStatePropertyAll(
+                      theme.colorScheme.surface,
+                    ),
+                    backgroundColor: WidgetStatePropertyAll(
+                      theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  icon: const Icon(Icons.info_outline),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -729,21 +1005,23 @@ class _TagsRow extends StatefulWidget {
 }
 
 mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
-  StreamController<(int, double?)> get syncr;
+  StreamController<(int, double?)>? get syncr;
   int get initIdx;
-  int get count => source.count;
 
-  PostImpl getPost(int idx) => source.forIdxUnsafe(idx);
+  int get count;
+  int get index => _idx;
 
-  ResourceSource<int, PostImpl> get source;
+  PostImpl getPost(int idx);
+
+  StreamSubscription<int> Function(void Function(int) f)? get countEvents;
 
   (Map<String, void>, int) _pinnedTags = ({}, 0);
   final Map<int, List<({String tag, bool pinned})>> _values = {};
 
   int _idx = 0;
 
-  late final StreamSubscription<(int, double?)> _events;
-  late final StreamSubscription<int> _countEvents;
+  late final StreamSubscription<(int, double?)>? _events;
+  late final StreamSubscription<int>? _countEvents;
 
   List<({String tag, bool pinned})> getTags(int idx) => _values[idx]!;
 
@@ -753,14 +1031,18 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
 
     _idx = initIdx;
 
-    _events = syncr.stream.listen((e) {
+    _events = syncr?.stream.listen((e) {
       if (e.$1 != _idx) {
         _setIdx(e.$1);
+
+        setState(() {});
       }
     });
 
-    _countEvents = source.backingStorage.watch((_) {
+    _countEvents = countEvents?.call((_) {
       _setIdx(_idx);
+
+      setState(() {});
     });
 
     _setIdx(_idx);
@@ -847,8 +1129,8 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
 
   @override
   void dispose() {
-    _events.cancel();
-    _countEvents.cancel();
+    _events?.cancel();
+    _countEvents?.cancel();
 
     super.dispose();
   }
@@ -866,15 +1148,101 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
   }
 }
 
+class _TagsRowBorder extends StatelessWidget {
+  const _TagsRowBorder({
+    super.key,
+    this.post,
+    required this.animation,
+    required this.child,
+  });
+
+  final PostImpl? post;
+
+  final Animation<double> animation;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget clipRrect = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.all(Radius.circular(16)),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: child,
+        ),
+      ),
+    );
+
+    if (post != null) {
+      clipRrect = Hero(
+        tag: (post!.uniqueKey(), "tags"),
+        child: clipRrect,
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) => Opacity(
+        opacity: animation.value,
+        child: child,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 25 + 16),
+          child: Padding(
+            padding: EdgeInsets.zero,
+            child: clipRrect,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TagsRowSingle extends StatefulWidget {
+  const _TagsRowSingle({
+    super.key,
+    required this.post,
+  });
+
+  final PostImpl post;
+
+  @override
+  State<_TagsRowSingle> createState() => __TagsRowSingleState();
+}
+
+class __TagsRowSingleState extends State<_TagsRowSingle>
+    with PinnedSortedTagsArrayMixin {
+  @override
+  List<String> get postTags => widget.post.tags;
+
+  @override
+  Widget build(BuildContext context) {
+    return _TagsRowChild(
+      post: widget.post,
+      tags: tags,
+    );
+  }
+}
+
 class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
   @override
-  ResourceSource<int, PostImpl> get source => widget.source;
+  StreamSubscription<int> Function(void Function(int) f) get countEvents =>
+      widget.source.backingStorage.watch;
 
   @override
-  int get count => source.count;
+  int get count => widget.source.count;
 
   @override
-  PostImpl getPost(int idx) => source.forIdxUnsafe(idx);
+  PostImpl getPost(int idx) => widget.source.forIdxUnsafe(idx);
 
   @override
   int get initIdx => widget.idx;
@@ -884,272 +1252,81 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AnimatedBuilder(
+    return _TagsRowBorder(
+      post: getPost(index),
       animation: widget.animation,
-      builder: (context, child) => Opacity(
-        opacity: widget.animation.value,
-        child: child,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 25 + 16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _CurrentTagsHero(
-              source: source,
-              initIdx: initIdx,
-              synchronizeRecv: syncr.stream,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(16)),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 1),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: ReplaceAnimation(
-                      source: source,
-                      synchronizeRecv: widget.syncr.stream,
-                      currentIndex: widget.idx,
-                      child: (context, idx) {
-                        final post = source.forIdxUnsafe(idx);
-                        final tags = getTags(idx);
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.antiAlias,
-                          itemCount: tags.length,
-                          itemBuilder: (context, index) {
-                            final e = tags[index];
-
-                            return Center(
-                              child: OutlinedTagChip(
-                                tag: e.tag,
-                                isPinned: e.pinned,
-                                letterCount: -1,
-                                onDoublePressed:
-                                    e.pinned || !TagManagerService.available
-                                        ? null
-                                        : () {
-                                            // controller.animateTo(
-                                            //   0,
-                                            //   duration: Durations.medium3,
-                                            //   curve: Easing.standard,
-                                            // );
-
-                                            const TagManagerService()
-                                                .pinned
-                                                .add(e.tag);
-                                          },
-                                onLongPressed: post is FavoritePost
-                                    ? null
-                                    : () {
-                                        context.openSafeModeDialog((safeMode) {
-                                          OnBooruTagPressed.pressOf(
-                                            context,
-                                            e.tag,
-                                            post.booru,
-                                            overrideSafeMode: safeMode,
-                                          );
-                                        });
-                                      },
-                                onPressed: () => OnBooruTagPressed.pressOf(
-                                  context,
-                                  e.tag,
-                                  post.booru,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+      child: ReplaceAnimation(
+        source: widget.source,
+        synchronizeRecv: widget.syncr.stream,
+        currentIndex: widget.idx,
+        child: (context, idx) {
+          return _TagsRowChild(
+            post: getPost(idx),
+            tags: getTags(idx),
+          );
+        },
       ),
     );
   }
 }
 
-class _CurrentTagsHero extends StatefulWidget {
-  const _CurrentTagsHero({
-    // super.key,
-    required this.source,
-    required this.synchronizeRecv,
-    required this.initIdx,
-    required this.child,
+class _TagsRowChild extends StatelessWidget {
+  const _TagsRowChild({
+    super.key,
+    required this.post,
+    required this.tags,
   });
 
-  final ResourceSource<int, PostImpl> source;
-  final Stream<(int, double?)> synchronizeRecv;
-
-  final int initIdx;
-
-  final Widget child;
-
-  @override
-  State<_CurrentTagsHero> createState() => __CurrentTagsHeroState();
-}
-
-class __CurrentTagsHeroState extends State<_CurrentTagsHero> {
-  late final StreamSubscription<(int, double?)> events;
-
-  late PostImpl post;
-
-  @override
-  void initState() {
-    super.initState();
-
-    post = widget.source.forIdxUnsafe(widget.initIdx);
-
-    events = widget.synchronizeRecv.listen((e) {
-      setState(() {
-        post = widget.source.forIdxUnsafe(e.$1);
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    events.cancel();
-
-    super.dispose();
-  }
+  final PostImpl post;
+  final List<({bool pinned, String tag})> tags;
 
   @override
   Widget build(BuildContext context) {
-    return Hero(
-      tag: (post.uniqueKey(), "tags"),
-      child: widget.child,
-    );
-  }
-}
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.antiAlias,
+      itemCount: tags.length,
+      itemBuilder: (context, index) {
+        final e = tags[index];
 
-class _CellWidgetState extends State<PostCell>
-    with PinnedSortedTagsArrayMixin, SettingsWatcherMixin {
-  PostImpl get post => widget.post;
-  @override
-  List<String> get postTags => widget.post.tags;
+        return Center(
+          child: OutlinedTagChip(
+            tag: e.tag,
+            isPinned: e.pinned,
+            letterCount: -1,
+            onDoublePressed: e.pinned || !TagManagerService.available
+                ? null
+                : () {
+                    // controller.animateTo(
+                    //   0,
+                    //   duration: Durations.medium3,
+                    //   curve: Easing.standard,
+                    // );
 
-  final controller = ScrollController();
-
-  @override
-  void dispose() {
-    controller.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final thumbnail = post.thumbnail(context);
-
-    final animate = PlayAnimations.maybeOf(context) ?? false;
-
-    final stickers = post.stickers(context, false);
-
-    final child = Builder(
-      builder: (context) {
-        final card = widget.wrapSelection(
-          Builder(
-            builder: (context) => GestureDetector(
-              child: Card(
-                elevation: 0,
-                clipBehavior: Clip.antiAlias,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                ),
-                color: theme.cardColor.withValues(alpha: 0),
-                child: Stack(
-                  children: [
-                    GridCellImage(
-                      heroTag: post.uniqueKey(),
-                      imageAlign: Alignment.topCenter,
-                      thumbnail: post.type == PostContentType.gif &&
-                              post.size != 0 &&
-                              !post.size.isNegative &&
-                              post.size < 524288
-                          ? CachedNetworkImageProvider(
-                              post.sampleUrl.isEmpty
-                                  ? post.fileUrl
-                                  : post.sampleUrl,
-                            )
-                          : thumbnail,
-                      blur: false,
-                    ),
-                    if (FavoritePostSourceService.available &&
-                        widget.post is! FavoritePost)
-                      Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: FavoritePostButton(
-                          heroKey: (post.uniqueKey(), "favoritePost"),
-                          post: post,
-                        ),
-                      ),
-                    if (stickers.isNotEmpty)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.end,
-                            direction: Axis.vertical,
-                            children: stickers.map(StickerWidget.new).toList(),
-                          ),
-                        ),
-                      ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        child: VideoGifRow(
-                          uniqueKey: widget.post.uniqueKey(),
-                          isVideo: widget.post.type == PostContentType.video,
-                          isGif: widget.post.type == PostContentType.gif,
-                        ),
-                      ),
-                    ),
-                    if (DownloadManager.available)
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: LinearDownloadIndicator(
-                          post: post,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+                    const TagManagerService().pinned.add(e.tag);
+                  },
+            onLongPressed: post is FavoritePost
+                ? null
+                : () {
+                    context.openSafeModeDialog((safeMode) {
+                      OnBooruTagPressed.pressOf(
+                        context,
+                        e.tag,
+                        post.booru,
+                        overrideSafeMode: safeMode,
+                      );
+                    });
+                  },
+            onPressed: () => OnBooruTagPressed.pressOf(
+              context,
+              e.tag,
+              post.booru,
             ),
           ),
         );
-
-        // if (tags.isEmpty) {
-        //   return card;
-        // }
-
-        return card;
       },
     );
-
-    if (animate) {
-      return child.animate(key: post.uniqueKey()).fadeIn();
-    }
-
-    return child;
   }
 }
 
@@ -1157,206 +1334,215 @@ class _BigImageVideo extends StatelessWidget {
   const _BigImageVideo({
     super.key,
     required this.post,
-    required this.content,
   });
 
   final PostImpl post;
-  final Contentable content;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final child = content is NetVideo
-        ? Material(
-            child: _ExpandedVideo(
-              post: post,
-              child: PhotoGalleryPageVideo(
-                url: (content as NetVideo).uri,
-                networkThumb: post.thumbnail(context),
-                localVideo: false,
-              ),
+    final Widget child = switch (post.type) {
+      PostContentType.none => const SizedBox.shrink(),
+      PostContentType.video => Material(
+          child: _ExpandedVideo(
+            post: post,
+            child: PhotoGalleryPageVideo(
+              url: post.videoUrl(),
+              networkThumb: post.thumbnail(),
+              localVideo: false,
             ),
-          )
-        : PhotoView(
-            heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-            maxScale: PhotoViewComputedScale.contained * 1.8,
-            minScale: PhotoViewComputedScale.contained * 0.8,
-            filterQuality: FilterQuality.high,
-            loadingBuilder: (context, event) {
-              final theme = Theme.of(context);
+          ),
+        ),
+      PostContentType.gif || PostContentType.image => PhotoView(
+          heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
+          maxScale: PhotoViewComputedScale.contained * 1.8,
+          minScale: PhotoViewComputedScale.contained * 0.8,
+          filterQuality: FilterQuality.high,
+          loadingBuilder: (context, event) {
+            final theme = Theme.of(context);
 
-              // try {
-              //   final p =
-              //       switch (_container!.pageController.position.userScrollDirection) {
-              //     ScrollDirection.idle => _container!.pageController.page?.round(),
-              //     ScrollDirection.forward => _container!.pageController.page?.floor(),
-              //     ScrollDirection.reverse => _container!.pageController.page?.ceil(),
-              //   };
+            final t = post.thumbnail();
 
-              //   cell = drawCell(p ?? currentPage);
-              // } catch (_) {}
+            final expectedBytes = event?.expectedTotalBytes;
+            final loadedBytes = event?.cumulativeBytesLoaded;
+            final value = loadedBytes != null && expectedBytes != null
+                ? loadedBytes / expectedBytes
+                : null;
 
-              final t = content.widgets.tryAsThumbnailable(context);
-              if (t == null) {
-                return const SizedBox.shrink();
-              }
-
-              final expectedBytes = event?.expectedTotalBytes;
-              final loadedBytes = event?.cumulativeBytesLoaded;
-              final value = loadedBytes != null && expectedBytes != null
-                  ? loadedBytes / expectedBytes
-                  : null;
-
-              return Stack(
-                fit: StackFit.expand,
-                alignment: Alignment.center,
-                children: [
-                  Image(
-                    image: t,
-                    filterQuality: FilterQuality.high,
-                    fit: BoxFit.contain,
+            return Stack(
+              fit: StackFit.expand,
+              alignment: Alignment.center,
+              children: [
+                Image(
+                  image: t,
+                  filterQuality: FilterQuality.high,
+                  fit: BoxFit.contain,
+                ),
+                Center(
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    backgroundColor: theme.colorScheme.surfaceContainer
+                        .withValues(alpha: 0.4),
+                    value: value ?? 0,
                   ),
-                  Center(
-                    child: CircularProgressIndicator(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      backgroundColor: theme.colorScheme.surfaceContainer
-                          .withValues(alpha: 0.4),
-                      value: value ?? 0,
-                    ),
-                  ),
-                ],
-              );
-              // final theme = Theme.of(context);
+                ),
+              ],
+            );
+            // final theme = Theme.of(context);
 
-              // final expectedBytes = event?.expectedTotalBytes;
-              // final loadedBytes = event?.cumulativeBytesLoaded;
-              // final value = loadedBytes != null && expectedBytes != null
-              //     ? loadedBytes / expectedBytes
-              //     : null;
+            // final expectedBytes = event?.expectedTotalBytes;
+            // final loadedBytes = event?.cumulativeBytesLoaded;
+            // final value = loadedBytes != null && expectedBytes != null
+            //     ? loadedBytes / expectedBytes
+            //     : null;
 
-              // return Center(
-              //   child: CircularProgressIndicator(
-              //     year2023: false,
-              //     color: theme.colorScheme.onSurfaceVariant,
-              //     backgroundColor:
-              //         theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
-              //     value: value,
-              //   ),
-              // );
-            },
-            backgroundDecoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(alpha: 0),
-            ),
-            imageProvider: content is NetImage
-                ? (content as NetImage).provider
-                : (content as NetGif).provider,
-          );
+            // return Center(
+            //   child: CircularProgressIndicator(
+            //     year2023: false,
+            //     color: theme.colorScheme.onSurfaceVariant,
+            //     backgroundColor:
+            //         theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
+            //     value: value,
+            //   ),
+            // );
+          },
+          backgroundDecoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0),
+          ),
+          imageProvider: post.imageContent(),
+        ),
+    };
 
     return child;
   }
 }
 
-class _ExpandedImage extends StatelessWidget {
-  const _ExpandedImage({
-    // super.key,
-    required this.post,
-    required this.content,
-  });
+// static Future<void> openMaximizedImage(
+//   BuildContext context,
+//   PostImpl post,
+//   Contentable content,
+// ) {
+//   return Navigator.of(context, rootNavigator: true).push<void>(
+//     PageRouteBuilder(
+//       fullscreenDialog: true,
+//       opaque: false,
+//       barrierDismissible: true,
+//       barrierColor: Colors.black.withValues(alpha: 0.5),
+//       pageBuilder: (
+//         context,
+//         animation,
+//         secondaryAnimation,
+//       ) {
+//         return _ExpandedImage(
+//           post: post,
+//           content: content,
+//         );
+//       },
+//     ),
+//   );
+// }
 
-  final PostImpl post;
-  final Contentable content;
+// class _ExpandedImage extends StatelessWidget {
+//   const _ExpandedImage({
+//     // super.key,
+//     required this.post,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+//   final PostImpl post;
 
-    final buttonStyle = ButtonStyle(
-      backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surface),
-      iconColor: WidgetStatePropertyAll(theme.colorScheme.onSurface),
-    );
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
 
-    final child = content is NetVideo
-        ? _ExpandedVideo(
-            post: post,
-            child: PhotoGalleryPageVideo(
-              url: (content as NetVideo).uri,
-              networkThumb: post.thumbnail(context),
-              localVideo: false,
-            ),
-          )
-        : PhotoView(
-            heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-            maxScale: PhotoViewComputedScale.contained * 1.8,
-            minScale: PhotoViewComputedScale.contained * 0.8,
-            filterQuality: FilterQuality.high,
-            loadingBuilder: (context, event) => const ShimmerLoadingIndicator(),
-            backgroundDecoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(alpha: 0),
-            ),
-            imageProvider: content is NetImage
-                ? (content as NetImage).provider
-                : (content as NetGif).provider,
-          );
+//     final buttonStyle = ButtonStyle(
+//       backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surface),
+//       iconColor: WidgetStatePropertyAll(theme.colorScheme.onSurface),
+//     );
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          style: buttonStyle,
-          icon: const Icon(Icons.close_rounded),
-        ),
-        actions: [
-          IconButtonTheme(
-            data: IconButtonThemeData(style: buttonStyle),
-            child: StarsButton(
-              idBooru: (post.id, post.booru),
-            ),
-          ),
-          if (FavoritePostSourceService.available)
-            IconButtonTheme(
-              data: IconButtonThemeData(style: buttonStyle),
-              child: FavoritePostButton(
-                post: post,
-                withBackground: false,
-              ),
-            ),
-          IconButton(
-            onPressed: () {
-              showModalBottomSheet<void>(
-                context: context,
-                builder: (sheetContext) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      top: 8,
-                      bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-                    ),
-                    child: SizedBox(
-                      width: MediaQuery.sizeOf(sheetContext).width,
-                      child: PostInfoSimple(post: post),
-                    ),
-                  );
-                },
-              );
-            },
-            style: buttonStyle,
-            icon: const Icon(Icons.info_outline),
-          ),
-        ],
-        backgroundColor: Colors.transparent,
-      ),
-      body: GestureDeadZones(
-        left: true,
-        right: true,
-        child: child,
-      ),
-    );
-  }
-}
+//     final child = switch (post.type) {
+//       PostContentType.none => const SizedBox.shrink(),
+//       PostContentType.video => _ExpandedVideo(
+//           post: post,
+//           child: PhotoGalleryPageVideo(
+//             url: (content as NetVideo).uri,
+//             networkThumb: post.thumbnail(),
+//             localVideo: false,
+//           ),
+//         ),
+//       PostContentType.gif || PostContentType.image => PhotoView(
+//           heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
+//           maxScale: PhotoViewComputedScale.contained * 1.8,
+//           minScale: PhotoViewComputedScale.contained * 0.8,
+//           filterQuality: FilterQuality.high,
+//           loadingBuilder: (context, event) => const ShimmerLoadingIndicator(),
+//           backgroundDecoration: BoxDecoration(
+//             color: theme.colorScheme.surface.withValues(alpha: 0),
+//           ),
+//           imageProvider: content is NetImage
+//               ? (content as NetImage).provider
+//               : (content as NetGif).provider,
+//         ),
+//     };
+
+//     return Scaffold(
+//       extendBodyBehindAppBar: true,
+//       backgroundColor: Colors.transparent,
+//       appBar: AppBar(
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.pop(context);
+//           },
+//           style: buttonStyle,
+//           icon: const Icon(Icons.close_rounded),
+//         ),
+//         actions: [
+//           IconButtonTheme(
+//             data: IconButtonThemeData(style: buttonStyle),
+//             child: StarsButton(
+//               idBooru: (post.id, post.booru),
+//             ),
+//           ),
+//           if (FavoritePostSourceService.available)
+//             IconButtonTheme(
+//               data: IconButtonThemeData(style: buttonStyle),
+//               child: FavoritePostButton(
+//                 post: post,
+//                 withBackground: false,
+//               ),
+//             ),
+//           IconButton(
+//             onPressed: () {
+//               showModalBottomSheet<void>(
+//                 context: context,
+//                 builder: (sheetContext) {
+//                   return Padding(
+//                     padding: EdgeInsets.only(
+//                       top: 8,
+//                       bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+//                     ),
+//                     child: SizedBox(
+//                       width: MediaQuery.sizeOf(sheetContext).width,
+//                       child: PostInfoSimple(post: post),
+//                     ),
+//                   );
+//                 },
+//               );
+//             },
+//             style: buttonStyle,
+//             icon: const Icon(Icons.info_outline),
+//           ),
+//         ],
+//         backgroundColor: Colors.transparent,
+//       ),
+//       body: GestureDeadZones(
+//         left: true,
+//         right: true,
+//         child: child,
+//       ),
+//     );
+//   }
+// }
 
 class _ExpandedVideo extends StatefulWidget {
   const _ExpandedVideo({
@@ -1415,6 +1601,7 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
                 child: Padding(
                   padding: EdgeInsets.only(bottom: viewPadding.bottom + 20),
                   child: VideoControls(
+                    forceShow: true,
                     videoControls: videoControls,
                     seekTimeAnchor: seekTimeAnchor,
                     vertical: true,

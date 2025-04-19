@@ -5,14 +5,16 @@
 
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/grid_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 
-class QuiltedGridLayout<T extends CellBase> extends StatefulWidget {
+class QuiltedGridLayout<T extends CellBuilder> extends StatefulWidget {
   const QuiltedGridLayout({
     super.key,
     required this.randomNumber,
@@ -34,7 +36,7 @@ class QuiltedGridLayout<T extends CellBase> extends StatefulWidget {
   State<QuiltedGridLayout<T>> createState() => _QuiltedGridLayoutState();
 }
 
-class _QuiltedGridLayoutState<T extends CellBase>
+class _QuiltedGridLayoutState<T extends CellBuilder>
     extends State<QuiltedGridLayout<T>>
     with ResetSelectionOnUpdate<T, QuiltedGridLayout<T>> {
   @override
@@ -46,51 +48,62 @@ class _QuiltedGridLayoutState<T extends CellBase>
   @override
   Widget build(BuildContext context) {
     final config = ShellConfiguration.of(context);
+    final l10n = context.l10n();
 
     return EmptyWidgetOrContent(
       progress: widget.progress,
       buildEmpty: widget.buildEmpty,
       source: source,
-      child: SliverGrid.builder(
-        itemCount: source.count,
-        gridDelegate: SliverQuiltedGridDelegate(
-          crossAxisCount: config.columns.number,
-          repeatPattern: QuiltedGridRepeatPattern.inverted,
-          pattern: config.columns.pattern(widget.randomNumber),
-        ),
-        itemBuilder: (context, idx) {
-          final cell = widget.source[idx];
+      child: TrackedIndex.wrap(
+        SliverGrid.builder(
+          itemCount: source.count,
+          gridDelegate: SliverQuiltedGridDelegate(
+            crossAxisCount: config.columns.number,
+            repeatPattern: QuiltedGridRepeatPattern.inverted,
+            pattern: config.columns.pattern(widget.randomNumber),
+          ),
+          itemBuilder: (context, idx) {
+            final cell = widget.source[idx];
 
-          return cell.buildCell<T>(
-            context,
-            idx,
-            cell,
-            imageAlign: Alignment.topCenter,
-            hideTitle: config.hideName,
-            isList: false,
-            animated: PlayAnimations.maybeOf(context) ?? false,
-            wrapSelection: (child) =>
-                cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-                      context: context,
-                      thisIndx: idx,
-                      onPressed: cell.tryAsPressable(
-                        context,
-                        idx,
-                      ),
-                      description: cell.description(),
-                      selectFrom: null,
-                      child: child,
-                    ) ??
-                WrapSelection(
-                  thisIndx: idx,
-                  description: cell.description(),
-                  onPressed: cell.tryAsPressable(context, idx),
-                  selectFrom: null,
-                  child: child,
+            return TrackingIndexHolder(
+              idx: idx,
+              child: ThisIndex(
+                idx: idx,
+                selectFrom: null,
+                child: Builder(
+                  builder: (context) => cell.buildCell(
+                    l10n,
+                    hideName: config.hideName,
+                    cellType: CellType.cell,
+                    imageAlign: Alignment.topCenter,
+                  ),
                 ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 }
+
+
+  // wrapSelection: (child) =>
+  //               cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
+  //                     context: context,
+  //                     thisIndx: idx,
+  //                     onPressed: cell.tryAsPressable(
+  //                       context,
+  //                       idx,
+  //                     ),
+  //                     description: cell.description(),
+  //                     selectFrom: null,
+  //                     child: child,
+  //                   ) ??
+  //               WrapSelection(
+  //                 thisIndx: idx,
+  //                 description: cell.description(),
+  //                 onPressed: cell.tryAsPressable(context, idx),
+  //                 selectFrom: null,
+  //                 child: child,
+  //               ),

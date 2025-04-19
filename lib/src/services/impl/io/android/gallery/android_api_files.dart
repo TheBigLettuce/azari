@@ -79,15 +79,15 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     this.type,
     this.sourceTags,
   ) {
-    _favoritesWatcher =
-        FavoritePostSourceService.safe()?.cache.countEvents.listen((_) {
-      backingStorage.addAll([]);
-    });
+    // _favoritesWatcher =
+    //     FavoritePostSourceService.safe()?.cache.countEvents.listen((_) {
+    //   backingStorage.addAll([]);
+    // });
   }
 
   final List<Directory> directories;
   final GalleryFilesPageType type;
-  late final StreamSubscription<int>? _favoritesWatcher;
+  // late final StreamSubscription<int>? _favoritesWatcher;
   final MapFilesSourceTags sourceTags;
 
   final cursorApi = platform.FilesCursor();
@@ -206,13 +206,13 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
 
   @override
   void destroy() {
-    _favoritesWatcher?.cancel();
+    // _favoritesWatcher?.cancel();
     backingStorage.destroy();
     progress.close();
   }
 }
 
-class AndroidUriFile implements ContentWidgets {
+class AndroidUriFile {
   const AndroidUriFile({
     required this.uri,
     required this.name,
@@ -246,9 +246,9 @@ class AndroidUriFile implements ContentWidgets {
   //   };
   // }
 
-  @override
-  String alias(bool long) => name;
+  // @override
+  // String alias(bool long) => name;
 
-  @override
-  Key uniqueKey() => ValueKey(uri);
+  // @override
+  // Key uniqueKey() => ValueKey(uri);
 }

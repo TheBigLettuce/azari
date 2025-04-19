@@ -5,16 +5,13 @@
 
 import "dart:async";
 
-import "package:azari/src/logic/local_tags_helper.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/focus_notifier.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/contentable.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
 import "package:flutter/material.dart";
 
-class ImageViewNotifiers extends StatefulWidget {
+class ImageViewNotifiers extends StatelessWidget {
   const ImageViewNotifiers({
     super.key,
     required this.stateController,
@@ -22,10 +19,13 @@ class ImageViewNotifiers extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.flipShowAppBar,
+    required this.loader,
     required this.child,
   });
 
   final Stream<void> flipShowAppBar;
+
+  final ImageViewLoader loader;
 
   final AnimationController controller;
   final PauseVideoState pauseVideoState;
@@ -35,44 +35,21 @@ class ImageViewNotifiers extends StatefulWidget {
   final Widget child;
 
   @override
-  State<ImageViewNotifiers> createState() => _ImageViewNotifiersState();
-}
-
-class _ImageViewNotifiersState extends State<ImageViewNotifiers> {
-  ImageViewStateController get stateController => widget.stateController;
-  int get currentIndex => stateController.currentIndex;
-
-  late final _searchData =
-      FilterNotifierData(TextEditingController(), FocusNode());
-
-  @override
-  void dispose() {
-    _searchData.dispose();
-
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return stateController.injectMetadataProvider(
-      ReloadImageNotifier(
-        reload: stateController.refreshImage,
-        child: PauseVideoNotifierHolder(
-          state: widget.pauseVideoState,
-          child: VideoControlsNotifier(
-            controller: widget.videoControls,
-            child: TagFilterValueNotifier(
-              notifier: _searchData.searchController,
-              child: TagFilterNotifier(
-                data: _searchData,
-                child: FocusNotifier(
-                  notifier: _searchData.searchFocus,
-                  child: _AppBarShownHolder(
-                    flipShowAppBar: widget.flipShowAppBar,
-                    animationController: widget.controller,
-                    child: widget.child,
-                  ),
-                ),
+    return _WidgetsHolder(
+      loader: loader,
+      child: ImageViewLoaderProvider(
+        loader: loader,
+        child: ImageViewTagsProvider(
+          loader: loader,
+          child: PauseVideoNotifierHolder(
+            state: pauseVideoState,
+            child: VideoControlsNotifier(
+              controller: videoControls,
+              child: _AppBarShownHolder(
+                flipShowAppBar: flipShowAppBar,
+                animationController: controller,
+                child: child,
               ),
             ),
           ),
@@ -85,21 +62,11 @@ class _ImageViewNotifiersState extends State<ImageViewNotifiers> {
 class ImageViewTagsProvider extends StatefulWidget {
   const ImageViewTagsProvider({
     super.key,
-    required this.currentPage,
-    required this.countEvents,
-    required this.watchTags,
-    required this.tags,
-    required this.currentCell,
+    required this.loader,
     required this.child,
   });
 
-  final Stream<int> currentPage;
-  final Stream<int> countEvents;
-
-  final WatchTagsCallback? watchTags;
-
-  final List<ImageTag> Function(ContentWidgets)? tags;
-  final (ContentWidgets, int) Function() currentCell;
+  final ImageViewLoader loader;
 
   final Widget child;
 
@@ -107,76 +74,77 @@ class ImageViewTagsProvider extends StatefulWidget {
   State<ImageViewTagsProvider> createState() => _ImageViewTagsProviderState();
 }
 
-class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
-  StreamSubscription<List<ImageTag>>? tagWatcher;
+class _ImageViewTagsProviderState extends State<ImageViewTagsProvider>
+    with ImageViewLoaderWatcher {
+  @override
+  ImageViewLoader get loader => widget.loader;
+
+  @override
+  void onNewCount(int newCount) {
+    _watchTags(_index);
+
+    setState(() {});
+  }
+
+  @override
+  void onNewIndex(int newIndex) {
+    if (_index == newIndex) {
+      return;
+    }
+
+    _index = newIndex;
+
+    _watchTags(_index);
+
+    setState(() {});
+  }
+
+  StreamSubscription<void>? tagWatcher;
   final tags = ImageViewTags();
 
-  late final StreamSubscription<int> indexEvents;
-  late final StreamSubscription<int> countEvents;
-
-  late ContentWidgets content;
-  late int currentCell;
+  late int _index;
 
   @override
   void initState() {
     super.initState();
-    final (c, cc) = widget.currentCell();
-    content = c;
-    currentCell = cc;
 
-    _watchTags(content);
+    _index = widget.loader.index;
 
-    indexEvents = widget.currentPage.listen((i) {
-      final (c, cc) = widget.currentCell();
-      content = c;
-      currentCell = cc;
-
-      _watchTags(content);
-
-      setState(() {});
-    });
-
-    countEvents = widget.countEvents.listen((newCount) {
-      final (c, cc) = widget.currentCell();
-      content = c;
-      currentCell = cc;
-
-      _watchTags(content);
-
-      setState(() {});
-    });
+    _watchTags(_index);
   }
 
   @override
   void dispose() {
     tags.dispose();
-    indexEvents.cancel();
-    countEvents.cancel();
     tagWatcher?.cancel();
 
     super.dispose();
   }
 
-  void _watchTags(ContentWidgets content) {
+  void _watchTags(int idx) {
     tagWatcher?.cancel();
-    tagWatcher = widget.watchTags?.call(content, (t) {
+    tagWatcher = widget.loader.tagsEventsFor(idx).listen((_) {
       final newTags = <ImageTag>[];
+      final tags = widget.loader.tagsFor(idx);
 
-      newTags.addAll(t.where((element) => element.favorite));
-      newTags.addAll(t.where((element) => !element.favorite));
+      newTags.addAll(
+        tags.where((element) => element.type == ImageTagType.favorite),
+      );
+      newTags.addAll(
+        tags.where((element) => element.type != ImageTagType.favorite),
+      );
 
-      tags.update(newTags, null);
+      this.tags.update(newTags);
     });
 
-    final t = widget.tags?.call(content);
+    final t = widget.loader.tagsFor(idx);
     tags.update(
-      t == null
-          ? const []
-          : t
-              .where((element) => element.favorite)
-              .followedBy(t.where((element) => !element.favorite))
-              .toList(),
-      content.alias(true),
+      t
+          .where((element) => element.type == ImageTagType.favorite)
+          .followedBy(
+            t.where((element) => element.type != ImageTagType.favorite),
+          )
+          .toList(),
     );
   }
 
@@ -184,6 +152,35 @@ class _ImageViewTagsProviderState extends State<ImageViewTagsProvider> {
   Widget build(BuildContext context) {
     return ImageTagsNotifier(
       tags: tags,
+      child: widget.child,
+    );
+  }
+}
+
+class _WidgetsHolder extends StatefulWidget {
+  const _WidgetsHolder({
+    super.key,
+    required this.loader,
+    required this.child,
+  });
+
+  final ImageViewLoader loader;
+
+  final Widget child;
+
+  @override
+  State<_WidgetsHolder> createState() => _WidgetsHolderState();
+}
+
+class _WidgetsHolderState extends State<_WidgetsHolder>
+    with ImageViewLoaderWatcher {
+  @override
+  ImageViewLoader get loader => widget.loader;
+
+  @override
+  Widget build(BuildContext context) {
+    return ImageViewWidgetsNotifier(
+      widgets: loader.get(loader.index)!,
       child: widget.child,
     );
   }
@@ -235,43 +232,38 @@ class _PauseVideoNotifierHolderState extends State<PauseVideoNotifierHolder> {
   }
 }
 
-class OriginalGridContext extends InheritedWidget {
-  const OriginalGridContext({
+class ImageViewLoaderProvider extends InheritedWidget {
+  const ImageViewLoaderProvider({
     super.key,
-    required this.gridContext,
+    required this.loader,
     required super.child,
   });
 
-  final BuildContext gridContext;
+  final ImageViewLoader loader;
 
-  static BuildContext? maybeOf(BuildContext context) {
+  static ImageViewLoader of(BuildContext context) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<OriginalGridContext>();
+        context.dependOnInheritedWidgetOfExactType<ImageViewLoaderProvider>();
 
-    return widget?.gridContext;
+    return widget!.loader;
   }
 
   @override
-  bool updateShouldNotify(OriginalGridContext oldWidget) =>
-      oldWidget.gridContext != gridContext;
+  bool updateShouldNotify(ImageViewLoaderProvider oldWidget) =>
+      oldWidget.loader != loader;
 }
 
 class ImageViewTags {
   ImageViewTags();
 
   List<ImageTag> _list = const [];
-  ParsedFilenameResult? _res;
 
   final _stream = StreamController<void>.broadcast();
   Stream<void> get stream => _stream.stream;
 
   List<ImageTag> get list => _list;
-  ParsedFilenameResult? get res => _res;
 
-  void update(List<ImageTag> list, String? filename) {
-    if (filename != null) {
-      _res = ParsedFilenameResult.fromFilename(filename).maybeValue();
-    }
+  void update(List<ImageTag> list) {
     _list = list;
 
     _stream.add(null);
@@ -301,16 +293,25 @@ class ImageTagsNotifier extends InheritedWidget {
       tags != oldWidget.tags;
 }
 
+enum ImageTagType {
+  favorite,
+  excluded,
+  normal;
+}
+
 class ImageTag {
   const ImageTag(
     this.tag, {
-    required this.favorite,
-    required this.excluded,
+    required this.type,
+    required this.onTap,
+    required this.onLongTap,
   });
 
   final String tag;
-  final bool favorite;
-  final bool excluded;
+
+  final ImageTagType type;
+  final ContextCallback? onTap;
+  final ContextCallback? onLongTap;
 }
 
 class _AppBarShownHolder extends StatefulWidget {
@@ -383,27 +384,27 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
   }
 }
 
-class ReloadImageNotifier extends InheritedWidget {
-  const ReloadImageNotifier({
-    super.key,
-    required this.reload,
-    required super.child,
-  });
+// class ReloadImageNotifier extends InheritedWidget {
+//   const ReloadImageNotifier({
+//     super.key,
+//     required this.reload,
+//     required super.child,
+//   });
 
-  final VoidCallback reload;
+//   final VoidCallback reload;
 
-  @override
-  bool updateShouldNotify(ReloadImageNotifier oldWidget) {
-    return reload != oldWidget.reload;
-  }
+//   @override
+//   bool updateShouldNotify(ReloadImageNotifier oldWidget) {
+//     return reload != oldWidget.reload;
+//   }
 
-  static void of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ReloadImageNotifier>();
+//   static void of(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<ReloadImageNotifier>();
 
-    widget!.reload();
-  }
-}
+//     widget!.reload();
+//   }
+// }
 
 class PauseVideoNotifier extends InheritedWidget {
   const PauseVideoNotifier({
@@ -477,56 +478,6 @@ class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
       count != oldWidget.count;
 }
 
-class TagFilterNotifier extends InheritedWidget {
-  const TagFilterNotifier({
-    super.key,
-    required this.data,
-    required super.child,
-  });
-
-  final FilterNotifierData data;
-
-  static FilterNotifierData? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagFilterNotifier>();
-
-    return widget?.data;
-  }
-
-  @override
-  bool updateShouldNotify(TagFilterNotifier oldWidget) =>
-      data != oldWidget.data;
-}
-
-class FilterNotifierData {
-  const FilterNotifierData(
-    this.searchController,
-    this.searchFocus,
-  );
-
-  final TextEditingController searchController;
-  final FocusNode searchFocus;
-
-  void dispose() {
-    searchController.dispose();
-    searchFocus.dispose();
-  }
-}
-
-class TagFilterValueNotifier extends InheritedNotifier<TextEditingController> {
-  const TagFilterValueNotifier({
-    super.key,
-    required super.notifier,
-    required super.child,
-  });
-
-  static String maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagFilterValueNotifier>();
-    return widget?.notifier?.value.text ?? "";
-  }
-}
-
 class AppBarVisibilityNotifier extends InheritedWidget {
   const AppBarVisibilityNotifier({
     super.key,
@@ -579,4 +530,25 @@ class VideoControlsNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(VideoControlsNotifier oldWidget) =>
       controller != oldWidget.controller;
+}
+
+class ImageViewWidgetsNotifier extends InheritedWidget {
+  const ImageViewWidgetsNotifier({
+    super.key,
+    required this.widgets,
+    required super.child,
+  });
+
+  final ImageViewWidgets widgets;
+
+  static ImageViewWidgets of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ImageViewWidgetsNotifier>();
+
+    return widget!.widgets;
+  }
+
+  @override
+  bool updateShouldNotify(ImageViewWidgetsNotifier oldWidget) =>
+      widgets != oldWidget.widgets;
 }

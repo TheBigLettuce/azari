@@ -18,7 +18,7 @@ abstract interface class ShellSelectionHolder {
   factory ShellSelectionHolder.source(
     SelectionController controller,
     List<SelectionBarAction> actions, {
-    required ReadOnlyStorage<int, CellBase> source,
+    required ReadOnlyStorage<int, CellBuilder> source,
   }) = _SelectionHolder;
 
   bool get isEmpty;
@@ -66,12 +66,12 @@ class _SelectionHolder implements ShellSelectionHolder {
   late final StreamSubscription<void> _countEvents;
 
   final SelectionController controller;
-  final ReadOnlyStorage<int, CellBase> source;
+  final ReadOnlyStorage<int, CellBuilder> source;
 
   @override
   final List<SelectionBarAction> actions;
 
-  final _selected = <int, CellBase>{};
+  final _selected = <int, CellBuilder>{};
 
   int? lastSelected;
 
@@ -84,7 +84,7 @@ class _SelectionHolder implements ShellSelectionHolder {
   int get count => _selected.length;
 
   void _use(
-    void Function(List<CellBase> l) f,
+    void Function(List<CellBuilder> l) f,
     bool closeOnPress,
   ) {
     f(_selected.values.toList());
@@ -152,7 +152,7 @@ class _SelectionHolder implements ShellSelectionHolder {
   @override
   bool isSelected(int indx) => _selected.containsKey(indx) && !indx.isNegative;
 
-  void _add(int id, CellBase selection) {
+  void _add(int id, CellBuilder selection) {
     if (id.isNegative) {
       return;
     }
