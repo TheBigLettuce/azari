@@ -73,62 +73,12 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
             enableHide: false,
             trailing: (
               Icons.add_rounded,
-              () {
-                Navigator.of(context, rootNavigator: true).push(
-                  DialogRoute<void>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(l10n.pinTag),
-                        content: AutocompleteWidget(
-                          null,
-                          (s) {},
-                          swapSearchIcon: false,
-                          (s) {
-                            widget.tagManager.pinned.add(s.trim());
-
-                            Navigator.pop(context);
-                          },
-                          () {},
-                          widget.api.searchTag,
-                          null,
-                          submitOnPress: true,
-                          roundBorders: true,
-                          plainSearchBar: true,
-                          showSearch: true,
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+              () => BooruSearchPage.openPinTagDialogDialog(context, widget.api),
             ),
             childSize: _ChipsPanelBody.size,
             child: _ChipsPanelBody(
-              onTagLongPressed: (str) => Navigator.push(
-                context,
-                DialogRoute<void>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(l10n.removeTag(str)),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          widget.tagManager.pinned.delete(str);
-                          Navigator.pop(context);
-                        },
-                        child: Text(l10n.yes),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Text(l10n.no),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              onTagLongPressed: (str) =>
+                  BooruSearchPage.openRemovePinnedTagDialog(context, str),
               source: source,
               onTagPressed: widget.onTagPressed,
               icon: const Icon(Icons.push_pin_rounded),
@@ -153,33 +103,7 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
               return;
             }
 
-            Navigator.of(context, rootNavigator: true).push(
-              DialogRoute<void>(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(l10n.addPinnedTag),
-                    content: AutocompleteWidget(
-                      null,
-                      (s) {},
-                      swapSearchIcon: false,
-                      (s) {
-                        widget.tagManager.pinned.add(s.trim());
-
-                        Navigator.pop(context);
-                      },
-                      () {},
-                      widget.api.searchTag,
-                      null,
-                      submitOnPress: true,
-                      roundBorders: true,
-                      plainSearchBar: true,
-                      showSearch: true,
-                    ),
-                  );
-                },
-              ),
-            );
+            BooruSearchPage.openPinTagDialogDialog(context, widget.api);
           },
         ),
       ],

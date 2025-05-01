@@ -69,65 +69,13 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
             enableHide: false,
             trailing: (
               Icons.add_rounded,
-              () {
-                Navigator.of(context, rootNavigator: true).push(
-                  DialogRoute<void>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(l10n.addToExcluded),
-                        content: AutocompleteWidget(
-                          null,
-                          (s) {},
-                          swapSearchIcon: false,
-                          (s) {
-                            widget.tagManager.excluded.add(s.trim());
-
-                            Navigator.pop(context);
-                          },
-                          () {},
-                          widget.api.searchTag,
-                          null,
-                          submitOnPress: true,
-                          roundBorders: true,
-                          plainSearchBar: true,
-                          showSearch: true,
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+              () => BooruSearchPage.openExcludeTagDialog(context, widget.api),
             ),
             childSize: _ChipsPanelBody.size,
             child: _ChipsPanelBody(
               source: source,
-              onTagPressed: (str) {
-                Navigator.push(
-                  context,
-                  DialogRoute<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(l10n.removeTag(str)),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            widget.tagManager.excluded.delete(str);
-                            Navigator.pop(context);
-                          },
-                          child: Text(l10n.yes),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text(l10n.no),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+              onTagPressed: (str) =>
+                  BooruSearchPage.openRemoveExcludedTagDialog(context, str),
               icon: const Icon(Icons.tag_rounded),
               backgroundColor: Colors.pink.shade300,
               foregroundColor: Colors.black.withValues(alpha: 0.8),
@@ -152,33 +100,7 @@ class __ExcludedTagsPanelState extends State<_ExcludedTagsPanel> {
               return;
             }
 
-            Navigator.of(context, rootNavigator: true).push(
-              DialogRoute<void>(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(l10n.addToExcluded),
-                    content: AutocompleteWidget(
-                      null,
-                      (s) {},
-                      swapSearchIcon: false,
-                      (s) {
-                        widget.tagManager.excluded.add(s);
-
-                        Navigator.pop(context);
-                      },
-                      () {},
-                      widget.api.searchTag,
-                      null,
-                      submitOnPress: true,
-                      roundBorders: true,
-                      plainSearchBar: true,
-                      showSearch: true,
-                    ),
-                  );
-                },
-              ),
-            );
+            BooruSearchPage.openExcludeTagDialog(context, widget.api);
           },
         ),
       ],

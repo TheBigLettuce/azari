@@ -104,56 +104,6 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
   }
 }
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({
-    super.key,
-    required this.statisticsDaily,
-    required this.statisticsGeneral,
-  });
-
-  final StatisticsDailyService statisticsDaily;
-  final StatisticsGeneralService statisticsGeneral;
-
-  static Future<void> open(
-    BuildContext context, {
-    required StatisticsDailyService statisticsDaily,
-    required StatisticsGeneralService statisticsGeneral,
-  }) =>
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) {
-            return DashboardPage(
-              statisticsDaily: statisticsDaily,
-              statisticsGeneral: statisticsGeneral,
-            );
-          },
-        ),
-      );
-
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
-
-class _DashboardPageState extends State<DashboardPage> {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n();
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            title: Text(l10n.dashboardPage),
-          ),
-          _GeneralStatistics(statisticsGeneral: widget.statisticsGeneral),
-          _DailyStatistics(statisticsDaily: widget.statisticsDaily),
-        ],
-      ),
-    );
-  }
-}
-
 class _DailyStatistics extends StatefulWidget {
   const _DailyStatistics({
     // super.key,

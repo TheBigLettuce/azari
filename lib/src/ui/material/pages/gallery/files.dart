@@ -6,7 +6,6 @@
 import "dart:async";
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
-import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/directories_mixin.dart";
 import "package:azari/src/logic/local_tags_helper.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
@@ -17,131 +16,149 @@ import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/app.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
 import "package:azari/src/ui/material/widgets/file_action_chips.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
-import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
-import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/grid_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/quilted_grid.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:go_router/go_router.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 
-class FilesPage extends StatefulWidget {
+//  dirName: switch (directory.bucketId) {
+//       "favorites" => l10n.galleryDirectoriesFavorites,
+//       "trash" => l10n.galleryDirectoryTrash,
+//       String() => directory.name,
+//     },
+
+// final directories = api.directories;
+// if (directories.length == 1) {
+//   final directory = directories.first;
+
+//   api = api.files(
+//     directory,
+//     switch (directory.bucketId) {
+//       "favorites" => GalleryFilesPageType.favorites,
+//       "trash" => GalleryFilesPageType.trash,
+//       String() => GalleryFilesPageType.normal,
+//     },
+//     name: directory.name,
+//     bucketId: directory.bucketId,
+//   );
+// } else {
+//   api = widget.data.api.joinedFiles(widget.data.directories);
+// }
+
+// this.presetFilteringMode = FilteringMode.noFilter,
+
+//  void onSuccess(bool success) {
+//     if (!success || !context.mounted) {
+//       return;
+//     }
+
+//     StatisticsGalleryService.addViewedDirectories(1);
+
+//     return FilesPage.open(
+//       context,
+//       secure: requireAuth,
+//     );
+//   }
+
+class FilesPage extends SpaceWidget<Directories> {
   const FilesPage({
     super.key,
-    required this.api,
-    required this.dirName,
-    required this.directories,
+    this.presetFilteringValue = "",
+    required this.secure,
+    required this.selectionController,
     required this.navBarEvents,
     required this.scrollingState,
-    this.secure,
-    this.callback,
-    this.presetFilteringValue = "",
-    this.filteringMode,
-    this.addScaffold = false,
-    required this.selectionController,
   });
 
-  final bool? secure;
-  final bool addScaffold;
+  final bool secure;
 
-  final String dirName;
   final String presetFilteringValue;
 
-  final List<Directory> directories;
-  final Directories api;
-
+  final SelectionController selectionController;
   final Stream<void>? navBarEvents;
+
   final ScrollingStateSink? scrollingState;
 
-  final ReturnFileCallback? callback;
-
-  final FilteringMode? filteringMode;
-
-  final SelectionController selectionController;
-
-  static Future<void> openProtected({
-    required BuildContext context,
-    required Directory directory,
-    required AppLocalizations l10n,
-    required GalleryReturnCallback? callback,
-    required Directories api,
-    required String Function(Directory) segmentFnc,
-    required bool addScaffold,
+  static void openImageView(
+    BuildContext context, {
+    int startingCell = 0,
+    Key? key,
   }) {
-    if (callback?.isDirectory ?? false) {
-      Navigator.maybePop(context);
+    context.goNamed("FilesImageView", queryParameters: {
+      "index": startingCell.toString(),
+    });
+  }
 
-      (callback! as ReturnDirectoryCallback)(
-        (
-          bucketId: directory.bucketId,
-          path: directory.relativeLoc,
-          volumeName: directory.volumeName
-        ),
-        false,
-      );
+  static void openEmptyTrashDialog(BuildContext context) =>
+      context.goNamed("EmptyTrashDialog");
 
-      return Future.value();
+  static void openDeleteFilesDialog(
+    BuildContext context,
+    List<File> selected,
+    DeleteDialogShow toShow,
+  ) {
+    void delete() {
+      const GalleryService().trash.addAll(
+            selected.map((e) => e.originalUri).toList(),
+          );
+
+      StatisticsGalleryService.addDeleted(selected.length);
+    }
+
+    if (!toShow.show) {
+      delete();
+      return;
+    }
+
+    context.goNamed("DeleteFilesDialog", extra: (selected, toShow));
+  }
+
+  static void _openProtected(
+    BuildContext context,
+    void Function(bool success) onSuccess,
+  ) {
+    bool requireAuth = false;
+    final l10n = context.l10n();
+
+    final files = Spaces().get<Directories>().bindFiles;
+    if (files == null) {
+      return onSuccess(false);
+    }
+
+    requireAuth = files.directories.fold(false, (value, d) {
+      return value ||
+          (DirectoryMetadataService.safe()
+                  ?.cache
+                  .get(defaultSegmentCell(d.name, d.bucketId))
+                  ?.requireAuth ??
+              false);
+    });
+
+    if (const AppApi().canAuthBiometric && requireAuth) {
+      LocalAuthentication()
+          .authenticate(localizedReason: l10n.openDirectory)
+          .then(onSuccess);
     } else {
-      bool requireAuth = false;
-
-      Future<void> onSuccess(bool success) {
-        if (!success || !context.mounted) {
-          return Future.value();
-        }
-
-        StatisticsGalleryService.addViewedDirectories(1);
-
-        return FilesPage.open(
-          context,
-          api: api,
-          directories: [directory],
-          secure: requireAuth,
-          addScaffold: addScaffold,
-          callback: callback?.toFileOrNull,
-          dirName: switch (directory.bucketId) {
-            "favorites" => l10n.galleryDirectoriesFavorites,
-            "trash" => l10n.galleryDirectoryTrash,
-            String() => directory.name,
-          },
-        );
-      }
-
-      requireAuth = DirectoryMetadataService.safe()
-              ?.cache
-              .get(segmentFnc(directory))
-              ?.requireAuth ??
-          false;
-
-      if (const AppApi().canAuthBiometric && requireAuth) {
-        return LocalAuthentication()
-            .authenticate(
-              localizedReason: l10n.openDirectory,
-            )
-            .then(onSuccess);
-      } else {
-        return onSuccess(true);
-      }
+      return onSuccess(true);
     }
   }
 
@@ -150,70 +167,65 @@ class FilesPage extends StatefulWidget {
       GridSettingsService.available &&
       GalleryService.available;
 
-  static Future<void> open(
+  static void open(
     BuildContext context, {
-    required String dirName,
-    required List<Directory> directories,
-    required Directories api,
-    bool addScaffold = false,
     String presetFilteringValue = "",
-    bool? secure,
-    ReturnFileCallback? callback,
+    bool secure = false,
     FilteringMode? filteringMode,
   }) {
     if (!hasServicesRequired()) {
       // TODO: change
       addAlert("FilesPage", "Gallery functionality isn't available");
 
-      return Future.value();
+      return;
+    }
+    if (secure) {
+      return _openProtected(context, (success) {
+        if (success) {
+          context.goNamed(
+            "Files",
+            queryParameters: {
+              "secure": "1",
+              "filterValue": presetFilteringValue,
+              if (filteringMode != null) "filterMode": filteringMode.name,
+            },
+          );
+        }
+      });
     }
 
-    return Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          return FilesPage(
-            dirName: dirName,
-            directories: directories,
-            api: api,
-            addScaffold: addScaffold,
-            presetFilteringValue: presetFilteringValue,
-            secure: secure,
-            callback: callback,
-            filteringMode: filteringMode,
-            selectionController: SelectionActions.controllerOf(context),
-            navBarEvents: NavigationButtonEvents.maybeOf(context),
-            scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-          );
-        },
-      ),
+    context.goNamed(
+      "Files",
+      queryParameters: {
+        "filterValue": presetFilteringValue,
+        if (filteringMode != null) "filterMode": filteringMode.name,
+      },
     );
   }
 
   @override
-  State<FilesPage> createState() => _FilesPageState();
+  SpaceState<Directories, FilesPage> createState() => _FilesPageState();
 }
 
-class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
+class _FilesPageState extends State<FilesPage>
+    with SettingsWatcherMixin, SpaceState<Directories, FilesPage> {
   final GlobalKey<BarIconState> _favoriteButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _videoButtonKey = GlobalKey();
   final GlobalKey<BarIconState> _duplicateButtonKey = GlobalKey();
 
-  late final Files api;
-
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
 
-  late final ChainedFilterResourceSource<int, File> filter;
+  Files? get api => value.bindFiles;
 
-  late final searchTextController =
-      TextEditingController(text: widget.presetFilteringValue);
+  ChainedFilterResourceSource<int, File>? filter;
+  SourceShellElementState<File>? status;
+
+  late final TextEditingController searchTextController;
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
-  late final PlatformImageViewStateImpl impl;
-
-  late final SourceShellElementState<File> status;
+  // PlatformImageViewStateImpl? impl;
 
   Iterable<File> filterColors(Iterable<File> cell, FilteringColors? colors) {
     return cell.where(
@@ -236,34 +248,72 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
     );
   }
 
+  Files? _thisFiles;
+
   @override
   void initState() {
     super.initState();
 
-    if (widget.directories.length == 1) {
-      final directory = widget.directories.first;
+    searchTextController =
+        TextEditingController(text: widget.presetFilteringValue);
 
-      api = widget.api.files(
-        directory,
-        switch (directory.bucketId) {
-          "favorites" => GalleryFilesPageType.favorites,
-          "trash" => GalleryFilesPageType.trash,
-          String() => GalleryFilesPageType.normal,
-        },
-        name: directory.name,
-        bucketId: directory.bucketId,
-      );
-    } else {
-      api = widget.api.joinedFiles(widget.directories);
+    _thisFiles = api;
+    if (api != null) {
+      _init(api!);
     }
+  }
 
+  @override
+  void onUpdate() {
+    super.onUpdate();
+    if (_thisFiles != api) {
+      if (api != null) {
+        _init(api!);
+      } else {
+        _deinit();
+      }
+
+      _thisFiles = api;
+    }
+  }
+
+  @override
+  void dispose() {
+    status?.destroy();
+    // impl?.dispose();
+
+    _subscription?.cancel();
+    _listener?.dispose();
+
+    searchFocus.dispose();
+    searchTextController.dispose();
+    filter?.destroy();
+
+    const WindowApi().setProtected(false);
+
+    super.dispose();
+  }
+
+  void _deinit() {
+    filter?.destroy();
+    filter = null;
+
+    // impl?.dispose();
+    // impl = null;
+
+    status?.destroy();
+    status = null;
+  }
+
+  void _init(Files api) {
+    filter?.destroy();
     filter = ChainedFilterResourceSource(
       api.source,
       ListStorage(),
-      onCompletelyEmpty: () {
-        Navigator.maybePop(context);
-      },
-      prefilter: () {
+      // onCompletelyEmpty: (filter) {
+      //   DirectoriesPage.open(context);
+      // },
+      prefilter: (filter) {
         if (filter.filteringMode == FilteringMode.favorite) {
           _favoriteButtonKey.currentState?.toggle(true);
           _duplicateButtonKey.currentState?.toggle(false);
@@ -363,9 +413,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       },
       allowedFilteringModes: {
         FilteringMode.noFilter,
-        if (api.type != GalleryFilesPageType.favorites &&
-            FavoritePostSourceService.available)
-          FilteringMode.favorite,
+        if (FavoritePostSourceService.available) FilteringMode.favorite,
         FilteringMode.original,
         FilteringMode.duplicate,
         if (ThumbnailService.available) FilteringMode.same,
@@ -382,128 +430,125 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
         SortingMode.size,
         SortingMode.stars,
       },
-      initialFilteringMode: widget.filteringMode ?? FilteringMode.noFilter,
+      initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
       filteringColors: FilteringColors.noColor,
     );
 
-    impl = PlatformImageViewStateImpl(
-      source: filter,
-      onTagPressed: (context, tag) => _onBooruTagPressed(
-        context,
-        const SettingsService().current.selectedBooru,
-        tag,
-        null,
-      ),
-      onTagLongPressed: (context, tag) {
-        final l10n = context.l10n();
+    // impl?.dispose();
+    // impl = PlatformImageViewStateImpl(
+    //   source: filter!,
+    //   onTagPressed: (context, tag) => _onBooruTagPressed(
+    //     context,
+    //     const SettingsService().current.selectedBooru,
+    //     tag,
+    //     null,
+    //   ),
+    //   onTagLongPressed: (context, tag) {
+    //     final l10n = context.l10n();
 
-        return radioDialog(
-          context,
-          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-          const SettingsService().current.safeMode,
-          (e) => _onBooruTagPressed(
-            context,
-            const SettingsService().current.selectedBooru,
-            tag,
-            e,
-          ),
-          title: l10n.chooseSafeMode,
-        );
-      },
-      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-        callback: widget.callback,
-        child: FilesDataNotifier(
-          api: api,
-          child: DeleteDialogShowNotifier(
-            toShow: toShowDelete,
-            child: OnBooruTagPressed(
-              onPressed: _onBooruTagPressed,
-              child: filter.inject(child),
-            ),
-          ),
-        ),
-      ),
-    );
+    //     return radioDialog(
+    //       context,
+    //       SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+    //       const SettingsService().current.safeMode,
+    //       (e) => _onBooruTagPressed(
+    //         context,
+    //         const SettingsService().current.selectedBooru,
+    //         tag,
+    //         e,
+    //       ),
+    //       title: l10n.chooseSafeMode,
+    //     );
+    //   },
+    //   wrapNotifiers: (child) => FilesDataNotifier(
+    //     api: api,
+    //     child: DeleteDialogShowNotifier(
+    //       toShow: toShowDelete,
+    //       child: OnBooruTagPressed(
+    //         onPressed: _onBooruTagPressed,
+    //         child: filter!.inject(child),
+    //       ),
+    //     ),
+    //   ),
+    // );
 
+    status?.destroy();
     status = SourceShellElementState(
-      source: filter,
+      source: filter!,
       selectionController: widget.selectionController,
       onEmpty: SourceOnEmptyInterface(
-        filter,
+        filter!,
         (context) => context.l10n().emptyNoMedia,
       ),
-      actions: widget.callback != null
-          ? const <SelectionBarAction>[]
-          : api.type.isTrash()
-              ? <SelectionBarAction>[
-                  _restoreFromTrashAction(const GalleryService().trash),
-                ]
-              : <SelectionBarAction>[
-                  if (settings.filesExtendedActions) ...[
-                    if (DownloadManager.available && LocalTagsService.available)
-                      SelectionBarAction(
-                        Icons.download_rounded,
-                        (selected) {
-                          const TasksService().add<DownloadManager>(
-                            () => redownloadFiles(
-                              context.l10n(),
-                              selected.cast(),
-                            ),
-                          );
-                        },
-                        true,
-                        taskTag: DownloadManager,
-                      ),
-                    if (LocalTagsService.available)
-                      _saveTagsAction(context.l10n()),
-                    if (LocalTagsService.available)
-                      _addTagAction(
-                        context,
-                        () => api.source.clearRefreshSilent(),
-                      ),
-                  ],
-                  _deleteAction(
-                    context,
-                    toShowDelete,
-                    const GalleryService().trash,
+      actions: api.type.isTrash()
+          ? <SelectionBarAction>[
+              _restoreFromTrashAction(const GalleryService().trash),
+            ]
+          : <SelectionBarAction>[
+              if (settings.filesExtendedActions) ...[
+                if (DownloadManager.available && LocalTagsService.available)
+                  SelectionBarAction(
+                    Icons.download_rounded,
+                    (selected) {
+                      const TasksService().add<DownloadManager>(
+                        () => redownloadFiles(
+                          context.l10n(),
+                          selected.cast(),
+                        ),
+                      );
+                    },
+                    true,
+                    taskTag: DownloadManager,
                   ),
-                  if (TagManagerService.available && LocalTagsService.available)
-                    _copyAction(
-                      context,
-                      api.bucketId,
-                      api.parent,
-                      toShowDelete,
-                    ),
-                  if (TagManagerService.available && LocalTagsService.available)
-                    _moveAction(
-                      context,
-                      api.bucketId,
-                      api.parent,
-                      toShowDelete,
-                    ),
-                ],
+                if (LocalTagsService.available) _saveTagsAction(context.l10n()),
+                if (LocalTagsService.available)
+                  _addTagAction(
+                    context,
+                    () => api.source.clearRefreshSilent(),
+                  ),
+              ],
+              _deleteAction(
+                context,
+                toShowDelete,
+                const GalleryService().trash,
+              ),
+              if (TagManagerService.available && LocalTagsService.available)
+                _copyAction(
+                  context,
+                  // api.bucketId,
+                  api.parent,
+                  toShowDelete,
+                ),
+              if (TagManagerService.available && LocalTagsService.available)
+                _moveAction(
+                  context,
+                  // api.bucketId,
+                  api.parent,
+                  toShowDelete,
+                ),
+            ],
     );
 
     final secure = widget.secure ??
-        (widget.directories.length == 1
+        (api.directories.length == 1
             ? DirectoryMetadataService.safe()
                     ?.cache
-                    .get(_segmentCell(widget.directories.first))
+                    .get(_segmentCell(api.directories.first))
                     ?.requireAuth ??
                 false
             : false);
 
     if (secure) {
+      _listener?.dispose();
       _listener = AppLifecycleListener(
         onHide: () {
           _subscription?.cancel();
           _subscription = Stream<void>.periodic(const Duration(seconds: 10))
               .listen((event) {
-            filter.backingStorage.clear();
+            filter?.backingStorage.clear();
 
             // ignore: use_build_context_synchronously
-            Navigator.of(context).maybePop();
+            DirectoriesPage.open(context);
 
             _subscription?.cancel();
 
@@ -520,31 +565,6 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
     }
 
     api.source.clearRefreshSilent();
-
-    platform.FlutterGalleryData.setUp(impl);
-    platform.GalleryVideoEvents.setUp(impl);
-  }
-
-  @override
-  void dispose() {
-    platform.FlutterGalleryData.setUp(null);
-    platform.GalleryVideoEvents.setUp(null);
-
-    status.destroy();
-    impl.dispose();
-
-    _subscription?.cancel();
-    _listener?.dispose();
-
-    searchFocus.dispose();
-    searchTextController.dispose();
-    filter.destroy();
-
-    api.close();
-
-    const WindowApi().setProtected(false);
-
-    super.dispose();
   }
 
   String _segmentCell(Directory cell) =>
@@ -566,332 +586,263 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
         rootNavigator: true,
         saveSelectedPage: (e) {},
         overrideSafeMode: overrideSafeMode,
-      ).then((value) {
-        if (context.mounted) {
-          PauseVideoNotifier.maybePauseOf(context, false);
-        }
-      });
+      );
+      // .then((value) {
+      //   if (context.mounted) {
+      //     PauseVideoNotifier.maybePauseOf(context, false);
+      //   }
+      // });
 
       return;
     }
 
     searchTextController.text = tag;
-    filter.filteringMode = FilteringMode.tag;
-    if (filter.backingStorage.isNotEmpty) {
+    filter?.filteringMode = FilteringMode.tag;
+    if (filter?.backingStorage.isNotEmpty ?? false) {
       ExitOnPressRoute.maybeExitOf(context);
-      // Navigator.pop(context);
     }
   }
 
   FilteringMode? beforeButtons;
 
   PathVolume? makeThenMoveTo() {
-    if (widget.directories.length == 1) {
-      final dir = widget.directories.first;
-      if (dir.relativeLoc.isEmpty ||
-          dir.name.isEmpty ||
-          dir.volumeName.isEmpty) {
-        return null;
-      }
+    // if (widget.data.directories.length == 1) {
+    //   final dir = widget.data.directories.first;
+    //   if (dir.relativeLoc.isEmpty ||
+    //       dir.name.isEmpty ||
+    //       dir.volumeName.isEmpty) {
+    //     return null;
+    //   }
 
-      return PathVolume(dir.relativeLoc, dir.volumeName, dir.name);
-    }
+    //   return PathVolume(dir.relativeLoc, dir.volumeName, dir.name);
+    // }
 
     return null;
   }
 
+  String searchHint(AppLocalizations l10n) {
+    return api == null
+        ? "No directories"
+        : "${api!.directories.length} ${l10n.directoriesPlural}";
+  }
+
+  Widget _wrapNotifiers(Widget child) {
+    Widget ret = child;
+    if (filter != null) {
+      ret = filter!.inject(ret);
+    }
+    if (status != null) {
+      ret = status!.source.inject(ret);
+    }
+
+    return ret;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n();
     final gridSettings = GridSettingsData<FilesData>();
 
-    return FlutterGalleryDataNotifier(
-      galleryDataImpl: impl,
-      child: ScaffoldSelectionBar(
-        addScaffoldAndBar: widget.addScaffold || widget.callback != null,
-        child: GridPopScope(
-          searchTextController: searchTextController,
-          filter: filter,
-          child: ShellScope(
-            footer: widget.callback?.preview,
-            stackInjector: status,
-            fab: widget.callback == null
-                ? const NoShellFab()
-                : const DefaultShellFab(),
-            // pageName: widget.dirName,
-            configWatcher: gridSettings.watch,
-            settingsButton: ShellSettingsButton.fromWatchable(
-              gridSettings,
-              header: const _ShowAdditionalButtons(),
-              localizeHideNames: (context) =>
-                  l10n.hideNames(l10n.hideNamesFiles),
+    return ShellScope(
+      stackInjector: status,
+      configWatcher: gridSettings.watch,
+      backButton: CallbackAppBarBackButton(
+        onPressed: () => DirectoriesPage.open(context),
+      ),
+      settingsButton: ShellSettingsButton.fromWatchable(
+        gridSettings,
+        header: const _ShowAdditionalButtons(),
+        localizeHideNames: (context) => l10n.hideNames(l10n.hideNamesFiles),
+      ),
+      appBar: SearchBarAppBarType.fromFilter(
+        filter,
+        hintText: searchHint(l10n),
+        textEditingController: searchTextController,
+        focus: searchFocus,
+        complete: LocalTagsService.safe()?.complete,
+        trailingItems: [
+          if (api != null && api!.type.isTrash())
+            IconButton(
+              onPressed: () => FilesPage.openEmptyTrashDialog(context),
+              icon: const Icon(Icons.delete_sweep_outlined),
             ),
-            backButton: CallbackAppBarBackButton(
-              onPressed: () {
-                if (filter.filteringMode != FilteringMode.noFilter) {
-                  filter.filteringMode = FilteringMode.noFilter;
-                  return;
-                }
-                Navigator.pop(context);
-              },
-            ),
-            appBar: SearchBarAppBarType.fromFilter(
-              filter,
-              hintText: widget.dirName,
-              textEditingController: searchTextController,
-              focus: searchFocus,
-              complete: LocalTagsService.safe()?.complete,
-              trailingItems: [
-                if (widget.callback == null && api.type.isTrash())
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        DialogRoute<void>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(l10n.emptyTrashTitle),
-                              content: Text(
-                                l10n.thisIsPermanent,
-                                style: TextStyle(
-                                  color: Colors.red.harmonizeWith(
-                                    theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    const GalleryService().trash.empty();
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(l10n.yes),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(l10n.no),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_sweep_outlined),
-                  ),
-                // if (widget.callback != null)
-                //   OnBooruTagPressed(
-                //     onPressed: _onBooruTagPressed,
-                //     child: Builder(
-                //       builder: (context) => IconButton(
-                //         onPressed: () {
-                //           if (filter.progress.inRefreshing) {
-                //             return;
-                //           }
+        ],
+      ),
+      elements: [
+        ElementPriority(
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            sliver: SliverToBoxAdapter(
+              child: SizedBox(
+                height: 40,
+                child: ListView(
+                  padding: const EdgeInsets.only(left: 18, right: 12),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: filter != null && status != null
+                            ? () {
+                                final selection = status!.selection;
 
-                //           final upTo = filter.backingStorage.count;
-
-                //           try {
-                //             final n = math.Random.secure().nextInt(upTo);
-
-                //             filter.forIdxUnsafe(n).onPressed(context, n);
-                //           } catch (e, trace) {
-                //             Logger.root
-                //                 .warning("getting random number", e, trace);
-
-                //             return;
-                //           }
-
-                //           if (widget.callback!.returnBack) {
-                //             Navigator.pop(context);
-                //             Navigator.pop(context);
-                //           }
-                //         },
-                //         icon: const Icon(Icons.casino_outlined),
-                //       ),
-                //     ),
-                //   ),
-              ],
-            ),
-            elements: [
-              ElementPriority(
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  sliver: SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 40,
-                      child: ListView(
-                        padding: const EdgeInsets.only(left: 18, right: 12),
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                final selection = status.selection;
-
-                                if (selection.count == filter.count) {
+                                if (selection.count == filter?.count) {
                                   selection.reset(true);
                                 } else {
                                   selection.selectAll();
                                 }
-                              },
-                              icon: const Icon(Icons.select_all_rounded),
-                            ),
-                          ),
-                          StreamBuilder(
-                            stream: filter.filterEvents,
-                            builder: (context, value) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: FilterChip(
-                                  showCheckmark: false,
-                                  avatar: Icon(FilteringMode.duplicate.icon),
-                                  selected: filter.filteringMode ==
-                                      FilteringMode.duplicate,
-                                  label: Text(l10n.enumFilteringModeDuplicate),
-                                  onSelected: (value) {
-                                    if (filter.filteringMode ==
+                              }
+                            : null,
+                        icon: const Icon(Icons.select_all_rounded),
+                      ),
+                    ),
+                    StreamBuilder(
+                      stream: filter?.filterEvents,
+                      builder: (context, value) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: FilterChip(
+                            showCheckmark: false,
+                            avatar: Icon(FilteringMode.duplicate.icon),
+                            selected: filter?.filteringMode ==
+                                FilteringMode.duplicate,
+                            label: Text(l10n.enumFilteringModeDuplicate),
+                            onSelected: filter != null
+                                ? (value) {
+                                    if (filter?.filteringMode ==
                                         FilteringMode.duplicate) {
-                                      filter.filteringMode = beforeButtons ==
+                                      filter?.filteringMode = beforeButtons ==
                                               FilteringMode.duplicate
                                           ? FilteringMode.noFilter
                                           : (beforeButtons ??
                                               FilteringMode.noFilter);
                                       return;
                                     } else {
-                                      beforeButtons = filter.filteringMode;
-                                      filter.filteringMode =
+                                      beforeButtons = filter?.filteringMode;
+                                      filter?.filteringMode =
                                           FilteringMode.duplicate;
                                       return;
                                     }
-                                  },
-                                ),
-                              );
-                            },
+                                  }
+                                : null,
                           ),
-                          StreamBuilder(
-                            stream: filter.filterEvents,
-                            builder: (context, value) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: FilterChip(
-                                  showCheckmark: false,
-                                  avatar: Icon(FilteringMode.favorite.icon),
-                                  selected: filter.filteringMode ==
-                                      FilteringMode.favorite,
-                                  label: Text(l10n.favoritesLabel),
-                                  onSelected: (value) {
-                                    if (filter.filteringMode ==
+                        );
+                      },
+                    ),
+                    StreamBuilder(
+                      stream: filter?.filterEvents,
+                      builder: (context, value) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: FilterChip(
+                            showCheckmark: false,
+                            avatar: Icon(FilteringMode.favorite.icon),
+                            selected:
+                                filter?.filteringMode == FilteringMode.favorite,
+                            label: Text(l10n.favoritesLabel),
+                            onSelected: filter != null
+                                ? (value) {
+                                    if (filter?.filteringMode ==
                                         FilteringMode.favorite) {
-                                      filter.filteringMode = beforeButtons ==
+                                      filter?.filteringMode = beforeButtons ==
                                               FilteringMode.favorite
                                           ? FilteringMode.noFilter
                                           : beforeButtons ??
                                               FilteringMode.noFilter;
                                       return;
                                     } else {
-                                      beforeButtons = filter.filteringMode;
-                                      filter.filteringMode =
+                                      beforeButtons = filter?.filteringMode;
+                                      filter?.filteringMode =
                                           FilteringMode.favorite;
                                       return;
                                     }
-                                  },
-                                ),
-                              );
-                            },
+                                  }
+                                : null,
                           ),
-                          StreamBuilder(
-                            stream: filter.filterEvents,
-                            builder: (context, value) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: FilterChip(
-                                  showCheckmark: false,
-                                  avatar: Icon(FilteringMode.video.icon),
-                                  selected: filter.filteringMode ==
-                                      FilteringMode.video,
-                                  label: Text(l10n.videosLabel),
-                                  onSelected: (value) {
-                                    if (filter.filteringMode ==
+                        );
+                      },
+                    ),
+                    StreamBuilder(
+                      stream: filter?.filterEvents,
+                      builder: (context, value) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: FilterChip(
+                            showCheckmark: false,
+                            avatar: Icon(FilteringMode.video.icon),
+                            selected:
+                                filter?.filteringMode == FilteringMode.video,
+                            label: Text(l10n.videosLabel),
+                            onSelected: filter != null
+                                ? (value) {
+                                    if (filter?.filteringMode ==
                                         FilteringMode.video) {
-                                      filter.filteringMode =
+                                      filter?.filteringMode =
                                           beforeButtons == FilteringMode.video
                                               ? FilteringMode.noFilter
                                               : beforeButtons ??
                                                   FilteringMode.noFilter;
                                       return;
                                     } else {
-                                      beforeButtons = filter.filteringMode;
-                                      filter.filteringMode =
+                                      beforeButtons = filter?.filteringMode;
+                                      filter?.filteringMode =
                                           FilteringMode.video;
                                       return;
                                     }
-                                  },
-                                ),
-                              );
-                            },
+                                  }
+                                : null,
                           ),
-                        ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          hideOnEmpty: false,
+        ),
+        if (status != null && filter != null)
+          ElementPriority(
+            Builder(
+              builder: (context) => ShellElement(
+                key: ValueKey(settings.filesExtendedActions),
+                state: status!,
+                scrollingState: widget.scrollingState,
+                scrollUpOn: widget.navBarEvents == null
+                    ? const []
+                    : [(widget.navBarEvents!, null)],
+                registerNotifiers: (child) {
+                  return FilesDataNotifier(
+                    api: api,
+                    child: DeleteDialogShowNotifier(
+                      toShow: toShowDelete,
+                      child: OnBooruTagPressed(
+                        onPressed: _onBooruTagPressed,
+                        child: _wrapNotifiers(child),
                       ),
                     ),
+                  );
+                },
+                slivers: [
+                  CurrentGridSettingsLayout<File>(
+                    source: filter!.backingStorage,
+                    progress: filter!.progress,
+                    // gridSeed: gridSeed,
+                    selection: status!.selection,
                   ),
-                ),
-                hideOnEmpty: false,
+                ],
               ),
-              ElementPriority(
-                Builder(
-                  builder: (context) => ShellElement(
-                    key: ValueKey(settings.filesExtendedActions),
-                    state: status,
-                    scrollingState: widget.scrollingState,
-                    scrollUpOn: widget.navBarEvents == null
-                        ? const []
-                        : [(widget.navBarEvents!, null)],
-                    registerNotifiers: (child) {
-                      return ReturnFileCallbackNotifier(
-                        callback: widget.callback,
-                        child: FilesDataNotifier(
-                          api: api,
-                          child: DeleteDialogShowNotifier(
-                            toShow: toShowDelete,
-                            child: OnBooruTagPressed(
-                              onPressed: _onBooruTagPressed,
-                              child: filter.inject(
-                                status.source.inject(child),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    slivers: [
-                      CurrentGridSettingsLayout<File>(
-                        source: filter.backingStorage,
-                        progress: filter.progress,
-                        // gridSeed: gridSeed,
-                        selection: status.selection,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+      ],
     );
   }
 }
 
 class _ShowAdditionalButtons extends StatefulWidget {
-  const _ShowAdditionalButtons({
-    super.key,
-  });
+  const _ShowAdditionalButtons({super.key});
 
   @override
   State<_ShowAdditionalButtons> createState() => __ShowAdditionalButtonsState();
@@ -915,113 +866,25 @@ class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons>
   }
 }
 
-class FlutterGalleryDataNotifier extends InheritedWidget {
-  const FlutterGalleryDataNotifier({
-    super.key,
-    required this.galleryDataImpl,
-    required super.child,
-  });
-
-  final PlatformImageViewStateImpl galleryDataImpl;
-
-  static PlatformImageViewStateImpl? maybeOf(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
-
-    return widget?.galleryDataImpl;
-  }
-
-  @override
-  bool updateShouldNotify(FlutterGalleryDataNotifier oldWidget) =>
-      galleryDataImpl != oldWidget.galleryDataImpl;
-}
-
-// class _TagsNotifier extends StatefulWidget {
-//   const _TagsNotifier({
-//     // super.key,
-//     required this.tagManager,
-//     required this.tagSource,
-//     required this.child,
+// class FlutterGalleryDataNotifier extends InheritedWidget {
+//   const FlutterGalleryDataNotifier({
+//     super.key,
+//     required this.galleryDataImpl,
+//     required super.child,
 //   });
 
-//   final FilesSourceTags tagSource;
-//   final TagManagerService tagManager;
+//   final PlatformImageViewStateImpl? galleryDataImpl;
 
-//   final Widget child;
+//   static PlatformImageViewStateImpl? maybeOf(BuildContext context) {
+//     final widget = context
+//         .dependOnInheritedWidgetOfExactType<FlutterGalleryDataNotifier>();
 
-//   @override
-//   State<_TagsNotifier> createState() => __TagsNotifierState();
-// }
-
-// class __TagsNotifierState extends State<_TagsNotifier> {
-//   late final StreamSubscription<List<String>> subscription;
-//   late final StreamSubscription<void> subscr;
-
-//   final _tags = ImageViewTags();
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     _tags.update(
-//       widget.tagSource.current
-//           .map(
-//             (e) => ImageTag(
-//               e,
-//               type: widget.tagManager.pinned.exists(e)
-//                   ? ImageTagType.favorite
-//                   : widget.tagManager.excluded.exists(e)
-//                       ? ImageTagType.excluded
-//                       : ImageTagType.normal,
-//             ),
-//           )
-//           .toList(),
-//     );
-
-//     subscription = widget.tagSource.watch((list) {
-//       _refresh();
-//     });
-
-//     subscr = widget.tagManager.pinned.events.listen((_) {
-//       _refresh();
-//     });
-//   }
-
-//   void _refresh() {
-//     setState(() {
-//       _tags.update(
-//         widget.tagSource.current
-//             .map(
-//               (e) => ImageTag(
-//                 e,
-//                 type: widget.tagManager.pinned.exists(e)
-//                     ? ImageTagType.favorite
-//                     : widget.tagManager.excluded.exists(e)
-//                         ? ImageTagType.excluded
-//                         : ImageTagType.normal,
-//               ),
-//             )
-//             .toList(),
-//       );
-//     });
+//     return widget?.galleryDataImpl;
 //   }
 
 //   @override
-//   void dispose() {
-//     _tags.dispose();
-//     subscription.cancel();
-//     subscr.cancel();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ImageTagsNotifier(
-//       tags: _tags,
-//       child: widget.child,
-//     );
-//   }
+//   bool updateShouldNotify(FlutterGalleryDataNotifier oldWidget) =>
+//       galleryDataImpl != oldWidget.galleryDataImpl;
 // }
 
 class TagsRibbon extends StatefulWidget {
@@ -1562,9 +1425,9 @@ class ReturnFileCallbackNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final ReturnFileCallback? callback;
+  final void Function(File e)? callback;
 
-  static ReturnFileCallback? maybeOf(BuildContext context) {
+  static void Function(File e)? maybeOf(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<ReturnFileCallbackNotifier>();
 
@@ -1806,68 +1669,6 @@ class DeleteDialogShowNotifier extends InheritedWidget {
       toShow != oldWidget.toShow;
 }
 
-Future<void> deleteFilesDialog(
-  BuildContext context,
-  List<File> selected,
-  DeleteDialogShow toShow,
-) {
-  final l10n = context.l10n();
-
-  void delete() {
-    const GalleryService().trash.addAll(
-          selected.map((e) => e.originalUri).toList(),
-        );
-
-    StatisticsGalleryService.addDeleted(selected.length);
-  }
-
-  if (!toShow.show) {
-    delete();
-    return Future.value();
-  }
-
-  return Navigator.of(context, rootNavigator: true).push(
-    DialogRoute(
-      context: context,
-      builder: (context) {
-        final text = selected.length == 1
-            ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
-            : "${l10n.tagDeleteDialogTitle}"
-                " ${selected.length}"
-                " ${l10n.elementPlural}";
-
-        return AlertDialog(
-          title: Text(text),
-          content: Text(l10n.youCanRestoreFromTrash),
-          actions: [
-            TextButton(
-              onPressed: () {
-                delete();
-                toShow.show = false;
-                Navigator.pop(context);
-              },
-              child: Text(l10n.yesHide),
-            ),
-            TextButton(
-              onPressed: () {
-                delete();
-                Navigator.pop(context);
-              },
-              child: Text(l10n.yes),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(l10n.no),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-}
-
 SelectionBarAction _restoreFromTrashAction(GalleryTrash galleryTrash) {
   return SelectionBarAction(
     Icons.restore_from_trash,
@@ -1917,7 +1718,6 @@ SelectionBarAction _addTagAction(
 
           refresh();
         },
-        context.l10n(),
       );
     },
     false,
@@ -1932,7 +1732,7 @@ SelectionBarAction _deleteAction(
   return SelectionBarAction(
     Icons.delete,
     (selected) {
-      deleteFilesDialog(
+      FilesPage.openDeleteFilesDialog(
         context,
         selected.cast(),
         toShow,
@@ -1944,7 +1744,7 @@ SelectionBarAction _deleteAction(
 
 SelectionBarAction _copyAction(
   BuildContext context,
-  String bucketId,
+  // String bucketId,
   Directories providedApi,
   DeleteDialogShow toShow,
 ) {
@@ -1953,7 +1753,7 @@ SelectionBarAction _copyAction(
     (selected) {
       moveOrCopyFnc(
         context,
-        bucketId,
+        // bucketId,
         selected.cast(),
         false,
         providedApi,
@@ -1966,7 +1766,7 @@ SelectionBarAction _copyAction(
 
 SelectionBarAction _moveAction(
   BuildContext context,
-  String bucketId,
+  // String bucketId,
   Directories providedApi,
   DeleteDialogShow toShow,
 ) {
@@ -1975,7 +1775,7 @@ SelectionBarAction _moveAction(
     (selected) {
       moveOrCopyFnc(
         context,
-        bucketId,
+        // bucketId,
         selected.cast(),
         true,
         providedApi,
@@ -1988,7 +1788,7 @@ SelectionBarAction _moveAction(
 
 void moveOrCopyFnc(
   BuildContext topContext,
-  String originalBucketId,
+  // String originalBucketId,
   List<File> selected,
   bool move,
   Directories providedApi,
@@ -2007,92 +1807,128 @@ void moveOrCopyFnc(
     }
   }
 
-  final l10n = AppLocalizations.of(topContext)!;
+  // final l10n = AppLocalizations.of(topContext)!;
+  Navigator.of(topContext).push(
+    DialogRoute<void>(
+      context: topContext,
+      builder: (context) {
+        final l10n = context.l10n();
 
-  DirectoriesPage.open(
-    topContext,
-    showBackButton: true,
-    wrapGridPage: true,
-    providedApi: providedApi,
-    callback: ReturnDirectoryCallback(
-      choose: (value, newDir) {
-        if (!newDir && value.bucketId == originalBucketId) {
-          ScaffoldMessenger.of(topContext).showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              content: Text(
-                move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
-              ),
+        return LabeledlDialog(
+          name: "Pick",
+          storage: providedApi.source.backingStorage,
+          actions: [
+            IconButton(
+              onPressed: () => FilesApi.safe()
+                  ?.chooseDirectory(l10n, temporary: true)
+                  .then((value) {
+                const FilesApi()
+                    .copyMove(
+                  value!.uri,
+                  "",
+                  selected,
+                  move: move,
+                  newDir: true,
+                )
+                    .catchError((dynamic e) {
+                  if (topContext.mounted) {
+                    ScaffoldMessenger.of(topContext).showSnackBar(
+                      SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        content: Text(
+                          e is PlatformException ? e.code : e.toString(),
+                        ),
+                      ),
+                    );
+                  }
+                });
+
+                if (move) {
+                  StatisticsGalleryService.addMoved(selected.length);
+                } else {
+                  StatisticsGalleryService.addCopied(selected.length);
+                }
+              }).onError((e, trace) {
+                Logger.root.severe(
+                  "new folder in android_directories",
+                  e,
+                  trace,
+                );
+              }).whenComplete(() {
+                if (context.mounted) {
+                  context.goNamed("Files");
+                }
+              }),
+              icon: const Icon(Icons.create_new_folder_outlined),
             ),
-          );
-          return Future.value();
-        }
-
-        if (value.bucketId == "trash") {
-          if (!move) {
-            ScaffoldMessenger.of(topContext).showSnackBar(
-              SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text(
-                  l10n.cantCopyToTrash,
-                ),
-              ),
-            );
-            return Future.value();
-          }
-
-          return deleteFilesDialog(
-            topContext,
-            selected,
-            toShow,
-          );
-        } else {
-          const FilesApi()
-              .copyMove(
-            value.path,
-            value.volumeName,
-            selected,
-            move: move,
-            newDir: newDir,
-          )
-              .catchError((dynamic e) {
-            if (topContext.mounted) {
-              ScaffoldMessenger.of(topContext).showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  content: Text(
-                    e is PlatformException ? e.code : e.toString(),
+          ],
+          onPressed: (value) {
+            // if (value.bucketId == originalBucketId) {
+            //   ScaffoldMessenger.of(topContext).showSnackBar(
+            //     SnackBar(
+            //       behavior: SnackBarBehavior.floating,
+            //       content: Text(
+            //         move ? l10n.cantMoveSameDest : l10n.cantCopySameDest,
+            //       ),
+            //     ),
+            //   );
+            //   return;
+            // } else
+            if (value.bucketId == "trash") {
+              if (!move) {
+                ScaffoldMessenger.of(topContext).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    content: Text(
+                      l10n.cantCopyToTrash,
+                    ),
                   ),
-                ),
+                );
+                return;
+              }
+
+              FilesPage.openDeleteFilesDialog(
+                topContext,
+                selected,
+                toShow,
               );
+
+              return;
             }
-          });
 
-          if (move) {
-            StatisticsGalleryService.addMoved(selected.length);
-          } else {
-            StatisticsGalleryService.addCopied(selected.length);
-          }
-        }
+            const FilesApi()
+                .copyMove(
+              value.relativeLoc,
+              value.volumeName,
+              selected,
+              move: move,
+              newDir: false,
+            )
+                .catchError((dynamic e) {
+              if (topContext.mounted) {
+                ScaffoldMessenger.of(topContext).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    content: Text(
+                      e is PlatformException ? e.code : e.toString(),
+                    ),
+                  ),
+                );
+              }
+            });
 
-        return Future.value();
+            if (move) {
+              StatisticsGalleryService.addMoved(selected.length);
+            } else {
+              StatisticsGalleryService.addCopied(selected.length);
+            }
+
+            context.goNamed("Files");
+          },
+        );
       },
-      preview: PreferredSize(
-        preferredSize: Size.fromHeight(CopyMovePreview.size.toDouble()),
-        child: CopyMovePreview(
-          files: selected,
-          icon: move ? Icons.forward_rounded : Icons.copy_rounded,
-          title: move ? l10n.moveTo : l10n.copyTo,
-        ),
-      ),
-      joinable: false,
-      suggestFor: searchPrefix,
     ),
-  ).then((value) {
-    if (topContext.mounted) {
-      PauseVideoNotifier.maybePauseOf(topContext, false);
-    }
-  });
+  );
 }
 
 Future<void> _saveTags(

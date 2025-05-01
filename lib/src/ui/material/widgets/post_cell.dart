@@ -6,7 +6,9 @@
 import "dart:async";
 import "dart:ui";
 
+import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
@@ -28,6 +30,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 import "package:photo_view/photo_view.dart";
 
 class PostCell extends StatefulWidget {
@@ -76,39 +79,16 @@ class _PostCellState extends State<PostCell>
 
         final sink = TrackedIndex.sinkOf(context);
 
-        Navigator.of(context, rootNavigator: true)
-            .push<void>(
-          PageRouteBuilder(
-            barrierDismissible: true,
-            fullscreenDialog: true,
-            opaque: false,
-            barrierColor: Colors.black.withValues(alpha: 0.2),
-            pageBuilder: (context, animation, secondaryAnimation) {
-              return OnBooruTagPressed(
-                onPressed: fnc,
-                child: CardDialog(
-                  animation: animation,
-                  source: source,
-                  indexSink: sink,
-                  tryScrollTo: tryScrollTo,
-                  idx: idx.$1,
-                ),
-              );
-            },
+        CardDialog.open(
+          context,
+          CardDialogData(
+            onPressed: fnc,
+            tryScrollTo: tryScrollTo,
+            source: source,
+            indexSink: sink,
+            startingIdx: idx.$1,
           ),
-        )
-            .whenComplete(() {
-          sink.add(null);
-        });
-
-        // final source = post.getSource(context);
-        // final loader = PostImageViewLoader(resource: source);
-        // final stateController = DefaultStateController(loader: loader);
-
-        // ImageView.open(context, stateController).whenComplete(() {
-        //   loader.dispose();
-        //   stateController.dispose();
-        // });
+        );
       },
       onDoubleTap: DownloadManager.available && LocalTagsService.available
           ? (context) {
@@ -159,18 +139,6 @@ class _PostCellState extends State<PostCell>
                       post: post,
                     ),
                   ),
-                // if (stickers.isNotEmpty)
-                //   Align(
-                //     alignment: Alignment.topRight,
-                //     child: Padding(
-                //       padding: const EdgeInsets.all(8),
-                //       child: Wrap(
-                //         crossAxisAlignment: WrapCrossAlignment.end,
-                //         direction: Axis.vertical,
-                //         children: stickers.map(StickerWidget.new).toList(),
-                //       ),
-                //     ),
-                //   ),
                 Align(
                   alignment: Alignment.bottomLeft,
                   child: Padding(
@@ -215,7 +183,7 @@ class CardAnimationChild extends StatelessWidget {
     required this.buttonsRow,
   });
 
-  final Animation<double> animation;
+  final Animation<double>? animation;
 
   final PostImpl post;
 
@@ -225,6 +193,21 @@ class CardAnimationChild extends StatelessWidget {
   Widget build(BuildContext context) {
     final thumbnail = post.thumbnail();
     final theme = Theme.of(context);
+
+    final icon = DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+      ),
+      child: SizedBox.expand(
+        child: Center(
+          child: Hero(
+            tag: (post.uniqueKey(), "videoIcon"),
+            child: const Icon(Icons.play_arrow_rounded),
+          ),
+        ),
+      ),
+    );
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -283,28 +266,17 @@ class CardAnimationChild extends StatelessWidget {
                     blur: false,
                   ),
                   if (post.type == PostContentType.video)
-                    AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) => Opacity(
-                        opacity: animation.value,
-                        child: child,
-                      ),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(15)),
+                    if (animation != null)
+                      AnimatedBuilder(
+                        animation: animation!,
+                        builder: (context, child) => Opacity(
+                          opacity: animation!.value,
+                          child: child,
                         ),
-                        child: SizedBox.expand(
-                          child: Center(
-                            child: Hero(
-                              tag: (post.uniqueKey(), "videoIcon"),
-                              child: const Icon(Icons.play_arrow_rounded),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                        child: icon,
+                      )
+                    else
+                      icon,
                 ],
               ),
             ),
@@ -594,6 +566,37 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
   }
 }
 
+class CardDialogStaticData {
+  const CardDialogStaticData({
+    required this.onPressed,
+    required this.booru,
+    required this.postId,
+  });
+
+  final OnBooruTagPressedFunc onPressed;
+
+  final Booru booru;
+  final int postId;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType || other is! CardDialogStaticData) {
+      return false;
+    }
+
+    return postId == other.postId &&
+        onPressed == other.onPressed &&
+        booru == other.booru;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        postId,
+        onPressed,
+        booru,
+      );
+}
+
 class CardDialogStatic extends StatelessWidget {
   const CardDialogStatic({
     super.key,
@@ -601,9 +604,32 @@ class CardDialogStatic extends StatelessWidget {
     required this.animation,
   });
 
-  final Animation<double> animation;
+  final Animation<double>? animation;
 
   final Future<PostImpl> Function() getPost;
+
+  static void openAsync(
+    BuildContext context, {
+    required Booru booru,
+    required int postId,
+  }) {
+    if (!TagManagerService.available || !VisitedPostsService.available) {
+      addAlert("openPostAsync", "Couldn't launch image view"); // TODO: change
+
+      return;
+    }
+
+    final fnc = OnBooruTagPressed.of(context);
+
+    context.pushNamed(
+      "PostImageAsync",
+      extra: CardDialogStaticData(
+        onPressed: fnc,
+        booru: booru,
+        postId: postId,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -613,94 +639,29 @@ class CardDialogStatic extends StatelessWidget {
       Navigator.of(context).pop();
     }
 
-    return ExitOnPressRoute(
-      exit: exit,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 400.0.clamp(0, size.width),
-          ),
-          child: AnimatedBuilder(
-            animation: animation,
-            builder: (context, child) => Opacity(
-              opacity: animation.value,
-              child: child,
+    final child = WrapFutureRestartable(
+      newStatus: getPost,
+      bottomSheetVariant: true,
+      errorBuilder: (error, refresh) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 400.0.clamp(0, size.width),
+              maxHeight: 400.0.clamp(0, size.height),
             ),
-            child: WrapFutureRestartable(
-              newStatus: getPost,
-              bottomSheetVariant: true,
-              errorBuilder: (error, refresh) => Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: 400.0.clamp(0, size.width),
-                      maxHeight: 400.0.clamp(0, size.height),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.all(Radius.circular(15)),
-                      child: Material(
-                        type: MaterialType.card,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 38,
-                          ),
-                          child: WrapFutureRestartable.defaultError(
-                            error,
-                            refresh,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              placeholder: Center(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: 400.0.clamp(0, size.width),
-                      maxHeight: 400.0.clamp(0, size.height),
-                    ),
-                    child: const ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(15)),
-                      child: ShimmerLoadingIndicator(backgroundAlpha: 1),
-                    ),
-                  ),
-                ),
-              ),
-              builder: (context, post) => SingleChildScrollView(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(15)),
+              child: Material(
+                type: MaterialType.card,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 24,
+                    horizontal: 20,
+                    vertical: 38,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipRRect(
-                        child: CardAnimationChild(
-                          animation: animation,
-                          post: post,
-                          buttonsRow: ClipRRect(
-                            child: _ButtonsCol(
-                              animation: animation,
-                              post: post,
-                            ),
-                          ),
-                        ),
-                      ),
-                      _TagsRowBorder(
-                        animation: animation,
-                        child: _TagsRowSingle(
-                          post: post,
-                        ),
-                      ),
-                    ],
+                  child: WrapFutureRestartable.defaultError(
+                    error,
+                    refresh,
                   ),
                 ),
               ),
@@ -708,38 +669,142 @@ class CardDialogStatic extends StatelessWidget {
           ),
         ),
       ),
+      placeholder: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 400.0.clamp(0, size.width),
+              maxHeight: 400.0.clamp(0, size.height),
+            ),
+            child: const ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+              child: ShimmerLoadingIndicator(backgroundAlpha: 1),
+            ),
+          ),
+        ),
+      ),
+      builder: (context, post) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                child: CardAnimationChild(
+                  animation: animation,
+                  post: post,
+                  buttonsRow: ClipRRect(
+                    child: _ButtonsCol(
+                      animation: animation,
+                      post: post,
+                    ),
+                  ),
+                ),
+              ),
+              _TagsRowBorder(
+                animation: animation,
+                child: _TagsRowSingle(
+                  post: post,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return ExitOnPressRoute(
+      exit: exit,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 400.0.clamp(0, size.width),
+          ),
+          child: animation != null
+              ? AnimatedBuilder(
+                  animation: animation!,
+                  builder: (context, child) => Opacity(
+                    opacity: animation!.value,
+                    child: child,
+                  ),
+                  child: child,
+                )
+              : child,
+        ),
+      ),
     );
   }
+}
+
+class CardDialogData {
+  const CardDialogData({
+    required this.onPressed,
+    required this.tryScrollTo,
+    required this.source,
+    required this.indexSink,
+    required this.startingIdx,
+  });
+
+  final OnBooruTagPressedFunc onPressed;
+  final void Function(int) tryScrollTo;
+
+  final ResourceSource<int, PostImpl> source;
+
+  final Sink<int?> indexSink;
+
+  final int startingIdx;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType || other is! CardDialogData) {
+      return false;
+    }
+
+    return indexSink == other.indexSink &&
+        onPressed == other.onPressed &&
+        tryScrollTo == other.tryScrollTo &&
+        source == other.source &&
+        startingIdx == other.startingIdx;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        indexSink,
+        onPressed,
+        tryScrollTo,
+        source,
+        startingIdx,
+      );
 }
 
 class CardDialog extends StatefulWidget {
   const CardDialog({
     super.key,
     required this.animation,
-    required this.idx,
-    required this.source,
-    required this.tryScrollTo,
-    required this.indexSink,
+    required this.data,
   });
 
-  final Animation<double> animation;
+  final CardDialogData data;
 
-  final void Function(int) tryScrollTo;
+  final Animation<double>? animation;
 
-  final int idx;
-  final ResourceSource<int, PostImpl> source;
-
-  final Sink<int?> indexSink;
+  static void open(BuildContext context, CardDialogData data) {
+    context.pushNamed("PostImage", extra: data);
+  }
 
   @override
   State<CardDialog> createState() => _CardDialogState();
 }
 
 class _CardDialogState extends State<CardDialog> {
-  Animation<double> get animation => widget.animation;
+  Animation<double>? get animation => widget.animation;
 
-  int get idx => widget.idx;
-  ResourceSource<int, PostImpl> get source => widget.source;
+  int get idx => widget.data.startingIdx;
+  ResourceSource<int, PostImpl> get source => widget.data.source;
   late final StreamSubscription<(int, double?)> _indexEvents;
   int _oldIdx = 0;
 
@@ -749,15 +814,15 @@ class _CardDialogState extends State<CardDialog> {
   void initState() {
     super.initState();
 
-    _oldIdx = widget.idx;
+    _oldIdx = widget.data.startingIdx;
 
     _indexEvents = syncr.stream.listen((e) {
       if (e.$1 != _oldIdx) {
         _oldIdx = e.$1;
 
-        widget.indexSink.add(_oldIdx);
+        widget.data.indexSink.add(_oldIdx);
 
-        widget.tryScrollTo(_oldIdx);
+        widget.data.tryScrollTo(_oldIdx);
 
         if (context.mounted && source.count > 1) {
           if (_oldIdx != 0) {
@@ -862,12 +927,47 @@ class _ButtonsCol extends StatelessWidget {
     required this.post,
   });
 
-  final Animation<double> animation;
+  final Animation<double>? animation;
   final PostImpl post;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final infoIcon = IconButton(
+      onPressed: () {
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (sheetContext) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: 8,
+                bottom: MediaQuery.viewPaddingOf(
+                      context,
+                    ).bottom +
+                    12,
+              ),
+              child: SizedBox(
+                width: MediaQuery.sizeOf(
+                  sheetContext,
+                ).width,
+                child: PostInfoSimple(post: post),
+              ),
+            );
+          },
+        );
+      },
+      style: ButtonStyle(
+        foregroundColor: WidgetStatePropertyAll(
+          theme.colorScheme.surface,
+        ),
+        backgroundColor: WidgetStatePropertyAll(
+          theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      icon: const Icon(Icons.info_outline),
+    );
 
     return Padding(
       padding: const EdgeInsets.only(left: 8),
@@ -885,30 +985,42 @@ class _ButtonsCol extends StatelessWidget {
                     spacing: 8,
                     children: [
                       if (FavoritePostSourceService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
-                          child: StarsButton(
+                        if (animation != null)
+                          AnimatedBuilder(
+                            animation: animation!,
+                            builder: (context, child) => Opacity(
+                              opacity: animation!.value,
+                              child: child,
+                            ),
+                            child: StarsButton(
+                              addBackground: true,
+                              idBooru: (post.id, post.booru),
+                            ),
+                          )
+                        else
+                          StarsButton(
                             addBackground: true,
                             idBooru: (post.id, post.booru),
                           ),
-                        ),
                       if (DownloadManager.available &&
                           LocalTagsService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
-                          child: DownloadButton(
+                        if (animation != null)
+                          AnimatedBuilder(
+                            animation: animation!,
+                            builder: (context, child) => Opacity(
+                              opacity: animation!.value,
+                              child: child,
+                            ),
+                            child: DownloadButton(
+                              post: post,
+                              secondVariant: true,
+                            ),
+                          )
+                        else
+                          DownloadButton(
                             post: post,
                             secondVariant: true,
                           ),
-                        ),
                       if (FavoritePostSourceService.available &&
                           post is! FavoritePost)
                         FavoritePostButton(
@@ -917,17 +1029,23 @@ class _ButtonsCol extends StatelessWidget {
                           backgroundAlpha: 1,
                         )
                       else if (FavoritePostSourceService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
-                          child: FavoritePostButton(
+                        if (animation != null)
+                          AnimatedBuilder(
+                            animation: animation!,
+                            builder: (context, child) => Opacity(
+                              opacity: animation!.value,
+                              child: child,
+                            ),
+                            child: FavoritePostButton(
+                              post: post,
+                              backgroundAlpha: 1,
+                            ),
+                          )
+                        else
+                          FavoritePostButton(
                             post: post,
                             backgroundAlpha: 1,
                           ),
-                        ),
                     ],
                   ),
                 ),
@@ -935,47 +1053,16 @@ class _ButtonsCol extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: AnimatedBuilder(
-                animation: animation,
-                builder: (context, child) => Opacity(
-                  opacity: animation.value,
-                  child: child,
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (sheetContext) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            top: 8,
-                            bottom: MediaQuery.viewPaddingOf(
-                                  context,
-                                ).bottom +
-                                12,
-                          ),
-                          child: SizedBox(
-                            width: MediaQuery.sizeOf(
-                              sheetContext,
-                            ).width,
-                            child: PostInfoSimple(post: post),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  style: ButtonStyle(
-                    foregroundColor: WidgetStatePropertyAll(
-                      theme.colorScheme.surface,
-                    ),
-                    backgroundColor: WidgetStatePropertyAll(
-                      theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  icon: const Icon(Icons.info_outline),
-                ),
-              ),
+              child: animation != null
+                  ? AnimatedBuilder(
+                      animation: animation!,
+                      builder: (context, child) => Opacity(
+                        opacity: animation!.value,
+                        child: child,
+                      ),
+                      child: infoIcon,
+                    )
+                  : infoIcon,
             ),
           ],
         ),
@@ -995,7 +1082,7 @@ class _TagsRow extends StatefulWidget {
 
   final int idx;
 
-  final Animation<double> animation;
+  final Animation<double>? animation;
 
   final StreamController<(int, double?)> syncr;
   final ResourceSource<int, PostImpl> source;
@@ -1158,7 +1245,7 @@ class _TagsRowBorder extends StatelessWidget {
 
   final PostImpl? post;
 
-  final Animation<double> animation;
+  final Animation<double>? animation;
 
   final Widget child;
 
@@ -1187,22 +1274,28 @@ class _TagsRowBorder extends StatelessWidget {
       );
     }
 
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) => Opacity(
-        opacity: animation.value,
-        child: child,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 25 + 16),
-          child: Padding(
-            padding: EdgeInsets.zero,
-            child: clipRrect,
-          ),
+    final cliprr = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 25 + 16),
+        child: Padding(
+          padding: EdgeInsets.zero,
+          child: clipRrect,
         ),
       ),
+    );
+
+    if (animation == null) {
+      return cliprr;
+    }
+
+    return AnimatedBuilder(
+      animation: animation!,
+      builder: (context, child) => Opacity(
+        opacity: animation!.value,
+        child: child,
+      ),
+      child: cliprr,
     );
   }
 }
@@ -1389,23 +1482,6 @@ class _BigImageVideo extends StatelessWidget {
                 ),
               ],
             );
-            // final theme = Theme.of(context);
-
-            // final expectedBytes = event?.expectedTotalBytes;
-            // final loadedBytes = event?.cumulativeBytesLoaded;
-            // final value = loadedBytes != null && expectedBytes != null
-            //     ? loadedBytes / expectedBytes
-            //     : null;
-
-            // return Center(
-            //   child: CircularProgressIndicator(
-            //     year2023: false,
-            //     color: theme.colorScheme.onSurfaceVariant,
-            //     backgroundColor:
-            //         theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
-            //     value: value,
-            //   ),
-            // );
           },
           backgroundDecoration: BoxDecoration(
             color: theme.colorScheme.surface.withValues(alpha: 0),
@@ -1417,132 +1493,6 @@ class _BigImageVideo extends StatelessWidget {
     return child;
   }
 }
-
-// static Future<void> openMaximizedImage(
-//   BuildContext context,
-//   PostImpl post,
-//   Contentable content,
-// ) {
-//   return Navigator.of(context, rootNavigator: true).push<void>(
-//     PageRouteBuilder(
-//       fullscreenDialog: true,
-//       opaque: false,
-//       barrierDismissible: true,
-//       barrierColor: Colors.black.withValues(alpha: 0.5),
-//       pageBuilder: (
-//         context,
-//         animation,
-//         secondaryAnimation,
-//       ) {
-//         return _ExpandedImage(
-//           post: post,
-//           content: content,
-//         );
-//       },
-//     ),
-//   );
-// }
-
-// class _ExpandedImage extends StatelessWidget {
-//   const _ExpandedImage({
-//     // super.key,
-//     required this.post,
-//   });
-
-//   final PostImpl post;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     final buttonStyle = ButtonStyle(
-//       backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surface),
-//       iconColor: WidgetStatePropertyAll(theme.colorScheme.onSurface),
-//     );
-
-//     final child = switch (post.type) {
-//       PostContentType.none => const SizedBox.shrink(),
-//       PostContentType.video => _ExpandedVideo(
-//           post: post,
-//           child: PhotoGalleryPageVideo(
-//             url: (content as NetVideo).uri,
-//             networkThumb: post.thumbnail(),
-//             localVideo: false,
-//           ),
-//         ),
-//       PostContentType.gif || PostContentType.image => PhotoView(
-//           heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-//           maxScale: PhotoViewComputedScale.contained * 1.8,
-//           minScale: PhotoViewComputedScale.contained * 0.8,
-//           filterQuality: FilterQuality.high,
-//           loadingBuilder: (context, event) => const ShimmerLoadingIndicator(),
-//           backgroundDecoration: BoxDecoration(
-//             color: theme.colorScheme.surface.withValues(alpha: 0),
-//           ),
-//           imageProvider: content is NetImage
-//               ? (content as NetImage).provider
-//               : (content as NetGif).provider,
-//         ),
-//     };
-
-//     return Scaffold(
-//       extendBodyBehindAppBar: true,
-//       backgroundColor: Colors.transparent,
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () {
-//             Navigator.pop(context);
-//           },
-//           style: buttonStyle,
-//           icon: const Icon(Icons.close_rounded),
-//         ),
-//         actions: [
-//           IconButtonTheme(
-//             data: IconButtonThemeData(style: buttonStyle),
-//             child: StarsButton(
-//               idBooru: (post.id, post.booru),
-//             ),
-//           ),
-//           if (FavoritePostSourceService.available)
-//             IconButtonTheme(
-//               data: IconButtonThemeData(style: buttonStyle),
-//               child: FavoritePostButton(
-//                 post: post,
-//                 withBackground: false,
-//               ),
-//             ),
-//           IconButton(
-//             onPressed: () {
-//               showModalBottomSheet<void>(
-//                 context: context,
-//                 builder: (sheetContext) {
-//                   return Padding(
-//                     padding: EdgeInsets.only(
-//                       top: 8,
-//                       bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-//                     ),
-//                     child: SizedBox(
-//                       width: MediaQuery.sizeOf(sheetContext).width,
-//                       child: PostInfoSimple(post: post),
-//                     ),
-//                   );
-//                 },
-//               );
-//             },
-//             style: buttonStyle,
-//             icon: const Icon(Icons.info_outline),
-//           ),
-//         ],
-//         backgroundColor: Colors.transparent,
-//       ),
-//       body: GestureDeadZones(
-//         left: true,
-//         right: true,
-//         child: child,
-//       ),
-//     );
-//   }
-// }
 
 class _ExpandedVideo extends StatefulWidget {
   const _ExpandedVideo({

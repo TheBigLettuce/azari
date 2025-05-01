@@ -30,39 +30,71 @@ import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
+
+class BooruRestoredPageData {
+  const BooruRestoredPageData({
+    required this.saveSelectedPage,
+    required this.booru,
+    required this.pagingRegistry,
+    required this.overrideSafeMode,
+    required this.thenMoveTo,
+  });
+
+  final Booru booru;
+
+  final SafeMode? overrideSafeMode;
+  final PathVolume? thenMoveTo;
+
+  final void Function(String? e) saveSelectedPage;
+  final PagingStateRegistry? pagingRegistry;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType || other is! BooruRestoredPageData) {
+      return false;
+    }
+
+    return booru == other.booru &&
+        saveSelectedPage == other.saveSelectedPage &&
+        pagingRegistry == other.pagingRegistry &&
+        overrideSafeMode == other.overrideSafeMode &&
+        thenMoveTo == other.thenMoveTo;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        booru,
+        saveSelectedPage,
+        pagingRegistry,
+        thenMoveTo,
+        overrideSafeMode,
+      );
+}
 
 class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
     super.key,
-    required this.saveSelectedPage,
-    required this.booru,
     required this.tags,
-    required this.selectionController,
-    this.pagingRegistry,
-    this.overrideSafeMode,
+    required this.data,
     this.name,
-    this.thenMoveTo,
-    this.wrapScaffold = false,
     this.trySearchBookmarkByTags = false,
+    required this.selectionController,
   });
 
-  final String? name;
-  final Booru booru;
-  final String tags;
-  final PagingStateRegistry? pagingRegistry;
-  final SafeMode? overrideSafeMode;
-  final void Function(String? e) saveSelectedPage;
-  final bool wrapScaffold;
+  final BooruRestoredPageData data;
 
-  final PathVolume? thenMoveTo;
+  final String tags;
+  final String? name;
+
   final bool trySearchBookmarkByTags;
 
   final SelectionController selectionController;
 
   static bool hasServicesRequired() => GridDbService.available;
 
-  static Future<void> open(
+  static void open(
     BuildContext context, {
     required Booru booru,
     required String tags,
@@ -72,7 +104,6 @@ class BooruRestoredPage extends StatefulWidget {
     PagingStateRegistry? pagingRegistry,
     SafeMode? overrideSafeMode,
     PathVolume? thenMoveTo,
-    // bool wrapScaffold = false,
     bool trySearchBookmarkByTags = false,
   }) {
     if (!hasServicesRequired()) {
@@ -81,24 +112,24 @@ class BooruRestoredPage extends StatefulWidget {
         "Booru functionality isn't available", // TODO: change
       );
 
-      return Future.value();
+      return;
     }
 
-    return Navigator.of(context, rootNavigator: rootNavigator).push(
-      MaterialPageRoute(
-        builder: (context) => BooruRestoredPage(
-          booru: booru,
-          tags: tags,
-          saveSelectedPage: saveSelectedPage,
-          name: name,
-          pagingRegistry: pagingRegistry,
-          overrideSafeMode: overrideSafeMode,
-          thenMoveTo: thenMoveTo,
-          wrapScaffold: rootNavigator,
-          trySearchBookmarkByTags: trySearchBookmarkByTags,
-          selectionController: SelectionActions.controllerOf(context),
-        ),
+    context.goNamed(
+      "BooruTagsSearch",
+      extra: BooruRestoredPageData(
+        saveSelectedPage: saveSelectedPage,
+        booru: booru,
+        pagingRegistry: pagingRegistry,
+        overrideSafeMode: overrideSafeMode,
+        thenMoveTo: thenMoveTo,
       ),
+      queryParameters: {
+        if (name != null) "name": name,
+        "addScaffold": rootNavigator ? "1" : "0",
+        "bookmarksByTags": trySearchBookmarkByTags ? "1" : "0",
+        "tags": tags,
+      },
     );
   }
 
@@ -148,14 +179,14 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     // );
 
     final secondary = const GridDbService().openSecondary(
-      widget.booru,
+      widget.data.booru,
       name,
       safeMode,
       !addToBookmarks,
     );
 
     return RestoredBooruPageState(
-      widget.booru,
+      widget.data.booru,
       tags,
       secondary,
       addToBookmarks,
@@ -163,8 +194,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
         if (DownloadManager.available && LocalTagsService.available)
           actions.downloadPost(
             context,
-            widget.booru,
-            widget.thenMoveTo,
+            widget.data.booru,
+            widget.data.thenMoveTo,
           ),
         if (FavoritePostSourceService.available)
           actions.favorites(
@@ -183,10 +214,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
     final tagsTrimmed = widget.tags.trim();
 
-    final bookmarkByName = widget.trySearchBookmarkByTags &&
-            GridBookmarkService.available
-        ? const GridBookmarkService().getFirstByTags(tagsTrimmed, widget.booru)
-        : null;
+    final bookmarkByName =
+        widget.trySearchBookmarkByTags && GridBookmarkService.available
+            ? const GridBookmarkService()
+                .getFirstByTags(tagsTrimmed, widget.data.booru)
+            : null;
 
     final String name;
     if (bookmarkByName == null) {
@@ -195,21 +227,21 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       name = bookmarkByName.name;
     }
 
-    widget.saveSelectedPage(name);
+    widget.data.saveSelectedPage(name);
 
-    pagingState = widget.pagingRegistry?.getOrRegister(
+    pagingState = widget.data.pagingRegistry?.getOrRegister(
           name,
           () => makePageEntry(
             name,
             bookmarkByName != null || widget.name != null,
-            bookmarkByName != null ? null : widget.overrideSafeMode,
+            bookmarkByName != null ? null : widget.data.overrideSafeMode,
             bookmarkByName?.tags ?? tagsTrimmed,
           ),
         ) ??
         makePageEntry(
           name,
           bookmarkByName != null || widget.name != null,
-          bookmarkByName != null ? null : widget.overrideSafeMode,
+          bookmarkByName != null ? null : widget.data.overrideSafeMode,
           bookmarkByName?.tags ?? tagsTrimmed,
         );
 
@@ -220,7 +252,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
             null) {
       const GridBookmarkService().add(
         GridBookmark(
-          booru: widget.booru,
+          booru: widget.data.booru,
           name: pagingState.secondaryGrid.name,
           time: DateTime.now(),
           tags: bookmarkByName?.tags ?? tagsTrimmed,
@@ -246,19 +278,19 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
     final gridBookmarks = GridBookmarkService.safe();
 
-    if (widget.pagingRegistry == null) {
-      widget.saveSelectedPage(null);
+    if (widget.data.pagingRegistry == null) {
+      widget.data.saveSelectedPage(null);
       if (gridBookmarks != null && !pagingState.addToBookmarks) {
         gridBookmarks.delete(pagingState.secondaryGrid.name);
       }
       pagingState.dispose(pagingState.addToBookmarks);
     } else {
       if (!isRestart) {
-        widget.saveSelectedPage(null);
+        widget.data.saveSelectedPage(null);
         if (gridBookmarks != null && !pagingState.addToBookmarks) {
           gridBookmarks.delete(pagingState.secondaryGrid.name);
         }
-        (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
+        (widget.data.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
                 as RestoredBooruPageState)
             .dispose(pagingState.addToBookmarks);
       }
@@ -282,12 +314,14 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       overrideSafeMode: safeMode,
       tags: tag,
       saveSelectedPage: (s) {},
-    ).then((value) {
-      if (context.mounted) {
-        PauseVideoNotifier.maybePauseOf(context, false);
-      }
-    });
+    );
   }
+
+  // .then((value) {
+  //     if (context.mounted) {
+  //       PauseVideoNotifier.maybePauseOf(context, false);
+  //     }
+  //   })
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +329,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     final navigationButtonEvents = NavigationButtonEvents.maybeOf(context);
 
     return ScaffoldSelectionBar(
-      addScaffoldAndBar: widget.wrapScaffold,
+      addScaffoldAndBar: true,
       child: Builder(
         builder: (context) {
           return BooruAPINotifier(

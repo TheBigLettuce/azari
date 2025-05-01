@@ -59,8 +59,8 @@ class _AppBar extends StatelessWidget {
 
     final Widget? b = switch (backButton) {
       EmptyAppBarBackButton() =>
-        Navigator.of(context).canPop() && backButton.inherit
-            ? const BackButton()
+        GoRouter.of(context).canPop() && backButton.inherit
+            ? BackButton(onPressed: context.pop)
             : null,
       CallbackAppBarBackButton() => BackButton(onPressed: backButton.onPressed),
       OverrideAppBarBackButton() => backButton.child,

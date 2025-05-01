@@ -37,7 +37,6 @@ import "package:azari/src/services/impl/obj/directory_impl.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:dio/dio.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/widgets.dart";
@@ -79,13 +78,7 @@ Future<Services> init(AppInstanceType appType) async {
           notificationEvents: notificationsEvents.stream,
         ),
       TargetPlatform.linux => LinuxPlatformImpl(
-          accentColor: await () async {
-            try {
-              return (await DynamicColorPlugin.getAccentColor())!;
-            } catch (_) {
-              return const Color(0xff6d5e0f);
-            }
-          }(),
+          accentColor: const Color(0xff6d5e0f),
           version: await () async {
             try {
               final exePath =
@@ -172,6 +165,123 @@ class $NotificationChannels implements NotificationChannels {
   NotificationChannelId downloadId() => _instance.downloadId();
 }
 
+// class IoStorageApiImpl implements StorageApi {
+//   @override
+//   CategoryApi get category => throw UnimplementedError();
+
+//   @override
+//   GalleryApi? get gallery => throw UnimplementedError();
+
+//   @override
+//   Future<StorageData> loadData() {
+//     // TODO: implement loadData
+//     throw UnimplementedError();
+//   }
+// }
+
+// class _CategoryImpl {
+//   String get dir;
+
+//   Future<void> delete() {}
+//   Future<void> cleanIfNeeded() {}
+// }
+
+// class IoCategoryApi implements CategoryApi {
+//   static final _categories = <StorageCategories, _CategoryImpl>{};
+
+//   @override
+//   Future<void> copy(InternalStoragePath path_, StorageCategories to) async {
+//     path_ as _IoInternalStoragePath;
+
+//     if (path_.isDirectory) {
+//       return;
+//     }
+
+//     final file = io.File(path_.path);
+//     if (!(await file.exists())) {
+//       return;
+//     }
+
+//     final dir = _categories[to]!.dir;
+//     final newFile = io.File("$dir${path.separator}${path.basename(file.path)}");
+//     if (await newFile.exists()) {
+//       return;
+//     }
+
+//     await file.copy(newFile.path);
+//   }
+
+//   @override
+//   Future<void> move(InternalStoragePath path_, StorageCategories to) async {
+//     path_ as _IoInternalStoragePath;
+
+//     if (path_.isDirectory) {
+//       return;
+//     }
+
+//     final file = io.File(path_.path);
+//     if (!(await file.exists())) {
+//       return;
+//     }
+
+//     final dir = _categories[to]!.dir;
+//     final newFile = io.File("$dir${path.separator}${path.basename(file.path)}");
+
+//     if (!(await file.exists()) || await newFile.exists()) {
+//       return;
+//     }
+
+//     await file.rename(newFile.path);
+//   }
+
+//   @override
+//   Future<void> nuke(StorageCategories c) => _categories[c]!.delete();
+
+//   @override
+//   Future<void> optimize(StorageCategories c) => _categories[c]!.cleanIfNeeded();
+
+//   @override
+//   Future<void> remove(InternalStoragePath path) async {
+//     path as _IoInternalStoragePath;
+
+//     if (path.isDirectory) {
+//       return;
+//     }
+
+//     final file = io.File(path.path);
+//     if (!(await file.exists())) {
+//       return;
+//     }
+
+//     await file.delete();
+//   }
+
+//   @override
+//   Future<void> rename(InternalStoragePath from, InternalStoragePath to) async {
+//     from as _IoInternalStoragePath;
+//     to as _IoInternalStoragePath;
+
+//     if (from.isDirectory || to.isDirectory) {
+//       return;
+//     }
+
+//     final e1 = io.File(from.path);
+//     final e2 = io.File(to.path);
+//     if (!(await e1.exists()) || await e2.exists()) {
+//       return;
+//     }
+
+//     await e1.rename(e2.path);
+//   }
+// }
+
+class _IoInternalStoragePath implements InternalStoragePath {
+  const _IoInternalStoragePath(this.path, this.isDirectory);
+
+  final bool isDirectory;
+  final String path;
+}
+
 class IoFilesManagement implements FilesApi {
   const IoFilesManagement();
 
@@ -229,13 +339,13 @@ class IoFilesManagement implements FilesApi {
   }
 
   @override
-  Future<({String path, String formattedPath})?> chooseDirectory(
+  Future<({String uri, String formattedPath})?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
   }) {
     return FilePicker.platform
         .getDirectoryPath(dialogTitle: l10n.pickDirectory)
-        .then((e) => e == null ? null : (path: e, formattedPath: e));
+        .then((e) => e == null ? null : (uri: e, formattedPath: e));
   }
 }
 

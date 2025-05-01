@@ -23,6 +23,7 @@ import "package:azari/src/ui/material/widgets/time_label.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 
 class BookmarkPage extends StatefulWidget {
   const BookmarkPage({
@@ -89,7 +90,9 @@ class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
   }
 
   void launchGrid(BuildContext context, GridBookmark e) {
-    currentPage = e.name;
+    // currentPage = e.name;
+
+    // .whenComplete(() => currentPage = null)
 
     BooruRestoredPage.open(
       context,
@@ -99,7 +102,7 @@ class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
       pagingRegistry: widget.pagingRegistry,
       saveSelectedPage: widget.saveSelectedPage,
       rootNavigator: false,
-    ).whenComplete(() => currentPage = null);
+    );
   }
 
   @override
@@ -423,7 +426,6 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
     final size = MediaQuery.sizeOf(context).longestSide * 0.2;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = context.l10n();
 
     return Animate(
       autoPlay: false,
@@ -512,70 +514,11 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                           ),
                           Align(
                             alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: IconButton.filledTonal(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    DialogRoute<void>(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                            l10n.delete,
-                                          ),
-                                          content: ListTile(
-                                            title: Text(widget.state.tags),
-                                            subtitle: Text(
-                                              widget.state.time.toString(),
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: gridDbs != null
-                                                  ? () {
-                                                      gridDbs!
-                                                          .openSecondary(
-                                                            widget.state.booru,
-                                                            widget.state.name,
-                                                            null,
-                                                          )
-                                                          .destroy()
-                                                          .then(
-                                                        (value) {
-                                                          if (context.mounted) {
-                                                            Navigator.pop(
-                                                              context,
-                                                            );
-                                                          }
-
-                                                          animationController
-                                                              .forward()
-                                                              .then((_) {
-                                                            gridBookmarks
-                                                                .delete(
-                                                              widget.state.name,
-                                                            );
-                                                          });
-                                                        },
-                                                      );
-                                                    }
-                                                  : null,
-                                              child: Text(l10n.yes),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: Text(l10n.no),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.delete_outline_rounded),
+                            child: DeleteBookmarkButton(
+                              data: DeleteBookmarkData(
+                                state: widget.state,
+                                gridBookmarks: gridBookmarks,
+                                gridDbs: gridDbs,
                               ),
                             ),
                           ),
@@ -618,6 +561,53 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class DeleteBookmarkData {
+  const DeleteBookmarkData({
+    required this.state,
+    required this.gridBookmarks,
+    required this.gridDbs,
+  });
+
+  final GridBookmark state;
+
+  final GridBookmarkService gridBookmarks;
+  final GridDbService? gridDbs;
+
+  @override
+  bool operator ==(Object other) {
+    if (runtimeType != other.runtimeType || other is! DeleteBookmarkData) {
+      return false;
+    }
+
+    return state == other.state &&
+        gridDbs == other.gridDbs &&
+        gridBookmarks == other.gridBookmarks;
+  }
+
+  @override
+  int get hashCode => Object.hash(state, gridDbs, gridBookmarks);
+}
+
+class DeleteBookmarkButton extends StatelessWidget {
+  const DeleteBookmarkButton({
+    super.key,
+    required this.data,
+  });
+
+  final DeleteBookmarkData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: IconButton.filledTonal(
+        onPressed: () => context.pushNamed("DeleteBookmark", extra: data),
+        icon: const Icon(Icons.delete_outline_rounded),
       ),
     );
   }

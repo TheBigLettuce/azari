@@ -26,7 +26,7 @@ mixin DefaultBuildCell implements CellBuilder {
           thumbnail: thumbnail(),
           dismiss: dismiss(),
         ),
-      CellType.cell => GridCell(
+      CellType.cell || CellType.cellStatic => GridCell(
           uniqueKey: uniqueKey(),
           thumbnail: thumbnail(),
           titleLines: titleLines(),
@@ -74,6 +74,7 @@ abstract interface class CellBuilder extends CellBuilderData {
 enum CellType {
   list,
   cell,
+  cellStatic,
 }
 
 class ExitOnPressRoute extends InheritedWidget {

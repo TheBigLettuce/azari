@@ -43,7 +43,6 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:flutter/scheduler.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:mime/mime.dart" as mime;
@@ -78,6 +77,31 @@ Future<void> initServices(AppInstanceType appType) {
 
   return Future(() async {
     _dbInstance = await init(appType);
+
+    Spaces.init((register) {
+      final gallery = _dbInstance.get<GalleryService>();
+      if (gallery != null) {
+        final d = gallery.open();
+        late final StreamSubscription<void> dEvents;
+
+        register<Directories>(
+          SpaceData(
+            fn: (update) {
+              d.trashCell?.refresh();
+              d.source.clearRefresh();
+
+              dEvents = d.bindFilesEvents.listen((_) => update());
+
+              return d;
+            },
+            destruct: (d) {
+              dEvents.cancel();
+              d.close();
+            },
+          ),
+        );
+      }
+    });
 
     return;
   });
@@ -292,21 +316,6 @@ abstract class BooruTagging<T extends BooruTaggingType> {
 
   /// Delete all the tags from the DB.
   void clear();
-
-  // StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
-  // StreamSubscription<int> watchCount(void Function(int) f, [bool fire = false]);
-
-  // StreamSubscription<List<ImageTag>> watchImage(
-  //   List<String> tags,
-  //   void Function(List<ImageTag>) f, {
-  //   bool fire = false,
-  // });
-
-  // StreamSubscription<List<ImageTag>> watchImageLocal(
-  //   String filename,
-  //   void Function(List<ImageTag>) f, {
-  //   bool fire = false,
-  // });
 }
 
 mixin class TagManagerService implements ServiceMarker {
@@ -1147,4 +1156,147 @@ mixin class ColorsNamesService implements ServiceMarker {
   ColorsNamesData get current => _instance!.current;
 
   void add(ColorsNamesData data) => _instance!.add(data);
+}
+
+class SpaceData<T extends SpaceMarker> {
+  const SpaceData({
+    required this.fn,
+    required this.destruct,
+  });
+
+  final T Function(VoidCallback update) fn;
+  final void Function(T) destruct;
+}
+
+class _SpaceImpl<T extends SpaceMarker> {
+  _SpaceImpl(T Function(VoidCallback update) get, this.disposeE) {
+    e = get(() {
+      _events.add(null);
+    });
+  }
+
+  final _events = StreamController<void>.broadcast();
+  final void Function(T) disposeE;
+
+  late final T e;
+
+  Widget inject(Widget child) {
+    return _Space<T>(
+      value: e,
+      child: child,
+    );
+  }
+
+  void dispose() {
+    _events.close();
+    disposeE(e);
+  }
+}
+
+class Spaces {
+  factory Spaces() => _instance!;
+
+  Spaces._(
+      void Function(void Function<T extends SpaceMarker>(SpaceData<T> data) fn)
+          register) {
+    register(_register);
+  }
+
+  static Spaces? _instance;
+
+  static void init(
+    void Function(void Function<T extends SpaceMarker>(SpaceData<T> data) fn)
+        register,
+  ) {
+    if (_instance != null) {
+      assert(() {
+        throw "Spaces._instance not null";
+      }());
+      return;
+    }
+
+    _instance = Spaces._(register);
+  }
+
+  final _m = <Type, _SpaceImpl<dynamic>>{};
+
+  void _register<T extends SpaceMarker>(SpaceData<T> data) {
+    assert(!_m.containsKey(T));
+
+    if (_m.containsKey(T)) {
+      return;
+    }
+
+    _m[T] = _SpaceImpl<T>(data.fn, data.destruct);
+  }
+
+  Stream<void> events<T extends SpaceMarker>() => _m[T]!._events.stream;
+
+  T get<T extends SpaceMarker>() => _m[T]!.e as T;
+
+  void dispose() {
+    for (final e in _m.values) {
+      e.dispose();
+    }
+
+    _m.clear();
+  }
+
+  Widget inject(Widget child) => _m.values.fold(child, (c, e) => e.inject(c));
+
+  static T spaceOf<T extends SpaceMarker>(BuildContext context) =>
+      _Space.of<T>(context);
+}
+
+abstract class SpaceWidget<T extends SpaceMarker> extends StatefulWidget {
+  const SpaceWidget({super.key});
+
+  @override
+  SpaceState<T, SpaceWidget<T>> createState();
+}
+
+mixin SpaceState<T extends SpaceMarker, W extends SpaceWidget<T>> on State<W> {
+  late final T value;
+  late final StreamSubscription<void> _valueEvents;
+
+  void onUpdate() {}
+
+  @override
+  void initState() {
+    super.initState();
+    final space = Spaces();
+
+    value = space.get<T>();
+    _valueEvents = space.events<T>().listen((_) {
+      setState(() {});
+      onUpdate();
+    });
+  }
+
+  @override
+  void dispose() {
+    _valueEvents.cancel();
+
+    super.dispose();
+  }
+}
+
+abstract class SpaceMarker {}
+
+class _Space<T extends SpaceMarker> extends InheritedWidget {
+  const _Space({
+    super.key,
+    required this.value,
+    required super.child,
+  });
+  final T value;
+
+  static T of<T extends SpaceMarker>(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<_Space<T>>();
+
+    return widget!.value;
+  }
+
+  @override
+  bool updateShouldNotify(_Space<T> oldWidget) => value != oldWidget.value;
 }

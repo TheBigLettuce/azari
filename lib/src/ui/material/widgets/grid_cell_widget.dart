@@ -26,6 +26,10 @@ class GridCellName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (title.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return IgnorePointer(
       child: Container(
         alignment: Alignment.bottomCenter,

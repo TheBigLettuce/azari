@@ -8,6 +8,7 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 
 class TranslationNotes extends StatefulWidget {
   const TranslationNotes({
@@ -23,17 +24,8 @@ class TranslationNotes extends StatefulWidget {
     BuildContext context, {
     required int postId,
     required Booru booru,
-  }) {
-    Navigator.of(context, rootNavigator: true).push<void>(
-      DialogRoute(
-        context: context,
-        builder: (context) => TranslationNotes(
-          postId: postId,
-          booru: booru,
-        ),
-      ),
-    );
-  }
+  }) =>
+      context.pushNamed("TranslationNotes", extra: (postId, booru));
 
   @override
   State<TranslationNotes> createState() => _TranslationNotesState();

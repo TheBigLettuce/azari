@@ -5,39 +5,35 @@
 
 part of "android_gallery.dart";
 
-class _JoinedDirectories extends _AndroidGalleryFiles {
-  _JoinedDirectories({
-    required super.directories,
-    required super.parent,
-    required super.source,
-    required super.sourceTags,
-  }) : super(
-          type: GalleryFilesPageType.normal,
-          target: "joinedDir",
-          bucketId: "joinedDir",
-        );
+// class _JoinedDirectories extends _AndroidGalleryFiles {
+//   _JoinedDirectories({
+//     required super.directories,
+//     required super.parent,
+//     required super.source,
+//     required super.sourceTags,
+//   }) : super(
+//           type: GalleryFilesPageType.normal,
+//         );
 
-  @override
-  bool isBucketId(String dirId) {
-    for (final d in directories) {
-      if (d.bucketId == dirId) {
-        return true;
-      }
-    }
+//   @override
+//   bool isBucketId(String dirId) {
+//     for (final d in directories) {
+//       if (d.bucketId == dirId) {
+//         return true;
+//       }
+//     }
 
-    return false;
-  }
-}
+//     return false;
+//   }
+// }
 
 class _AndroidGalleryFiles implements Files {
   _AndroidGalleryFiles({
-    required this.bucketId,
     required this.directories,
     required this.sourceTags,
     required this.source,
     required this.type,
     required this.parent,
-    required this.target,
   }) : startTime = DateTime.now().millisecondsSinceEpoch;
 
   @override
@@ -46,18 +42,26 @@ class _AndroidGalleryFiles implements Files {
   @override
   final _AndroidGallery parent;
 
+  @override
+  ImageViewLoader get loader => stateController;
+
+  @override
+  late final PlatformImageViewStateImpl stateController =
+      PlatformImageViewStateImpl(source: source);
+
   final int startTime;
-  final String target;
 
   bool isThumbsLoading = false;
 
-  bool isBucketId(String bucketId) => directories.first.bucketId == bucketId;
+  bool includesTarget(String bucketId) =>
+      directories.indexWhere((e) => e.bucketId == bucketId) != -1;
 
   @override
   final _AndroidFileSourceJoined source;
 
   @override
   void close() {
+    stateController.dispose();
     parent.bindFiles = null;
     source.destroy();
     sourceTags.dispose();
@@ -68,9 +72,6 @@ class _AndroidGalleryFiles implements Files {
 
   @override
   final List<Directory> directories;
-
-  @override
-  final String bucketId;
 }
 
 class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
@@ -126,9 +127,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
     final cursor = await cursorApi.acquire(
       directories: directories.map((e) => e.bucketId).toList(),
       type: switch (type) {
-        GalleryFilesPageType.normal ||
-        GalleryFilesPageType.favorites =>
-          platform.FilesCursorType.normal,
+        GalleryFilesPageType.normal => platform.FilesCursorType.normal,
         GalleryFilesPageType.trash => platform.FilesCursorType.trashed,
       },
       sortingMode: switch (sortingMode) {

@@ -30,7 +30,7 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
   late final StreamSubscription<String> subscr;
   late final StreamSubscription<void> refreshingEvents;
 
-  late final PlatformImageViewStateImpl impl;
+  // late final PlatformImageViewStateImpl impl;
 
   @override
   void initState() {
@@ -48,37 +48,34 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
 
     _search = _FilesLoadingStatus(fileSource);
 
-    impl = PlatformImageViewStateImpl(
-      source: _search.source,
-      onTagPressed: (context, tag) => BooruRestoredPage.open(
-        context,
-        booru: const SettingsService().current.selectedBooru,
-        tags: tag,
-        saveSelectedPage: (_) {},
-        rootNavigator: true,
-      ),
-      onTagLongPressed: (context, tag) {
-        final l10n = context.l10n();
+    // impl = PlatformImageViewStateImpl(
+    //   source: _search.source,
+    //   onTagPressed: (context, tag) => BooruRestoredPage.open(
+    //     context,
+    //     booru: const SettingsService().current.selectedBooru,
+    //     tags: tag,
+    //     saveSelectedPage: (_) {},
+    //     rootNavigator: true,
+    //   ),
+    //   onTagLongPressed: (context, tag) {
+    //     final l10n = context.l10n();
 
-        return radioDialog(
-          context,
-          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-          const SettingsService().current.safeMode,
-          (e) => BooruRestoredPage.open(
-            context,
-            booru: const SettingsService().current.selectedBooru,
-            tags: tag,
-            saveSelectedPage: (_) {},
-            rootNavigator: true,
-          ),
-          title: l10n.chooseSafeMode,
-        );
-      },
-      wrapNotifiers: (child) => ReturnFileCallbackNotifier(
-        callback: null,
-        child: child,
-      ),
-    );
+    //     return radioDialog(
+    //       context,
+    //       SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+    //       const SettingsService().current.safeMode,
+    //       (e) => BooruRestoredPage.open(
+    //         context,
+    //         booru: const SettingsService().current.selectedBooru,
+    //         tags: tag,
+    //         saveSelectedPage: (_) {},
+    //         rootNavigator: true,
+    //       ),
+    //       title: l10n.chooseSafeMode,
+    //     );
+    //   },
+    //   wrapNotifiers: (child) => child,
+    // );
 
     refreshingEvents = fileSource.progress.watch((_) {
       setState(() {});
@@ -98,7 +95,7 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
 
   @override
   void dispose() {
-    impl.dispose();
+    // impl.dispose();
 
     subscr.cancel();
     refreshingEvents.cancel();
@@ -138,7 +135,6 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
                   child: _FilesCell(
                     file: cell,
                     search: _search,
-                    impl: impl,
                     idx: i,
                   ),
                 );
@@ -164,33 +160,19 @@ class _FilesCell extends StatelessWidget {
     required this.file,
     required this.search,
     required this.idx,
-    required this.impl,
+    // required this.impl,
   });
 
   final int idx;
 
   final _FilesLoadingStatus search;
-  final PlatformImageViewStateImpl impl;
+  // final PlatformImageViewStateImpl impl;
   final File file;
 
-  void onPressed(BuildContext context) {
-    platform.FlutterGalleryData.setUp(impl);
-    platform.GalleryVideoEvents.setUp(impl);
-
-    Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        builder: (context) {
-          return ImageView(
-            startingIndex: idx,
-            stateController: impl,
-          );
-        },
-      ),
-    ).whenComplete(() {
-      platform.FlutterGalleryData.setUp(null);
-      platform.GalleryVideoEvents.setUp(null);
-    });
-  }
+  void onPressed(BuildContext context) => GallerySearchPage.openImageView(
+        context,
+        startingIndex: idx,
+      );
 
   @override
   Widget build(BuildContext context) {

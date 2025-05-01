@@ -5,34 +5,34 @@
 
 part of "home.dart";
 
-class _NavigatorShell extends StatefulWidget {
-  const _NavigatorShell({
-    required this.navigatorKey,
-    required this.child,
-  });
+// class _NavigatorShell extends StatefulWidget {
+//   const _NavigatorShell({
+//     required this.navigatorKey,
+//     required this.child,
+//   });
 
-  final GlobalKey<NavigatorState> navigatorKey;
+//   final GlobalKey<NavigatorState> navigatorKey;
 
-  final Widget child;
+//   final Widget child;
 
-  @override
-  State<_NavigatorShell> createState() => __NavigatorShellState();
-}
+//   @override
+//   State<_NavigatorShell> createState() => __NavigatorShellState();
+// }
 
-class __NavigatorShellState extends State<_NavigatorShell> {
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      key: widget.navigatorKey,
-      onGenerateInitialRoutes: (navigator, initialRoute) {
-        return [
-          MaterialPageRoute(
-            builder: (_) {
-              return widget.child;
-            },
-          ),
-        ];
-      },
-    );
-  }
-}
+// class __NavigatorShellState extends State<_NavigatorShell> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Navigator(
+//       key: widget.navigatorKey,
+//       onGenerateInitialRoutes: (navigator, initialRoute) {
+//         return [
+//           MaterialPageRoute(
+//             builder: (_) {
+//               return widget.child;
+//             },
+//           ),
+//         ];
+//       },
+//     );
+//   }
+// }

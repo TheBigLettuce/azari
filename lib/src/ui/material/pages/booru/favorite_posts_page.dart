@@ -31,11 +31,11 @@ import "package:flutter/material.dart";
 class FavoritePostsPage extends StatefulWidget {
   const FavoritePostsPage({
     super.key,
-    required this.rootNavigatorPop,
+    // required this.rootNavigatorPop,
     required this.selectionController,
   });
 
-  final void Function(bool)? rootNavigatorPop;
+  // final void Function(bool)? rootNavigatorPop;
   final SelectionController selectionController;
 
   static bool hasServicesRequired() =>
@@ -399,7 +399,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     return GridPopScope(
       searchTextController: searchTextController,
       filter: filter,
-      rootNavigatorPop: widget.rootNavigatorPop,
+      // rootNavigatorPop: widget.rootNavigatorPop,
       child: ShellScope(
         stackInjector: status,
         configWatcher: gridSettings.watch,

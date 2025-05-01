@@ -13,7 +13,6 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -81,7 +80,7 @@ class SearchBarAppBarType extends ShellAppBarType {
   });
 
   factory SearchBarAppBarType.fromFilter(
-    ChainedFilterResourceSource<dynamic, dynamic> filter, {
+    ChainedFilterResourceSource<dynamic, dynamic>? filter, {
     required TextEditingController textEditingController,
     required FocusNode focus,
     String? hintText,
@@ -101,8 +100,8 @@ class SearchBarAppBarType extends ShellAppBarType {
       trailingItems: trailingItems,
       onPressed: onPressed,
       bottomWidget: bottomWidget,
-      onChanged: (str) => filter.clearRefresh(),
-      filterWidget: filter.allowedFilteringModes.isNotEmpty
+      onChanged: (str) => filter?.clearRefresh(),
+      filterWidget: filter?.allowedFilteringModes.isNotEmpty ?? false
           ? ChainedFilterIcon(
               filter: filter,
               controller: textEditingController,
@@ -137,7 +136,7 @@ class ChainedFilterIcon extends StatelessWidget {
     this.complete,
   });
 
-  final ChainedFilterResourceSource<dynamic, dynamic> filter;
+  final ChainedFilterResourceSource<dynamic, dynamic>? filter;
   final TextEditingController controller;
   final FocusNode focusNode;
   final Future<List<BooruTag>> Function(String string)? complete;
@@ -146,33 +145,45 @@ class ChainedFilterIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () {
-        showModalBottomSheet<void>(
-          useRootNavigator: true,
-          isScrollControlled: true,
-          showDragHandle: true,
-          context: context,
-          builder: (context) {
-            return SafeArea(
-              child: _FilteringWidget(
-                complete: complete,
-                selectSorting: (e) => filter.sortingMode = e,
-                currentSorting: filter.sortingMode,
-                enabledSorting: filter.allowedSortingModes,
-                select: (e) => filter.filteringMode = e,
-                currentFilter: filter.filteringMode,
-                enabledModes: filter.allowedFilteringModes,
-                // onChange: onChange,
-                onChange: null,
-                controller: controller,
-                focusNode: focusNode, selectColors: filter.setColors,
-                currentColors: filter.filteringColors,
-              ),
-            );
-          },
-        );
-      },
-      icon: _FilterIcon(filter: filter),
+      onPressed: filter != null
+          ? () {
+              showModalBottomSheet<void>(
+                useRootNavigator: true,
+                isScrollControlled: true,
+                showDragHandle: true,
+                context: context,
+                builder: (context) {
+                  return SafeArea(
+                    child: _FilteringWidget(
+                      complete: complete,
+                      selectSorting: (e) => filter!.sortingMode = e,
+                      currentSorting: filter!.sortingMode,
+                      enabledSorting: filter!.allowedSortingModes,
+                      select: (e) => filter!.filteringMode = e,
+                      currentFilter: filter!.filteringMode,
+                      enabledModes: filter!.allowedFilteringModes,
+                      // onChange: onChange,
+                      onChange: null,
+                      controller: controller,
+                      focusNode: focusNode, selectColors: filter!.setColors,
+                      currentColors: filter!.filteringColors,
+                    ),
+                  );
+                },
+              );
+            }
+          : null,
+      icon: AnimatedCrossFade(
+        firstChild: filter != null
+            ? _FilterIcon(filter: filter!)
+            : const SizedBox.shrink(),
+        secondChild: Icon(FilteringMode.noFilter.icon),
+        crossFadeState: filter != null
+            ? CrossFadeState.showFirst
+            : CrossFadeState.showSecond,
+        duration: Durations.medium1,
+        firstCurve: Easing.standard,
+      ),
       padding: EdgeInsets.zero,
     );
   }
@@ -411,8 +422,8 @@ class __FilteringWidgetState extends State<_FilteringWidget>
                           e,
                           e.translatedString(l10n, colorsNames),
                           icon: Icons.circle_rounded,
-                          iconColor:
-                              e.color.harmonizeWith(theme.colorScheme.primary),
+                          iconColor: e
+                              .color, // .harmonizeWith(theme.colorScheme.primary)
                         ),
                       ),
                   title: "Color tags", // TODO: change

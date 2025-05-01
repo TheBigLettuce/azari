@@ -7,23 +7,17 @@ import "dart:async";
 
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
-import "package:azari/src/ui/material/widgets/image_view/default_state_controller.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_theme.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:logging/logging.dart";
-import "package:photo_view/photo_view.dart";
-import "package:photo_view/photo_view_gallery.dart";
 
-part "image_view_body.dart";
 part "video/video_controls.dart";
 
 typedef NotifierWrapper = Widget Function(Widget child);
@@ -127,8 +121,6 @@ abstract class ImageViewStateController {
 
   Widget inject(Widget child);
 
-  // void refreshImage();
-
   Widget buildBody(BuildContext context);
 }
 
@@ -205,6 +197,7 @@ class ImageView extends StatefulWidget {
     this.onExit,
     this.startingIndex = 0,
     required this.stateController,
+    required this.returnBack,
   });
 
   final VoidCallback? onExit;
@@ -212,43 +205,7 @@ class ImageView extends StatefulWidget {
   final int startingIndex;
 
   final ImageViewStateController stateController;
-
-  static Future<void> open(
-    BuildContext context,
-    ImageViewStateController stateController, {
-    Key? key,
-    int startingCell = 0,
-    VoidCallback? onExit,
-  }) =>
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (context) => ImageView(
-            key: key,
-            startingIndex: startingCell,
-            onExit: onExit,
-            stateController: stateController,
-          ),
-        ),
-      );
-
-  static Future<void> openAsync(
-    BuildContext context,
-    Future<ImageViewStateController> Function() stateController, {
-    int startingCell = 0,
-    Key? key,
-  }) =>
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (context) => WrapFutureRestartable(
-            newStatus: stateController,
-            builder: (context, value) => ImageView(
-              key: key,
-              stateController: value,
-              startingIndex: startingCell,
-            ),
-          ),
-        ),
-      );
+  final VoidCallback returnBack;
 
   static final log = Logger("ImageView");
 
@@ -367,6 +324,7 @@ class ImageViewState extends State<ImageView> with TickerProviderStateMixin {
               videoControls: videoControls,
               controller: animationController,
               pauseVideoState: pauseVideoState,
+              returnBack: widget.returnBack,
               child: Animate(
                 controller: slideAnimationLeft,
                 autoPlay: false,
@@ -486,213 +444,3 @@ class PauseVideoState {
     _events.close();
   }
 }
-
-
-
-// @immutable
-// class ImageViewDescription {
-//   const ImageViewDescription({
-//     this.pageChange,
-//     this.beforeRestore,
-//     this.onExit,
-//     this.statistics,
-//     this.ignoreOnNearEnd = true,
-//   });
-
-//   final bool ignoreOnNearEnd;
-
-//   final ImageViewStatistics? statistics;
-
-//   final VoidCallback? onExit;
-//   final VoidCallback? beforeRestore;
-
-//   final void Function(ImageViewStateController state)? pageChange;
-// }
-
-
-
-// static Future<void> defaultForGrid(
-//   BuildContext gridContext,
-//   ImageViewDescription<T> imageDesctipion,
-//   int startingCell,
-//   List<ImageTag> Function(ContentWidgets)? tags,
-//   WatchTagsCallback? watchTags,
-//   void Function(T)? addToVisited, {
-//   PlatformImageViewStateImpl? galleryImpl,
-//   required ResourceSource<int, T> source,
-//   void Function(int)? download,
-//   required NotifierWrapper? wrapNotifiers,
-// }) {
-//   final selection = SelectionActions.of(gridContext);
-//   selection.controller.setVisibility(false);
-
-//   addToVisited?.call(source.forIdxUnsafe(startingCell));
-
-//   final ImageViewStateController stateController = galleryImpl ??
-//       DefaultStateController(
-//         getContent: (idx) => source.forIdxUnsafe(idx).content(gridContext),
-//         count: source.count,
-//         countEvents: source.backingStorage.countEvents,
-//         statistics: imageDesctipion.statistics,
-//         download: download,
-//         watchTags: watchTags,
-//         tags: tags,
-//         wrapNotifiers: wrapNotifiers,
-//         scrollUntill: (i) =>
-//             ShellScrollNotifier.maybeScrollToOf<T>(gridContext, i),
-//         onNearEnd: imageDesctipion.ignoreOnNearEnd || !source.hasNext
-//             ? null
-//             : source.next,
-//         pageChange: (state) {
-//           imageDesctipion.pageChange?.call(state);
-//           addToVisited?.call(source.backingStorage[state.currentIndex]);
-//         },
-//       );
-
-//   return Navigator.of(gridContext, rootNavigator: true)
-//       .push(
-//     MaterialPageRoute<void>(
-//       builder: (context) => ImageView(
-//         onExit: imageDesctipion.onExit,
-//         startingIndex: startingCell,
-//         stateController: stateController,
-//       ),
-//     ),
-//   )
-//       .then((value) {
-//     selection.controller.setVisibility(true);
-
-//     return value;
-//   })
-//     ..whenComplete(() {
-//       if (stateController is DefaultStateController) {
-//         stateController.dispose();
-//       }
-//     });
-// }
-
-// addToVisited?.call(stateController.getContent(startingCell));
-
-// final stateController = DefaultStateController(
-//   getContent: getContent,
-//   count: cellCount,
-//   statistics: imageDesctipion?.statistics,
-//   download: download,
-//   wrapNotifiers: wrapNotifiers,
-//   tags: tags,
-//   watchTags: watchTags,
-//   pageChange: (state) {
-//     imageDesctipion?.pageChange?.call(state);
-//     addToVisited?.call(getContent(state.currentIndex)!);
-//   },
-// );
-
-// ..whenComplete(() {
-//     stateController.dispose();
-//   })
-
-// ..whenComplete(() {
-//     stateController?.dispose();
-//   })
-
-
-
-// abstract interface class ContentableCell
-//     implements ImageViewContentable, CellBase {}
-
-
-// class StaticContentIndexMetadata implements CurrentIndexMetadata {
-//   const StaticContentIndexMetadata({
-//     required this.content,
-//   });
-
-//   final Contentable content;
-
-//   @override
-//   List<ImageViewAction> actions(BuildContext context) {
-//     return content.widgets.tryAsActionable(context);
-//   }
-
-//   @override
-//   List<NavigationAction> appBarButtons(BuildContext context) {
-//     return content.widgets.tryAsAppBarButtonable(context);
-//   }
-
-//   @override
-//   Key get uniqueKey => content.widgets.uniqueKey();
-
-//   @override
-//   int get count => 1;
-
-//   @override
-//   int get index => 0;
-
-//   @override
-//   bool get isVideo => content is NetVideo;
-
-//   @override
-//   Widget? openMenuButton(BuildContext context) {
-//     return null;
-//   }
-
-//   // @override
-//   // List<Sticker> stickers(BuildContext context) {
-//   //   return content.widgets.tryAsStickerable(context, true);
-//   // }
-
-//   @override
-//   bool operator ==(Object other) {
-//     return other is StaticContentIndexMetadata && content == other.content;
-//   }
-
-//   @override
-//   int get hashCode => content.hashCode;
-// }
-
-// abstract class CurrentIndexMetadata {
-//   static CurrentIndexMetadata? maybeOf(BuildContext context) {
-//     final widget = context
-//         .dependOnInheritedWidgetOfExactType<CurrentIndexMetadataNotifier>();
-
-//     return widget?.metadata;
-//   }
-
-//   static ImageProvider? Function(int idx) thumbnailsOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<ThumbnailsNotifier>();
-
-//     return widget!.provider;
-//   }
-
-//   static CurrentIndexMetadata of(BuildContext context) => maybeOf(context)!;
-
-//   bool get isVideo;
-//   int get index;
-//   int get count;
-//   Key get uniqueKey;
-
-//   List<ImageViewAction> actions(BuildContext context);
-
-//   List<NavigationAction> appBarButtons(BuildContext context);
-
-//   Widget? openMenuButton(BuildContext context);
-
-//   // List<Sticker> stickers(BuildContext context);
-// }
-
-// class CurrentIndexMetadataNotifier extends InheritedWidget {
-//   const CurrentIndexMetadataNotifier({
-//     super.key,
-//     required this.metadata,
-//     required int refreshTimes,
-//     required super.child,
-//   }) : _refreshTimes = refreshTimes;
-
-//   final CurrentIndexMetadata metadata;
-//   final int _refreshTimes;
-
-//   @override
-//   bool updateShouldNotify(CurrentIndexMetadataNotifier oldWidget) =>
-//       metadata != oldWidget.metadata ||
-//       _refreshTimes != oldWidget._refreshTimes;
-// }

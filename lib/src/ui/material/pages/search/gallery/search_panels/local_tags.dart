@@ -20,7 +20,6 @@ class _LocalTagsPanel extends StatefulWidget {
   final ResourceSource<int, Directory> source;
 
   final void Function(
-    String str,
     List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
@@ -113,10 +112,7 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel>
               return;
             }
 
-            // Navigator.pop(context);
-
             widget.joinedDirectories(
-              "Booru",
               booru,
               tag: filteringValue,
               filteringMode: FilteringMode.tag,

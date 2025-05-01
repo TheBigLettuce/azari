@@ -19,7 +19,7 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart"
     as actions;
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
@@ -28,8 +28,6 @@ import "package:flutter/widgets.dart";
 import "package:local_auth/local_auth.dart";
 
 mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
-  Directories? get providedApi;
-  GalleryReturnCallback? get callback;
   SelectionController get selectionController;
 
   final gridSettings = GridSettingsData<DirectoriesData>();
@@ -45,7 +43,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   late final TextEditingController searchTextController;
   late final FocusNode searchFocus;
 
-  late final Directories api;
+  final Directories api = Spaces().get<Directories>();
 
   int _galleryVersion = 0;
 
@@ -60,13 +58,6 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
     searchTextController = TextEditingController();
     searchFocus = FocusNode(canRequestFocus: false);
-
-    api = providedApi ?? const GalleryService().open();
-
-    if (providedApi == null) {
-      api.trashCell?.refresh();
-      api.source.clearRefresh();
-    }
 
     GalleryApi.safe()?.version.then((value) => _galleryVersion = value);
 
@@ -110,44 +101,32 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     status = SourceShellElementState(
       source: filter,
       selectionController: selectionController,
-      actions: callback != null
-          ? <SelectionBarAction>[
-              if (callback?.isFile ?? false)
-                actions.joinedDirectories(
-                  context,
-                  api,
-                  callback?.toFileOrNull,
-                  segmentCell,
-                ),
-            ]
-          : <SelectionBarAction>[
-              if (DirectoryMetadataService.available &&
-                  DirectoryTagService.available)
-                actions.addToGroup<Directory>(
-                  context,
-                  (selected) {
-                    final t = selected.first.tag;
-                    for (final e in selected.skip(1)) {
-                      if (t != e.tag) {
-                        return null;
-                      }
-                    }
+      actions: <SelectionBarAction>[
+        if (DirectoryMetadataService.available && DirectoryTagService.available)
+          actions.addToGroup<Directory>(
+            context,
+            (selected) {
+              final t = selected.first.tag;
+              for (final e in selected.skip(1)) {
+                if (t != e.tag) {
+                  return null;
+                }
+              }
 
-                    return t;
-                  },
-                  _addToGroup,
-                  true,
-                  completeDirectoryNameTag: completeDirectoryNameTag,
-                ),
-              if (BlacklistedDirectoryService.available)
-                actions.blacklist(context, segmentCell),
-              actions.joinedDirectories(
-                context,
-                api,
-                callback?.toFileOrNull,
-                segmentCell,
-              ),
-            ],
+              return t;
+            },
+            _addToGroup,
+            true,
+            completeDirectoryNameTag: completeDirectoryNameTag,
+          ),
+        if (BlacklistedDirectoryService.available)
+          actions.blacklist(context, segmentCell),
+        actions.joinedDirectories(
+          context,
+          api,
+          segmentCell,
+        ),
+      ],
       onEmpty: _DirectoryOnEmpty(
         api.trashCell,
         api.source.backingStorage,
@@ -165,9 +144,9 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
     filter.destroy();
 
-    if (providedApi == null) {
-      api.close();
-    }
+    // if (providedApi == null) {
+    //   api.close();
+    // }
 
     searchFocus.dispose();
     _lifecycleListener?.dispose();
@@ -196,24 +175,16 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   }) {
     return Segments(
       l10n.segmentsUncategorized,
-      injectedLabel:
-          callback != null ? l10n.suggestionsLabel : l10n.segmentsSpecial,
-      displayFirstCellInSpecial: callback != null,
+      injectedLabel: l10n.segmentsSpecial,
       caps: DirectoryMetadataService.available
           ? DirectoryMetadataSegments(l10n.segmentsSpecial)
           : const SegmentCapability.empty(),
       segment: segmentCell,
       injectedSegments: api.trashCell != null ? [api.trashCell!] : const [],
-      onLabelPressed: callback == null || callback!.isFile
-          ? (label, children) => actions.joinedDirectoriesFnc(
-                context,
-                label,
-                children,
-                api,
-                callback?.toFile,
-                segmentCell,
-              )
-          : null,
+      onLabelPressed: (label, children) {
+        Spaces().get<Directories>().files(children);
+        FilesPage.open(context);
+      },
     );
   }
 

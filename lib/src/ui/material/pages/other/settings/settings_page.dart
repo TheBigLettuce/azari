@@ -11,35 +11,16 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_list.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 
 part "is_restart.dart";
 part "select_booru.dart";
 part "select_theme.dart";
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({
-    super.key,
-    required this.settingsService,
-    required this.galleryService,
-    required this.thumbnailService,
-  });
+  const SettingsPage({super.key});
 
-  final ThumbnailService? thumbnailService;
-  final GalleryService? galleryService;
-
-  final SettingsService settingsService;
-
-  static Future<void> open(BuildContext context) {
-    return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) => SettingsPage(
-          settingsService: const SettingsService(),
-          galleryService: GalleryService.safe(),
-          thumbnailService: ThumbnailService.safe(),
-        ),
-      ),
-    );
-  }
+  static Future<void> open(BuildContext context) => context.push("/settings");
 
   @override
   Widget build(BuildContext context) {

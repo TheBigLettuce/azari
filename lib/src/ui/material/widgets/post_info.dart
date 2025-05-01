@@ -20,10 +20,10 @@ import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.da
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/translation_notes.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart" as url;
 
 class PostInfo extends StatefulWidget {
@@ -353,52 +353,8 @@ class StarsButton extends StatefulWidget {
   static Future<void> openChangeColorNameDialog(
     BuildContext context,
     FilteringColors e,
-  ) {
-    return Navigator.of(context, rootNavigator: true).push(
-      DialogRoute<void>(
-        context: context,
-        builder: (context) {
-          final l10n = context.l10n();
-          final colorsNames = const ColorsNamesService().current;
-
-          return AlertDialog(
-            title: Text(
-              "Change ${e.translatedString(l10n, colorsNames)} to",
-            ),
-            content: TextField(
-              onSubmitted: (value) {
-                switch (e) {
-                  case FilteringColors.red:
-                    colorsNames.copy(red: value).maybeSave();
-                  case FilteringColors.blue:
-                    colorsNames.copy(blue: value).maybeSave();
-                  case FilteringColors.yellow:
-                    colorsNames.copy(yellow: value).maybeSave();
-                  case FilteringColors.green:
-                    colorsNames.copy(green: value).maybeSave();
-                  case FilteringColors.purple:
-                    colorsNames.copy(purple: value).maybeSave();
-                  case FilteringColors.orange:
-                    colorsNames.copy(orange: value).maybeSave();
-                  case FilteringColors.pink:
-                    colorsNames.copy(pink: value).maybeSave();
-                  case FilteringColors.white:
-                    colorsNames.copy(white: value).maybeSave();
-                  case FilteringColors.brown:
-                    colorsNames.copy(brown: value).maybeSave();
-                  case FilteringColors.black:
-                    colorsNames.copy(black: value).maybeSave();
-                  case FilteringColors.noColor:
-                }
-
-                Navigator.of(context, rootNavigator: true).pop();
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
+  ) =>
+      context.pushNamed("ColorChangeDialog", extra: e);
 
   @override
   State<StarsButton> createState() => _StarsButtonState();
@@ -445,7 +401,8 @@ class _StarsButtonState extends State<StarsButton>
     final theme = Theme.of(context);
     final color = post!.filteringColors == FilteringColors.noColor
         ? null
-        : post!.filteringColors.color.harmonizeWith(theme.colorScheme.primary);
+        : post!
+            .filteringColors.color; //.harmonizeWith(theme.colorScheme.primary)
 
     return MenuAnchor(
       menuChildren: [
@@ -594,8 +551,8 @@ class _StarsButtonState extends State<StarsButton>
                           selected: post!.filteringColors == e,
                           avatar: Icon(
                             Icons.circle_rounded,
-                            color: e.color
-                                .harmonizeWith(theme.colorScheme.primary),
+                            color: e
+                                .color, // .harmonizeWith(theme.colorScheme.primary)
                           ),
                           label: Text(e.translatedString(l10n, colorsNames)),
                           onSelected: (selected) {

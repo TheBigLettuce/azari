@@ -14,6 +14,7 @@ import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 import "package:scrollable_positioned_list/scrollable_positioned_list.dart";
 
 class ImageViewSkeleton extends StatefulWidget {
@@ -24,6 +25,7 @@ class ImageViewSkeleton extends StatefulWidget {
     required this.videoControls,
     required this.pauseVideoState,
     required this.stateControler,
+    required this.returnBack,
     required this.child,
   });
 
@@ -33,6 +35,8 @@ class ImageViewSkeleton extends StatefulWidget {
 
   final VideoControlsControllerImpl videoControls;
   final ImageViewStateController stateControler;
+
+  final VoidCallback returnBack;
 
   final Widget child;
 
@@ -142,6 +146,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                                 Row(
                                   children: [
                                     BackButton(
+                                      onPressed: widget.returnBack,
                                       style: ButtonStyle(
                                         backgroundColor: WidgetStatePropertyAll(
                                           colorScheme.surface,
@@ -1052,7 +1057,7 @@ class _ExitOnPressRoute extends StatelessWidget {
       scaffold.closeEndDrawer();
     }
 
-    Navigator.pop(context);
+    context.pop();
   }
 
   @override

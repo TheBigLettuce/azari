@@ -18,9 +18,11 @@ import "package:azari/src/ui/material/widgets/file_action_chips.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/load_tags.dart";
+import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:go_router/go_router.dart";
 
 class FileInfo extends StatefulWidget {
   const FileInfo({
@@ -261,9 +263,9 @@ class FileBooruInfoTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: ListTile(
         onTap: () {
-          Navigator.pop(context);
+          context.pop();
 
-          openPostAsync(context, booru: res.$2, postId: res.$1);
+          CardDialogStatic.openAsync(context, booru: res.$2, postId: res.$1);
         },
         tileColor: theme.colorScheme.surfaceContainerHigh,
         leading: const Icon(Icons.description_outlined),

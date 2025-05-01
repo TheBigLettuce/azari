@@ -5,76 +5,49 @@
 
 part of "home.dart";
 
-mixin _BeforeYouContinueDialogMixin {
-  void maybeBeforeYouContinueDialog(
-    BuildContext context,
-    SettingsData settings,
-    GalleryService galleryService,
-  ) {
-    if (settings.path.isEmpty) {
-      WidgetsBinding.instance.scheduleFrameCallback(
-        (timeStamp) {
-          Navigator.push(
-            context,
-            DialogRoute<void>(
-              context: context,
-              builder: (context) {
-                final l10n = context.l10n();
+// mixin _BeforeYouContinueDialogMixin {
+//   void maybeBeforeYouContinueDialog(
+//     BuildContext context,
+//     SettingsData settings,
+//     GalleryService galleryService,
+//   ) {
+//     if (settings.path.isEmpty) {
+//       WidgetsBinding.instance.scheduleFrameCallback(
+//         (timeStamp) {
+//           Navigator.push(
+//             context,
+//             DialogRoute<void>(
+//               context: context,
+//               builder: (context) {
+//                 final l10n = context.l10n();
 
-                return AlertDialog(
-                  title: Text(l10n.beforeYouContinueTitle),
-                  content: Text(l10n.needChooseDirectory),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(l10n.later),
-                    ),
-                    TextButton(
-                      onPressed: FilesApi.available
-                          ? () {
-                              chooseDirectoryCallback((_) {}, l10n);
+//                 return AlertDialog(
+//                   title: Text(l10n.beforeYouContinueTitle),
+//                   content: Text(l10n.needChooseDirectory),
+//                   actions: [
+//                     TextButton(
+//                       onPressed: () {
+//                         Navigator.pop(context);
+//                       },
+//                       child: Text(l10n.later),
+//                     ),
+//                     TextButton(
+//                       onPressed: FilesApi.available
+//                           ? () {
+//                               chooseDirectoryCallback((_) {}, l10n);
 
-                              Navigator.pop(context);
-                            }
-                          : null,
-                      child: Text(l10n.choose),
-                    ),
-                  ],
-                );
-              },
-            ),
-          );
-        },
-      );
-    }
-  }
-}
-
-/// Pick an operating system directory.
-/// Calls [onError] in case of any error and resolves to false.
-Future<bool> chooseDirectoryCallback(
-  void Function(String) onError,
-  AppLocalizations l10n,
-) async {
-  late final ({String formattedPath, String path}) resp;
-
-  try {
-    resp = (await const FilesApi().chooseDirectory(l10n))!;
-  } catch (e, trace) {
-    Logger.root.severe("chooseDirectory", e, trace);
-    onError(l10n.emptyResult);
-    return false;
-  }
-
-  final current = const SettingsService().current;
-  current
-      .copy(
-        path:
-            current.path.copy(path: resp.path, pathDisplay: resp.formattedPath),
-      )
-      .save();
-
-  return Future.value(true);
-}
+//                               Navigator.pop(context);
+//                             }
+//                           : null,
+//                       child: Text(l10n.choose),
+//                     ),
+//                   ],
+//                 );
+//               },
+//             ),
+//           );
+//         },
+//       );
+//     }
+//   }
+// }

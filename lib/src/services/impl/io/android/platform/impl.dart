@@ -240,16 +240,16 @@ class _FilesApiImpl implements FilesApi {
   const _FilesApiImpl();
 
   @override
-  Future<({String path, String formattedPath})?> chooseDirectory(
+  Future<({String uri, String formattedPath})?> chooseDirectory(
     AppLocalizations _, {
     bool temporary = false,
-  }) async {
+  }) {
     return AndroidPlatformImpl.activityContext
         .invokeMethod("chooseDirectory", temporary)
         .then(
           (value) => (
             formattedPath: (value as Map)["pathDisplay"] as String,
-            path: value["path"] as String,
+            uri: value["path"] as String,
           ),
         );
   }

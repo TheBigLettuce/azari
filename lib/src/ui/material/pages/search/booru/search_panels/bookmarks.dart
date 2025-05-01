@@ -54,8 +54,6 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
   }
 
   void _onPressed(GridBookmark bookmark) {
-    // Navigator.pop(context);
-
     BooruRestoredPage.open(
       context,
       booru: bookmark.booru,

@@ -5,7 +5,14 @@
 
 // ignore_for_file: unused_element_parameter
 
-part of "image_view.dart";
+import "dart:async";
+
+import "package:azari/src/services/impl/io/default_state_controller.dart";
+import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
+import "package:flutter/material.dart";
+import "package:photo_view/photo_view.dart";
+import "package:photo_view/photo_view_gallery.dart";
 
 class PhotoViewGalleryBody extends StatefulWidget {
   const PhotoViewGalleryBody({

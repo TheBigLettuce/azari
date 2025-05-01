@@ -8,8 +8,10 @@ import "dart:async";
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart";
 
@@ -304,74 +306,85 @@ class ErrorOr<T> {
   bool get hasValue => _data != null;
 }
 
+class AddTagDialog extends StatefulWidget {
+  const AddTagDialog({
+    super.key,
+    required this.onSubmit,
+  });
+
+  final void Function(String, bool) onSubmit;
+
+  @override
+  State<AddTagDialog> createState() => _AddTagDialogState();
+}
+
+class _AddTagDialogState extends State<AddTagDialog> {
+  static final _regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
+
+  bool delete = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return AlertDialog(
+      title: Text(l10n.addTag),
+      actions: [
+        IconButton.filledTonal(
+          isSelected: delete,
+          onPressed: () {
+            delete = !delete;
+
+            setState(() {});
+          },
+          icon: const Icon(Icons.delete_forever_rounded),
+        ),
+      ],
+      content: Form(
+        autovalidateMode: AutovalidateMode.always,
+        child: TextFormField(
+          enabled: true,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            icon: Icon(Icons.tag_rounded),
+          ),
+          validator: (value) {
+            if (value == null) {
+              return l10n.valueIsNull;
+            }
+
+            final v = value.trim();
+            if (v.isEmpty) {
+              return l10n.valueIsEmpty;
+            }
+
+            if (v.length <= 1) {
+              return l10n.valueIsEmpty;
+            }
+
+            if (_regexp.hasMatch(v)) {
+              return l10n.tagValidationError;
+            }
+
+            return null;
+          },
+          onFieldSubmitted: (value) {
+            final v = value.trim();
+            if (v.isEmpty || v.length <= 1 || _regexp.hasMatch(v)) {
+              return;
+            }
+
+            widget.onSubmit(v, delete);
+            context.pop();
+          },
+        ),
+      ),
+    );
+  }
+}
+
 void openAddTagDialog(
   BuildContext context,
   void Function(String, bool) onSubmit,
-  AppLocalizations l10n,
-) {
-  final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
-  bool delete = false;
-
-  Navigator.of(context, rootNavigator: true).push(
-    DialogRoute<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.addTag),
-          actions: [
-            StatefulBuilder(
-              builder: (context, setState) => IconButton.filledTonal(
-                isSelected: delete,
-                onPressed: () {
-                  delete = !delete;
-
-                  setState(() {});
-                },
-                icon: const Icon(Icons.delete_forever_rounded),
-              ),
-            ),
-          ],
-          content: Form(
-            autovalidateMode: AutovalidateMode.always,
-            child: TextFormField(
-              enabled: true,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                icon: Icon(Icons.tag_rounded),
-              ),
-              validator: (value) {
-                if (value == null) {
-                  return l10n.valueIsNull;
-                }
-
-                final v = value.trim();
-                if (v.isEmpty) {
-                  return l10n.valueIsEmpty;
-                }
-
-                if (v.length <= 1) {
-                  return l10n.valueIsEmpty;
-                }
-
-                if (regexp.hasMatch(v)) {
-                  return l10n.tagValidationError;
-                }
-
-                return null;
-              },
-              onFieldSubmitted: (value) {
-                final v = value.trim();
-                if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
-                  return;
-                }
-
-                onSubmit(v, delete);
-                Navigator.pop(context);
-              },
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
+) =>
+    context.pushNamed("AddTagDialog", extra: onSubmit);

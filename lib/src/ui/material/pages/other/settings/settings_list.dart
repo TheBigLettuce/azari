@@ -15,6 +15,8 @@ import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
+import "package:logging/logging.dart";
 
 class SettingsList extends StatefulWidget {
   const SettingsList({
@@ -259,7 +261,7 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
         child: ListTile(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          onTap: () => const LicensePage().open(context),
+          onTap: () => context.pushNamed("LicensePage"),
           title: Text(l10n.licenseSetting),
           subtitle: const Text("GPL-2.0-only"),
         ),
@@ -308,4 +310,31 @@ class _SettingsGroup extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Pick an operating system directory.
+/// Calls [onError] in case of any error and resolves to false.
+Future<bool> chooseDirectoryCallback(
+  void Function(String) onError,
+  AppLocalizations l10n,
+) async {
+  late final ({String formattedPath, String uri}) resp;
+
+  try {
+    resp = (await const FilesApi().chooseDirectory(l10n))!;
+  } catch (e, trace) {
+    Logger.root.severe("chooseDirectory", e, trace);
+    onError(l10n.emptyResult);
+    return false;
+  }
+
+  final current = const SettingsService().current;
+  current
+      .copy(
+        path:
+            current.path.copy(path: resp.uri, pathDisplay: resp.formattedPath),
+      )
+      .save();
+
+  return Future.value(true);
 }

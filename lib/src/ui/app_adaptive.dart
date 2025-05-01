@@ -11,9 +11,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 class AppAdaptive extends StatelessWidget {
-  const AppAdaptive({
-    super.key,
-  });
+  const AppAdaptive({super.key});
 
   @override
   Widget build(BuildContext context) {

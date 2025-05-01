@@ -17,6 +17,47 @@ abstract interface class PlatformApi implements ServiceMarker {
   GalleryApi? get gallery;
   ThumbsApi? get thumbs;
   FilesApi? get files;
+  // StorageApi get storage;
+}
+
+abstract class StorageApi {
+  CategoryApi get category;
+  GalleryApi? get gallery;
+
+  Future<StorageData> loadData();
+}
+
+abstract class CategoryApi {
+  Future<void> nuke(StorageCategories c);
+  Future<void> optimize(StorageCategories c);
+
+  Future<void> move(InternalStoragePath path, StorageCategories to);
+  Future<void> copy(InternalStoragePath path, StorageCategories to);
+  // Future<void> rename(InternalStoragePath from, InternalStoragePath to);
+  Future<void> remove(InternalStoragePath path);
+}
+
+abstract class InternalStoragePath {}
+
+abstract class ExternalStoragePath {}
+
+abstract class StorageData {
+  StorageCategories get categories;
+  Map<StorageCategories, int> get sizes;
+
+  List<StorageUnit> describeCategory(StorageCategories c);
+}
+
+abstract class StorageUnit {
+  String get displayName;
+  InternalStoragePath get path;
+}
+
+enum StorageCategories {
+  unknown,
+  cache,
+  thumbnails,
+  db;
 }
 
 mixin class AppApi {
@@ -232,6 +273,7 @@ mixin class FilesApi {
       ) ??
       Future.value();
 
+  /// if newDir is is set, [choosen] should be uri str on android
   Future<void> copyMove(
     String chosen,
     String chosenVolumeName,
@@ -251,7 +293,7 @@ mixin class FilesApi {
   void deleteAll(List<File> selected) =>
       PlatformApi._instance?.files?.deleteAll(selected);
 
-  Future<({String formattedPath, String path})?> chooseDirectory(
+  Future<({String formattedPath, String uri})?> chooseDirectory(
     AppLocalizations l10n, {
     bool temporary = false,
   }) =>

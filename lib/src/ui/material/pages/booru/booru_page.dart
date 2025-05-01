@@ -30,6 +30,7 @@ import "package:azari/src/ui/material/pages/search/booru/popular_random_buttons.
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
+import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
@@ -41,6 +42,7 @@ import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -48,40 +50,26 @@ class BooruPage extends StatefulWidget {
   const BooruPage({
     super.key,
     required this.pagingRegistry,
-    required this.procPop,
     required this.selectionController,
   });
 
   final PagingStateRegistry pagingRegistry;
 
-  final void Function(bool) procPop;
   final SelectionController selectionController;
 
   static bool hasServicesRequired() => GridDbService.available;
 
-  static Future<void> open(
-    BuildContext context, {
-    required PagingStateRegistry pagingRegistry,
-    required void Function(bool) procPop,
-  }) {
+  static void open(BuildContext context) {
     if (!hasServicesRequired()) {
       addAlert(
         "BooruPage",
         "Booru functionality isn't available", // TODO: change
       );
 
-      return Future.value();
+      return;
     }
 
-    return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => BooruPage(
-          pagingRegistry: pagingRegistry,
-          procPop: procPop,
-          selectionController: SelectionActions.controllerOf(context),
-        ),
-      ),
-    );
+    context.goNamed("Home");
   }
 
   @override
@@ -165,7 +153,7 @@ class _BooruPageState extends State<BooruPage>
             searchTextController: null,
             filter: null,
             stackInjector: pagingState.stackInjector,
-            rootNavigatorPop: widget.procPop,
+            // rootNavigatorPop: widget.procPop,
             child: BooruAPINotifier(
               api: pagingState.api,
               child: OnBooruTagPressed(
@@ -346,13 +334,13 @@ class _BooruPageState extends State<BooruPage>
           ),
         ),
       BooruSubPage.favorites => FavoritePostsPage(
-          rootNavigatorPop: widget.procPop,
+          // rootNavigatorPop: widget.procPop,
           selectionController: widget.selectionController,
         ),
       BooruSubPage.bookmarks => GridPopScope(
           searchTextController: null,
           filter: null,
-          rootNavigatorPop: widget.procPop,
+          // rootNavigatorPop: widget.procPop,
           child: BookmarkPage(
             pagingRegistry: widget.pagingRegistry,
             saveSelectedPage: setSecondaryName,
@@ -362,7 +350,7 @@ class _BooruPageState extends State<BooruPage>
       BooruSubPage.hiddenPosts => GridPopScope(
           searchTextController: null,
           filter: null,
-          rootNavigatorPop: widget.procPop,
+          // rootNavigatorPop: widget.procPop,
           child: HiddenPostsPage(
             selectionController: widget.selectionController,
           ),
@@ -370,7 +358,7 @@ class _BooruPageState extends State<BooruPage>
       BooruSubPage.downloads => GridPopScope(
           searchTextController: null,
           filter: null,
-          rootNavigatorPop: widget.procPop,
+          // rootNavigatorPop: widget.procPop,
           child: DownloadsPage(
             selectionController: widget.selectionController,
           ),
@@ -378,7 +366,7 @@ class _BooruPageState extends State<BooruPage>
       BooruSubPage.visited => GridPopScope(
           searchTextController: null,
           filter: null,
-          rootNavigatorPop: widget.procPop,
+          // rootNavigatorPop: widget.procPop,
           child: VisitedPostsPage(
             selectionController: widget.selectionController,
           ),
@@ -390,20 +378,20 @@ class _BooruPageState extends State<BooruPage>
 class BooruPageOnPopScope extends StatefulWidget {
   const BooruPageOnPopScope({
     super.key,
-    this.rootNavigatorPopCond = false,
+    // this.rootNavigatorPopCond = false,
     required this.searchTextController,
     required this.filter,
-    this.rootNavigatorPop,
+    // this.rootNavigatorPop,
     required this.stackInjector,
     required this.child,
   });
 
-  final bool rootNavigatorPopCond;
+  // final bool rootNavigatorPopCond;
 
   final TextEditingController? searchTextController;
   final ChainedFilterResourceSource<dynamic, dynamic>? filter;
 
-  final void Function(bool)? rootNavigatorPop;
+  // final void Function(bool)? rootNavigatorPop;
   final BooruStackInjector stackInjector;
 
   final Widget child;
@@ -418,10 +406,10 @@ class _BooruPageOnPopScopeState extends State<BooruPageOnPopScope>
   ChainedFilterResourceSource<dynamic, dynamic>? get filter => widget.filter;
 
   @override
-  void Function(bool)? get rootNavigatorPop => widget.rootNavigatorPop;
+  void Function(bool)? get rootNavigatorPop => null;
 
   @override
-  bool get rootNavigatorPopCond => widget.rootNavigatorPopCond;
+  bool get rootNavigatorPopCond => false;
 
   @override
   TextEditingController? get searchTextController =>
@@ -823,7 +811,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
                         overrideSafeMode:
                             const SettingsService().current.safeMode,
                       ),
-                      onLongPress: () => openPostAsync(
+                      onLongPress: () => CardDialogStatic.openAsync(
                         context,
                         booru: widget.api.booru,
                         postId: tag.postId,

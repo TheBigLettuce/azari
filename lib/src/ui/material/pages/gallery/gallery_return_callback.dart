@@ -6,67 +6,67 @@
 import "package:azari/src/services/services.dart";
 import "package:flutter/widgets.dart";
 
-extension GalleryReturnTypeCheckersExt on GalleryReturnCallback {
-  bool get isDirectory => this is ReturnDirectoryCallback;
-  bool get isFile => this is ReturnFileCallback;
+// extension GalleryReturnTypeCheckersExt on GalleryReturnCallback {
+//   bool get isDirectory => this is ReturnDirectoryCallback;
+//   bool get isFile => this is ReturnFileCallback;
 
-  ReturnDirectoryCallback get toDirectory => this as ReturnDirectoryCallback;
-  ReturnFileCallback get toFile => this as ReturnFileCallback;
+//   ReturnDirectoryCallback get toDirectory => this as ReturnDirectoryCallback;
+//   ReturnFileCallback get toFile => this as ReturnFileCallback;
 
-  ReturnFileCallback? get toFileOrNull =>
-      this is ReturnFileCallback ? this as ReturnFileCallback : null;
-}
+//   ReturnFileCallback? get toFileOrNull =>
+//       this is ReturnFileCallback ? this as ReturnFileCallback : null;
+// }
 
-sealed class GalleryReturnCallback {
-  const GalleryReturnCallback({
-    required this.preview,
-  });
+// sealed class GalleryReturnCallback {
+//   const GalleryReturnCallback({
+//     required this.preview,
+//   });
 
-  final PreferredSizeWidget preview;
-}
+//   final PreferredSizeWidget preview;
+// }
 
-class ReturnDirectoryCallback extends GalleryReturnCallback {
-  const ReturnDirectoryCallback({
-    required super.preview,
-    required this.joinable,
-    required this.suggestFor,
-    required this.choose,
-  });
+// class ReturnDirectoryCallback extends GalleryReturnCallback {
+//   const ReturnDirectoryCallback({
+//     required super.preview,
+//     required this.joinable,
+//     required this.suggestFor,
+//     required this.choose,
+//   });
 
-  final Future<void> Function(
-    ({
-      String path,
-      String volumeName,
-      String bucketId,
-    }) e,
-    bool newDir,
-  ) choose;
+//   final void Function(
+//     ({
+//       String path,
+//       String volumeName,
+//       String bucketId,
+//     }) e,
+//     bool newDir,
+//   ) choose;
 
-  final bool joinable;
+//   final bool joinable;
 
-  final List<String> suggestFor;
+//   final List<String> suggestFor;
 
-  Future<void> call(
-    ({
-      String path,
-      String volumeName,
-      String bucketId,
-    }) e,
-    bool newDir,
-  ) =>
-      choose(e, newDir);
-}
+//   void call(
+//     ({
+//       String path,
+//       String volumeName,
+//       String bucketId,
+//     }) e,
+//     bool newDir,
+//   ) =>
+//       choose(e, newDir);
+// }
 
-class ReturnFileCallback extends GalleryReturnCallback {
-  const ReturnFileCallback({
-    this.returnBack = false,
-    required super.preview,
-    required this.choose,
-  });
+// class ReturnFileCallback extends GalleryReturnCallback {
+//   const ReturnFileCallback({
+//     this.returnBack = false,
+//     required super.preview,
+//     required this.choose,
+//   });
 
-  final Future<void> Function(File file) choose;
+//   final Future<void> Function(File file) choose;
 
-  final bool returnBack;
+//   final bool returnBack;
 
-  Future<void> call(File file) => choose(file);
-}
+//   Future<void> call(File file) => choose(file);
+// }

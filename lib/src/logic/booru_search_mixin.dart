@@ -66,7 +66,7 @@ class SearchPagePopScope extends StatefulWidget {
     required this.searchController,
     required this.sink,
     required this.searchFocus,
-    required this.procPop,
+    // required this.procPop,
     required this.child,
   });
 
@@ -74,7 +74,7 @@ class SearchPagePopScope extends StatefulWidget {
   final StreamSink<String> sink;
   final FocusNode searchFocus;
 
-  final void Function(bool)? procPop;
+  // final void Function(bool)? procPop;
 
   final Widget child;
 
@@ -109,7 +109,7 @@ class _SearchPagePopScopeState extends State<SearchPagePopScope> {
       return;
     }
 
-    widget.procPop?.call(didPop);
+    // widget.procPop?.call(didPop);
   }
 
   @override

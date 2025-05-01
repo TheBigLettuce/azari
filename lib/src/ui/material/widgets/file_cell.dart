@@ -9,7 +9,9 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
@@ -22,14 +24,14 @@ class FileCell extends StatelessWidget {
   const FileCell({
     super.key,
     required this.file,
-    required this.isList,
+    required this.type,
     required this.imageAlign,
     required this.hideName,
   });
 
   final FileImpl file;
 
-  final bool isList;
+  final CellType type;
   final bool hideName;
 
   final Alignment imageAlign;
@@ -47,6 +49,36 @@ class FileCell extends StatelessWidget {
 
     final filteringData = ChainedFilter.maybeOf(context);
 
+    final stack = Stack(
+      children: [
+        GridCellImage(
+          imageAlign: imageAlign,
+          thumbnail: thumbnail,
+          blur: false,
+        ),
+        _Stickers(file: file),
+        Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 6,
+              vertical: 4,
+            ),
+            child: VideoGifRow(
+              uniqueKey: file.uniqueKey(),
+              isVideo: file.isVideo,
+              isGif: file.isGif,
+            ),
+          ),
+        ),
+        if (alias != null && alias.isNotEmpty)
+          GridCellName(
+            title: alias,
+            lines: file.titleLines(),
+          ),
+      ],
+    );
+
     Widget child = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -61,42 +93,19 @@ class FileCell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: WrapSelection(
-                // thisIndx: thisIndx,
-                // description: description,
-                // selectFrom: selectFrom,
-                // onPressed: file.onPressed,
-                onPressed: () => file.openImage(context),
-                child: Stack(
-                  children: [
-                    GridCellImage(
-                      imageAlign: imageAlign,
-                      thumbnail: thumbnail,
-                      blur: false,
-                    ),
-                    _Stickers(file: file),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        child: VideoGifRow(
-                          uniqueKey: file.uniqueKey(),
-                          isVideo: file.isVideo,
-                          isGif: file.isGif,
-                        ),
+              child: type == CellType.cellStatic
+                  ? stack
+                  : WrapSelection(
+                      // thisIndx: thisIndx,
+                      // description: description,
+                      // selectFrom: selectFrom,
+                      // onPressed: file.onPressed,
+                      onPressed: () => FilesPage.openImageView(
+                        context,
+                        startingCell: ThisIndex.maybeOf(context)?.$1 ?? 0,
                       ),
+                      child: stack,
                     ),
-                    if (alias != null && alias.isNotEmpty)
-                      GridCellName(
-                        title: alias,
-                        lines: file.titleLines(),
-                      ),
-                  ],
-                ),
-              ),
             ),
           ),
         ),

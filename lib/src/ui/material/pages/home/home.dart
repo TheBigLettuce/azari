@@ -24,6 +24,7 @@ import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 import "package:logging/logging.dart";
 
 part "animated_icons_mixin.dart";
@@ -35,14 +36,14 @@ part "icons/home.dart";
 part "icons/search.dart";
 part "navigator_shell.dart";
 
-class Home extends StatefulWidget {
-  const Home({
-    super.key,
-  });
+// class Home extends StatefulWidget {
+//   const Home({
+//     super.key,
+//   });
 
-  @override
-  State<Home> createState() => _HomeState();
-}
+//   @override
+//   State<Home> createState() => _HomeState();
+// }
 
 mixin CurrentGalleryPageMixin<W extends StatefulWidget> on State<W> {
   final galleryPage = ValueNotifier<GallerySubPage>(GallerySubPage.gallery);
@@ -55,147 +56,147 @@ mixin CurrentGalleryPageMixin<W extends StatefulWidget> on State<W> {
   }
 }
 
-class _HomeState extends State<Home>
-    with
-        TickerProviderStateMixin<Home>,
-        ChangePageMixin,
-        AnimatedIconsMixin,
-        CurrentGalleryPageMixin,
-        _BeforeYouContinueDialogMixin {
-  late final SettingsData settings;
+// class _HomeState extends State<Home>
+//     with
+//         TickerProviderStateMixin<Home>,
+//         ChangePageMixin,
+//         AnimatedIconsMixin,
+//         CurrentGalleryPageMixin,
+//         _BeforeYouContinueDialogMixin {
+//   late final SettingsData settings;
 
-  late final StreamSubscription<NotificationRouteEvent> notificationEvents;
-  final navBarEvents = StreamController<void>.broadcast();
-  final scrollingState = ScrollingStateSink();
+//   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
+//   final navBarEvents = StreamController<void>.broadcast();
+//   final scrollingState = ScrollingStateSink();
 
-  bool isRefreshing = false;
+//   bool isRefreshing = false;
 
-  @override
-  void initState() {
-    super.initState();
+//   @override
+//   void initState() {
+//     super.initState();
 
-    settings = const SettingsService().current;
+//     settings = const SettingsService().current;
 
-    notificationEvents = const AppApi().notificationEvents.listen((route) {
-      final currentRoute = _routeNotifier.value;
+//     notificationEvents = const AppApi().notificationEvents.listen((route) {
+//       final currentRoute = _routeNotifier.value;
 
-      switch (route) {
-        case NotificationRouteEvent.downloads:
-          if (currentRoute != CurrentRoute.home) {
-            switchPage(this, CurrentRoute.home);
-          }
+//       switch (route) {
+//         case NotificationRouteEvent.downloads:
+//           if (currentRoute != CurrentRoute.home) {
+//             switchPage(this, CurrentRoute.home);
+//           }
 
-          _booruPageNotifier.value = BooruSubPage.downloads;
-      }
-    });
+//           _booruPageNotifier.value = BooruSubPage.downloads;
+//       }
+//     });
 
-    if (GalleryService.available) {
-      maybeBeforeYouContinueDialog(
-        context,
-        settings,
-        const GalleryService(),
-      );
-    }
+//     if (GalleryService.available) {
+//       maybeBeforeYouContinueDialog(
+//         context,
+//         settings,
+//         const GalleryService(),
+//       );
+//     }
 
-    if (isRestart) {
-      restartOver();
-    }
-  }
+//     if (isRestart) {
+//       restartOver();
+//     }
+//   }
 
-  @override
-  void dispose() {
-    scrollingState.dispose();
-    navBarEvents.close();
-    notificationEvents.cancel();
+//   @override
+//   void dispose() {
+//     scrollingState.dispose();
+//     navBarEvents.close();
+//     notificationEvents.cancel();
 
-    _booruPageNotifier.dispose();
+//     _booruPageNotifier.dispose();
 
-    super.dispose();
-  }
+//     super.dispose();
+//   }
 
-  void onDestinationSelected(BuildContext context, CurrentRoute route) {
-    if (route == _routeNotifier.value) {
-      navBarEvents.add(null);
-      return;
-    }
+//   void onDestinationSelected(BuildContext context, CurrentRoute route) {
+//     if (route == _routeNotifier.value) {
+//       navBarEvents.add(null);
+//       return;
+//     }
 
-    SelectionActions.controllerOf(context).setCount(0);
+//     SelectionActions.controllerOf(context).setCount(0);
 
-    final currentRoute = _routeNotifier.value;
+//     final currentRoute = _routeNotifier.value;
 
-    if (route == CurrentRoute.home && currentRoute == CurrentRoute.home) {
-      Scaffold.of(context).openDrawer();
-    } else if (route == CurrentRoute.gallery &&
-        currentRoute == CurrentRoute.gallery) {
-      final nav = galleryKey.currentState;
-      if (nav != null) {
-        while (nav.canPop()) {
-          nav.pop();
-        }
-      }
+//     if (route == CurrentRoute.home && currentRoute == CurrentRoute.home) {
+//       Scaffold.of(context).openDrawer();
+//     } else if (route == CurrentRoute.gallery &&
+//         currentRoute == CurrentRoute.gallery) {
+//       final nav = galleryKey.currentState;
+//       if (nav != null) {
+//         while (nav.canPop()) {
+//           nav.pop();
+//         }
+//       }
 
-      galleryPage.value = galleryPage.value == GallerySubPage.gallery
-          ? GallerySubPage.blacklisted
-          : GallerySubPage.gallery;
+//       galleryPage.value = galleryPage.value == GallerySubPage.gallery
+//           ? GallerySubPage.blacklisted
+//           : GallerySubPage.gallery;
 
-      animateIcons(this);
-    } else {
-      switchPage(this, route);
-    }
+//       animateIcons(this);
+//     } else {
+//       switchPage(this, route);
+//     }
 
-    scrollingState.sink.add(true);
-  }
+//     scrollingState.sink.add(true);
+//   }
 
-  void onPop(bool didPop, Object? _) {
-    _procPopAll(
-      galleryPage,
-      this,
-      didPop,
-    );
-  }
+//   void onPop(bool didPop, Object? _) {
+//     _procPopAll(
+//       galleryPage,
+//       this,
+//       didPop,
+//     );
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ScrollingStateSinkProvider(
-      stateSink: scrollingState,
-      child: NavigationButtonEvents(
-        events: navBarEvents.stream,
-        child: CurrentRoute.wrap(
-          _routeNotifier,
-          GallerySubPage.wrap(
-            galleryPage,
-            BooruSubPage.wrap(
-              _booruPageNotifier,
-              PopScope(
-                canPop: false,
-                onPopInvokedWithResult: onPop,
-                child: HomeSkeleton(
-                  animatedIcons: this,
-                  onDestinationSelected: onDestinationSelected,
-                  booru: settings.selectedBooru,
-                  scrollingState: scrollingState,
-                  drawer: HomeDrawer(
-                    changePage: this,
-                    animatedIcons: this,
-                    settingsService: const SettingsService(),
-                    gridBookmarks: GridBookmarkService.safe(),
-                    favoritePosts: FavoritePostSourceService.safe(),
-                  ),
-                  child: _CurrentPageWidget(
-                    icons: this,
-                    changePage: this,
-                    galleryPageNotifier: galleryPage,
-                    settingsService: const SettingsService(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ScrollingStateSinkProvider(
+//       stateSink: scrollingState,
+//       child: NavigationButtonEvents(
+//         events: navBarEvents.stream,
+//         child: CurrentRoute.wrap(
+//           _routeNotifier,
+//           GallerySubPage.wrap(
+//             galleryPage,
+//             BooruSubPage.wrap(
+//               _booruPageNotifier,
+//               PopScope(
+//                 canPop: false,
+//                 onPopInvokedWithResult: onPop,
+//                 child: HomeSkeleton(
+//                   animatedIcons: this,
+//                   onDestinationSelected: onDestinationSelected,
+//                   booru: settings.selectedBooru,
+//                   scrollingState: scrollingState,
+//                   drawer: HomeDrawer(
+//                     changePage: this,
+//                     animatedIcons: this,
+//                     settingsService: const SettingsService(),
+//                     gridBookmarks: GridBookmarkService.safe(),
+//                     favoritePosts: FavoritePostSourceService.safe(),
+//                   ),
+//                   child: _CurrentPageWidget(
+//                     icons: this,
+//                     changePage: this,
+//                     galleryPageNotifier: galleryPage,
+//                     settingsService: const SettingsService(),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class ScrollingStateSink {
   ScrollingStateSink();

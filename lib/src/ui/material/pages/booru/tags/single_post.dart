@@ -9,6 +9,7 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -57,7 +58,7 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  Future<void> _launch(BuildContext context) {
+  void _launch(BuildContext context) {
     final l10n = context.l10n();
 
     final n = int.tryParse(controller.text);
@@ -65,7 +66,7 @@ class _SinglePostState extends State<SinglePost> {
       throw l10n.notANumber(controller.text);
     }
 
-    return openPostAsync(context, booru: booruApi.booru, postId: n);
+    CardDialogStatic.openAsync(context, booru: booruApi.booru, postId: n);
   }
 
   Future<void> _tryClipboard() async {

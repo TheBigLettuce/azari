@@ -26,6 +26,14 @@ Future<void> initMain(AppInstanceType appType) async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }
 
+Future<void> wrapZone(Future<void> Function() fn) async =>
+    await runZonedGuarded<Future<void>>(
+      () async => await fn(),
+      (error, stackTrace) {
+        AlertService.safe()?.add(_ExcMessage(error, stackTrace));
+      },
+    );
+
 void _initLogger() {
   if (kReleaseMode) {
     return;
@@ -70,4 +78,20 @@ class _LogMessage implements AlertData {
   String? expandedInfo() {
     return r.stackTrace?.toString();
   }
+}
+
+class _ExcMessage implements AlertData {
+  _ExcMessage(this.e, this.trace);
+
+  final Object e;
+  final StackTrace trace;
+
+  @override
+  (VoidCallback, Icon)? get onPressed => null;
+
+  @override
+  String title() => "Exception: $e";
+
+  @override
+  String? expandedInfo() => trace.toString();
 }

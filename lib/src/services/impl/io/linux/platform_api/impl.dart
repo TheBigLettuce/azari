@@ -35,6 +35,9 @@ class LinuxPlatformImpl implements PlatformApi {
 
   @override
   ThumbsApi? get thumbs => null;
+
+  @override
+  StorageApi get storage => throw UnimplementedError();
 }
 
 class _WindowApi implements WindowApi {

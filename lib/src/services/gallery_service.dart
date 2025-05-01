@@ -91,20 +91,14 @@ abstract class FileBase {
   (int, Booru)? get res;
 }
 
-abstract class Directories {
+abstract class Directories implements SpaceMarker {
   ResourceSource<int, Directory> get source;
   TrashCell? get trashCell;
+  Stream<void> get bindFilesEvents;
 
   Files? get bindFiles;
 
-  Files files(
-    Directory directory,
-    GalleryFilesPageType type, {
-    required String bucketId,
-    required String name,
-  });
-
-  Files joinedFiles(List<Directory> directories);
+  Files files(List<Directory> directories);
 
   void close();
 }
@@ -112,13 +106,14 @@ abstract class Directories {
 abstract class Files {
   SortingResourceSource<int, File> get source;
   FilesSourceTags get sourceTags;
+  ImageViewStateController get stateController;
+  ImageViewLoader get loader;
 
   GalleryFilesPageType get type;
 
   Directories get parent;
 
   List<Directory> get directories;
-  String get bucketId;
 
   void close();
 }
@@ -191,10 +186,8 @@ class MapFilesSourceTags implements FilesSourceTags {
 
 enum GalleryFilesPageType {
   normal,
-  trash,
-  favorites;
+  trash;
 
-  bool isFavorites() => this == favorites;
   bool isTrash() => this == trash;
 }
 

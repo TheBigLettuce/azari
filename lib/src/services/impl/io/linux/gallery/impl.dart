@@ -3,6 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
 import "dart:io" as io;
 
 import "package:azari/src/logic/local_tags_helper.dart";
@@ -10,7 +11,9 @@ import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/trash_cell.dart";
+import "package:azari/src/services/impl/io/default_state_controller.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:mime/mime.dart";
 import "package:path/path.dart" as path;
 
@@ -51,34 +54,26 @@ class _Directories implements Directories {
   _Directories();
 
   final trash = GalleryService.safe()?.trash;
+  final _bindFilesEvents = StreamController<void>.broadcast();
 
   @override
   late final TrashCell? trashCell = trash != null ? TrashCell(trash!) : null;
 
-  @override
-  Files? bindFiles;
+  Files? _bindFiles;
 
   @override
-  Files files(
-    Directory directory,
-    GalleryFilesPageType type, {
-    required String name,
-    required String bucketId,
-  }) {
-    if (bindFiles != null) {
-      throw "already hosting files";
-    }
+  Stream<void> get bindFilesEvents => _bindFilesEvents.stream;
 
-    return bindFiles = _Files(
-      directories: [directory],
-      parent: this,
-      bucketId: bucketId,
-      type: type,
-    );
+  @override
+  Files? get bindFiles => _bindFiles;
+
+  set bindFiles(Files? f) {
+    _bindFiles = f;
+    _bindFilesEvents.add(null);
   }
 
   @override
-  Files joinedFiles(List<Directory> directories) {
+  Files files(List<Directory> directories) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
@@ -86,7 +81,7 @@ class _Directories implements Directories {
     return bindFiles = _Files(
       directories: directories,
       parent: this,
-      bucketId: "joinedDir",
+      // bucketId: "joinedDir",
       type: GalleryFilesPageType.normal,
     );
   }
@@ -96,6 +91,7 @@ class _Directories implements Directories {
 
   @override
   void close() {
+    _bindFilesEvents.close();
     source.destroy();
     trashCell?.dispose();
   }
@@ -167,7 +163,7 @@ class _LinuxResourceSource implements ResourceSource<int, Directory> {
 
 class _Files implements Files {
   _Files({
-    required this.bucketId,
+    // required this.bucketId,
     required this.directories,
     required this.parent,
     required this.type,
@@ -183,17 +179,21 @@ class _Files implements Files {
   final _Directories parent;
 
   @override
-  final String bucketId;
+  ImageViewLoader get loader => stateController.loader;
 
   @override
-  late final SortingResourceSource<int, File> source =
-      _LinuxFilesSource(directories);
+  late final PlatformImageViewStateImpl stateController =
+      PlatformImageViewStateImpl(source: source);
+
+  @override
+  late final _LinuxFilesSource source = _LinuxFilesSource(directories);
 
   @override
   MapFilesSourceTags sourceTags = MapFilesSourceTags();
 
   @override
   void close() {
+    stateController.dispose();
     parent.bindFiles = null;
     source.destroy();
     sourceTags.dispose();

@@ -12,9 +12,10 @@ import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
+import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
@@ -23,6 +24,7 @@ import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 
 part "search_panels/add_tag_button.dart";
 part "search_panels/bookmarks.dart";
@@ -34,19 +36,23 @@ part "search_panels/recently_searched_tags.dart";
 part "search_panels/tag_list.dart";
 
 class BooruSearchPage extends StatefulWidget {
-  const BooruSearchPage({
-    super.key,
-    required this.procPop,
-  });
-
-  final void Function(bool)? procPop;
+  const BooruSearchPage({super.key});
 
   static bool hasServicesRequired() => TagManagerService.available;
 
-  static void open(
-    BuildContext context, {
-    void Function(bool)? procPop,
-  }) {
+  static void openPinTagDialogDialog(BuildContext context, BooruAPI api) =>
+      context.goNamed("PinTagDialog", extra: api);
+
+  static void openRemovePinnedTagDialog(BuildContext context, String tag) =>
+      context.goNamed("RemovePinnedTagDialog", extra: tag);
+
+  static void openRemoveExcludedTagDialog(BuildContext context, String tag) =>
+      context.goNamed("RemoveExcludedTagDialog", extra: tag);
+
+  static void openExcludeTagDialog(BuildContext context, BooruAPI api) =>
+      context.goNamed("ExcludeTagDialog", extra: api);
+
+  static void open(BuildContext context) {
     if (!hasServicesRequired()) {
       // TODO: change
       addAlert("BooruSearchPage", "Search functionality isn't available");
@@ -54,13 +60,7 @@ class BooruSearchPage extends StatefulWidget {
       return;
     }
 
-    Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        builder: (context) => BooruSearchPage(
-          procPop: procPop,
-        ),
-      ),
-    );
+    context.goNamed("BooruSearch");
   }
 
   @override
@@ -117,7 +117,7 @@ class _BooruSearchPageState extends State<BooruSearchPage>
       body: SearchPagePopScope(
         searchController: searchController,
         sink: filteringEvents.sink,
-        procPop: widget.procPop,
+        // procPop: widget.procPop,
         searchFocus: focusNode,
         child: CustomScrollView(
           slivers: [
@@ -135,6 +135,7 @@ class _BooruSearchPageState extends State<BooruSearchPage>
                   sink: filteringEvents.sink,
                   searchTextController: searchController,
                   searchFocus: focusNode,
+                  returnBack: () => BooruPage.open(context),
                 ),
               ),
             ),
@@ -186,6 +187,7 @@ class SearchPageSearchBar extends StatelessWidget {
     required this.searchFocus,
     required this.sink,
     required this.complete,
+    required this.returnBack,
     this.onSubmit = _doNothing,
   });
 
@@ -195,6 +197,7 @@ class SearchPageSearchBar extends StatelessWidget {
   final Future<List<BooruTag>> Function(String string)? complete;
 
   final StreamSink<String> sink;
+  final VoidCallback returnBack;
 
   final void Function(bool dialog) onSubmit;
 
@@ -244,6 +247,7 @@ class SearchPageSearchBar extends StatelessWidget {
         leading: _SearchBackIcon(
           searchTextController: searchTextController,
           onSubmit: onSubmit,
+          returnBack: returnBack,
         ),
         trailing: [
           IconButton(
@@ -261,10 +265,12 @@ class _SearchBackIcon extends StatefulWidget {
     // super.key,
     required this.searchTextController,
     required this.onSubmit,
+    required this.returnBack,
   });
 
   final TextEditingController searchTextController;
   final void Function(bool dialog) onSubmit;
+  final VoidCallback returnBack;
 
   @override
   State<_SearchBackIcon> createState() => __SearchBackIconState();
@@ -300,7 +306,7 @@ class __SearchBackIconState extends State<_SearchBackIcon> {
   Widget build(BuildContext context) {
     return AnimatedCrossFade(
       firstChild: IconButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: widget.returnBack,
         icon: const Icon(Icons.arrow_back),
       ),
       secondChild: IconButton(

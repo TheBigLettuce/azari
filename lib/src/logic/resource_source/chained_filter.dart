@@ -27,8 +27,8 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   ChainedFilterResourceSource(
     this._original,
     this._filterStorage, {
-    this.prefilter = _doNothing,
-    this.onCompletelyEmpty = _doNothing,
+    this.prefilter,
+    this.onCompletelyEmpty,
     FilteringColors? filteringColors,
     required this.filter,
     required this.allowedFilteringModes,
@@ -67,8 +67,6 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
         initialSortingMode: SortingMode.none,
       );
 
-  static void _doNothing() {}
-
   static FilteringData? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<_FilteringDataNotifier>();
@@ -87,8 +85,8 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final Set<FilteringMode> allowedFilteringModes;
   final Set<SortingMode> allowedSortingModes;
 
-  final VoidCallback prefilter;
-  final VoidCallback onCompletelyEmpty;
+  final void Function(ChainedFilterResourceSource<K, V>)? prefilter;
+  final void Function(ChainedFilterResourceSource<K, V>)? onCompletelyEmpty;
 
   final bool enableColors;
 
@@ -182,11 +180,11 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     if (_original.backingStorage.count == 0) {
       backingStorage.addAll([]);
       progress.inRefreshing = false;
-      onCompletelyEmpty();
+      onCompletelyEmpty?.call(this);
       return 0;
     }
 
-    prefilter();
+    prefilter?.call(this);
 
     dynamic data;
 
@@ -264,7 +262,7 @@ class FilteringData {
 
   @override
   bool operator ==(Object other) {
-    if (other is! FilteringData) {
+    if (other.runtimeType != runtimeType || other is! FilteringData) {
       return false;
     }
 

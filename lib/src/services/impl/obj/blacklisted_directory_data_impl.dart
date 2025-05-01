@@ -5,9 +5,7 @@
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:flutter/material.dart";
@@ -19,24 +17,16 @@ abstract class BlacklistedDirectoryDataImpl
   const BlacklistedDirectoryDataImpl();
 
   @override
-  Key uniqueKey() => ValueKey(bucketId);
+  String title(AppLocalizations l10n) => name;
 
-//  itemFactory: (context, idx, cell) {
-//                   return cell.buildCell(
-//                     context,
-//                     cell,
-//                     cellType: CellType.list,
-//                     wrapSelection: (child) => child,
-//                   );
-//                 },
+  @override
+  Key uniqueKey() => ValueKey(bucketId);
 
   @override
   TileDismiss dismiss() => TileDismiss(
-        () {
-          const BlacklistedDirectoryService()
-              .backingStorage
-              .removeAll([bucketId]);
-        },
+        () => const BlacklistedDirectoryService()
+            .backingStorage
+            .removeAll([bucketId]),
         Icons.restore_page_rounded,
       );
 
@@ -51,26 +41,19 @@ abstract class BlacklistedDirectoryDataImpl
       builder: (context) => InkWell(
         borderRadius: BorderRadius.circular(25),
         onTap: () {
-          final (api, callback, _) = DirectoriesDataNotifier.of(context);
-
-          FilesPage.open(
-            context,
-            api: api,
-            dirName: name,
-            callback: callback?.toFileOrNull,
-            directories: [
-              Directory(
-                bucketId: bucketId,
-                name: name,
-                tag: "",
-                volumeName: "",
-                relativeLoc: "",
-                lastModified: 0,
-                thumbFileId: 0,
-              ),
-            ],
-            secure: true,
-          );
+          final api = Spaces().get<Directories>();
+          api.files([
+            Directory(
+              bucketId: bucketId,
+              name: name,
+              tag: "",
+              volumeName: "",
+              relativeLoc: "",
+              lastModified: 0,
+              thumbFileId: 0,
+            ),
+          ]);
+          FilesPage.open(context, secure: true);
         },
         child: super.buildCell(
           l10n,
@@ -81,7 +64,4 @@ abstract class BlacklistedDirectoryDataImpl
       ),
     );
   }
-
-  @override
-  String title(AppLocalizations l10n) => name;
 }

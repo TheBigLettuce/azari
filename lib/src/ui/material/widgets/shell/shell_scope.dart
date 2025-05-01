@@ -26,6 +26,7 @@ import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 
 part "configuration/shell_selection.dart";
 part "parts/app_bar.dart";
@@ -181,7 +182,7 @@ class ShellScope extends StatefulWidget {
   });
 
   final bool addGesturesPadding;
-  final ShellScopeOverlayInjector stackInjector;
+  final ShellScopeOverlayInjector? stackInjector;
   final ShellAppBarType appBar;
   final PreferredSizeWidget? searchBottomWidget;
   final PreferredSizeWidget? footer;
@@ -214,6 +215,33 @@ class _ShellScopeState extends State<ShellScope> with _ShellScrollStatusMixin {
 
   @override
   Widget build(BuildContext context) {
+    Widget stack = _StaticBottomPadding(
+      actions: SelectionActions.of(context),
+      child: _Stack(
+        footer: widget.footer,
+        fab: widget.fab,
+        stackInjector: widget.stackInjector,
+        child: _MainBody(
+          showScrollbar: widget.showScrollbar,
+          backButton: widget.backButton,
+          slivers: widget.elements,
+          addGesturesPadding: widget.addGesturesPadding,
+          searchWidget: widget.appBar,
+          footer: widget.footer,
+          onEmpty: widget.stackInjector?.onEmpty,
+          bottomWidget: widget.searchBottomWidget,
+          settingsButton: widget.settingsButton,
+          controller: controller,
+          saveScrollOffsNotifier: _saveOffNotifier,
+          scrollDirection: widget.scrollDirection,
+        ),
+      ),
+    );
+
+    if (widget.stackInjector != null) {
+      stack = widget.stackInjector!.wrapChild(stack);
+    }
+
     return ShellConfiguration(
       watch: widget.configWatcher,
       child: ShellCapabilityQuery(
@@ -225,31 +253,8 @@ class _ShellScopeState extends State<ShellScope> with _ShellScrollStatusMixin {
             fabNotifier: _fabNotifier,
             controller: controller,
             scrollSizeCalculator:
-                widget.stackInjector.tryCalculateScrollSizeToItem,
-            child: widget.stackInjector.wrapChild(
-              _StaticBottomPadding(
-                actions: SelectionActions.of(context),
-                child: _Stack(
-                  footer: widget.footer,
-                  fab: widget.fab,
-                  stackInjector: widget.stackInjector,
-                  child: _MainBody(
-                    showScrollbar: widget.showScrollbar,
-                    backButton: widget.backButton,
-                    slivers: widget.elements,
-                    addGesturesPadding: widget.addGesturesPadding,
-                    searchWidget: widget.appBar,
-                    footer: widget.footer,
-                    onEmpty: widget.stackInjector.onEmpty,
-                    bottomWidget: widget.searchBottomWidget,
-                    settingsButton: widget.settingsButton,
-                    controller: controller,
-                    saveScrollOffsNotifier: _saveOffNotifier,
-                    scrollDirection: widget.scrollDirection,
-                  ),
-                ),
-              ),
-            ),
+                widget.stackInjector?.tryCalculateScrollSizeToItem,
+            child: stack,
           ),
         ),
       ),
@@ -323,7 +328,7 @@ class _MainBody extends StatelessWidget {
   final bool addGesturesPadding;
   final ValueNotifier<bool> saveScrollOffsNotifier;
 
-  final OnEmptyInterface onEmpty;
+  final OnEmptyInterface? onEmpty;
 
   final List<ElementPriority> slivers;
   final Axis scrollDirection;
@@ -338,7 +343,7 @@ class _MainBody extends StatelessWidget {
     required ShellAppBarType searchWidget,
     required PreferredSizeWidget? footer,
     required PreferredSizeWidget? bottomWidget,
-    required OnEmptyInterface onEmpty,
+    required OnEmptyInterface? onEmpty,
   }) {
     Widget? appBar;
     if (searchWidget is! NoShellAppBar) {
@@ -353,12 +358,17 @@ class _MainBody extends StatelessWidget {
 
     return [
       if (appBar != null) appBar,
-      _OnEmptyListenerSlivers(
-        onEmpty: onEmpty,
-        slivers: slivers,
-      ),
-      // ...slivers,
-
+      if (onEmpty != null)
+        _OnEmptyListenerSlivers(
+          onEmpty: onEmpty,
+          slivers: slivers,
+        )
+      else
+        SliverMainAxisGroup(
+            slivers: slivers
+                .where((e) => !e.hideOnEmpty)
+                .map((e) => e.sliver)
+                .toList()),
       _WrapPadding(footer: footer),
     ];
   }
@@ -382,25 +392,41 @@ class _MainBody extends StatelessWidget {
                       : 0,
                 )
               : EdgeInsets.zero,
-          child: _OnEmptyListenerScrollView(
-            onEmpty: onEmpty,
-            controller: controller,
-            build: (context, showEmpty) => CustomScrollView(
-              scrollDirection: scrollDirection,
-              controller: controller,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: bodySlivers(
-                context,
-                slivers: slivers,
-                backButton: backButton,
-                bottomWidget: bottomWidget,
-                footer: footer,
-                searchWidget: searchWidget,
-                settingsButton: settingsButton,
-                onEmpty: onEmpty,
-              ),
-            ),
-          ),
+          child: onEmpty == null
+              ? CustomScrollView(
+                  scrollDirection: scrollDirection,
+                  controller: controller,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: bodySlivers(
+                    context,
+                    slivers: slivers,
+                    backButton: backButton,
+                    bottomWidget: bottomWidget,
+                    footer: footer,
+                    searchWidget: searchWidget,
+                    settingsButton: settingsButton,
+                    onEmpty: onEmpty,
+                  ),
+                )
+              : _OnEmptyListenerScrollView(
+                  onEmpty: onEmpty!,
+                  controller: controller,
+                  build: (context, showEmpty) => CustomScrollView(
+                    scrollDirection: scrollDirection,
+                    controller: controller,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: bodySlivers(
+                      context,
+                      slivers: slivers,
+                      backButton: backButton,
+                      bottomWidget: bottomWidget,
+                      footer: footer,
+                      searchWidget: searchWidget,
+                      settingsButton: settingsButton,
+                      onEmpty: onEmpty!,
+                    ),
+                  ),
+                ),
         ),
       ),
     );
@@ -580,7 +606,7 @@ class _Stack extends StatelessWidget {
     required this.child,
   });
 
-  final ShellScopeOverlayInjector stackInjector;
+  final ShellScopeOverlayInjector? stackInjector;
   final ShellFabType fab;
   final PreferredSizeWidget? footer;
 
@@ -593,7 +619,7 @@ class _Stack extends StatelessWidget {
     return Stack(
       children: [
         child,
-        ...stackInjector.injectStack(context),
+        ...stackInjector?.injectStack(context) ?? const [],
         if (fab is! NoShellFab)
           Align(
             alignment: Alignment.bottomRight,
@@ -1067,7 +1093,7 @@ class ShellScrollNotifier extends InheritedWidget {
   final ScrollController controller;
   final ValueNotifier<bool> fabNotifier;
   final ValueNotifier<bool> saveScrollNotifier;
-  final ScrollSizeCalculator scrollSizeCalculator;
+  final ScrollSizeCalculator? scrollSizeCalculator;
 
   static ScrollController of(BuildContext context) {
     final widget =
@@ -1110,7 +1136,9 @@ class ShellScrollNotifier extends InheritedWidget {
     bool animate = false,
   ]) {
     final notifier = _maybeOf(context);
-    if (notifier == null || !notifier.controller.hasClients) {
+    if (notifier == null ||
+        !notifier.controller.hasClients ||
+        notifier.scrollSizeCalculator == null) {
       return;
     }
     final controller = notifier.controller;
@@ -1126,7 +1154,7 @@ class ShellScrollNotifier extends InheritedWidget {
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
-    final double target = notifier.scrollSizeCalculator(
+    final double target = notifier.scrollSizeCalculator!(
       contentSize,
       i,
       config.layoutType,

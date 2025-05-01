@@ -5,8 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
-import "package:azari/src/logic/directories_mixin.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
@@ -14,7 +12,6 @@ import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
@@ -23,10 +20,10 @@ import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
-import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:go_router/go_router.dart";
 
 part "search_panels/chips_panel_body.dart";
 part "search_panels/directory_list.dart";
@@ -37,31 +34,27 @@ part "search_panels/search_in_booru_button.dart";
 part "search_panels/search_in_directories_buttons.dart";
 
 class GallerySearchPage extends StatefulWidget {
-  const GallerySearchPage({
-    super.key,
-    required this.procPop,
-  });
-
-  final void Function(bool)? procPop;
+  const GallerySearchPage({super.key});
 
   static bool hasServicesRequired() => GalleryService.available;
 
-  static Future<void> open(
+  static void openImageView(
     BuildContext context, {
-    void Function(bool)? procPop,
-  }) {
+    int startingIndex = 0,
+  }) =>
+      context.goNamed("GallerySearchImageView", queryParameters: {
+        "index": startingIndex.toString(),
+      });
+
+  static void open(BuildContext context) {
     if (!hasServicesRequired()) {
       // TODO: change
       addAlert("GallerySearchPage", "Search functionality isn't available");
 
-      return Future.value();
+      return;
     }
 
-    return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => GallerySearchPage(procPop: procPop),
-      ),
-    );
+    context.goNamed("GallerySearch");
   }
 
   @override
@@ -74,7 +67,7 @@ class _GallerySearchPageState extends State<GallerySearchPage>
   final focusNode = FocusNode();
 
   final _filteringEvents = StreamController<String>.broadcast();
-  late final Directories api;
+  final Directories api = Spaces().get<Directories>();
 
   // late final Map<String, bool> blurMap;
 
@@ -82,7 +75,7 @@ class _GallerySearchPageState extends State<GallerySearchPage>
   void initState() {
     super.initState();
 
-    api = open();
+    // api = open();
 
     // blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
     //   map[e.categoryName] = e.blur;
@@ -90,13 +83,11 @@ class _GallerySearchPageState extends State<GallerySearchPage>
     //   return map;
     // });
 
-    api.source.clearRefresh();
+    // api.source.clearRefresh();
   }
 
   @override
   void dispose() {
-    api.close();
-
     _filteringEvents.close();
 
     focusNode.dispose();
@@ -110,35 +101,21 @@ class _GallerySearchPageState extends State<GallerySearchPage>
   // }
 
   void _onDirectoryPressed(Directory directory) {
-    final l10n = context.l10n();
-
-    FilesPage.openProtected(
-      context: context,
-      l10n: l10n,
-      callback: null,
-      addScaffold: true,
-      api: api,
-      directory: directory,
-      segmentFnc: (cell) => defaultSegmentCell(cell.name, cell.bucketId),
-    );
+    api.files([directory]);
+    FilesPage.open(context, secure: true);
   }
 
   void _joinedDirectories(
-    String str,
     List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
   }) {
-    joinedDirectoriesFnc(
+    api.files(list);
+    FilesPage.open(
       context,
-      str,
-      list,
-      api,
-      null,
-      (cell) => defaultSegmentCell(cell.name, cell.bucketId),
-      tag: tag,
+      secure: true,
+      presetFilteringValue: tag,
       filteringMode: filteringMode,
-      addScaffold: true,
     );
   }
 
@@ -222,73 +199,66 @@ class _GallerySearchPageState extends State<GallerySearchPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _SearchPagePopScope(
-        searchController: searchController,
-        sink: _filteringEvents.sink,
-        searchFocus: focusNode,
-        procPop: widget.procPop,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              forceMaterialTransparency: true,
-              floating: true,
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              toolbarHeight: 78,
-              title: SizedBox(
-                height: 48,
-                child: SearchPageSearchBar(
-                  complete: _completeDirectoryNameTag,
-                  onSubmit: search,
-                  sink: _filteringEvents.sink,
-                  searchTextController: searchController,
-                  searchFocus: focusNode,
-                ),
-              ),
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          forceMaterialTransparency: true,
+          floating: true,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          toolbarHeight: 78,
+          title: SizedBox(
+            height: 48,
+            child: SearchPageSearchBar(
+              complete: _completeDirectoryNameTag,
+              onSubmit: search,
+              sink: _filteringEvents.sink,
+              searchTextController: searchController,
+              searchFocus: focusNode,
+              returnBack: () => DirectoriesPage.open(context),
             ),
-            StreamBuilder(
-              stream: _filteringEvents.stream,
-              builder: (context, snapshot) => _SearchInDirectoriesButtons(
-                listPadding: _ChipsPanelBody.listPadding,
-                filteringValue: snapshot.data ?? "",
-                joinedDirectories: _joinedDirectories,
-                source: api.source,
-              ),
-            ),
-            _DirectoryNamesPanel(
-              api: api,
-              filteringEvents: _filteringEvents,
-              searchController: searchController,
-              directoryComplete: _completeDirectoryNameTag,
-            ),
-            if (LocalTagsService.available)
-              _LocalTagsPanel(
-                filteringEvents: _filteringEvents,
-                searchController: searchController,
-                joinedDirectories: _joinedDirectories,
-                source: api.source,
-              ),
-            _FilesList(
-              filteringEvents: _filteringEvents,
-              searchController: searchController,
-            ),
-            _DirectoryList(
-              filteringEvents: _filteringEvents,
-              source: api.source,
-              searchController: searchController,
-              onDirectoryPressed: _onDirectoryPressed,
-            ),
-            Builder(
-              builder: (context) => SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        StreamBuilder(
+          stream: _filteringEvents.stream,
+          builder: (context, snapshot) => _SearchInDirectoriesButtons(
+            listPadding: _ChipsPanelBody.listPadding,
+            filteringValue: snapshot.data ?? "",
+            joinedDirectories: _joinedDirectories,
+            source: api.source,
+          ),
+        ),
+        _DirectoryNamesPanel(
+          api: api,
+          filteringEvents: _filteringEvents,
+          searchController: searchController,
+          directoryComplete: _completeDirectoryNameTag,
+        ),
+        if (LocalTagsService.available)
+          _LocalTagsPanel(
+            filteringEvents: _filteringEvents,
+            searchController: searchController,
+            joinedDirectories: _joinedDirectories,
+            source: api.source,
+          ),
+        _FilesList(
+          filteringEvents: _filteringEvents,
+          searchController: searchController,
+        ),
+        _DirectoryList(
+          filteringEvents: _filteringEvents,
+          source: api.source,
+          searchController: searchController,
+          onDirectoryPressed: _onDirectoryPressed,
+        ),
+        Builder(
+          builder: (context) => SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -300,14 +270,14 @@ class _SearchPagePopScope extends StatefulWidget {
     required this.sink,
     required this.searchFocus,
     required this.child,
-    required this.procPop,
+    // required this.procPop,
   });
 
   final TextEditingController searchController;
   final StreamSink<String> sink;
   final FocusNode searchFocus;
 
-  final void Function(bool)? procPop;
+  // final void Function(bool)? procPop;
 
   final Widget child;
 
@@ -346,7 +316,7 @@ class __SearchPagePopScopeState extends State<_SearchPagePopScope> {
           return;
         }
 
-        widget.procPop?.call(didPop);
+        // widget.procPop?.call(didPop);
       },
       child: widget.child,
     );

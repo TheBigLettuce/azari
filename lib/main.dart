@@ -12,14 +12,11 @@ import "package:azari/src/init_main/init_main.dart";
 import "package:azari/src/init_main/restart_widget.dart";
 import "package:azari/src/logic/local_tags_helper.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
-import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
+import "package:azari/src/services/impl/io/default_state_controller.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/app_adaptive.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
@@ -29,31 +26,10 @@ import "package:flutter/services.dart";
 part "main_pick_file.dart";
 part "main_quick_view.dart";
 
-void main() async {
-  await runZonedGuarded(
-    () async {
-      await initMain(AppInstanceType.full);
+Future<void> main() async {
+  await wrapZone(() async {
+    await initMain(AppInstanceType.full);
 
-      runApp(const AppAdaptive());
-    },
-    (error, stackTrace) {
-      AlertService.safe()?.add(_ExcMessage(error, stackTrace));
-    },
-  );
-}
-
-class _ExcMessage implements AlertData {
-  _ExcMessage(this.e, this.trace);
-
-  final Object e;
-  final StackTrace trace;
-
-  @override
-  (VoidCallback, Icon)? get onPressed => null;
-
-  @override
-  String title() => "Exception: $e";
-
-  @override
-  String? expandedInfo() => trace.toString();
+    runApp(const AppAdaptive());
+  });
 }

@@ -6,20 +6,17 @@
 import "dart:async";
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
-import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/impl/io/platform_thumbnail_provider.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/file_cell.dart";
 import "package:azari/src/ui/material/widgets/file_info.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
@@ -27,7 +24,6 @@ import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
-import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
 import "package:url_launcher/url_launcher.dart" as url;
@@ -91,84 +87,53 @@ abstract class FileImpl
       FileCell(
         key: uniqueKey(),
         file: this,
-        isList: cellType == CellType.list,
+        type: cellType,
         hideName: hideName,
         imageAlign: imageAlign,
       );
 
-  // static List<ImageTag> imageTags(BuildContext context, String filename) {
-  //   final postTags = const LocalTagsService().get(filename);
-  //   if (postTags.isEmpty) {
-  //     return const [];
+  // void openImage(BuildContext context) {
+  //   final thisIdx = ThisIndex.of(context);
+  //   final providedState = FlutterGalleryDataNotifier.maybeOf(context);
+  //   if (providedState != null) {
+  //     ImageView.openAsync(context, () => SynchronousFuture(providedState),
+  //         startingCell: thisIdx.$1);
+  //     return;
   //   }
 
-  //   final onBooruTagPressed = OnBooruTagPressed.of(context);
-  //   final booru = const SettingsService().current.selectedBooru;
+  //   final stateController = PlatformImageViewStateImpl(
+  //     source: getSource(context),
+  //     wrapNotifiers: (child) => child,
+  //     onTagLongPressed: (context, tag) => BooruRestoredPage.open(
+  //       context,
+  //       booru: const SettingsService().current.selectedBooru,
+  //       tags: tag,
+  //       saveSelectedPage: (_) {},
+  //       rootNavigator: true,
+  //     ),
+  //     onTagPressed: (context, tag) {
+  //       final l10n = context.l10n();
 
-  //   return postTags
-  //       .map(
-  //         (e) => ImageTag(
-  //           e,
-  //           type: const TagManagerService().pinned.exists(e)
-  //               ? ImageTagType.favorite
-  //               : const TagManagerService().excluded.exists(e)
-  //                   ? ImageTagType.excluded
-  //                   : ImageTagType.normal,
-  //           onTap: () => onBooruTagPressed(context, booru, e, null),
-  //           onLongTap: () => onBooruTagPressed(context, booru, e, null),
+  //       return radioDialog(
+  //         context,
+  //         SafeMode.values.map((e) => (e, e.translatedString(l10n))),
+  //         const SettingsService().current.safeMode,
+  //         (e) => BooruRestoredPage.open(
+  //           context,
+  //           booru: const SettingsService().current.selectedBooru,
+  //           tags: tag,
+  //           saveSelectedPage: (_) {},
+  //           rootNavigator: true,
+  //           overrideSafeMode: e,
   //         ),
-  //       )
-  //       .toList();
+  //         title: l10n.chooseSafeMode,
+  //       );
+  //     },
+  //   );
+
+  //   ImageView.openAsync(context, () => SynchronousFuture(stateController),
+  //       startingCell: thisIdx.$1);
   // }
-
-  Future<void> openImage(BuildContext context) {
-    final thisIdx = ThisIndex.of(context);
-    final providedState = FlutterGalleryDataNotifier.maybeOf(context);
-    if (providedState != null) {
-      return ImageView.open(context, providedState, startingCell: thisIdx.$1);
-    }
-
-    final stateController = PlatformImageViewStateImpl(
-      source: getSource(context),
-      wrapNotifiers: (child) => child,
-      onTagLongPressed: (context, tag) => BooruRestoredPage.open(
-        context,
-        booru: const SettingsService().current.selectedBooru,
-        tags: tag,
-        saveSelectedPage: (_) {},
-        rootNavigator: true,
-      ),
-      onTagPressed: (context, tag) {
-        final l10n = context.l10n();
-
-        return radioDialog(
-          context,
-          SafeMode.values.map((e) => (e, e.translatedString(l10n))),
-          const SettingsService().current.safeMode,
-          (e) => BooruRestoredPage.open(
-            context,
-            booru: const SettingsService().current.selectedBooru,
-            tags: tag,
-            saveSelectedPage: (_) {},
-            rootNavigator: true,
-            overrideSafeMode: e,
-          ),
-          title: l10n.chooseSafeMode,
-        );
-      },
-    );
-
-    platform.FlutterGalleryData.setUp(stateController);
-    platform.GalleryVideoEvents.setUp(stateController);
-
-    return ImageView.open(context, stateController, startingCell: thisIdx.$1)
-        .whenComplete(() {
-      stateController.dispose();
-
-      platform.FlutterGalleryData.setUp(null);
-      platform.GalleryVideoEvents.setUp(null);
-    });
-  }
 }
 
 List<Sticker> defaultStickersFile(
@@ -366,12 +331,6 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
           Icons.check,
           () {
             callback(this as File);
-            if (callback.returnBack) {
-              Navigator.of(context)
-                ..pop(context)
-                ..pop(context)
-                ..pop(context);
-            }
           },
         ),
       ];
@@ -400,7 +359,7 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
             ImageViewAction(
               Icons.delete,
               () {
-                deleteFilesDialog(
+                FilesPage.openDeleteFilesDialog(
                   context,
                   [this as File],
                   toShowDelete,
@@ -415,9 +374,9 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
 
                   return moveOrCopyFnc(
                     context,
-                    api.directories.length == 1
-                        ? api.directories.first.bucketId
-                        : "",
+                    // api.directories.length == 1
+                    //     ? api.directories.first.bucketId
+                    //     : "",
                     [this as File],
                     false,
                     api.parent,
@@ -428,14 +387,14 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
             if (TagManagerService.available && LocalTagsService.available)
               ImageViewAction(
                 Icons.forward_rounded,
-                () async {
+                () {
                   AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                   return moveOrCopyFnc(
                     context,
-                    api.directories.length == 1
-                        ? api.directories.first.bucketId
-                        : "",
+                    // api.directories.length == 1
+                    //     ? api.directories.first.bucketId
+                    //     : "",
                     [this as File],
                     true,
                     api.parent,
@@ -446,128 +405,3 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
           ];
   }
 }
-
-// mixin PigeonFilePressable implements Pressable<File>, FileImpl {
-//   @override
-//   void onPressed(
-//     BuildContext context,
-//     int idx,
-//   ) {
-//     final api = FilesDataNotifier.maybeOf(context);
-//     final fnc = OnBooruTagPressed.of(context);
-//     final callback = ReturnFileCallbackNotifier.maybeOf(context);
-
-//     final impl = PlatformImageViewStateImpl(
-//       source: getSource(context),
-//       wrapNotifiers: (child) {
-//         Widget child_ = OnBooruTagPressed(
-//           onPressed: fnc,
-//           child: child,
-//         );
-
-//         if (api != null) {
-//           child_ = FilesDataNotifier(
-//             api: api,
-//             child: child_,
-//           );
-//         }
-
-//         if (callback != null) {
-//           child_ = ReturnFileCallbackNotifier(
-//             callback: callback,
-//             child: child_,
-//           );
-//         }
-
-//         return child_;
-//       },
-//       watchTags: LocalTagsService.available && TagManagerService.available
-//           ? FileImpl.watchTags
-//           : null,
-//       tags: LocalTagsService.available && TagManagerService.available
-//           ? FileImpl.imageTags
-//           : null,
-//     );
-
-//     platform.FlutterGalleryData.setUp(impl);
-//     platform.GalleryVideoEvents.setUp(impl);
-
-//     Navigator.of(context, rootNavigator: true).push<void>(
-//       MaterialPageRoute(
-//         builder: (context) {
-//           return ImageView(
-//             startingIndex: idx,
-//             stateController: impl,
-//           );
-//         },
-//       ),
-//     ).whenComplete(() {
-//       impl.dispose();
-//       platform.FlutterGalleryData.setUp(null);
-//       platform.GalleryVideoEvents.setUp(null);
-//     });
-//   }
-// }
-
-
-  // @override
-  // Widget buildSelectionWrapper<T extends CellBuilder>({
-  //   required BuildContext context,
-  //   required int thisIndx,
-  //   required List<int>? selectFrom,
-  //   required CellBuilderData description,
-  //   required VoidCallback? onPressed,
-  //   required Widget child,
-  // }) =>
-    
-
-
-// Future<void> loadNetworkThumb(
-//   BuildContext context,
-//   String filename,
-//   int id,
-//   ThumbnailService thumbnails,
-//   PinnedThumbnailService pinnedThumbnails, [
-//   bool addToPinned = true,
-// ]) {
-//   final notifier = GlobalProgressTab.maybeOf(context)
-//       ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
-//   if (notifier == null ||
-//       notifier.value != null ||
-//       pinnedThumbnails.get(id) != null) {
-//     return Future.value();
-//   }
-
-//   return notifier.value = Future(() async {
-//     final notif = await NotificationApi().show(
-//       id: NotificationApi.savingThumbId,
-//       title: "",
-//       channel: NotificationChannel.misc,
-//       group: NotificationGroup.misc,
-//     );
-
-//     notif.update(0, filename);
-
-//     final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
-//     if (res != null) {
-//       final client = BooruAPI.defaultClientForBooru(res.booru);
-//       final api = BooruAPI.fromEnum(res.booru, client);
-
-//       try {
-//         final post = await api.singlePost(res.id);
-
-//         final t =
-//             await GalleryApi().thumbs.saveFromNetwork(post.previewUrl, id);
-
-//         thumbnails.delete(id);
-//         pinnedThumbnails.add(id, t.path, t.differenceHash);
-//       } catch (e, trace) {
-//         Logger.root.warning("loadNetworkThumb", e, trace);
-//       }
-
-//       client.close(force: true);
-//     }
-
-//     notif.done();
-//   }).whenComplete(() => notifier.value = null);
-// }

@@ -11,19 +11,6 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:flutter/material.dart";
 
-extension OpenLicensePageExt on LicensePage {
-  void open(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return this;
-        },
-      ),
-    );
-  }
-}
-
 extension AppLocalizationsContextExt on BuildContext {
   AppLocalizations l10n() => AppLocalizations.of(this)!;
 }

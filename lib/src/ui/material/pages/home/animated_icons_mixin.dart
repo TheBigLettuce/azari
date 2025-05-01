@@ -5,7 +5,8 @@
 
 part of "home.dart";
 
-mixin AnimatedIconsMixin on State<Home>, TickerProviderStateMixin<Home> {
+mixin AnimatedIconsMixin<W extends StatefulWidget>
+    on State<W>, TickerProviderStateMixin<W> {
   late final AnimationController pageFadeAnimation;
 
   late final AnimationController homeIconController;

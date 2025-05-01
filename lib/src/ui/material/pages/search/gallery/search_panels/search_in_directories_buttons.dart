@@ -21,7 +21,6 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
   final EdgeInsets listPadding;
 
   final void Function(
-    String str,
     List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
@@ -71,12 +70,7 @@ class _SearchInDirectoriesButtons extends StatelessWidget {
       return;
     }
 
-    // Navigator.pop(context);
-
     joinedDirectories(
-      directories.length == 1
-          ? directories.first.name
-          : "${directories.length} ${l10n.directoriesPlural}",
       directories,
       tag: filteringValue,
       filteringMode: asTag ? FilteringMode.tag : null,

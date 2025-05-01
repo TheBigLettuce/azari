@@ -6,24 +6,25 @@
 import "package:azari/src/logic/blacklisted_directories_mixin.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 
 class BlacklistedDirectoriesPage extends StatefulWidget {
   const BlacklistedDirectoriesPage({
     super.key,
-    required this.popScope,
     required this.selectionController,
-    required this.footer,
   });
 
-  final void Function(bool) popScope;
   final SelectionController selectionController;
 
-  final PreferredSizeWidget? footer;
+  static void open(BuildContext context) {
+    context.goNamed("BlacklistedDirectories");
+  }
 
   @override
   State<BlacklistedDirectoriesPage> createState() =>
@@ -45,11 +46,11 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
     return ShellScope(
       stackInjector: status,
       configWatcher: gridConfiguration.watch,
-      footer: widget.footer,
+      // footer: widget.footer,
       appBar: TitleAppBarType(
         title: l10n.blacklistedFoldersPage,
         leading: IconButton(
-          onPressed: () => widget.popScope(false),
+          onPressed: () => DirectoriesPage.open(context),
           icon: const Icon(Icons.arrow_back),
         ),
       ),

@@ -3,17 +3,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:animations/animations.dart";
 import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/directories_mixin.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/platform_thumbnail_provider.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:local_auth/local_auth.dart";
@@ -74,91 +70,75 @@ class _Cell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    final theme = Theme.of(context);
-
-    final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(context);
-
-    final scrollingState = ScrollingStateSinkProvider.maybeOf(context);
-    final navBarEvents = NavigationButtonEvents.maybeOf(context);
-
-    final selectionController = SelectionActions.controllerOf(context);
 
     final thisIdx = ThisIndex.maybeOf(context);
 
-    return OpenContainer(
-      tappable: false,
-      closedElevation: 0,
-      openElevation: 0,
-      transitionType: ContainerTransitionType.fadeThrough,
-      middleColor: theme.colorScheme.surface.withValues(alpha: 0),
-      openColor: theme.colorScheme.surface.withValues(alpha: 0),
-      closedColor: theme.colorScheme.surface.withValues(alpha: 1),
-      closedBuilder: (containerContext, action) => WrapSelection(
-        overrideIdx: thisIdx,
-        onPressed: () {
-          final (api, callback, segmentFnc) =
-              DirectoriesDataNotifier.of(context);
+    final api = Spaces().get<Directories>();
 
-          if (callback?.isDirectory ?? false) {
-            Navigator.pop(containerContext);
+    if (cellType == CellType.cellStatic) {
+      return superChild;
+    }
 
-            (callback! as ReturnDirectoryCallback)(
-              (
-                bucketId: impl.bucketId,
-                path: impl.relativeLoc,
-                volumeName: impl.volumeName
-              ),
-              false,
-            );
-          } else {
-            bool requireAuth = false;
+    return WrapSelection(
+      overrideIdx: thisIdx,
+      onPressed: () {
+        bool requireAuth = false;
 
-            void onSuccess(bool success) {
-              if (!success || !containerContext.mounted) {
-                return;
-              }
-
-              StatisticsGalleryService.addViewedDirectories(1);
-
-              action();
-            }
-
-            requireAuth = DirectoryMetadataService.safe()
-                    ?.cache
-                    .get(segmentFnc(impl as Directory))
-                    ?.requireAuth ??
-                false;
-
-            if (const AppApi().canAuthBiometric && requireAuth) {
-              LocalAuthentication()
-                  .authenticate(
-                    localizedReason: l10n.openDirectory,
-                  )
-                  .then(onSuccess);
-            } else {
-              onSuccess(true);
-            }
+        void onSuccess(bool success) {
+          if (!success || !context.mounted) {
+            return;
           }
-          // action();
-        }, // onPressed
-        child: superChild,
-      ),
-      openBuilder: (containerContext, action) {
-        return FilesPage(
-          api: api,
-          dirName: switch (impl.bucketId) {
-            "favorites" => l10n.galleryDirectoriesFavorites,
-            "trash" => l10n.galleryDirectoryTrash,
-            String() => impl.name,
-          },
-          // secure: secure,
-          selectionController: selectionController,
-          directories: [impl as Directory],
-          scrollingState: scrollingState,
-          navBarEvents: navBarEvents,
-          callback: callback?.toFileOrNull,
-        );
-      },
+
+          StatisticsGalleryService.addViewedDirectories(1);
+
+          api.files([impl as Directory]);
+
+          FilesPage.open(context, secure: requireAuth);
+        }
+
+        requireAuth = DirectoryMetadataService.safe()
+                ?.cache
+                .get(defaultSegmentCell(impl.name, impl.bucketId))
+                ?.requireAuth ??
+            false;
+
+        if (const AppApi().canAuthBiometric && requireAuth) {
+          LocalAuthentication()
+              .authenticate(localizedReason: l10n.openDirectory)
+              .then(onSuccess);
+        } else {
+          onSuccess(true);
+        }
+      }, // onPressed
+      child: superChild,
     );
   }
 }
+
+//  OpenContainer(
+//       tappable: false,
+//       closedElevation: 0,
+//       openElevation: 0,
+//       transitionType: ContainerTransitionType.fadeThrough,
+//       middleColor: theme.colorScheme.surface.withValues(alpha: 0),
+//       openColor: theme.colorScheme.surface.withValues(alpha: 0),
+//       closedColor: theme.colorScheme.surface.withValues(alpha: 1),
+//       closedBuilder: (containerContext, action) =>,
+//       openBuilder: (containerContext, action) {
+//         return FilesPage(
+//           // secure: secure,
+//           data: FilesPageData(
+//             api: api,
+//             dirName: switch (impl.bucketId) {
+//               "favorites" => l10n.galleryDirectoriesFavorites,
+//               "trash" => l10n.galleryDirectoryTrash,
+//               String() => impl.name,
+//             },
+//             directories: [impl as Directory],
+//           ),
+//           selectionController: selectionController,
+//           scrollingState: scrollingState,
+//           navBarEvents: navBarEvents,
+//         );
+//       },
+//     )

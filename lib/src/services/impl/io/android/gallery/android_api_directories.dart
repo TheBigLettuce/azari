@@ -8,7 +8,9 @@ part of "android_gallery.dart";
 class _AndroidGallery implements Directories {
   _AndroidGallery() {
     _eventsNotify = const GalleryApi().events.notify?.listen((target) {
-      if (target == null || target == bindFiles?.target) {
+      if (target == null ||
+          bindFiles != null ||
+          bindFiles!.includesTarget(target)) {
         bindFiles?.source.clearRefresh();
       }
 
@@ -17,6 +19,7 @@ class _AndroidGallery implements Directories {
   }
 
   late final StreamSubscription<String?>? _eventsNotify;
+  final _bindFilesEvents = StreamController<void>.broadcast();
 
   final trash = GalleryService.safe()?.trash;
 
@@ -24,8 +27,18 @@ class _AndroidGallery implements Directories {
 
   bool isThumbsLoading = false;
 
+  _AndroidGalleryFiles? _bindFiles;
+
   @override
-  _AndroidGalleryFiles? bindFiles;
+  _AndroidGalleryFiles? get bindFiles => _bindFiles;
+
+  set bindFiles(_AndroidGalleryFiles? f) {
+    _bindFiles = f;
+    _bindFilesEvents.add(null);
+  }
+
+  @override
+  Stream<void> get bindFilesEvents => _bindFilesEvents.stream;
 
   @override
   TrashCell? get trashCell => source.trashCell;
@@ -37,19 +50,44 @@ class _AndroidGallery implements Directories {
 
   @override
   void close() {
+    _bindFilesEvents.close();
     _eventsNotify?.cancel();
     source.destroy();
     trashCell?.dispose();
-    bindFiles = null;
+    _bindFiles?.close();
+    _bindFiles = null;
   }
 
+  // @override
+  // Files files(
+  //   Directory directory,
+  //   GalleryFilesPageType type, {
+  //   required String bucketId,
+  //   required String name,
+  // }) {
+  //   if (bindFiles != null) {
+  //     throw "already hosting files";
+  //   }
+
+  //   final sourceTags = MapFilesSourceTags();
+
+  //   return bindFiles = _AndroidGalleryFiles(
+  //     source: _AndroidFileSourceJoined(
+  //       [directory],
+  //       type,
+  //       sourceTags,
+  //     ),
+  //     sourceTags: sourceTags,
+  //     directories: [directory],
+  //     target: name,
+  //     type: type,
+  //     parent: this,
+  //     bucketId: bucketId,
+  //   );
+  // }
+
   @override
-  Files files(
-    Directory directory,
-    GalleryFilesPageType type, {
-    required String bucketId,
-    required String name,
-  }) {
+  Files files(List<Directory> directories) {
     if (bindFiles != null) {
       throw "already hosting files";
     }
@@ -58,29 +96,6 @@ class _AndroidGallery implements Directories {
 
     return bindFiles = _AndroidGalleryFiles(
       source: _AndroidFileSourceJoined(
-        [directory],
-        type,
-        sourceTags,
-      ),
-      sourceTags: sourceTags,
-      directories: [directory],
-      target: name,
-      type: type,
-      parent: this,
-      bucketId: bucketId,
-    );
-  }
-
-  @override
-  Files joinedFiles(List<Directory> directories) {
-    if (bindFiles != null) {
-      throw "already hosting files";
-    }
-
-    final sourceTags = MapFilesSourceTags();
-
-    return bindFiles = _JoinedDirectories(
-      source: _AndroidFileSourceJoined(
         directories,
         GalleryFilesPageType.normal,
         sourceTags,
@@ -88,6 +103,7 @@ class _AndroidGallery implements Directories {
       sourceTags: sourceTags,
       directories: directories,
       parent: this,
+      type: GalleryFilesPageType.normal,
     );
   }
 }

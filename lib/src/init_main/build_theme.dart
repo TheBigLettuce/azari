@@ -17,7 +17,7 @@ ThemeData buildTheme(
   final type = const SettingsService().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
-      ..[TargetPlatform.android] = const FadeForwardsPageTransitionsBuilder()
+      ..[TargetPlatform.android] = const PredictiveBackPageTransitionsBuilder()
       ..[TargetPlatform.linux] = const FadeForwardsPageTransitionsBuilder(),
   );
 
