@@ -809,6 +809,10 @@
     "@enumGridLayoutTypeGridMasonry": {
         "description": "GridLayoutType.gridMasonry"
     },
+    "enumThemeTypeMain": "Default",
+    "@enumThemeTypeMain": {
+        "description": "ThemeType.main"
+    },
     "enumThemeTypeSystemAccent": "System Accent",
     "@enumThemeTypeSystemAccent": {
         "description": "ThemeType.systemAccent"
@@ -1318,7 +1322,7 @@
     "@latestLabel": {
         "description": "Chip button label to switch pages on booru screen"
     },
-    "stars": "{count, plural, =0{No tracks} =1{1 star} other{{count} stars}}",
+    "stars": "{count, plural, =0{No stars} =1{1 star} other{{count} stars}}",
     "@stars": {
         "description": "Stars count",
         "placeholders": {
@@ -1326,5 +1330,62 @@
                 "type": "num"
             }
         }
+    },
+    "colorTagsLabel": "Color tags",
+    "@colorTagsLabel": {
+        "description": "Color tags label in filtering"
+    },
+    "changeColorTo": "Change {color} to",
+    "@changeColorTo": {
+        "description": "Dialog label to give a color new name",
+        "placeholders": {
+            "color": {
+                "type": "String"
+            }
+        }
+    },
+    "enumFilteringColorsNoColor": "None",
+    "@enumFilteringColorsNoColor": {
+        "description": "FilteringColors.noColor"
+    },
+    "enumFilteringColorsRed": "Red",
+    "@enumFilteringColorsRed": {
+        "description": "FilteringColors.red"
+    },
+    "enumFilteringColorsBlue": "Blue",
+    "@enumFilteringColorsBlue": {
+        "description": "FilteringColors.blue"
+    },
+    "enumFilteringColorsYellow": "Yellow",
+    "@enumFilteringColorsYellow": {
+        "description": "FilteringColors.yellow"
+    },
+    "enumFilteringColorsGreen": "Green",
+    "@enumFilteringColorsGreen": {
+        "description": "FilteringColors.green"
+    },
+    "enumFilteringColorsPurple": "Purple",
+    "@enumFilteringColorsPurple": {
+        "description": "FilteringColors.purple"
+    },
+    "enumFilteringColorsOrange": "Orange",
+    "@enumFilteringColorsOrange": {
+        "description": "FilteringColors.orange"
+    },
+    "enumFilteringColorsPink": "Pink",
+    "@enumFilteringColorsPink": {
+        "description": "FilteringColors.pink"
+    },
+    "enumFilteringColorsWhite": "White",
+    "@enumFilteringColorsWhite": {
+        "description": "FilteringColors.white"
+    },
+    "enumFilteringColorsBrown": "Brown",
+    "@enumFilteringColorsBrown": {
+        "description": "FilteringColors.brown"
+    },
+    "enumFilteringColorsBlack": "Black",
+    "@enumFilteringColorsBlack": {
+        "description": "FilteringColors.black"
     }
 }

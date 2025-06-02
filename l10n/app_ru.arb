@@ -237,6 +237,7 @@
     "enumGridLayoutTypeList": "Список",
     "enumGridLayoutTypeGridQuilted": "Мозайка",
     "enumGridLayoutTypeGridMasonry": "Волнистая сетка",
+    "enumThemeTypeMain": "Оригинальная",
     "enumThemeTypeSystemAccent": "Система",
     "enumThemeTypePink": "Розовая",
     "pixels": "{number} п.",
@@ -475,5 +476,25 @@
                 "type": "num"
             }
         }
-    }
+    },
+    "colorTagsLabel": "Цветовые теги",
+    "changeColorTo": "Изменить {color} на",
+    "@changeColorTo": {
+        "placeholders": {
+            "color": {
+                "type": "String"
+            }
+        }
+    },
+    "enumFilteringColorsNoColor": "Без цвета",
+    "enumFilteringColorsRed": "Красный",
+    "enumFilteringColorsBlue": "Синий",
+    "enumFilteringColorsYellow": "Желтый",
+    "enumFilteringColorsGreen": "Зеленый",
+    "enumFilteringColorsPurple": "Фиолетовый",
+    "enumFilteringColorsOrange": "Оранжевый",
+    "enumFilteringColorsPink": "Розовый",
+    "enumFilteringColorsWhite": "Белый",
+    "enumFilteringColorsBrown": "Серый",
+    "enumFilteringColorsBlack": "Черный"
 }
