@@ -3,8 +3,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "dart:math" as math;
+
 import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
 
 class ShimmerPlaceholdersChips extends StatelessWidget {
   const ShimmerPlaceholdersChips({
@@ -132,6 +134,49 @@ class _ShimmerPlaceholdersHorizontalState
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class ShimmerLoadingIndicator extends StatelessWidget {
+  const ShimmerLoadingIndicator({
+    super.key,
+    this.delay = const Duration(seconds: 1),
+    this.duration = const Duration(milliseconds: 500),
+    this.reverse = false,
+    this.backgroundAlpha = 0.5,
+  });
+
+  final bool reverse;
+
+  final Duration delay;
+  final Duration duration;
+
+  final double backgroundAlpha;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Animate(
+      onComplete: (controller) => controller.repeat(),
+      effects: [
+        ShimmerEffect(
+          angle: reverse ? math.pi + (math.pi / 12) : null,
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.1),
+            colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            colorScheme.primary.withValues(alpha: 0.1),
+          ],
+          delay: delay,
+          duration: duration,
+        ),
+      ],
+      child: Container(
+        color: colorScheme.surfaceContainerHighest.withValues(
+          alpha: backgroundAlpha,
+        ),
       ),
     );
   }

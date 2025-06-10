@@ -19,14 +19,12 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/file_cell.dart";
 import "package:azari/src/ui/material/widgets/file_info.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/post_info.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
@@ -50,10 +48,7 @@ abstract class FileImpl
   String title(AppLocalizations l10n) => name;
 
   @override
-  List<Sticker> stickers(
-    BuildContext context, [
-    bool includeDuplicate = true,
-  ]) {
+  List<Sticker> stickers(BuildContext context, [bool includeDuplicate = true]) {
     final favoritePosts = FavoritePostSourceService.safe();
     final filteringData = ChainedFilter.maybeOf(context);
 
@@ -87,39 +82,13 @@ abstract class FileImpl
     required CellType cellType,
     required bool hideName,
     Alignment imageAlign = Alignment.center,
-  }) =>
-      FileCell(
-        key: uniqueKey(),
-        file: this,
-        isList: cellType == CellType.list,
-        hideName: hideName,
-        imageAlign: imageAlign,
-      );
-
-  // static List<ImageTag> imageTags(BuildContext context, String filename) {
-  //   final postTags = const LocalTagsService().get(filename);
-  //   if (postTags.isEmpty) {
-  //     return const [];
-  //   }
-
-  //   final onBooruTagPressed = OnBooruTagPressed.of(context);
-  //   final booru = const SettingsService().current.selectedBooru;
-
-  //   return postTags
-  //       .map(
-  //         (e) => ImageTag(
-  //           e,
-  //           type: const TagManagerService().pinned.exists(e)
-  //               ? ImageTagType.favorite
-  //               : const TagManagerService().excluded.exists(e)
-  //                   ? ImageTagType.excluded
-  //                   : ImageTagType.normal,
-  //           onTap: () => onBooruTagPressed(context, booru, e, null),
-  //           onLongTap: () => onBooruTagPressed(context, booru, e, null),
-  //         ),
-  //       )
-  //       .toList();
-  // }
+  }) => FileCell(
+    key: uniqueKey(),
+    file: this,
+    isList: cellType == CellType.list,
+    hideName: hideName,
+    imageAlign: imageAlign,
+  );
 
   Future<void> openImage(BuildContext context) {
     final thisIdx = ThisIndex.of(context);
@@ -135,8 +104,6 @@ abstract class FileImpl
         context,
         booru: const SettingsService().current.selectedBooru,
         tags: tag,
-        saveSelectedPage: (_) {},
-        rootNavigator: true,
       ),
       onTagPressed: (context, tag) {
         final l10n = context.l10n();
@@ -149,8 +116,6 @@ abstract class FileImpl
             context,
             booru: const SettingsService().current.selectedBooru,
             tags: tag,
-            saveSelectedPage: (_) {},
-            rootNavigator: true,
             overrideSafeMode: e,
           ),
           title: l10n.chooseSafeMode,
@@ -161,8 +126,11 @@ abstract class FileImpl
     platform.FlutterGalleryData.setUp(stateController);
     platform.GalleryVideoEvents.setUp(stateController);
 
-    return ImageView.open(context, stateController, startingCell: thisIdx.$1)
-        .whenComplete(() {
+    return ImageView.open(
+      context,
+      stateController,
+      startingCell: thisIdx.$1,
+    ).whenComplete(() {
       stateController.dispose();
 
       platform.FlutterGalleryData.setUp(null);
@@ -171,10 +139,7 @@ abstract class FileImpl
   }
 }
 
-List<Sticker> defaultStickersFile(
-  BuildContext? context,
-  FileImpl file,
-) {
+List<Sticker> defaultStickersFile(BuildContext? context, FileImpl file) {
   return [
     if (file.tags.containsKey("original")) Sticker(FilteringMode.original.icon),
     if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
@@ -224,8 +189,6 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
   @override
   List<Widget> appBarButtons(BuildContext context) {
     return [
-      if (res != null && FavoritePostSourceService.available)
-        StarsButton(idBooru: res!),
       IconButton(
         icon: const Icon(Icons.share),
         onPressed: () => const AppApi().shareMedia(originalUri),
@@ -247,20 +210,14 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
   Future<void> Function(BuildContext context) openInfo() {
     return (context) {
       final imageTags = ImageTagsNotifier.of(context);
-      final onBooruTagPressed = OnBooruTagPressed.maybeOf(context) ??
-          (
-            BuildContext context,
-            Booru booru,
-            String tag,
-            SafeMode? safeMode,
-          ) {
+      final onBooruTagPressed =
+          OnBooruTagPressed.maybeOf(context) ??
+          (BuildContext context, Booru booru, String tag, SafeMode? safeMode) {
             BooruRestoredPage.open(
               context,
               booru: booru,
               tags: tag,
-              saveSelectedPage: (_) {},
               overrideSafeMode: safeMode,
-              rootNavigator: true,
             );
           };
 
@@ -292,67 +249,65 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
       Icons.favorite_border_rounded,
       res != null && FavoritePostSourceService.available
           ? () {
-              if (const FavoritePostSourceService()
-                  .cache
-                  .isFavorite(res!.$1, res!.$2)) {
+              if (const FavoritePostSourceService().cache.isFavorite(
+                res!.$1,
+                res!.$2,
+              )) {
                 const FavoritePostSourceService().removeAll([res!]);
 
                 return;
               }
 
-              const TasksService().add<FavoritePostSourceService>(
-                () async {
-                  final client = BooruAPI.defaultClientForBooru(res!.$2);
-                  final api = BooruAPI.fromEnum(
-                    res!.$2,
-                    client,
-                  );
+              const TasksService().add<FavoritePostSourceService>(() async {
+                final client = BooruAPI.defaultClientForBooru(res!.$2);
+                final api = BooruAPI.fromEnum(res!.$2, client);
 
-                  try {
-                    final ret = await api.singlePost(res!.$1);
+                try {
+                  final ret = await api.singlePost(res!.$1);
 
-                    const FavoritePostSourceService().addAll([
-                      FavoritePost(
-                        id: ret.id,
-                        md5: ret.md5,
-                        tags: ret.tags,
-                        width: ret.width,
-                        height: ret.height,
-                        fileUrl: ret.fileUrl,
-                        previewUrl: ret.previewUrl,
-                        sampleUrl: ret.sampleUrl,
-                        sourceUrl: ret.sourceUrl,
-                        rating: ret.rating,
-                        score: ret.score,
-                        createdAt: ret.createdAt,
-                        booru: ret.booru,
-                        type: ret.type,
-                        size: ret.size,
-                        stars: FavoriteStars.zero,
-                        filteringColors: FilteringColors.noColor,
-                      ),
-                    ]);
-                  } catch (e, trace) {
-                    Logger.root.warning("favoritePostButton", e, trace);
-                  } finally {
-                    client.close(force: true);
-                  }
-                },
-              );
+                  const FavoritePostSourceService().addAll([
+                    FavoritePost(
+                      id: ret.id,
+                      md5: ret.md5,
+                      tags: ret.tags,
+                      width: ret.width,
+                      height: ret.height,
+                      fileUrl: ret.fileUrl,
+                      previewUrl: ret.previewUrl,
+                      sampleUrl: ret.sampleUrl,
+                      sourceUrl: ret.sourceUrl,
+                      rating: ret.rating,
+                      score: ret.score,
+                      createdAt: ret.createdAt,
+                      booru: ret.booru,
+                      type: ret.type,
+                      size: ret.size,
+                      stars: FavoriteStars.zero,
+                      filteringColors: FilteringColors.noColor,
+                    ),
+                  ]);
+                } catch (e, trace) {
+                  Logger.root.warning("favoritePostButton", e, trace);
+                } finally {
+                  client.close(force: true);
+                }
+              });
             }
           : null,
       watch: res != null && FavoritePostSourceService.available
           ? (f, [bool fire = false]) {
-              return const FavoritePostSourceService()
-                  .cache
+              return const FavoritePostSourceService().cache
                   .streamSingle(res!.$1, res!.$2, fire)
                   .map<(IconData?, Color?, bool?)>((e) {
-                return (
-                  e ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  e ? Colors.red.shade900 : null,
-                  !e
-                );
-              }).listen(f);
+                    return (
+                      e
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      e ? Colors.red.shade900 : null,
+                      !e,
+                    );
+                  })
+                  .listen(f);
             }
           : null,
       taskTag: FavoritePostSourceService,
@@ -362,25 +317,20 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
 
     if (callback != null) {
       return <ImageViewAction>[
-        ImageViewAction(
-          Icons.check,
-          () {
-            callback(this as File);
-            if (callback.returnBack) {
-              Navigator.of(context)
-                ..pop(context)
-                ..pop(context)
-                ..pop(context);
-            }
-          },
-        ),
+        ImageViewAction(Icons.check, () {
+          callback(this as File);
+          if (callback.returnBack) {
+            Navigator.of(context)
+              ..pop(context)
+              ..pop(context)
+              ..pop(context);
+          }
+        }),
       ];
     }
 
     if (api == null) {
-      return <ImageViewAction>[
-        favoriteAction,
-      ];
+      return <ImageViewAction>[favoriteAction];
     }
 
     final toShowDelete =
@@ -388,186 +338,45 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
 
     return api.type.isTrash()
         ? <ImageViewAction>[
-            ImageViewAction(
-              Icons.restore_from_trash,
-              () {
-                const GalleryService().trash.removeAll([originalUri]);
-              },
-            ),
+            ImageViewAction(Icons.restore_from_trash, () {
+              const GalleryService().trash.removeAll([originalUri]);
+            }),
           ]
         : <ImageViewAction>[
             favoriteAction,
-            ImageViewAction(
-              Icons.delete,
-              () {
-                deleteFilesDialog(
+            ImageViewAction(Icons.delete, () {
+              deleteFilesDialog(context, [this as File], toShowDelete);
+            }),
+            if (TagManagerService.available && LocalTagsService.available)
+              ImageViewAction(Icons.copy, () {
+                AppBarVisibilityNotifier.maybeToggleOf(context, true);
+
+                return moveOrCopyFnc(
                   context,
+                  api.directories.length == 1
+                      ? api.directories.first.bucketId
+                      : "",
                   [this as File],
+                  false,
+                  api.parent,
                   toShowDelete,
                 );
-              },
-            ),
+              }),
             if (TagManagerService.available && LocalTagsService.available)
-              ImageViewAction(
-                Icons.copy,
-                () {
-                  AppBarVisibilityNotifier.maybeToggleOf(context, true);
+              ImageViewAction(Icons.forward_rounded, () {
+                AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
-                  return moveOrCopyFnc(
-                    context,
-                    api.directories.length == 1
-                        ? api.directories.first.bucketId
-                        : "",
-                    [this as File],
-                    false,
-                    api.parent,
-                    toShowDelete,
-                  );
-                },
-              ),
-            if (TagManagerService.available && LocalTagsService.available)
-              ImageViewAction(
-                Icons.forward_rounded,
-                () async {
-                  AppBarVisibilityNotifier.maybeToggleOf(context, true);
-
-                  return moveOrCopyFnc(
-                    context,
-                    api.directories.length == 1
-                        ? api.directories.first.bucketId
-                        : "",
-                    [this as File],
-                    true,
-                    api.parent,
-                    toShowDelete,
-                  );
-                },
-              ),
+                return moveOrCopyFnc(
+                  context,
+                  api.directories.length == 1
+                      ? api.directories.first.bucketId
+                      : "",
+                  [this as File],
+                  true,
+                  api.parent,
+                  toShowDelete,
+                );
+              }),
           ];
   }
 }
-
-// mixin PigeonFilePressable implements Pressable<File>, FileImpl {
-//   @override
-//   void onPressed(
-//     BuildContext context,
-//     int idx,
-//   ) {
-//     final api = FilesDataNotifier.maybeOf(context);
-//     final fnc = OnBooruTagPressed.of(context);
-//     final callback = ReturnFileCallbackNotifier.maybeOf(context);
-
-//     final impl = PlatformImageViewStateImpl(
-//       source: getSource(context),
-//       wrapNotifiers: (child) {
-//         Widget child_ = OnBooruTagPressed(
-//           onPressed: fnc,
-//           child: child,
-//         );
-
-//         if (api != null) {
-//           child_ = FilesDataNotifier(
-//             api: api,
-//             child: child_,
-//           );
-//         }
-
-//         if (callback != null) {
-//           child_ = ReturnFileCallbackNotifier(
-//             callback: callback,
-//             child: child_,
-//           );
-//         }
-
-//         return child_;
-//       },
-//       watchTags: LocalTagsService.available && TagManagerService.available
-//           ? FileImpl.watchTags
-//           : null,
-//       tags: LocalTagsService.available && TagManagerService.available
-//           ? FileImpl.imageTags
-//           : null,
-//     );
-
-//     platform.FlutterGalleryData.setUp(impl);
-//     platform.GalleryVideoEvents.setUp(impl);
-
-//     Navigator.of(context, rootNavigator: true).push<void>(
-//       MaterialPageRoute(
-//         builder: (context) {
-//           return ImageView(
-//             startingIndex: idx,
-//             stateController: impl,
-//           );
-//         },
-//       ),
-//     ).whenComplete(() {
-//       impl.dispose();
-//       platform.FlutterGalleryData.setUp(null);
-//       platform.GalleryVideoEvents.setUp(null);
-//     });
-//   }
-// }
-
-
-  // @override
-  // Widget buildSelectionWrapper<T extends CellBuilder>({
-  //   required BuildContext context,
-  //   required int thisIndx,
-  //   required List<int>? selectFrom,
-  //   required CellBuilderData description,
-  //   required VoidCallback? onPressed,
-  //   required Widget child,
-  // }) =>
-    
-
-
-// Future<void> loadNetworkThumb(
-//   BuildContext context,
-//   String filename,
-//   int id,
-//   ThumbnailService thumbnails,
-//   PinnedThumbnailService pinnedThumbnails, [
-//   bool addToPinned = true,
-// ]) {
-//   final notifier = GlobalProgressTab.maybeOf(context)
-//       ?.get("loadNetworkThumb", () => ValueNotifier<Future<void>?>(null));
-//   if (notifier == null ||
-//       notifier.value != null ||
-//       pinnedThumbnails.get(id) != null) {
-//     return Future.value();
-//   }
-
-//   return notifier.value = Future(() async {
-//     final notif = await NotificationApi().show(
-//       id: NotificationApi.savingThumbId,
-//       title: "",
-//       channel: NotificationChannel.misc,
-//       group: NotificationGroup.misc,
-//     );
-
-//     notif.update(0, filename);
-
-//     final res = ParsedFilenameResult.fromFilename(filename).maybeValue();
-//     if (res != null) {
-//       final client = BooruAPI.defaultClientForBooru(res.booru);
-//       final api = BooruAPI.fromEnum(res.booru, client);
-
-//       try {
-//         final post = await api.singlePost(res.id);
-
-//         final t =
-//             await GalleryApi().thumbs.saveFromNetwork(post.previewUrl, id);
-
-//         thumbnails.delete(id);
-//         pinnedThumbnails.add(id, t.path, t.differenceHash);
-//       } catch (e, trace) {
-//         Logger.root.warning("loadNetworkThumb", e, trace);
-//       }
-
-//       client.close(force: true);
-//     }
-
-//     notif.done();
-//   }).whenComplete(() => notifier.value = null);
-// }

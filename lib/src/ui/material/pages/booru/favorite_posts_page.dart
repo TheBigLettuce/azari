@@ -20,8 +20,7 @@ import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
@@ -75,11 +74,16 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
             ..sort((e1, e2) {
               return switch (sort) {
                 SortingMode.none || SortingMode.size => e2.id.compareTo(e1.id),
-                SortingMode.rating => e1.rating.asSafeMode.index
-                    .compareTo(e2.rating.asSafeMode.index),
+                SortingMode.rating => e1.rating.index.compareTo(
+                  e2.rating.index,
+                ),
                 SortingMode.score => e1.score.compareTo(e2.score),
-                SortingMode.stars =>
-                  e1.stars.asNumber.compareTo(e2.stars.asNumber),
+                SortingMode.stars => e1.stars.asNumber.compareTo(
+                  e2.stars.asNumber,
+                ),
+                SortingMode.color => e1.filteringColors.index.compareTo(
+                  e2.filteringColors.index,
+                ),
               };
             });
 
@@ -90,31 +94,31 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
       filter: (cells, filteringMode, sortingMode, colors, end, data) {
         return switch (filteringMode) {
           FilteringMode.onlyHalfStars => (
-              _filterTag(
-                cells.where(
-                  (e) =>
-                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
-                      e.stars != FavoriteStars.zero &&
-                      e.stars.isHalf &&
-                      (colors == FilteringColors.noColor ||
-                          e.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (e) =>
+                    _matchSafeMode(e.rating) &&
+                    e.stars != FavoriteStars.zero &&
+                    e.stars.isHalf &&
+                    (colors == FilteringColors.noColor ||
+                        e.filteringColors == colors),
               ),
-              data
             ),
+            data,
+          ),
           FilteringMode.onlyFullStars => (
-              _filterTag(
-                cells.where(
-                  (e) =>
-                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
-                      e.stars != FavoriteStars.zero &&
-                      !e.stars.isHalf &&
-                      (colors == FilteringColors.noColor ||
-                          e.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (e) =>
+                    _matchSafeMode(e.rating) &&
+                    e.stars != FavoriteStars.zero &&
+                    !e.stars.isHalf &&
+                    (colors == FilteringColors.noColor ||
+                        e.filteringColors == colors),
               ),
-              data
             ),
+            data,
+          ),
           FilteringMode.fiveStars ||
           FilteringMode.fourHalfStars ||
           FilteringMode.fourStars ||
@@ -125,75 +129,59 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
           FilteringMode.oneHalfStars ||
           FilteringMode.oneStars ||
           FilteringMode.zeroHalfStars ||
-          FilteringMode.zeroStars =>
-            (
-              _filterTag(
-                _filterStars(cells, filteringMode, colors),
-              ),
-              data,
-            ),
-          FilteringMode.same => sameFavorites(
-              cells,
-              data,
-              end,
-              _collector,
-              safeModeState.current,
-            ),
+          FilteringMode.zeroStars => (
+            _filterTag(_filterStars(cells, filteringMode, colors)),
+            data,
+          ),
+          FilteringMode.same => sameFavorites(cells, data, end, _collector),
           FilteringMode.tag => (
-              _filterTag(
-                cells.where(
-                  (e) =>
-                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
-                      (colors == FilteringColors.noColor ||
-                          e.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (e) =>
+                    _matchSafeMode(e.rating) &&
+                    (colors == FilteringColors.noColor ||
+                        e.filteringColors == colors),
               ),
-              data
             ),
+            data,
+          ),
           FilteringMode.gif => (
-              _filterTag(
-                cells.where(
-                  (element) =>
-                      element.type == PostContentType.gif &&
-                      safeModeState.current
-                          .inLevel(element.rating.asSafeMode) &&
-                      (colors == FilteringColors.noColor ||
-                          element.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (element) =>
+                    element.type == PostContentType.gif &&
+                    _matchSafeMode(element.rating) &&
+                    (colors == FilteringColors.noColor ||
+                        element.filteringColors == colors),
               ),
-              data
             ),
+            data,
+          ),
           FilteringMode.video => (
-              _filterTag(
-                cells.where(
-                  (element) =>
-                      element.type == PostContentType.video &&
-                      safeModeState.current
-                          .inLevel(element.rating.asSafeMode) &&
-                      (colors == FilteringColors.noColor ||
-                          element.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (element) =>
+                    element.type == PostContentType.video &&
+                    _matchSafeMode(element.rating) &&
+                    (colors == FilteringColors.noColor ||
+                        element.filteringColors == colors),
               ),
-              data
             ),
+            data,
+          ),
           FilteringMode() => (
-              _filterTag(
-                cells.where(
-                  (e) =>
-                      safeModeState.current.inLevel(e.rating.asSafeMode) &&
-                      (colors == FilteringColors.noColor ||
-                          e.filteringColors == colors),
-                ),
+            _filterTag(
+              cells.where(
+                (e) =>
+                    _matchSafeMode(e.rating) &&
+                    (colors == FilteringColors.noColor ||
+                        e.filteringColors == colors),
               ),
-              data
-            )
+            ),
+            data,
+          ),
         };
       },
-      // prefilter: () {
-      //   settingsService?.current
-      //       .copy(favoritesPageMode: filter.filteringMode)
-      //       .maybeSave();
-      // },
       allowedFilteringModes: const {
         FilteringMode.tag,
         FilteringMode.gif,
@@ -218,6 +206,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
         SortingMode.rating,
         SortingMode.score,
         SortingMode.stars,
+        SortingMode.color,
       },
       initialFilteringMode: FilteringMode.tag,
       initialSortingMode: SortingMode.none,
@@ -262,6 +251,15 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
     });
   }
 
+  bool _matchSafeMode(PostRating rating) => switch (safeModeState.current) {
+    SafeMode.normal => rating == PostRating.general,
+    SafeMode.relaxed =>
+      rating == PostRating.sensitive || rating == PostRating.general,
+    SafeMode.explicit =>
+      rating == PostRating.questionable || rating == PostRating.explicit,
+    SafeMode.none => true,
+  };
+
   Iterable<FavoritePost> _filterStars(
     Iterable<FavoritePost> cells,
     FilteringMode mode,
@@ -269,7 +267,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
   ) {
     return cells.where(
       (e) =>
-          safeModeState.current.inLevel(e.rating.asSafeMode) &&
+          _matchSafeMode(e.rating) &&
           (mode.toStars == e.stars) &&
           (colors == FilteringColors.noColor || e.filteringColors == colors),
     );
@@ -285,18 +283,18 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
     }
   }
 
-  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
+  (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
     Iterable<T> cells,
     dynamic data_,
     bool end,
     Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
-    SafeMode currentSafeMode,
+    // SafeMode currentSafeMode,
   ) {
     final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
 
     T? prevCell;
     for (final e in cells) {
-      if (!currentSafeMode.inLevel(e.rating.asSafeMode)) {
+      if (!_matchSafeMode(e.rating)) {
         continue;
       }
 
@@ -343,15 +341,8 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       selectionController: widget.selectionController,
       actions: <SelectionBarAction>[
         if (DownloadManager.available && LocalTagsService.available)
-          booru_actions.downloadPost(
-            context,
-            settings.selectedBooru,
-            null,
-          ),
-        booru_actions.favorites(
-          context,
-          showDeleteSnackbar: true,
-        ),
+          booru_actions.downloadPost(context, settings.selectedBooru, null),
+        booru_actions.favorites(context, showDeleteSnackbar: true),
       ],
       wrapRefresh: null,
     );
@@ -403,6 +394,17 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       child: ShellScope(
         stackInjector: status,
         configWatcher: gridSettings.watch,
+        searchBottomWidget: PreferredSize(
+          preferredSize: const Size(double.infinity, 80),
+          child: _SearchBarWidget(
+            api: api,
+            filter: filter,
+            safeModeState: safeModeState,
+            searchTextController: searchTextController,
+            searchFocus: searchFocus,
+            settingsService: const SettingsService(),
+          ),
+        ),
         appBar: TitleAppBarType(
           title: l10n.favoritesLabel,
           leading: IconButton(
@@ -418,27 +420,24 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
         ),
         elements: [
           ElementPriority(
-            _SearchBarWidget(
-              api: api,
-              filter: filter,
-              safeModeState: safeModeState,
-              searchTextController: searchTextController,
-              searchFocus: searchFocus,
-              settingsService: const SettingsService(),
+            FavoritePostsPinnedTagsRow(
+              onTagPressed: (str) {
+                _onPressed(context, settings.selectedBooru, str, null);
+              },
+              onTagLongPressed: null,
             ),
             hideOnEmpty: false,
           ),
           ElementPriority(
             ShellElement(
               state: status,
-              scrollUpOn:
-                  navBarEvents != null ? [(navBarEvents, null)] : const [],
+              scrollUpOn: navBarEvents != null
+                  ? [(navBarEvents, null)]
+                  : const [],
               scrollingState: ScrollingStateSinkProvider.maybeOf(context),
               registerNotifiers: (child) => OnBooruTagPressed(
                 onPressed: _onPressed,
-                child: filter.inject(
-                  status.source.inject(child),
-                ),
+                child: filter.inject(status.source.inject(child)),
               ),
               slivers: [
                 Builder(
@@ -463,6 +462,127 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class FavoritePostsPinnedTagsRow extends StatefulWidget {
+  const FavoritePostsPinnedTagsRow({
+    super.key,
+    required this.onTagPressed,
+    required this.onTagLongPressed,
+  });
+
+  final StringCallback onTagPressed;
+  final StringCallback? onTagLongPressed;
+
+  @override
+  State<FavoritePostsPinnedTagsRow> createState() =>
+      _FavoritePostsPinnedTagsRowState();
+}
+
+class _FavoritePostsPinnedTagsRowState
+    extends State<FavoritePostsPinnedTagsRow> {
+  final controller = ScrollController();
+
+  late final StreamSubscription<int> _latestCountEvents;
+  int _latestCount = 0;
+  final List<String> _list = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _latestCountEvents = const TagManagerService().latest.events.listen((e) {
+      if (e == _latestCount) {
+        return;
+      }
+
+      _latestCount = e;
+      _seekLastSearchedPinnedTags();
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _latestCountEvents.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _seekLastSearchedPinnedTags();
+  }
+
+  void _seekLastSearchedPinnedTags() {
+    final pinnedTags = PinnedTagsProvider.of(context);
+
+    final tags = <String>{};
+
+    final latestTags = const TagManagerService().latest.get(25);
+    for (final tag in latestTags) {
+      if (pinnedTags.map.containsKey(tag.tag)) {
+        tags.add(tag.tag);
+      }
+    }
+
+    tags.addAll(pinnedTags.map.keys);
+
+    _list.clear();
+    _list.addAll(tags);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    PinnedTagsProvider.of(context);
+
+    if (_list.isEmpty) {
+      return const SliverPadding(padding: EdgeInsets.zero);
+    }
+
+    return SliverToBoxAdapter(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 52),
+        child: ListView.builder(
+          controller: controller,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          scrollDirection: Axis.horizontal,
+          itemCount: _list.length,
+          itemBuilder: (context, index) {
+            final tag = _list[index];
+
+            return Padding(
+              padding: const EdgeInsets.all(4),
+              child: GestureDetector(
+                onLongPress: widget.onTagLongPressed == null
+                    ? null
+                    : () {
+                        widget.onTagLongPressed!(tag);
+                      },
+                child: ActionChip(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    controller.animateTo(
+                      0,
+                      duration: Durations.medium3,
+                      curve: Easing.standard,
+                    );
+                    widget.onTagPressed(tag);
+                    const TagManagerService().latest.add(tag);
+                  },
+                  label: Text(tag),
+                  avatar: const Icon(Icons.push_pin_rounded),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -496,8 +616,6 @@ class _SearchBarWidget extends StatelessWidget {
           context,
           booru: api.booru,
           tags: searchTextController.text.trim(),
-          rootNavigator: false,
-          saveSelectedPage: (_) {},
           overrideSafeMode: safeMode,
           // wrapScaffold: true,
         );
@@ -520,61 +638,51 @@ class _SearchBarWidget extends StatelessWidget {
     final l10n = context.l10n();
     final theme = Theme.of(context);
 
-    const padding = EdgeInsets.only(
-      right: 16,
-      left: 16,
-      top: 4,
-      bottom: 8,
-    );
+    const padding = EdgeInsets.only(right: 16, left: 16, top: 4, bottom: 8);
 
-    return SliverToBoxAdapter(
-      child: Center(
-        child: Padding(
-          padding: padding,
-          child: SearchBarAutocompleteWrapper(
-            search: SearchBarAppBarType(
-              onChanged: onChanged,
-              complete: api.searchTag,
-              textEditingController: searchTextController,
+    return Center(
+      child: Padding(
+        padding: padding,
+        child: SearchBarAutocompleteWrapper(
+          search: SearchBarAppBarType(
+            onChanged: onChanged,
+            complete: api.searchTag,
+            textEditingController: searchTextController,
+          ),
+          searchFocus: searchFocus,
+          child: (context, controller, focus, onSubmitted) => SearchBar(
+            onSubmitted: (str) {
+              onSubmitted();
+              filter.clearRefresh();
+            },
+            backgroundColor: WidgetStatePropertyAll(
+              theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
             ),
-            searchFocus: searchFocus,
-            child: (
-              context,
-              controller,
-              focus,
-              onSubmitted,
-            ) =>
-                SearchBar(
-              onSubmitted: (str) {
-                onSubmitted();
-                filter.clearRefresh();
-              },
-              onTapOutside: (event) => focus.unfocus(),
-              elevation: const WidgetStatePropertyAll(0),
-              focusNode: focus,
-              controller: controller,
-              onChanged: onChanged,
-              hintText: l10n.filterHint,
-              leading: IconButton(
-                onPressed: () => launchGrid(context),
-                icon: Icon(
-                  Icons.search_rounded,
-                  color: theme.colorScheme.primary,
-                ),
+            onTapOutside: (event) => focus.unfocus(),
+            elevation: const WidgetStatePropertyAll(0),
+            focusNode: focus,
+            controller: controller,
+            onChanged: onChanged,
+            hintText: l10n.filterHint,
+            leading: IconButton(
+              onPressed: () => launchGrid(context),
+              icon: Icon(
+                Icons.search_rounded,
+                color: theme.colorScheme.primary,
               ),
-              trailing: [
-                ChainedFilterIcon(
-                  filter: filter,
-                  controller: searchTextController,
-                  complete: api.searchTag,
-                  focusNode: searchFocus,
-                ),
-                IconButton(
-                  onPressed: clear,
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
             ),
+            trailing: [
+              ChainedFilterIcon(
+                filter: filter,
+                controller: searchTextController,
+                complete: api.searchTag,
+                focusNode: searchFocus,
+              ),
+              IconButton(
+                onPressed: clear,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
           ),
         ),
       ),

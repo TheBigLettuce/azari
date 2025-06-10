@@ -26,7 +26,7 @@ Future<void> mainPickfile() async {
             theme: buildTheme(Brightness.light, accentColor),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: ScaffoldSelectionBarInherited(
+            home: _ScaffoldSelectionBarInherited(
               child: Builder(
                 builder: (context) => DirectoriesPage(
                   selectionController: SelectionActions.controllerOf(context),
@@ -37,8 +37,9 @@ Future<void> mainPickfile() async {
                       return Future.value();
                     },
                     preview: PreferredSize(
-                      preferredSize:
-                          Size.fromHeight(CopyMovePreview.size.toDouble()),
+                      preferredSize: Size.fromHeight(
+                        CopyMovePreview.size.toDouble(),
+                      ),
                       child: IgnorePointer(
                         child: Builder(
                           builder: (context) {
@@ -64,6 +65,50 @@ Future<void> mainPickfile() async {
   );
 }
 
+class _ScaffoldSelectionBarInherited extends StatelessWidget {
+  const _ScaffoldSelectionBarInherited({
+    // super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnnotatedRegion(
+      value: makeSystemUiOverlayStyle(theme),
+      child: Scaffold(
+        extendBody: true,
+        resizeToAvoidBottomInset: false,
+        bottomNavigationBar: SelectionBar(
+          actions: SelectionActions.of(context),
+        ),
+        body: GestureDeadZones(
+          left: true,
+          right: true,
+          child: Builder(
+            builder: (buildContext) {
+              final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+
+              final data = MediaQuery.of(buildContext);
+
+              return MediaQuery(
+                data: data.copyWith(
+                  viewPadding:
+                      data.viewPadding + EdgeInsets.only(bottom: bottomPadding),
+                ),
+                child: child,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GalleryPageHolder extends StatefulWidget {
   const _GalleryPageHolder({
     // super.key,
@@ -83,8 +128,6 @@ class __GalleryPageHolderState extends State<_GalleryPageHolder>
   @override
   void initState() {
     super.initState();
-
-    _actions = SelectionActions();
   }
 
   @override
@@ -96,9 +139,6 @@ class __GalleryPageHolderState extends State<_GalleryPageHolder>
 
   @override
   Widget build(BuildContext context) {
-    return GallerySubPage.wrap(
-      galleryPage,
-      _actions.inject(widget.child),
-    );
+    return GallerySubPage.wrap(galleryPage, _actions.inject(widget.child));
   }
 }

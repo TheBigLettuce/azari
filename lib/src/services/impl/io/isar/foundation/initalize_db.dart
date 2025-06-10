@@ -32,13 +32,6 @@ Future<void> initalizeIsarDb(
 
   Dbs.init(paths);
 
-  if (Dbs().main.isarFavoritePosts.countSync() != 0) {
-    await _moveFavoritePostsFromMain(
-      rootDirectory: paths.rootDirectory,
-      main: Dbs().main,
-    );
-  }
-
   // currently this is very fragile
   // favoritePosts.cache should be available before
   // the favorites Isolate is started
@@ -80,10 +73,7 @@ Future<void> initalizeIsarDb(
     db.downloads.markInProgressAsFailed();
 
     for (final e in IsarCollectionReverseIterable(
-      IsarCollectionIterator(
-        Dbs().main.isarDownloadFiles,
-        reversed: false,
-      ),
+      IsarCollectionIterator(Dbs().main.isarDownloadFiles, reversed: false),
     )) {
       downloader.restoreFile(e);
     }
@@ -92,52 +82,4 @@ Future<void> initalizeIsarDb(
   }
 
   db.downloadManager = downloader;
-}
-
-Future<void> _moveFavoritePostsFromMain({
-  required String rootDirectory,
-  required Isar main,
-}) async {
-  final favoritePostsIsar = Isar.openSync(
-    const [IsarFavoritePostSchema],
-    directory: rootDirectory,
-    inspector: false,
-    name: "favoritePosts",
-  );
-
-  final ret = <IsarFavoritePost>[];
-  final remove = <int>[];
-
-  for (final e in IsarCollectionReverseIterable(
-    IsarCollectionIterator(
-      main.isarFavoritePosts,
-      reversed: false,
-      bufferLen: 100,
-    ),
-  )) {
-    ret.add(e);
-    remove.add(e.isarId!);
-
-    if (ret.length == 100) {
-      favoritePostsIsar.writeTxnSync(() {
-        favoritePostsIsar.isarFavoritePosts.putAllByIdBooruSync(ret);
-      });
-
-      ret.clear();
-    }
-  }
-
-  if (ret.isNotEmpty) {
-    favoritePostsIsar.writeTxnSync(() {
-      favoritePostsIsar.isarFavoritePosts.putAllByIdBooruSync(ret);
-    });
-
-    ret.clear();
-  }
-
-  main.writeTxnSync(() {
-    main.isarFavoritePosts.deleteAllSync(remove);
-  });
-
-  await favoritePostsIsar.close();
 }

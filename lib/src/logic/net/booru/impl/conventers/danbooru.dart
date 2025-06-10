@@ -143,40 +143,6 @@ class _DanbooruPost extends PostImpl implements Post {
   String get previewUrl => previewUrl720 ?? smallPreviewUrl;
 }
 
-// @JsonSerializable()
-// class _DanbooruMediaAsset {
-//   const _DanbooruMediaAsset(this.variants);
-
-//   factory _DanbooruMediaAsset.fromJson(Map<String, dynamic> json) =>
-//       _$DanbooruMediaAssetFromJson(json);
-
-//   String? find720() {
-//     final idx = variants.indexWhere((e) => e.type == "720x720");
-//     if (idx < 0) {
-//       return null;
-//     }
-
-//     return variants[idx].url;
-//   }
-
-//   @JsonKey(name: "variants")
-//   final List<_Variants> variants;
-// }
-
-// @JsonSerializable()
-// class _Variants {
-//   const _Variants(this.type, this.url);
-
-//   factory _Variants.fromJson(Map<String, dynamic> json) =>
-//       _$VariantsFromJson(json);
-
-//   @JsonKey(name: "type")
-//   final String type;
-
-//   @JsonKey(name: "url")
-//   final String url;
-// }
-
 class _DanbooruMediaAsset720Converter
     implements JsonConverter<String?, Map<dynamic, dynamic>?> {
   const _DanbooruMediaAsset720Converter();
@@ -201,24 +167,6 @@ class _DanbooruMediaAsset720Converter
   @override
   Map<dynamic, dynamic>? toJson(String? object) => null;
 }
-
-// class DanbooruMediaAssetConverter implements JsonConverter<_DanbooruMediaAsset, Map<dynamic, dynamic>> {
-//   const DanbooruMediaAssetConverter();
-
-//   @override
-//   PostRating fromJson(String? json) => json == null
-//       ? PostRating.general
-//       : switch (json) {
-//           "g" => PostRating.general,
-//           "s" => PostRating.sensitive,
-//           "q" => PostRating.questionable,
-//           "e" => PostRating.explicit,
-//           String() => PostRating.general,
-//         };
-
-//   @override
-//   String toJson(PostRating object) => object.name[0];
-// }
 
 class DanbooruRatingConverter implements JsonConverter<PostRating, String?> {
   const DanbooruRatingConverter();
@@ -254,16 +202,16 @@ class DanbooruPoolCategoryConventer
 
   @override
   BooruPoolCategory fromJson(String json) => switch (json) {
-        "series" => BooruPoolCategory.series,
-        "collection" => BooruPoolCategory.collection,
-        String() => BooruPoolCategory.collection,
-      };
+    "series" => BooruPoolCategory.series,
+    "collection" => BooruPoolCategory.collection,
+    String() => BooruPoolCategory.collection,
+  };
 
   @override
   String toJson(BooruPoolCategory object) => switch (object) {
-        BooruPoolCategory.series => "series",
-        BooruPoolCategory.collection => "collection",
-      };
+    BooruPoolCategory.series => "series",
+    BooruPoolCategory.collection => "collection",
+  };
 }
 
 @JsonSerializable()

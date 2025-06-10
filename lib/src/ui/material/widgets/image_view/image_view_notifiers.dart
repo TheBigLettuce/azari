@@ -8,7 +8,7 @@ import "dart:async";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
-import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
 import "package:flutter/material.dart";
 
 class ImageViewNotifiers extends StatelessWidget {
@@ -29,14 +29,14 @@ class ImageViewNotifiers extends StatelessWidget {
 
   final AnimationController controller;
   final PauseVideoState pauseVideoState;
-  final VideoControlsController videoControls;
+  final PlayerWidgetController videoControls;
   final ImageViewStateController stateController;
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return _WidgetsHolder(
+    return ImageViewWidgetsHolder(
       loader: loader,
       child: ImageViewLoaderProvider(
         loader: loader,
@@ -44,7 +44,7 @@ class ImageViewNotifiers extends StatelessWidget {
           loader: loader,
           child: PauseVideoNotifierHolder(
             state: pauseVideoState,
-            child: VideoControlsNotifier(
+            child: PlayerWidgetControllerNotifier(
               controller: videoControls,
               child: _AppBarShownHolder(
                 flipShowAppBar: flipShowAppBar,
@@ -150,15 +150,12 @@ class _ImageViewTagsProviderState extends State<ImageViewTagsProvider>
 
   @override
   Widget build(BuildContext context) {
-    return ImageTagsNotifier(
-      tags: tags,
-      child: widget.child,
-    );
+    return ImageTagsNotifier(tags: tags, child: widget.child);
   }
 }
 
-class _WidgetsHolder extends StatefulWidget {
-  const _WidgetsHolder({
+class ImageViewWidgetsHolder extends StatefulWidget {
+  const ImageViewWidgetsHolder({
     super.key,
     required this.loader,
     required this.child,
@@ -169,10 +166,10 @@ class _WidgetsHolder extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_WidgetsHolder> createState() => _WidgetsHolderState();
+  State<ImageViewWidgetsHolder> createState() => _ImageViewWidgetsHolderState();
 }
 
-class _WidgetsHolderState extends State<_WidgetsHolder>
+class _ImageViewWidgetsHolderState extends State<ImageViewWidgetsHolder>
     with ImageViewLoaderWatcher {
   @override
   ImageViewLoader get loader => widget.loader;
@@ -242,8 +239,8 @@ class ImageViewLoaderProvider extends InheritedWidget {
   final ImageViewLoader loader;
 
   static ImageViewLoader of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ImageViewLoaderProvider>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ImageViewLoaderProvider>();
 
     return widget!.loader;
   }
@@ -282,8 +279,8 @@ class ImageTagsNotifier extends InheritedWidget {
   final ImageViewTags tags;
 
   static ImageViewTags of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
 
     return widget!.tags;
   }
@@ -293,11 +290,7 @@ class ImageTagsNotifier extends InheritedWidget {
       tags != oldWidget.tags;
 }
 
-enum ImageTagType {
-  favorite,
-  excluded,
-  normal;
-}
+enum ImageTagType { favorite, excluded, normal }
 
 class ImageTag {
   const ImageTag(
@@ -347,9 +340,9 @@ class _AppBarShownHolderState extends State<_AppBarShownHolder> {
       const WindowApi().setFullscreen(false);
       widget.animationController.reverse();
     } else {
-      widget.animationController
-          .forward()
-          .then((value) => const WindowApi().setFullscreen(true));
+      widget.animationController.forward().then(
+        (value) => const WindowApi().setFullscreen(true),
+      );
     }
   }
 
@@ -422,22 +415,22 @@ class PauseVideoNotifier extends InheritedWidget {
   final void Function(bool) setPause;
 
   static PauseVideoState stateOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
 
     return widget!.state;
   }
 
   static bool of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
 
     return widget!.pause;
   }
 
   static void maybePauseOf(BuildContext context, bool pause) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
 
     widget?.setPause(pause);
   }
@@ -460,15 +453,19 @@ class ImageViewInfoTilesRefreshNotifier extends InheritedWidget {
   final VoidCallback incr;
 
   static void refreshOf(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<
-        ImageViewInfoTilesRefreshNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<
+          ImageViewInfoTilesRefreshNotifier
+        >();
 
     widget?.incr();
   }
 
   static int of(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<
-        ImageViewInfoTilesRefreshNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<
+          ImageViewInfoTilesRefreshNotifier
+        >();
 
     return widget!.count;
   }
@@ -491,15 +488,15 @@ class AppBarVisibilityNotifier extends InheritedWidget {
   final void Function(bool? setTo) toggle;
 
   static void maybeToggleOf(BuildContext context, [bool? setTo]) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
 
     widget?.toggle(setTo);
   }
 
   static bool? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<AppBarVisibilityNotifier>();
 
     return widget?.isShown;
   }
@@ -511,24 +508,24 @@ class AppBarVisibilityNotifier extends InheritedWidget {
       isShown != oldWidget.isShown || toggle != oldWidget.toggle;
 }
 
-class VideoControlsNotifier extends InheritedWidget {
-  const VideoControlsNotifier({
+class PlayerWidgetControllerNotifier extends InheritedWidget {
+  const PlayerWidgetControllerNotifier({
     super.key,
     required this.controller,
     required super.child,
   });
 
-  final VideoControlsController controller;
+  final PlayerWidgetController controller;
 
-  static VideoControlsController of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<VideoControlsNotifier>();
+  static PlayerWidgetController of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<PlayerWidgetControllerNotifier>();
 
     return widget!.controller;
   }
 
   @override
-  bool updateShouldNotify(VideoControlsNotifier oldWidget) =>
+  bool updateShouldNotify(PlayerWidgetControllerNotifier oldWidget) =>
       controller != oldWidget.controller;
 }
 
@@ -542,8 +539,8 @@ class ImageViewWidgetsNotifier extends InheritedWidget {
   final ImageViewWidgets widgets;
 
   static ImageViewWidgets of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ImageViewWidgetsNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ImageViewWidgetsNotifier>();
 
     return widget!.widgets;
   }

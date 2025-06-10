@@ -20,39 +20,22 @@ mixin DefaultBuildCell implements CellBuilder {
   }) {
     return switch (cellType) {
       CellType.list => DefaultListTile(
-          uniqueKey: uniqueKey(),
-          title: title(l10n),
-          subtitle: subtitle(l10n),
-          thumbnail: thumbnail(),
-          dismiss: dismiss(),
-        ),
+        uniqueKey: uniqueKey(),
+        title: title(l10n),
+        subtitle: subtitle(l10n),
+        thumbnail: thumbnail(),
+        dismiss: dismiss(),
+      ),
       CellType.cell => GridCell(
-          uniqueKey: uniqueKey(),
-          thumbnail: thumbnail(),
-          titleLines: titleLines(),
-          title: hideName ? null : title(l10n),
-          subtitle: hideName ? null : subtitle(l10n),
-          imageAlign: imageAlign,
-        ),
+        uniqueKey: uniqueKey(),
+        thumbnail: thumbnail(),
+        titleLines: titleLines(),
+        title: hideName ? null : title(l10n),
+        subtitle: hideName ? null : subtitle(l10n),
+        imageAlign: imageAlign,
+      ),
     };
   }
-}
-
-// required Widget Function(Widget child) wrapSelection,
-
-abstract mixin class CellBuilderData {
-  const CellBuilderData();
-
-  Key uniqueKey();
-
-  String title(AppLocalizations l10n);
-  String subtitle(AppLocalizations l10n) => "";
-
-  int titleLines() => 1;
-
-  ImageProvider? thumbnail() => null;
-
-  TileDismiss? dismiss() => null;
 }
 
 /// Cells on a grid.
@@ -71,34 +54,28 @@ abstract interface class CellBuilder extends CellBuilderData {
   });
 }
 
-enum CellType {
-  list,
-  cell,
+abstract mixin class CellBuilderData {
+  const CellBuilderData();
+
+  Key uniqueKey();
+
+  String title(AppLocalizations l10n);
+  String subtitle(AppLocalizations l10n) => "";
+
+  int titleLines() => 1;
+
+  ImageProvider? thumbnail() => null;
+
+  TileDismiss? dismiss() => null;
 }
 
-class ExitOnPressRoute extends InheritedWidget {
-  const ExitOnPressRoute({
-    super.key,
-    required this.exit,
-    required super.child,
-  });
+enum CellType { list, cell }
 
-  final void Function() exit;
+class Sticker {
+  const Sticker(this.icon, {this.important = false, this.subtitle});
 
-  static void maybeExitOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
+  final bool important;
 
-    widget?.exit();
-  }
-
-  static void exitOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
-
-    widget!.exit();
-  }
-
-  @override
-  bool updateShouldNotify(ExitOnPressRoute oldWidget) => exit != oldWidget.exit;
+  final String? subtitle;
+  final IconData icon;
 }

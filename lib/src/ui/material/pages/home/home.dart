@@ -20,7 +20,7 @@ import "package:azari/src/ui/material/pages/booru/visited_posts.dart";
 import "package:azari/src/ui/material/pages/discover/discover.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/home/home_skeleton.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
+import "package:azari/src/ui/material/pages/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -36,9 +36,7 @@ part "icons/search.dart";
 part "navigator_shell.dart";
 
 class Home extends StatefulWidget {
-  const Home({
-    super.key,
-  });
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -90,11 +88,7 @@ class _HomeState extends State<Home>
     });
 
     if (GalleryService.available) {
-      maybeBeforeYouContinueDialog(
-        context,
-        settings,
-        const GalleryService(),
-      );
+      maybeBeforeYouContinueDialog(context, settings, const GalleryService());
     }
 
     if (isRestart) {
@@ -147,11 +141,7 @@ class _HomeState extends State<Home>
   }
 
   void onPop(bool didPop, Object? _) {
-    _procPopAll(
-      galleryPage,
-      this,
-      didPop,
-    );
+    _procPopAll(galleryPage, this, didPop);
   }
 
   @override
@@ -245,16 +235,13 @@ class ScrollingStateSinkProvider extends InheritedWidget {
 }
 
 class NavigationButtonEvents extends InheritedWidget {
-  const NavigationButtonEvents({
-    required this.events,
-    required super.child,
-  });
+  const NavigationButtonEvents({required this.events, required super.child});
 
   final Stream<void> events;
 
   static Stream<void>? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<NavigationButtonEvents>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<NavigationButtonEvents>();
 
     return widget?.events;
   }
@@ -266,16 +253,13 @@ class NavigationButtonEvents extends InheritedWidget {
 }
 
 class PinnedTagsProvider extends InheritedWidget {
-  const PinnedTagsProvider({
-    required this.pinnedTags,
-    required super.child,
-  });
+  const PinnedTagsProvider({required this.pinnedTags, required super.child});
 
-  final (Map<String, void> map, int count) pinnedTags;
+  final ({Map<String, void> map, int count}) pinnedTags;
 
-  static (Map<String, void> map, int count) of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<PinnedTagsProvider>();
+  static ({Map<String, void> map, int count}) of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<PinnedTagsProvider>();
 
     return widget!.pinnedTags;
   }

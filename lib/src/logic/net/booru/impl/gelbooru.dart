@@ -16,10 +16,7 @@ import "package:xml/xml.dart";
 const Duration _defaultTimeout = Duration(seconds: 30);
 
 class Gelbooru implements BooruAPI {
-  const Gelbooru(
-    this.client, {
-    this.booru = Booru.gelbooru,
-  });
+  const Gelbooru(this.client, {this.booru = Booru.gelbooru});
 
   static final _log = Logger("Gelbooru API");
 
@@ -132,8 +129,9 @@ class Gelbooru implements BooruAPI {
     required BooruPostsOrder order,
     required bool ignoreExcludedTags,
   }) async {
-    final excludedTags =
-        ignoreExcludedTags ? null : TagManagerService.safe()?.excluded;
+    final excludedTags = ignoreExcludedTags
+        ? null
+        : TagManagerService.safe()?.excluded;
     final excluded = excludedTags?.get(-1).map((e) => "-${e.tag} ").toList();
 
     final String excludedTagsString = excluded == null
@@ -178,17 +176,13 @@ class Gelbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     final resp = await client.getUriLog<Map<String, dynamic>>(
-      Uri.https(
-        booru.url,
-        "/index.php",
-        {
-          "page": "dapi",
-          "s": "post",
-          "q": "index",
-          "id": id.toString(),
-          "json": "1",
-        },
-      ),
+      Uri.https(booru.url, "/index.php", {
+        "page": "dapi",
+        "s": "post",
+        "q": "index",
+        "id": id.toString(),
+        "json": "1",
+      }),
       options: Options(
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
@@ -218,8 +212,7 @@ class Gelbooru implements BooruAPI {
       limit: 30,
       order: switch (order) {
         RandomPostsOrder.random ||
-        RandomPostsOrder.latest =>
-          BooruPostsOrder.latest,
+        RandomPostsOrder.latest => BooruPostsOrder.latest,
         RandomPostsOrder.rating => BooruPostsOrder.score,
       },
       pageSaver: PageSaver.noPersist(),
@@ -256,12 +249,10 @@ class Gelbooru implements BooruAPI {
 }
 
 class GelbooruCommunity implements BooruComunnityAPI {
-  GelbooruCommunity({
-    required this.booru,
-    required this.client,
-  })  : forum = _ForumAPI(client),
-        comments = _CommentsAPI(client),
-        pools = _PoolsAPI(client);
+  GelbooruCommunity({required this.booru, required this.client})
+    : forum = _ForumAPI(client),
+      comments = _CommentsAPI(client),
+      pools = _PoolsAPI(client);
 
   @override
   final Booru booru;
@@ -313,10 +304,7 @@ class _CommentsAPI implements BooruCommentsAPI {
     required int postId,
     int? limit,
     required PageSaver pageSaver,
-  }) {
-    // TODO: implement when unlocked
-    return Future.value(const []);
-  }
+  }) => Future.value(const []);
 
   @override
   Future<List<BooruComments>> search({

@@ -18,28 +18,30 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/copy_move_preview.dart";
-import "package:azari/src/ui/material/widgets/file_action_chips.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/widgets/file_info.dart";
+import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/grid_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/quilted_grid.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
+import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -92,14 +94,11 @@ class FilesPage extends StatefulWidget {
     if (callback?.isDirectory ?? false) {
       Navigator.maybePop(context);
 
-      (callback! as ReturnDirectoryCallback)(
-        (
-          bucketId: directory.bucketId,
-          path: directory.relativeLoc,
-          volumeName: directory.volumeName
-        ),
-        false,
-      );
+      (callback! as ReturnDirectoryCallback)((
+        bucketId: directory.bucketId,
+        path: directory.relativeLoc,
+        volumeName: directory.volumeName,
+      ), false);
 
       return Future.value();
     } else {
@@ -127,17 +126,15 @@ class FilesPage extends StatefulWidget {
         );
       }
 
-      requireAuth = DirectoryMetadataService.safe()
-              ?.cache
+      requireAuth =
+          DirectoryMetadataService.safe()?.cache
               .get(segmentFnc(directory))
               ?.requireAuth ??
           false;
 
       if (const AppApi().canAuthBiometric && requireAuth) {
         return LocalAuthentication()
-            .authenticate(
-              localizedReason: l10n.openDirectory,
-            )
+            .authenticate(localizedReason: l10n.openDirectory)
             .then(onSuccess);
       } else {
         return onSuccess(true);
@@ -206,34 +203,37 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
   late final ChainedFilterResourceSource<int, File> filter;
 
-  late final searchTextController =
-      TextEditingController(text: widget.presetFilteringValue);
+  late final searchTextController = TextEditingController(
+    text: widget.presetFilteringValue,
+  );
   final searchFocus = FocusNode();
 
   final toShowDelete = DeleteDialogShow();
+  late final selectionActions = widget.addScaffold || widget.callback != null
+      ? SelectionActions()
+      : null;
+
   late final PlatformImageViewStateImpl impl;
 
   late final SourceShellElementState<File> status;
 
   Iterable<File> filterColors(Iterable<File> cell, FilteringColors? colors) {
-    return cell.where(
-      (e) {
-        if (colors == null || colors == FilteringColors.noColor) {
-          return true;
-        }
+    return cell.where((e) {
+      if (colors == null || colors == FilteringColors.noColor) {
+        return true;
+      }
 
-        if (e.res == null) {
-          return false;
-        }
+      if (e.res == null) {
+        return false;
+      }
 
-        final favorite = FavoritePostSourceService.safe()?.cache.get(e.res!);
-        if (favorite == null) {
-          return false;
-        }
+      final favorite = FavoritePostSourceService.safe()?.cache.get(e.res!);
+      if (favorite == null) {
+        return false;
+      }
 
-        return favorite.filteringColors == colors;
-      },
-    );
+      return favorite.filteringColors == colors;
+    });
   }
 
   @override
@@ -289,42 +289,46 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       },
       filter: (cells, filteringMode, sortingMode, colors, end, data) {
         return switch (filteringMode) {
-          FilteringMode.favorite => FavoritePostSourceService.available
-              ? favorite(
-                  filterColors(cells, colors),
-                  searchTextController.text,
-                )
-              : (cells, data),
+          FilteringMode.favorite =>
+            FavoritePostSourceService.available
+                ? favorite(
+                    filterColors(cells, colors),
+                    searchTextController.text,
+                  )
+                : (cells, data),
           FilteringMode.untagged => untagged(filterColors(cells, colors)),
-          FilteringMode.tag =>
-            tag(filterColors(cells, colors), searchTextController.text),
-          FilteringMode.tagReversed =>
-            tagReversed(filterColors(cells, colors), searchTextController.text),
+          FilteringMode.tag => tag(
+            filterColors(cells, colors),
+            searchTextController.text,
+          ),
+          FilteringMode.tagReversed => tagReversed(
+            filterColors(cells, colors),
+            searchTextController.text,
+          ),
           FilteringMode.video => video(filterColors(cells, colors)),
           FilteringMode.gif => gif(filterColors(cells, colors)),
           FilteringMode.duplicate => duplicate(filterColors(cells, colors)),
           FilteringMode.original => original(filterColors(cells, colors)),
-          FilteringMode.same => ThumbnailService.available
-              ? same(
-                  filterColors(cells, colors),
-                  data,
-                  onSkipped: () {
-                    if (!context.mounted || !ThumbnailService.available) {
-                      return;
-                    }
+          FilteringMode.same =>
+            ThumbnailService.available
+                ? same(
+                    filterColors(cells, colors),
+                    data,
+                    onSkipped: () {
+                      if (!context.mounted || !ThumbnailService.available) {
+                        return;
+                      }
 
-                    ScaffoldMessenger.of(context)
-                      ..removeCurrentSnackBar()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n().resultsIncomplete),
-                          duration: const Duration(seconds: 20),
-                          action: SnackBarAction(
-                            label: context.l10n().loadMoreLabel,
-                            onPressed: () {
-                              loadNextThumbnails(
-                                api.source,
-                                () {
+                      ScaffoldMessenger.of(context)
+                        ..removeCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text(context.l10n().resultsIncomplete),
+                            duration: const Duration(seconds: 20),
+                            action: SnackBarAction(
+                              label: context.l10n().loadMoreLabel,
+                              onPressed: () {
+                                loadNextThumbnails(api.source, () {
                                   try {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -333,32 +337,35 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                                     );
                                     api.source.clearRefreshSilent();
                                   } catch (_) {}
-                                },
-                              );
-                            },
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                  },
-                  end: end,
-                  source: api.source,
-                )
-              : (cells, data),
-          FilteringMode.onlyFullStars =>
-            stars(filterColors(cells, colors), false),
-          FilteringMode.onlyHalfStars =>
-            stars(filterColors(cells, colors), true),
+                        );
+                    },
+                    end: end,
+                    source: api.source,
+                  )
+                : (cells, data),
+          FilteringMode.onlyFullStars => stars(
+            filterColors(cells, colors),
+            false,
+          ),
+          FilteringMode.onlyHalfStars => stars(
+            filterColors(cells, colors),
+            true,
+          ),
           FilteringMode() => (
-              searchTextController.text.isEmpty
-                  ? filterColors(cells, colors)
-                  : filterColors(
-                      cells.where(
-                        (e) => e.name.contains(searchTextController.text),
-                      ),
-                      colors,
+            searchTextController.text.isEmpty
+                ? filterColors(cells, colors)
+                : filterColors(
+                    cells.where(
+                      (e) => e.name.contains(searchTextController.text),
                     ),
-              data
-            ),
+                    colors,
+                  ),
+            data,
+          ),
         };
       },
       allowedFilteringModes: {
@@ -428,7 +435,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
     status = SourceShellElementState(
       source: filter,
-      selectionController: widget.selectionController,
+      selectionController:
+          selectionActions?.controller ?? widget.selectionController,
       onEmpty: SourceOnEmptyInterface(
         filter,
         (context) => context.l10n().emptyNoMedia,
@@ -436,62 +444,45 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       actions: widget.callback != null
           ? const <SelectionBarAction>[]
           : api.type.isTrash()
-              ? <SelectionBarAction>[
-                  _restoreFromTrashAction(const GalleryService().trash),
-                ]
-              : <SelectionBarAction>[
-                  if (settings.filesExtendedActions) ...[
-                    if (DownloadManager.available && LocalTagsService.available)
-                      SelectionBarAction(
-                        Icons.download_rounded,
-                        (selected) {
-                          const TasksService().add<DownloadManager>(
-                            () => redownloadFiles(
-                              context.l10n(),
-                              selected.cast(),
-                            ),
-                          );
-                        },
-                        true,
-                        taskTag: DownloadManager,
-                      ),
-                    if (LocalTagsService.available)
-                      _saveTagsAction(context.l10n()),
-                    if (LocalTagsService.available)
-                      _addTagAction(
-                        context,
-                        () => api.source.clearRefreshSilent(),
-                      ),
-                  ],
-                  _deleteAction(
-                    context,
-                    toShowDelete,
-                    const GalleryService().trash,
+          ? <SelectionBarAction>[
+              _restoreFromTrashAction(const GalleryService().trash),
+            ]
+          : <SelectionBarAction>[
+              if (settings.filesExtendedActions) ...[
+                if (DownloadManager.available && LocalTagsService.available)
+                  SelectionBarAction(
+                    Icons.download_rounded,
+                    (selected) {
+                      const TasksService().add<DownloadManager>(
+                        () => redownloadFiles(context.l10n(), selected.cast()),
+                      );
+                    },
+                    true,
+                    taskTag: DownloadManager,
                   ),
-                  if (TagManagerService.available && LocalTagsService.available)
-                    _copyAction(
-                      context,
-                      api.bucketId,
-                      api.parent,
-                      toShowDelete,
-                    ),
-                  if (TagManagerService.available && LocalTagsService.available)
-                    _moveAction(
-                      context,
-                      api.bucketId,
-                      api.parent,
-                      toShowDelete,
-                    ),
-                ],
+                if (LocalTagsService.available) _saveTagsAction(context.l10n()),
+                if (LocalTagsService.available)
+                  _addTagAction(context, () => api.source.clearRefreshSilent()),
+              ],
+              _deleteAction(
+                context,
+                toShowDelete,
+                const GalleryService().trash,
+              ),
+              if (TagManagerService.available && LocalTagsService.available)
+                _copyAction(context, api.bucketId, api.parent, toShowDelete),
+              if (TagManagerService.available && LocalTagsService.available)
+                _moveAction(context, api.bucketId, api.parent, toShowDelete),
+            ],
     );
 
-    final secure = widget.secure ??
+    final secure =
+        widget.secure ??
         (widget.directories.length == 1
-            ? DirectoryMetadataService.safe()
-                    ?.cache
-                    .get(_segmentCell(widget.directories.first))
-                    ?.requireAuth ??
-                false
+            ? DirectoryMetadataService.safe()?.cache
+                      .get(_segmentCell(widget.directories.first))
+                      ?.requireAuth ??
+                  false
             : false);
 
     if (secure) {
@@ -500,15 +491,15 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
           _subscription?.cancel();
           _subscription = Stream<void>.periodic(const Duration(seconds: 10))
               .listen((event) {
-            filter.backingStorage.clear();
+                filter.backingStorage.clear();
 
-            // ignore: use_build_context_synchronously
-            Navigator.of(context).maybePop();
+                // ignore: use_build_context_synchronously
+                Navigator.of(context).maybePop();
 
-            _subscription?.cancel();
+                _subscription?.cancel();
 
-            return;
-          });
+                return;
+              });
         },
         onShow: () {
           _subscription?.cancel();
@@ -527,6 +518,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
   @override
   void dispose() {
+    selectionActions?.dispose();
+
     platform.FlutterGalleryData.setUp(null);
     platform.GalleryVideoEvents.setUp(null);
 
@@ -563,8 +556,6 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
         context,
         booru: booru,
         tags: tag,
-        rootNavigator: true,
-        saveSelectedPage: (e) {},
         overrideSafeMode: overrideSafeMode,
       ).then((value) {
         if (context.mounted) {
@@ -608,8 +599,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
     return FlutterGalleryDataNotifier(
       galleryDataImpl: impl,
-      child: ScaffoldSelectionBar(
-        addScaffoldAndBar: widget.addScaffold || widget.callback != null,
+      child: ScaffoldWithSelectionBar(
+        actions: selectionActions,
         child: GridPopScope(
           searchTextController: searchTextController,
           filter: filter,
@@ -623,7 +614,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
             configWatcher: gridSettings.watch,
             settingsButton: ShellSettingsButton.fromWatchable(
               gridSettings,
-              header: const _ShowAdditionalButtons(),
+              header: const ShowAdditionalButtonsTile(),
               localizeHideNames: (context) =>
                   l10n.hideNames(l10n.hideNamesFiles),
             ),
@@ -682,38 +673,6 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                     },
                     icon: const Icon(Icons.delete_sweep_outlined),
                   ),
-                // if (widget.callback != null)
-                //   OnBooruTagPressed(
-                //     onPressed: _onBooruTagPressed,
-                //     child: Builder(
-                //       builder: (context) => IconButton(
-                //         onPressed: () {
-                //           if (filter.progress.inRefreshing) {
-                //             return;
-                //           }
-
-                //           final upTo = filter.backingStorage.count;
-
-                //           try {
-                //             final n = math.Random.secure().nextInt(upTo);
-
-                //             filter.forIdxUnsafe(n).onPressed(context, n);
-                //           } catch (e, trace) {
-                //             Logger.root
-                //                 .warning("getting random number", e, trace);
-
-                //             return;
-                //           }
-
-                //           if (widget.callback!.returnBack) {
-                //             Navigator.pop(context);
-                //             Navigator.pop(context);
-                //           }
-                //         },
-                //         icon: const Icon(Icons.casino_outlined),
-                //       ),
-                //     ),
-                //   ),
               ],
             ),
             elements: [
@@ -751,17 +710,19 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                                 child: FilterChip(
                                   showCheckmark: false,
                                   avatar: Icon(FilteringMode.duplicate.icon),
-                                  selected: filter.filteringMode ==
+                                  selected:
+                                      filter.filteringMode ==
                                       FilteringMode.duplicate,
                                   label: Text(l10n.enumFilteringModeDuplicate),
                                   onSelected: (value) {
                                     if (filter.filteringMode ==
                                         FilteringMode.duplicate) {
-                                      filter.filteringMode = beforeButtons ==
+                                      filter.filteringMode =
+                                          beforeButtons ==
                                               FilteringMode.duplicate
                                           ? FilteringMode.noFilter
                                           : (beforeButtons ??
-                                              FilteringMode.noFilter);
+                                                FilteringMode.noFilter);
                                       return;
                                     } else {
                                       beforeButtons = filter.filteringMode;
@@ -782,17 +743,19 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                                 child: FilterChip(
                                   showCheckmark: false,
                                   avatar: Icon(FilteringMode.favorite.icon),
-                                  selected: filter.filteringMode ==
+                                  selected:
+                                      filter.filteringMode ==
                                       FilteringMode.favorite,
                                   label: Text(l10n.favoritesLabel),
                                   onSelected: (value) {
                                     if (filter.filteringMode ==
                                         FilteringMode.favorite) {
-                                      filter.filteringMode = beforeButtons ==
+                                      filter.filteringMode =
+                                          beforeButtons ==
                                               FilteringMode.favorite
                                           ? FilteringMode.noFilter
                                           : beforeButtons ??
-                                              FilteringMode.noFilter;
+                                                FilteringMode.noFilter;
                                       return;
                                     } else {
                                       beforeButtons = filter.filteringMode;
@@ -813,7 +776,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                                 child: FilterChip(
                                   showCheckmark: false,
                                   avatar: Icon(FilteringMode.video.icon),
-                                  selected: filter.filteringMode ==
+                                  selected:
+                                      filter.filteringMode ==
                                       FilteringMode.video,
                                   label: Text(l10n.videosLabel),
                                   onSelected: (value) {
@@ -821,9 +785,9 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                                         FilteringMode.video) {
                                       filter.filteringMode =
                                           beforeButtons == FilteringMode.video
-                                              ? FilteringMode.noFilter
-                                              : beforeButtons ??
-                                                  FilteringMode.noFilter;
+                                          ? FilteringMode.noFilter
+                                          : beforeButtons ??
+                                                FilteringMode.noFilter;
                                       return;
                                     } else {
                                       beforeButtons = filter.filteringMode;
@@ -861,9 +825,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                             toShow: toShowDelete,
                             child: OnBooruTagPressed(
                               onPressed: _onBooruTagPressed,
-                              child: filter.inject(
-                                status.source.inject(child),
-                              ),
+                              child: filter.inject(status.source.inject(child)),
                             ),
                           ),
                         ),
@@ -888,16 +850,15 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
   }
 }
 
-class _ShowAdditionalButtons extends StatefulWidget {
-  const _ShowAdditionalButtons({
-    super.key,
-  });
+class ShowAdditionalButtonsTile extends StatefulWidget {
+  const ShowAdditionalButtonsTile({super.key});
 
   @override
-  State<_ShowAdditionalButtons> createState() => __ShowAdditionalButtonsState();
+  State<ShowAdditionalButtonsTile> createState() =>
+      _ShowAdditionalButtonsTileState();
 }
 
-class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons>
+class _ShowAdditionalButtonsTileState extends State<ShowAdditionalButtonsTile>
     with SettingsWatcherMixin {
   @override
   Widget build(BuildContext context) {
@@ -906,8 +867,7 @@ class __ShowAdditionalButtonsState extends State<_ShowAdditionalButtons>
     return SwitchListTile(
       value: settings.filesExtendedActions,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      onChanged: (value) => const SettingsService()
-          .current
+      onChanged: (value) => const SettingsService().current
           .copy(filesExtendedActions: value)
           .save(),
       title: Text(l10n.extendedFilesGridActions),
@@ -936,94 +896,6 @@ class FlutterGalleryDataNotifier extends InheritedWidget {
       galleryDataImpl != oldWidget.galleryDataImpl;
 }
 
-// class _TagsNotifier extends StatefulWidget {
-//   const _TagsNotifier({
-//     // super.key,
-//     required this.tagManager,
-//     required this.tagSource,
-//     required this.child,
-//   });
-
-//   final FilesSourceTags tagSource;
-//   final TagManagerService tagManager;
-
-//   final Widget child;
-
-//   @override
-//   State<_TagsNotifier> createState() => __TagsNotifierState();
-// }
-
-// class __TagsNotifierState extends State<_TagsNotifier> {
-//   late final StreamSubscription<List<String>> subscription;
-//   late final StreamSubscription<void> subscr;
-
-//   final _tags = ImageViewTags();
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     _tags.update(
-//       widget.tagSource.current
-//           .map(
-//             (e) => ImageTag(
-//               e,
-//               type: widget.tagManager.pinned.exists(e)
-//                   ? ImageTagType.favorite
-//                   : widget.tagManager.excluded.exists(e)
-//                       ? ImageTagType.excluded
-//                       : ImageTagType.normal,
-//             ),
-//           )
-//           .toList(),
-//     );
-
-//     subscription = widget.tagSource.watch((list) {
-//       _refresh();
-//     });
-
-//     subscr = widget.tagManager.pinned.events.listen((_) {
-//       _refresh();
-//     });
-//   }
-
-//   void _refresh() {
-//     setState(() {
-//       _tags.update(
-//         widget.tagSource.current
-//             .map(
-//               (e) => ImageTag(
-//                 e,
-//                 type: widget.tagManager.pinned.exists(e)
-//                     ? ImageTagType.favorite
-//                     : widget.tagManager.excluded.exists(e)
-//                         ? ImageTagType.excluded
-//                         : ImageTagType.normal,
-//               ),
-//             )
-//             .toList(),
-//       );
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     _tags.dispose();
-//     subscription.cancel();
-//     subscr.cancel();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ImageTagsNotifier(
-//       tags: _tags,
-//       child: widget.child,
-//     );
-//   }
-// }
-
 class TagsRibbon extends StatefulWidget {
   const TagsRibbon({
     super.key,
@@ -1048,7 +920,8 @@ class TagsRibbon extends StatefulWidget {
   final List<PopupMenuItem<void>> Function(
     String tag,
     ScrollController controller,
-  )? items;
+  )?
+  items;
 
   @override
   State<TagsRibbon> createState() => _TagsRibbonState();
@@ -1064,20 +937,20 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
   late List<ImageTag>? _pinnedList = !widget.showPin
       ? null
       : pinned
-          .get(-1)
-          .map(
-            (e) => ImageTag(
-              e.tag,
-              type: ImageTagType.favorite,
-              onTap: widget.selectTag != null
-                  ? (context) => widget.selectTag!(e.tag, scrollController)
-                  : null,
-              onLongTap: widget.selectTag != null
-                  ? (context) => widget.onLongPress!(e.tag, scrollController)
-                  : null,
-            ),
-          )
-          .toList();
+            .get(-1)
+            .map(
+              (e) => ImageTag(
+                e.tag,
+                type: ImageTagType.favorite,
+                onTap: widget.selectTag != null
+                    ? (context) => widget.selectTag!(e.tag, scrollController)
+                    : null,
+                onLongTap: widget.selectTag != null
+                    ? (context) => widget.onLongPress!(e.tag, scrollController)
+                    : null,
+              ),
+            )
+            .toList();
 
   bool showOnlyPinned = false;
 
@@ -1103,11 +976,11 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
                       type: ImageTagType.excluded,
                       onTap: widget.selectTag != null
                           ? (context) =>
-                              widget.selectTag!(e.tag, scrollController)
+                                widget.selectTag!(e.tag, scrollController)
                           : null,
                       onLongTap: widget.selectTag != null
                           ? (context) =>
-                              widget.onLongPress!(e.tag, scrollController)
+                                widget.onLongPress!(e.tag, scrollController)
                           : null,
                     ),
                   )
@@ -1175,11 +1048,10 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
               alignment: Alignment.centerLeft,
               child: ListView.builder(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 12) +
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12) +
                     (widget.showPin
-                        ? EdgeInsets.only(
-                            right: 40 + gestureRight * 0.5,
-                          )
+                        ? EdgeInsets.only(right: 40 + gestureRight * 0.5)
                         : EdgeInsets.zero),
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
@@ -1205,17 +1077,11 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
                       onLongPress: widget.onLongPress == null
                           ? null
                           : () {
-                              widget.onLongPress!(
-                                elem.tag,
-                                scrollController,
-                              );
+                              widget.onLongPress!(elem.tag, scrollController);
                             },
                       onPressed: widget.selectTag == null
                           ? null
-                          : () => widget.selectTag!(
-                                elem.tag,
-                                scrollController,
-                              ),
+                          : () => widget.selectTag!(elem.tag, scrollController),
                       style: const ButtonStyle(
                         visualDensity: VisualDensity.compact,
                       ),
@@ -1241,10 +1107,7 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
                         ? child
                         : MenuWrapper(
                             title: elem.tag,
-                            items: widget.items!(
-                              elem.tag,
-                              scrollController,
-                            ),
+                            items: widget.items!(elem.tag, scrollController),
                             child: child,
                           ),
                   );
@@ -1291,25 +1154,19 @@ class _TagsRibbonState extends State<TagsRibbon> with TagManagerService {
     return _list.isEmpty && (_pinnedList == null || _pinnedList!.isEmpty)
         ? widget.emptyWidget
         : !widget.sliver
-            ? Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 8),
-                child: child,
-              )
-            : SliverPadding(
-                padding: const EdgeInsets.only(top: 4, bottom: 8),
-                sliver: SliverToBoxAdapter(
-                  child: child,
-                ),
-              );
+        ? Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: child,
+          )
+        : SliverPadding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            sliver: SliverToBoxAdapter(child: child),
+          );
   }
 }
 
 class BarIcon extends StatefulWidget {
-  const BarIcon({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-  });
+  const BarIcon({super.key, required this.icon, required this.onPressed});
 
   final IconData icon;
   final bool? Function() onPressed;
@@ -1322,8 +1179,8 @@ class BarIconState extends State<BarIcon> {
   bool _toggled = false;
 
   void toggle(bool v) => setState(() {
-        _toggled = v;
-      });
+    _toggled = v;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1367,11 +1224,8 @@ class BarIconState extends State<BarIcon> {
                 ),
                 duration: Durations.medium3,
                 curve: Easing.standard,
-                builder: (context, value, child) => Icon(
-                  widget.icon,
-                  color: value,
-                  size: 22,
-                ),
+                builder: (context, value, child) =>
+                    Icon(widget.icon, color: value, size: 22),
               ),
             ),
           ),
@@ -1382,11 +1236,7 @@ class BarIconState extends State<BarIcon> {
 }
 
 class IconBarGridHeader extends StatelessWidget {
-  const IconBarGridHeader({
-    super.key,
-    required this.icons,
-    this.countWatcher,
-  });
+  const IconBarGridHeader({super.key, required this.icons, this.countWatcher});
 
   final List<BarIcon> icons;
   final WatchFire<int>? countWatcher;
@@ -1422,10 +1272,7 @@ class IconBarGridHeader extends StatelessWidget {
                     ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: icons,
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: icons),
             ],
           ),
         ),
@@ -1455,14 +1302,11 @@ class __CountWatcherState extends State<_CountWatcher> {
   void initState() {
     super.initState();
 
-    subsc = widget.countWatcher(
-      (i) {
-        setState(() {
-          count = i;
-        });
-      },
-      true,
-    );
+    subsc = widget.countWatcher((i) {
+      setState(() {
+        count = i;
+      });
+    }, true);
   }
 
   @override
@@ -1512,41 +1356,37 @@ class CurrentGridSettingsLayout<T extends CellBuilder> extends StatelessWidget {
 
     return switch (config.layoutType) {
       GridLayoutType.grid => GridLayout<T>(
-          source: source,
-          progress: progress,
-          buildEmpty: buildEmpty,
-          selection: selection,
-        ),
+        source: source,
+        progress: progress,
+        buildEmpty: buildEmpty,
+        selection: selection,
+      ),
       GridLayoutType.list => ListLayout<T>(
-          hideThumbnails: hideThumbnails,
-          source: source,
-          progress: progress,
-          buildEmpty: buildEmpty,
-          selection: selection,
-        ),
+        hideThumbnails: hideThumbnails,
+        source: source,
+        progress: progress,
+        buildEmpty: buildEmpty,
+        selection: selection,
+      ),
       GridLayoutType.gridQuilted => QuiltedGridLayout<T>(
-          randomNumber: gridSeed,
-          source: source,
-          progress: progress,
-          buildEmpty: buildEmpty,
-          selection: selection,
-        ),
+        randomNumber: gridSeed,
+        source: source,
+        progress: progress,
+        buildEmpty: buildEmpty,
+        selection: selection,
+      ),
     };
   }
 }
 
 class FilesDataNotifier extends InheritedWidget {
-  const FilesDataNotifier({
-    super.key,
-    required this.api,
-    required super.child,
-  });
+  const FilesDataNotifier({super.key, required this.api, required super.child});
 
   final Files? api;
 
   static Files? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
 
     return widget?.api;
   }
@@ -1634,16 +1474,18 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
                       TextSpan(
                         text: "${widget.name}\n",
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
                     TextSpan(
                       text:
                           "${widget.storage.count} ${widget.storage.count == 1 ? l10n.elementSingular : l10n.elementPlural}",
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],
@@ -1670,10 +1512,7 @@ class _GridFooterState<T> extends State<GridFooter<T>> {
 }
 
 class _StatisticsPanel<T> extends StatefulWidget {
-  const _StatisticsPanel({
-    super.key,
-    required this.statistics,
-  });
+  const _StatisticsPanel({super.key, required this.statistics});
 
   final (List<Widget> Function(T), WatchFire<T>) statistics;
 
@@ -1691,14 +1530,11 @@ class __StatisticsPanelState<T> extends State<_StatisticsPanel<T>> {
   void initState() {
     super.initState();
 
-    subscr = widget.statistics.$2(
-      (e) {
-        setState(() {
-          value = e;
-        });
-      },
-      true,
-    );
+    subscr = widget.statistics.$2((e) {
+      setState(() {
+        value = e;
+      });
+    }, true);
   }
 
   @override
@@ -1795,8 +1631,8 @@ class DeleteDialogShowNotifier extends InheritedWidget {
   final DeleteDialogShow toShow;
 
   static DeleteDialogShow? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<DeleteDialogShowNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<DeleteDialogShowNotifier>();
 
     return widget?.toShow;
   }
@@ -1815,8 +1651,8 @@ Future<void> deleteFilesDialog(
 
   void delete() {
     const GalleryService().trash.addAll(
-          selected.map((e) => e.originalUri).toList(),
-        );
+      selected.map((e) => e.originalUri).toList(),
+    );
 
     StatisticsGalleryService.addDeleted(selected.length);
   }
@@ -1833,8 +1669,8 @@ Future<void> deleteFilesDialog(
         final text = selected.length == 1
             ? "${l10n.tagDeleteDialogTitle} ${selected.first.name}"
             : "${l10n.tagDeleteDialogTitle}"
-                " ${selected.length}"
-                " ${l10n.elementPlural}";
+                  " ${selected.length}"
+                  " ${l10n.elementPlural}";
 
         return AlertDialog(
           title: Text(text),
@@ -1869,15 +1705,11 @@ Future<void> deleteFilesDialog(
 }
 
 SelectionBarAction _restoreFromTrashAction(GalleryTrash galleryTrash) {
-  return SelectionBarAction(
-    Icons.restore_from_trash,
-    (selected) {
-      galleryTrash.removeAll(
-        selected.map((e) => (e as File).originalUri).toList(),
-      );
-    },
-    false,
-  );
+  return SelectionBarAction(Icons.restore_from_trash, (selected) {
+    galleryTrash.removeAll(
+      selected.map((e) => (e as File).originalUri).toList(),
+    );
+  }, false);
 }
 
 SelectionBarAction _saveTagsAction(AppLocalizations l10n) {
@@ -1897,31 +1729,23 @@ SelectionBarAction _addTagAction(
   BuildContext context,
   void Function() refresh,
 ) {
-  return SelectionBarAction(
-    Icons.new_label_rounded,
-    (selected) {
-      openAddTagDialog(
-        context,
-        (v, delete) {
-          if (delete) {
-            const LocalTagsService().removeSingle(
-              selected.map((e) => (e as File).name).toList(),
-              v,
-            );
-          } else {
-            const LocalTagsService().addMultiple(
-              selected.map((e) => (e as File).name).toList(),
-              v,
-            );
-          }
+  return SelectionBarAction(Icons.new_label_rounded, (selected) {
+    openAddTagDialog(context, (v, delete) {
+      if (delete) {
+        const LocalTagsService().removeSingle(
+          selected.map((e) => (e as File).name).toList(),
+          v,
+        );
+      } else {
+        const LocalTagsService().addMultiple(
+          selected.map((e) => (e as File).name).toList(),
+          v,
+        );
+      }
 
-          refresh();
-        },
-        context.l10n(),
-      );
-    },
-    false,
-  );
+      refresh();
+    }, context.l10n());
+  }, false);
 }
 
 SelectionBarAction _deleteAction(
@@ -1929,17 +1753,9 @@ SelectionBarAction _deleteAction(
   DeleteDialogShow toShow,
   GalleryTrash galleryTrash,
 ) {
-  return SelectionBarAction(
-    Icons.delete,
-    (selected) {
-      deleteFilesDialog(
-        context,
-        selected.cast(),
-        toShow,
-      );
-    },
-    false,
-  );
+  return SelectionBarAction(Icons.delete, (selected) {
+    deleteFilesDialog(context, selected.cast(), toShow);
+  }, false);
 }
 
 SelectionBarAction _copyAction(
@@ -1948,20 +1764,16 @@ SelectionBarAction _copyAction(
   Directories providedApi,
   DeleteDialogShow toShow,
 ) {
-  return SelectionBarAction(
-    Icons.copy,
-    (selected) {
-      moveOrCopyFnc(
-        context,
-        bucketId,
-        selected.cast(),
-        false,
-        providedApi,
-        toShow,
-      );
-    },
-    false,
-  );
+  return SelectionBarAction(Icons.copy, (selected) {
+    moveOrCopyFnc(
+      context,
+      bucketId,
+      selected.cast(),
+      false,
+      providedApi,
+      toShow,
+    );
+  }, false);
 }
 
 SelectionBarAction _moveAction(
@@ -1970,20 +1782,16 @@ SelectionBarAction _moveAction(
   Directories providedApi,
   DeleteDialogShow toShow,
 ) {
-  return SelectionBarAction(
-    Icons.forward_rounded,
-    (selected) {
-      moveOrCopyFnc(
-        context,
-        bucketId,
-        selected.cast(),
-        true,
-        providedApi,
-        toShow,
-      );
-    },
-    false,
-  );
+  return SelectionBarAction(Icons.forward_rounded, (selected) {
+    moveOrCopyFnc(
+      context,
+      bucketId,
+      selected.cast(),
+      true,
+      providedApi,
+      toShow,
+    );
+  }, false);
 }
 
 void moveOrCopyFnc(
@@ -2033,40 +1841,34 @@ void moveOrCopyFnc(
             ScaffoldMessenger.of(topContext).showSnackBar(
               SnackBar(
                 behavior: SnackBarBehavior.floating,
-                content: Text(
-                  l10n.cantCopyToTrash,
-                ),
+                content: Text(l10n.cantCopyToTrash),
               ),
             );
             return Future.value();
           }
 
-          return deleteFilesDialog(
-            topContext,
-            selected,
-            toShow,
-          );
+          return deleteFilesDialog(topContext, selected, toShow);
         } else {
           const FilesApi()
               .copyMove(
-            value.path,
-            value.volumeName,
-            selected,
-            move: move,
-            newDir: newDir,
-          )
+                value.path,
+                value.volumeName,
+                selected,
+                move: move,
+                newDir: newDir,
+              )
               .catchError((dynamic e) {
-            if (topContext.mounted) {
-              ScaffoldMessenger.of(topContext).showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  content: Text(
-                    e is PlatformException ? e.code : e.toString(),
-                  ),
-                ),
-              );
-            }
-          });
+                if (topContext.mounted) {
+                  ScaffoldMessenger.of(topContext).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(
+                        e is PlatformException ? e.code : e.toString(),
+                      ),
+                    ),
+                  );
+                }
+              });
 
           if (move) {
             StatisticsGalleryService.addMoved(selected.length);
@@ -2095,10 +1897,120 @@ void moveOrCopyFnc(
   });
 }
 
-Future<void> _saveTags(
-  List<File> selected,
-  AppLocalizations l10n,
-) async {
+class CopyMovePreview extends StatefulWidget {
+  const CopyMovePreview({
+    super.key,
+    required this.files,
+    required this.title,
+    required this.icon,
+  });
+
+  final String title;
+
+  final List<File>? files;
+  final IconData icon;
+
+  static const int size = 60 + 16;
+
+  @override
+  State<CopyMovePreview> createState() => _CopyMovePreviewState();
+}
+
+class _CopyMovePreviewState extends State<CopyMovePreview> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: SizedBox(
+        height: CopyMovePreview.size.toDouble(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              color: colorScheme.surfaceContainer.withValues(alpha: 0.95),
+            ),
+            child: SizedBox(
+              height: 60,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 24,
+                  bottom: 12,
+                  top: 12,
+                  right: 24,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SizedBox.square(
+                        dimension: 36,
+                        child: widget.files != null
+                            ? Badge.count(
+                                count: widget.files!.length,
+                                alignment: Alignment.topRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: 4,
+                                    left: 4,
+                                    bottom: 4,
+                                  ),
+                                  child: GridCell(
+                                    uniqueKey: widget.files!.first.uniqueKey(),
+                                    thumbnail: widget.files!.first.thumbnail(),
+                                    title: null,
+                                    circle: true,
+                                    imageAlign: Alignment.topCenter,
+                                    tightMode: true,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                      Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.8,
+                          ),
+                        ),
+                      ),
+                      DecoratedBox(
+                        decoration: ShapeDecoration(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            widget.icon,
+                            size: 20,
+                            color: colorScheme.primary.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _saveTags(List<File> selected, AppLocalizations l10n) async {
   if (!LocalTagsService.available) {
     return;
   }
@@ -2108,7 +2020,8 @@ Future<void> _saveTags(
     id: const NotificationChannels().savingTags,
     group: NotificationGroup.misc,
     channel: NotificationChannel.misc,
-    body: "${l10n.savingTagsSaving}"
+    body:
+        "${l10n.savingTagsSaving}"
         " ${selected.length == 1 ? '1 ${l10n.tagSingular}' : '${selected.length} ${l10n.tagPlural}'}",
   );
 
@@ -2124,13 +2037,6 @@ Future<void> _saveTags(
     }
   } catch (e, trace) {
     Logger.root.warning("Saving tags failed", e, trace);
-
-    // TODO: add scaffold
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text(l10n.tagSavingInProgress),
-    //     ),
-    //   );
   } finally {
     handle?.done();
     GalleryApi.safe()?.notify(null);
@@ -2139,89 +2045,68 @@ Future<void> _saveTags(
 
 /// Data for the [FilteringMode.same].
 class SameFilterAccumulator {
-  SameFilterAccumulator.empty()
-      : data = {},
-        skipped = 0;
+  SameFilterAccumulator.empty() : data = {}, skipped = 0;
 
   final Map<int, Map<int, File>> data;
   int skipped;
 }
 
-(Iterable<File>, dynamic) tag(
-  Iterable<File> cells,
-  String searchText,
-) {
+(Iterable<File>, dynamic) tag(Iterable<File> cells, String searchText) {
   if (searchText.isEmpty) {
     return (cells, null);
   }
 
   return (
-    cells.where(
-      (element) {
-        for (final tag in searchText.split(" ")) {
-          if (!element.tags.containsKey(tag)) {
-            return false;
-          }
+    cells.where((element) {
+      for (final tag in searchText.split(" ")) {
+        if (!element.tags.containsKey(tag)) {
+          return false;
         }
+      }
 
-        return true;
-      },
-    ),
-    null
+      return true;
+    }),
+    null,
   );
 }
 
-(Iterable<File>, dynamic) tagReversed(
-  Iterable<File> cells,
-  String searchText,
-) {
+(Iterable<File>, dynamic) tagReversed(Iterable<File> cells, String searchText) {
   return (
-    cells.where(
-      (element) {
-        for (final tag in searchText.split(" ")) {
-          if (element.tags.containsKey(tag)) {
-            return false;
-          }
+    cells.where((element) {
+      for (final tag in searchText.split(" ")) {
+        if (element.tags.containsKey(tag)) {
+          return false;
         }
+      }
 
-        return true;
-      },
-    ),
-    null
+      return true;
+    }),
+    null,
   );
 }
 
-(Iterable<File>, dynamic) favorite(
-  Iterable<File> cells,
-  String searchText,
-) {
+(Iterable<File>, dynamic) favorite(Iterable<File> cells, String searchText) {
   return (
-    cells.where(
-      (element) {
-        final isFavorite = const FavoritePostSourceService()
-            .cache
-            .isFavorite(element.res!.$1, element.res!.$2);
+    cells.where((element) {
+      final isFavorite = const FavoritePostSourceService().cache.isFavorite(
+        element.res!.$1,
+        element.res!.$2,
+      );
 
-        if (searchText.isNotEmpty) {
-          return element.res != null &&
-              isFavorite &&
-              element.tags.containsKey(searchText);
-        }
+      if (searchText.isNotEmpty) {
+        return element.res != null &&
+            isFavorite &&
+            element.tags.containsKey(searchText);
+      }
 
-        return element.res != null && isFavorite;
-      },
-    ),
-    null
+      return element.res != null && isFavorite;
+    }),
+    null,
   );
 }
 
 (Iterable<File>, dynamic) untagged(Iterable<File> cells) {
-  return (
-    cells.where(
-      (element) => element.tags.isEmpty,
-    ),
-    null
-  );
+  return (cells.where((element) => element.tags.isEmpty), null);
 }
 
 (Iterable<File>, dynamic) video(Iterable<File> cells) {
@@ -2236,35 +2121,26 @@ class SameFilterAccumulator {
   return (cells.where((element) => element.isDuplicate), null);
 }
 
-(Iterable<File>, dynamic) stars(
-  Iterable<File> cells,
-  bool onlyHalf,
-) {
+(Iterable<File>, dynamic) stars(Iterable<File> cells, bool onlyHalf) {
   return (
-    cells.where(
-      (element) {
-        if (FavoritePostSourceService.available && element.res != null) {
-          final stars =
-              const FavoritePostSourceService().cache.get(element.res!)?.stars;
-          if (stars != null) {
-            return stars != FavoriteStars.zero && stars.isHalf == onlyHalf;
-          }
+    cells.where((element) {
+      if (FavoritePostSourceService.available && element.res != null) {
+        final stars = const FavoritePostSourceService().cache
+            .get(element.res!)
+            ?.stars;
+        if (stars != null) {
+          return stars != FavoriteStars.zero && stars.isHalf == onlyHalf;
         }
+      }
 
-        return false;
-      },
-    ),
-    null
+      return false;
+    }),
+    null,
   );
 }
 
 (Iterable<File>, dynamic) original(Iterable<File> cells) {
-  return (
-    cells.where(
-      (element) => element.tags.containsKey("original"),
-    ),
-    null
-  );
+  return (cells.where((element) => element.tags.containsKey("original")), null);
 }
 
 Iterable<(File f, int? h)> _getDifferenceHash(Iterable<File> cells) sync* {
@@ -2311,7 +2187,7 @@ Iterable<(File f, int? h)> _getDifferenceHash(Iterable<File> cells) sync* {
           }
         }
       }(),
-      accu
+      accu,
     );
   }
 
@@ -2360,4 +2236,74 @@ Future<void> loadNextThumbnails(
   }
 
   callback();
+}
+
+Future<void> redownloadFiles(AppLocalizations l10n, List<File> files) async {
+  if (!DownloadManager.available || !FilesApi.available) {
+    return Future.value();
+  }
+
+  final clients = <Booru, Dio>{};
+  final apis = <Booru, BooruAPI>{};
+
+  final progress = await const NotificationApi().show(
+    id: const NotificationChannels().redownloadFiles,
+    title: l10n.redownloadFetchingUrls,
+    group: NotificationGroup.misc,
+    channel: NotificationChannel.misc,
+    body: l10n.redownloadRedowloadingFiles(files.length),
+  );
+
+  try {
+    progress?.setTotal(files.length);
+
+    final posts = <Post>[];
+    final actualFiles = <File>[];
+
+    for (final (index, file) in files.indexed) {
+      progress?.update(index, "$index / ${files.length}");
+
+      final res = ParsedFilenameResult.fromFilename(file.name).maybeValue();
+      if (res == null) {
+        continue;
+      }
+
+      final dio = clients.putIfAbsent(
+        res.booru,
+        () => BooruAPI.defaultClientForBooru(res.booru),
+      );
+      final api = apis.putIfAbsent(
+        res.booru,
+        () => BooruAPI.fromEnum(res.booru, dio),
+      );
+
+      try {
+        posts.add(await api.singlePost(res.id));
+        actualFiles.add(file);
+      } catch (e, trace) {
+        Logger.root.warning("RedownloadTile", e, trace);
+      }
+    }
+
+    const FilesApi().deleteAll(actualFiles);
+
+    posts.downloadAll();
+  } catch (e, stackTrace) {
+    AlertService.safe()?.add(
+      AlertData(e.toString(), stackTrace.toString(), (
+        () {
+          const TasksService().add<RedownloadChip>(
+            () => redownloadFiles(l10n, files),
+          );
+        },
+        const Icon(Icons.restart_alt_rounded),
+      )),
+    );
+  } finally {
+    for (final client in clients.values) {
+      client.close();
+    }
+
+    progress?.done();
+  }
 }

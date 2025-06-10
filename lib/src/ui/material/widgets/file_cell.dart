@@ -9,10 +9,12 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
+import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
@@ -47,88 +49,91 @@ class FileCell extends StatelessWidget {
 
     final filteringData = ChainedFilter.maybeOf(context);
 
-    Widget child = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Expanded(
-          child: Card(
-            margin: const EdgeInsets.all(0.5),
-            elevation: 0,
-            color: theme.cardColor.withValues(alpha: 0),
-            child: ClipPath(
-              clipper: ShapeBorderClipper(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              child: WrapSelection(
-                // thisIndx: thisIndx,
-                // description: description,
-                // selectFrom: selectFrom,
-                // onPressed: file.onPressed,
-                onPressed: () => file.openImage(context),
-                child: Stack(
-                  children: [
-                    GridCellImage(
-                      imageAlign: imageAlign,
-                      thumbnail: thumbnail,
-                      blur: false,
+    return Animate(
+      key: file.uniqueKey(),
+      effects: animate ? const [FadeEffect(end: 1)] : null,
+      child: switch (isList) {
+        true => WrapSelection(
+          limitedSize: true,
+          onPressed: () => file.openImage(context),
+          child: DefaultListTile(
+            uniqueKey: file.uniqueKey(),
+            thumbnail: thumbnail,
+            title: alias,
+          ),
+        ),
+        false => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: Card(
+                margin: const EdgeInsets.all(0.5),
+                elevation: 0,
+                color: theme.cardColor.withValues(alpha: 0),
+                child: ClipPath(
+                  clipper: ShapeBorderClipper(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    _Stickers(file: file),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
+                  ),
+                  child: WrapSelection(
+                    onPressed: () => file.openImage(context),
+                    child: Stack(
+                      children: [
+                        GridCellImage(
+                          imageAlign: imageAlign,
+                          thumbnail: thumbnail,
+                          blur: false,
                         ),
-                        child: VideoGifRow(
-                          uniqueKey: file.uniqueKey(),
-                          isVideo: file.isVideo,
-                          isGif: file.isGif,
+                        FileCellStickers(file: file),
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            child: VideoOrGifIcon(
+                              uniqueKey: file.uniqueKey(),
+                              type: file.isVideo
+                                  ? PostContentType.video
+                                  : file.isGif
+                                  ? PostContentType.gif
+                                  : PostContentType.none,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (alias != null && alias.isNotEmpty)
+                          GridCellName(title: alias, lines: file.titleLines()),
+                      ],
                     ),
-                    if (alias != null && alias.isNotEmpty)
-                      GridCellName(
-                        title: alias,
-                        lines: file.titleLines(),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+            if (LocalTagsService.available &&
+                filteringData != null &&
+                (filteringData.filteringMode == FilteringMode.tag ||
+                    filteringData.filteringMode == FilteringMode.tagReversed))
+              FileCellTagsList(file: file),
+          ],
         ),
-        if (LocalTagsService.available &&
-            filteringData != null &&
-            (filteringData.filteringMode == FilteringMode.tag ||
-                filteringData.filteringMode == FilteringMode.tagReversed))
-          FileCellTagsList(file: file),
-      ],
+      },
     );
-
-    if (animate) {
-      child = child.animate(key: file.uniqueKey()).fadeIn();
-    }
-
-    return child;
   }
 }
 
-class _Stickers extends StatefulWidget {
-  const _Stickers({
-    super.key,
-    required this.file,
-  });
+class FileCellStickers extends StatefulWidget {
+  const FileCellStickers({super.key, required this.file});
 
   final FileImpl file;
 
   @override
-  State<_Stickers> createState() => __StickersState();
+  State<FileCellStickers> createState() => _FileCellStickersState();
 }
 
-class __StickersState extends State<_Stickers> with FavoritePostsWatcherMixin {
+class _FileCellStickersState extends State<FileCellStickers>
+    with FavoritePostsWatcherMixin {
   @override
   Widget build(BuildContext context) {
     final stickers = widget.file.stickers(context, false);
@@ -152,10 +157,7 @@ class __StickersState extends State<_Stickers> with FavoritePostsWatcherMixin {
 }
 
 class FileCellTagsList extends StatefulWidget {
-  const FileCellTagsList({
-    super.key,
-    required this.file,
-  });
+  const FileCellTagsList({super.key, required this.file});
 
   final FileImpl file;
 
@@ -218,11 +220,7 @@ class _FileCellTagsListState extends State<FileCellTagsList>
                   );
                 });
               },
-              onPressed: () => OnBooruTagPressed.pressOf(
-                context,
-                e.tag,
-                booru,
-              ),
+              onPressed: () => OnBooruTagPressed.pressOf(context, e.tag, booru),
             );
           },
         ),

@@ -14,8 +14,8 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
 import "package:azari/src/ui/material/pages/search/booru/popular_random_buttons.dart";
+import "package:azari/src/ui/material/pages/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -72,16 +72,9 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
           selectionController: selectionController,
           actions: [
             if (DownloadManager.available && LocalTagsService.available)
-              actions.downloadPost(
-                context,
-                settings.selectedBooru,
-                null,
-              ),
+              actions.downloadPost(context, settings.selectedBooru, null),
             if (FavoritePostSourceService.available)
-              actions.favorites(
-                context,
-                showDeleteSnackbar: true,
-              ),
+              actions.favorites(context, showDeleteSnackbar: true),
             if (HiddenBooruPostsService.available) actions.hide(context),
           ],
         );
@@ -121,10 +114,10 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
       pagingState.updateTime();
     }
 
-    favoritesWatcher =
-        FavoritePostSourceService.safe()?.cache.countEvents.listen((event) {
-      source.backingStorage.addAll(const []);
-    });
+    favoritesWatcher = FavoritePostSourceService.safe()?.cache.countEvents
+        .listen((event) {
+          source.backingStorage.addAll(const []);
+        });
 
     hiddenPostWatcher = HiddenBooruPostsService.safe()?.watch((_) {
       source.backingStorage.addAll(const []);
@@ -136,8 +129,9 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
     if (GridBookmarkService.available &&
         pagingState.restoreSecondaryGrid != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        final e =
-            const GridBookmarkService().get(pagingState.restoreSecondaryGrid!)!;
+        final e = const GridBookmarkService().get(
+          pagingState.restoreSecondaryGrid!,
+        )!;
 
         openSecondaryBooruPage(e);
       });
@@ -200,13 +194,7 @@ class _MainGridPagingState implements PagingEntry {
     MainGridHandle mainGrid, {
     required SelectionController selectionController,
     required List<SelectionBarAction> actions,
-  }) =>
-      _MainGridPagingState(
-        booru,
-        mainGrid,
-        actions,
-        selectionController,
-      );
+  }) => _MainGridPagingState(booru, mainGrid, actions, selectionController);
 
   final Booru booru;
 

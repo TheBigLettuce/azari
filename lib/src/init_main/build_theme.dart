@@ -10,14 +10,11 @@ import "package:azari/src/ui/material/theme.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
-ThemeData buildTheme(
-  Brightness brightness,
-  Color accentColor,
-) {
+ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = const SettingsService().current.themeType;
   final pageTransition = PageTransitionsTheme(
     builders: Map.from(const PageTransitionsTheme().builders)
-      ..[TargetPlatform.android] = const FadeForwardsPageTransitionsBuilder()
+      ..[TargetPlatform.android] = const PredictiveBackPageTransitionsBuilder()
       ..[TargetPlatform.linux] = const FadeForwardsPageTransitionsBuilder(),
   );
 
@@ -39,34 +36,34 @@ ThemeData buildTheme(
 
   var baseTheme = switch (type) {
     ThemeType.main => ThemeData(
-        menuTheme: menuTheme,
-        popupMenuTheme: popupMenuTheme,
-        pageTransitionsTheme: pageTransition,
-        useMaterial3: true,
-        colorScheme: switch (brightness) {
-          ui.Brightness.dark => MaterialTheme.darkScheme(),
-          ui.Brightness.light => MaterialTheme.lightScheme(),
-        },
-      ),
+      menuTheme: menuTheme,
+      popupMenuTheme: popupMenuTheme,
+      pageTransitionsTheme: pageTransition,
+      useMaterial3: true,
+      colorScheme: switch (brightness) {
+        ui.Brightness.dark => MaterialTheme.darkScheme(),
+        ui.Brightness.light => MaterialTheme.lightScheme(),
+      },
+    ),
     ThemeType.systemAccent => ThemeData(
-        brightness: brightness,
-        menuTheme: menuTheme,
-        popupMenuTheme: popupMenuTheme,
-        pageTransitionsTheme: pageTransition,
-        useMaterial3: true,
-        colorSchemeSeed: accentColor,
-      ),
+      brightness: brightness,
+      menuTheme: menuTheme,
+      popupMenuTheme: popupMenuTheme,
+      pageTransitionsTheme: pageTransition,
+      useMaterial3: true,
+      colorSchemeSeed: accentColor,
+    ),
     ThemeType.pink => ThemeData(
+      brightness: Brightness.dark,
+      menuTheme: menuTheme,
+      popupMenuTheme: popupMenuTheme,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.pink,
         brightness: Brightness.dark,
-        menuTheme: menuTheme,
-        popupMenuTheme: popupMenuTheme,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.pink,
-          brightness: Brightness.dark,
-        ),
-        pageTransitionsTheme: pageTransition,
-        useMaterial3: true,
       ),
+      pageTransitionsTheme: pageTransition,
+      useMaterial3: true,
+    ),
   };
 
   final scrollBarTheme = ScrollbarThemeData(
@@ -80,8 +77,9 @@ ThemeData buildTheme(
   switch (type) {
     case ThemeType.systemAccent || ThemeType.main:
       baseTheme = baseTheme.copyWith(
-        progressIndicatorTheme:
-            baseTheme.progressIndicatorTheme.copyWith(year2023: false),
+        progressIndicatorTheme: baseTheme.progressIndicatorTheme.copyWith(
+          year2023: false,
+        ),
         scrollbarTheme: scrollBarTheme,
         listTileTheme: baseTheme.listTileTheme.copyWith(
           isThreeLine: false,
@@ -94,8 +92,9 @@ ThemeData buildTheme(
     case ThemeType.pink:
       baseTheme = baseTheme.copyWith(
         sliderTheme: baseTheme.sliderTheme.copyWith(year2023: false),
-        progressIndicatorTheme:
-            baseTheme.progressIndicatorTheme.copyWith(year2023: false),
+        progressIndicatorTheme: baseTheme.progressIndicatorTheme.copyWith(
+          year2023: false,
+        ),
         scrollbarTheme: scrollBarTheme,
         scaffoldBackgroundColor: baseTheme.colorScheme.surface,
         filledButtonTheme: FilledButtonThemeData(
@@ -111,9 +110,7 @@ ThemeData buildTheme(
         ),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-            textStyle: WidgetStatePropertyAll(
-              baseTheme.textTheme.bodyMedium,
-            ),
+            textStyle: WidgetStatePropertyAll(baseTheme.textTheme.bodyMedium),
             foregroundColor: WidgetStatePropertyAll(
               baseTheme.colorScheme.primary.withValues(alpha: 0.8),
             ),
@@ -125,23 +122,17 @@ ThemeData buildTheme(
   return baseTheme;
 }
 
-SystemUiOverlayStyle navBarStyleForTheme(
-  ThemeData theme, {
-  bool transparent = true,
-  bool highTone = true,
-}) =>
+SystemUiOverlayStyle makeSystemUiOverlayStyle(ThemeData theme) =>
     SystemUiOverlayStyle(
       systemNavigationBarContrastEnforced: false,
       statusBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
-      statusBarColor:
-          (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
-              .withValues(alpha: 0.8),
+      statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.8),
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
-      systemNavigationBarColor:
-          (highTone ? theme.colorScheme.surfaceDim : theme.colorScheme.surface)
-              .withValues(alpha: transparent ? 0.0 : 0.8),
+      systemNavigationBarColor: theme.colorScheme.surfaceContainer.withValues(
+        alpha: 0.4,
+      ),
     );

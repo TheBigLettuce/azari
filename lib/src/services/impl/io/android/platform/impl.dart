@@ -29,15 +29,17 @@ class AndroidPlatformImpl implements PlatformApi {
     required String version,
     required _PlatformGalleryImpl galleryImpl,
     required Stream<platform.NotificationRouteEvent> notificationEvents,
-  })  : app = _AppApi(accentColor, version, notificationEvents),
-        network = _NetworkStatusApi(galleryImpl),
-        gallery = _GalleryApi(galleryImpl);
+  }) : app = _AppApi(accentColor, version, notificationEvents),
+       network = _NetworkStatusApi(galleryImpl),
+       gallery = _GalleryApi(galleryImpl);
 
-  static const appContext =
-      MethodChannel("com.github.thebiglettuce.azari.app_context");
+  static const appContext = MethodChannel(
+    "com.github.thebiglettuce.azari.app_context",
+  );
 
-  static const activityContext =
-      MethodChannel("com.github.thebiglettuce.azari.activity_context");
+  static const activityContext = MethodChannel(
+    "com.github.thebiglettuce.azari.activity_context",
+  );
 
   @override
   WindowApi get window => const _WindowApi();
@@ -67,10 +69,9 @@ class AndroidPlatformImpl implements PlatformApi {
   }
 
   Future<bool> moveInternal(String internalAppDir, List<String> uris) {
-    return activityContext.invokeMethod(
-      "moveInternal",
-      {"dir": internalAppDir, "uris": uris},
-    ).then((value) => (value as bool?) ?? false);
+    return activityContext
+        .invokeMethod("moveInternal", {"dir": internalAppDir, "uris": uris})
+        .then((value) => (value as bool?) ?? false);
   }
 
   Future<bool> currentNetworkStatus() {
@@ -219,8 +220,10 @@ class _WindowApi implements WindowApi {
 
   @override
   Future<void> setWakelock(bool lockWake) {
-    return AndroidPlatformImpl.activityContext
-        .invokeMethod("setWakelock", lockWake);
+    return AndroidPlatformImpl.activityContext.invokeMethod(
+      "setWakelock",
+      lockWake,
+    );
   }
 
   @override
@@ -243,16 +246,14 @@ class _FilesApiImpl implements FilesApi {
   Future<({String path, String formattedPath})?> chooseDirectory(
     AppLocalizations _, {
     bool temporary = false,
-  }) async {
-    return AndroidPlatformImpl.activityContext
-        .invokeMethod("chooseDirectory", temporary)
-        .then(
-          (value) => (
-            formattedPath: (value as Map)["pathDisplay"] as String,
-            path: value["path"] as String,
-          ),
-        );
-  }
+  }) => AndroidPlatformImpl.activityContext
+      .invokeMethod("chooseDirectory", temporary)
+      .then(
+        (value) => (
+          formattedPath: (value as Map)["pathDisplay"] as String,
+          path: value["path"] as String,
+        ),
+      );
 
   @override
   Future<void> moveSingle({
@@ -260,10 +261,11 @@ class _FilesApiImpl implements FilesApi {
     required String rootDir,
     required String targetDir,
   }) {
-    return AndroidPlatformImpl.appContext.invokeMethod(
-      "move",
-      {"source": source, "rootUri": rootDir, "dir": targetDir},
-    );
+    return AndroidPlatformImpl.appContext.invokeMethod("move", {
+      "source": source,
+      "rootUri": rootDir,
+      "dir": targetDir,
+    });
   }
 
   @override
@@ -285,23 +287,20 @@ class _FilesApiImpl implements FilesApi {
     required bool move,
     required bool newDir,
   }) {
-    return AndroidPlatformImpl.activityContext.invokeMethod(
-      "copyMoveFiles",
-      {
-        "dest": chosen,
-        "images": selected
-            .where((element) => !element.isVideo)
-            .map((e) => e.id)
-            .toList(),
-        "videos": selected
-            .where((element) => element.isVideo)
-            .map((e) => e.id)
-            .toList(),
-        "move": move,
-        "volumeName": chosenVolumeName,
-        "newDir": newDir,
-      },
-    );
+    return AndroidPlatformImpl.activityContext.invokeMethod("copyMoveFiles", {
+      "dest": chosen,
+      "images": selected
+          .where((element) => !element.isVideo)
+          .map((e) => e.id)
+          .toList(),
+      "videos": selected
+          .where((element) => element.isVideo)
+          .map((e) => e.id)
+          .toList(),
+      "move": move,
+      "volumeName": chosenVolumeName,
+      "newDir": newDir,
+    });
   }
 
   @override
@@ -310,10 +309,11 @@ class _FilesApiImpl implements FilesApi {
       return Future.value();
     }
 
-    AndroidPlatformImpl.activityContext.invokeMethod(
-      "rename",
-      {"uri": uri, "newName": newName, "notify": notify},
-    );
+    AndroidPlatformImpl.activityContext.invokeMethod("rename", {
+      "uri": uri,
+      "newName": newName,
+      "notify": notify,
+    });
 
     return Future.value();
   }
@@ -337,16 +337,14 @@ class _FilesApiImpl implements FilesApi {
       }
     }
 
-    return AndroidPlatformImpl.activityContext.invokeMethod(
-      "copyMoveInternal",
-      {
-        "dirName": dirName,
-        "relativePath": relativePath,
-        "images": images,
-        "videos": videos,
-        "volume": volume,
-      },
-    );
+    return AndroidPlatformImpl.activityContext
+        .invokeMethod("copyMoveInternal", {
+          "dirName": dirName,
+          "relativePath": relativePath,
+          "images": images,
+          "videos": videos,
+          "volume": volume,
+        });
   }
 }
 
@@ -364,15 +362,13 @@ class _ThumbsApiImpl implements ThumbsApi {
   Future<ThumbId> get(int id) {
     return AndroidPlatformImpl.appContext
         .invokeMethod("getCachedThumb", id)
-        .then(
-      (value) {
-        return ThumbId(
-          id: id,
-          path: (value as Map)["path"] as String,
-          differenceHash: value["hash"] as int,
-        );
-      },
-    );
+        .then((value) {
+          return ThumbId(
+            id: id,
+            path: (value as Map)["path"] as String,
+            differenceHash: value["hash"] as int,
+          );
+        });
   }
 
   @override
@@ -381,22 +377,23 @@ class _ThumbsApiImpl implements ThumbsApi {
 
   @override
   void removeAll(List<int> id, [bool fromPinned = false]) {
-    AndroidPlatformImpl.appContext.invokeMethod(
-      "deleteCachedThumbs",
-      {"ids": id, "fromPinned": fromPinned},
-    );
+    AndroidPlatformImpl.appContext.invokeMethod("deleteCachedThumbs", {
+      "ids": id,
+      "fromPinned": fromPinned,
+    });
   }
 
   @override
   Future<ThumbId> saveFromNetwork(String url, int id) {
     return AndroidPlatformImpl.appContext
-        .invokeMethod("saveThumbNetwork", {"url": url, "id": id}).then(
-      (value) => ThumbId(
-        id: id,
-        path: (value as Map)["path"] as String,
-        differenceHash: value["hash"] as int,
-      ),
-    );
+        .invokeMethod("saveThumbNetwork", {"url": url, "id": id})
+        .then(
+          (value) => ThumbId(
+            id: id,
+            path: (value as Map)["path"] as String,
+            differenceHash: value["hash"] as int,
+          ),
+        );
   }
 }
 
@@ -411,12 +408,12 @@ class _AppApi implements AppApi {
 
   @override
   List<PermissionController> get requiredPermissions => const [
-        _PhotosVideosPermission(),
-        _ManageMediaPermission(),
-        _NotificationPermission(),
-        _MediaLocationPermission(),
-        _StoragePermission(),
-      ];
+    _PhotosVideosPermission(),
+    _ManageMediaPermission(),
+    _NotificationPermission(),
+    _MediaLocationPermission(),
+    _StoragePermission(),
+  ];
 
   @override
   final Color accentColor;
@@ -431,8 +428,10 @@ class _AppApi implements AppApi {
 
   @override
   Future<void> shareMedia(String originalUri, {bool url = false}) {
-    AndroidPlatformImpl.activityContext
-        .invokeMethod("shareMedia", {"uri": originalUri, "isUrl": url});
+    AndroidPlatformImpl.activityContext.invokeMethod("shareMedia", {
+      "uri": originalUri,
+      "isUrl": url,
+    });
 
     return Future.value();
   }

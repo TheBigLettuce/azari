@@ -20,7 +20,6 @@ import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
@@ -93,125 +92,7 @@ class PopularRandomChips extends StatelessWidget {
   }
 }
 
-enum BooruChipsState {
-  latest,
-  popular,
-  random,
-  videos;
-}
-
-class _VideosSettingsDialog extends StatefulWidget {
-  const _VideosSettingsDialog({
-    super.key,
-    required this.booru,
-  });
-
-  final Booru booru;
-
-  @override
-  State<_VideosSettingsDialog> createState() => __VideosSettingsDialogState();
-}
-
-class __VideosSettingsDialogState extends State<_VideosSettingsDialog>
-    with SettingsWatcherMixin {
-  late final TextEditingController textController;
-  final focus = FocusNode();
-
-  late final client = BooruAPI.defaultClientForBooru(widget.booru);
-  late final BooruAPI api;
-
-  @override
-  void initState() {
-    super.initState();
-
-    api = BooruAPI.fromEnum(widget.booru, client);
-
-    textController = TextEditingController(text: settings.randomVideosAddTags);
-  }
-
-  @override
-  void dispose() {
-    focus.dispose();
-
-    client.close(force: true);
-
-    if (settings.randomVideosAddTags != textController.text) {
-      settings.copy(randomVideosAddTags: textController.text).save();
-    }
-
-    textController.dispose();
-
-    super.dispose();
-  }
-
-  (String, List<BooruTag>)? latestSearch;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n();
-
-    return AlertDialog(
-      title: Text(l10n.settingsLabel),
-      actions: [
-        IconButton.filled(
-          onPressed: () =>
-              settings.copy(randomVideosOrder: RandomPostsOrder.random).save(),
-          icon: const Icon(Icons.shuffle_rounded),
-          isSelected: settings.randomVideosOrder == RandomPostsOrder.random,
-        ),
-        IconButton.filled(
-          onPressed: () =>
-              settings.copy(randomVideosOrder: RandomPostsOrder.rating).save(),
-          icon: const Icon(Icons.whatshot_rounded),
-          isSelected: settings.randomVideosOrder == RandomPostsOrder.rating,
-        ),
-        IconButton.filled(
-          onPressed: () =>
-              settings.copy(randomVideosOrder: RandomPostsOrder.latest).save(),
-          icon: const Icon(Icons.schedule_rounded),
-          isSelected: settings.randomVideosOrder == RandomPostsOrder.latest,
-        ),
-      ],
-      content: Padding(
-        padding: EdgeInsets.zero,
-        child: SearchBarAutocompleteWrapper(
-          search: SearchBarAppBarType(
-            onChanged: null,
-            complete: (str) async {
-              if (str == latestSearch?.$1) {
-                return latestSearch!.$2;
-              }
-
-              final res = await api.searchTag(str);
-
-              latestSearch = (str, res);
-
-              return res;
-            },
-            textEditingController: textController,
-          ),
-          searchFocus: focus,
-          child: (context, controller, focus, onSelected) => TextField(
-            decoration: InputDecoration(
-              icon: const Icon(Icons.tag_outlined),
-              suffix: IconButton(
-                onPressed: () {
-                  controller.clear();
-                  focus.unfocus();
-                },
-                icon: const Icon(Icons.close_rounded),
-              ),
-              hintText: l10n.addTagsSearch,
-              border: InputBorder.none,
-            ),
-            controller: controller,
-            focusNode: focus,
-          ),
-        ),
-      ),
-    );
-  }
-}
+enum BooruChipsState { latest, popular, random, videos }
 
 class PopularPage extends StatefulWidget {
   const PopularPage({
@@ -219,13 +100,11 @@ class PopularPage extends StatefulWidget {
     required this.api,
     required this.tags,
     required this.safeMode,
-    required this.selectionController,
   });
 
   final String tags;
 
   final BooruAPI api;
-  final SelectionController selectionController;
 
   final SafeMode Function() safeMode;
 
@@ -239,12 +118,8 @@ class PopularPage extends StatefulWidget {
   }) {
     return Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
-        builder: (context) => PopularPage(
-          api: api,
-          tags: tags,
-          safeMode: safeMode,
-          selectionController: SelectionActions.controllerOf(context),
-        ),
+        builder: (context) =>
+            PopularPage(api: api, tags: tags, safeMode: safeMode),
       ),
     );
   }
@@ -262,6 +137,8 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
   );
 
   late final SourceShellElementState gridStatus;
+
+  final selectionActions = SelectionActions();
 
   final pageSaver = PageSaver.noPersist();
 
@@ -298,23 +175,16 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
 
     gridStatus = SourceShellElementState(
       source: source,
-      selectionController: widget.selectionController,
+      selectionController: selectionActions.controller,
       onEmpty: SourceOnEmptyInterface(
         source,
         (context) => context.l10n().emptyNoPosts,
       ),
       actions: <SelectionBarAction>[
         if (DownloadManager.available && LocalTagsService.available)
-          actions.downloadPost(
-            context,
-            widget.api.booru,
-            null,
-          ),
+          actions.downloadPost(context, widget.api.booru, null),
         if (FavoritePostSourceService.available)
-          actions.favorites(
-            context,
-            showDeleteSnackbar: true,
-          ),
+          actions.favorites(context, showDeleteSnackbar: true),
         if (HiddenBooruPostsService.available) actions.hide(context),
       ],
     );
@@ -322,6 +192,7 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
 
   @override
   void dispose() {
+    selectionActions.dispose();
     gridSettings.cancel();
     source.destroy();
     gridStatus.destroy();
@@ -340,8 +211,6 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
       booru: booru,
       tags: tag,
       overrideSafeMode: safeMode,
-      rootNavigator: true,
-      saveSelectedPage: (_) {},
     );
   }
 
@@ -349,8 +218,8 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return ScaffoldSelectionBar(
-      addScaffoldAndBar: true,
+    return ScaffoldWithSelectionBar(
+      actions: selectionActions,
       child: GridPopScope(
         searchTextController: null,
         filter: null,
@@ -363,7 +232,8 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
               pinned: true,
               snap: true,
               stretch: true,
-              bottom: bottomWidget ??
+              bottom:
+                  bottomWidget ??
                   const PreferredSize(
                     preferredSize: Size.zero,
                     child: SizedBox.shrink(),
@@ -396,10 +266,7 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
 
                         _onBooruTagPressed(context, booru, value, safeMode);
                       },
-                      child: BooruAPINotifier(
-                        api: widget.api,
-                        child: child,
-                      ),
+                      child: BooruAPINotifier(api: widget.api, child: child),
                     ),
                     slivers: [
                       CurrentGridSettingsLayout<Post>(
@@ -453,7 +320,8 @@ class PostsShellElement extends StatelessWidget {
         updateScrollPosition: updateScrollPosition,
         initialScrollPosition: initialScrollPosition,
         scrollingState: ScrollingStateSinkProvider.maybeOf(context),
-        slivers: overrideSlivers ??
+        slivers:
+            overrideSlivers ??
             [
               Builder(
                 builder: (context) {
@@ -535,11 +403,9 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
   void initState() {
     super.initState();
 
-    subscr = widget.progress.watch(
-      (t) {
-        setState(() {});
-      },
-    );
+    subscr = widget.progress.watch((t) {
+      setState(() {});
+    });
   }
 
   @override
@@ -557,8 +423,6 @@ class __EmptyWidgetState extends State<_EmptyWidget> {
       return const SizedBox.shrink();
     }
 
-    return EmptyWidgetBackground(
-      subtitle: l10n.emptyNoPosts,
-    );
+    return EmptyWidgetBackground(subtitle: l10n.emptyNoPosts);
   }
 }

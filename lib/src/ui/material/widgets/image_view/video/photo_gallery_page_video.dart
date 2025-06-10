@@ -6,10 +6,9 @@
 import "dart:async";
 
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart"
-    as controls;
-import "package:azari/src/ui/material/widgets/loading_error_widget.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
 import "package:chewie/chewie.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -32,14 +31,14 @@ class PhotoGalleryPageVideo extends StatefulWidget {
 }
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
-  StreamSubscription<controls.VideoControlsEvent>? eventsSubscr;
+  StreamSubscription<PlayerButtonEvent>? buttonEvents;
 
   late VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
   Object? error;
 
-  late controls.VideoControlsController playerControls;
+  late PlayerWidgetController playerControls;
 
   @override
   void initState() {
@@ -54,10 +53,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    playerControls = VideoControlsNotifier.of(context);
-    eventsSubscr ??= playerControls.events.listen((event) {
+    playerControls = PlayerWidgetControllerNotifier.of(context);
+    buttonEvents ??= playerControls.buttonEvents.listen((event) {
       switch (event) {
-        case controls.VolumeButton():
+        case VolumeButton():
           double newVolume;
 
           if (controller.value.volume > 0) {
@@ -68,11 +67,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
           controller.setVolume(newVolume);
 
-          VideoSettingsService.safe()
-              ?.current
+          VideoSettingsService.safe()?.current
               .copy(volume: newVolume)
               .maybeSave();
-        case controls.FullscreenButton():
+        case FullscreenButton():
           final orientation = MediaQuery.orientationOf(context);
           if (orientation == Orientation.landscape) {
             SystemChrome.setPreferredOrientations([
@@ -87,7 +85,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               DeviceOrientation.landscapeRight,
             ]);
           }
-        case controls.PlayButton():
+        case PlayButton():
           if (controller.value.isBuffering) {
             return;
           }
@@ -97,15 +95,14 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
           } else {
             controller.play();
           }
-        case controls.LoopingButton():
+        case LoopingButton():
           final newLooping = !controller.value.isLooping;
 
           controller.setLooping(newLooping);
-          VideoSettingsService.safe()
-              ?.current
+          VideoSettingsService.safe()?.current
               .copy(looping: newLooping)
               .maybeSave();
-        case controls.AddDuration():
+        case AddDuration():
           controller.seekTo(
             controller.value.position +
                 Duration(seconds: event.durationSeconds.toInt()),
@@ -131,82 +128,85 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   Future<void> _initController() {
     WidgetsBinding.instance.scheduleFrameCallback((_) {
       playerControls.clear();
-      playerControls.setPlayState(controls.PlayState.buffering);
+      playerControls.playState = PlayState.buffering;
     });
 
-    return controller.initialize().then((value) {
-      if (!disposed) {
-        controller.addListener(_listener);
+    return controller
+        .initialize()
+        .then((value) {
+          if (!disposed) {
+            controller.addListener(_listener);
 
-        final videoSettings = VideoSettingsService.safe()?.current;
+            final videoSettings = VideoSettingsService.safe()?.current;
 
-        controller.setVolume(videoSettings?.volume ?? 1);
+            controller.setVolume(videoSettings?.volume ?? 1);
 
-        setState(() {
-          chewieController?.dispose();
-          chewieController = ChewieController(
-            videoPlayerController: controller,
-            aspectRatio: controller.value.aspectRatio,
-            looping: videoSettings?.looping ?? true,
-            allowPlaybackSpeedChanging: false,
-            showOptions: false,
-            showControls: false,
-            allowMuting: false,
-            zoomAndPan: true,
-            showControlsOnInitialize: false,
-          );
-        });
+            setState(() {
+              chewieController?.dispose();
+              chewieController = ChewieController(
+                videoPlayerController: controller,
+                aspectRatio: controller.value.aspectRatio,
+                looping: videoSettings?.looping ?? true,
+                allowPlaybackSpeedChanging: false,
+                showOptions: false,
+                showControls: false,
+                allowMuting: false,
+                zoomAndPan: true,
+                showControlsOnInitialize: false,
+              );
+            });
 
-        playerControls.setDuration(controller.value.duration);
+            playerControls.duration = controller.value.duration;
 
-        chewieController!.play().onError((e, stackTrace) {
+            chewieController!.play().onError((e, stackTrace) {
+              if (!disposed) {
+                setState(() {
+                  error = e;
+                });
+              }
+            });
+          }
+        })
+        .onError((e, stackTrace) {
           if (!disposed) {
             setState(() {
               error = e;
             });
           }
         });
-      }
-    }).onError((e, stackTrace) {
-      if (!disposed) {
-        setState(() {
-          error = e;
-        });
-      }
-    });
   }
 
   Duration? prevProgress;
-  controls.PlayState? prevPlayState;
+  PlayState? prevPlayState;
 
   void _listener() {
     final value = controller.value;
 
     final newPlayState = value.isBuffering
-        ? controls.PlayState.buffering
+        ? PlayState.buffering
         : value.isPlaying
-            ? controls.PlayState.isPlaying
-            : controls.PlayState.stopped;
+        ? PlayState.isPlaying
+        : PlayState.stopped;
 
     final newProgress = value.position;
 
     if (prevProgress != newProgress) {
       prevProgress = newProgress;
 
-      playerControls.setDuration(controller.value.duration);
-      playerControls.setProgress(newProgress);
+      playerControls.duration = controller.value.duration;
+      playerControls.progress = newProgress;
     }
 
     if (prevPlayState != newPlayState) {
       prevPlayState = newPlayState;
 
-      playerControls.setPlayState(newPlayState);
+      playerControls.playState = newPlayState;
     }
   }
 
   @override
   void dispose() {
-    eventsSubscr?.cancel();
+    buttonEvents?.cancel();
     disposed = true;
     controller.dispose();
     chewieController?.dispose();
@@ -230,38 +230,36 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
             isPreviouslyPlayed: controller.value.isPlaying,
           )
         : error != null
-            ? LoadingErrorWidget(
-                error: tryFormatError(),
-                short: false,
-                refresh: () {
-                  controller.dispose();
-                  newController();
-                  _initController();
-                  setState(() {});
-                },
-              )
-            : chewieController == null
-                ? widget.networkThumb != null
-                    ? Image(
-                        image: widget.networkThumb!,
-                        filterQuality: FilterQuality.high,
-                        fit: BoxFit.contain,
-                      )
-                    : const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                : GestureDetector(
-                    onDoubleTap: () {
-                      if (!disposed) {
-                        if (chewieController!.isPlaying) {
-                          chewieController!.pause();
-                        } else {
-                          chewieController!.play();
-                        }
-                      }
-                    },
-                    child: Chewie(controller: chewieController!),
-                  );
+        ? LoadingErrorWidget(
+            error: tryFormatError(),
+            short: false,
+            refresh: () {
+              controller.dispose();
+              newController();
+              _initController();
+              setState(() {});
+            },
+          )
+        : chewieController == null
+        ? widget.networkThumb != null
+              ? Image(
+                  image: widget.networkThumb!,
+                  filterQuality: FilterQuality.high,
+                  fit: BoxFit.contain,
+                )
+              : const Center(child: CircularProgressIndicator())
+        : GestureDetector(
+            onDoubleTap: () {
+              if (!disposed) {
+                if (chewieController!.isPlaying) {
+                  chewieController!.pause();
+                } else {
+                  chewieController!.play();
+                }
+              }
+            },
+            child: Chewie(controller: chewieController!),
+          );
   }
 }
 

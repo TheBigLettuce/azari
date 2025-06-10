@@ -24,11 +24,10 @@ import "package:azari/src/ui/material/pages/booru/visited_posts.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/ui/material/pages/search/booru/popular_random_buttons.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
@@ -37,7 +36,7 @@ import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -128,7 +127,6 @@ class _BooruPageState extends State<BooruPage>
       tags: e.tags,
       saveSelectedPage: setSecondaryName,
       name: e.name,
-      rootNavigator: false,
     );
   }
 
@@ -151,7 +149,6 @@ class _BooruPageState extends State<BooruPage>
       overrideSafeMode: safeMode,
       saveSelectedPage: setSecondaryName,
       pagingRegistry: pagingRegistry,
-      rootNavigator: false,
     );
   }
 
@@ -161,228 +158,223 @@ class _BooruPageState extends State<BooruPage>
 
     return switch (BooruSubPage.of(context)) {
       BooruSubPage.booru => pagingState.source.inject(
-          BooruPageOnPopScope(
-            searchTextController: null,
-            filter: null,
-            stackInjector: pagingState.stackInjector,
-            rootNavigatorPop: widget.procPop,
-            child: BooruAPINotifier(
-              api: pagingState.api,
-              child: OnBooruTagPressed(
-                onPressed: _onBooruTagPressed,
-                child: ShellScope(
-                  settingsButton: ShellSettingsButton.onlyHeader(
-                    SafeModeButton(
-                      settingsWatcher: const SettingsService().watch,
-                    ),
+        BooruPageOnPopScope(
+          searchTextController: null,
+          filter: null,
+          stackInjector: pagingState.stackInjector,
+          rootNavigatorPop: widget.procPop,
+          child: BooruAPINotifier(
+            api: pagingState.api,
+            child: OnBooruTagPressed(
+              onPressed: _onBooruTagPressed,
+              child: ShellScope(
+                settingsButton: ShellSettingsButton.onlyHeader(
+                  SafeModeButton(
+                    settingsWatcher: const SettingsService().watch,
                   ),
-                  configWatcher: gridSettings.watch,
-                  appBar: RawAppBarType(
-                    (context, settingsButton, bottomWidget) => SliverAppBar(
-                      pinned: true,
-                      floating: true,
-                      automaticallyImplyLeading: false,
-                      leading: IconButton(
-                        onPressed: () {
-                          Scaffold.of(context).openDrawer();
-                        },
-                        icon: const Icon(Icons.menu_rounded),
+                ),
+                configWatcher: gridSettings.watch,
+                appBar: RawAppBarType(
+                  (context, settingsButton, bottomWidget) => SliverAppBar(
+                    pinned: true,
+                    floating: true,
+                    automaticallyImplyLeading: false,
+                    leading: IconButton(
+                      onPressed: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                      icon: const Icon(Icons.menu_rounded),
+                    ),
+                    bottom: bottomWidget,
+                    title: const AppLogoTitle(),
+                    actions: [
+                      IconButton(
+                        onPressed: () => BooruSearchPage.open(context),
+                        icon: const Icon(Icons.search_rounded),
                       ),
-                      bottom: bottomWidget,
-                      title: const AppLogoTitle(),
-                      actions: [
-                        IconButton(
-                          onPressed: () => BooruSearchPage.open(context),
-                          icon: const Icon(Icons.search_rounded),
+                      if (settingsButton != null) settingsButton,
+                      // IconButton(
+                      //   onPressed: () {
+                      //     Scaffold.of(context).openDrawer();
+                      //   },
+                      //   icon: const Icon(Icons.menu_rounded),
+                      // ),
+                    ],
+                  ),
+                ),
+                searchBottomWidget: PreferredSize(
+                  preferredSize: const Size.fromHeight(56),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: SizedBox(
+                      height: 40,
+                      child: Builder(
+                        builder: (context) => PopularRandomChips(
+                          // safeMode: () => settings.safeMode,
+                          // booru: pagingState.booru,
+                          // onTagPressed: _onBooruTagPressed,
+                          listPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
+                          state: currentSubpage,
+                          onPressed: (state) {
+                            final scrollController =
+                                ShellScrollNotifier.maybeOf(context);
+
+                            if (state == currentSubpage ||
+                                scrollController == null) {
+                              return;
+                            }
+
+                            pagingState.currentSubpage = state;
+                            pagingState.selectionController.setCount(0);
+                          },
                         ),
-                        if (settingsButton != null) settingsButton,
-                        // IconButton(
-                        //   onPressed: () {
-                        //     Scaffold.of(context).openDrawer();
-                        //   },
-                        //   icon: const Icon(Icons.menu_rounded),
-                        // ),
-                      ],
+                      ),
                     ),
                   ),
-                  searchBottomWidget: PreferredSize(
-                    preferredSize: const Size.fromHeight(56),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: SizedBox(
-                        height: 40,
-                        child: Builder(
-                          builder: (context) => PopularRandomChips(
-                            // safeMode: () => settings.safeMode,
-                            // booru: pagingState.booru,
-                            // onTagPressed: _onBooruTagPressed,
-                            listPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                            ),
-                            state: currentSubpage,
-                            onPressed: (state) {
-                              final scrollController =
-                                  ShellScrollNotifier.maybeOf(context);
+                ),
+                stackInjector: pagingState.stackInjector,
+                elements: switch (currentSubpage) {
+                  BooruChipsState.latest => [
+                    ElementPriority(
+                      PostsShellElement(
+                        key: const ValueKey(BooruChipsState.latest),
+                        status: pagingState.status,
+                        initialScrollPosition: pagingState.offset,
+                        updateScrollPosition: pagingState.setOffset,
+                        overrideSlivers: [
+                          if (HottestTagsService.available)
+                            HottestTagsCarousel(api: pagingState.api),
+                          Builder(
+                            builder: (context) {
+                              final padding = MediaQuery.systemGestureInsetsOf(
+                                context,
+                              );
 
-                              if (state == currentSubpage ||
-                                  scrollController == null) {
-                                return;
-                              }
-
-                              pagingState.currentSubpage = state;
-                              pagingState.selectionController.setCount(0);
+                              return SliverPadding(
+                                padding: EdgeInsets.only(
+                                  left: padding.left * 0.2,
+                                  right: padding.right * 0.2,
+                                ),
+                                sliver: CurrentGridSettingsLayout<Post>(
+                                  source: source.backingStorage,
+                                  progress: source.progress,
+                                  // gridSeed: gridSeed,
+                                  selection: null,
+                                  buildEmpty: (e) => EmptyWidgetWithButton(
+                                    error: e,
+                                    buttonText: l10n.openInBrowser,
+                                    onPressed: () {
+                                      launchUrl(
+                                        Uri.https(pagingState.api.booru.url),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
                             },
                           ),
-                        ),
+                          Builder(
+                            builder: (context) {
+                              final padding = MediaQuery.systemGestureInsetsOf(
+                                context,
+                              );
+
+                              return SliverPadding(
+                                padding: EdgeInsets.only(
+                                  left: padding.left * 0.2,
+                                  right: padding.right * 0.2,
+                                ),
+                                sliver: GridConfigPlaceholders(
+                                  progress: source.progress,
+                                  // randomNumber: gridSeed,
+                                ),
+                              );
+                            },
+                          ),
+                          GridFooter<void>(storage: source.backingStorage),
+                        ],
                       ),
                     ),
-                  ),
-                  stackInjector: pagingState.stackInjector,
-                  elements: switch (currentSubpage) {
-                    BooruChipsState.latest => [
-                        ElementPriority(
-                          PostsShellElement(
-                            key: const ValueKey(BooruChipsState.latest),
-                            status: pagingState.status,
-                            initialScrollPosition: pagingState.offset,
-                            updateScrollPosition: pagingState.setOffset,
-                            overrideSlivers: [
-                              if (HottestTagsService.available)
-                                HottestTagsCarousel(api: pagingState.api),
-                              Builder(
-                                builder: (context) {
-                                  final padding =
-                                      MediaQuery.systemGestureInsetsOf(context);
-
-                                  return SliverPadding(
-                                    padding: EdgeInsets.only(
-                                      left: padding.left * 0.2,
-                                      right: padding.right * 0.2,
-                                    ),
-                                    sliver: CurrentGridSettingsLayout<Post>(
-                                      source: source.backingStorage,
-                                      progress: source.progress,
-                                      // gridSeed: gridSeed,
-                                      selection: null,
-                                      buildEmpty: (e) => EmptyWidgetWithButton(
-                                        error: e,
-                                        buttonText: l10n.openInBrowser,
-                                        onPressed: () {
-                                          launchUrl(
-                                            Uri.https(
-                                              pagingState.api.booru.url,
-                                            ),
-                                            mode:
-                                                LaunchMode.externalApplication,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              Builder(
-                                builder: (context) {
-                                  final padding =
-                                      MediaQuery.systemGestureInsetsOf(context);
-
-                                  return SliverPadding(
-                                    padding: EdgeInsets.only(
-                                      left: padding.left * 0.2,
-                                      right: padding.right * 0.2,
-                                    ),
-                                    sliver: GridConfigPlaceholders(
-                                      progress: source.progress,
-                                      // randomNumber: gridSeed,
-                                    ),
-                                  );
-                                },
-                              ),
-                              GridFooter<void>(storage: source.backingStorage),
-                            ],
-                          ),
-                        ),
-                      ],
-                    BooruChipsState.popular => [
-                        ElementPriority(
-                          PostsShellElement(
-                            key: const ValueKey(BooruChipsState.popular),
-                            updateScrollPosition:
-                                pagingState.popularStatus.setOffset,
-                            initialScrollPosition:
-                                pagingState.popularStatus.localScrollOffset,
-                            status: pagingState.popularStatus,
-                          ),
-                        ),
-                      ],
-                    BooruChipsState.random => [
-                        ElementPriority(
-                          PostsShellElement(
-                            key: const ValueKey(BooruChipsState.random),
-                            updateScrollPosition:
-                                pagingState.randomStatus.setOffset,
-                            initialScrollPosition:
-                                pagingState.randomStatus.localScrollOffset,
-                            status: pagingState.randomStatus,
-                          ),
-                        ),
-                      ],
-                    BooruChipsState.videos => [
-                        ElementPriority(
-                          PostsShellElement(
-                            key: const ValueKey(BooruChipsState.videos),
-                            updateScrollPosition:
-                                pagingState.videosStatus.setOffset,
-                            initialScrollPosition:
-                                pagingState.videosStatus.localScrollOffset,
-                            status: pagingState.videosStatus,
-                          ),
-                        ),
-                      ],
-                  },
-                ),
+                  ],
+                  BooruChipsState.popular => [
+                    ElementPriority(
+                      PostsShellElement(
+                        key: const ValueKey(BooruChipsState.popular),
+                        updateScrollPosition:
+                            pagingState.popularStatus.setOffset,
+                        initialScrollPosition:
+                            pagingState.popularStatus.localScrollOffset,
+                        status: pagingState.popularStatus,
+                      ),
+                    ),
+                  ],
+                  BooruChipsState.random => [
+                    ElementPriority(
+                      PostsShellElement(
+                        key: const ValueKey(BooruChipsState.random),
+                        updateScrollPosition:
+                            pagingState.randomStatus.setOffset,
+                        initialScrollPosition:
+                            pagingState.randomStatus.localScrollOffset,
+                        status: pagingState.randomStatus,
+                      ),
+                    ),
+                  ],
+                  BooruChipsState.videos => [
+                    ElementPriority(
+                      PostsShellElement(
+                        key: const ValueKey(BooruChipsState.videos),
+                        updateScrollPosition:
+                            pagingState.videosStatus.setOffset,
+                        initialScrollPosition:
+                            pagingState.videosStatus.localScrollOffset,
+                        status: pagingState.videosStatus,
+                      ),
+                    ),
+                  ],
+                },
               ),
             ),
           ),
         ),
+      ),
       BooruSubPage.favorites => FavoritePostsPage(
-          rootNavigatorPop: widget.procPop,
+        rootNavigatorPop: widget.procPop,
+        selectionController: widget.selectionController,
+      ),
+      BooruSubPage.bookmarks => GridPopScope(
+        searchTextController: null,
+        filter: null,
+        rootNavigatorPop: widget.procPop,
+        child: BookmarkPage(
+          pagingRegistry: widget.pagingRegistry,
+          saveSelectedPage: setSecondaryName,
           selectionController: widget.selectionController,
         ),
-      BooruSubPage.bookmarks => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          rootNavigatorPop: widget.procPop,
-          child: BookmarkPage(
-            pagingRegistry: widget.pagingRegistry,
-            saveSelectedPage: setSecondaryName,
-            selectionController: widget.selectionController,
-          ),
-        ),
+      ),
       BooruSubPage.hiddenPosts => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          rootNavigatorPop: widget.procPop,
-          child: HiddenPostsPage(
-            selectionController: widget.selectionController,
-          ),
-        ),
+        searchTextController: null,
+        filter: null,
+        rootNavigatorPop: widget.procPop,
+        child: HiddenPostsPage(selectionController: widget.selectionController),
+      ),
       BooruSubPage.downloads => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          rootNavigatorPop: widget.procPop,
-          child: DownloadsPage(
-            selectionController: widget.selectionController,
-          ),
-        ),
+        searchTextController: null,
+        filter: null,
+        rootNavigatorPop: widget.procPop,
+        child: DownloadsPage(selectionController: widget.selectionController),
+      ),
       BooruSubPage.visited => GridPopScope(
-          searchTextController: null,
-          filter: null,
-          rootNavigatorPop: widget.procPop,
-          child: VisitedPostsPage(
-            selectionController: widget.selectionController,
-          ),
+        searchTextController: null,
+        filter: null,
+        rootNavigatorPop: widget.procPop,
+        child: VisitedPostsPage(
+          selectionController: widget.selectionController,
         ),
+      ),
     };
   }
 }
@@ -470,9 +462,7 @@ class _BooruPageOnPopScopeState extends State<BooruPageOnPopScope>
 }
 
 class AppLogoTitle extends StatelessWidget {
-  const AppLogoTitle({
-    super.key,
-  });
+  const AppLogoTitle({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -504,9 +494,7 @@ class AppLogoTitle extends StatelessWidget {
         const Padding(padding: EdgeInsets.only(right: 8)),
         Text(
           "アザリ", // TODO: show 아사리 when Korean locale, consider showing Hanzi variations for Chinese locales 阿闍梨
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontFamily: "NotoSerif",
-          ),
+          style: theme.textTheme.titleLarge?.copyWith(fontFamily: "NotoSerif"),
         ),
       ],
     );
@@ -557,13 +545,12 @@ class _GridConfigPlaceholdersState extends State<GridConfigPlaceholders> {
 
     return switch (gridConfig.layoutType) {
       GridLayoutType.grid ||
-      GridLayoutType.list =>
-        const ListLayoutPlaceholder(),
+      GridLayoutType.list => const ListLayoutPlaceholder(),
       GridLayoutType.gridQuilted => GridQuiltedLayoutPlaceholder(
-          randomNumber: widget.randomNumber,
-          circle: false,
-          tightMode: false,
-        ),
+        randomNumber: widget.randomNumber,
+        circle: false,
+        tightMode: false,
+      ),
     };
   }
 }
@@ -580,8 +567,8 @@ class OnBooruTagPressed extends InheritedWidget {
   static OnBooruTagPressedFunc of(BuildContext context) => maybeOf(context)!;
 
   static OnBooruTagPressedFunc? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
 
     return widget?.onPressed;
   }
@@ -592,8 +579,8 @@ class OnBooruTagPressed extends InheritedWidget {
     Booru booru, {
     SafeMode? overrideSafeMode,
   }) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
 
     widget!.onPressed(context, booru, tag, overrideSafeMode);
   }
@@ -604,8 +591,8 @@ class OnBooruTagPressed extends InheritedWidget {
     Booru booru, {
     SafeMode? overrideSafeMode,
   }) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
 
     widget?.onPressed(context, booru, tag, overrideSafeMode);
   }
@@ -640,12 +627,7 @@ class OpenMenuButton extends StatelessWidget {
     return PopupMenuButton(
       itemBuilder: (_) {
         return MenuWrapper.menuItems(context, controller.text, true, [
-          launchGridSafeModeItem(
-            context,
-            controller.text,
-            launchGrid,
-            l10n,
-          ),
+          launchGridSafeModeItem(context, controller.text, launchGrid, l10n),
         ]);
       },
     );
@@ -657,19 +639,16 @@ PopupMenuItem<void> launchGridSafeModeItem(
   String tag,
   OpenSearchCallback launchGrid,
   AppLocalizations l10n,
-) =>
-    PopupMenuItem(
-      onTap: () {
-        if (tag.isEmpty) {
-          return;
-        }
+) => PopupMenuItem(
+  onTap: () {
+    if (tag.isEmpty) {
+      return;
+    }
 
-        context.openSafeModeDialog(
-          (value) => launchGrid(context, tag, value),
-        );
-      },
-      child: Text(l10n.searchWithSafeMode),
-    );
+    context.openSafeModeDialog((value) => launchGrid(context, tag, value));
+  },
+  child: Text(l10n.searchWithSafeMode),
+);
 
 class HottestTagsCarousel extends StatefulWidget {
   const HottestTagsCarousel({
@@ -700,8 +679,9 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
     final time = refreshedAt(widget.api.booru);
     if (time == null ||
         time.add(const Duration(days: 3)).isBefore(DateTime.now())) {
-      const TasksService()
-          .add<HottestTagsCarousel>(() => _loadHottestTags(widget.api));
+      const TasksService().add<HottestTagsCarousel>(
+        () => _loadHottestTags(widget.api),
+      );
     }
 
     list = loadAndFilter();
@@ -774,8 +754,9 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
     if (task.isWaiting && list.isEmpty) {
       return SliverToBoxAdapter(
         child: ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: 160 * GridAspectRatio.oneFive.value),
+          constraints: BoxConstraints(
+            maxHeight: 160 * GridAspectRatio.oneFive.value,
+          ),
           child: CarouselView.weighted(
             itemSnapping: true,
             flexWeights: const [3, 2, 1],
@@ -787,9 +768,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
     }
 
     if (list.isEmpty) {
-      return const SliverPadding(
-        padding: EdgeInsets.zero,
-      );
+      return const SliverPadding(padding: EdgeInsets.zero);
     }
 
     final theme = Theme.of(context);
@@ -798,8 +777,9 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
       padding: EdgeInsets.zero,
       sliver: SliverToBoxAdapter(
         child: ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: 160 * GridAspectRatio.oneFive.value),
+          constraints: BoxConstraints(
+            maxHeight: 160 * GridAspectRatio.oneFive.value,
+          ),
           child: CarouselView.weighted(
             enableSplash: false,
             itemSnapping: true,
@@ -809,10 +789,7 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  HottestTagWidget(
-                    tag: tag,
-                    booru: widget.api.booru,
-                  ),
+                  HottestTagWidget(tag: tag, booru: widget.api.booru),
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -828,19 +805,23 @@ class _HottestTagsCarouselState extends State<HottestTagsCarousel>
                         booru: widget.api.booru,
                         postId: tag.postId,
                       ),
-                      overlayColor: WidgetStateProperty.resolveWith(
-                          (Set<WidgetState> states) {
+                      overlayColor: WidgetStateProperty.resolveWith((
+                        Set<WidgetState> states,
+                      ) {
                         if (states.contains(WidgetState.pressed)) {
-                          return theme.colorScheme.onSurface
-                              .withValues(alpha: 0.1);
+                          return theme.colorScheme.onSurface.withValues(
+                            alpha: 0.1,
+                          );
                         }
                         if (states.contains(WidgetState.hovered)) {
-                          return theme.colorScheme.onSurface
-                              .withValues(alpha: 0.08);
+                          return theme.colorScheme.onSurface.withValues(
+                            alpha: 0.08,
+                          );
                         }
                         if (states.contains(WidgetState.focused)) {
-                          return theme.colorScheme.onSurface
-                              .withValues(alpha: 0.1);
+                          return theme.colorScheme.onSurface.withValues(
+                            alpha: 0.1,
+                          );
                         }
                         return null;
                       }),
@@ -872,11 +853,7 @@ class _HottestTagData {
 }
 
 class HottestTagWidget extends StatelessWidget {
-  const HottestTagWidget({
-    super.key,
-    required this.tag,
-    required this.booru,
-  });
+  const HottestTagWidget({super.key, required this.tag, required this.booru});
 
   final _HottestTagData tag;
   final Booru booru;
@@ -893,12 +870,7 @@ class HottestTagWidget extends StatelessWidget {
           color: Colors.black.withValues(alpha: 0.15),
           colorBlendMode: BlendMode.darken,
           image: CachedNetworkImageProvider(tag.thumbUrl),
-          frameBuilder: (
-            context,
-            child,
-            frame,
-            wasSynchronouslyLoaded,
-          ) {
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
             if (wasSynchronouslyLoaded) {
               return child;
             }
@@ -913,10 +885,7 @@ class HottestTagWidget extends StatelessWidget {
         Align(
           alignment: Alignment.bottomLeft,
           child: Padding(
-            padding: const EdgeInsets.only(
-              bottom: 12,
-              left: 14,
-            ),
+            padding: const EdgeInsets.only(bottom: 12, left: 14),
             child: Text(
               tag.tag,
               maxLines: 1,
@@ -958,21 +927,24 @@ Future<void> _loadHottestTags(BooruAPI api) async {
         .take(15)
         .toList();
 
-    final favoriteTags = const TagManagerService()
-        .pinned
-        .get(130)
-        .where((e) => !tags.containsKey(e.tag))
-        .toList()
-      ..shuffle(random);
+    final favoriteTags =
+        const TagManagerService().pinned
+            .get(130)
+            .where((e) => !tags.containsKey(e.tag))
+            .toList()
+          ..shuffle(random);
 
-    for (final tag in localTags.isNotEmpty
-        ? tags.values
-            .take(tags.length - localTags.length)
-            .followedBy(localTags)
-            .followedBy(favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)))
-        : tags.values.followedBy(
-            favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)),
-          )) {
+    for (final tag
+        in (localTags.isNotEmpty && tags.length > localTags.length)
+            ? tags.values
+                  .take(tags.length - localTags.length)
+                  .followedBy(localTags)
+                  .followedBy(
+                    favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)),
+                  )
+            : tags.values.followedBy(
+                favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)),
+              )) {
       final posts = await api.page(
         0,
         tag.tag,
@@ -1003,11 +975,7 @@ Future<void> _loadHottestTags(BooruAPI api) async {
 }
 
 class BooruAPINotifier extends InheritedWidget {
-  const BooruAPINotifier({
-    super.key,
-    required this.api,
-    required super.child,
-  });
+  const BooruAPINotifier({super.key, required this.api, required super.child});
 
   final BooruAPI api;
 
@@ -1016,8 +984,8 @@ class BooruAPINotifier extends InheritedWidget {
   }
 
   static BooruAPI? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
 
     return widget?.api;
   }

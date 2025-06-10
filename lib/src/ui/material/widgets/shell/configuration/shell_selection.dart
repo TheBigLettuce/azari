@@ -7,9 +7,10 @@ part of "../shell_scope.dart";
 
 extension ShellSelectionInjectSelfExt on ShellSelectionHolder {
   Widget inject(Widget child) {
-    return _SelectionNotifier(
-      gridSelection: this,
-      child: child,
+    return StreamBuilder(
+      stream: countEvents,
+      builder: (context, _) =>
+          _SelectionNotifier(gridSelection: this, count: count, child: child),
     );
   }
 }
@@ -21,6 +22,8 @@ abstract interface class ShellSelectionHolder {
     required ReadOnlyStorage<int, CellBuilder> source,
   }) = _SelectionHolder;
 
+  Stream<void> get countEvents;
+
   bool get isEmpty;
   bool get isNotEmpty;
   List<SelectionBarAction> get actions;
@@ -31,10 +34,7 @@ abstract interface class ShellSelectionHolder {
 
   void selectUnselectAll();
   void selectAll();
-  void selectUnselectUntil(
-    int indx_, {
-    List<int>? selectFrom,
-  });
+  void selectUnselectUntil(int indx_, {List<int>? selectFrom});
 
   void selectOrUnselect(int index);
 
@@ -44,19 +44,15 @@ abstract interface class ShellSelectionHolder {
   static ShellSelectionHolder of(BuildContext context) => maybeOf(context)!;
 
   static ShellSelectionHolder? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectionNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectionNotifier>();
 
     return widget?.gridSelection;
   }
 }
 
 class _SelectionHolder implements ShellSelectionHolder {
-  _SelectionHolder(
-    this.controller,
-    this.actions, {
-    required this.source,
-  }) {
+  _SelectionHolder(this.controller, this.actions, {required this.source}) {
     _countEvents = controller.countEvents.listen((_) {
       if (controller.count == 0 && count != 0) {
         _selected.clear();
@@ -81,12 +77,12 @@ class _SelectionHolder implements ShellSelectionHolder {
   bool get isNotEmpty => _selected.isNotEmpty;
 
   @override
+  Stream<void> get countEvents => controller.countEvents;
+
+  @override
   int get count => _selected.length;
 
-  void _use(
-    void Function(List<CellBuilder> l) f,
-    bool closeOnPress,
-  ) {
+  void _use(void Function(List<CellBuilder> l) f, bool closeOnPress) {
     f(_selected.values.toList());
     if (closeOnPress) {
       reset();
@@ -180,10 +176,7 @@ class _SelectionHolder implements ShellSelectionHolder {
   }
 
   @override
-  void selectUnselectUntil(
-    int indx_, {
-    List<int>? selectFrom,
-  }) {
+  void selectUnselectUntil(int indx_, {List<int>? selectFrom}) {
     var indx = indx_;
 
     if (lastSelected != null) {
@@ -246,14 +239,16 @@ class _SelectionHolder implements ShellSelectionHolder {
 class _SelectionNotifier extends InheritedWidget {
   const _SelectionNotifier({
     // super.key,
+    required this.count,
     required this.gridSelection,
     required super.child,
   });
 
+  final int count;
   final ShellSelectionHolder gridSelection;
 
   @override
   bool updateShouldNotify(_SelectionNotifier oldWidget) {
-    return gridSelection != oldWidget.gridSelection;
+    return gridSelection != oldWidget.gridSelection || count != oldWidget.count;
   }
 }

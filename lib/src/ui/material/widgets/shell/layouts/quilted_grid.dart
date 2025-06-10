@@ -6,7 +6,7 @@
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/grid_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
@@ -86,24 +86,3 @@ class _QuiltedGridLayoutState<T extends CellBuilder>
     );
   }
 }
-
-
-  // wrapSelection: (child) =>
-  //               cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-  //                     context: context,
-  //                     thisIndx: idx,
-  //                     onPressed: cell.tryAsPressable(
-  //                       context,
-  //                       idx,
-  //                     ),
-  //                     description: cell.description(),
-  //                     selectFrom: null,
-  //                     child: child,
-  //                   ) ??
-  //               WrapSelection(
-  //                 thisIndx: idx,
-  //                 description: cell.description(),
-  //                 onPressed: cell.tryAsPressable(context, idx),
-  //                 selectFrom: null,
-  //                 child: child,
-  //               ),

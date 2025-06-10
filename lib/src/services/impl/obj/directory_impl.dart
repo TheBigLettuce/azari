@@ -12,8 +12,8 @@ import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:local_auth/local_auth.dart";
@@ -38,23 +38,22 @@ abstract class DirectoryImpl
     required bool hideName,
     required CellType cellType,
     Alignment imageAlign = Alignment.center,
-  }) =>
-      _Cell(
-        cellType: cellType,
-        hideName: hideName,
-        impl: this,
-        imageAlign: imageAlign,
-        superChild: super.buildCell(
-          l10n,
-          cellType: cellType,
-          imageAlign: imageAlign,
-          hideName: hideName,
-        ),
-      );
+  }) => DirectoryImplCell(
+    cellType: cellType,
+    hideName: hideName,
+    impl: this,
+    imageAlign: imageAlign,
+    superChild: super.buildCell(
+      l10n,
+      cellType: cellType,
+      imageAlign: imageAlign,
+      hideName: hideName,
+    ),
+  );
 }
 
-class _Cell extends StatelessWidget {
-  const _Cell({
+class DirectoryImplCell extends StatelessWidget {
+  const DirectoryImplCell({
     super.key,
     required this.impl,
     required this.hideName,
@@ -95,21 +94,20 @@ class _Cell extends StatelessWidget {
       closedColor: theme.colorScheme.surface.withValues(alpha: 1),
       closedBuilder: (containerContext, action) => WrapSelection(
         overrideIdx: thisIdx,
+        limitedSize: cellType == CellType.list,
         onPressed: () {
-          final (api, callback, segmentFnc) =
-              DirectoriesDataNotifier.of(context);
+          final (api, callback, segmentFnc) = DirectoriesDataNotifier.of(
+            context,
+          );
 
           if (callback?.isDirectory ?? false) {
             Navigator.pop(containerContext);
 
-            (callback! as ReturnDirectoryCallback)(
-              (
-                bucketId: impl.bucketId,
-                path: impl.relativeLoc,
-                volumeName: impl.volumeName
-              ),
-              false,
-            );
+            (callback! as ReturnDirectoryCallback)((
+              bucketId: impl.bucketId,
+              path: impl.relativeLoc,
+              volumeName: impl.volumeName,
+            ), false);
           } else {
             bool requireAuth = false;
 
@@ -123,17 +121,15 @@ class _Cell extends StatelessWidget {
               action();
             }
 
-            requireAuth = DirectoryMetadataService.safe()
-                    ?.cache
+            requireAuth =
+                DirectoryMetadataService.safe()?.cache
                     .get(segmentFnc(impl as Directory))
                     ?.requireAuth ??
                 false;
 
             if (const AppApi().canAuthBiometric && requireAuth) {
               LocalAuthentication()
-                  .authenticate(
-                    localizedReason: l10n.openDirectory,
-                  )
+                  .authenticate(localizedReason: l10n.openDirectory)
                   .then(onSuccess);
             } else {
               onSuccess(true);

@@ -5,12 +5,13 @@
 
 import "dart:async";
 
-import "package:azari/src/ui/material/widgets/action_button.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_fab.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
+import "package:azari/src/ui/material/widgets/selection_bar.dart";
+import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -31,7 +32,7 @@ class ImageViewSkeleton extends StatefulWidget {
   final AnimationController controller;
   final PauseVideoState pauseVideoState;
 
-  final VideoControlsControllerImpl videoControls;
+  final PlayerWidgetController videoControls;
   final ImageViewStateController stateControler;
 
   final Widget child;
@@ -87,8 +88,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
           : Brightness.dark,
       systemNavigationBarIconBrightness:
           colorScheme.brightness == Brightness.dark
-              ? Brightness.light
-              : Brightness.dark,
+          ? Brightness.light
+          : Brightness.dark,
       systemNavigationBarColor: colorScheme.surface.withValues(alpha: 0.4),
     );
 
@@ -130,7 +131,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                           height: 56 + viewPadding.top,
                           width: double.infinity,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
+                            padding:
+                                const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 8,
                                 ) +
@@ -151,14 +153,14 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
                                     const Padding(
                                       padding: EdgeInsets.only(left: 8),
                                     ),
-                                    _CountButton(
+                                    ImageViewQuickImageButton(
                                       loader: loader,
                                       showThumbnailsBar: () =>
                                           thumbnailsBarShowEvents.add(null),
                                     ),
                                   ],
                                 ),
-                                const _AppBarButtons(),
+                                const ImageViewAppBarButtons(),
                               ],
                             ),
                           ),
@@ -177,9 +179,7 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
               ),
               const SizedBox(
                 height: 80,
-                child: AbsorbPointer(
-                  child: SizedBox.shrink(),
-                ),
+                child: AbsorbPointer(child: SizedBox.shrink()),
               ),
               _BottomIcons(
                 videoControls: isWide ? null : widget.videoControls,
@@ -213,8 +213,8 @@ class _ImageViewSkeletonState extends State<ImageViewSkeleton>
   }
 }
 
-class _AppBarButtons extends StatelessWidget {
-  const _AppBarButtons({super.key});
+class ImageViewAppBarButtons extends StatelessWidget {
+  const ImageViewAppBarButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -224,9 +224,7 @@ class _AppBarButtons extends StatelessWidget {
     return IconButtonTheme(
       data: IconButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStatePropertyAll(
-            theme.colorScheme.surface,
-          ),
+          backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surface),
         ),
       ),
       child: Row(
@@ -270,10 +268,7 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
   void initState() {
     super.initState();
 
-    controller = AnimationController(
-      vsync: this,
-      duration: Durations.medium1,
-    );
+    controller = AnimationController(vsync: this, duration: Durations.medium1);
 
     _events = widget.events.listen((_) {
       if (controller.isForwardOrCompleted) {
@@ -308,7 +303,8 @@ class __ThumbnailsBarState extends State<_ThumbnailsBar>
       return;
     }
 
-    final isVisisble = positions.indexWhere(
+    final isVisisble =
+        positions.indexWhere(
           (e) =>
               e.index == idx &&
               !e.itemLeadingEdge.isNegative &&
@@ -442,20 +438,16 @@ class _ThumbnailBarChild extends StatelessWidget {
                     const ShimmerLoadingIndicator()
                   else
                     Image(
-                      frameBuilder: (
-                        context,
-                        child,
-                        frame,
-                        wasSynchronouslyLoaded,
-                      ) {
-                        if (wasSynchronouslyLoaded) {
-                          return child;
-                        }
+                      frameBuilder:
+                          (context, child, frame, wasSynchronouslyLoaded) {
+                            if (wasSynchronouslyLoaded) {
+                              return child;
+                            }
 
-                        return frame == null
-                            ? const ShimmerLoadingIndicator()
-                            : child.animate().fadeIn();
-                      },
+                            return frame == null
+                                ? const ShimmerLoadingIndicator()
+                                : child.animate().fadeIn();
+                          },
                       image: thumbnail,
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
@@ -468,23 +460,25 @@ class _ThumbnailBarChild extends StatelessWidget {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            theme.colorScheme.surfaceContainer
-                                .withValues(alpha: 0.8),
-                            theme.colorScheme.surfaceContainer
-                                .withValues(alpha: 0.6),
-                            theme.colorScheme.surfaceContainer
-                                .withValues(alpha: 0.4),
-                            theme.colorScheme.surfaceContainer
-                                .withValues(alpha: 0.2),
-                            theme.colorScheme.surfaceContainer
-                                .withValues(alpha: 0),
+                            theme.colorScheme.surfaceContainer.withValues(
+                              alpha: 0.8,
+                            ),
+                            theme.colorScheme.surfaceContainer.withValues(
+                              alpha: 0.6,
+                            ),
+                            theme.colorScheme.surfaceContainer.withValues(
+                              alpha: 0.4,
+                            ),
+                            theme.colorScheme.surfaceContainer.withValues(
+                              alpha: 0.2,
+                            ),
+                            theme.colorScheme.surfaceContainer.withValues(
+                              alpha: 0,
+                            ),
                           ],
                         ),
                       ),
-                      child: const SizedBox(
-                        height: 40,
-                        width: double.infinity,
-                      ),
+                      child: const SizedBox(height: 40, width: double.infinity),
                     ),
                   ),
                   Align(
@@ -510,8 +504,8 @@ class _ThumbnailBarChild extends StatelessWidget {
   }
 }
 
-class _CountButton extends StatefulWidget {
-  const _CountButton({
+class ImageViewQuickImageButton extends StatefulWidget {
+  const ImageViewQuickImageButton({
     super.key,
     required this.showThumbnailsBar,
     required this.loader,
@@ -521,10 +515,11 @@ class _CountButton extends StatefulWidget {
   final VoidCallback showThumbnailsBar;
 
   @override
-  State<_CountButton> createState() => __CountButtonState();
+  State<ImageViewQuickImageButton> createState() =>
+      _ImageViewQuickImageButtonState();
 }
 
-class __CountButtonState extends State<_CountButton>
+class _ImageViewQuickImageButtonState extends State<ImageViewQuickImageButton>
     with ImageViewLoaderWatcher {
   @override
   ImageViewLoader get loader => widget.loader;
@@ -532,8 +527,6 @@ class __CountButtonState extends State<_CountButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // final metadata = CurrentIndexMetadata.of(context);
 
     return SizedBox(
       height: 40,
@@ -555,8 +548,9 @@ class __CountButtonState extends State<_CountButton>
                       TextSpan(
                         text: "/${loader.count}",
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -586,7 +580,7 @@ class _BottomIcons extends StatelessWidget {
   final EdgeInsets viewPadding;
 
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
-  final VideoControlsControllerImpl? videoControls;
+  final PlayerWidgetController? videoControls;
 
   @override
   Widget build(BuildContext context) {
@@ -608,9 +602,8 @@ class _BottomIcons extends StatelessWidget {
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: viewPadding.bottom)
+            padding: EdgeInsets.only(bottom: viewPadding.bottom),
             // + const EdgeInsets.symmetric(horizontal: 16)
-            ,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -651,7 +644,14 @@ class _BottomIcons extends StatelessWidget {
                     ),
                   ),
                 ),
-                const _BottomRibbon(),
+                AnimatedSize(
+                  curve: Easing.standard,
+                  duration: Durations.medium1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: _PinnedTagsRow(tags: ImageTagsNotifier.of(context)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -662,7 +662,9 @@ class _BottomIcons extends StatelessWidget {
 }
 
 class _Actions extends StatelessWidget {
-  const _Actions({super.key});
+  const _Actions(
+    // {super.key}
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -681,10 +683,7 @@ class _Actions extends StatelessWidget {
                 e.onPress == null
                     ? null
                     : () {
-                        AppBarVisibilityNotifier.maybeToggleOf(
-                          context,
-                          true,
-                        );
+                        AppBarVisibilityNotifier.maybeToggleOf(context, true);
 
                         e.onPress!();
                       },
@@ -704,7 +703,9 @@ class _Actions extends StatelessWidget {
 }
 
 class _Stickers extends StatelessWidget {
-  const _Stickers({super.key});
+  const _Stickers(
+    // {super.key}
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -715,17 +716,13 @@ class _Stickers extends StatelessWidget {
     final stickers = widgets.stickers(context);
 
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 8,
-      ),
+      padding: const EdgeInsets.only(left: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: stickers
             .map(
               (e) => Padding(
-                padding: const EdgeInsets.only(
-                  right: 8,
-                ),
+                padding: const EdgeInsets.only(right: 8),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
@@ -733,10 +730,7 @@ class _Stickers extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: e.subtitle != null
-                        ? const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          )
+                        ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
                         : const EdgeInsets.all(4),
                     child: e.subtitle != null
                         ? Row(
@@ -752,11 +746,7 @@ class _Stickers extends StatelessWidget {
                                         alpha: 0.6,
                                       ),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.only(
-                                  right: 4,
-                                ),
-                              ),
+                              const Padding(padding: EdgeInsets.only(right: 4)),
                               Text(
                                 e.subtitle!,
                                 style: theme.textTheme.labelSmall?.copyWith(
@@ -774,33 +764,13 @@ class _Stickers extends StatelessWidget {
                             size: 16,
                             color: e.important
                                 ? colorScheme.secondary
-                                : colorScheme.onSurface.withValues(
-                                    alpha: 0.6,
-                                  ),
+                                : colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                   ),
                 ),
               ),
             )
             .toList(),
-      ),
-    );
-  }
-}
-
-class _BottomRibbon extends StatelessWidget {
-  const _BottomRibbon({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSize(
-      curve: Easing.standard,
-      duration: Durations.medium1,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: _PinnedTagsRow(
-          tags: ImageTagsNotifier.of(context),
-        ),
       ),
     );
   }
@@ -939,10 +909,7 @@ class PinnedTagChip extends StatelessWidget {
     final text = Text(
       "#${(tag.length > letterCount) && !letterCount.isNegative ? "${tag.substring(0, letterCount - (letterCount < 10 ? 2 : 3))}${letterCount < 10 ? '..' : '...'}" : tag}",
       style: (tight ? theme.textTheme.labelSmall : theme.textTheme.labelMedium)
-          ?.copyWith(
-        color: textColor,
-        overflow: TextOverflow.fade,
-      ),
+          ?.copyWith(color: textColor, overflow: TextOverflow.fade),
     );
 
     return GestureDetector(
@@ -965,10 +932,7 @@ class PinnedTagChip extends StatelessWidget {
           child: addPinnedIcon
               ? Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.push_pin_rounded, size: 8),
-                    text,
-                  ],
+                  children: [const Icon(Icons.push_pin_rounded, size: 8), text],
                 )
               : text,
         ),
@@ -1013,9 +977,7 @@ class OutlinedTagChip extends StatelessWidget {
       child: DecoratedBox(
         decoration: const ShapeDecoration(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(5),
-            ),
+            borderRadius: BorderRadius.all(Radius.circular(5)),
           ),
         ),
         child: Padding(
@@ -1057,9 +1019,6 @@ class _ExitOnPressRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExitOnPressRoute(
-      exit: () => _exit(context),
-      child: child,
-    );
+    return ExitOnPressRoute(exit: () => _exit(context), child: child);
   }
 }

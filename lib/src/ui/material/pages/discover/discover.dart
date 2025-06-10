@@ -9,16 +9,14 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/pages/search/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
-import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 
 class DiscoverPage extends StatefulWidget {
-  const DiscoverPage({
-    super.key,
-  });
+  const DiscoverPage({super.key});
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
@@ -91,9 +89,7 @@ class __PoolsBodyState extends State<_PoolsBody> {
       source: source,
       enableHide: false,
       childSize: _PoolsPanelBody.size,
-      child: _PoolsPanelBody(
-        source: source,
-      ),
+      child: _PoolsPanelBody(source: source),
     );
   }
 }
@@ -137,36 +133,33 @@ class __PoolsPanelBodyState extends State<_PoolsPanelBody> {
       height: _PoolsPanelBody.size.height,
       child: switch (widget.source.progress.inRefreshing) {
         true => const ShimmerPlaceholdersHorizontal(
-            childSize: _PoolsPanelBody.size,
-          ),
+          childSize: _PoolsPanelBody.size,
+        ),
         false => ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            scrollDirection: Axis.horizontal,
-            itemCount: widget.source.count,
-            itemBuilder: (context, index) {
-              final pool = widget.source.backingStorage[index];
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          scrollDirection: Axis.horizontal,
+          itemCount: widget.source.count,
+          itemBuilder: (context, index) {
+            final pool = widget.source.backingStorage[index];
 
-              return SizedBox(
-                width: _PoolsPanelBody.size.width,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      // Expanded(
-                      //     child: GridCellImage(
-                      //         blur: false,
-                      //         imageAlign: Alignment.topCenter,
-                      //         thumbnail: CachedNetworkImageProvider())),
-                      SizedBox(
-                        height: 20,
-                        child: Text(pool.name),
-                      ),
-                    ],
-                  ),
+            return SizedBox(
+              width: _PoolsPanelBody.size.width,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    // Expanded(
+                    //     child: GridCellImage(
+                    //         blur: false,
+                    //         imageAlign: Alignment.topCenter,
+                    //         thumbnail: CachedNetworkImageProvider())),
+                    SizedBox(height: 20, child: Text(pool.name)),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
+        ),
       },
     );
   }

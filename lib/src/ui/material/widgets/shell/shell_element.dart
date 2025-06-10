@@ -55,17 +55,16 @@ class SourceShellElementState<T extends CellBuilder>
   final List<SelectionBarAction> actions;
 
   final Widget Function(SourceShellElementState state, Widget child)?
-      wrapRefresh;
+  wrapRefresh;
 
   static Widget defaultRefreshIndicator(
     SourceShellElementState state,
     Widget child,
-  ) =>
-      SourceShellRefreshIndicator(
-        selection: state.selection,
-        source: state.source,
-        child: child,
-      );
+  ) => SourceShellRefreshIndicator(
+    selection: state.selection,
+    source: state.source,
+    child: child,
+  );
 
   double _cachedScrollOffset = 0;
 
@@ -159,8 +158,7 @@ class SourceShellElementState<T extends CellBuilder>
   @override
   StreamSubscription<bool> watchRefreshing(
     void Function(bool isRefreshing) fn,
-  ) =>
-      source.progress.watch(fn);
+  ) => source.progress.watch(fn);
 
   void destroy() {
     selection.dispose();
@@ -285,8 +283,9 @@ class _ShellElementState extends State<ShellElement> {
       child: state.selection.inject(
         Builder(
           builder: (context) {
-            final saveScroll =
-                ShellScrollNotifier.saveScrollNotifierOf(context);
+            final saveScroll = ShellScrollNotifier.saveScrollNotifierOf(
+              context,
+            );
 
             return ShellScrollingLogicHolder(
               offsetSaveNotifier: saveScroll,
@@ -323,8 +322,8 @@ class PlayAnimations extends StatefulWidget {
   final Widget child;
 
   static bool? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_PlayAnimationNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_PlayAnimationNotifier>();
 
     return widget?.play;
   }
@@ -378,18 +377,12 @@ class _PlayAnimationsState extends State<PlayAnimations> {
 
   @override
   Widget build(BuildContext context) {
-    return _PlayAnimationNotifier(
-      play: play,
-      child: widget.child,
-    );
+    return _PlayAnimationNotifier(play: play, child: widget.child);
   }
 }
 
 class _PlayAnimationNotifier extends InheritedWidget {
-  const _PlayAnimationNotifier({
-    required this.play,
-    required super.child,
-  });
+  const _PlayAnimationNotifier({required this.play, required super.child});
 
   final bool play;
 
@@ -399,17 +392,13 @@ class _PlayAnimationNotifier extends InheritedWidget {
 }
 
 class SelectedGridPage extends InheritedWidget {
-  const SelectedGridPage({
-    super.key,
-    required this.page,
-    required super.child,
-  });
+  const SelectedGridPage({super.key, required this.page, required super.child});
 
   final int page;
 
   static int? of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<SelectedGridPage>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<SelectedGridPage>();
 
     return widget!.page;
   }
@@ -526,7 +515,7 @@ class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
 
     final scrollingEvent =
         controller.position.pixels == controller.position.maxScrollExtent ||
-            controller.offset == 0;
+        controller.offset == 0;
 
     if (scrollingEvent ||
         controller.position.userScrollDirection == ScrollDirection.forward) {
@@ -552,8 +541,8 @@ class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
         if (_prevScrollOffsetUp == 0) {
           _prevScrollOffsetUp = controller.offset;
         } else {
-          _scrollingOffsetFlingUp +=
-              (_prevScrollOffsetUp - controller.offset).abs();
+          _scrollingOffsetFlingUp += (_prevScrollOffsetUp - controller.offset)
+              .abs();
           _prevScrollOffsetUp = controller.offset;
         }
       }
@@ -618,7 +607,7 @@ class _ShellSelectionCountHolderState extends State<ShellSelectionCountHolder> {
 
   int _updateCount = 0;
 
-  void _onPop(bool _, Object? __) {
+  void _onPop(bool _, Object? _) {
     if (widget.selection.isNotEmpty) {
       widget.selection.reset();
     }
@@ -678,8 +667,8 @@ class SelectionCountNotifier extends InheritedWidget {
   final int countUpdateTimes;
 
   static int maybeCountOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
 
     return widget?.count ?? 0;
   }

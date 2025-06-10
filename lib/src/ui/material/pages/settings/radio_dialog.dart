@@ -15,23 +15,6 @@ extension SafeModeRadioDialogExt on BuildContext {
   ]) {
     final l10n = this.l10n();
 
-    // void defaultOnPressed(SafeMode? value) {
-    //   final db = DatabaseConnectionNotifier.of(this);
-
-    //   Navigator.of(this, rootNavigator: true).push<void>(
-    //     MaterialPageRoute(
-    //       builder: (context) => BooruRestoredPage(
-    //         db: db,
-    //         booru: booru,
-    //         tags: tags,
-    //         saveSelectedPage: (_) {},
-    //         wrapScaffold: true,
-    //         overrideSafeMode: value,
-    //       ),
-    //     ),
-    //   );
-    // }
-
     radioDialog<SafeMode>(
       this,
       SafeMode.values.map((e) => (e, e.translatedString(l10n))),
@@ -51,10 +34,7 @@ void radioDialog<T>(
   required String title,
   bool allowSingle = false,
 }) {
-  Navigator.of(
-    context,
-    rootNavigator: true,
-  ).push(
+  Navigator.of(context, rootNavigator: true).push(
     DialogRoute<void>(
       context: context,
       builder: (context) {

@@ -11,15 +11,13 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
 import "package:flutter/material.dart";
 
 class SettingsList extends StatefulWidget {
-  const SettingsList({
-    super.key,
-  });
+  const SettingsList({super.key});
 
   @override
   State<SettingsList> createState() => _SettingsListState();
@@ -96,11 +94,7 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
               settings.selectedBooru,
               (value) {
                 if (value != null && value != settings.selectedBooru) {
-                  selectBooru(
-                    context,
-                    settings,
-                    value,
-                  );
+                  selectBooru(context, settings, value);
                 }
               },
               title: l10n.selectedBooruSetting,
@@ -168,9 +162,7 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
               },
               title: l10n.settingsTheme,
             ),
-            subtitle: Text(
-              settings.themeType.translatedString(l10n),
-            ),
+            subtitle: Text(settings.themeType.translatedString(l10n)),
           ),
           // SwitchListTile(
           //   tileColor: theme.colorScheme.surfaceContainerHigh,
@@ -230,7 +222,8 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
                                         child: Text(l10n.no),
                                       ),
                                       TextButton(
-                                        onPressed: ThumbnailService.available &&
+                                        onPressed:
+                                            ThumbnailService.available &&
                                                 GalleryService.available
                                             ? clear
                                             : null,
@@ -257,8 +250,9 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
       MenuWrapper(
         title: "GPL-2.0-only",
         child: ListTile(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           onTap: () => const LicensePage().open(context),
           title: Text(l10n.licenseSetting),
           subtitle: const Text("GPL-2.0-only"),
@@ -281,9 +275,7 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
 
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      sliver: SliverList.list(
-        children: list,
-      ),
+      sliver: SliverList.list(children: list),
     );
   }
 }
@@ -302,9 +294,7 @@ class _SettingsGroup extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: ClipRRect(
         borderRadius: const BorderRadius.all(Radius.circular(25)),
-        child: ListBody(
-          children: children,
-        ),
+        child: ListBody(children: children),
       ),
     );
   }

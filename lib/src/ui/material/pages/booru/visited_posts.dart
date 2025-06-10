@@ -15,7 +15,6 @@ import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -24,10 +23,7 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class VisitedPostsPage extends StatefulWidget {
-  const VisitedPostsPage({
-    super.key,
-    required this.selectionController,
-  });
+  const VisitedPostsPage({super.key, required this.selectionController});
 
   final SelectionController selectionController;
 
@@ -108,9 +104,7 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
       context,
       booru: booru,
       tags: tag,
-      rootNavigator: false,
       overrideSafeMode: safeMode,
-      saveSelectedPage: (_) {},
     );
   }
 
@@ -140,10 +134,8 @@ class _VisitedPostsPageState extends State<VisitedPostsPage>
         ElementPriority(
           ShellElement(
             // key: gridKey,
-            registerNotifiers: (child) => OnBooruTagPressed(
-              onPressed: _onBooruTagPressed,
-              child: child,
-            ),
+            registerNotifiers: (child) =>
+                OnBooruTagPressed(onPressed: _onBooruTagPressed, child: child),
             scrollingState: ScrollingStateSinkProvider.maybeOf(context),
             state: status,
             slivers: [

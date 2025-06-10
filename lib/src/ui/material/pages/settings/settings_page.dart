@@ -8,7 +8,7 @@ import "package:azari/src/init_main/restart_widget.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_list.dart";
+import "package:azari/src/ui/material/pages/settings/settings_list.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:flutter/material.dart";
 
@@ -17,43 +17,26 @@ part "select_booru.dart";
 part "select_theme.dart";
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({
-    super.key,
-    required this.settingsService,
-    required this.galleryService,
-    required this.thumbnailService,
-  });
-
-  final ThumbnailService? thumbnailService;
-  final GalleryService? galleryService;
-
-  final SettingsService settingsService;
+  const SettingsPage({super.key});
 
   static Future<void> open(BuildContext context) {
-    return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) => SettingsPage(
-          settingsService: const SettingsService(),
-          galleryService: GalleryService.safe(),
-          thumbnailService: ThumbnailService.safe(),
-        ),
-      ),
-    );
+    return Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    final padding =
-        EdgeInsets.only(bottom: 8 + MediaQuery.paddingOf(context).bottom);
+    final padding = EdgeInsets.only(
+      bottom: 8 + MediaQuery.paddingOf(context).bottom,
+    );
 
     return SettingsSkeleton(
       l10n.settingsPageName,
-      child: SliverPadding(
-        padding: padding,
-        sliver: const SettingsList(),
-      ),
+      child: SliverPadding(padding: padding, sliver: const SettingsList()),
     );
   }
 }
@@ -89,7 +72,7 @@ class SettingsSkeleton extends StatelessWidget {
         MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero;
 
     return AnnotatedRegion(
-      value: navBarStyleForTheme(theme),
+      value: makeSystemUiOverlayStyle(theme),
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.endContained,
         bottomNavigationBar: bottomAppBar,
@@ -102,9 +85,7 @@ class SettingsSkeleton extends StatelessWidget {
           right: true,
           child: CustomScrollView(
             slivers: [
-              SliverAppBar.large(
-                title: Text(pageDescription),
-              ),
+              SliverAppBar.large(title: Text(pageDescription)),
               SliverPadding(
                 padding: EdgeInsets.only(bottom: insets.bottom),
                 sliver: child,

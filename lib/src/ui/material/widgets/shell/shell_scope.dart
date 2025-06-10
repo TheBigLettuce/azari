@@ -14,12 +14,11 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
-import "package:azari/src/ui/material/widgets/focus_notifier.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
@@ -32,20 +31,19 @@ part "parts/app_bar.dart";
 part "shell_element.dart";
 part "wrappers/wrap_selection.dart";
 
-typedef WatchFire<T> = StreamSubscription<T> Function(
-  void Function(T), [
-  bool fire,
-]);
+typedef WatchFire<T> =
+    StreamSubscription<T> Function(void Function(T), [bool fire]);
 
 typedef NotifiersFn = InheritedWidget Function(Widget child);
 typedef ScrollOffsetFn = void Function(double pos);
 typedef ScrollUpEvents = (Stream<void> stream, bool Function()? conditional);
-typedef ScrollSizeCalculator = double Function(
-  double contentSize,
-  int idx,
-  GridLayoutType layoutType,
-  GridColumn columns,
-);
+typedef ScrollSizeCalculator =
+    double Function(
+      double contentSize,
+      int idx,
+      GridLayoutType layoutType,
+      GridColumn columns,
+    );
 
 abstract class ShellScopeOverlayInjector {
   Widget wrapChild(Widget child);
@@ -95,9 +93,7 @@ class SourceOnEmptyInterface implements OnEmptyInterface {
 
   @override
   Widget build(BuildContext context) {
-    return EmptyWidgetBackground(
-      subtitle: subtitle(context),
-    );
+    return EmptyWidgetBackground(subtitle: subtitle(context));
   }
 
   @override
@@ -130,10 +126,7 @@ mixin DefaultInjectStack implements ShellScopeOverlayInjector {
 }
 
 class ElementPriority {
-  const ElementPriority(
-    this.sliver, {
-    this.hideOnEmpty = true,
-  });
+  const ElementPriority(this.sliver, {this.hideOnEmpty = true});
 
   final Widget sliver;
   final bool hideOnEmpty;
@@ -284,8 +277,8 @@ mixin _ShellScrollStatusMixin<S extends StatefulWidget> on State<S> {
   }
 
   void _listener() {
-    final showFab = controller.position.pixels ==
-            controller.position.maxScrollExtent ||
+    final showFab =
+        controller.position.pixels == controller.position.maxScrollExtent ||
         controller.position.userScrollDirection == ScrollDirection.forward &&
             controller.offset != 0;
     if (_fabNotifier.value != showFab) {
@@ -353,12 +346,9 @@ class _MainBody extends StatelessWidget {
 
     return [
       if (appBar != null) appBar,
-      _OnEmptyListenerSlivers(
-        onEmpty: onEmpty,
-        slivers: slivers,
-      ),
-      // ...slivers,
+      _OnEmptyListenerSlivers(onEmpty: onEmpty, slivers: slivers),
 
+      // ...slivers,
       _WrapPadding(footer: footer),
     ];
   }
@@ -407,7 +397,8 @@ class _MainBody extends StatelessWidget {
 
     return MediaQuery(
       data: m.copyWith(
-        padding: m.padding +
+        padding:
+            m.padding +
             EdgeInsets.only(
               top: 4,
               bottom: searchWidget is NoShellAppBar ? 4 : 0,
@@ -527,10 +518,12 @@ class _OnEmptyListenerSliversState extends State<_OnEmptyListenerSlivers>
 
   @override
   Widget build(BuildContext context) {
-    final notHide =
-        widget.slivers.where((e) => !e.hideOnEmpty).map((e) => e.sliver);
-    final hide =
-        widget.slivers.where((e) => e.hideOnEmpty).map((e) => e.sliver);
+    final notHide = widget.slivers
+        .where((e) => !e.hideOnEmpty)
+        .map((e) => e.sliver);
+    final hide = widget.slivers
+        .where((e) => e.hideOnEmpty)
+        .map((e) => e.sliver);
 
     return SliverMainAxisGroup(
       slivers: [
@@ -551,9 +544,7 @@ class _OnEmptyListenerSliversState extends State<_OnEmptyListenerSlivers>
 }
 
 class _WrapPadding extends StatelessWidget {
-  const _WrapPadding({
-    required this.footer,
-  });
+  const _WrapPadding({required this.footer});
 
   final PreferredSizeWidget? footer;
 
@@ -562,7 +553,8 @@ class _WrapPadding extends StatelessWidget {
     final hasFab = ShellCapabilityQuery.fabOf(context) is! NoShellFab;
 
     final insets = EdgeInsets.only(
-      bottom: ShellBottomPaddingProvider.of(context, hasFab) +
+      bottom:
+          ShellBottomPaddingProvider.of(context, hasFab) +
           (footer != null ? footer!.preferredSize.height : 0) +
           8,
     );
@@ -712,10 +704,7 @@ class __LinearProgressIndicatorState extends State<_LinearProgressIndicator> {
   @override
   Widget build(BuildContext context) {
     return !progress.inRefreshing
-        ? const Padding(
-            padding: EdgeInsets.only(top: 4),
-            child: SizedBox(),
-          )
+        ? const Padding(padding: EdgeInsets.only(top: 4), child: SizedBox())
         : const LinearProgressIndicator();
   }
 }
@@ -829,16 +818,15 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
 
     const circularProgress = SizedBox.square(
       dimension: 12,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-      ),
+      child: CircularProgressIndicator(strokeWidth: 2),
     );
 
     final dismissCard = Tooltip(
       message: l10n.dismiss,
       child: ActionChip(
-        avatar:
-            status.inRefresh ? null : const Icon(Icons.new_releases_outlined),
+        avatar: status.inRefresh
+            ? null
+            : const Icon(Icons.new_releases_outlined),
         labelStyle: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.primary,
         ),
@@ -906,7 +894,8 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
                             child: Padding(
                               padding: EdgeInsets.only(
                                 right: 8,
-                                top: kToolbarHeight +
+                                top:
+                                    kToolbarHeight +
                                     8 +
                                     MediaQuery.viewPaddingOf(context).top,
                               ),
@@ -918,14 +907,15 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
                     ],
                     target: scrollingDown
                         ? !atEdge
-                            ? 1
-                            : 0
+                              ? 1
+                              : 0
                         : 1,
                     child: child!,
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(8) +
+                  padding:
+                      const EdgeInsets.all(8) +
                       EdgeInsets.only(
                         top: MediaQuery.viewPaddingOf(context).top,
                       ),
@@ -972,14 +962,10 @@ class _StaticBottomPadding extends StatelessWidget {
   }
 }
 
-enum _ShellCapAspect {
-  fab,
-}
+enum _ShellCapAspect { fab }
 
 class ShellCapabilityData {
-  const ShellCapabilityData({
-    required this.fab,
-  });
+  const ShellCapabilityData({required this.fab});
 
   final ShellFabType fab;
 
@@ -1021,8 +1007,7 @@ class ShellCapabilityQuery extends InheritedModel<_ShellCapAspect> {
     return InheritedModel.inheritFrom<ShellCapabilityQuery>(
       context,
       aspect: aspect,
-    )!
-        .data;
+    )!.data;
   }
 
   static ShellCapabilityData? maybeOf(BuildContext context) {
@@ -1070,36 +1055,36 @@ class ShellScrollNotifier extends InheritedWidget {
   final ScrollSizeCalculator scrollSizeCalculator;
 
   static ScrollController of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
 
     return widget!.controller;
   }
 
   static ShellScrollNotifier? _maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
 
     return widget;
   }
 
   static ScrollController? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
 
     return widget?.controller;
   }
 
   static ValueNotifier<bool> fabNotifierOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
 
     return widget!.fabNotifier;
   }
 
   static ValueNotifier<bool> saveScrollNotifierOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ShellScrollNotifier>();
 
     return widget!.saveScrollNotifier;
   }
@@ -1123,7 +1108,8 @@ class ShellScrollNotifier extends InheritedWidget {
     }
 
     // Get the full content height.
-    final contentSize = controller.position.viewportDimension +
+    final contentSize =
+        controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
     final double target = notifier.scrollSizeCalculator(
@@ -1177,4 +1163,27 @@ class ShellBottomPaddingProvider extends InheritedWidget {
   @override
   bool updateShouldNotify(ShellBottomPaddingProvider oldWidget) =>
       padding != oldWidget.padding;
+}
+
+class ExitOnPressRoute extends InheritedWidget {
+  const ExitOnPressRoute({super.key, required this.exit, required super.child});
+
+  final void Function() exit;
+
+  static void maybeExitOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
+
+    widget?.exit();
+  }
+
+  static void exitOf(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<ExitOnPressRoute>();
+
+    widget!.exit();
+  }
+
+  @override
+  bool updateShouldNotify(ExitOnPressRoute oldWidget) => exit != oldWidget.exit;
 }

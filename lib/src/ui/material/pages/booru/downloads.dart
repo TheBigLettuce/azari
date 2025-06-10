@@ -20,10 +20,7 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class DownloadsPage extends StatefulWidget {
-  const DownloadsPage({
-    super.key,
-    required this.selectionController,
-  });
+  const DownloadsPage({super.key, required this.selectionController});
 
   final SelectionController selectionController;
 
@@ -101,35 +98,30 @@ class _DownloadsPageState extends State<DownloadsPage>
   Segments<DownloadHandle> _makeSegments(
     BuildContext context,
     AppLocalizations l10n,
-  ) =>
-      Segments(
-        l10n.unknownSegmentsPlaceholder,
-        hidePinnedIcon: true,
-        limitLabelChildren: 6,
-        injectedLabel: "",
-        segment: (e) => e.data.status.translatedString(l10n),
-        caps: const SegmentCapability.alwaysPinned(),
-      );
+  ) => Segments(
+    l10n.unknownSegmentsPlaceholder,
+    hidePinnedIcon: true,
+    limitLabelChildren: 6,
+    injectedLabel: "",
+    segment: (e) => e.data.status.translatedString(l10n),
+    caps: const SegmentCapability.alwaysPinned(),
+  );
 
   SelectionBarAction delete(BuildContext context) {
-    return SelectionBarAction(
-      Icons.remove,
-      (selected) {
-        if (selected.isEmpty) {
-          return;
-        }
+    return SelectionBarAction(Icons.remove, (selected) {
+      if (selected.isEmpty) {
+        return;
+      }
 
-        storage.removeAll(selected.map((e) => (e as DownloadHandle).key));
-      },
-      true,
-    );
+      storage.removeAll(selected.map((e) => (e as DownloadHandle).key));
+    }, true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return ScaffoldSelectionBar(
+    return ScaffoldWithSelectionBar(
       child: ShellScope(
         stackInjector: status,
         configWatcher: gridSettings.watch,

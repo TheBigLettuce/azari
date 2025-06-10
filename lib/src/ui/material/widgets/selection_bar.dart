@@ -5,13 +5,51 @@
 
 import "dart:async";
 
-import "package:azari/src/ui/material/widgets/action_button.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
+import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
 
 class SelectionBar extends StatefulWidget {
-  const SelectionBar({
+  const SelectionBar({super.key, required this.actions});
+
+  final SelectionActions actions;
+
+  @override
+  State<SelectionBar> createState() => _SelectionBarState();
+}
+
+class _SelectionBarState extends State<SelectionBar>
+    with DefaultSelectionEventsMixin {
+  @override
+  SelectionAreaSize get selectionSizes =>
+      const SelectionAreaSize(base: 0, expanded: 80);
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      autoPlay: false,
+      target: widget.actions.controller.isExpanded ? 1 : 0,
+      effects: [
+        SlideEffect(
+          duration: 220.ms,
+          curve: Easing.standard,
+          end: Offset.zero,
+          begin: const Offset(0, 1),
+        ),
+      ],
+      child: SelectionBarBase(
+        selectionActions: widget.actions,
+        actions: actions,
+      ),
+    );
+  }
+}
+
+class SelectionBarBase extends StatefulWidget {
+  const SelectionBarBase({
     super.key,
     required this.selectionActions,
     required this.actions,
@@ -21,10 +59,10 @@ class SelectionBar extends StatefulWidget {
   final List<SelectionButton> actions;
 
   @override
-  State<SelectionBar> createState() => _SelectionBarState();
+  State<SelectionBarBase> createState() => _SelectionBarBaseState();
 }
 
-class _SelectionBarState extends State<SelectionBar> {
+class _SelectionBarBaseState extends State<SelectionBarBase> {
   late final StreamSubscription<void> _countEvents;
 
   @override
@@ -44,15 +82,15 @@ class _SelectionBarState extends State<SelectionBar> {
   }
 
   Widget _wrapped(SelectionButton e) => ActionButton(
-        e.icon,
-        e.consume,
-        animate: e.animate,
-        onLongPress: null,
-        play: e.play,
-        animation: const [],
-        addBorder: false,
-        taskTag: e.taskTag,
-      );
+    e.icon,
+    e.consume,
+    animate: e.animate,
+    onLongPress: null,
+    play: e.play,
+    animation: const [],
+    addBorder: false,
+    taskTag: e.taskTag,
+  );
 
   void _unselectAll() {
     widget.selectionActions.controller.setCount(0);
@@ -65,9 +103,7 @@ class _SelectionBarState extends State<SelectionBar> {
         .map(
           (e) => PopupMenuItem<void>(
             onTap: e.consume,
-            child: AbsorbPointer(
-              child: _wrapped(e),
-            ),
+            child: AbsorbPointer(child: _wrapped(e)),
           ),
         )
         .toList();
@@ -90,14 +126,14 @@ class _SelectionBarState extends State<SelectionBar> {
     final actions = widget.actions.length < 4
         ? widget.actions.map(_wrapped).toList()
         : widget.actions
-            .getRange(
-              widget.actions.length != 4
-                  ? widget.actions.length - 3
-                  : widget.actions.length - 3 - 1,
-              widget.actions.length,
-            )
-            .map(_wrapped)
-            .toList();
+              .getRange(
+                widget.actions.length != 4
+                    ? widget.actions.length - 3
+                    : widget.actions.length - 3 - 1,
+                widget.actions.length,
+              )
+              .map(_wrapped)
+              .toList();
 
     final count = widget.selectionActions.controller.count.toString();
 
@@ -106,9 +142,7 @@ class _SelectionBarState extends State<SelectionBar> {
       children: [
         const SizedBox(
           height: 80,
-          child: AbsorbPointer(
-            child: SizedBox.shrink(),
-          ),
+          child: AbsorbPointer(child: SizedBox.shrink()),
         ),
         BottomAppBar(
           color: bottomBarColor,
@@ -124,10 +158,7 @@ class _SelectionBarState extends State<SelectionBar> {
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: Wrap(
-                    spacing: 4,
-                    children: actions,
-                  ),
+                  child: Wrap(spacing: 4, children: actions),
                 ),
               ),
               Row(
@@ -145,10 +176,7 @@ class _SelectionBarState extends State<SelectionBar> {
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8, right: 8),
-                          child: Text(
-                            count,
-                            style: textStyle,
-                          ),
+                          child: Text(count, style: textStyle),
                         ),
                       ),
                     ),
@@ -164,6 +192,162 @@ class _SelectionBarState extends State<SelectionBar> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ActionButton extends StatefulWidget {
+  const ActionButton(
+    this.icon,
+    this.onPressed, {
+    super.key,
+    this.color,
+    required this.onLongPress,
+    required this.play,
+    required this.animate,
+    required this.taskTag,
+    this.watch,
+    required this.animation,
+    this.iconOnly = false,
+    this.addBorder = true,
+  });
+
+  final bool addBorder;
+  final bool animate;
+  final bool iconOnly;
+  final bool play;
+
+  final IconData icon;
+
+  final Color? color;
+
+  final List<Effect<dynamic>> animation;
+
+  final Type? taskTag;
+
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+
+  final WatchFire<(IconData?, Color?, bool?)>? watch;
+
+  @override
+  State<ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<ActionButton>
+    with SingleTickerProviderStateMixin {
+  StreamSubscription<(IconData?, Color?, bool?)>? _subscr;
+
+  late (IconData, Color?, bool) data = (widget.icon, widget.color, widget.play);
+
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(vsync: this, duration: Durations.medium2);
+
+    _subscr = widget.watch?.call((d) {
+      data = (d.$1 ?? data.$1, d.$2, d.$3 ?? data.$3);
+
+      setState(() {});
+    }, true);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _subscr?.cancel();
+
+    super.dispose();
+  }
+
+  void onPressed() {
+    if (widget.animate && data.$3) {
+      controller.reset();
+      controller.animateTo(1).then((value) => controller.animateBack(0));
+    }
+    HapticFeedback.selectionClick();
+    widget.onPressed!();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final tag = widget.taskTag != null
+        ? const TasksService().statusUnsafe(context, widget.taskTag!)
+        : TaskStatus.done;
+
+    final icon = tag.isWaiting
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : TweenAnimationBuilder(
+            tween: ColorTween(end: data.$2 ?? theme.colorScheme.onSurface),
+            duration: Durations.medium1,
+            curve: Easing.linear,
+            builder: (context, color, _) {
+              return Icon(
+                data.$1,
+                color: widget.onPressed == null || widget.onPressed == null
+                    ? theme.disabledColor.withValues(alpha: 0.5)
+                    : color,
+              );
+            },
+          );
+
+    if (widget.iconOnly) {
+      return GestureDetector(
+        onTap: widget.onPressed == null ? null : onPressed,
+        child: widget.animate
+            ? Animate(
+                effects: widget.animation,
+                controller: controller,
+                autoPlay: false,
+                child: icon,
+              )
+            : icon,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: GestureDetector(
+        onLongPress: widget.onLongPress == null
+            ? null
+            : () {
+                widget.onLongPress!();
+                HapticFeedback.lightImpact();
+              },
+        child: IconButton(
+          style: !widget.addBorder
+              ? null
+              : ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    theme.colorScheme.surfaceContainerLow.withValues(
+                      alpha: 0.9,
+                    ),
+                  ),
+                  shape: const WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
+                    ),
+                  ),
+                ),
+          onPressed: widget.onPressed == null ? null : onPressed,
+          icon: widget.animate
+              ? Animate(
+                  effects: widget.animation,
+                  controller: controller,
+                  autoPlay: false,
+                  child: icon,
+                )
+              : icon,
+        ),
+      ),
     );
   }
 }
@@ -246,13 +430,13 @@ abstract class SelectionController {
   void setCount(int count, [List<SelectionButton> Function()? factory]);
   void setVisibility(bool isVisible);
   void setExpanded(bool isExpanded);
+
+  static SelectionController of(BuildContext context) =>
+      SelectionActions.of(context).controller;
 }
 
 class SelectionAreaSize {
-  const SelectionAreaSize({
-    required this.base,
-    required this.expanded,
-  });
+  const SelectionAreaSize({required this.base, required this.expanded});
 
   final double base;
   final double expanded;
@@ -283,7 +467,7 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
   SelectionAreaSize get selectionSizes;
 
   late final StreamSubscription<List<SelectionButton> Function()?>
-      _actionEvents;
+  _actionEvents;
 
   late final StreamSubscription<void> _expandedEvents;
 
@@ -303,8 +487,9 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
 
     if (_selectionActions == null) {
       _selectionActions = SelectionActions.of(context);
-      _actionEvents =
-          _selectionActions!.connect(selectionSizes).listen((newActions) {
+      _actionEvents = _selectionActions!.connect(selectionSizes).listen((
+        newActions,
+      ) {
         if (_prevFunc == newActions) {
           return;
         } else if (newActions == null) {
@@ -320,8 +505,9 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
         }
       });
 
-      _expandedEvents =
-          _selectionActions!.controller.expandedEvents.listen((_) {
+      _expandedEvents = _selectionActions!.controller.expandedEvents.listen((
+        _,
+      ) {
         animateNavBar(_selectionActions!.controller.isExpanded);
         setState(() {});
       });
@@ -414,19 +600,14 @@ class _DefaultSelectionActions implements SelectionActions {
   SelectionAreaSize size = const SelectionAreaSize(base: 0, expanded: 0);
 
   @override
-  Stream<List<SelectionButton> Function()?> connect(
-    SelectionAreaSize size_,
-  ) {
+  Stream<List<SelectionButton> Function()?> connect(SelectionAreaSize size_) {
     size = size_;
 
     return _events.stream;
   }
 
   @override
-  Widget inject(Widget child) => _Notifier(
-        instance: this,
-        child: child,
-      );
+  Widget inject(Widget child) => _Notifier(instance: this, child: child);
 
   @override
   void dispose() {

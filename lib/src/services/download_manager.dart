@@ -141,9 +141,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
     }
 
     final toDownload = downloads
-        .skipWhile(
-          (element) => map_.containsKey(element.url),
-        )
+        .skipWhile((element) => map_.containsKey(element.url))
         .toList();
     if (downloads.isEmpty) {
       return;
@@ -180,9 +178,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
     }
 
     final entries = map_.values
-        .where(
-          (element) => element.data.status == DownloadStatus.onHold,
-        )
+        .where((element) => element.data.status == DownloadStatus.onHold)
         .take(newAdd)
         .map(
           (e) => DownloadHandle(
@@ -204,9 +200,9 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
     }
 
     if (this is DownloadManagerHasPersistence) {
-      (this as DownloadManagerHasPersistence)
-          .db
-          .saveAll(entries.map((e) => e.data._toDb()).toList());
+      (this as DownloadManagerHasPersistence).db.saveAll(
+        entries.map((e) => e.data._toDb()).toList(),
+      );
     }
 
     for (final e in entries) {
@@ -277,8 +273,10 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
 
     final entry = map_[url]!;
 
-    final dir =
-        await ensureDownloadDirExists(dir: downloadDir, site: entry.data.site);
+    final dir = await ensureDownloadDirExists(
+      dir: downloadDir,
+      site: entry.data.site,
+    );
     final filePath = path.joinAll([dir, entry.data.name]);
 
     if (await files!.exists(filePath)) {
@@ -305,19 +303,16 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
         cancelToken: entry.token,
         onReceiveProgress: progress != null
             ? (count, total) => _downloadProgress(
-                  url,
-                  progress,
-                  entry,
-                  count: count,
-                  total: total,
-                )
+                url,
+                progress,
+                entry,
+                count: count,
+                total: total,
+              )
             : null,
       );
 
-      await _moveDownloadedFile(
-        entry,
-        filePath: filePath,
-      );
+      await _moveDownloadedFile(entry, filePath: filePath);
 
       _complete(entry.key);
       progress?.done();
@@ -368,11 +363,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
 class DownloadHandle
     with DefaultBuildCell, CellBuilderData
     implements CellBuilder {
-  DownloadHandle({
-    required this.data,
-    required this.token,
-    this.watcher,
-  });
+  DownloadHandle({required this.data, required this.token, this.watcher});
 
   StreamController<double>? watcher;
 
@@ -398,16 +389,15 @@ class DownloadHandle
     required CellType cellType,
     required bool hideName,
     Alignment imageAlign = Alignment.center,
-  }) =>
-      WrapSelection(
-        onPressed: null,
-        child: super.buildCell(
-          l10n,
-          cellType: cellType,
-          hideName: hideName,
-          imageAlign: imageAlign,
-        ),
-      );
+  }) => WrapSelection(
+    onPressed: null,
+    child: super.buildCell(
+      l10n,
+      cellType: cellType,
+      hideName: hideName,
+      imageAlign: imageAlign,
+    ),
+  );
 
   @override
   ImageProvider<Object> thumbnail() =>
@@ -468,25 +458,122 @@ class DownloadEntry {
   final DownloadStatus status;
 
   DownloadEntry _copyStatus(DownloadStatus newStatus) => DownloadEntry._(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        status: newStatus,
-        thenMoveTo: thenMoveTo,
-      );
+    name: name,
+    url: url,
+    thumbUrl: thumbUrl,
+    site: site,
+    status: newStatus,
+    thenMoveTo: thenMoveTo,
+  );
 
   DownloadFileData _toDb() => DownloadFileData(
-        status: status,
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: DateTime.now(),
-      );
+    status: status,
+    name: name,
+    url: url,
+    thumbUrl: thumbUrl,
+    site: site,
+    date: DateTime.now(),
+  );
 
   @override
   String toString() {
     return "DownloadEntry(name: $name)";
+  }
+}
+
+class LinearDownloadIndicator extends StatefulWidget {
+  const LinearDownloadIndicator({super.key, required this.post});
+
+  final PostImpl post;
+
+  @override
+  State<LinearDownloadIndicator> createState() =>
+      _LinearDownloadIndicatorState();
+}
+
+class _LinearDownloadIndicatorState extends State<LinearDownloadIndicator>
+    with DownloadManager {
+  late final StreamSubscription<void> events;
+  DownloadHandle? status;
+
+  @override
+  void initState() {
+    events = storage.watch((_) {
+      setState(() {
+        status = statusFor(widget.post.fileDownloadUrl());
+      });
+    }, true);
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return status == null || status!.data.status == DownloadStatus.failed
+        ? const SizedBox.shrink()
+        : _LinearProgress(handle: status!);
+  }
+}
+
+class _LinearProgress extends StatefulWidget {
+  const _LinearProgress({
+    // super.key,
+    required this.handle,
+  });
+
+  final DownloadHandle handle;
+
+  @override
+  State<_LinearProgress> createState() => __LinearProgressState();
+}
+
+class __LinearProgressState extends State<_LinearProgress> {
+  late final StreamSubscription<void> subscription;
+
+  double? progress;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = widget.handle.watchProgress((i) {
+      setState(() {
+        progress = i;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      autoPlay: true,
+      effects: const [
+        FadeEffect(
+          duration: Durations.medium4,
+          curve: Easing.standard,
+          begin: 0,
+          end: 1,
+        ),
+      ],
+      child: LinearProgressIndicator(
+        borderRadius: const BorderRadius.all(Radius.circular(5)),
+        minHeight: 2,
+        value: progress,
+      ),
+    );
   }
 }

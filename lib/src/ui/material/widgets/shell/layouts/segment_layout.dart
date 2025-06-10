@@ -4,16 +4,15 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
-import "dart:ui";
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/segment_label.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
@@ -88,11 +87,7 @@ class Segments<T> {
   final void Function(String label, List<T> children)? onLabelPressed;
 }
 
-enum SegmentModifier {
-  blur,
-  auth,
-  sticky;
-}
+enum SegmentModifier { blur, auth, sticky }
 
 abstract interface class SegmentCapability {
   const factory SegmentCapability.empty() = _SegmentCapabilityEmpty;
@@ -177,7 +172,8 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
   ShellSelectionHolder? get selection => widget.selection;
 
   @override
-  void Function()? get onUpdate => () => _makeSegments(l10n ?? context.l10n());
+  void Function()? get onUpdate =>
+      () => _makeSegments(l10n ?? context.l10n());
 
   List<_SegmentType> _data = [];
   List<int>? predefined;
@@ -244,29 +240,27 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
               if (cell
                   .title(l10n)
                   .startsWith(e.length <= 6 ? e : e.substring(0, 6))) {
-                suggestionCells.add(
-                  (
-                    SyncCell(cell),
-                    caps
-                        .get(segments.segment!(cell) ?? "")
-                        .contains(SegmentModifier.blur)
-                  ),
-                );
+                suggestionCells.add((
+                  SyncCell(cell),
+                  caps
+                      .get(segments.segment!(cell) ?? "")
+                      .contains(SegmentModifier.blur),
+                ));
                 break;
               }
             }
           } else {
-            if (cell.title(l10n).startsWith(
+            if (cell
+                .title(l10n)
+                .startsWith(
                   alias.length <= 6 ? alias : alias.substring(0, 6),
                 )) {
-              suggestionCells.add(
-                (
-                  SyncCell(cell),
-                  caps
-                      .get(segments.segment!(cell) ?? "")
-                      .contains(SegmentModifier.blur)
-                ),
-              );
+              suggestionCells.add((
+                SyncCell(cell),
+                caps
+                    .get(segments.segment!(cell) ?? "")
+                    .contains(SegmentModifier.blur),
+              ));
             }
           }
         }
@@ -274,8 +268,7 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
 
       if (suggestionCells.isNotEmpty) {
         suggestionCells.sort(
-          (a, b) => (a.$1 as SyncCell<T>)
-              .value
+          (a, b) => (a.$1 as SyncCell<T>).value
               .title(l10n)
               .compareTo((b.$1 as SyncCell<T>).value.title(l10n)),
         );
@@ -314,7 +307,7 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
                             SyncCell(cell),
                             caps
                                 .get(segments.segment!(cell) ?? "")
-                                .contains(SegmentModifier.blur)
+                                .contains(SegmentModifier.blur),
                           );
                         }(),
                     ]
@@ -327,11 +320,7 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
       if (segments.injectedSegments.isNotEmpty) {
         segRows.add(
           _HeaderWithCells<T>(
-            _SegSticky(
-              segments.injectedLabel,
-              null,
-              unstickable: false,
-            ),
+            _SegSticky(segments.injectedLabel, null, unstickable: false),
             segments.injectedSegments.map((e) => (e, false)).toList(),
             const {SegmentModifier.sticky},
           ),
@@ -374,26 +363,24 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
       }
     });
 
-    segMap.forEach(
-      (key, value) {
-        if (!value.$2.contains(SegmentModifier.sticky)) {
-          segRows.add(
-            _HeaderWithIdx(
-              _SegSticky(
-                key,
-                segments.onLabelPressed == null
-                    ? null
-                    : () => onLabelPressed(key, value.$1),
-              ),
-              value.$1,
-              value.$2,
+    segMap.forEach((key, value) {
+      if (!value.$2.contains(SegmentModifier.sticky)) {
+        segRows.add(
+          _HeaderWithIdx(
+            _SegSticky(
+              key,
+              segments.onLabelPressed == null
+                  ? null
+                  : () => onLabelPressed(key, value.$1),
             ),
-          );
+            value.$1,
+            value.$2,
+          ),
+        );
 
-          predefined.addAll(value.$1);
-        }
-      },
-    );
+        predefined.addAll(value.$1);
+      }
+    });
 
     if (unsegmented.isNotEmpty) {
       segRows.add(
@@ -420,11 +407,7 @@ class _SegmentLayoutState<T extends CellBuilder> extends State<SegmentLayout<T>>
     if (segments.injectedSegments.isNotEmpty) {
       segRows.add(
         _HeaderWithCells<T>(
-          _SegSticky(
-            segments.injectedLabel,
-            null,
-            unstickable: false,
-          ),
+          _SegSticky(segments.injectedLabel, null, unstickable: false),
           segments.injectedSegments.map((e) => (e, false)).toList(),
           const {SegmentModifier.sticky},
         ),
@@ -524,25 +507,23 @@ class SegmentLayoutBody<T extends CellBuilder> extends StatelessWidget {
     final slivers = <Widget>[];
 
     for (final e in data) {
-      slivers.add(
-        switch (e) {
-          _HeaderWithIdx() => _SegRowHIdx<T>(
-              selection: selection,
-              val: e,
-              gridSeed: gridSeed,
-              predefined: predefined,
-              segments: segments,
-              storage: storage,
-              config: config,
-            ),
-          _HeaderWithCells<T>() => _SegRowHCell<T>(
-              selection: selection,
-              val: e,
-              segments: segments,
-            ),
-          _HeaderWithCells<CellBuilder>() => throw UnimplementedError(),
-        },
-      );
+      slivers.add(switch (e) {
+        _HeaderWithIdx() => _SegRowHIdx<T>(
+          selection: selection,
+          val: e,
+          gridSeed: gridSeed,
+          predefined: predefined,
+          segments: segments,
+          storage: storage,
+          config: config,
+        ),
+        _HeaderWithCells<T>() => _SegRowHCell<T>(
+          selection: selection,
+          val: e,
+          segments: segments,
+        ),
+        _HeaderWithCells<CellBuilder>() => throw UnimplementedError(),
+      });
     }
 
     return SliverMainAxisGroup(slivers: slivers);
@@ -576,25 +557,22 @@ class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
     _watchers = widget.val.cells
         .where((e) => e.$1 is AsyncCell<T>)
         .map(
-          (e) => (e.$1 as AsyncCell<T>).watch(
-            (newE) {
-              if (newE != null) {
-                _addedCells.removeWhere(
-                  (e) => e.$1.value.uniqueKey() == newE.uniqueKey(),
-                );
-                _addedCells.add((SyncCell(newE), false));
-              } else {
-                _addedCells.removeWhere(
-                  (e2) =>
-                      e2.$1.value.uniqueKey() ==
-                      (e.$1 as AsyncCell<T>).uniqueKey(),
-                );
-              }
+          (e) => (e.$1 as AsyncCell<T>).watch((newE) {
+            if (newE != null) {
+              _addedCells.removeWhere(
+                (e) => e.$1.value.uniqueKey() == newE.uniqueKey(),
+              );
+              _addedCells.add((SyncCell(newE), false));
+            } else {
+              _addedCells.removeWhere(
+                (e2) =>
+                    e2.$1.value.uniqueKey() ==
+                    (e.$1 as AsyncCell<T>).uniqueKey(),
+              );
+            }
 
-              setState(() {});
-            },
-            true,
-          ),
+            setState(() {});
+          }, true),
         )
         .toList();
   }
@@ -612,7 +590,8 @@ class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    late final items = widget.val.cells
+    late final items =
+        widget.val.cells
             .where((e) => e.$1 is! AsyncCell<T>)
             .map((e) => (e.$1 as SyncCell<T>, e.$2))
             .toList() +
@@ -654,31 +633,6 @@ class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
     );
   }
 }
-
-//  wrapSelection: (child) =>
-//               cell.value
-//                   .tryAsSelectionWrapperable()
-//                   ?.buildSelectionWrapper<T>(
-//                     context: context,
-//                     description: cell.value.description(),
-//                     onPressed: cell.value.tryAsPressable<T>(
-//                       context,
-//                       idx,
-//                     ),
-//                     selectFrom: null,
-//                     thisIndx: -1,
-//                     child: child,
-//                   ) ??
-//               WrapSelection<T>(
-//                 description: cell.value.description(),
-//                 onPressed: cell.value.tryAsPressable<T>(
-//                   context,
-//                   idx,
-//                 ),
-//                 selectFrom: null,
-//                 thisIndx: -1,
-//                 child: child,
-//               ),
 
 class _SegRowHIdx<T extends CellBuilder> extends StatelessWidget {
   const _SegRowHIdx({
@@ -740,130 +694,34 @@ class _SegRowHIdx<T extends CellBuilder> extends StatelessWidget {
       count: val.list.length,
       sliver: switch (config.layoutType) {
         GridLayoutType.grid => SliverGrid.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              childAspectRatio: config.aspectRatio.value,
-              crossAxisCount: config.columns.number,
-            ),
-            itemCount: val.list.length,
-            itemBuilder: buildItem,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            childAspectRatio: config.aspectRatio.value,
+            crossAxisCount: config.columns.number,
           ),
+          itemCount: val.list.length,
+          itemBuilder: buildItem,
+        ),
         GridLayoutType.list => SliverPadding(
-            padding: const EdgeInsets.only(right: 8, left: 8),
-            sliver: SliverList.builder(
-              itemCount: val.list.length,
-              itemBuilder: (context, idx) =>
-                  buildItem(context, idx, CellType.list),
-            ),
-          ),
-        GridLayoutType.gridQuilted => SliverGrid.builder(
+          padding: const EdgeInsets.only(right: 8, left: 8),
+          sliver: SliverList.builder(
             itemCount: val.list.length,
-            gridDelegate: SliverQuiltedGridDelegate(
-              crossAxisCount: config.columns.number,
-              repeatPattern: QuiltedGridRepeatPattern.inverted,
-              pattern: config.columns.pattern(gridSeed),
-            ),
-            itemBuilder: buildItem,
+            itemBuilder: (context, idx) =>
+                buildItem(context, idx, CellType.list),
           ),
+        ),
+        GridLayoutType.gridQuilted => SliverGrid.builder(
+          itemCount: val.list.length,
+          gridDelegate: SliverQuiltedGridDelegate(
+            crossAxisCount: config.columns.number,
+            repeatPattern: QuiltedGridRepeatPattern.inverted,
+            pattern: config.columns.pattern(gridSeed),
+          ),
+          itemBuilder: buildItem,
+        ),
       },
     );
   }
 }
-
-//  wrapSelection: (child) =>
-//         cell.tryAsSelectionWrapperable()?.buildSelectionWrapper<T>(
-//               context: context,
-//               thisIndx: realIdx,
-//               description: cell.description(),
-//               selectFrom: predefined,
-//               onPressed: cell.tryAsPressable(context, idx),
-//               child: child,
-//             ) ??
-//         WrapSelection<T>(
-//           thisIndx: realIdx,
-//           description: cell.description(),
-//           selectFrom: predefined,
-//           onPressed: cell.tryAsPressable(context, idx),
-//           child: child,
-//         ),
-
-// final child = Builder(
-//                 builder: (context) {
-//                   final theme = Theme.of(context);
-//                   SelectionCountNotifier.maybeCountOf(context);
-//                   final isSelected = selection?.isSelected(realIdx) ?? false;
-
-//                   return DecoratedBox(
-//                     decoration: ShapeDecoration(
-//                       shape: const StadiumBorder(),
-//                       color: isSelected
-//                           ? null
-//                           : idx.isOdd
-//                               ? theme.colorScheme.secondary
-//                                   .withValues(alpha: 0.1)
-//                               : theme.colorScheme.surfaceContainerHighest
-//                                   .withValues(alpha: 0.1),
-//                     ),
-//                     child: ListTile(
-//                       textColor: isSelected
-//                           ? theme.colorScheme.inversePrimary
-//                           : null,
-//                       leading: toBlur
-//                           ? ClipOval(
-//                               child: ImageFiltered(
-//                                 imageFilter: ImageFilter.compose(
-//                                   outer: ImageFilter.blur(
-//                                     sigmaX: 3.59,
-//                                     sigmaY: 3.59,
-//                                     tileMode: TileMode.mirror,
-//                                   ),
-//                                   inner: ImageFilter.dilate(
-//                                     radiusX: 0.7,
-//                                     radiusY: 0.7,
-//                                   ),
-//                                 ),
-//                                 child: CircleAvatar(
-//                                   backgroundColor: theme.colorScheme.surface
-//                                       .withValues(alpha: 0),
-//                                   backgroundImage:
-//                                       cell.tryAsThumbnailable(context),
-//                                 ),
-//                               ),
-//                             )
-//                           : CircleAvatar(
-//                               backgroundColor: theme.colorScheme.surface
-//                                   .withValues(alpha: 0),
-//                               backgroundImage:
-//                                   cell.tryAsThumbnailable(context),
-//                             ),
-//                       title: Text(
-//                         cell.alias(true),
-//                         softWrap: false,
-//                         style: TextStyle(
-//                           color: isSelected
-//                               ? theme.colorScheme.onPrimary
-//                                   .withValues(alpha: 0.8)
-//                               : idx.isOdd
-//                                   ? theme.colorScheme.onSurface
-//                                       .withValues(alpha: 0.8)
-//                                   : theme.colorScheme.onSurface
-//                                       .withValues(alpha: 0.9),
-//                         ),
-//                         overflow: TextOverflow.ellipsis,
-//                       ),
-//                     ),
-//                   );
-//                 },
-//               );
-
-//               return WrapSelection(
-//                 selectFrom: null,
-//                 limitedSize: true,
-//                 shape: const StadiumBorder(),
-//                 description: cell.description(),
-//                 onPressed: cell.tryAsPressable(context, idx),
-//                 thisIndx: realIdx,
-//                 child: child,
-//               );
 
 class SegmentCard<T extends CellBuilder> extends StatelessWidget {
   const SegmentCard({
@@ -919,10 +777,7 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
           const {SegmentModifier.sticky},
         );
       } else {
-        segments.caps.add(
-          [segmentLabel.seg],
-          const {SegmentModifier.sticky},
-        );
+        segments.caps.add([segmentLabel.seg], const {SegmentModifier.sticky});
       }
 
       unawaited(HapticFeedback.vibrate());
@@ -940,15 +795,9 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
       }
 
       if (toBlur) {
-        segments.caps.remove(
-          [segmentLabel.seg],
-          const {SegmentModifier.blur},
-        );
+        segments.caps.remove([segmentLabel.seg], const {SegmentModifier.blur});
       } else {
-        segments.caps.add(
-          [segmentLabel.seg],
-          const {SegmentModifier.blur},
-        );
+        segments.caps.add([segmentLabel.seg], const {SegmentModifier.blur});
       }
 
       unawaited(HapticFeedback.vibrate());
@@ -964,15 +813,9 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
       }
 
       if (toAuth) {
-        segments.caps.remove(
-          [segmentLabel.seg],
-          const {SegmentModifier.auth},
-        );
+        segments.caps.remove([segmentLabel.seg], const {SegmentModifier.auth});
       } else {
-        segments.caps.add(
-          [segmentLabel.seg],
-          const {SegmentModifier.auth},
-        );
+        segments.caps.add([segmentLabel.seg], const {SegmentModifier.auth});
       }
 
       unawaited(HapticFeedback.vibrate());
@@ -981,9 +824,7 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
     return SliverPadding(
       padding: const EdgeInsets.all(4),
       sliver: DecoratedSliver(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(25)),
         sliver: SliverMainAxisGroup(
           slivers: [
             SliverPadding(
@@ -992,7 +833,8 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
                 child: SegmentLabel(
                   segmentLabel.seg,
                   count: count,
-                  icons: segments.caps.ignoreButtons ||
+                  icons:
+                      segments.caps.ignoreButtons ||
                           isUnsegmented ||
                           isSpecial ||
                           isBooru
@@ -1022,10 +864,7 @@ class SegmentCard<T extends CellBuilder> extends StatelessWidget {
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.all(4),
-              sliver: sliver,
-            ),
+            SliverPadding(padding: const EdgeInsets.all(4), sliver: sliver),
           ],
         ),
       ),

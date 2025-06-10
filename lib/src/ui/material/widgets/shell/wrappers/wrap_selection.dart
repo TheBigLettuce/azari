@@ -99,7 +99,7 @@ class WrapSelection extends StatelessWidget {
               selection.selectOrUnselect(thisIdx.$1);
             },
       onWillAcceptWithDetails: (data) => true,
-      builder: (context, _, __) {
+      builder: (context, _, _) {
         if (selection.isNotEmpty) {
           return Draggable(
             data: 1,
@@ -235,15 +235,16 @@ class __WrappedSelectionCoreState extends State<_WrappedSelectionCore>
                 child: GestureDetector(
                   child: Builder(
                     builder: (context) => InkWell(
-                      onDoubleTap: widget.onDoubleTap == null ||
+                      onDoubleTap:
+                          widget.onDoubleTap == null ||
                               widget.selection!.isNotEmpty
                           ? null
                           : () => widget.onDoubleTap!(context),
                       customBorder: widget.shape,
                       onTap: selection.isEmpty
                           ? thisIndx.isNegative && widget.onPressed == null
-                              ? null
-                              : widget.onPressed
+                                ? null
+                                : widget.onPressed
                           : () {
                               selection.selectOrUnselect(thisIndx);
                             },
@@ -283,9 +284,7 @@ class __WrappedSelectionCoreState extends State<_WrappedSelectionCore>
                       child: Icon(
                         Icons.check_rounded,
                         color: colorScheme.primaryFixedDim,
-                        shadows: const [
-                          Shadow(),
-                        ],
+                        shadows: const [Shadow()],
                       ),
                     ),
                   ),
@@ -293,9 +292,9 @@ class __WrappedSelectionCoreState extends State<_WrappedSelectionCore>
               ),
             ),
           ).animate().fadeIn(
-                duration: const Duration(milliseconds: 160),
-                curve: Easing.emphasizedAccelerate,
-              ),
+            duration: const Duration(milliseconds: 160),
+            curve: Easing.emphasizedAccelerate,
+          ),
         ],
       ],
     );
@@ -328,7 +327,7 @@ class __WrappedSelectionCoreState extends State<_WrappedSelectionCore>
 
 class _LongPressMoveGesture extends StatefulWidget {
   const _LongPressMoveGesture({
-    super.key,
+    // super.key,
     required this.selection,
     required this.thisIndx,
     required this.selectFrom,
@@ -358,32 +357,31 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
     final gestures = <Type, GestureRecognizerFactory>{
       LongPressGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-              () => LongPressGestureRecognizer(
-                    debugOwner: this,
-                    postAcceptSlopTolerance: 30,
-                  ), (LongPressGestureRecognizer instance) {
-        instance
-          ..onLongPress = selection.isEmpty
-              ? null
-              : () {
-                  selection.selectUnselectUntil(
-                    widget.thisIndx,
-                    selectFrom: widget.selectFrom,
-                  );
-                  HapticFeedback.vibrate();
-                }
-          ..onLongPressMoveUpdate = (details) {
-            if (details.offsetFromOrigin.dy >= 18) {
-              widget.selection.selectAll();
-            }
-          };
-      }),
+            () => LongPressGestureRecognizer(
+              debugOwner: this,
+              postAcceptSlopTolerance: 30,
+            ),
+            (LongPressGestureRecognizer instance) {
+              instance
+                ..onLongPress = selection.isEmpty
+                    ? null
+                    : () {
+                        selection.selectUnselectUntil(
+                          widget.thisIndx,
+                          selectFrom: widget.selectFrom,
+                        );
+                        HapticFeedback.vibrate();
+                      }
+                ..onLongPressMoveUpdate = (details) {
+                  if (details.offsetFromOrigin.dy >= 18) {
+                    widget.selection.selectAll();
+                  }
+                };
+            },
+          ),
     };
 
-    return RawGestureDetector(
-      gestures: gestures,
-      child: widget.child,
-    );
+    return RawGestureDetector(gestures: gestures, child: widget.child);
   }
 }
 
@@ -397,8 +395,8 @@ class WrapperSelectionAnimation extends InheritedWidget {
   final VoidCallback play;
 
   static void tryPlayOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<WrapperSelectionAnimation>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<WrapperSelectionAnimation>();
 
     widget?.play();
   }

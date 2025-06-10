@@ -64,3 +64,4 @@ app.*.map.json
 libisar.so
 
 untranslated_strings.txt
+/l10n/app_ja.arb

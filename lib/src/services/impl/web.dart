@@ -23,7 +23,7 @@ import "package:azari/src/services/impl/obj/visited_post.dart";
 import "package:azari/src/services/impl/web/impl.dart" as web;
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:flutter/widgets.dart";
 
 Future<Services> init(AppInstanceType appType) {
@@ -90,9 +90,7 @@ class MemoryGridDbService implements GridDbService {
 int _incr = 0;
 
 class MemorySecondaryGridHandle implements SecondaryGridHandle {
-  MemorySecondaryGridHandle(
-    SafeMode? safeMode,
-  ) {
+  MemorySecondaryGridHandle(SafeMode? safeMode) {
     name = (_incr += 1).toString();
     currentState = GridState(
       name: name,
@@ -497,27 +495,23 @@ class $SettingsData extends SettingsData {
     ThemeType? themeType,
     String? randomVideosAddTags,
     RandomPostsOrder? randomVideosOrder,
-  }) =>
-      $SettingsData(
-        selectedBooru: selectedBooru ?? this.selectedBooru,
-        quality: quality ?? this.quality,
-        safeMode: safeMode ?? this.safeMode,
-        showWelcomePage: showWelcomePage ?? this.showWelcomePage,
-        path: this.path,
-        extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
-        sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
-        filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
-        themeType: themeType ?? this.themeType,
-        randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
-        randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
-      );
+  }) => $SettingsData(
+    selectedBooru: selectedBooru ?? this.selectedBooru,
+    quality: quality ?? this.quality,
+    safeMode: safeMode ?? this.safeMode,
+    showWelcomePage: showWelcomePage ?? this.showWelcomePage,
+    path: this.path,
+    extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
+    sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,
+    filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions,
+    themeType: themeType ?? this.themeType,
+    randomVideosOrder: randomVideosOrder ?? this.randomVideosOrder,
+    randomVideosAddTags: randomVideosAddTags ?? this.randomVideosAddTags,
+  );
 }
 
 class $LocalTagsData implements LocalTagsData {
-  const $LocalTagsData({
-    required this.filename,
-    required this.tags,
-  });
+  const $LocalTagsData({required this.filename, required this.tags});
 
   @override
   final String filename;
@@ -575,40 +569,37 @@ class $DownloadFileData extends DownloadFileDataImpl
 
   @override
   DownloadFileData toFailed() => $DownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.failed,
-      );
+    name: name,
+    url: url,
+    thumbUrl: thumbUrl,
+    site: site,
+    date: date,
+    status: DownloadStatus.failed,
+  );
 
   @override
   DownloadFileData toInProgress() => $DownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.inProgress,
-      );
+    name: name,
+    url: url,
+    thumbUrl: thumbUrl,
+    site: site,
+    date: date,
+    status: DownloadStatus.inProgress,
+  );
 
   @override
   DownloadFileData toOnHold() => $DownloadFileData(
-        name: name,
-        url: url,
-        thumbUrl: thumbUrl,
-        site: site,
-        date: date,
-        status: DownloadStatus.onHold,
-      );
+    name: name,
+    url: url,
+    thumbUrl: thumbUrl,
+    site: site,
+    date: date,
+    status: DownloadStatus.onHold,
+  );
 }
 
 class $GridBookmarkThumbnail implements GridBookmarkThumbnail {
-  const $GridBookmarkThumbnail({
-    required this.url,
-    required this.rating,
-  });
+  const $GridBookmarkThumbnail({required this.url, required this.rating});
 
   @override
   final PostRating rating;
@@ -655,14 +646,13 @@ class $GridBookmark extends GridBookmarkImpl implements GridBookmark {
     Booru? booru,
     DateTime? time,
     List<GridBookmarkThumbnail>? thumbnails,
-  }) =>
-      $GridBookmark.required(
-        thumbnails: thumbnails?.cast() ?? this.thumbnails,
-        tags: tags ?? this.tags,
-        booru: booru ?? this.booru,
-        name: name ?? this.name,
-        time: time ?? this.time,
-      );
+  }) => $GridBookmark.required(
+    thumbnails: thumbnails?.cast() ?? this.thumbnails,
+    tags: tags ?? this.tags,
+    booru: booru ?? this.booru,
+    name: name ?? this.name,
+    time: time ?? this.time,
+  );
 }
 
 class $FavoritePost extends PostImpl
@@ -766,13 +756,12 @@ class $GridState implements GridState {
     String? tags,
     double? offset,
     SafeMode? safeMode,
-  }) =>
-      $GridState(
-        tags: tags ?? this.tags,
-        safeMode: safeMode ?? this.safeMode,
-        offset: offset ?? this.offset,
-        name: name ?? this.name,
-      );
+  }) => $GridState(
+    tags: tags ?? this.tags,
+    safeMode: safeMode ?? this.safeMode,
+    offset: offset ?? this.offset,
+    name: name ?? this.name,
+  );
 }
 
 class $StatisticsBooruData extends StatisticsBooruData {
@@ -789,13 +778,12 @@ class $StatisticsBooruData extends StatisticsBooruData {
     int? downloaded,
     int? swiped,
     int? booruSwitches,
-  }) =>
-      $StatisticsBooruData(
-        booruSwitches: booruSwitches ?? this.booruSwitches,
-        downloaded: downloaded ?? this.downloaded,
-        swiped: swiped ?? this.swiped,
-        viewed: viewed ?? this.viewed,
-      );
+  }) => $StatisticsBooruData(
+    booruSwitches: booruSwitches ?? this.booruSwitches,
+    downloaded: downloaded ?? this.downloaded,
+    swiped: swiped ?? this.swiped,
+    viewed: viewed ?? this.viewed,
+  );
 }
 
 class $StatisticsDailyData extends StatisticsDailyData {
@@ -807,30 +795,25 @@ class $StatisticsDailyData extends StatisticsDailyData {
 
   @override
   StatisticsDailyData add({required int swipedBoth}) => $StatisticsDailyData(
-        swipedBoth: this.swipedBoth + swipedBoth,
-        durationMillis: durationMillis,
-        date: date,
-      );
+    swipedBoth: this.swipedBoth + swipedBoth,
+    durationMillis: durationMillis,
+    date: date,
+  );
 
   @override
   StatisticsDailyData copy({
     int? durationMillis,
     int? swipedBoth,
     DateTime? date,
-  }) =>
-      $StatisticsDailyData(
-        swipedBoth: swipedBoth ?? this.swipedBoth,
-        durationMillis: durationMillis ?? this.durationMillis,
-        date: date ?? this.date,
-      );
+  }) => $StatisticsDailyData(
+    swipedBoth: swipedBoth ?? this.swipedBoth,
+    durationMillis: durationMillis ?? this.durationMillis,
+    date: date ?? this.date,
+  );
 }
 
 class $TagData extends TagDataImpl implements TagData {
-  const $TagData({
-    required this.time,
-    required this.tag,
-    required this.type,
-  });
+  const $TagData({required this.time, required this.tag, required this.type});
 
   @override
   final String tag;
@@ -842,11 +825,8 @@ class $TagData extends TagDataImpl implements TagData {
   final TagType type;
 
   @override
-  TagData copy({String? tag, TagType? type}) => $TagData(
-        time: time,
-        tag: tag ?? this.tag,
-        type: type ?? this.type,
-      );
+  TagData copy({String? tag, TagType? type}) =>
+      $TagData(time: time, tag: tag ?? this.tag, type: type ?? this.type);
 }
 
 class MemoryTagManager implements TagManagerService {
@@ -913,13 +893,12 @@ class $HottestTag implements HottestTag {
     int? count,
     Booru? booru,
     List<ThumbUrlRating>? thumbUrls,
-  }) =>
-      $HottestTag.required(
-        tag: tag ?? this.tag,
-        thumbUrls: thumbUrls ?? this.thumbUrls,
-        count: count ?? this.count,
-        booru: booru ?? this.booru,
-      );
+  }) => $HottestTag.required(
+    tag: tag ?? this.tag,
+    thumbUrls: thumbUrls ?? this.thumbUrls,
+    count: count ?? this.count,
+    booru: booru ?? this.booru,
+  );
 }
 
 class $ThumbUrlRating implements ThumbUrlRating {
@@ -1034,10 +1013,7 @@ class $VisitedPost extends VisitedPostImpl
 class $BlacklistedDirectoryData extends BlacklistedDirectoryDataImpl
     with DefaultBuildCell
     implements BlacklistedDirectoryData {
-  const $BlacklistedDirectoryData({
-    required this.bucketId,
-    required this.name,
-  });
+  const $BlacklistedDirectoryData({required this.bucketId, required this.name});
 
   @override
   final String bucketId;

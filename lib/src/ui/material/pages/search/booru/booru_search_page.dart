@@ -13,12 +13,12 @@ import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/search/fading_panel.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
-import "package:azari/src/ui/material/widgets/fading_panel.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
@@ -34,19 +34,13 @@ part "search_panels/recently_searched_tags.dart";
 part "search_panels/tag_list.dart";
 
 class BooruSearchPage extends StatefulWidget {
-  const BooruSearchPage({
-    super.key,
-    required this.procPop,
-  });
+  const BooruSearchPage({super.key, required this.procPop});
 
   final void Function(bool)? procPop;
 
   static bool hasServicesRequired() => TagManagerService.available;
 
-  static void open(
-    BuildContext context, {
-    void Function(bool)? procPop,
-  }) {
+  static void open(BuildContext context, {void Function(bool)? procPop}) {
     if (!hasServicesRequired()) {
       // TODO: change
       addAlert("BooruSearchPage", "Search functionality isn't available");
@@ -56,9 +50,7 @@ class BooruSearchPage extends StatefulWidget {
 
     Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
-        builder: (context) => BooruSearchPage(
-          procPop: procPop,
-        ),
+        builder: (context) => BooruSearchPage(procPop: procPop),
       ),
     );
   }
@@ -75,11 +67,9 @@ class _BooruSearchPageState extends State<BooruSearchPage>
 
   void search(bool dialog) {
     if (searchController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n!.searchTextIsEmpty),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n!.searchTextIsEmpty)));
 
       return;
     }
@@ -103,9 +93,7 @@ class _BooruSearchPageState extends State<BooruSearchPage>
       context,
       booru: booru,
       tags: tag,
-      rootNavigator: true,
       overrideSafeMode: safeMode,
-      saveSelectedPage: (_) {},
     );
   }
 
@@ -221,13 +209,7 @@ class SearchPageSearchBar extends StatelessWidget {
         textEditingController: searchTextController,
       ),
       searchFocus: searchFocus,
-      child: (
-        context,
-        controller,
-        focus,
-        onSubmitted,
-      ) =>
-          SearchBar(
+      child: (context, controller, focus, onSubmitted) => SearchBar(
         onSubmitted: (str) {
           onSubmitted();
           onSubmit(false);
@@ -246,10 +228,7 @@ class SearchPageSearchBar extends StatelessWidget {
           onSubmit: onSubmit,
         ),
         trailing: [
-          IconButton(
-            onPressed: clear,
-            icon: const Icon(Icons.close_rounded),
-          ),
+          IconButton(onPressed: clear, icon: const Icon(Icons.close_rounded)),
         ],
       ),
     );
@@ -307,8 +286,9 @@ class __SearchBackIconState extends State<_SearchBackIcon> {
         onPressed: () => widget.onSubmit(true),
         icon: const Icon(Icons.search_rounded),
       ),
-      crossFadeState:
-          isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      crossFadeState: isEmpty
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
       duration: Durations.medium3,
     );
   }

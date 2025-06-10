@@ -13,7 +13,7 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
+import "package:azari/src/ui/material/pages/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
@@ -68,10 +68,7 @@ class _HomeSkeletonState extends State<HomeSkeleton>
         : HomeNavigationBar(
             scrollingState: widget.scrollingState,
             onDestinationSelected: widget.onDestinationSelected,
-            desitinations: widget.animatedIcons.icons(
-              context,
-              widget.booru,
-            ),
+            desitinations: widget.animatedIcons.icons(context, widget.booru),
           );
 
     final body = GestureDeadZones(
@@ -85,16 +82,13 @@ class _HomeSkeletonState extends State<HomeSkeleton>
             hasInternet: hasInternet,
             child: widget.child,
           ),
-          if (!hasInternet) const _NoNetworkIndicator(),
+          if (!hasInternet) const NoNetworkIndicator(),
         ],
       ),
     );
 
     return AnnotatedRegion(
-      value: navBarStyleForTheme(
-        theme,
-        highTone: false,
-      ),
+      value: makeSystemUiOverlayStyle(theme),
       child: Scaffold(
         extendBody: true,
         extendBodyBehindAppBar: true,
@@ -102,19 +96,18 @@ class _HomeSkeletonState extends State<HomeSkeleton>
         resizeToAvoidBottomInset: false,
         bottomNavigationBar: bottomNavigationBar,
         drawer: widget.drawer,
-        // backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
         body: switch (showRail) {
           true => Row(
-              children: [
-                _NavigationRail(
-                  onDestinationSelected: widget.onDestinationSelected,
-                  animatedIcons: widget.animatedIcons,
-                  booru: widget.booru,
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(child: body),
-              ],
-            ),
+            children: [
+              _NavigationRail(
+                onDestinationSelected: widget.onDestinationSelected,
+                animatedIcons: widget.animatedIcons,
+                booru: widget.booru,
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: body),
+            ],
+          ),
           false => body,
         },
       ),
@@ -155,10 +148,8 @@ class _SkeletonBody extends StatelessWidget {
   }
 }
 
-class _NoNetworkIndicator extends StatelessWidget {
-  const _NoNetworkIndicator(
-      // {super.key}
-      );
+class NoNetworkIndicator extends StatelessWidget {
+  const NoNetworkIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -166,25 +157,21 @@ class _NoNetworkIndicator extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final containerColor =
-        colorScheme.surfaceContainerHighest.withValues(alpha: 0.8);
+    final containerColor = colorScheme.surfaceContainerHighest.withValues(
+      alpha: 0.8,
+    );
     final textColor = colorScheme.onSurface.withValues(alpha: 0.8);
 
     final effects = [
       MoveEffect(
         duration: 200.ms,
         curve: Easing.standard,
-        begin: Offset(
-          0,
-          -(24 + MediaQuery.viewPaddingOf(context).top),
-        ),
+        begin: Offset(0, -(24 + MediaQuery.viewPaddingOf(context).top)),
         end: Offset.zero,
       ),
     ];
 
-    final padding = EdgeInsets.only(
-      top: MediaQuery.viewPaddingOf(context).top,
-    );
+    final padding = EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top);
 
     final size = MediaQuery.sizeOf(context);
 
@@ -211,13 +198,8 @@ class _NoNetworkIndicator extends StatelessWidget {
                       size: 14,
                       color: textColor,
                     ),
-                    const Padding(
-                      padding: EdgeInsets.only(right: 4),
-                    ),
-                    Text(
-                      l10n.noInternet,
-                      style: TextStyle(color: textColor),
-                    ),
+                    const Padding(padding: EdgeInsets.only(right: 4)),
+                    Text(l10n.noInternet, style: TextStyle(color: textColor)),
                   ],
                 ),
               ),
@@ -261,10 +243,7 @@ class __NavigationRailState extends State<_NavigationRail>
     final currentRoute = isExpanded ? 0 : CurrentRoute.of(context).index;
 
     void goToPage(int i) {
-      widget.onDestinationSelected(
-        context,
-        CurrentRoute.fromIndex(i),
-      );
+      widget.onDestinationSelected(context, CurrentRoute.fromIndex(i));
     }
 
     void useAction(int i_) {
@@ -280,17 +259,17 @@ class __NavigationRailState extends State<_NavigationRail>
 
     final destinations = switch (isExpanded) {
       true => [
-          const NavigationRailDestination(
-            icon: Icon(Icons.close_rounded),
-            label: SizedBox.shrink(),
+        const NavigationRailDestination(
+          icon: Icon(Icons.close_rounded),
+          label: SizedBox.shrink(),
+        ),
+        ...actions.map(
+          (e) => NavigationRailDestination(
+            icon: Icon(e.icon),
+            label: const SizedBox.shrink(),
           ),
-          ...actions.map(
-            (e) => NavigationRailDestination(
-              icon: Icon(e.icon),
-              label: const SizedBox.shrink(),
-            ),
-          ),
-        ],
+        ),
+      ],
       false => widget.animatedIcons.railIcons(context, l10n, widget.booru),
     };
 
@@ -396,8 +375,9 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final backgroundColor =
-        colorScheme.surfaceContainer.withValues(alpha: 0.95);
+    final backgroundColor = colorScheme.surfaceContainer.withValues(
+      alpha: 0.95,
+    );
 
     return AnimatedBuilder(
       animation: scrollingAnimation,
@@ -407,12 +387,7 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
             parent: scrollingAnimation.view,
             curve: Easing.emphasizedDecelerate,
             reverseCurve: Easing.emphasizedAccelerate,
-          ).drive<Offset>(
-            Tween(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ),
-          ),
+          ).drive<Offset>(Tween(begin: const Offset(0, 1), end: Offset.zero)),
           child: child,
         );
       },
@@ -421,41 +396,39 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
         switchOutCurve: Easing.standard,
         duration: Durations.medium3,
         child: switch (controller.isExpanded) {
-          true => SelectionBar(
-              actions: actions,
-              selectionActions: selectionActions,
-            ),
+          true => SelectionBarBase(
+            actions: actions,
+            selectionActions: selectionActions,
+          ),
           false => NavigationBar(
-              onDestinationSelected: (value) {
-                widget.onDestinationSelected(
-                  context,
-                  CurrentRoute.fromIndex(value),
-                );
-              },
-              labelTextStyle: WidgetStateMapper({
-                WidgetState.disabled: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.38),
+            onDestinationSelected: (value) {
+              widget.onDestinationSelected(
+                context,
+                CurrentRoute.fromIndex(value),
+              );
+            },
+            labelTextStyle: WidgetStateMapper({
+              WidgetState.disabled: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.38,
                 ),
-                WidgetState.selected: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-                WidgetState.any: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              }),
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              backgroundColor: backgroundColor,
-              selectedIndex: currentRoute.index,
-              destinations: widget.desitinations,
-            ),
+              ),
+              WidgetState.selected: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              WidgetState.any: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            }),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            backgroundColor: backgroundColor,
+            selectedIndex: currentRoute.index,
+            destinations: widget.desitinations,
+          ),
         },
         transitionBuilder: (child, animation) {
-          return FadeScaleTransition(
-            animation: animation,
-            child: child,
-          );
+          return FadeScaleTransition(animation: animation, child: child);
         },
       ),
     );
@@ -502,12 +475,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
     bookmarks = gridBookmarks?.firstNumber(5) ?? [];
     settings = widget.settingsService.current;
 
-    bookmarkEvents = gridBookmarks?.watch(
-      (_) {
-        key.currentState?.diffAndAnimate(gridBookmarks!.firstNumber(5));
-      },
-      true,
-    );
+    bookmarkEvents = gridBookmarks?.watch((_) {
+      key.currentState?.diffAndAnimate(gridBookmarks!.firstNumber(5));
+    }, true);
   }
 
   @override
@@ -532,16 +502,16 @@ class _HomeDrawerState extends State<HomeDrawer> {
     switch (CurrentRoute.of(context)) {
       case CurrentRoute.home:
         widget.animatedIcons.homeIconController.reverse().then(
-              (value) => widget.animatedIcons.homeIconController.forward(),
-            );
+          (value) => widget.animatedIcons.homeIconController.forward(),
+        );
       case CurrentRoute.gallery:
         widget.animatedIcons.galleryIconController.reverse().then(
-              (value) => widget.animatedIcons.galleryIconController.forward(),
-            );
+          (value) => widget.animatedIcons.galleryIconController.forward(),
+        );
       case CurrentRoute.discover:
         widget.animatedIcons.discoverIconController.reverse().then(
-              (value) => widget.animatedIcons.discoverIconController.forward(),
-            );
+          (value) => widget.animatedIcons.discoverIconController.forward(),
+        );
     }
   }
 
@@ -578,15 +548,11 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 ),
                 if (e == BooruSubPage.favorites && favoritePosts != null)
                   _DrawerNavigationBadgeStyle(
-                    child: _FavoritePostsCount(
-                      favoritePosts: favoritePosts!,
-                    ),
+                    child: _FavoritePostsCount(favoritePosts: favoritePosts!),
                   )
                 else if (e == BooruSubPage.bookmarks && gridBookmarks != null)
                   _DrawerNavigationBadgeStyle(
-                    child: _BookmarksCount(
-                      gridBookmarks: gridBookmarks!,
-                    ),
+                    child: _BookmarksCount(gridBookmarks: gridBookmarks!),
                   ),
               ],
             ),
@@ -621,10 +587,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 style: theme.textTheme.titleSmall,
               ),
             ),
-            _AnimatedTagColumn(
-              key: key,
-              initalBookmarks: bookmarks,
-            ),
+            _AnimatedTagColumn(key: key, initalBookmarks: bookmarks),
           ],
           const Padding(
             padding: EdgeInsets.only(top: 8, bottom: 8),
@@ -653,17 +616,15 @@ class _DrawerNavigationBadgeStyle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textStyle = theme.textTheme.labelSmall?.copyWith(
+    final textStyle =
+        theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSurface,
         ) ??
         const TextStyle();
 
     return Padding(
       padding: const EdgeInsets.only(left: 12, right: 24),
-      child: DefaultTextStyle(
-        style: textStyle,
-        child: child,
-      ),
+      child: DefaultTextStyle(style: textStyle, child: child),
     );
   }
 }
@@ -755,10 +716,7 @@ class __FavoritePostsCountState extends State<_FavoritePostsCount> {
 }
 
 class _AnimatedTagColumn extends StatefulWidget {
-  const _AnimatedTagColumn({
-    super.key,
-    required this.initalBookmarks,
-  });
+  const _AnimatedTagColumn({super.key, required this.initalBookmarks});
 
   final List<GridBookmark> initalBookmarks;
 
@@ -803,8 +761,9 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
 
     final alive = <(int, GridBookmark)>[];
     final removed = <(int, GridBookmark)>[];
-    final newBookmarks =
-        toNew.indexed.where((e) => !bookmarkMap.containsKey(e.$2.name));
+    final newBookmarks = toNew.indexed.where(
+      (e) => !bookmarkMap.containsKey(e.$2.name),
+    );
 
     for (final (idx, bookmark) in bookmarks.indexed) {
       if (newMap.containsKey(bookmark.name)) {
@@ -824,8 +783,9 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
           animation: animation,
           builder: (context, widget) {
             return SizedBox(
-              height: sizeTween
-                  .transform(Easing.standard.transform(animation.value)),
+              height: sizeTween.transform(
+                Easing.standard.transform(animation.value),
+              ),
               child: SlideTransition(
                 position: animation
                     .drive(CurveTween(curve: Easing.standardAccelerate))
@@ -862,8 +822,10 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
   }
 
   static final sizeTween = Tween<double>(begin: 0, end: 56);
-  static final slideTween =
-      Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero);
+  static final slideTween = Tween<Offset>(
+    begin: const Offset(-1, 0),
+    end: Offset.zero,
+  );
 
   Widget itemBuilder(
     BuildContext context,
@@ -897,14 +859,7 @@ class __AnimatedTagColumnState extends State<_AnimatedTagColumn> {
   }
 
   void openBooruSearchPage(GridBookmark e) {
-    BooruRestoredPage.open(
-      context,
-      booru: e.booru,
-      tags: e.tags,
-      name: e.name,
-      rootNavigator: true,
-      saveSelectedPage: (_) {},
-    );
+    BooruRestoredPage.open(context, booru: e.booru, tags: e.tags, name: e.name);
   }
 
   @override
@@ -950,10 +905,7 @@ class _NavigationDrawerTile extends StatelessWidget {
           child: Row(
             children: [
               const Padding(padding: EdgeInsets.only(left: 12)),
-              Icon(
-                icon,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(icon, color: theme.colorScheme.onSurfaceVariant),
               const Padding(padding: EdgeInsets.only(right: 12)),
               Text(label, style: textStyle),
             ],

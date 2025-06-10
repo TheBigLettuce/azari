@@ -61,8 +61,6 @@ class __BookmarksPanelState extends State<_BookmarksPanel> {
       booru: bookmark.booru,
       tags: bookmark.tags,
       name: bookmark.name,
-      rootNavigator: true,
-      saveSelectedPage: (_) {},
     );
   }
 

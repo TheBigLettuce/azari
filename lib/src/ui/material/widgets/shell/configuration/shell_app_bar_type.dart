@@ -21,12 +21,12 @@ sealed class ShellAppBarType {
   const ShellAppBarType({
     required this.leading,
     required this.trailingItems,
-    this.bottomWidget,
+    // this.bottomWidget,
   });
 
   final Widget? leading;
   final List<Widget>? trailingItems;
-  final PreferredSizeWidget? bottomWidget;
+  // final PreferredSizeWidget? bottomWidget;
 }
 
 class TitleAppBarType extends ShellAppBarType {
@@ -34,7 +34,7 @@ class TitleAppBarType extends ShellAppBarType {
     required this.title,
     super.leading,
     super.trailingItems,
-    super.bottomWidget,
+    // super.bottomWidget,
   });
 
   final String title;
@@ -49,19 +49,16 @@ class RawAppBarType implements ShellAppBarType {
   @override
   List<Widget>? get trailingItems => null;
 
-  @override
-  PreferredSizeWidget? get bottomWidget => null;
-
   final Widget Function(
     BuildContext context,
     Widget? gridSettingsButton,
     PreferredSizeWidget? bottomWidget,
-  ) sliver;
+  )
+  sliver;
 }
 
 class NoShellAppBar extends ShellAppBarType {
-  const NoShellAppBar()
-      : super(leading: null, trailingItems: null, bottomWidget: null);
+  const NoShellAppBar() : super(leading: null, trailingItems: null);
 }
 
 class SearchBarAppBarType extends ShellAppBarType {
@@ -74,7 +71,7 @@ class SearchBarAppBarType extends ShellAppBarType {
     this.hintText,
     super.leading,
     super.trailingItems,
-    super.bottomWidget,
+    // super.bottomWidget,
     this.enableCount = false,
     this.filterFocus,
     this.onPressed,
@@ -89,7 +86,7 @@ class SearchBarAppBarType extends ShellAppBarType {
     Widget? leading,
     List<Widget>? trailingItems,
     void Function(BuildContext context)? onPressed,
-    PreferredSizeWidget? bottomWidget,
+    // PreferredSizeWidget? bottomWidget,
   }) {
     return SearchBarAppBarType(
       textEditingController: textEditingController,
@@ -100,7 +97,7 @@ class SearchBarAppBarType extends ShellAppBarType {
       filterFocus: focus,
       trailingItems: trailingItems,
       onPressed: onPressed,
-      bottomWidget: bottomWidget,
+      // bottomWidget: bottomWidget,
       onChanged: (str) => filter.clearRefresh(),
       filterWidget: filter.allowedFilteringModes.isNotEmpty
           ? ChainedFilterIcon(
@@ -165,7 +162,8 @@ class ChainedFilterIcon extends StatelessWidget {
                 // onChange: onChange,
                 onChange: null,
                 controller: controller,
-                focusNode: focusNode, selectColors: filter.setColors,
+                focusNode: focusNode,
+                selectColors: filter.setColors,
                 currentColors: filter.filteringColors,
               ),
             );
@@ -340,8 +338,10 @@ class __FilteringWidgetState extends State<_FilteringWidget>
               ),
               if (widget.onChange != null)
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
                   child: widget.complete != null
                       ? SearchBarAutocompleteWrapper(
                           search: SearchBarAppBarType(
@@ -350,33 +350,28 @@ class __FilteringWidgetState extends State<_FilteringWidget>
                             textEditingController: widget.controller,
                           ),
                           searchFocus: widget.focusNode,
-                          child: (
-                            context,
-                            controller,
-                            focus,
-                            onSubmitted,
-                          ) =>
+                          child: (context, controller, focus, onSubmitted) =>
                               SearchBar(
-                            onSubmitted: (str) {
-                              onSubmitted();
-                              widget.onChange?.call(str);
-                            },
-                            elevation: const WidgetStatePropertyAll(0),
-                            focusNode: focus,
-                            controller: controller,
-                            onChanged: widget.onChange,
-                            hintText: l10n.filterHint,
-                            leading: const Icon(Icons.search_rounded),
-                            trailing: [
-                              IconButton(
-                                onPressed: () {
-                                  controller.text = "";
-                                  widget.onChange?.call("");
+                                onSubmitted: (str) {
+                                  onSubmitted();
+                                  widget.onChange?.call(str);
                                 },
-                                icon: const Icon(Icons.close_rounded),
+                                elevation: const WidgetStatePropertyAll(0),
+                                focusNode: focus,
+                                controller: controller,
+                                onChanged: widget.onChange,
+                                hintText: l10n.filterHint,
+                                leading: const Icon(Icons.search_rounded),
+                                trailing: [
+                                  IconButton(
+                                    onPressed: () {
+                                      controller.text = "";
+                                      widget.onChange?.call("");
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         )
                       : SearchBar(
                           elevation: const WidgetStatePropertyAll(0),
@@ -403,7 +398,7 @@ class __FilteringWidgetState extends State<_FilteringWidget>
                   allowUnselect: true,
                   reorder: false,
                   onLongPress: (e) =>
-                      StarsButton.openChangeColorNameDialog(context, e),
+                      ColorCubeMenu.openChangeColorNameDialog(context, e),
                   values: FilteringColors.values
                       .where((e) => e != FilteringColors.noColor)
                       .map(
@@ -411,11 +406,12 @@ class __FilteringWidgetState extends State<_FilteringWidget>
                           e,
                           e.translatedString(l10n, colorsNames),
                           icon: Icons.circle_rounded,
-                          iconColor:
-                              e.color.harmonizeWith(theme.colorScheme.primary),
+                          iconColor: e.color.harmonizeWith(
+                            theme.colorScheme.primary,
+                          ),
                         ),
                       ),
-                  title: "Color tags", // TODO: change
+                  title: l10n.colorTagsLabel,
                 ),
               SegmentedButtonGroup<FilteringMode>(
                 variant: SegmentedButtonVariant.chip,

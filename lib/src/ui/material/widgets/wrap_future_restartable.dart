@@ -9,37 +9,6 @@ import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
-class _DefaultOnError extends StatelessWidget {
-  const _DefaultOnError({
-    super.key,
-    required this.refresh,
-    required this.error,
-  });
-
-  final VoidCallback refresh;
-  final Object error;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        EmptyWidget(
-          gridSeed: 0,
-          error: EmptyWidget.unwrapDioError(error),
-        ),
-        const Padding(padding: EdgeInsets.only(bottom: 8)),
-        FilledButton(
-          onPressed: refresh,
-          child: Text(l10n.tryAgain),
-        ),
-      ],
-    );
-  }
-}
-
 class WrapFutureRestartable<T> extends StatefulWidget {
   const WrapFutureRestartable({
     super.key,
@@ -47,7 +16,7 @@ class WrapFutureRestartable<T> extends StatefulWidget {
     required this.builder,
     this.bottomSheetVariant = false,
     this.placeholder,
-    this.errorBuilder = defaultError,
+    this.errorBuilder = defaultErrorBuilder,
   });
 
   final Future<T> Function() newStatus;
@@ -57,8 +26,8 @@ class WrapFutureRestartable<T> extends StatefulWidget {
 
   final Widget Function(Object error, VoidCallback refresh) errorBuilder;
 
-  static Widget defaultError(Object error, VoidCallback refresh) =>
-      _DefaultOnError(error: error, refresh: refresh);
+  static Widget defaultErrorBuilder(Object error, VoidCallback refresh) =>
+      _OnErrorWidget(error: error, refresh: refresh);
 
   @override
   State<WrapFutureRestartable<T>> createState() =>
@@ -139,7 +108,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
           if (!snapshot.hasData && !snapshot.hasError) {
             return widget.placeholder ??
                 AnnotatedRegion(
-                  value: navBarStyleForTheme(theme, highTone: false),
+                  value: makeSystemUiOverlayStyle(theme),
                   child: const Scaffold(
                     body: Center(
                       child: SizedBox(
@@ -151,7 +120,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
                 );
           } else if (snapshot.hasError) {
             return AnnotatedRegion(
-              value: navBarStyleForTheme(theme),
+              value: makeSystemUiOverlayStyle(theme),
               child: Scaffold(
                 appBar: AppBar(),
                 body: Center(
@@ -170,6 +139,31 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
           }
         },
       ),
+    );
+  }
+}
+
+class _OnErrorWidget extends StatelessWidget {
+  const _OnErrorWidget({
+    // super.key,
+    required this.refresh,
+    required this.error,
+  });
+
+  final VoidCallback refresh;
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        EmptyWidget(gridSeed: 0, error: EmptyWidget.unwrapDioError(error)),
+        const Padding(padding: EdgeInsets.only(bottom: 8)),
+        FilledButton(onPressed: refresh, child: Text(l10n.tryAgain)),
+      ],
     );
   }
 }

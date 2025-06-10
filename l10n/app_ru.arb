@@ -208,6 +208,7 @@
     "enumSortingModeRating": "Рейтинг",
     "enumSortingModeScore": "Очки",
     "enumSortingModeStars": "Звезды",
+    "enumSortingModeColor": "Цвет",
     "enumFilteringModeFavorite": "Избранное",
     "enumFilteringModeOriginal": "Оригинальный",
     "enumFilteringModeSame": "Схожесть",

@@ -6,25 +6,30 @@
 import "dart:async";
 import "dart:ui";
 
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/logic/resource_source/chained_filter.dart";
+import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/photo_gallery_page_video.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
-import "package:azari/src/ui/material/widgets/post_info_simple.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
 import "package:cached_network_image/cached_network_image.dart";
+import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -33,9 +38,11 @@ import "package:photo_view/photo_view.dart";
 class PostCell extends StatefulWidget {
   const PostCell({
     required super.key,
+    required this.cellType,
     required this.post,
   });
 
+  final CellType cellType;
   final PostImpl post;
 
   @override
@@ -48,6 +55,8 @@ class _PostCellState extends State<PostCell>
   @override
   List<String> get postTags => widget.post.tags;
 
+  late final name = widget.post.tags.join(" ");
+
   final controller = ScrollController();
 
   @override
@@ -57,27 +66,20 @@ class _PostCellState extends State<PostCell>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final thumbnail = post.thumbnail();
+  void _open() {
+    final fnc = OnBooruTagPressed.of(context);
+    final idx = ThisIndex.of(context);
 
-    final animate = PlayAnimations.maybeOf(context) ?? false;
+    final source = post.getSource(context);
 
-    // final stickers = post.stickers(context);
-    final child = WrapSelection(
-      onPressed: () {
-        final fnc = OnBooruTagPressed.of(context);
-        final idx = ThisIndex.of(context);
+    void tryScrollTo(int i) {}
 
-        final source = post.getSource(context);
+    final sink = TrackedIndex.sinkOf(context);
 
-        void tryScrollTo(int i) {}
+    const VisitedPostsService().addAll([post.asVisitedPost]);
 
-        final sink = TrackedIndex.sinkOf(context);
-
-        Navigator.of(context, rootNavigator: true)
-            .push<void>(
+    Navigator.of(context, rootNavigator: true)
+        .push<void>(
           PageRouteBuilder(
             barrierDismissible: true,
             fullscreenDialog: true,
@@ -97,113 +99,139 @@ class _PostCellState extends State<PostCell>
             },
           ),
         )
-            .whenComplete(() {
+        .whenComplete(() {
           sink.add(null);
         });
+  }
 
-        // final source = post.getSource(context);
-        // final loader = PostImageViewLoader(resource: source);
-        // final stateController = DefaultStateController(loader: loader);
+  void _download(BuildContext context) {
+    const downloadManager = DownloadManager();
+    final status = downloadManager.statusFor(post.fileDownloadUrl());
+    final downloadStatus = status?.data.status;
 
-        // ImageView.open(context, stateController).whenComplete(() {
-        //   loader.dispose();
-        //   stateController.dispose();
-        // });
-      },
-      onDoubleTap: DownloadManager.available && LocalTagsService.available
-          ? (context) {
-              const downloadManager = DownloadManager();
-              final status = downloadManager.statusFor(post.fileDownloadUrl());
-              final downloadStatus = status?.data.status;
+    if (downloadStatus == DownloadStatus.failed) {
+      downloadManager.restartAll([status!]);
+    } else {
+      post.download();
+    }
+    WrapperSelectionAnimation.tryPlayOf(context);
+  }
 
-              if (downloadStatus == DownloadStatus.failed) {
-                downloadManager.restartAll([status!]);
-              } else {
-                post.download();
-              }
-              WrapperSelectionAnimation.tryPlayOf(context);
-            }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final thumbnail = post.thumbnail();
+
+    final animate = PlayAnimations.maybeOf(context) ?? false;
+
+    final sortingColor =
+        ChainedFilterResourceSource.maybeOf(context)?.sortingMode ==
+        SortingMode.color;
+
+    return Animate(
+      key: post.uniqueKey(),
+      effects: animate
+          ? const [
+              FadeEffect(
+                duration: Durations.long1,
+                curve: Easing.standard,
+                end: 1,
+              ),
+            ]
           : null,
-      child: Builder(
-        builder: (context) => GestureDetector(
-          child: Card(
-            elevation: 0,
-            clipBehavior: Clip.antiAlias,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(15)),
-            ),
-            color: theme.cardColor.withValues(alpha: 0),
-            child: Stack(
-              children: [
-                GridCellImage(
-                  heroTag: post.uniqueKey(),
-                  imageAlign: Alignment.topCenter,
-                  thumbnail: post.type == PostContentType.gif &&
-                          post.size != 0 &&
-                          !post.size.isNegative &&
-                          post.size < 524288
-                      ? CachedNetworkImageProvider(
-                          post.sampleUrl.isEmpty
-                              ? post.fileUrl
-                              : post.sampleUrl,
-                        )
-                      : thumbnail,
-                  blur: false,
+      child: WrapSelection(
+        onPressed: _open,
+        onDoubleTap: DownloadManager.available && LocalTagsService.available
+            ? _download
+            : null,
+        child: switch (widget.cellType) {
+          CellType.list => DefaultListTile(
+            uniqueKey: widget.post.uniqueKey(),
+            thumbnail: thumbnail,
+            title: name,
+          ),
+          CellType.cell => Builder(
+            builder: (context) => GestureDetector(
+              child: Card(
+                elevation: 0,
+                clipBehavior: Clip.antiAlias,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(15)),
                 ),
-                if (FavoritePostSourceService.available &&
-                    widget.post is! FavoritePost)
-                  Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: FavoritePostButton(
-                      heroKey: (post.uniqueKey(), "favoritePost"),
-                      post: post,
+                color: theme.cardColor.withValues(alpha: 0),
+                child: Stack(
+                  children: [
+                    DecoratedBox(
+                      position: DecorationPosition.foreground,
+                      decoration: sortingColor && post is FavoritePost
+                          ? BoxDecoration(
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(15),
+                              ),
+                              border: Border.fromBorderSide(
+                                BorderSide(
+                                  color: (post as FavoritePost)
+                                      .filteringColors
+                                      .color
+                                      .harmonizeWith(theme.colorScheme.primary)
+                                      .withValues(alpha: 0.35),
+                                  width: 1.5,
+                                ),
+                              ),
+                            )
+                          : const BoxDecoration(),
+                      child: GridCellImage(
+                        heroTag: post.uniqueKey(),
+                        imageAlign: Alignment.topCenter,
+                        thumbnail:
+                            post.type == PostContentType.gif &&
+                                post.size != 0 &&
+                                !post.size.isNegative &&
+                                post.size < 524288
+                            ? CachedNetworkImageProvider(
+                                post.sampleUrl.isEmpty
+                                    ? post.fileUrl
+                                    : post.sampleUrl,
+                              )
+                            : thumbnail,
+                        blur: false,
+                      ),
                     ),
-                  ),
-                // if (stickers.isNotEmpty)
-                //   Align(
-                //     alignment: Alignment.topRight,
-                //     child: Padding(
-                //       padding: const EdgeInsets.all(8),
-                //       child: Wrap(
-                //         crossAxisAlignment: WrapCrossAlignment.end,
-                //         direction: Axis.vertical,
-                //         children: stickers.map(StickerWidget.new).toList(),
-                //       ),
-                //     ),
-                //   ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
+                    if (FavoritePostSourceService.available &&
+                        widget.post is! FavoritePost)
+                      Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: FavoritePostButton(
+                          heroKey: (post.uniqueKey(), "favoritePost"),
+                          post: post,
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        child: VideoOrGifIcon(
+                          uniqueKey: post.uniqueKey(),
+                          type: post.type,
+                        ),
+                      ),
                     ),
-                    child: VideoGifRow(
-                      uniqueKey: widget.post.uniqueKey(),
-                      isVideo: widget.post.type == PostContentType.video,
-                      isGif: widget.post.type == PostContentType.gif,
-                    ),
-                  ),
+                    if (DownloadManager.available)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: LinearDownloadIndicator(post: post),
+                      ),
+                  ],
                 ),
-                if (DownloadManager.available)
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: LinearDownloadIndicator(
-                      post: post,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
+        },
       ),
     );
-
-    if (animate) {
-      return child.animate(key: post.uniqueKey()).fadeIn();
-    }
-
-    return child;
   }
 }
 
@@ -213,13 +241,36 @@ class CardAnimationChild extends StatelessWidget {
     required this.post,
     required this.animation,
     required this.buttonsRow,
+    required this.source,
   });
 
   final Animation<double> animation;
+  final ResourceSource<int, PostImpl>? source;
 
   final PostImpl post;
 
   final Widget buttonsRow;
+
+  void _open(BuildContext context) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    const WindowApi().setWakelock(true);
+
+    Navigator.of(context, rootNavigator: true)
+        .push<void>(
+          PageRouteBuilder(
+            barrierDismissible: true,
+            fullscreenDialog: true,
+            barrierColor: Colors.black.withValues(alpha: 1),
+            pageBuilder: (context, animation, animationSecond) {
+              return CardDialogContent(post: post);
+            },
+          ),
+        )
+        .then((_) {
+          const WindowApi().setWakelock(false);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -239,30 +290,7 @@ class CardAnimationChild extends StatelessWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                // final content = post.content(context);
-
-                SystemChrome.setEnabledSystemUIMode(
-                  SystemUiMode.immersiveSticky,
-                );
-                const WindowApi().setWakelock(true);
-
-                Navigator.of(context, rootNavigator: true)
-                    .push<void>(
-                  PageRouteBuilder(
-                    barrierDismissible: true,
-                    fullscreenDialog: true,
-                    barrierColor: Colors.black.withValues(alpha: 1),
-                    pageBuilder: (context, animation, animationSecond) {
-                      return _BigImageVideo(post: post);
-                    },
-                  ),
-                )
-                    .then((_) {
-                  const WindowApi().setWakelock(false);
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                });
-              },
+              onTap: () => _open(context),
               child: Stack(
                 children: [
                   GridCellImage(
@@ -270,7 +298,8 @@ class CardAnimationChild extends StatelessWidget {
                         .withValues(alpha: 1),
                     heroTag: post.uniqueKey(),
                     imageAlign: Alignment.topCenter,
-                    thumbnail: post.type == PostContentType.gif &&
+                    thumbnail:
+                        post.type == PostContentType.gif &&
                             post.size != 0 &&
                             !post.size.isNegative &&
                             post.size < 524288
@@ -285,15 +314,14 @@ class CardAnimationChild extends StatelessWidget {
                   if (post.type == PostContentType.video)
                     AnimatedBuilder(
                       animation: animation,
-                      builder: (context, child) => Opacity(
-                        opacity: animation.value,
-                        child: child,
-                      ),
+                      builder: (context, child) =>
+                          Opacity(opacity: animation.value, child: child),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(15)),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(15),
+                          ),
                         ),
                         child: SizedBox.expand(
                           child: Center(
@@ -304,6 +332,27 @@ class CardAnimationChild extends StatelessWidget {
                           ),
                         ),
                       ),
+                    ),
+                  if (FavoritePostSourceService.available)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) =>
+                            Opacity(opacity: animation.value, child: child),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: ColorCube(
+                            idBooru: (post.id, post.booru),
+                            source: source,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (post is FavoritePost)
+                    RefreshImageCube(
+                      post: post as FavoritePost,
+                      animation: animation,
                     ),
                 ],
               ),
@@ -316,10 +365,82 @@ class CardAnimationChild extends StatelessWidget {
   }
 }
 
-enum ReplaceAnimationType {
-  vertical,
-  horizontal,
+class RefreshImageCube extends StatelessWidget {
+  const RefreshImageCube({
+    super.key,
+    required this.post,
+    required this.animation,
+  });
+
+  final FavoritePost post;
+  final Animation<double> animation;
+
+  Future<void> _fetchUpdate() async {
+    final client = BooruAPI.defaultClientForBooru(post.booru);
+    final api = BooruAPI.fromEnum(post.booru, client);
+
+    try {
+      final newPost = await api.singlePost(post.id);
+      post.applyBase(newPost).maybeSave();
+    } catch (e, stack) {
+      AlertService().add(
+        AlertData("_RefreshImageCube", stack.toString(), null),
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final status = const TasksService().status<RefreshImageCube>(context);
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) =>
+          Opacity(opacity: animation.value, child: child),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow.withValues(
+                alpha: 0.8,
+              ),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: const BorderRadius.all(Radius.circular(6)),
+                onTap: status == TaskStatus.done
+                    ? () => const TasksService().add<RefreshImageCube>(
+                        _fetchUpdate,
+                      )
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: status == TaskStatus.done ? 0.8 : 0.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+enum ReplaceAnimationType { vertical, horizontal }
 
 class ReplaceAnimation extends StatefulWidget {
   const ReplaceAnimation({
@@ -353,9 +474,11 @@ class ReplaceAnimation extends StatefulWidget {
 class _ReplaceAnimationState extends State<ReplaceAnimation>
     with SingleTickerProviderStateMixin {
   late final StreamSubscription<(int, double?)>? syncEvents;
+  late final StreamSubscription<int> _countEvents;
 
   double? _animValue;
   int _idx = 0;
+  int _count = 0;
 
   double? get animValue => _animValue;
   set animValue(double? a) {
@@ -378,6 +501,7 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
     super.initState();
 
     idx = widget.currentIndex;
+    _count = widget.source.backingStorage.count;
 
     syncEvents = widget.synchronizeRecv?.listen((e) {
       setState(() {
@@ -393,6 +517,13 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
       vsync: this,
     );
 
+    _countEvents = widget.source.backingStorage.watch((count) {
+      setState(() {
+        idx = count == 0 || count == 1 ? 0 : idx.clamp(0, count - 1);
+        _count = count;
+      });
+    });
+
     controller.addListener(listener);
   }
 
@@ -401,6 +532,7 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
     syncEvents?.cancel();
     controller.removeListener(listener);
     controller.dispose();
+    _countEvents.cancel();
 
     super.dispose();
   }
@@ -441,6 +573,10 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
 
   @override
   Widget build(BuildContext context) {
+    if (_count == 0) {
+      return const SizedBox.shrink();
+    }
+
     return AnimatedSize(
       duration: Durations.medium1,
       curve: Easing.standard,
@@ -456,29 +592,28 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
                   ? Transform.scale(
                       alignment: Alignment.centerLeft,
                       scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
-                      child: animValue != null &&
+                      child:
+                          animValue != null &&
                               animValue != 0 &&
                               !animValue!.isNegative
                           ? widget.child(context, idx - 1)
                           : const SizedBox.shrink(),
                     )
                   : animValue != null &&
-                          animValue != 0 &&
-                          !animValue!.isNegative
-                      ? widget.child(context, idx - 1)
-                      : const SizedBox.shrink(),
+                        animValue != 0 &&
+                        !animValue!.isNegative
+                  ? widget.child(context, idx - 1)
+                  : const SizedBox.shrink(),
             ),
           Opacity(
             opacity: animValue == null ? 1 : 1 - (animValue!.abs()),
             child: SlideTransition(
-              position: AlwaysStoppedAnimation(
-                switch (widget.type) {
-                  ReplaceAnimationType.vertical => Offset(0, animValue ?? 0),
-                  ReplaceAnimationType.horizontal => Offset(animValue ?? 0, 0),
-                },
-              ),
+              position: AlwaysStoppedAnimation(switch (widget.type) {
+                ReplaceAnimationType.vertical => Offset(0, animValue ?? 0),
+                ReplaceAnimationType.horizontal => Offset(animValue ?? 0, 0),
+              }),
               child: GestureDetector(
-                key: ValueKey(idx),
+                key: ValueKey((idx, _count)),
                 onHorizontalDragEnd: widget.synchronizeRecv == null
                     ? (details) {
                         if (animValue != null &&
@@ -539,18 +674,6 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
                           return;
                         }
 
-                        // if (animValue != null &&
-                        //     animValue!.isNegative &&
-                        //     animValue! < -0.8) {
-                        //   commitForward();
-                        //   return;
-                        // } else if (animValue != null &&
-                        //     !animValue!.isNegative &&
-                        //     animValue! > 0.8) {
-                        //   commitBackward();
-                        //   return;
-                        // }
-
                         setState(() {
                           animValue =
                               ((animValue ?? 0) + (details.delta.dx * 0.0034))
@@ -578,15 +701,16 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
                   ? Transform.scale(
                       alignment: Alignment.centerRight,
                       scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
-                      child: animValue != null &&
+                      child:
+                          animValue != null &&
                               animValue != 0 &&
                               animValue!.isNegative
                           ? widget.child(context, idx + 1)
                           : const SizedBox.shrink(),
                     )
                   : animValue != null && animValue != 0 && animValue!.isNegative
-                      ? widget.child(context, idx + 1)
-                      : const SizedBox.shrink(),
+                  ? widget.child(context, idx + 1)
+                  : const SizedBox.shrink(),
             ),
         ],
       ),
@@ -617,21 +741,19 @@ class CardDialogStatic extends StatelessWidget {
       exit: exit,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 400.0.clamp(0, size.width),
-          ),
+          constraints: BoxConstraints(maxWidth: 400.0.clamp(0, size.width)),
           child: AnimatedBuilder(
             animation: animation,
-            builder: (context, child) => Opacity(
-              opacity: animation.value,
-              child: child,
-            ),
+            builder: (context, child) =>
+                Opacity(opacity: animation.value, child: child),
             child: WrapFutureRestartable(
               newStatus: getPost,
               bottomSheetVariant: true,
               errorBuilder: (error, refresh) => Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
@@ -647,7 +769,7 @@ class CardDialogStatic extends StatelessWidget {
                             horizontal: 20,
                             vertical: 38,
                           ),
-                          child: WrapFutureRestartable.defaultError(
+                          child: WrapFutureRestartable.defaultErrorBuilder(
                             error,
                             refresh,
                           ),
@@ -659,8 +781,10 @@ class CardDialogStatic extends StatelessWidget {
               ),
               placeholder: Center(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth: 400.0.clamp(0, size.width),
@@ -687,18 +811,17 @@ class CardDialogStatic extends StatelessWidget {
                           animation: animation,
                           post: post,
                           buttonsRow: ClipRRect(
-                            child: _ButtonsCol(
+                            child: CardDialogButtons(
                               animation: animation,
                               post: post,
                             ),
                           ),
+                          source: null,
                         ),
                       ),
                       _TagsRowBorder(
                         animation: animation,
-                        child: _TagsRowSingle(
-                          post: post,
-                        ),
+                        child: _TagsRowSingle(post: post),
                       ),
                     ],
                   ),
@@ -741,6 +864,8 @@ class _CardDialogState extends State<CardDialog> {
   int get idx => widget.idx;
   ResourceSource<int, PostImpl> get source => widget.source;
   late final StreamSubscription<(int, double?)> _indexEvents;
+  late final StreamSubscription<int> _countEvents;
+
   int _oldIdx = 0;
 
   final syncr = StreamController<(int, double?)>.broadcast();
@@ -754,6 +879,11 @@ class _CardDialogState extends State<CardDialog> {
     _indexEvents = syncr.stream.listen((e) {
       if (e.$1 != _oldIdx) {
         _oldIdx = e.$1;
+
+        final post = source.forIdx(e.$1);
+        if (post != null) {
+          const VisitedPostsService().addAll([post.asVisitedPost]);
+        }
 
         widget.indexSink.add(_oldIdx);
 
@@ -778,11 +908,18 @@ class _CardDialogState extends State<CardDialog> {
         }
       }
     });
+
+    _countEvents = widget.source.backingStorage.watch((count) {
+      if (count == 0) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   @override
   void dispose() {
     _indexEvents.cancel();
+    _countEvents.cancel();
 
     super.dispose();
   }
@@ -795,21 +932,19 @@ class _CardDialogState extends State<CardDialog> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
+    if (widget.source.count == 0) {
+      return const SizedBox.shrink();
+    }
+
     return ExitOnPressRoute(
       exit: _exit,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 400.0.clamp(0, size.width),
-          ),
+          constraints: BoxConstraints(maxWidth: 400.0.clamp(0, size.width)),
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 24,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
               child: Column(
-                // mainAxisSize: MainAxisSize.max,
                 children: [
                   ClipRRect(
                     child: ReplaceAnimation(
@@ -818,8 +953,13 @@ class _CardDialogState extends State<CardDialog> {
                       addScale: true,
                       currentIndex: idx,
                       child: (context, idx) {
+                        final post = source.forIdx(idx);
+                        if (post == null) {
+                          return const SizedBox.shrink();
+                        }
+
                         return CardAnimationChild(
-                          post: source.forIdxUnsafe(idx),
+                          post: post,
                           animation: animation,
                           buttonsRow: ClipRRect(
                             child: ReplaceAnimation(
@@ -828,13 +968,19 @@ class _CardDialogState extends State<CardDialog> {
                               currentIndex: idx,
                               type: ReplaceAnimationType.vertical,
                               child: (context, idx) {
-                                return _ButtonsCol(
+                                final post = source.forIdx(idx);
+                                if (post == null) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                return CardDialogButtons(
                                   animation: animation,
-                                  post: source.forIdxUnsafe(idx),
+                                  post: post,
                                 );
                               },
                             ),
                           ),
+                          source: source,
                         );
                       },
                     ),
@@ -855,8 +1001,8 @@ class _CardDialogState extends State<CardDialog> {
   }
 }
 
-class _ButtonsCol extends StatelessWidget {
-  const _ButtonsCol({
+class CardDialogButtons extends StatelessWidget {
+  const CardDialogButtons({
     super.key,
     required this.animation,
     required this.post,
@@ -867,16 +1013,12 @@ class _ButtonsCol extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          // spacing: 8,
           children: [
-            // const SizedBox.shrink(),
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
@@ -884,26 +1026,12 @@ class _ButtonsCol extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     spacing: 8,
                     children: [
-                      if (FavoritePostSourceService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
-                          child: StarsButton(
-                            addBackground: true,
-                            idBooru: (post.id, post.booru),
-                          ),
-                        ),
                       if (DownloadManager.available &&
                           LocalTagsService.available)
                         AnimatedBuilder(
                           animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
+                          builder: (context, child) =>
+                              Opacity(opacity: animation.value, child: child),
                           child: DownloadButton(
                             post: post,
                             secondVariant: true,
@@ -919,10 +1047,8 @@ class _ButtonsCol extends StatelessWidget {
                       else if (FavoritePostSourceService.available)
                         AnimatedBuilder(
                           animation: animation,
-                          builder: (context, child) => Opacity(
-                            opacity: animation.value,
-                            child: child,
-                          ),
+                          builder: (context, child) =>
+                              Opacity(opacity: animation.value, child: child),
                           child: FavoritePostButton(
                             post: post,
                             backgroundAlpha: 1,
@@ -937,48 +1063,120 @@ class _ButtonsCol extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: AnimatedBuilder(
                 animation: animation,
-                builder: (context, child) => Opacity(
-                  opacity: animation.value,
-                  child: child,
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (sheetContext) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            top: 8,
-                            bottom: MediaQuery.viewPaddingOf(
-                                  context,
-                                ).bottom +
-                                12,
-                          ),
-                          child: SizedBox(
-                            width: MediaQuery.sizeOf(
-                              sheetContext,
-                            ).width,
-                            child: PostInfoSimple(post: post),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  style: ButtonStyle(
-                    foregroundColor: WidgetStatePropertyAll(
-                      theme.colorScheme.surface,
-                    ),
-                    backgroundColor: WidgetStatePropertyAll(
-                      theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  icon: const Icon(Icons.info_outline),
-                ),
+                builder: (context, child) =>
+                    Opacity(opacity: animation.value, child: child),
+                child: ShowPostInfoButton(post: post),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ShowPostInfoButton extends StatefulWidget {
+  const ShowPostInfoButton({super.key, required this.post});
+
+  final PostImpl post;
+
+  @override
+  State<ShowPostInfoButton> createState() => _ShowPostInfoButtonState();
+}
+
+class _ShowPostInfoButtonState extends State<ShowPostInfoButton>
+    with FavoritePostsWatcherMixin {
+  late FavoriteStars? stars;
+
+  @override
+  void onFavoritePostsUpdate() {
+    super.onFavoritePostsUpdate();
+
+    stars = const FavoritePostSourceService().cache.get((
+      widget.post.id,
+      widget.post.booru,
+    ))?.stars;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    onFavoritePostsUpdate();
+  }
+
+  void _openBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: 8,
+            bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+          ),
+          child: SizedBox(
+            width: MediaQuery.sizeOf(sheetContext).width,
+            child: PostInfo(post: widget.post),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedSize(
+      alignment: Alignment.topCenter,
+      curve: Easing.standard,
+      duration: Durations.long1,
+      child: Column(
+        children: [
+          IconButton(
+            onPressed: _openBottomSheet,
+            style: ButtonStyle(
+              foregroundColor: WidgetStatePropertyAll(
+                theme.colorScheme.surface,
+              ),
+              backgroundColor: WidgetStatePropertyAll(
+                theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            icon: const Icon(Icons.info_outline),
+          ),
+          if (stars != null && stars! != FavoriteStars.zero)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Badge(
+                offset: Offset.zero,
+                backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                alignment: Alignment.center,
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        stars!.asNumber.toString(),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -1011,24 +1209,26 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
   int get count;
   int get index => _idx;
 
-  PostImpl getPost(int idx);
+  PostImpl? getPost(int idx);
 
   StreamSubscription<int> Function(void Function(int) f)? get countEvents;
 
-  (Map<String, void>, int) _pinnedTags = ({}, 0);
+  ({Map<String, void> map, int count}) _pinnedTags = (map: {}, count: 0);
   final Map<int, List<({String tag, bool pinned})>> _values = {};
 
   int _idx = 0;
+  int _prevCount = 0;
 
   late final StreamSubscription<(int, double?)>? _events;
   late final StreamSubscription<int>? _countEvents;
 
-  List<({String tag, bool pinned})> getTags(int idx) => _values[idx]!;
+  List<({String tag, bool pinned})>? getTags(int idx) => _values[idx];
 
   @override
   void initState() {
     super.initState();
 
+    _prevCount = count;
     _idx = initIdx;
 
     _events = syncr?.stream.listen((e) {
@@ -1039,8 +1239,19 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
       }
     });
 
-    _countEvents = countEvents?.call((_) {
-      _setIdx(_idx);
+    _countEvents = countEvents?.call((count) {
+      final newIdx = _idx.clamp(0, count);
+      if (newIdx != _idx) {
+        _setIdx(newIdx);
+      } else {
+        if (_prevCount != _idx) {
+          _setIdx(newIdx);
+        } else {
+          _resortMap();
+        }
+      }
+
+      _prevCount = count;
 
       setState(() {});
     });
@@ -1052,7 +1263,7 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
     return (
       tuple.$1.clamp(0, count - 1),
       tuple.$2,
-      tuple.$3.clamp(0, count - 1)
+      tuple.$3.clamp(0, count - 1),
     );
   }
 
@@ -1070,7 +1281,10 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
     if (oldTriple == newTriple) {
       for (final e in _toSet(oldTriple)) {
         if (!_values.containsKey(e)) {
-          _values[e] = _sortTags(e);
+          final value = _sortTags(e);
+          if (value != null) {
+            _values[e] = value;
+          }
         }
       }
 
@@ -1089,24 +1303,30 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
 
     for (final e in toAdd) {
       if (!_values.containsKey(e)) {
-        _values[e] = _sortTags(e);
+        final value = _sortTags(e);
+        if (value != null) {
+          _values[e] = value;
+        }
       }
     }
 
     _idx = newIdx;
   }
 
-  List<({String tag, bool pinned})> _sortTags(int idx) {
-    final postTags = getPost(idx).tags;
+  List<({String tag, bool pinned})>? _sortTags(int idx) {
+    final postTags = getPost(idx)?.tags;
+    if (postTags == null) {
+      return null;
+    }
 
-    if (_pinnedTags.$1.isEmpty) {
+    if (_pinnedTags.map.isEmpty) {
       return postTags.map((e) => (tag: e, pinned: false)).toList();
     }
 
     final postTags_ = postTags.toList();
     final pinnedTags = <String>[];
     postTags_.removeWhere((e) {
-      if (_pinnedTags.$1.containsKey(e)) {
+      if (_pinnedTags.map.containsKey(e)) {
         pinnedTags.add(e);
 
         return true;
@@ -1123,7 +1343,10 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
 
   void _resortMap() {
     for (final e in _values.keys) {
-      _values[e] = _sortTags(e);
+      final value = _sortTags(e);
+      if (value != null) {
+        _values[e] = value;
+      }
     }
   }
 
@@ -1150,7 +1373,7 @@ mixin _MultipleSortedTagArray<W extends StatefulWidget> on State<W> {
 
 class _TagsRowBorder extends StatelessWidget {
   const _TagsRowBorder({
-    super.key,
+    // super.key,
     this.post,
     required this.animation,
     required this.child,
@@ -1181,26 +1404,18 @@ class _TagsRowBorder extends StatelessWidget {
     );
 
     if (post != null) {
-      clipRrect = Hero(
-        tag: (post!.uniqueKey(), "tags"),
-        child: clipRrect,
-      );
+      clipRrect = Hero(tag: (post!.uniqueKey(), "tags"), child: clipRrect);
     }
 
     return AnimatedBuilder(
       animation: animation,
-      builder: (context, child) => Opacity(
-        opacity: animation.value,
-        child: child,
-      ),
+      builder: (context, child) =>
+          Opacity(opacity: animation.value, child: child),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 18),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 25 + 16),
-          child: Padding(
-            padding: EdgeInsets.zero,
-            child: clipRrect,
-          ),
+          child: Padding(padding: EdgeInsets.zero, child: clipRrect),
         ),
       ),
     );
@@ -1209,7 +1424,7 @@ class _TagsRowBorder extends StatelessWidget {
 
 class _TagsRowSingle extends StatefulWidget {
   const _TagsRowSingle({
-    super.key,
+    // super.key,
     required this.post,
   });
 
@@ -1226,10 +1441,7 @@ class __TagsRowSingleState extends State<_TagsRowSingle>
 
   @override
   Widget build(BuildContext context) {
-    return _TagsRowChild(
-      post: widget.post,
-      tags: tags,
-    );
+    return TagsRowChild(post: widget.post, tags: tags);
   }
 }
 
@@ -1242,7 +1454,7 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
   int get count => widget.source.count;
 
   @override
-  PostImpl getPost(int idx) => widget.source.forIdxUnsafe(idx);
+  PostImpl? getPost(int idx) => widget.source.forIdx(idx);
 
   @override
   int get initIdx => widget.idx;
@@ -1260,22 +1472,21 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
         synchronizeRecv: widget.syncr.stream,
         currentIndex: widget.idx,
         child: (context, idx) {
-          return _TagsRowChild(
-            post: getPost(idx),
-            tags: getTags(idx),
-          );
+          final post = getPost(idx);
+          final tags = getTags(idx);
+          if (post == null || tags == null) {
+            return const SizedBox.shrink();
+          }
+
+          return TagsRowChild(post: post, tags: tags);
         },
       ),
     );
   }
 }
 
-class _TagsRowChild extends StatelessWidget {
-  const _TagsRowChild({
-    super.key,
-    required this.post,
-    required this.tags,
-  });
+class TagsRowChild extends StatelessWidget {
+  const TagsRowChild({super.key, required this.post, required this.tags});
 
   final PostImpl post;
   final List<({bool pinned, String tag})> tags;
@@ -1298,12 +1509,6 @@ class _TagsRowChild extends StatelessWidget {
             onDoublePressed: e.pinned || !TagManagerService.available
                 ? null
                 : () {
-                    // controller.animateTo(
-                    //   0,
-                    //   duration: Durations.medium3,
-                    //   curve: Easing.standard,
-                    // );
-
                     const TagManagerService().pinned.add(e.tag);
                   },
             onLongPressed: post is FavoritePost
@@ -1318,11 +1523,8 @@ class _TagsRowChild extends StatelessWidget {
                       );
                     });
                   },
-            onPressed: () => OnBooruTagPressed.pressOf(
-              context,
-              e.tag,
-              post.booru,
-            ),
+            onPressed: () =>
+                OnBooruTagPressed.pressOf(context, e.tag, post.booru),
           ),
         );
       },
@@ -1330,11 +1532,8 @@ class _TagsRowChild extends StatelessWidget {
   }
 }
 
-class _BigImageVideo extends StatelessWidget {
-  const _BigImageVideo({
-    super.key,
-    required this.post,
-  });
+class CardDialogContent extends StatelessWidget {
+  const CardDialogContent({super.key, required this.post});
 
   final PostImpl post;
 
@@ -1345,204 +1544,61 @@ class _BigImageVideo extends StatelessWidget {
     final Widget child = switch (post.type) {
       PostContentType.none => const SizedBox.shrink(),
       PostContentType.video => Material(
-          child: _ExpandedVideo(
-            post: post,
-            child: PhotoGalleryPageVideo(
-              url: post.videoUrl(),
-              networkThumb: post.thumbnail(),
-              localVideo: false,
-            ),
+        child: _ExpandedVideo(
+          post: post,
+          child: PhotoGalleryPageVideo(
+            url: post.videoUrl(),
+            networkThumb: post.thumbnail(),
+            localVideo: false,
           ),
         ),
+      ),
       PostContentType.gif || PostContentType.image => PhotoView(
-          heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-          maxScale: PhotoViewComputedScale.contained * 1.8,
-          minScale: PhotoViewComputedScale.contained * 0.8,
-          filterQuality: FilterQuality.high,
-          loadingBuilder: (context, event) {
-            final theme = Theme.of(context);
+        heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
+        maxScale: PhotoViewComputedScale.contained * 1.8,
+        minScale: PhotoViewComputedScale.contained * 0.8,
+        filterQuality: FilterQuality.high,
+        loadingBuilder: (context, event) {
+          final theme = Theme.of(context);
 
-            final t = post.thumbnail();
+          final t = post.thumbnail();
 
-            final expectedBytes = event?.expectedTotalBytes;
-            final loadedBytes = event?.cumulativeBytesLoaded;
-            final value = loadedBytes != null && expectedBytes != null
-                ? loadedBytes / expectedBytes
-                : null;
+          final expectedBytes = event?.expectedTotalBytes;
+          final loadedBytes = event?.cumulativeBytesLoaded;
+          final value = loadedBytes != null && expectedBytes != null
+              ? loadedBytes / expectedBytes
+              : null;
 
-            return Stack(
-              fit: StackFit.expand,
-              alignment: Alignment.center,
-              children: [
-                Image(
-                  image: t,
-                  filterQuality: FilterQuality.high,
-                  fit: BoxFit.contain,
+          return Stack(
+            fit: StackFit.expand,
+            alignment: Alignment.center,
+            children: [
+              Image(
+                image: t,
+                filterQuality: FilterQuality.high,
+                fit: BoxFit.contain,
+              ),
+              Center(
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  backgroundColor: theme.colorScheme.surfaceContainer
+                      .withValues(alpha: 0.4),
+                  value: value ?? 0,
                 ),
-                Center(
-                  child: CircularProgressIndicator(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    backgroundColor: theme.colorScheme.surfaceContainer
-                        .withValues(alpha: 0.4),
-                    value: value ?? 0,
-                  ),
-                ),
-              ],
-            );
-            // final theme = Theme.of(context);
-
-            // final expectedBytes = event?.expectedTotalBytes;
-            // final loadedBytes = event?.cumulativeBytesLoaded;
-            // final value = loadedBytes != null && expectedBytes != null
-            //     ? loadedBytes / expectedBytes
-            //     : null;
-
-            // return Center(
-            //   child: CircularProgressIndicator(
-            //     year2023: false,
-            //     color: theme.colorScheme.onSurfaceVariant,
-            //     backgroundColor:
-            //         theme.colorScheme.surfaceContainer.withValues(alpha: 0.4),
-            //     value: value,
-            //   ),
-            // );
-          },
-          backgroundDecoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0),
-          ),
-          imageProvider: post.imageContent(),
+              ),
+            ],
+          );
+        },
+        backgroundDecoration: BoxDecoration(
+          color: theme.colorScheme.surface.withValues(alpha: 0),
         ),
+        imageProvider: post.imageContent(),
+      ),
     };
 
     return child;
   }
 }
-
-// static Future<void> openMaximizedImage(
-//   BuildContext context,
-//   PostImpl post,
-//   Contentable content,
-// ) {
-//   return Navigator.of(context, rootNavigator: true).push<void>(
-//     PageRouteBuilder(
-//       fullscreenDialog: true,
-//       opaque: false,
-//       barrierDismissible: true,
-//       barrierColor: Colors.black.withValues(alpha: 0.5),
-//       pageBuilder: (
-//         context,
-//         animation,
-//         secondaryAnimation,
-//       ) {
-//         return _ExpandedImage(
-//           post: post,
-//           content: content,
-//         );
-//       },
-//     ),
-//   );
-// }
-
-// class _ExpandedImage extends StatelessWidget {
-//   const _ExpandedImage({
-//     // super.key,
-//     required this.post,
-//   });
-
-//   final PostImpl post;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     final buttonStyle = ButtonStyle(
-//       backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surface),
-//       iconColor: WidgetStatePropertyAll(theme.colorScheme.onSurface),
-//     );
-
-//     final child = switch (post.type) {
-//       PostContentType.none => const SizedBox.shrink(),
-//       PostContentType.video => _ExpandedVideo(
-//           post: post,
-//           child: PhotoGalleryPageVideo(
-//             url: (content as NetVideo).uri,
-//             networkThumb: post.thumbnail(),
-//             localVideo: false,
-//           ),
-//         ),
-//       PostContentType.gif || PostContentType.image => PhotoView(
-//           heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-//           maxScale: PhotoViewComputedScale.contained * 1.8,
-//           minScale: PhotoViewComputedScale.contained * 0.8,
-//           filterQuality: FilterQuality.high,
-//           loadingBuilder: (context, event) => const ShimmerLoadingIndicator(),
-//           backgroundDecoration: BoxDecoration(
-//             color: theme.colorScheme.surface.withValues(alpha: 0),
-//           ),
-//           imageProvider: content is NetImage
-//               ? (content as NetImage).provider
-//               : (content as NetGif).provider,
-//         ),
-//     };
-
-//     return Scaffold(
-//       extendBodyBehindAppBar: true,
-//       backgroundColor: Colors.transparent,
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () {
-//             Navigator.pop(context);
-//           },
-//           style: buttonStyle,
-//           icon: const Icon(Icons.close_rounded),
-//         ),
-//         actions: [
-//           IconButtonTheme(
-//             data: IconButtonThemeData(style: buttonStyle),
-//             child: StarsButton(
-//               idBooru: (post.id, post.booru),
-//             ),
-//           ),
-//           if (FavoritePostSourceService.available)
-//             IconButtonTheme(
-//               data: IconButtonThemeData(style: buttonStyle),
-//               child: FavoritePostButton(
-//                 post: post,
-//                 withBackground: false,
-//               ),
-//             ),
-//           IconButton(
-//             onPressed: () {
-//               showModalBottomSheet<void>(
-//                 context: context,
-//                 builder: (sheetContext) {
-//                   return Padding(
-//                     padding: EdgeInsets.only(
-//                       top: 8,
-//                       bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-//                     ),
-//                     child: SizedBox(
-//                       width: MediaQuery.sizeOf(sheetContext).width,
-//                       child: PostInfoSimple(post: post),
-//                     ),
-//                   );
-//                 },
-//               );
-//             },
-//             style: buttonStyle,
-//             icon: const Icon(Icons.info_outline),
-//           ),
-//         ],
-//         backgroundColor: Colors.transparent,
-//       ),
-//       body: GestureDeadZones(
-//         left: true,
-//         right: true,
-//         child: child,
-//       ),
-//     );
-//   }
-// }
 
 class _ExpandedVideo extends StatefulWidget {
   const _ExpandedVideo({
@@ -1560,7 +1616,7 @@ class _ExpandedVideo extends StatefulWidget {
 }
 
 class __ExpandedVideoState extends State<_ExpandedVideo> {
-  final videoControls = VideoControlsControllerImpl();
+  final videoControls = PlayerWidgetController();
   final pauseVideoState = PauseVideoState();
 
   final seekTimeAnchor = GlobalKey<SeekTimeAnchorState>();
@@ -1583,7 +1639,7 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
     final viewPadding = MediaQuery.viewPaddingOf(context);
 
     return Center(
-      child: VideoControlsNotifier(
+      child: PlayerWidgetControllerNotifier(
         controller: videoControls,
         child: PauseVideoNotifierHolder(
           state: pauseVideoState,
@@ -1609,6 +1665,310 @@ class __ExpandedVideoState extends State<_ExpandedVideo> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DownloadButton extends StatefulWidget {
+  const DownloadButton({
+    super.key,
+    required this.post,
+    this.secondVariant = false,
+  });
+
+  final PostImpl post;
+
+  final bool secondVariant;
+
+  @override
+  State<DownloadButton> createState() => _DownloadButtonState();
+}
+
+class _DownloadButtonState extends State<DownloadButton> with DownloadManager {
+  late final StreamSubscription<void> events;
+  DownloadHandle? status;
+
+  @override
+  void initState() {
+    super.initState();
+
+    events = storage.watch((_) {
+      setState(() {
+        status = statusFor(widget.post.fileDownloadUrl());
+      });
+    }, true);
+  }
+
+  @override
+  void dispose() {
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final downloadStatus = status?.data.status;
+
+    final icon = switch (downloadStatus) {
+      DownloadStatus.onHold || null => const Icon(Icons.download_rounded),
+      DownloadStatus.failed => const Icon(Icons.file_download_off_rounded),
+      DownloadStatus.inProgress => const Icon(Icons.downloading_rounded),
+    };
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          onPressed:
+              downloadStatus == DownloadStatus.onHold ||
+                  downloadStatus == DownloadStatus.inProgress
+              ? null
+              : () {
+                  if (downloadStatus == DownloadStatus.failed) {
+                    restartAll([status!]);
+                  } else {
+                    widget.post.download();
+                    WrapperSelectionAnimation.tryPlayOf(context);
+                  }
+                },
+          style: widget.secondVariant
+              ? ButtonStyle(
+                  foregroundColor: WidgetStateProperty.fromMap({
+                    WidgetState.disabled: theme.disabledColor,
+                    WidgetState.any: theme.colorScheme.surface,
+                  }),
+                  backgroundColor: WidgetStateProperty.fromMap({
+                    WidgetState.disabled:
+                        theme.colorScheme.surfaceContainerHigh,
+                    WidgetState.any: theme.colorScheme.onSurfaceVariant,
+                  }),
+                )
+              : ButtonStyle(
+                  shape: WidgetStatePropertyAll(
+                    downloadStatus == DownloadStatus.inProgress ||
+                            downloadStatus == DownloadStatus.onHold
+                        ? const CircleBorder()
+                        : const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(15)),
+                          ),
+                  ),
+                  foregroundColor: WidgetStateProperty.fromMap({
+                    WidgetState.disabled: theme.disabledColor,
+                    WidgetState.any: theme.colorScheme.onSurfaceVariant
+                        .withValues(alpha: 0.9),
+                  }),
+                  backgroundColor: WidgetStateProperty.fromMap({
+                    WidgetState.disabled: theme.colorScheme.surfaceContainerHigh
+                        .withValues(alpha: 0.8),
+                    WidgetState.any: theme.colorScheme.surfaceContainer
+                        .withValues(alpha: 0.8),
+                  }),
+                ),
+          icon: icon,
+        ),
+        if (status != null && downloadStatus == DownloadStatus.inProgress)
+          _Progress(handle: status!),
+      ],
+    );
+  }
+}
+
+class _Progress extends StatefulWidget {
+  const _Progress({
+    // super.key,
+    required this.handle,
+  });
+
+  final DownloadHandle handle;
+
+  @override
+  State<_Progress> createState() => __ProgressState();
+}
+
+class __ProgressState extends State<_Progress> {
+  late final StreamSubscription<void> subscription;
+
+  double? progress;
+
+  @override
+  void initState() {
+    super.initState();
+
+    subscription = widget.handle.watchProgress((i) {
+      setState(() {
+        progress = i;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 38,
+      child: CircularProgressIndicator(strokeWidth: 2, value: progress),
+    );
+  }
+}
+
+class FavoritePostButton extends StatefulWidget {
+  const FavoritePostButton({
+    super.key,
+    required this.post,
+    this.withBackground = true,
+    this.heroKey,
+    this.backgroundAlpha = 0.4,
+  });
+
+  final PostImpl post;
+  final bool withBackground;
+
+  final double backgroundAlpha;
+  final Object? heroKey;
+
+  @override
+  State<FavoritePostButton> createState() => _FavoritePostButtonState();
+}
+
+class _FavoritePostButtonState extends State<FavoritePostButton>
+    with SingleTickerProviderStateMixin, FavoritePostSourceService {
+  late final AnimationController controller;
+  late final StreamSubscription<void> events;
+
+  bool favorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(vsync: this);
+
+    favorite = cache.isFavorite(widget.post.id, widget.post.booru);
+
+    events = cache.streamSingle(widget.post.id, widget.post.booru).listen((
+      newFavorite,
+    ) {
+      if (newFavorite == favorite) {
+        return;
+      }
+
+      favorite = newFavorite;
+
+      if (favorite) {
+        controller.forward().then((_) => controller.reverse());
+      }
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget child = TweenAnimationBuilder(
+      curve: Easing.linear,
+      tween: ColorTween(
+        end: favorite ? Colors.pink : theme.colorScheme.surfaceContainer,
+      ),
+      duration: Durations.short3,
+      builder: (context, value, child) => IconButton(
+        style: widget.withBackground
+            ? ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(value),
+                backgroundColor: WidgetStatePropertyAll(
+                  theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: widget.backgroundAlpha,
+                  ),
+                ),
+              )
+            : null,
+        onPressed: () => addRemove([widget.post]),
+        icon: Animate(
+          controller: controller,
+          value: 0,
+          autoPlay: false,
+          effects: const [
+            ScaleEffect(
+              delay: Duration(milliseconds: 40),
+              duration: Durations.short3,
+              begin: Offset(1, 1),
+              end: Offset(2, 2),
+              curve: Easing.emphasizedDecelerate,
+            ),
+          ],
+          child: Icon(
+            favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          ),
+        ),
+      ),
+    );
+
+    if (widget.heroKey != null) {
+      child = Hero(tag: widget.heroKey!, child: child);
+    }
+
+    return child;
+  }
+}
+
+class VideoOrGifIcon extends StatelessWidget {
+  const VideoOrGifIcon({
+    super.key,
+    required this.type,
+    required this.uniqueKey,
+  });
+
+  final Key uniqueKey;
+
+  final PostContentType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final icon = switch (type) {
+      PostContentType.none || PostContentType.image => null,
+      PostContentType.video => Icons.play_arrow_rounded,
+      PostContentType.gif => Icons.gif_rounded,
+    };
+
+    if (icon == null) {
+      return const SizedBox.shrink();
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: theme.colorScheme.secondary.withValues(alpha: 0.8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Hero(
+          tag: (uniqueKey, "videoIcon"),
+          child: Icon(
+            icon,
+            size: 16,
+            color: theme.colorScheme.onSecondary.withValues(alpha: 0.9),
           ),
         ),
       ),

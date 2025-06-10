@@ -5,7 +5,7 @@
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
@@ -17,12 +17,9 @@ abstract class HiddenBooruPostDataImpl
   const HiddenBooruPostDataImpl();
 
   @override
-  TileDismiss dismiss() => TileDismiss(
-        () {
-          const HiddenBooruPostsService().removeAll([(postId, booru)]);
-        },
-        Icons.image_rounded,
-      );
+  TileDismiss dismiss() => TileDismiss(() {
+    const HiddenBooruPostsService().removeAll([(postId, booru)]);
+  }, Icons.image_rounded);
 
   @override
   Key uniqueKey() => ValueKey((postId, booru));

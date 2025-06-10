@@ -89,7 +89,7 @@ enum ThemeType {
   const ThemeType();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        main => "Default", // TODO: change
+        ThemeType.main => l10n.enumThemeTypeMain,
         ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
         ThemeType.pink => l10n.enumThemeTypePink,
       };

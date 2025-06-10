@@ -6,7 +6,7 @@
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
@@ -83,14 +83,6 @@ class _ListLayoutState<T extends CellBuilder> extends State<ListLayout<T>>
   }
 }
 
-//  ??
-//                 DefaultListTile(
-//                   selection: selection,
-//                   cell: cell,
-//                   index: index,
-//                   hideThumbnails: widget.hideThumbnails,
-//                 )
-
 class TileDismiss {
   const TileDismiss(this.onDismissed, this.icon);
 
@@ -124,47 +116,60 @@ class DefaultListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final animate = PlayAnimations.maybeOf(context) ?? false;
     final theme = Theme.of(context);
-    SelectionCountNotifier.maybeCountOf(context);
-    // final isSelected = selection?.isSelected(selectionIndex ?? index) ?? false;
+
+    final thisIdx = ThisIndex.maybeOf(context);
+    final isOdd = thisIdx?.$1.isOdd ?? false;
+
+    final isSelected =
+        (thisIdx?.$1 == null
+            ? null
+            : ShellSelectionHolder.maybeOf(context)?.isSelected(thisIdx!.$1)) ??
+        false;
 
     Widget child = DecoratedBox(
       decoration: BoxDecoration(
-        color:
-            // isSelected
-            //     ? null
-            //     :
-            theme.colorScheme.secondary.withValues(alpha: 0.1),
-        // index.isOdd
-        //     ? theme.colorScheme.secondary.withValues(alpha: 0.1)
-        //     : theme.colorScheme.surfaceContainerHighest
-        //         .withValues(alpha: 0.1),
+        color: !isSelected
+            ? isOdd
+                  ? theme.colorScheme.surfaceContainerLowest.withValues(
+                      alpha: 0.4,
+                    )
+                  : theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    )
+            : theme.colorScheme.secondary.withValues(alpha: 0.1),
       ),
       child: DecoratedBox(
         decoration: const ShapeDecoration(shape: StadiumBorder()),
         child: ListTile(
-          // textColor: isSelected ? theme.colorScheme.inversePrimary : null,
+          textColor: isSelected ? theme.colorScheme.inversePrimary : null,
           leading: thumbnail != null
-              ? CircleAvatar(
-                  backgroundColor:
-                      theme.colorScheme.surface.withValues(alpha: 0),
-                  backgroundImage: thumbnail,
+              ? Hero(
+                  tag: uniqueKey,
+                  child: CircleAvatar(
+                    backgroundColor: theme.colorScheme.surface.withValues(
+                      alpha: 0,
+                    ),
+                    backgroundImage: thumbnail,
+                  ),
                 )
               : null,
-          subtitle:
-              subtitle == null || subtitle!.isEmpty ? null : Text(subtitle!),
+          subtitle: subtitle == null || subtitle!.isEmpty
+              ? null
+              : Text(subtitle!),
           trailing: trailing,
           title: Text(
             title ?? "",
             softWrap: false,
             style: TextStyle(
-              color:
-                  // isSelected
-                  //     ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
-                  //     :
-                  theme.colorScheme.onSurface.withValues(alpha: 0.8),
-              // index.isOdd
-              //     ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
-              //     : theme.colorScheme.onSurface.withValues(alpha: 0.9),
+              color: !isSelected
+                  ? isOdd
+                        ? theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.8,
+                          )
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.75,
+                          )
+                  : theme.colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -210,13 +215,3 @@ class DefaultListTile extends StatelessWidget {
     );
   }
 }
-
-//  WrapSelection(
-//       selectFrom: null,
-//       limitedSize: true,
-//       shape: const StadiumBorder(),
-//       description: cell.description(),
-//       onPressed: cell.tryAsPressable(context, index),
-//       thisIndx: selectionIndex ?? index,
-//       child: child,
-//     ).animate(key: cell.uniqueKey()).fadeIn()

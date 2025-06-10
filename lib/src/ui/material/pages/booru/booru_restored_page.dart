@@ -17,7 +17,6 @@ import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/other/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
@@ -35,30 +34,21 @@ import "package:url_launcher/url_launcher.dart";
 class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
     super.key,
-    required this.saveSelectedPage,
     required this.booru,
     required this.tags,
-    required this.selectionController,
-    this.pagingRegistry,
     this.overrideSafeMode,
     this.name,
     this.thenMoveTo,
-    this.wrapScaffold = false,
     this.trySearchBookmarkByTags = false,
   });
 
   final String? name;
   final Booru booru;
   final String tags;
-  final PagingStateRegistry? pagingRegistry;
   final SafeMode? overrideSafeMode;
-  final void Function(String? e) saveSelectedPage;
-  final bool wrapScaffold;
 
   final PathVolume? thenMoveTo;
   final bool trySearchBookmarkByTags;
-
-  final SelectionController selectionController;
 
   static bool hasServicesRequired() => GridDbService.available;
 
@@ -66,13 +56,11 @@ class BooruRestoredPage extends StatefulWidget {
     BuildContext context, {
     required Booru booru,
     required String tags,
-    required void Function(String? e) saveSelectedPage,
-    required bool rootNavigator,
+    void Function(String? e)? saveSelectedPage,
     String? name,
     PagingStateRegistry? pagingRegistry,
     SafeMode? overrideSafeMode,
     PathVolume? thenMoveTo,
-    // bool wrapScaffold = false,
     bool trySearchBookmarkByTags = false,
   }) {
     if (!hasServicesRequired()) {
@@ -84,19 +72,15 @@ class BooruRestoredPage extends StatefulWidget {
       return Future.value();
     }
 
-    return Navigator.of(context, rootNavigator: rootNavigator).push(
+    return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) => BooruRestoredPage(
           booru: booru,
           tags: tags,
-          saveSelectedPage: saveSelectedPage,
           name: name,
-          pagingRegistry: pagingRegistry,
           overrideSafeMode: overrideSafeMode,
           thenMoveTo: thenMoveTo,
-          wrapScaffold: rootNavigator,
           trySearchBookmarkByTags: trySearchBookmarkByTags,
-          selectionController: SelectionActions.controllerOf(context),
         ),
       ),
     );
@@ -131,22 +115,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     SafeMode? safeMode,
     String tags,
   ) {
-    // final (
-    //   gridBookmarks,
-    //   favoritePosts,
-    //   hiddenBooruPosts,
-    //   tagManager,
-    //   gridDbs,
-    //   localTags,
-    // ) = (
-    //   S<GridBookmarkService>(),
-    //   S<FavoritePostSourceService>(),
-    //   S<HiddenBooruPostsService>(),
-    //   S<TagManagerService>(),
-    //   S<GridDbService>()!,
-    //   S<LocalTagsService>(),
-    // );
-
     final secondary = const GridDbService().openSecondary(
       widget.booru,
       name,
@@ -161,19 +129,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       addToBookmarks,
       [
         if (DownloadManager.available && LocalTagsService.available)
-          actions.downloadPost(
-            context,
-            widget.booru,
-            widget.thenMoveTo,
-          ),
+          actions.downloadPost(context, widget.booru, widget.thenMoveTo),
         if (FavoritePostSourceService.available)
-          actions.favorites(
-            context,
-            showDeleteSnackbar: true,
-          ),
+          actions.favorites(context, showDeleteSnackbar: true),
         if (HiddenBooruPostsService.available) actions.hide(context),
       ],
-      widget.selectionController,
     );
   }
 
@@ -183,8 +143,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
 
     final tagsTrimmed = widget.tags.trim();
 
-    final bookmarkByName = widget.trySearchBookmarkByTags &&
-            GridBookmarkService.available
+    final bookmarkByName =
+        widget.trySearchBookmarkByTags && GridBookmarkService.available
         ? const GridBookmarkService().getFirstByTags(tagsTrimmed, widget.booru)
         : null;
 
@@ -195,23 +155,12 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       name = bookmarkByName.name;
     }
 
-    widget.saveSelectedPage(name);
-
-    pagingState = widget.pagingRegistry?.getOrRegister(
-          name,
-          () => makePageEntry(
-            name,
-            bookmarkByName != null || widget.name != null,
-            bookmarkByName != null ? null : widget.overrideSafeMode,
-            bookmarkByName?.tags ?? tagsTrimmed,
-          ),
-        ) ??
-        makePageEntry(
-          name,
-          bookmarkByName != null || widget.name != null,
-          bookmarkByName != null ? null : widget.overrideSafeMode,
-          bookmarkByName?.tags ?? tagsTrimmed,
-        );
+    pagingState = makePageEntry(
+      name,
+      bookmarkByName != null || widget.name != null,
+      bookmarkByName != null ? null : widget.overrideSafeMode,
+      bookmarkByName?.tags ?? tagsTrimmed,
+    );
 
     TagManagerService.safe()?.latest.add(bookmarkByName?.tags ?? tagsTrimmed);
 
@@ -232,10 +181,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       source.backingStorage.addAll([]);
     });
 
-    favoritesWatcher =
-        FavoritePostSourceService.safe()?.cache.countEvents.listen((event) {
-      source.backingStorage.addAll([]);
-    });
+    favoritesWatcher = FavoritePostSourceService.safe()?.cache.countEvents
+        .listen((event) {
+          source.backingStorage.addAll([]);
+        });
   }
 
   @override
@@ -245,24 +194,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     hiddenPostWatcher?.cancel();
 
     final gridBookmarks = GridBookmarkService.safe();
-
-    if (widget.pagingRegistry == null) {
-      widget.saveSelectedPage(null);
-      if (gridBookmarks != null && !pagingState.addToBookmarks) {
-        gridBookmarks.delete(pagingState.secondaryGrid.name);
-      }
-      pagingState.dispose(pagingState.addToBookmarks);
-    } else {
-      if (!isRestart) {
-        widget.saveSelectedPage(null);
-        if (gridBookmarks != null && !pagingState.addToBookmarks) {
-          gridBookmarks.delete(pagingState.secondaryGrid.name);
-        }
-        (widget.pagingRegistry!.remove(pagingState.secondaryGrid.name)!
-                as RestoredBooruPageState)
-            .dispose(pagingState.addToBookmarks);
-      }
+    if (gridBookmarks != null && !pagingState.addToBookmarks) {
+      gridBookmarks.delete(pagingState.secondaryGrid.name);
     }
+    pagingState.dispose(pagingState.addToBookmarks);
 
     super.dispose();
   }
@@ -278,7 +213,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     BooruRestoredPage.open(
       context,
       booru: booru,
-      rootNavigator: true,
       overrideSafeMode: safeMode,
       tags: tag,
       saveSelectedPage: (s) {},
@@ -294,8 +228,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
     final l10n = context.l10n();
     final navigationButtonEvents = NavigationButtonEvents.maybeOf(context);
 
-    return ScaffoldSelectionBar(
-      addScaffoldAndBar: widget.wrapScaffold,
+    return ScaffoldWithSelectionBar(
+      actions: pagingState.selectionActions,
       child: Builder(
         builder: (context) {
           return BooruAPINotifier(
@@ -310,41 +244,38 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                 stackInjector: pagingState.status,
                 configWatcher: gridSettings.watch,
                 settingsButton: ShellSettingsButton.onlyHeader(
-                  SafeModeButton(
-                    secondaryGrid: pagingState.secondaryGrid,
-                  ),
+                  SafeModeButton(secondaryGrid: pagingState.secondaryGrid),
                 ),
-                appBar: RawAppBarType(
-                  (context, settingsButton, bottomWidget) {
-                    return SliverAppBar(
-                      leading: const BackButton(),
-                      floating: true,
-                      pinned: true,
-                      snap: true,
-                      stretch: true,
-                      bottom: bottomWidget ??
-                          const PreferredSize(
-                            preferredSize: Size.zero,
-                            child: SizedBox.shrink(),
-                          ),
-                      title: _AppBarText(key: _textKey, source: source),
-                      actions: [
-                        IconButton(
-                          icon: pagingState.addToBookmarks
-                              ? const Icon(Icons.bookmark_remove_rounded)
-                              : const Icon(Icons.bookmark_add_rounded),
-                          onPressed: () {
-                            pagingState.addToBookmarks =
-                                !pagingState.addToBookmarks;
-
-                            setState(() {});
-                          },
+                appBar: RawAppBarType((context, settingsButton, bottomWidget) {
+                  return SliverAppBar(
+                    leading: const BackButton(),
+                    floating: true,
+                    pinned: true,
+                    snap: true,
+                    stretch: true,
+                    bottom:
+                        bottomWidget ??
+                        const PreferredSize(
+                          preferredSize: Size.zero,
+                          child: SizedBox.shrink(),
                         ),
-                        if (settingsButton != null) settingsButton,
-                      ],
-                    );
-                  },
-                ),
+                    title: _AppBarText(key: _textKey, source: source),
+                    actions: [
+                      IconButton(
+                        icon: pagingState.addToBookmarks
+                            ? const Icon(Icons.bookmark_remove_rounded)
+                            : const Icon(Icons.bookmark_add_rounded),
+                        onPressed: () {
+                          pagingState.addToBookmarks =
+                              !pagingState.addToBookmarks;
+
+                          setState(() {});
+                        },
+                      ),
+                      if (settingsButton != null) settingsButton,
+                    ],
+                  );
+                }),
                 elements: [
                   ElementPriority(
                     ShellElement(
@@ -355,26 +286,22 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                       scrollUpOn: navigationButtonEvents == null
                           ? const []
                           : [(navigationButtonEvents, null)],
-                      scrollingState:
-                          ScrollingStateSinkProvider.maybeOf(context),
+                      scrollingState: ScrollingStateSinkProvider.maybeOf(
+                        context,
+                      ),
                       updateScrollPosition: pagingState.setOffset,
-                      // download: downloadManager != null && localTags != null
-                      //     ? _download
-                      //     : null,
                       registerNotifiers: (child) => OnBooruTagPressed(
                         onPressed: _onTagPressed,
                         child: pagingState.status.source.inject(
-                          BooruAPINotifier(
-                            api: api,
-                            child: child,
-                          ),
+                          BooruAPINotifier(api: api, child: child),
                         ),
                       ),
                       slivers: [
                         Builder(
                           builder: (context) {
-                            final padding =
-                                MediaQuery.systemGestureInsetsOf(context);
+                            final padding = MediaQuery.systemGestureInsetsOf(
+                              context,
+                            );
 
                             return SliverPadding(
                               padding: EdgeInsets.only(
@@ -402,8 +329,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                         ),
                         Builder(
                           builder: (context) {
-                            final padding =
-                                MediaQuery.systemGestureInsetsOf(context);
+                            final padding = MediaQuery.systemGestureInsetsOf(
+                              context,
+                            );
 
                             return SliverPadding(
                               padding: EdgeInsets.only(
@@ -441,7 +369,7 @@ class RestoredBooruPageState implements PagingEntry {
     this.secondaryGrid,
     this.addToBookmarks,
     this.actions,
-    this.selectionController,
+    // this.selectionController,
   ) : client = BooruAPI.defaultClientForBooru(booru) {
     api = BooruAPI.fromEnum(booru, client);
 
@@ -475,7 +403,7 @@ class RestoredBooruPageState implements PagingEntry {
         source,
         (context) => context.l10n().emptyNoPosts,
       ),
-      selectionController: selectionController,
+      selectionController: selectionActions.controller,
       actions: actions,
       updatesAvailable: source.updatesAvailable,
     );
@@ -496,7 +424,7 @@ class RestoredBooruPageState implements PagingEntry {
   late final GridPostSource source;
   late final SourceShellElementState<Post> status;
   final List<SelectionBarAction> actions;
-  final SelectionController selectionController;
+  final selectionActions = SelectionActions();
 
   int? currentSkipped;
 

@@ -17,7 +17,7 @@ class VideoControls extends StatefulWidget {
   final bool vertical;
   final bool forceShow;
 
-  final VideoControlsControllerImpl videoControls;
+  final PlayerWidgetController videoControls;
   final GlobalKey<SeekTimeAnchorState> seekTimeAnchor;
 
   @override
@@ -26,14 +26,14 @@ class VideoControls extends StatefulWidget {
 
 class _VideoControlsState extends State<VideoControls>
     with TickerProviderStateMixin, VideoSettingsWatcherMixin {
-  late final StreamSubscription<PlayerUpdate> playerUpdatesSubsc;
+  late final StreamSubscription<PlayerEvent> playerUpdatesSubsc;
 
   late final AnimationController animationController;
 
   final videoTimeKey = GlobalKey<__VideoTimeState>();
   final playButtonKey = GlobalKey<__PlayButtonState>();
 
-  VideoControlsControllerImpl get controls => widget.videoControls;
+  PlayerWidgetController get controls => widget.videoControls;
 
   bool appBarVisible = true;
 
@@ -47,7 +47,7 @@ class _VideoControlsState extends State<VideoControls>
       value: widget.forceShow ? 1 : null,
     );
 
-    playerUpdatesSubsc = controls._playerEvents.stream.listen((update) {
+    playerUpdatesSubsc = controls.playerEvents.listen((update) {
       switch (update) {
         case DurationUpdate():
         case ProgressUpdate():
@@ -96,10 +96,7 @@ class _VideoControlsState extends State<VideoControls>
     final theme = Theme.of(context);
 
     final children = [
-      _PlayButton(
-        key: playButtonKey,
-        controller: controls,
-      ),
+      _PlayButton(key: playButtonKey, controller: controls),
       IconButton(
         style: const ButtonStyle(
           shape: WidgetStateProperty.fromMap({
@@ -112,7 +109,7 @@ class _VideoControlsState extends State<VideoControls>
         isSelected: videoSettings == null ? null : videoSettings?.volume != 0,
         onPressed: videoSettings != null
             ? () {
-                controls._events.add(const VolumeButton());
+                controls.addButtonEvent(const VolumeButton());
               }
             : null,
         icon: videoSettings == null || videoSettings?.volume == 0
@@ -123,21 +120,16 @@ class _VideoControlsState extends State<VideoControls>
         isSelected: videoSettings?.looping,
         onPressed: videoSettings != null
             ? () {
-                controls._events.add(const LoopingButton());
+                controls.addButtonEvent(const LoopingButton());
               }
             : null,
         icon: const Icon(Icons.loop_outlined),
       ),
-      _VideoTime(
-        key: videoTimeKey,
-        controller: controls,
-      ),
+      _VideoTime(key: videoTimeKey, controller: controls),
       IconButton.filledTonal(
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(
-            theme.colorScheme.surfaceContainerHigh.withValues(
-              alpha: 0.6,
-            ),
+            theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
           ),
           shape: const WidgetStatePropertyAll(
             RoundedRectangleBorder(
@@ -146,7 +138,7 @@ class _VideoControlsState extends State<VideoControls>
           ),
         ),
         onPressed: () {
-          controls._events.add(const FullscreenButton());
+          controls.addButtonEvent(const FullscreenButton());
         },
         icon: const Icon(Icons.fullscreen_outlined),
       ),
@@ -172,11 +164,7 @@ class _VideoControlsState extends State<VideoControls>
       controller: animationController,
       child: Animate(
         effects: const [
-          FadeEffect(
-            begin: 1,
-            end: 0,
-            duration: Duration(milliseconds: 500),
-          ),
+          FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500)),
         ],
         autoPlay: false,
         target: appBarVisible ? 0 : 1,
@@ -188,12 +176,15 @@ class _VideoControlsState extends State<VideoControls>
               width: widget.vertical ? null : 60,
               height: widget.vertical ? 60 : null,
               child: Card.filled(
-                color: theme.colorScheme.surfaceContainerHigh
-                    .withValues(alpha: 0.8),
+                color: theme.colorScheme.surfaceContainerHigh.withValues(
+                  alpha: 0.8,
+                ),
                 child: GestureDetector(
                   onPanStart: (details) {
-                    widget.seekTimeAnchor.currentState
-                        ?.updateDuration(0, false);
+                    widget.seekTimeAnchor.currentState?.updateDuration(
+                      0,
+                      false,
+                    );
                   },
                   onPanUpdate: (details) {
                     widget.seekTimeAnchor.currentState?.updateDuration(
@@ -238,7 +229,7 @@ class SeekTimeAnchor extends StatefulWidget {
 
   final double bottomPadding;
 
-  final VideoControlsControllerImpl videoControls;
+  final PlayerWidgetController videoControls;
 
   @override
   State<SeekTimeAnchor> createState() => SeekTimeAnchorState();
@@ -250,8 +241,9 @@ class SeekTimeAnchorState extends State<SeekTimeAnchor> {
   void updateDuration(double d, bool isVertical) {
     setState(() {
       if (seekDuration != null) {
-        seekDuration =
-            isVertical ? seekDuration! + (d * 0.2) : seekDuration! - (d * 0.2);
+        seekDuration = isVertical
+            ? seekDuration! + (d * 0.2)
+            : seekDuration! - (d * 0.2);
       } else {
         seekDuration = d;
       }
@@ -260,7 +252,7 @@ class SeekTimeAnchorState extends State<SeekTimeAnchor> {
 
   void finishUpdating() {
     if (seekDuration != null) {
-      widget.videoControls._events.add(AddDuration(seekDuration!));
+      widget.videoControls.addButtonEvent(AddDuration(seekDuration!));
 
       setState(() {
         seekDuration = null;
@@ -276,12 +268,7 @@ class SeekTimeAnchorState extends State<SeekTimeAnchor> {
     return Animate(
       autoPlay: false,
       target: seekDuration != null ? 1 : 0,
-      effects: const [
-        FadeEffect(
-          begin: 0,
-          end: 1,
-        ),
-      ],
+      effects: const [FadeEffect(begin: 0, end: 1)],
       child: Padding(
         padding: EdgeInsets.only(bottom: widget.bottomPadding + 8 + 60),
         child: Align(
@@ -308,12 +295,9 @@ class SeekTimeAnchorState extends State<SeekTimeAnchor> {
 }
 
 class _PlayButton extends StatefulWidget {
-  const _PlayButton({
-    required super.key,
-    required this.controller,
-  });
+  const _PlayButton({required super.key, required this.controller});
 
-  final VideoControlsControllerImpl controller;
+  final PlayerWidgetController controller;
 
   @override
   State<_PlayButton> createState() => __PlayButtonState();
@@ -354,17 +338,17 @@ class __PlayButtonState extends State<_PlayButton> {
       onPressed: playState == null
           ? null
           : () {
-              widget.controller._events.add(const PlayButton());
+              widget.controller.addButtonEvent(const PlayButton());
             },
       icon: playState == null
           ? const Icon(Icons.play_arrow_rounded)
           : switch (playState) {
               PlayState.isPlaying => const Icon(Icons.stop_circle_rounded),
               PlayState.buffering => const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
               PlayState.stopped => const Icon(Icons.play_arrow_rounded),
             },
     );
@@ -372,12 +356,9 @@ class __PlayButtonState extends State<_PlayButton> {
 }
 
 class _VideoTime extends StatefulWidget {
-  const _VideoTime({
-    required super.key,
-    required this.controller,
-  });
+  const _VideoTime({required super.key, required this.controller});
 
-  final VideoControlsControllerImpl controller;
+  final PlayerWidgetController controller;
 
   @override
   State<_VideoTime> createState() => __VideoTimeState();

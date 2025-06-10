@@ -10,7 +10,6 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
-import "package:azari/src/ui/material/widgets/focus_notifier.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
@@ -31,28 +30,24 @@ class ShellSettingsButton extends StatelessWidget {
     Widget? header,
     required String Function(BuildContext) localizeHideNames,
     bool buildHideName = true,
-  }) =>
-      ShellSettingsButton(
-        add: (d) => w.current = d,
-        watch: w.watch,
-        header: header,
-        buildHideName: buildHideName,
-        localizeHideNames: localizeHideNames,
-      );
+  }) => ShellSettingsButton(
+    add: (d) => w.current = d,
+    watch: w.watch,
+    header: header,
+    buildHideName: buildHideName,
+    localizeHideNames: localizeHideNames,
+  );
 
-  static Widget onlyHeader(
-    Widget header, [
-    ButtonStyle? style,
-  ]) =>
-      _Header(
-        header: header,
-        style: style,
-      );
+  static Widget onlyHeader(Widget header, [ButtonStyle? style]) =>
+      _Header(header: header, style: style);
 
   final void Function(ShellConfigurationData) add;
 
-  final StreamSubscription<ShellConfigurationData>
-      Function(void Function(ShellConfigurationData) f, [bool fire]) watch;
+  final StreamSubscription<ShellConfigurationData> Function(
+    void Function(ShellConfigurationData) f, [
+    bool fire,
+  ])
+  watch;
 
   final String Function(BuildContext) localizeHideNames;
 
@@ -145,10 +140,7 @@ class SegmentedButtonValue<T> {
   final Color? iconColor;
 }
 
-enum SegmentedButtonVariant {
-  chip,
-  segments;
-}
+enum SegmentedButtonVariant { chip, segments }
 
 class SegmentedButtonGroup<T> extends StatefulWidget {
   const SegmentedButtonGroup({
@@ -214,7 +206,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
         final positions = itemPositionListener.itemPositions.value.toList();
 
-        final isVisisble = positions.indexWhere(
+        final isVisisble =
+            positions.indexWhere(
               (e) =>
                   e.index == idx &&
                   !e.itemLeadingEdge.isNegative &&
@@ -282,8 +275,9 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
             return e1.label.compareTo(e2.label);
           });
     if (widget.reorder) {
-      final selectedSegment =
-          newValues.indexWhere((element) => element.value == widget.selected);
+      final selectedSegment = newValues.indexWhere(
+        (element) => element.value == widget.selected,
+      );
       if (selectedSegment != -1) {
         final s = newValues.removeAt(selectedSegment);
         newValues.insert(0, s);
@@ -304,82 +298,83 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
           )
         : switch (widget.variant) {
             SegmentedButtonVariant.segments => SingleChildScrollView(
-                controller: controller,
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: SegmentedButton<T>(
-                    emptySelectionAllowed:
-                        widget.selected == null || widget.allowUnselect,
-                    onSelectionChanged:
-                        newValues.length == 1 && !widget.allowUnselect
-                            ? null
-                            : select,
-                    segments: newValues
-                        .map(
-                          (e) => ButtonSegment(
-                            value: e.value,
-                            label: Text(e.label),
-                            icon: e.icon != null
-                                ? Icon(e.icon, color: e.iconColor)
-                                : null,
-                          ),
-                        )
-                        .toList(),
-                    showSelectedIcon: widget.showSelectedIcon,
-                    selected:
-                        widget.selected != null ? {widget.selected as T} : {},
-                  ),
-                ),
-              ),
-            SegmentedButtonVariant.chip => SizedBox(
-                height: 40,
-                child: ScrollablePositionedList.builder(
-                  itemScrollController: itemScrollController,
-                  itemPositionsListener: itemPositionListener,
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: newValues.length,
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) {
-                    final e = newValues[index];
-
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        right: index == newValues.length - 1 ? 0 : 8,
-                      ),
-                      child: GestureDetector(
-                        onLongPress: widget.onLongPress == null
-                            ? null
-                            : () => widget.onLongPress!(e.value),
-                        child: ChoiceChip(
-                          showCheckmark: false,
-                          selected: e.value == widget.selected,
-                          avatar: e.icon != null
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: SegmentedButton<T>(
+                  emptySelectionAllowed:
+                      widget.selected == null || widget.allowUnselect,
+                  onSelectionChanged:
+                      newValues.length == 1 && !widget.allowUnselect
+                      ? null
+                      : select,
+                  segments: newValues
+                      .map(
+                        (e) => ButtonSegment(
+                          value: e.value,
+                          label: Text(e.label),
+                          icon: e.icon != null
                               ? Icon(e.icon, color: e.iconColor)
                               : null,
-                          label: Text(e.label),
-                          onSelected:
-                              newValues.length == 1 && !widget.allowUnselect
-                                  ? null
-                                  : (_) {
-                                      if (e.value == widget.selected) {
-                                        if (!widget.allowUnselect) {
-                                          return;
-                                        }
-
-                                        select({});
-                                        return;
-                                      }
-
-                                      select({e.value});
-                                    },
                         ),
-                      ),
-                    );
-                  },
+                      )
+                      .toList(),
+                  showSelectedIcon: widget.showSelectedIcon,
+                  selected: widget.selected != null
+                      ? {widget.selected as T}
+                      : {},
                 ),
               ),
+            ),
+            SegmentedButtonVariant.chip => SizedBox(
+              height: 40,
+              child: ScrollablePositionedList.builder(
+                itemScrollController: itemScrollController,
+                itemPositionsListener: itemPositionListener,
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: newValues.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  final e = newValues[index];
+
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index == newValues.length - 1 ? 0 : 8,
+                    ),
+                    child: GestureDetector(
+                      onLongPress: widget.onLongPress == null
+                          ? null
+                          : () => widget.onLongPress!(e.value),
+                      child: ChoiceChip(
+                        showCheckmark: false,
+                        selected: e.value == widget.selected,
+                        avatar: e.icon != null
+                            ? Icon(e.icon, color: e.iconColor)
+                            : null,
+                        label: Text(e.label),
+                        onSelected:
+                            newValues.length == 1 && !widget.allowUnselect
+                            ? null
+                            : (_) {
+                                if (e.value == widget.selected) {
+                                  if (!widget.allowUnselect) {
+                                    return;
+                                  }
+
+                                  select({});
+                                  return;
+                                }
+
+                                select({e.value});
+                              },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           };
 
     return Padding(
@@ -388,17 +383,18 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
+            padding: const EdgeInsets.only(
+              bottom: 8,
+              top: 4,
+              left: 12,
+              right: 12,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    widget.title,
-                    style: theme.textTheme.bodyLarge,
-                  ),
+                  child: Text(widget.title, style: theme.textTheme.bodyLarge),
                 ),
                 if (widget.enableFilter)
                   Expanded(
@@ -473,10 +469,7 @@ class SafeModeState {
 }
 
 class SafeModeSegment extends StatefulWidget {
-  const SafeModeSegment({
-    super.key,
-    required this.state,
-  });
+  const SafeModeSegment({super.key, required this.state});
 
   final SafeModeState state;
 
@@ -536,11 +529,8 @@ class _SafeModeSegmentState extends State<SafeModeSegment> {
 }
 
 class SafeModeButton extends StatefulWidget {
-  const SafeModeButton({
-    super.key,
-    this.settingsWatcher,
-    this.secondaryGrid,
-  }) : assert(settingsWatcher == null || secondaryGrid == null);
+  const SafeModeButton({super.key, this.settingsWatcher, this.secondaryGrid})
+    : assert(settingsWatcher == null || secondaryGrid == null);
 
   final WatchFire<SettingsData?>? settingsWatcher;
   final SecondaryGridHandle? secondaryGrid;
@@ -560,23 +550,17 @@ class _SafeModeButtonState extends State<SafeModeButton> {
   void initState() {
     super.initState();
 
-    settingsWatcher = widget.settingsWatcher?.call(
-      (s) {
-        _settings = s;
+    settingsWatcher = widget.settingsWatcher?.call((s) {
+      _settings = s;
 
-        setState(() {});
-      },
-      true,
-    );
+      setState(() {});
+    }, true);
 
-    stateWatcher = widget.secondaryGrid?.watch(
-      (s) {
-        _stateSettings = s;
+    stateWatcher = widget.secondaryGrid?.watch((s) {
+      _stateSettings = s;
 
-        setState(() {});
-      },
-      true,
-    );
+      setState(() {});
+    }, true);
   }
 
   @override
@@ -632,8 +616,11 @@ class _BottomSheetContent extends StatefulWidget {
   final void Function(ShellConfigurationData)? add;
   final String Function(BuildContext) localizeHideNames;
 
-  final StreamSubscription<ShellConfigurationData>
-      Function(void Function(ShellConfigurationData) f, [bool fire])? watch;
+  final StreamSubscription<ShellConfigurationData> Function(
+    void Function(ShellConfigurationData) f, [
+    bool fire,
+  ])?
+  watch;
 
   @override
   State<_BottomSheetContent> createState() => __BottomSheetContentState();
@@ -650,14 +637,11 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
   void initState() {
     super.initState();
 
-    watcher = widget.watch?.call(
-      (newSettings) {
-        _gridSettings = newSettings;
+    watcher = widget.watch?.call((newSettings) {
+      _gridSettings = newSettings;
 
-        setState(() {});
-      },
-      true,
-    );
+      setState(() {});
+    }, true);
   }
 
   @override
@@ -679,8 +663,12 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
+            padding: const EdgeInsets.only(
+              bottom: 8,
+              top: 4,
+              left: 12,
+              right: 12,
+            ),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
@@ -695,8 +683,9 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
               value: aspectRatio.index.toDouble(),
               max: GridAspectRatio.values.length.toDouble() - 1,
               divisions: GridAspectRatio.values.length - 1,
-              label:
-                  GridAspectRatio.fromIndex(aspectRatio.index).value.toString(),
+              label: GridAspectRatio.fromIndex(
+                aspectRatio.index,
+              ).value.toString(),
               semanticFormatterCallback: (value) =>
                   GridAspectRatio.fromIndex(value.toInt()).value.toString(),
               onChanged: (val) {
@@ -732,8 +721,12 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.only(bottom: 8, top: 4, left: 12, right: 12),
+            padding: const EdgeInsets.only(
+              bottom: 8,
+              top: 4,
+              left: 12,
+              right: 12,
+            ),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
@@ -777,15 +770,18 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
           e,
           e.translatedString(l10n),
           icon: switch (e) {
-            GridLayoutType.grid => e == selectGridLayout
-                ? Icons.grid_view_rounded
-                : Icons.grid_view_outlined,
-            GridLayoutType.list => e == selectGridLayout
-                ? Icons.view_list_rounded
-                : Icons.view_list_outlined,
-            GridLayoutType.gridQuilted => e == selectGridLayout
-                ? Icons.view_quilt_rounded
-                : Icons.view_quilt_outlined,
+            GridLayoutType.grid =>
+              e == selectGridLayout
+                  ? Icons.grid_view_rounded
+                  : Icons.grid_view_outlined,
+            GridLayoutType.list =>
+              e == selectGridLayout
+                  ? Icons.view_list_rounded
+                  : Icons.view_list_outlined,
+            GridLayoutType.gridQuilted =>
+              e == selectGridLayout
+                  ? Icons.view_quilt_rounded
+                  : Icons.view_quilt_outlined,
             // GridLayoutType.gridMasonry => e == selectGridLayout
             //     ? Icons.grid_view_rounded
             //     : Icons.grid_view_outlined,
@@ -818,9 +814,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
         width: double.infinity,
         child: Padding(
           padding: EdgeInsets.all(18),
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
+          child: Center(child: CircularProgressIndicator()),
         ),
       );
     }

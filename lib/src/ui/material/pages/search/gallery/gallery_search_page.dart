@@ -19,9 +19,9 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/other/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
-import "package:azari/src/ui/material/widgets/fading_panel.dart";
+import "package:azari/src/ui/material/pages/search/fading_panel.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
@@ -37,10 +37,7 @@ part "search_panels/search_in_booru_button.dart";
 part "search_panels/search_in_directories_buttons.dart";
 
 class GallerySearchPage extends StatefulWidget {
-  const GallerySearchPage({
-    super.key,
-    required this.procPop,
-  });
+  const GallerySearchPage({super.key, required this.procPop});
 
   final void Function(bool)? procPop;
 
@@ -147,24 +144,22 @@ class _GallerySearchPageState extends State<GallerySearchPage>
 
     return Future.value(
       api.source.backingStorage
-          .map(
-            (e) {
-              if (e.tag.isNotEmpty &&
-                  e.tag.contains(str) &&
-                  !m.containsKey(e.tag)) {
-                m[e.tag] = null;
-                return e.tag;
-              }
+          .map((e) {
+            if (e.tag.isNotEmpty &&
+                e.tag.contains(str) &&
+                !m.containsKey(e.tag)) {
+              m[e.tag] = null;
+              return e.tag;
+            }
 
-              if (e.name.startsWith(str) && !m.containsKey(e.name)) {
-                m[e.name] = null;
+            if (e.name.startsWith(str) && !m.containsKey(e.name)) {
+              m[e.name] = null;
 
-                return e.name;
-              } else {
-                return null;
-              }
-            },
-          )
+              return e.name;
+            } else {
+              return null;
+            }
+          })
           .where((e) => e != null)
           .take(15)
           .map((e) => BooruTag(e!, -1))
@@ -174,11 +169,9 @@ class _GallerySearchPageState extends State<GallerySearchPage>
 
   void search(bool dialog) {
     if (searchController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n().searchTextIsEmpty),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n().searchTextIsEmpty)));
 
       return;
     }
@@ -193,9 +186,7 @@ class _GallerySearchPageState extends State<GallerySearchPage>
         context,
         booru: booru,
         tags: tag,
-        rootNavigator: true,
         overrideSafeMode: safeMode,
-        saveSelectedPage: (_) {},
       );
     }
 

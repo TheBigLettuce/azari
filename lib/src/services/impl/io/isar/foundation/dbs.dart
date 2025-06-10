@@ -7,7 +7,6 @@ import "dart:io" as io;
 
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/services/impl/io/isar/foundation/favorite_posts_isolate.dart";
-import "package:azari/src/services/impl/io/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/downloader/download_file.dart";
@@ -53,7 +52,6 @@ const mainSchemas = [
   IsarColorsNamesDataSchema,
   IsarVisitedPostSchema,
   IsarSettingsSchema,
-  IsarFavoritePostSchema, // TODO:
   IsarLocalTagDictionarySchema,
   IsarBookmarkSchema,
   IsarDownloadFileSchema,
@@ -183,10 +181,7 @@ class Dbs {
     );
 
     final blacklistedDb = Isar.openSync(
-      const [
-        IsarBlacklistedDirectorySchema,
-        IsarDirectoryMetadataSchema,
-      ],
+      const [IsarBlacklistedDirectorySchema, IsarDirectoryMetadataSchema],
       directory: paths.rootDirectory,
       inspector: false,
       name: "androidBlacklistedDir",
@@ -254,8 +249,9 @@ class Dbs {
 
   Isar openSecondaryGridName(String name, bool create, DbPaths paths) {
     if (!create &&
-        !io.File(path.join(paths.secondaryGridDir, "$name.isar"))
-            .existsSync()) {
+        !io.File(
+          path.join(paths.secondaryGridDir, "$name.isar"),
+        ).existsSync()) {
       throw "$name doesn't exist on disk";
     }
 

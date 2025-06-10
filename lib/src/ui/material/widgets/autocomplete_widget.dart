@@ -5,7 +5,6 @@
 
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/ui/material/widgets/focus_notifier.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
 
@@ -130,8 +129,9 @@ class AutocompleteWidget extends StatelessWidget {
                           AutocompleteHighlightedOption.of(context) == index;
                       if (highlight) {
                         highlightChanged(options.elementAt(index));
-                        WidgetsBinding.instance
-                            .scheduleFrameCallback((timeStamp) {
+                        WidgetsBinding.instance.scheduleFrameCallback((
+                          timeStamp,
+                        ) {
                           Scrollable.ensureVisible(context);
                         });
                       }
@@ -150,37 +150,39 @@ class AutocompleteWidget extends StatelessWidget {
       },
       fieldViewBuilder:
           (context, textEditingController, focusNode, onFieldSubmitted) {
-        return plainSearchBar
-            ? SearchBar(
-                elevation: const WidgetStatePropertyAll(0),
-                controller: textEditingController,
-                focusNode: focusNode,
-                hintText: context.l10n().searchHint,
-                leading: const Icon(Icons.search),
-                onChanged: disable ? null : (_) => onChanged,
-                onSubmitted: onSubmit,
-              )
-            : AutocompleteSearchBar(
-                focusNode: focusNode,
-                disable: disable,
-                addItems: addItems,
-                textController: textEditingController,
-                onChanged: onChanged,
-                onSubmit: onSubmit,
-                count: searchCount,
-                swapSearchIcon: swapSearchIcon,
-                searchTextOverride: searchTextOverride,
-                customHint: customHint,
-              );
-      },
+            return plainSearchBar
+                ? SearchBar(
+                    elevation: const WidgetStatePropertyAll(0),
+                    controller: textEditingController,
+                    focusNode: focusNode,
+                    hintText: context.l10n().searchHint,
+                    leading: const Icon(Icons.search),
+                    onChanged: disable ? null : (_) => onChanged,
+                    onSubmitted: onSubmit,
+                  )
+                : AutocompleteSearchBar(
+                    focusNode: focusNode,
+                    disable: disable,
+                    addItems: addItems,
+                    textController: textEditingController,
+                    onChanged: onChanged,
+                    onSubmit: onSubmit,
+                    count: searchCount,
+                    swapSearchIcon: swapSearchIcon,
+                    searchTextOverride: searchTextOverride,
+                    customHint: customHint,
+                  );
+          },
       optionsBuilder: (textEditingValue) async {
         if (disable) {
           return const [];
         }
 
         try {
-          return (await autocompleteTag(textEditingValue.text, complF))
-              .map((e) => e.tag);
+          return (await autocompleteTag(
+            textEditingValue.text,
+            complF,
+          )).map((e) => e.tag);
         } catch (e, trace) {
           Logger.root.warning("AutocompleteWidget", e, trace);
 
@@ -248,8 +250,9 @@ class AutocompleteSearchBar extends StatelessWidget {
         child: Theme(
           data: theme.copyWith(
             searchBarTheme: SearchBarThemeData(
-              overlayColor:
-                  WidgetStatePropertyAll(onPrimary.withValues(alpha: 0.05)),
+              overlayColor: WidgetStatePropertyAll(
+                onPrimary.withValues(alpha: 0.05),
+              ),
               textStyle: WidgetStatePropertyAll(
                 TextStyle(
                   color: disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
@@ -262,9 +265,7 @@ class AutocompleteSearchBar extends StatelessWidget {
                     : surfaceTint.withValues(alpha: 0.8),
               ),
               hintStyle: WidgetStatePropertyAll(
-                TextStyle(
-                  color: onPrimary.withValues(alpha: 0.5),
-                ),
+                TextStyle(color: onPrimary.withValues(alpha: 0.5)),
               ),
             ),
             badgeTheme: BadgeThemeData(
@@ -273,10 +274,12 @@ class AutocompleteSearchBar extends StatelessWidget {
             ),
             inputDecorationTheme: InputDecorationTheme(
               iconColor: disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
-              prefixIconColor:
-                  disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
-              suffixIconColor:
-                  disable ? onSurface.withValues(alpha: 0.4) : onPrimary,
+              prefixIconColor: disable
+                  ? onSurface.withValues(alpha: 0.4)
+                  : onPrimary,
+              suffixIconColor: disable
+                  ? onSurface.withValues(alpha: 0.4)
+                  : onPrimary,
             ),
             iconTheme: IconThemeData(
               size: 18,
@@ -297,8 +300,8 @@ class AutocompleteSearchBar extends StatelessWidget {
             side: const WidgetStatePropertyAll(BorderSide.none),
             leading: !notifier.hasFocus
                 ? swapSearchIcon && addItems != null && addItems!.length == 1
-                    ? addItems!.first
-                    : const Icon(Icons.search_rounded)
+                      ? addItems!.first
+                      : const Icon(Icons.search_rounded)
                 : BackButton(
                     onPressed: () {
                       FocusNotifier.of(context).unfocus();
@@ -328,8 +331,8 @@ class AutocompleteSearchBar extends StatelessWidget {
                     ),
                   ]
                 : count != null
-                    ? [Badge(label: Text(count.toString()))]
-                    : null,
+                ? [Badge(label: Text(count.toString()))]
+                : null,
             onChanged: disable
                 ? null
                 : (value) {
@@ -362,4 +365,27 @@ Future<List<BooruTag>> autocompleteTag(
   return tags.isEmpty || tags.last.isEmpty
       ? Future.value([])
       : complF(tags.last);
+}
+
+class FocusNotifier extends InheritedNotifier<FocusNode> {
+  const FocusNotifier({
+    super.key,
+    required super.notifier,
+    required super.child,
+  });
+
+  static ({VoidCallback unfocus, bool hasFocus}) of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+
+    return (
+      hasFocus: widget.notifier?.hasFocus ?? false,
+      unfocus: widget.notifier?.previousFocus ?? () {},
+    );
+  }
+
+  static FocusNode nodeOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+
+    return widget.notifier!;
+  }
 }

@@ -364,7 +364,7 @@ enum SafeMode {
         SafeMode.normal => to == normal,
         SafeMode.none => to == none || to == relaxed || to == normal,
         SafeMode.relaxed => to == normal || to == relaxed,
-        SafeMode.explicit => true,
+        SafeMode.explicit => to == explicit,
       };
 
   String translatedString(AppLocalizations l10n) => switch (this) {

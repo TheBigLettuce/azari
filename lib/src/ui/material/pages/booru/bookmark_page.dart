@@ -14,12 +14,12 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/settings/settings_label.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
-import "package:azari/src/ui/material/widgets/time_label.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -98,7 +98,6 @@ class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
       name: e.name,
       pagingRegistry: widget.pagingRegistry,
       saveSelectedPage: widget.saveSelectedPage,
-      rootNavigator: false,
     ).whenComplete(() => currentPage = null);
   }
 
@@ -129,12 +128,14 @@ class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
           return DecoratedBox(
             decoration: e.$1.isOdd
                 ? BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerLow
-                        .withValues(alpha: 0.4),
+                    color: theme.colorScheme.surfaceContainerLow.withValues(
+                      alpha: 0.4,
+                    ),
                   )
                 : BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerLow
-                        .withValues(alpha: 0.2),
+                    color: theme.colorScheme.surfaceContainerLow.withValues(
+                      alpha: 0.2,
+                    ),
                   ),
             child: ShellScope(
               key: ValueKey(booru),
@@ -148,8 +149,9 @@ class _BookmarkPageState extends State<BookmarkPage> with SettingsWatcherMixin {
                         ? const EdgeInsets.only(top: 24)
                         : EdgeInsets.zero,
                     sliver: ShellElement(
-                      scrollingState:
-                          ScrollingStateSinkProvider.maybeOf(context),
+                      scrollingState: ScrollingStateSinkProvider.maybeOf(
+                        context,
+                      ),
                       state: state,
                       scrollUpOn: navigationEvents != null
                           ? [(navigationEvents, () => currentPage == null)]
@@ -215,11 +217,14 @@ class _ClusteredSource {
 
   late final StreamSubscription<int> events;
 
-  final _sources = <Booru,
-      ({
-    GenericListSource<GridBookmark> source,
-    SourceShellElementState<GridBookmark> state
-  })>{};
+  final _sources =
+      <
+        Booru,
+        ({
+          GenericListSource<GridBookmark> source,
+          SourceShellElementState<GridBookmark> state,
+        })
+      >{};
 
   Iterable<ResourceSource<int, GridBookmark>> get sources =>
       _sources.values.map((e) => e.source);
@@ -232,10 +237,7 @@ class _ClusteredSource {
     }
 
     for (final e in service.all) {
-      final source = _sources.putIfAbsent(
-        e.booru,
-        () => _makeSource(e.booru),
-      );
+      final source = _sources.putIfAbsent(e.booru, () => _makeSource(e.booru));
 
       source.source.backingStorage.add(e, true);
     }
@@ -249,8 +251,9 @@ class _ClusteredSource {
 
   ({
     GenericListSource<GridBookmark> source,
-    SourceShellElementState<GridBookmark> state
-  }) _makeSource(Booru booru) {
+    SourceShellElementState<GridBookmark> state,
+  })
+  _makeSource(Booru booru) {
     final source = GenericListSource<GridBookmark>(null);
 
     return (
@@ -325,13 +328,15 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
     final timeNow = DateTime.now();
     final list = <Widget>[];
 
-    final titleStyle = theme.textTheme.titleSmall!
-        .copyWith(color: theme.colorScheme.secondary);
+    final titleStyle = theme.textTheme.titleSmall!.copyWith(
+      color: theme.colorScheme.secondary,
+    );
 
     ({int day, int month, int year})? time;
 
     for (final e in widget.source) {
-      final addTime = time == null ||
+      final addTime =
+          time == null ||
           time != (day: e.time.day, month: e.time.month, year: e.time.year);
       if (addTime) {
         time = (day: e.time.day, month: e.time.month, year: e.time.year);
@@ -364,10 +369,44 @@ class __BookmarkBodyState extends State<_BookmarkBody> {
 
     return SliverPadding(
       padding: const EdgeInsets.only(bottom: 8),
-      sliver: SliverList.list(
-        children: makeList(context, theme),
-      ),
+      sliver: SliverList.list(children: makeList(context, theme)),
     );
+  }
+}
+
+class TimeLabel extends StatelessWidget {
+  const TimeLabel(
+    this.time,
+    this.titleStyle,
+    this.now, {
+    super.key,
+    this.removePadding = false,
+  });
+
+  final bool removePadding;
+
+  final ({int day, int month, int year}) time;
+
+  final TextStyle titleStyle;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+
+    if (time == (year: now.day, month: now.month, day: now.year)) {
+      return SettingsLabel(
+        l10n.todayLabel,
+        titleStyle,
+        removePadding: removePadding,
+      );
+    } else {
+      return SettingsLabel(
+        l10n.dateSimple(DateTime(time.year, time.month, time.day)),
+        titleStyle,
+        removePadding: removePadding,
+      );
+    }
   }
 }
 
@@ -455,17 +494,15 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.25),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.25,
+                  ),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(25),
                     bottomRight: Radius.circular(25),
                   ),
                 ),
-                child: SizedBox(
-                  height: size,
-                  width: double.infinity,
-                ),
+                child: SizedBox(height: size, width: double.infinity),
               ),
               Column(
                 children: [
@@ -487,20 +524,21 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                                 final e = widget.state.thumbnails[index];
 
                                 return Image(
-                                  frameBuilder: (
-                                    context,
-                                    child,
-                                    frame,
-                                    wasSynchronouslyLoaded,
-                                  ) {
-                                    if (wasSynchronouslyLoaded) {
-                                      return child;
-                                    }
+                                  frameBuilder:
+                                      (
+                                        context,
+                                        child,
+                                        frame,
+                                        wasSynchronouslyLoaded,
+                                      ) {
+                                        if (wasSynchronouslyLoaded) {
+                                          return child;
+                                        }
 
-                                    return frame == null
-                                        ? const ShimmerLoadingIndicator()
-                                        : child.animate().fadeIn();
-                                  },
+                                        return frame == null
+                                            ? const ShimmerLoadingIndicator()
+                                            : child.animate().fadeIn();
+                                      },
                                   colorBlendMode: BlendMode.color,
                                   color: colorScheme.primaryContainer
                                       .withValues(alpha: 0.4),
@@ -522,9 +560,7 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                                       context: context,
                                       builder: (context) {
                                         return AlertDialog(
-                                          title: Text(
-                                            l10n.delete,
-                                          ),
+                                          title: Text(l10n.delete),
                                           content: ListTile(
                                             title: Text(widget.state.tags),
                                             subtitle: Text(
@@ -542,24 +578,25 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                                                             null,
                                                           )
                                                           .destroy()
-                                                          .then(
-                                                        (value) {
-                                                          if (context.mounted) {
-                                                            Navigator.pop(
-                                                              context,
-                                                            );
-                                                          }
+                                                          .then((value) {
+                                                            if (context
+                                                                .mounted) {
+                                                              Navigator.pop(
+                                                                context,
+                                                              );
+                                                            }
 
-                                                          animationController
-                                                              .forward()
-                                                              .then((_) {
-                                                            gridBookmarks
-                                                                .delete(
-                                                              widget.state.name,
-                                                            );
+                                                            animationController
+                                                                .forward()
+                                                                .then((_) {
+                                                                  gridBookmarks
+                                                                      .delete(
+                                                                        widget
+                                                                            .state
+                                                                            .name,
+                                                                      );
+                                                                });
                                                           });
-                                                        },
-                                                      );
                                                     }
                                                   : null,
                                               child: Text(l10n.yes),
@@ -595,16 +632,18 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                             Text(
                               widget.title,
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.secondary
-                                    .withValues(alpha: 0.9),
+                                color: colorScheme.secondary.withValues(
+                                  alpha: 0.9,
+                                ),
                                 letterSpacing: -0.4,
                               ),
                             ),
                             Text(
                               widget.subtitle,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.8),
+                                color: colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.8,
+                                ),
                                 letterSpacing: 0.8,
                               ),
                             ),

@@ -3,7 +3,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:flutter/material.dart";
 
 class StickerWidget extends StatelessWidget {
@@ -57,8 +57,9 @@ class StickerWidget extends StatelessWidget {
                         size: 14,
                         color: e.important
                             ? colorScheme.primary.withValues(alpha: 0.9)
-                            : colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.8),
+                            : colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.8,
+                              ),
                       ),
                       const Padding(padding: EdgeInsets.only(right: 6)),
                       Text(

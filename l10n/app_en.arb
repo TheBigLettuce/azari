@@ -693,6 +693,10 @@
     "@enumSortingModeStars": {
         "description": "SortingMode.stars"
     },
+    "enumSortingModeColor": "Color",
+    "@enumSortingModeColor": {
+        "description": "SortingMode.color"
+    },
     "enumFilteringModeFavorite": "Favorite",
     "@enumFilteringModeFavorite": {
         "description": "FilteringMode.favorite"

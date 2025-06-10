@@ -11,7 +11,7 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
-import "package:azari/src/ui/material/widgets/image_view/video/video_controls_controller.dart";
+import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
@@ -83,8 +83,8 @@ class PlatformImageViewStateImpl
             type: const TagManagerService().pinned.exists(e)
                 ? ImageTagType.favorite
                 : const TagManagerService().excluded.exists(e)
-                    ? ImageTagType.excluded
-                    : ImageTagType.normal,
+                ? ImageTagType.excluded
+                : ImageTagType.normal,
             onTap: onTagPressed != null
                 ? (context) => onTagPressed!(context, e)
                 : null,
@@ -146,7 +146,7 @@ class PlatformImageViewStateImpl
   Widget buildBody(BuildContext context) {
     return _ImageViewBodyPlatformView(
       videoEvents: _videoChanges.stream,
-      controls: VideoControlsNotifier.of(context),
+      controls: PlayerWidgetControllerNotifier.of(context),
       startingCell: currentIndex,
     );
   }
@@ -215,179 +215,6 @@ class _LoopingEvent implements _VideoPlayerEvent {
   final bool looping;
 }
 
-// class _FileMetadataProvider extends StatefulWidget {
-//   const _FileMetadataProvider({
-//     // super.key,
-//     required this.currentIndex,
-//     required this.indexEvents,
-//     required this.source,
-//     required this.wrapNotifiers,
-//     required this.currentCount,
-//     required this.countEvents,
-//     required this.child,
-//   });
-
-//   final int currentIndex;
-//   final int currentCount;
-
-//   final ResourceSource<int, File> source;
-
-//   final Stream<int> indexEvents;
-//   final Stream<int> countEvents;
-
-//   final NotifierWrapper? wrapNotifiers;
-
-//   final Widget child;
-
-//   @override
-//   State<_FileMetadataProvider> createState() => __FileMetadataProviderState();
-// }
-
-// class __FileMetadataProviderState extends State<_FileMetadataProvider> {
-//   late final StreamSubscription<int> _eventsIndex;
-//   late final StreamSubscription<int> _eventsCount;
-
-//   late _FileToMetadata metadata;
-//   int refreshTimes = 0;
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     metadata = _FileToMetadata(
-//       file: widget.source.forIdxUnsafe(widget.currentIndex),
-//       index: widget.currentIndex,
-//       count: widget.currentCount,
-//       wrapNotifiers: widget.wrapNotifiers,
-//     );
-
-//     _eventsIndex = widget.indexEvents.listen((newIndex) {
-//       metadata = _FileToMetadata(
-//         file: widget.source.forIdxUnsafe(newIndex),
-//         count: metadata.count,
-//         index: newIndex,
-//         wrapNotifiers: widget.wrapNotifiers,
-//       );
-
-//       refreshTimes += 1;
-
-//       setState(() {});
-//     });
-
-//     _eventsCount = widget.countEvents.listen((newCount) {
-//       metadata = _FileToMetadata(
-//         file: metadata.file,
-//         index: metadata.index,
-//         count: newCount,
-//         wrapNotifiers: widget.wrapNotifiers,
-//       );
-
-//       refreshTimes += 1;
-
-//       setState(() {});
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     _eventsIndex.cancel();
-//     _eventsCount.cancel();
-
-//     super.dispose();
-//   }
-
-//   ImageProvider _getThumbnail(int i) =>
-//       widget.source.forIdxUnsafe(i).thumbnail();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ThumbnailsNotifier(
-//       provider: _getThumbnail,
-//       child: CurrentIndexMetadataNotifier(
-//         metadata: metadata,
-//         refreshTimes: refreshTimes,
-//         child: widget.child,
-//       ),
-//     );
-//   }
-// }
-
-// class _FileToMetadata implements CurrentIndexMetadata {
-//   const _FileToMetadata({
-//     required this.file,
-//     required this.index,
-//     required this.wrapNotifiers,
-//     required this.count,
-//   });
-
-//   final NotifierWrapper? wrapNotifiers;
-//   final File file;
-
-//   @override
-//   final int index;
-
-//   @override
-//   final int count;
-
-//   @override
-//   bool get isVideo => file.isVideo;
-
-//   @override
-//   Key get uniqueKey => file.uniqueKey();
-
-//   @override
-//   List<ImageViewAction> actions(BuildContext context) => file.actions(context);
-
-//   @override
-//   List<NavigationAction> appBarButtons(BuildContext context) =>
-//       file.appBarButtons(context);
-
-//   @override
-//   Widget? openMenuButton(BuildContext context) {
-//     return ImageViewFab(
-//       openBottomSheet: (context) {
-//         return showModalBottomSheet<void>(
-//           context: context,
-//           isScrollControlled: true,
-//           builder: (sheetContext) {
-//             final child = ExitOnPressRoute(
-//               exit: () {
-//                 Navigator.of(sheetContext).pop();
-//                 ExitOnPressRoute.exitOf(context);
-//               },
-//               child: PauseVideoNotifierHolder(
-//                 state: PauseVideoNotifier.stateOf(context),
-//                 child: ImageTagsNotifier(
-//                   tags: ImageTagsNotifier.of(context),
-//                   child: Padding(
-//                     padding: EdgeInsets.only(
-//                       top: 8,
-//                       bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
-//                     ),
-//                     child: SizedBox(
-//                       width: MediaQuery.sizeOf(sheetContext).width,
-//                       child: file.info(context),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             );
-
-//             if (wrapNotifiers != null) {
-//               return wrapNotifiers!(child);
-//             }
-
-//             return child;
-//           },
-//         );
-//       },
-//     );
-//   }
-
-//   // @override
-//   // List<Sticker> stickers(BuildContext context) => file.stickers(context, true);
-// }
-
 class _ImageViewBodyPlatformView extends StatefulWidget {
   const _ImageViewBodyPlatformView({
     // super.key,
@@ -397,7 +224,7 @@ class _ImageViewBodyPlatformView extends StatefulWidget {
   });
 
   final Stream<_VideoPlayerEvent> videoEvents;
-  final VideoControlsController controls;
+  final PlayerWidgetController controls;
   final int startingCell;
 
   @override
@@ -408,7 +235,7 @@ class _ImageViewBodyPlatformView extends StatefulWidget {
 class __ImageViewBodyPlatformViewState
     extends State<_ImageViewBodyPlatformView> {
   late final StreamSubscription<_VideoPlayerEvent> events;
-  late final StreamSubscription<VideoControlsEvent> controlsEvents;
+  late final StreamSubscription<PlayerButtonEvent> buttonsEvents;
 
   @override
   void initState() {
@@ -416,46 +243,46 @@ class __ImageViewBodyPlatformViewState
 
     final galleryEvents = platform.PlatformGalleryEvents();
 
-    controlsEvents = widget.controls.events.listen(
+    buttonsEvents = widget.controls.buttonEvents.listen(
       (e) => switch (e) {
         VolumeButton() => galleryEvents.volumeButtonPressed(null),
         FullscreenButton() => null,
         PlayButton() => galleryEvents.playButtonPressed(),
         LoopingButton() => galleryEvents.loopingButtonPressed(),
-        AddDuration() =>
-          galleryEvents.durationChanged(e.durationSeconds.ceil() * 1000),
+        AddDuration() => galleryEvents.durationChanged(
+          e.durationSeconds.ceil() * 1000,
+        ),
       },
     );
 
-    events = widget.videoEvents.listen(
-      (e) {
-        return switch (e) {
-          _VolumeEvent() => widget.controls.setVolume(e.volume),
-          _DurationEvent() =>
-            widget.controls.setDuration(Duration(milliseconds: e.duration)),
-          _ProgressEvent() =>
-            widget.controls.setProgress(Duration(milliseconds: e.duration)),
-          _LoopingEvent() => VideoSettingsService.available
+    events = widget.videoEvents.listen((e) {
+      return switch (e) {
+        _VolumeEvent() => widget.controls.volume = e.volume,
+        _DurationEvent() => widget.controls.duration = Duration(
+          milliseconds: e.duration,
+        ),
+        _ProgressEvent() => widget.controls.progress = Duration(
+          milliseconds: e.duration,
+        ),
+        _LoopingEvent() =>
+          VideoSettingsService.available
               ? ()
               : const VideoSettingsService().add(
                   const VideoSettingsService().current.copy(looping: e.looping),
                 ),
-          _PlaybackStateEvent() => widget.controls.setPlayState(
-              switch (e.state) {
-                platform.VideoPlaybackState.stopped => PlayState.stopped,
-                platform.VideoPlaybackState.playing => PlayState.isPlaying,
-                platform.VideoPlaybackState.buffering => PlayState.buffering,
-              },
-            ),
-        };
-      },
-    );
+        _PlaybackStateEvent() => widget.controls.playState = switch (e.state) {
+          platform.VideoPlaybackState.stopped => PlayState.stopped,
+          platform.VideoPlaybackState.playing => PlayState.isPlaying,
+          platform.VideoPlaybackState.buffering => PlayState.buffering,
+        },
+      };
+    });
   }
 
   @override
   void dispose() {
     events.cancel();
-    controlsEvents.cancel();
+    buttonsEvents.cancel();
 
     super.dispose();
   }
@@ -481,14 +308,12 @@ class __ImageViewBodyPlatformViewState
           },
           onCreatePlatformView: (params) {
             return PlatformViewsService.initExpensiveAndroidView(
-              id: params.id,
-              viewType: params.viewType,
-              creationParams: {
-                "id": widget.startingCell,
-              },
-              creationParamsCodec: const StandardMessageCodec(),
-              layoutDirection: TextDirection.ltr,
-            )
+                id: params.id,
+                viewType: params.viewType,
+                creationParams: {"id": widget.startingCell},
+                creationParamsCodec: const StandardMessageCodec(),
+                layoutDirection: TextDirection.ltr,
+              )
               ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
               ..create();
           },

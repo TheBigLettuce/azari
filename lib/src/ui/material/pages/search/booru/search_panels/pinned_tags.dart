@@ -28,11 +28,17 @@ class _PinnedTagsPanel extends StatefulWidget {
 class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
-    () => Future.value(widget.tagManager.pinned.complete(filteringValue)),
+    () => Future.value(filteringValue.trim().isEmpty
+        ? _pinnedTags.keys
+            .map((e) =>
+                TagData(tag: e, type: TagType.pinned, time: DateTime.now()))
+            .toList()
+        : widget.tagManager.pinned.complete(filteringValue)),
     watchCount: (f, [_ = false]) => widget.tagManager.latest.events.listen(f),
   );
 
   late final StreamSubscription<String> filteringSubscr;
+  Map<String, void> _pinnedTags = {};
 
   @override
   void initState() {
@@ -47,8 +53,17 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
         source.clearRefresh();
       });
     });
+  }
 
-    source.clearRefresh();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newPinnedTags = PinnedTagsProvider.of(context).map;
+    if (_pinnedTags != newPinnedTags) {
+      _pinnedTags = newPinnedTags;
+      source.clearRefresh();
+    }
   }
 
   @override

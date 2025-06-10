@@ -6,11 +6,10 @@
 import "dart:ui";
 
 import "package:azari/src/logic/typedefs.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/sticker.dart";
-import "package:azari/src/ui/material/widgets/loading_error_widget.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/sticker_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
@@ -26,6 +25,10 @@ class GridCellName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (title.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return IgnorePointer(
       child: Container(
         alignment: Alignment.bottomCenter,
@@ -48,9 +51,7 @@ class GridCellName extends StatelessWidget {
             textAlign: TextAlign.left,
             overflow: TextOverflow.ellipsis,
             maxLines: lines,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
           ),
         ),
       ),
@@ -146,9 +147,7 @@ class _GridCellImageState extends State<GridCellImage> {
           final blurSigma = constraints.biggest.longestSide * 0.069;
 
           final image = DecoratedBox(
-            decoration: BoxDecoration(
-              color: widget.backgroundColor,
-            ),
+            decoration: BoxDecoration(color: widget.backgroundColor),
             child: Image(
               key: ValueKey((widget.thumbnail.hashCode, _tries)),
               errorBuilder: (context, error, stackTrace) => LoadingErrorWidget(
@@ -159,12 +158,7 @@ class _GridCellImageState extends State<GridCellImage> {
                   setState(() {});
                 },
               ),
-              frameBuilder: (
-                context,
-                child,
-                frame,
-                wasSynchronouslyLoaded,
-              ) {
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                 if (wasSynchronouslyLoaded) {
                   return child;
                 }
@@ -181,8 +175,9 @@ class _GridCellImageState extends State<GridCellImage> {
                   : null,
               colorBlendMode: widget.blur ? BlendMode.darken : BlendMode.darken,
               fit: widget.boxFit,
-              filterQuality:
-                  widget.blur ? FilterQuality.none : FilterQuality.medium,
+              filterQuality: widget.blur
+                  ? FilterQuality.none
+                  : FilterQuality.medium,
               width: constraints.maxWidth,
               height: constraints.maxHeight,
             ),
@@ -196,10 +191,7 @@ class _GridCellImageState extends State<GridCellImage> {
                       sigmaY: blurSigma,
                       tileMode: TileMode.mirror,
                     ),
-                    inner: ImageFilter.dilate(
-                      radiusX: 0.5,
-                      radiusY: 0.5,
-                    ),
+                    inner: ImageFilter.dilate(radiusX: 0.5, radiusY: 0.5),
                   ),
                   child: image,
                 )
@@ -209,22 +201,14 @@ class _GridCellImageState extends State<GridCellImage> {
     );
 
     if (widget.heroTag != null) {
-      child = Hero(
-        tag: widget.heroTag!,
-        child: child,
-      );
+      child = Hero(tag: widget.heroTag!, child: child);
     }
 
     return Center(child: child);
   }
 }
 
-enum TitleMode {
-  normal,
-  long,
-  topLeft,
-  atBottom;
-}
+enum TitleMode { normal, long, topLeft, atBottom }
 
 /// The cell of [ShellElement].
 class GridCell extends StatelessWidget {
@@ -240,7 +224,6 @@ class GridCell extends StatelessWidget {
     this.stickers = const [],
     this.tightMode = false,
     this.titleLines = 1,
-    this.alignStickersTopCenter = false,
     this.circle = false,
   });
 
@@ -253,7 +236,6 @@ class GridCell extends StatelessWidget {
   final bool tightMode;
   final bool blur;
   final bool circle;
-  final bool alignStickersTopCenter;
 
   final Alignment imageAlign;
   final TitleMode titleMode;
@@ -276,9 +258,7 @@ class GridCell extends StatelessWidget {
         clipper: ShapeBorderClipper(
           shape: circle
               ? const CircleBorder()
-              : RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
+              : RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         ),
         child: Stack(
           children: [
@@ -290,22 +270,14 @@ class GridCell extends StatelessWidget {
               ),
             if (stickers.isNotEmpty)
               Align(
-                alignment: alignStickersTopCenter
-                    ? Alignment.topLeft
-                    : Alignment.topRight,
+                alignment: Alignment.topRight,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Wrap(
-                    textDirection:
-                        alignStickersTopCenter ? null : TextDirection.rtl,
+                    textDirection: TextDirection.rtl,
                     spacing: 2,
                     runSpacing: 2,
-                    crossAxisAlignment: alignStickersTopCenter
-                        ? WrapCrossAlignment.center
-                        : WrapCrossAlignment.start,
-                    direction: alignStickersTopCenter
-                        ? Axis.horizontal
-                        : Axis.vertical,
+                    direction: Axis.vertical,
                     children: stickers.map(StickerWidget.new).toList(),
                   ),
                 ),
@@ -319,10 +291,7 @@ class GridCell extends StatelessWidget {
                       secondaryTitle: subtitle,
                       lines: titleLines,
                     )
-                  : GridCellName(
-                      title: title ?? "",
-                      lines: titleLines,
-                    ),
+                  : GridCellName(title: title ?? "", lines: titleLines),
           ],
         ),
       ),
@@ -339,10 +308,7 @@ class GridCell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          flex: 2,
-          child: card,
-        ),
+        Expanded(flex: 2, child: card),
         Expanded(
           child: Padding(
             padding: tightMode
@@ -416,6 +382,113 @@ class CustomGridCellWrapper extends StatelessWidget {
         onPressed(context);
       },
       child: child,
+    );
+  }
+}
+
+class LoadingErrorWidget extends StatefulWidget {
+  const LoadingErrorWidget({
+    super.key,
+    required this.error,
+    required this.refresh,
+    this.short = true,
+  });
+
+  final bool short;
+
+  final String error;
+
+  final VoidCallback refresh;
+
+  @override
+  State<LoadingErrorWidget> createState() => _LoadingErrorWidgetState();
+}
+
+class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (widget.short) {
+      return GestureDetector(
+        onTap: () {
+          controller.forward().then((value) => widget.refresh());
+        },
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.2,
+            ),
+          ),
+          child: SizedBox.expand(
+            child: Center(
+              child: Animate(
+                autoPlay: false,
+                effects: [
+                  FadeEffect(
+                    duration: 200.ms,
+                    curve: Easing.standard,
+                    begin: 1,
+                    end: 0,
+                  ),
+                  RotateEffect(duration: 200.ms, curve: Easing.standard),
+                ],
+                controller: controller,
+                child: const Icon(Icons.refresh_rounded),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ColoredBox(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+      child: Center(
+        child: InkWell(
+          onTap: widget.refresh,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(padding: EdgeInsets.only(top: 20)),
+              Icon(
+                Icons.refresh_rounded,
+                color: theme.colorScheme.primary.withValues(alpha: 0.8),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 40, right: 40, top: 4),
+                child: Text(
+                  widget.error,
+                  maxLines: 4,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    overflow: TextOverflow.ellipsis,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+              const Padding(padding: EdgeInsets.only(top: 20)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

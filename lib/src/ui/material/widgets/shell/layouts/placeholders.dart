@@ -7,11 +7,11 @@ import "dart:async";
 
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:azari/src/ui/material/widgets/shimmer_loading_indicator.dart";
+import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
@@ -54,9 +54,8 @@ class ListLayoutPlaceholder extends StatelessWidget {
       padding: const EdgeInsets.only(right: 8, left: 8),
       sliver: SliverList.builder(
         itemCount: 20,
-        itemBuilder: (context, index) => DefaultListTilePlaceholder(
-          index: index,
-        ),
+        itemBuilder: (context, index) =>
+            DefaultListTilePlaceholder(index: index),
       ),
     );
   }
@@ -77,8 +76,9 @@ class DefaultListTilePlaceholder extends StatelessWidget {
         decoration: BoxDecoration(
           color: index.isOdd
               ? theme.colorScheme.secondary.withValues(alpha: 0.1)
-              : theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.1),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.1,
+                ),
         ),
         child: ListTile(
           minVerticalPadding: 1,
@@ -118,10 +118,7 @@ class GridQuiltedLayoutPlaceholder extends StatelessWidget {
       ),
       itemCount: config.columns.number * 20,
       itemBuilder: (context, idx) {
-        return GridCellPlaceholder(
-          circle: circle,
-          tightMode: tightMode,
-        );
+        return GridCellPlaceholder(circle: circle, tightMode: tightMode);
       },
     );
   }
@@ -151,10 +148,7 @@ class GridLayoutPlaceholder extends StatelessWidget {
       ),
       itemCount: config.columns.number * 20,
       itemBuilder: (context, idx) {
-        return GridCellPlaceholder(
-          circle: circle,
-          tightMode: tightMode,
-        );
+        return GridCellPlaceholder(circle: circle, tightMode: tightMode);
       },
     );
   }
@@ -211,7 +205,8 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
     return widget.source.count == 0 && !widget.progress.inRefreshing
         ? SliverToBoxAdapter(
             child: DefaultTextStyle(
-              style: theme.textTheme.titleMedium?.copyWith(
+              style:
+                  theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ) ??
                   const TextStyle(),
@@ -227,9 +222,39 @@ class _EmptyWidgetOrContentState extends State<EmptyWidgetOrContent>
   }
 }
 
+class TrackedIndex extends InheritedWidget {
+  const TrackedIndex({
+    super.key,
+    required this.idx,
+    required this.idxSink,
+    required super.child,
+  });
+
+  final int? idx;
+  final Sink<int?> idxSink;
+
+  static Widget wrap(Widget child) => _TrackedIndexWrapper(child: child);
+
+  static int? of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
+
+    return widget!.idx;
+  }
+
+  static Sink<int?> sinkOf(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
+
+    return widget!.idxSink;
+  }
+
+  @override
+  bool updateShouldNotify(TrackedIndex oldWidget) =>
+      idx != oldWidget.idx || idxSink != oldWidget.idxSink;
+}
+
 class _TrackedIndexWrapper extends StatefulWidget {
   const _TrackedIndexWrapper({
-    super.key,
+    // super.key,
     required this.child,
   });
 
@@ -271,34 +296,4 @@ class __TrackedIndexWrapperState extends State<_TrackedIndexWrapper> {
       child: widget.child,
     );
   }
-}
-
-class TrackedIndex extends InheritedWidget {
-  const TrackedIndex({
-    super.key,
-    required this.idx,
-    required this.idxSink,
-    required super.child,
-  });
-
-  final int? idx;
-  final Sink<int?> idxSink;
-
-  static Widget wrap(Widget child) => _TrackedIndexWrapper(child: child);
-
-  static int? of(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
-
-    return widget!.idx;
-  }
-
-  static Sink<int?> sinkOf(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<TrackedIndex>();
-
-    return widget!.idxSink;
-  }
-
-  @override
-  bool updateShouldNotify(TrackedIndex oldWidget) =>
-      idx != oldWidget.idx || idxSink != oldWidget.idxSink;
 }

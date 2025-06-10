@@ -6,7 +6,7 @@
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/widgets.dart";
 
@@ -24,8 +24,9 @@ abstract class GridBookmarkImpl
 
   @override
   ImageProvider<Object>? thumbnail() {
-    final e = thumbnails
-        .indexWhere((e) => e.rating.asSafeMode.inLevel(SafeMode.normal));
+    final e = thumbnails.indexWhere(
+      (e) => e.rating.asSafeMode.inLevel(SafeMode.normal),
+    );
 
     return CachedNetworkImageProvider(thumbnails[e].url);
   }

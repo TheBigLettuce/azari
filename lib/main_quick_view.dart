@@ -37,85 +37,40 @@ Future<void> mainQuickView() async {
       )
       .toList();
 
-  final source = GenericListSource<File>(
-    () => Future.value(files),
-  );
+  final source = GenericListSource<File>(() => Future.value(files));
   await source.clearRefresh();
+
+  final actions = SelectionActions();
+
+  final impl = PlatformImageViewStateImpl(
+    source: source,
+    wrapNotifiers: (child) => child,
+    onTagPressed: null,
+    onTagLongPressed: null,
+  );
+
+  platform.GalleryVideoEvents.setUp(impl);
+  platform.FlutterGalleryData.setUp(impl);
 
   runApp(
     injectWidgetEvents(
-      _GalleryDataHolder(
-        source: source,
-        child: (stateController) {
-          return MaterialApp(
-            title: "Azari",
-            themeAnimationCurve: Easing.standard,
-            themeAnimationDuration: const Duration(milliseconds: 300),
-            darkTheme: buildTheme(Brightness.dark, accentColor),
-            theme: buildTheme(Brightness.light, accentColor),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: ScaffoldSelectionBar(
-              addScaffoldAndBar: true,
-              child: PopScope(
-                canPop: false,
-                onPopInvokedWithResult: (didPop, result) =>
-                    const AppApi().close(),
-                child: ImageView(stateController: stateController),
-              ),
-            ),
-          );
-        },
+      MaterialApp(
+        title: "Azari",
+        themeAnimationCurve: Easing.standard,
+        themeAnimationDuration: const Duration(milliseconds: 300),
+        darkTheme: buildTheme(Brightness.dark, accentColor),
+        theme: buildTheme(Brightness.light, accentColor),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ScaffoldWithSelectionBar(
+          actions: actions,
+          child: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) => const AppApi().close(),
+            child: ImageView(stateController: impl),
+          ),
+        ),
       ),
     ),
   );
-}
-
-class _GalleryDataHolder extends StatefulWidget {
-  const _GalleryDataHolder({
-    // super.key,
-    required this.source,
-    required this.child,
-  });
-
-  final GenericListSource<File> source;
-
-  final Widget Function(PlatformImageViewStateImpl impl) child;
-
-  @override
-  State<_GalleryDataHolder> createState() => __GalleryDataHolderState();
-}
-
-class __GalleryDataHolderState extends State<_GalleryDataHolder> {
-  late final PlatformImageViewStateImpl impl;
-
-  @override
-  void initState() {
-    super.initState();
-
-    impl = PlatformImageViewStateImpl(
-      source: widget.source,
-      wrapNotifiers: (child) => child,
-      onTagPressed: null,
-      onTagLongPressed: null,
-    );
-
-    platform.GalleryVideoEvents.setUp(impl);
-    platform.FlutterGalleryData.setUp(impl);
-  }
-
-  @override
-  void dispose() {
-    platform.FlutterGalleryData.setUp(null);
-    platform.GalleryVideoEvents.setUp(null);
-
-    impl.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.child(impl);
-  }
 }

@@ -54,8 +54,6 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
         context,
         booru: const SettingsService().current.selectedBooru,
         tags: tag,
-        saveSelectedPage: (_) {},
-        rootNavigator: true,
       ),
       onTagLongPressed: (context, tag) {
         final l10n = context.l10n();
@@ -68,8 +66,6 @@ class __FilesListState extends State<_FilesList> with GalleryApi {
             context,
             booru: const SettingsService().current.selectedBooru,
             tags: tag,
-            saveSelectedPage: (_) {},
-            rootNavigator: true,
           ),
           title: l10n.chooseSafeMode,
         );

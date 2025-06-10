@@ -42,9 +42,7 @@ abstract class FavoritePostCache
 mixin FavoritePostsWatcherMixin<S extends StatefulWidget> on State<S> {
   StreamSubscription<int>? _favoritePostsEvents;
 
-  void onFavoritePostsUpdate() {
-    setState(() {});
-  }
+  void onFavoritePostsUpdate() {}
 
   @override
   void initState() {
@@ -118,6 +116,8 @@ abstract class FavoritePost implements PostBase, PostImpl {
     FavoriteStars? stars,
     FilteringColors? filteringColors,
   });
+
+  FavoritePost applyBase(PostBase post);
 }
 
 mixin FavoritePostCopyMixin implements FavoritePost {
@@ -159,6 +159,27 @@ mixin FavoritePostCopyMixin implements FavoritePost {
         size: size ?? this.size,
         stars: stars ?? this.stars,
         filteringColors: filteringColors ?? this.filteringColors,
+      );
+
+  @override
+  FavoritePost applyBase(PostBase post) => FavoritePost(
+        id: post.id,
+        md5: post.md5,
+        tags: post.tags,
+        width: post.width,
+        height: post.height,
+        fileUrl: post.fileUrl,
+        previewUrl: post.previewUrl,
+        sampleUrl: post.sampleUrl,
+        sourceUrl: post.sourceUrl,
+        rating: post.rating,
+        score: post.score,
+        createdAt: post.createdAt,
+        booru: post.booru,
+        type: post.type,
+        size: post.size,
+        stars: stars,
+        filteringColors: filteringColors,
       );
 }
 

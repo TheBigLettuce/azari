@@ -8,7 +8,7 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:flutter/material.dart";
 
@@ -21,24 +21,10 @@ abstract class BlacklistedDirectoryDataImpl
   @override
   Key uniqueKey() => ValueKey(bucketId);
 
-//  itemFactory: (context, idx, cell) {
-//                   return cell.buildCell(
-//                     context,
-//                     cell,
-//                     cellType: CellType.list,
-//                     wrapSelection: (child) => child,
-//                   );
-//                 },
-
   @override
-  TileDismiss dismiss() => TileDismiss(
-        () {
-          const BlacklistedDirectoryService()
-              .backingStorage
-              .removeAll([bucketId]);
-        },
-        Icons.restore_page_rounded,
-      );
+  TileDismiss dismiss() => TileDismiss(() {
+    const BlacklistedDirectoryService().backingStorage.removeAll([bucketId]);
+  }, Icons.restore_page_rounded);
 
   @override
   Widget buildCell(

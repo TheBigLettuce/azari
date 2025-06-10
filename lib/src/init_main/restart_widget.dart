@@ -353,7 +353,7 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
   @override
   Widget build(BuildContext context) {
     return PinnedTagsProvider(
-      pinnedTags: (pinnedTags, count),
+      pinnedTags: (map: pinnedTags, count: count),
       child: widget.child,
     );
   }

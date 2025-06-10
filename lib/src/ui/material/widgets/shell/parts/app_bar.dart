@@ -10,17 +10,13 @@ sealed class AppBarBackButtonBehaviour {
 }
 
 class EmptyAppBarBackButton implements AppBarBackButtonBehaviour {
-  const EmptyAppBarBackButton({
-    required this.inherit,
-  });
+  const EmptyAppBarBackButton({required this.inherit});
 
   final bool inherit;
 }
 
 class CallbackAppBarBackButton implements AppBarBackButtonBehaviour {
-  const CallbackAppBarBackButton({
-    this.onPressed = _doNothing,
-  });
+  const CallbackAppBarBackButton({this.onPressed = _doNothing});
 
   static void _doNothing() {}
 
@@ -67,95 +63,117 @@ class _AppBar extends StatelessWidget {
     };
 
     return switch (search) {
-      TitleAppBarType() => SliverAppBar.medium(
-          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
-          title: Text(search.title),
-          leading: search.leading ?? b,
-          actions: [
-            ...?search.trailingItems,
-            if (settingsButton != null) settingsButton!,
-          ],
-          automaticallyImplyLeading: false,
-          bottom: bottomWidget,
-        ),
+      TitleAppBarType() =>
+        bottomWidget != null
+            ? SliverAppBar(
+                backgroundColor: theme.colorScheme.surface.withValues(
+                  alpha: 0.95,
+                ),
+                title: Text(search.title),
+                leading: search.leading ?? b,
+                actions: [
+                  ...?search.trailingItems,
+                  if (settingsButton != null) settingsButton!,
+                ],
+                automaticallyImplyLeading: false,
+                pinned: true,
+                snap: true,
+                floating: true,
+                bottom: bottomWidget,
+              )
+            : SliverAppBar.medium(
+                backgroundColor: theme.colorScheme.surface.withValues(
+                  alpha: 0.95,
+                ),
+                title: Text(search.title),
+                leading: search.leading ?? b,
+                actions: [
+                  ...?search.trailingItems,
+                  if (settingsButton != null) settingsButton!,
+                ],
+                automaticallyImplyLeading: false,
+                bottom: bottomWidget,
+              ),
       SearchBarAppBarType() => SliverAppBar(
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarIconBrightness: theme.brightness == Brightness.light
-                ? Brightness.dark
-                : Brightness.light,
-            statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
-          ),
-          toolbarHeight: 80,
-          backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
-          centerTitle: true,
-          title: Center(
-            child: search.complete != null
-                ? SearchBarAutocompleteWrapper(
-                    searchFocus: searchFocus,
-                    search: search,
-                    child: (
-                      context,
-                      textEditingController,
-                      focusNode,
-                      onFieldSubmitted,
-                    ) =>
-                        SearchBar(
-                      onTap: search.onPressed == null
-                          ? null
-                          : () => search.onPressed!(context),
-                      onTapOutside: (_) => focusNode.unfocus(),
-                      onChanged: search.onChanged,
-                      focusNode: focusNode,
-                      controller: textEditingController,
-                      elevation: const WidgetStatePropertyAll(0),
-                      onSubmitted: (_) {
-                        search.onSubmitted?.call(textEditingController.text);
-                        onFieldSubmitted();
-                      },
-                      leading: search.leading ??
-                          b ??
-                          const Icon(Icons.search_rounded),
-                      hintText: search.hintText ?? l10n.searchHint,
-                      trailing: [
-                        ...?search.trailingItems,
-                        if (search.filterWidget != null) search.filterWidget!,
-                        if (settingsButton != null) settingsButton!,
-                      ],
-                      padding: const WidgetStatePropertyAll(
-                        EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                    ),
-                  )
-                : SearchBar(
-                    onTap: search.onPressed == null
-                        ? null
-                        : () => search.onPressed!(context),
-                    elevation: const WidgetStatePropertyAll(0),
-                    onSubmitted: search.onSubmitted,
-                    onChanged: search.onChanged,
-                    focusNode: searchFocus,
-                    onTapOutside: (_) => searchFocus.unfocus(),
-                    controller: search.textEditingController,
-                    leading:
-                        search.leading ?? b ?? const Icon(Icons.search_rounded),
-                    hintText: search.hintText ?? l10n.searchHint,
-                    trailing: [
-                      ...?search.trailingItems,
-                      if (search.filterWidget != null) search.filterWidget!,
-                      if (settingsButton != null) settingsButton!,
-                    ],
-                    padding: const WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                  ),
-          ),
-          stretch: true,
-          snap: true,
-          floating: true,
-          scrolledUnderElevation: 0,
-          automaticallyImplyLeading: false,
-          bottom: bottomWidget,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          systemNavigationBarContrastEnforced: false,
+          statusBarIconBrightness: theme.brightness == Brightness.light
+              ? Brightness.dark
+              : Brightness.light,
+          statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
         ),
+        toolbarHeight: 80,
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
+        centerTitle: true,
+        title: Center(
+          child: search.complete != null
+              ? SearchBarAutocompleteWrapper(
+                  searchFocus: searchFocus,
+                  search: search,
+                  child:
+                      (
+                        context,
+                        textEditingController,
+                        focusNode,
+                        onFieldSubmitted,
+                      ) => SearchBar(
+                        onTap: search.onPressed == null
+                            ? null
+                            : () => search.onPressed!(context),
+                        onTapOutside: (_) => focusNode.unfocus(),
+                        onChanged: search.onChanged,
+                        focusNode: focusNode,
+                        controller: textEditingController,
+                        elevation: const WidgetStatePropertyAll(0),
+                        onSubmitted: (_) {
+                          search.onSubmitted?.call(textEditingController.text);
+                          onFieldSubmitted();
+                        },
+                        leading:
+                            search.leading ??
+                            b ??
+                            const Icon(Icons.search_rounded),
+                        hintText: search.hintText ?? l10n.searchHint,
+                        trailing: [
+                          ...?search.trailingItems,
+                          if (search.filterWidget != null) search.filterWidget!,
+                          if (settingsButton != null) settingsButton!,
+                        ],
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                      ),
+                )
+              : SearchBar(
+                  onTap: search.onPressed == null
+                      ? null
+                      : () => search.onPressed!(context),
+                  elevation: const WidgetStatePropertyAll(0),
+                  onSubmitted: search.onSubmitted,
+                  onChanged: search.onChanged,
+                  focusNode: searchFocus,
+                  onTapOutside: (_) => searchFocus.unfocus(),
+                  controller: search.textEditingController,
+                  leading:
+                      search.leading ?? b ?? const Icon(Icons.search_rounded),
+                  hintText: search.hintText ?? l10n.searchHint,
+                  trailing: [
+                    ...?search.trailingItems,
+                    if (search.filterWidget != null) search.filterWidget!,
+                    if (settingsButton != null) settingsButton!,
+                  ],
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+        ),
+        stretch: true,
+        snap: true,
+        floating: true,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        bottom: bottomWidget,
+      ),
       RawAppBarType() => search.sliver(context, settingsButton, bottomWidget),
       NoShellAppBar() => const SliverPadding(padding: EdgeInsets.zero),
     };
@@ -163,11 +181,7 @@ class _AppBar extends StatelessWidget {
 }
 
 class AppBarDivider extends StatefulWidget {
-  const AppBarDivider({
-    super.key,
-    required this.controller,
-    this.child,
-  });
+  const AppBarDivider({super.key, required this.controller, this.child});
 
   final ScrollController controller;
   final Widget? child;
@@ -223,12 +237,7 @@ class _AppBarDividerState extends State<AppBarDivider>
         Animate(
           controller: controller,
           autoPlay: false,
-          effects: const [
-            FadeEffect(
-              begin: 0,
-              end: 1,
-            ),
-          ],
+          effects: const [FadeEffect(begin: 0, end: 1)],
           child: Divider(
             height: 1,
             thickness: 1,
@@ -257,7 +266,8 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
     TextEditingController,
     FocusNode,
     void Function(),
-  ) child;
+  )
+  child;
 
   @override
   Widget build(BuildContext context) {
@@ -272,88 +282,94 @@ class SearchBarAutocompleteWrapper extends StatelessWidget {
           return (await autocompleteTag(
             textEditingValue.text,
             search.complete!,
-          ))
-              .map((e) => e.tag);
+          )).map((e) => e.tag);
         } catch (e) {
           return [];
         }
       },
       fieldViewBuilder: child,
-      optionsViewBuilder: (
-        BuildContext context,
-        void Function(String) onSelected,
-        Iterable<String> options,
-      ) {
-        final tiles = options
-            .map(
-              (elem) => ListTile(
-                onTap: () {
-                  if (search.textEditingController == null) {
-                    return;
-                  }
+      optionsViewBuilder:
+          (
+            BuildContext context,
+            void Function(String) onSelected,
+            Iterable<String> options,
+          ) {
+            final tiles = options
+                .map(
+                  (elem) => ListTile(
+                    onTap: () {
+                      if (search.textEditingController == null) {
+                        return;
+                      }
 
-                  final tags = List<String>.from(
-                    search.textEditingController!.text.split(" "),
-                  );
+                      final tags = List<String>.from(
+                        search.textEditingController!.text.split(" "),
+                      );
 
-                  if (tags.isNotEmpty) {
-                    tags.removeLast();
-                    tags.remove(elem);
-                  }
+                      if (tags.isNotEmpty) {
+                        tags.removeLast();
+                        tags.remove(elem);
+                      }
 
-                  tags.add(elem);
+                      tags.add(elem);
 
-                  onSelected(tags.join(" "));
-                  search.onChanged?.call(search.textEditingController!.text);
-                },
-                title: Text(elem),
-              ),
-            )
-            .toList();
+                      onSelected(tags.join(" "));
+                      search.onChanged?.call(
+                        search.textEditingController!.text,
+                      );
+                    },
+                    title: Text(elem),
+                  ),
+                )
+                .toList();
 
-        final theme = Theme.of(context);
+            final theme = Theme.of(context);
 
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Material(
-              color: theme.colorScheme.surface,
-              surfaceTintColor: theme.colorScheme.surfaceTint,
-              clipBehavior: Clip.antiAlias,
-              borderRadius: BorderRadius.circular(25),
-              elevation: 4,
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxHeight: 200, maxWidth: 200),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: tiles.length,
-                  itemBuilder: (context, index) {
-                    return Builder(
-                      builder: (context) {
-                        final highlight =
-                            AutocompleteHighlightedOption.of(context) == index;
-                        if (highlight) {
-                          WidgetsBinding.instance
-                              .scheduleFrameCallback((timeStamp) {
-                            Scrollable.ensureVisible(context);
-                          });
-                        }
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Material(
+                  color: theme.colorScheme.surface,
+                  surfaceTintColor: theme.colorScheme.surfaceTint,
+                  clipBehavior: Clip.antiAlias,
+                  borderRadius: BorderRadius.circular(25),
+                  elevation: 4,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 200,
+                      maxWidth: 200,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: tiles.length,
+                      itemBuilder: (context, index) {
+                        return Builder(
+                          builder: (context) {
+                            final highlight =
+                                AutocompleteHighlightedOption.of(context) ==
+                                index;
+                            if (highlight) {
+                              WidgetsBinding.instance.scheduleFrameCallback((
+                                timeStamp,
+                              ) {
+                                Scrollable.ensureVisible(context);
+                              });
+                            }
 
-                        return Container(
-                          color: highlight ? theme.focusColor : null,
-                          child: tiles[index],
+                            return Container(
+                              color: highlight ? theme.focusColor : null,
+                              child: tiles[index],
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
     );
   }
 }

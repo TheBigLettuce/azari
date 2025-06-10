@@ -9,7 +9,8 @@ import "dart:async";
 import "dart:math";
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
-import "package:azari/src/generated/platform/platform_api.g.dart" as platform
+import "package:azari/src/generated/platform/platform_api.g.dart"
+    as platform
     show
         DirectoryFile,
         FilesCursor,
@@ -35,15 +36,15 @@ import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/theme.dart";
-import "package:azari/src/ui/material/widgets/grid_cell/cell.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:flutter/scheduler.dart";
+import "package:flutter_animate/flutter_animate.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
 import "package:mime/mime.dart" as mime;
@@ -86,11 +87,7 @@ Future<void> initServices(AppInstanceType appType) {
 Widget injectWidgetEvents(Widget child) =>
     _dbInstance.injectWidgetEvents(child);
 
-enum AppInstanceType {
-  full,
-  quickView,
-  pickFile;
-}
+enum AppInstanceType { full, quickView, pickFile }
 
 abstract interface class Services implements ServiceMarker {
   T? get<T extends ServiceMarker>();
@@ -113,12 +110,21 @@ mixin class GridDbService implements ServiceMarker {
     String name,
     SafeMode? safeMode, [
     bool create = false,
-  ]) =>
-      _instance!.openSecondary(booru, name, safeMode, create);
+  ]) => _instance!.openSecondary(booru, name, safeMode, create);
 }
 
 bool _isInit = false;
 late final Services _dbInstance;
+
+extension PostBaseToVisitedPostExt on PostBase {
+  VisitedPost get asVisitedPost => VisitedPost(
+    booru: booru,
+    id: id,
+    thumbUrl: previewUrl,
+    date: DateTime.now(),
+    rating: rating,
+  );
+}
 
 @immutable
 abstract class VisitedPost with DefaultBuildCell implements CellBuilder {
@@ -143,8 +149,8 @@ mixin class VisitedPostsService implements ServiceMarker {
   static bool get available => _instance != null;
   static VisitedPostsService? safe() => _instance;
 
-  static late final VisitedPostsService? _instance =
-      _dbInstance.get<VisitedPostsService>();
+  static late final VisitedPostsService? _instance = _dbInstance
+      .get<VisitedPostsService>();
 
   List<VisitedPost> get all => _instance!.all;
 
@@ -179,8 +185,8 @@ mixin class LocalTagsService implements ServiceMarker {
   static bool get available => _instance != null;
   static LocalTagsService? safe() => _instance;
 
-  static late final LocalTagsService? _instance =
-      _dbInstance.get<LocalTagsService>();
+  static late final LocalTagsService? _instance = _dbInstance
+      .get<LocalTagsService>();
 
   int get count => _instance!.count;
 
@@ -204,15 +210,10 @@ mixin class LocalTagsService implements ServiceMarker {
   StreamSubscription<LocalTagsData> watch(
     String filename,
     void Function(LocalTagsData) f,
-  ) =>
-      _instance!.watch(filename, f);
+  ) => _instance!.watch(filename, f);
 }
 
-enum TagType {
-  normal,
-  pinned,
-  excluded;
-}
+enum TagType { normal, pinned, excluded }
 
 mixin class DirectoryTagService implements ServiceMarker {
   const DirectoryTagService();
@@ -292,21 +293,6 @@ abstract class BooruTagging<T extends BooruTaggingType> {
 
   /// Delete all the tags from the DB.
   void clear();
-
-  // StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
-  // StreamSubscription<int> watchCount(void Function(int) f, [bool fire = false]);
-
-  // StreamSubscription<List<ImageTag>> watchImage(
-  //   List<String> tags,
-  //   void Function(List<ImageTag>) f, {
-  //   bool fire = false,
-  // });
-
-  // StreamSubscription<List<ImageTag>> watchImageLocal(
-  //   String filename,
-  //   void Function(List<ImageTag>) f, {
-  //   bool fire = false,
-  // });
 }
 
 mixin class TagManagerService implements ServiceMarker {
@@ -434,10 +420,7 @@ abstract interface class MainGridHandle {
 }
 
 class UpdatesAvailableStatus {
-  const UpdatesAvailableStatus(
-    this.hasUpdates,
-    this.inRefresh,
-  );
+  const UpdatesAvailableStatus(this.hasUpdates, this.inRefresh);
 
   final bool hasUpdates;
   final bool inRefresh;
@@ -556,14 +539,14 @@ abstract class Post implements PostBase, PostImpl {
   static String getUrl(PostBase p) {
     var url = switch (const SettingsService().current.quality) {
       DisplayQuality.original => p.fileUrl,
-      DisplayQuality.sample => p.sampleUrl
+      DisplayQuality.sample => p.sampleUrl,
     };
     if (url.isEmpty) {
       url = p.sampleUrl.isNotEmpty
           ? p.sampleUrl
           : p.fileUrl.isEmpty
-              ? p.previewUrl
-              : p.fileUrl;
+          ? p.previewUrl
+          : p.fileUrl;
     }
 
     return url;
@@ -583,17 +566,17 @@ enum PostRating {
   explicit;
 
   String translatedName(AppLocalizations l10n) => switch (this) {
-        PostRating.general => l10n.enumPostRatingGeneral,
-        PostRating.sensitive => l10n.enumPostRatingSensitive,
-        PostRating.questionable => l10n.enumPostRatingQuestionable,
-        PostRating.explicit => l10n.enumPostRatingExplicit,
-      };
+    PostRating.general => l10n.enumPostRatingGeneral,
+    PostRating.sensitive => l10n.enumPostRatingSensitive,
+    PostRating.questionable => l10n.enumPostRatingQuestionable,
+    PostRating.explicit => l10n.enumPostRatingExplicit,
+  };
 
   SafeMode get asSafeMode => switch (this) {
-        PostRating.general => SafeMode.normal,
-        PostRating.sensitive => SafeMode.relaxed,
-        PostRating.questionable || PostRating.explicit => SafeMode.none,
-      };
+    PostRating.general => SafeMode.normal,
+    PostRating.sensitive => SafeMode.relaxed,
+    PostRating.questionable || PostRating.explicit => SafeMode.none,
+  };
 }
 
 enum PostContentType {
@@ -603,12 +586,11 @@ enum PostContentType {
   image;
 
   Icon toIcon() => switch (this) {
-        PostContentType.none => const Icon(Icons.hide_image_outlined),
-        PostContentType.video => const Icon(Icons.slideshow_outlined),
-        PostContentType.image ||
-        PostContentType.gif =>
-          const Icon(Icons.photo_outlined),
-      };
+    PostContentType.none => const Icon(Icons.hide_image_outlined),
+    PostContentType.video => const Icon(Icons.slideshow_outlined),
+    PostContentType.image ||
+    PostContentType.gif => const Icon(Icons.photo_outlined),
+  };
 
   static PostContentType fromUrl(String url) {
     final t = mime.lookupMimeType(url);
@@ -670,12 +652,9 @@ abstract class AlertData {
 }
 
 class _AlertData implements AlertData {
-  const _AlertData(
-    String title,
-    String? expandedInfo,
-    this.onPressed,
-  )   : title_ = title,
-        expandedInfo_ = expandedInfo;
+  const _AlertData(String title, String? expandedInfo, this.onPressed)
+    : title_ = title,
+      expandedInfo_ = expandedInfo;
 
   final String title_;
   final String? expandedInfo_;
@@ -740,10 +719,7 @@ class _AlertServiceUIState extends State<AlertServiceUI> {
 }
 
 class AlertsStack extends StatefulWidget {
-  const AlertsStack({
-    super.key,
-    required this.navigatorKey,
-  });
+  const AlertsStack({super.key, required this.navigatorKey});
 
   final GlobalKey<NavigatorState> navigatorKey;
 
@@ -846,10 +822,7 @@ class _AlertsStackState extends State<AlertsStack>
     return ListenableBuilder(
       listenable: controller.view,
       builder: (context, child) {
-        return Opacity(
-          opacity: controller.value,
-          child: child,
-        );
+        return Opacity(opacity: controller.value, child: child);
       },
       child: SingleAlert(
         dismissController: dismissController,
@@ -911,10 +884,7 @@ class SingleAlert extends StatelessWidget {
       padding:
           padding + const EdgeInsets.symmetric(vertical: 20, horizontal: 28),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxHeight: 58,
-          maxWidth: 380,
-        ),
+        constraints: const BoxConstraints(maxHeight: 58, maxWidth: 380),
         child: Material(
           clipBehavior: Clip.antiAlias,
           shape: StadiumBorder(
@@ -949,14 +919,17 @@ class SingleAlert extends StatelessWidget {
                                   ? const BoxDecoration()
                                   : BoxDecoration(
                                       borderRadius: const BorderRadius.all(
-                                          Radius.circular(8)),
+                                        Radius.circular(8),
+                                      ),
                                       color: theme
-                                          .colorScheme.surfaceContainerHigh
+                                          .colorScheme
+                                          .surfaceContainerHigh
                                           .withValues(alpha: 0.6),
                                     ),
                               child: InkWell(
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(8)),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(8),
+                                ),
                                 onTap: subtitle != null ? _onPressed : null,
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -971,8 +944,9 @@ class SingleAlert extends StatelessWidget {
                                             alignment:
                                                 PlaceholderAlignment.middle,
                                             child: Padding(
-                                              padding:
-                                                  EdgeInsets.only(right: 6),
+                                              padding: EdgeInsets.only(
+                                                right: 6,
+                                              ),
                                               child: Icon(
                                                 Icons.open_in_full_rounded,
                                                 size: 14,
@@ -1086,19 +1060,18 @@ mixin ColorsNamesDataCopyImpl implements ColorsNamesData {
     String? white,
     String? brown,
     String? black,
-  }) =>
-      ColorsNamesData(
-        red: red ?? this.red,
-        blue: blue ?? this.blue,
-        yellow: yellow ?? this.yellow,
-        green: green ?? this.green,
-        purple: purple ?? this.purple,
-        orange: orange ?? this.orange,
-        pink: pink ?? this.pink,
-        white: white ?? this.white,
-        brown: brown ?? this.brown,
-        black: black ?? this.black,
-      );
+  }) => ColorsNamesData(
+    red: red ?? this.red,
+    blue: blue ?? this.blue,
+    yellow: yellow ?? this.yellow,
+    green: green ?? this.green,
+    purple: purple ?? this.purple,
+    orange: orange ?? this.orange,
+    pink: pink ?? this.pink,
+    white: white ?? this.white,
+    brown: brown ?? this.brown,
+    black: black ?? this.black,
+  );
 }
 
 mixin ColorsNamesWatcherMixin<S extends StatefulWidget> on State<S> {
