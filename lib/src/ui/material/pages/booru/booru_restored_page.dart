@@ -227,6 +227,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n();
     final navigationButtonEvents = NavigationButtonEvents.maybeOf(context);
+    final theme = Theme.of(context);
 
     return ScaffoldWithSelectionBar(
       actions: pagingState.selectionActions,
@@ -249,6 +250,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                 appBar: RawAppBarType((context, settingsButton, bottomWidget) {
                   return SliverAppBar(
                     leading: const BackButton(),
+                    backgroundColor: theme.colorScheme.surface.withValues(
+                      alpha: 1,
+                    ),
+                    scrolledUnderElevation: 0,
                     floating: true,
                     pinned: true,
                     snap: true,

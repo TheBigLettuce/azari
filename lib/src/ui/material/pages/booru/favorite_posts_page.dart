@@ -410,7 +410,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
           final theme = Theme.of(context);
 
           return SliverAppBar(
-            backgroundColor: theme.colorScheme.surface.withValues(alpha: 1),
+            backgroundColor: theme.colorScheme.surface,
             elevation: 0,
             scrolledUnderElevation: 0,
             pinned: true,

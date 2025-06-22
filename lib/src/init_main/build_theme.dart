@@ -133,6 +133,6 @@ SystemUiOverlayStyle makeSystemUiOverlayStyle(ThemeData theme) =>
           ? ui.Brightness.light
           : ui.Brightness.dark,
       systemNavigationBarColor: theme.colorScheme.surfaceContainer.withValues(
-        alpha: 0.4,
+        alpha: 0,
       ),
     );

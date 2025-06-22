@@ -336,7 +336,7 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
     scrollingAnimation = AnimationController(
       value: 1,
       duration: Durations.short4,
-      reverseDuration: Durations.short4,
+      reverseDuration: Durations.short1,
       vsync: this,
     );
 
@@ -369,71 +369,168 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
     }
   }
 
+  final heightTween = Tween<double>(begin: 48, end: 72);
+  final widthTween = Tween<double>(begin: 220, end: 280);
+  final labelSizeTween = Tween<double>(begin: 4, end: 0);
+  final backgroundAlphaTween = Tween<double>(begin: 0.75, end: 0.95);
+
   @override
   Widget build(BuildContext context) {
     final currentRoute = CurrentRoute.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final backgroundColor = colorScheme.surfaceContainer.withValues(
-      alpha: 0.95,
-    );
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
-    return AnimatedBuilder(
-      animation: scrollingAnimation,
-      builder: (context, child) {
-        return SlideTransition(
-          position: CurvedAnimation(
-            parent: scrollingAnimation.view,
-            curve: Easing.emphasizedDecelerate,
-            reverseCurve: Easing.emphasizedAccelerate,
-          ).drive<Offset>(Tween(begin: const Offset(0, 1), end: Offset.zero)),
-          child: child,
-        );
+    return AnimatedSwitcher(
+      switchInCurve: Easing.standard,
+      switchOutCurve: Easing.standard,
+      duration: Durations.medium3,
+      transitionBuilder: (child, animation) {
+        return FadeScaleTransition(animation: animation, child: child);
       },
-      child: AnimatedSwitcher(
-        switchInCurve: Easing.standard,
-        switchOutCurve: Easing.standard,
-        duration: Durations.medium3,
-        child: switch (controller.isExpanded) {
-          true => SelectionBarBase(
-            actions: actions,
-            selectionActions: selectionActions,
-          ),
-          false => NavigationBar(
-            onDestinationSelected: (value) {
-              widget.onDestinationSelected(
-                context,
-                CurrentRoute.fromIndex(value),
-              );
-            },
-            labelTextStyle: WidgetStateMapper({
-              WidgetState.disabled: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(
-                  alpha: 0.38,
+      child: switch (controller.isExpanded) {
+        true => SelectionBarBase(
+          actions: actions,
+          selectionActions: selectionActions,
+        ),
+        false => Stack(
+          alignment: Alignment.bottomCenter,
+          fit: StackFit.passthrough,
+          children: [
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      theme.colorScheme.surface.withValues(alpha: 0.8),
+                      theme.colorScheme.surface.withValues(alpha: 0.6),
+                      theme.colorScheme.surface.withValues(alpha: 0.4),
+                      theme.colorScheme.surface.withValues(alpha: 0.2),
+                      theme.colorScheme.surface.withValues(alpha: 0.1),
+                      theme.colorScheme.surface.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: bottomPadding + 80,
                 ),
               ),
-              WidgetState.selected: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 80 + bottomPadding),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12) +
+                    EdgeInsets.only(bottom: bottomPadding + 8),
+                child: DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: ShapeDecoration(
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        width: 0.2,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.15,
+                        ),
+                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    child: MediaQuery.removeViewPadding(
+                      removeBottom: true,
+                      context: context,
+                      child: AnimatedBuilder(
+                        animation: scrollingAnimation.view,
+                        builder: (context, child) {
+                          return SizedBox(
+                            width: widthTween.transform(
+                              Easing.standard.transform(
+                                scrollingAnimation.value,
+                              ),
+                            ),
+                            child: NavigationBar(
+                              height: heightTween.transform(
+                                Easing.standard.transform(
+                                  scrollingAnimation.value,
+                                ),
+                              ),
+                              onDestinationSelected: (value) {
+                                widget.onDestinationSelected(
+                                  context,
+                                  CurrentRoute.fromIndex(value),
+                                );
+                              },
+                              indicatorColor: colorScheme.surfaceContainerLow
+                                  .withValues(alpha: 0),
+                              labelTextStyle: WidgetStateMapper({
+                                WidgetState.disabled: theme
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.38),
+                                    ),
+                                WidgetState.selected: theme
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                WidgetState.any: theme.textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                              }),
+
+                              labelBehavior: scrollingAnimation.value >= 0.5
+                                  ? NavigationDestinationLabelBehavior
+                                        .alwaysShow
+                                  : NavigationDestinationLabelBehavior
+                                        .alwaysHide,
+                              backgroundColor: colorScheme.surfaceContainerLow
+                                  .withValues(
+                                    alpha: backgroundAlphaTween.transform(
+                                      scrollingAnimation.value,
+                                    ),
+                                  ),
+                              selectedIndex: currentRoute.index,
+                              destinations: widget.desitinations,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              WidgetState.any: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            }),
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            backgroundColor: backgroundColor,
-            selectedIndex: currentRoute.index,
-            destinations: widget.desitinations,
-          ),
-        },
-        transitionBuilder: (child, animation) {
-          return FadeScaleTransition(animation: animation, child: child);
-        },
-      ),
+            ),
+          ],
+        ),
+      },
     );
   }
 }
+
+// AnimatedBuilder(
+//       animation: scrollingAnimation,
+//       builder: (context, child) {
+//         return SlideTransition(
+//           position: CurvedAnimation(
+//             parent: scrollingAnimation.view,
+//             curve: Easing.emphasizedDecelerate,
+//             reverseCurve: Easing.emphasizedAccelerate,
+//           ).drive<Offset>(Tween(begin: const Offset(0, 1), end: Offset.zero)),
+//           child: child,
+//         );
+//       },
+//       child: ,
+//     )
 
 class HomeDrawer extends StatefulWidget {
   const HomeDrawer({

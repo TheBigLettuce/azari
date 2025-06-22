@@ -69,6 +69,7 @@ class _AppBar extends StatelessWidget {
                 backgroundColor: theme.colorScheme.surface.withValues(
                   alpha: 0.95,
                 ),
+                scrolledUnderElevation: 0,
                 title: Text(search.title),
                 leading: search.leading ?? b,
                 actions: [
@@ -86,6 +87,7 @@ class _AppBar extends StatelessWidget {
                 backgroundColor: theme.colorScheme.surface.withValues(
                   alpha: 0.95,
                 ),
+                scrolledUnderElevation: 0,
                 title: Text(search.title),
                 leading: search.leading ?? b,
                 actions: [
@@ -103,6 +105,7 @@ class _AppBar extends StatelessWidget {
               : Brightness.light,
           statusBarColor: theme.colorScheme.surface.withValues(alpha: 0.95),
         ),
+        scrolledUnderElevation: 0,
         toolbarHeight: 80,
         backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
         centerTitle: true,
@@ -171,7 +174,6 @@ class _AppBar extends StatelessWidget {
         stretch: true,
         snap: true,
         floating: true,
-        scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         bottom: bottomWidget,
         forceMaterialTransparency: searchWidget.transparent,

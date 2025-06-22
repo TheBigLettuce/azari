@@ -16,10 +16,7 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class HiddenPostsPage extends StatefulWidget {
-  const HiddenPostsPage({
-    super.key,
-    required this.selectionController,
-  });
+  const HiddenPostsPage({super.key, required this.selectionController});
 
   final SelectionController selectionController;
 
@@ -31,8 +28,6 @@ class HiddenPostsPage extends StatefulWidget {
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
     with SettingsWatcherMixin, HiddenBooruPostsService {
-  // final _hideKey = GlobalKey<_HideBlacklistedImagesHolderState>();
-
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
       cachedValues.entries
@@ -82,26 +77,6 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
     super.dispose();
   }
 
-  //  _HideBlacklistedImagesHolder(
-  //     key: _hideKey,
-  //     child: ,
-  //   )
-
-  // trailingItems: [
-  //       Builder(
-  //         builder: (context) {
-  //           return IconButton(
-  //             onPressed: () {
-  //               _hideKey.currentState?.toggle();
-  //             },
-  //             icon: HideHiddenImagesThumbsNotifier.of(context)
-  //                 ? const Icon(Icons.image_rounded)
-  //                 : const Icon(Icons.hide_image_rounded),
-  //           );
-  //         },
-  //       ),
-  //     ],
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
@@ -136,52 +111,3 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
     );
   }
 }
-
-// class _HideBlacklistedImagesHolder extends StatefulWidget {
-//   const _HideBlacklistedImagesHolder({
-//     required super.key,
-//     required this.child,
-//   });
-
-//   final Widget child;
-
-//   @override
-//   State<_HideBlacklistedImagesHolder> createState() =>
-//       _HideBlacklistedImagesHolderState();
-// }
-
-// class _HideBlacklistedImagesHolderState
-//     extends State<_HideBlacklistedImagesHolder> {
-//   bool show = true;
-
-//   void toggle() {
-//     setState(() {
-//       show = !show;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return HideHiddenImagesThumbsNotifier(hiding: show, child: widget.child);
-//   }
-// }
-
-// class HideHiddenImagesThumbsNotifier extends InheritedWidget {
-//   const HideHiddenImagesThumbsNotifier({
-//     super.key,
-//     required this.hiding,
-//     required super.child,
-//   });
-//   final bool hiding;
-
-//   static bool of(BuildContext context) {
-//     final widget = context
-//         .dependOnInheritedWidgetOfExactType<HideHiddenImagesThumbsNotifier>();
-
-//     return widget!.hiding;
-//   }
-
-//   @override
-//   bool updateShouldNotify(HideHiddenImagesThumbsNotifier oldWidget) =>
-//       hiding != oldWidget.hiding;
-// }

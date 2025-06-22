@@ -155,6 +155,7 @@ class _BooruPageState extends State<BooruPage>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
+    final theme = Theme.of(context);
 
     return switch (BooruSubPage.of(context)) {
       BooruSubPage.booru => pagingState.source.inject(
@@ -178,6 +179,10 @@ class _BooruPageState extends State<BooruPage>
                   (context, settingsButton, bottomWidget) => SliverAppBar(
                     pinned: true,
                     floating: true,
+                    backgroundColor: theme.colorScheme.surface.withValues(
+                      alpha: 1,
+                    ),
+                    scrolledUnderElevation: 0,
                     automaticallyImplyLeading: false,
                     leading: IconButton(
                       onPressed: () {
@@ -193,12 +198,6 @@ class _BooruPageState extends State<BooruPage>
                         icon: const Icon(Icons.search_rounded),
                       ),
                       if (settingsButton != null) settingsButton,
-                      // IconButton(
-                      //   onPressed: () {
-                      //     Scaffold.of(context).openDrawer();
-                      //   },
-                      //   icon: const Icon(Icons.menu_rounded),
-                      // ),
                     ],
                   ),
                 ),
