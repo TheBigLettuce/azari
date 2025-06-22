@@ -49,77 +49,79 @@ class FileCell extends StatelessWidget {
 
     final filteringData = ChainedFilter.maybeOf(context);
 
-    return Animate(
-      key: file.uniqueKey(),
-      effects: animate ? const [FadeEffect(end: 1)] : null,
-      child: switch (isList) {
-        true => WrapSelection(
-          limitedSize: true,
-          onPressed: () => file.openImage(context),
-          child: DefaultListTile(
-            uniqueKey: file.uniqueKey(),
-            thumbnail: thumbnail,
-            title: alias,
-          ),
+    Widget child = switch (isList) {
+      true => WrapSelection(
+        limitedSize: true,
+        onPressed: () => file.openImage(context),
+        child: DefaultListTile(
+          uniqueKey: file.uniqueKey(),
+          thumbnail: thumbnail,
+          title: alias,
         ),
-        false => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Expanded(
-              child: Card(
-                margin: const EdgeInsets.all(0.5),
-                elevation: 0,
-                color: theme.cardColor.withValues(alpha: 0),
-                child: ClipPath(
-                  clipper: ShapeBorderClipper(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+      ),
+      false => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: Card(
+              margin: const EdgeInsets.all(0.5),
+              elevation: 0,
+              color: theme.cardColor.withValues(alpha: 0),
+              child: ClipPath(
+                clipper: ShapeBorderClipper(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  child: WrapSelection(
-                    onPressed: () => file.openImage(context),
-                    child: Stack(
-                      children: [
-                        GridCellImage(
-                          imageAlign: imageAlign,
-                          thumbnail: thumbnail,
-                          blur: false,
-                        ),
-                        FileCellStickers(file: file),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 4,
-                            ),
-                            child: VideoOrGifIcon(
-                              uniqueKey: file.uniqueKey(),
-                              type: file.isVideo
-                                  ? PostContentType.video
-                                  : file.isGif
-                                  ? PostContentType.gif
-                                  : PostContentType.none,
-                            ),
+                ),
+                child: WrapSelection(
+                  onPressed: () => file.openImage(context),
+                  child: Stack(
+                    children: [
+                      GridCellImage(
+                        imageAlign: imageAlign,
+                        thumbnail: thumbnail,
+                        blur: false,
+                      ),
+                      FileCellStickers(file: file),
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
+                          child: VideoOrGifIcon(
+                            uniqueKey: file.uniqueKey(),
+                            type: file.isVideo
+                                ? PostContentType.video
+                                : file.isGif
+                                ? PostContentType.gif
+                                : PostContentType.none,
                           ),
                         ),
-                        if (alias != null && alias.isNotEmpty)
-                          GridCellName(title: alias, lines: file.titleLines()),
-                      ],
-                    ),
+                      ),
+                      if (alias != null && alias.isNotEmpty)
+                        GridCellName(title: alias, lines: file.titleLines()),
+                    ],
                   ),
                 ),
               ),
             ),
-            if (LocalTagsService.available &&
-                filteringData != null &&
-                (filteringData.filteringMode == FilteringMode.tag ||
-                    filteringData.filteringMode == FilteringMode.tagReversed))
-              FileCellTagsList(file: file),
-          ],
-        ),
-      },
-    );
+          ),
+          if (LocalTagsService.available &&
+              filteringData != null &&
+              (filteringData.filteringMode == FilteringMode.tag ||
+                  filteringData.filteringMode == FilteringMode.tagReversed))
+            FileCellTagsList(file: file),
+        ],
+      ),
+    };
+
+    if (animate) {
+      child = child.animate(key: file.uniqueKey()).fadeIn();
+    }
+
+    return child;
   }
 }
 

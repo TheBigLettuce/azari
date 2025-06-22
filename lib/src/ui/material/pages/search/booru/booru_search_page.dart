@@ -132,9 +132,8 @@ class _BooruSearchPageState extends State<BooruSearchPage>
               tagManager: tagManager,
               onTagPressed: _onTagPressed,
             ),
-            _PinnedTagsPanel(
+            PinnedTagsPanel(
               filteringEvents: filteringEvents.stream,
-              tagManager: tagManager,
               api: api,
               onTagPressed: pinnedTagPressed,
             ),
@@ -180,7 +179,7 @@ class SearchPageSearchBar extends StatelessWidget {
   final TextEditingController searchTextController;
   final FocusNode searchFocus;
 
-  final Future<List<BooruTag>> Function(String string)? complete;
+  final Future<List<TagData>> Function(String string)? complete;
 
   final StreamSink<String> sink;
 

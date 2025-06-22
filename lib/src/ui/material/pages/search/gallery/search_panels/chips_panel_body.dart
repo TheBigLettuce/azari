@@ -13,7 +13,7 @@ class _ChipsPanelBody extends StatefulWidget {
     required this.icon,
   });
 
-  final GenericListSource<BooruTag> source;
+  final GenericListSource<TagData> source;
 
   final void Function(String)? onTagPressed;
 
@@ -27,7 +27,7 @@ class _ChipsPanelBody extends StatefulWidget {
 }
 
 class __ChipsPanelBodyState extends State<_ChipsPanelBody> {
-  GenericListSource<BooruTag> get source => widget.source;
+  GenericListSource<TagData> get source => widget.source;
 
   late final StreamSubscription<void> subscr;
 
@@ -53,9 +53,7 @@ class __ChipsPanelBodyState extends State<_ChipsPanelBody> {
       width: double.infinity,
       height: 42,
       child: widget.source.progress.inRefreshing
-          ? const ShimmerPlaceholdersChips(
-              padding: _ChipsPanelBody.listPadding,
-            )
+          ? const ShimmerPlaceholdersChips(padding: _ChipsPanelBody.listPadding)
           : ListView.builder(
               padding: _ChipsPanelBody.listPadding,
               scrollDirection: Axis.horizontal,

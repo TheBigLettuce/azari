@@ -3,8 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/services/services.dart";
 import "package:flutter/material.dart";
 import "package:logging/logging.dart";
 
@@ -350,9 +350,9 @@ class AutocompleteSearchBar extends StatelessWidget {
   }
 }
 
-Future<List<BooruTag>> autocompleteTag(
+Future<List<TagData>> autocompleteTag(
   String tagString,
-  Future<List<BooruTag>> Function(String) complF,
+  Future<List<TagData>> Function(String) complF,
 ) {
   if (tagString.isEmpty) {
     return Future.value([]);

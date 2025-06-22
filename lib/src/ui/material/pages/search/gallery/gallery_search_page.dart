@@ -139,7 +139,7 @@ class _GallerySearchPageState extends State<GallerySearchPage>
     );
   }
 
-  Future<List<BooruTag>> _completeDirectoryNameTag(String str) {
+  Future<List<TagData>> _completeDirectoryNameTag(String str) {
     final m = <String, void>{};
 
     return Future.value(
@@ -162,7 +162,9 @@ class _GallerySearchPageState extends State<GallerySearchPage>
           })
           .where((e) => e != null)
           .take(15)
-          .map((e) => BooruTag(e!, -1))
+          .map(
+            (e) => TagData(tag: e!, type: TagType.normal, time: null, count: 0),
+          )
           .toList(),
     );
   }

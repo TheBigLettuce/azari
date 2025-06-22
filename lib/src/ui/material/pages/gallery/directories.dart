@@ -6,7 +6,6 @@
 import "dart:async";
 
 import "package:azari/src/logic/directories_mixin.dart";
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/typedefs.dart";
@@ -606,7 +605,7 @@ SelectionBarAction addToGroup<T extends CellBuilder>(
   Future<void Function(BuildContext)?> Function(List<T>, String, bool)
   onSubmitted,
   bool showPinButton, {
-  Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag,
+  Future<List<TagData>> Function(String str)? completeDirectoryNameTag,
 }) {
   return SelectionBarAction(Icons.group_work_outlined, (selected) {
     if (selected.isEmpty) {
@@ -644,7 +643,7 @@ class _GroupDialogWidget<T> extends StatefulWidget {
   final String? Function(List<T>) initalValue;
   final Future<void Function(BuildContext)?> Function(List<T>, String, bool)
   onSubmitted;
-  final Future<List<BooruTag>> Function(String str)? completeDirectoryNameTag;
+  final Future<List<TagData>> Function(String str)? completeDirectoryNameTag;
   final bool showPinButton;
 
   @override

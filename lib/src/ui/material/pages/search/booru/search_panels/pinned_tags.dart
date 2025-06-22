@@ -5,36 +5,45 @@
 
 part of "../booru_search_page.dart";
 
-class _PinnedTagsPanel extends StatefulWidget {
-  const _PinnedTagsPanel({
-    // super.key,
+class PinnedTagsPanel extends StatefulWidget {
+  const PinnedTagsPanel({
+    super.key,
     required this.filteringEvents,
-    required this.tagManager,
     required this.onTagPressed,
     required this.api,
+    this.sliver = true,
   });
 
+  final bool sliver;
   final Stream<String> filteringEvents;
-  final TagManagerService tagManager;
 
   final BooruAPI api;
 
   final StringCallback onTagPressed;
 
   @override
-  State<_PinnedTagsPanel> createState() => __PinnedTagsPanelState();
+  State<PinnedTagsPanel> createState() => _PinnedTagsPanelState();
 }
 
-class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
+class _PinnedTagsPanelState extends State<PinnedTagsPanel>
+    with TagManagerService {
   String filteringValue = "";
   late final GenericListSource<TagData> source = GenericListSource(
-    () => Future.value(filteringValue.trim().isEmpty
-        ? _pinnedTags.keys
-            .map((e) =>
-                TagData(tag: e, type: TagType.pinned, time: DateTime.now()))
-            .toList()
-        : widget.tagManager.pinned.complete(filteringValue)),
-    watchCount: (f, [_ = false]) => widget.tagManager.latest.events.listen(f),
+    () => Future.value(
+      filteringValue.trim().isEmpty
+          ? _pinnedTags.keys
+                .map(
+                  (e) => TagData(
+                    tag: e,
+                    type: TagType.pinned,
+                    time: null,
+                    count: 0,
+                  ),
+                )
+                .toList()
+          : pinned.complete(filteringValue),
+    ),
+    watchCount: (f, [_ = false]) => latest.events.listen(f),
   );
 
   late final StreamSubscription<String> filteringSubscr;
@@ -46,8 +55,9 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
 
     filteringSubscr = widget.filteringEvents.listen((str_) {
       setState(() {
-        final str =
-            str_.isEmpty ? "" : str_.trim().split(" ").lastOrNull?.trim() ?? "";
+        final str = str_.isEmpty
+            ? ""
+            : str_.trim().split(" ").lastOrNull?.trim() ?? "";
 
         filteringValue = str;
         source.clearRefresh();
@@ -79,124 +89,131 @@ class __PinnedTagsPanelState extends State<_PinnedTagsPanel> {
     final l10n = context.l10n();
     final theme = Theme.of(context);
 
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverToBoxAdapter(
-          child: FadingPanel(
-            label: l10n.pinnedTags,
-            source: source,
-            enableHide: false,
-            trailing: (
-              Icons.add_rounded,
-              () {
-                Navigator.of(context, rootNavigator: true).push(
-                  DialogRoute<void>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(l10n.pinTag),
-                        content: AutocompleteWidget(
-                          null,
-                          (s) {},
-                          swapSearchIcon: false,
-                          (s) {
-                            widget.tagManager.pinned.add(s.trim());
+    final panel = FadingPanel(
+      label: l10n.pinnedTags,
+      source: source,
+      enableHide: false,
+      trailing: (
+        Icons.add_rounded,
+        () {
+          Navigator.of(context, rootNavigator: true).push(
+            DialogRoute<void>(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text(l10n.pinTag),
+                  content: AutocompleteWidget(
+                    null,
+                    (s) {},
+                    swapSearchIcon: false,
+                    (s) {
+                      pinned.add(s.trim());
 
-                            Navigator.pop(context);
-                          },
-                          () {},
-                          widget.api.searchTag,
-                          null,
-                          submitOnPress: true,
-                          roundBorders: true,
-                          plainSearchBar: true,
-                          showSearch: true,
-                        ),
-                      );
+                      Navigator.pop(context);
                     },
+                    () {},
+                    widget.api.searchTag,
+                    null,
+                    submitOnPress: true,
+                    roundBorders: true,
+                    plainSearchBar: true,
+                    showSearch: true,
                   ),
                 );
               },
             ),
-            childSize: _ChipsPanelBody.size,
-            child: _ChipsPanelBody(
-              onTagLongPressed: (str) => Navigator.push(
-                context,
-                DialogRoute<void>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(l10n.removeTag(str)),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          widget.tagManager.pinned.delete(str);
-                          Navigator.pop(context);
-                        },
-                        child: Text(l10n.yes),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Text(l10n.no),
-                      ),
-                    ],
-                  ),
+          );
+        },
+      ),
+      childSize: _ChipsPanelBody.size,
+      child: _ChipsPanelBody(
+        onTagLongPressed: (str) => Navigator.push(
+          context,
+          DialogRoute<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(l10n.removeTag(str)),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    pinned.delete(str);
+                    Navigator.pop(context);
+                  },
+                  child: Text(l10n.yes),
                 ),
-              ),
-              source: source,
-              onTagPressed: widget.onTagPressed,
-              icon: const Icon(Icons.push_pin_rounded),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(l10n.no),
+                ),
+              ],
             ),
           ),
         ),
-        _AddTagButton(
-          tagManager: widget.tagManager,
-          storage: source.backingStorage,
-          api: widget.api,
-          foregroundColor: theme.colorScheme.onPrimary,
-          backgroundColor: theme.colorScheme.primary,
-          buildTitle: (context) => Text(
-            filteringValue.isNotEmpty
-                ? l10n.addTagToPinned(filteringValue)
-                : l10n.addPinnedTag,
+        source: source,
+        onTagPressed: widget.onTagPressed,
+        icon: const Icon(Icons.push_pin_rounded),
+      ),
+    );
+
+    final button = _AddTagButton(
+      sliver: widget.sliver,
+      tagManager: this,
+      storage: source.backingStorage,
+      api: widget.api,
+      foregroundColor: theme.colorScheme.onPrimary,
+      backgroundColor: theme.colorScheme.primary,
+      buildTitle: (context) => Text(
+        filteringValue.isNotEmpty
+            ? l10n.addTagToPinned(filteringValue)
+            : l10n.addPinnedTag,
+      ),
+      onPressed: () {
+        if (filteringValue.isNotEmpty) {
+          pinned.add(filteringValue);
+
+          return;
+        }
+
+        Navigator.of(context, rootNavigator: true).push(
+          DialogRoute<void>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text(l10n.addPinnedTag),
+                content: AutocompleteWidget(
+                  null,
+                  (s) {},
+                  swapSearchIcon: false,
+                  (s) {
+                    pinned.add(s.trim());
+
+                    Navigator.pop(context);
+                  },
+                  () {},
+                  widget.api.searchTag,
+                  null,
+                  submitOnPress: true,
+                  roundBorders: true,
+                  plainSearchBar: true,
+                  showSearch: true,
+                ),
+              );
+            },
           ),
-          onPressed: () {
-            if (filteringValue.isNotEmpty) {
-              widget.tagManager.pinned.add(filteringValue);
+        );
+      },
+    );
 
-              return;
-            }
+    if (!widget.sliver) {
+      return Column(children: [panel, button]);
+    }
 
-            Navigator.of(context, rootNavigator: true).push(
-              DialogRoute<void>(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(l10n.addPinnedTag),
-                    content: AutocompleteWidget(
-                      null,
-                      (s) {},
-                      swapSearchIcon: false,
-                      (s) {
-                        widget.tagManager.pinned.add(s.trim());
-
-                        Navigator.pop(context);
-                      },
-                      () {},
-                      widget.api.searchTag,
-                      null,
-                      submitOnPress: true,
-                      roundBorders: true,
-                      plainSearchBar: true,
-                      showSearch: true,
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(child: panel),
+        button,
       ],
     );
   }

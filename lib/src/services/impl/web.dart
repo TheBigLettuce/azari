@@ -813,20 +813,32 @@ class $StatisticsDailyData extends StatisticsDailyData {
 }
 
 class $TagData extends TagDataImpl implements TagData {
-  const $TagData({required this.time, required this.tag, required this.type});
+  const $TagData({
+    required this.time,
+    required this.tag,
+    required this.type,
+    required this.count,
+  });
 
   @override
   final String tag;
 
   @override
-  final DateTime time;
+  final DateTime? time;
 
   @override
   final TagType type;
 
   @override
-  TagData copy({String? tag, TagType? type}) =>
-      $TagData(time: time, tag: tag ?? this.tag, type: type ?? this.type);
+  final int count;
+
+  @override
+  TagData copy({String? tag, TagType? type, int? count}) => $TagData(
+    time: time,
+    tag: tag ?? this.tag,
+    type: type ?? this.type,
+    count: count ?? this.count,
+  );
 }
 
 class MemoryTagManager implements TagManagerService {
@@ -855,10 +867,6 @@ class $SettingsPath extends SettingsPath {
   SettingsPath copy({String? path, String? pathDisplay}) {
     return $SettingsPath(path ?? this.path, pathDisplay ?? this.pathDisplay);
   }
-}
-
-class $BooruTag extends BooruTag {
-  const $BooruTag(super.tag, super.count);
 }
 
 class $HottestTag implements HottestTag {

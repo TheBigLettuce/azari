@@ -9,7 +9,6 @@ import "package:async/async.dart";
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/directory_metadata_segments.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
@@ -49,10 +48,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
   int _galleryVersion = 0;
 
-  void onRequireAuth(
-    BuildContext context,
-    void Function() launchLocalAuth,
-  );
+  void onRequireAuth(BuildContext context, void Function() launchLocalAuth);
 
   @override
   void initState() {
@@ -85,10 +81,10 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
       api.source.backingStorage.addAll([]);
     });
 
-    _blacklistedWatcher =
-        BlacklistedDirectoryService.safe()?.backingStorage.watch((_) {
-      api.source.clearRefresh();
-    });
+    _blacklistedWatcher = BlacklistedDirectoryService.safe()?.backingStorage
+        .watch((_) {
+          api.source.clearRefresh();
+        });
 
     filter = ChainedFilterResourceSource(
       api.source,
@@ -99,7 +95,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
               e.name.contains(searchTextController.text) ||
               e.tag.contains(searchTextController.text),
         ),
-        null
+        null,
       ),
       allowedFilteringModes: const {},
       allowedSortingModes: const {},
@@ -148,10 +144,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
                 segmentCell,
               ),
             ],
-      onEmpty: _DirectoryOnEmpty(
-        api.trashCell,
-        api.source.backingStorage,
-      ),
+      onEmpty: _DirectoryOnEmpty(api.trashCell, api.source.backingStorage),
     );
   }
 
@@ -185,10 +178,8 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     GalleryApi.safe()?.version.then((value) => _galleryVersion = value);
   }
 
-  String segmentCell(Directory cell) => defaultSegmentCell(
-        cell.name,
-        cell.bucketId,
-      );
+  String segmentCell(Directory cell) =>
+      defaultSegmentCell(cell.name, cell.bucketId);
 
   Segments<Directory> makeSegments(
     BuildContext context, {
@@ -196,8 +187,9 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   }) {
     return Segments(
       l10n.segmentsUncategorized,
-      injectedLabel:
-          callback != null ? l10n.suggestionsLabel : l10n.segmentsSpecial,
+      injectedLabel: callback != null
+          ? l10n.suggestionsLabel
+          : l10n.segmentsSpecial,
       displayFirstCellInSpecial: callback != null,
       caps: DirectoryMetadataService.available
           ? DirectoryMetadataSegments(l10n.segmentsSpecial)
@@ -206,13 +198,13 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
       injectedSegments: api.trashCell != null ? [api.trashCell!] : const [],
       onLabelPressed: callback == null || callback!.isFile
           ? (label, children) => actions.joinedDirectoriesFnc(
-                context,
-                label,
-                children,
-                api,
-                callback?.toFile,
-                segmentCell,
-              )
+              context,
+              label,
+              children,
+              api,
+              callback?.toFile,
+              segmentCell,
+            )
           : null,
     );
   }
@@ -241,8 +233,9 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     if (noAuth.isEmpty &&
         requireAuth.isNotEmpty &&
         const AppApi().canAuthBiometric) {
-      final success = await LocalAuthentication()
-          .authenticate(localizedReason: l10n.changeGroupReason);
+      final success = await LocalAuthentication().authenticate(
+        localizedReason: l10n.changeGroupReason,
+      );
       if (!success) {
         return null;
       }
@@ -250,13 +243,15 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
 
     if (value.isEmpty) {
       directoryTags.delete(
-        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-            .map((e) => e.bucketId),
+        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth).map(
+          (e) => e.bucketId,
+        ),
       );
     } else {
       directoryTags.add(
-        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-            .map((e) => e.bucketId),
+        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth).map(
+          (e) => e.bucketId,
+        ),
         value,
       );
 
@@ -276,58 +271,53 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
     _refresh();
 
     if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
-      return (BuildContext context) => onRequireAuth(
-            context,
-            () async {
-              final success = await LocalAuthentication()
-                  .authenticate(localizedReason: l10n.changeGroupReason);
-              if (!success) {
-                return;
-              }
+      return (BuildContext context) => onRequireAuth(context, () async {
+        final success = await LocalAuthentication().authenticate(
+          localizedReason: l10n.changeGroupReason,
+        );
+        if (!success) {
+          return;
+        }
 
-              if (value.isEmpty) {
-                directoryTags.delete(requireAuth.map((e) => e.bucketId));
-              } else {
-                directoryTags.add(
-                  requireAuth.map((e) => e.bucketId),
-                  value,
-                );
-              }
+        if (value.isEmpty) {
+          directoryTags.delete(requireAuth.map((e) => e.bucketId));
+        } else {
+          directoryTags.add(requireAuth.map((e) => e.bucketId), value);
+        }
 
-              _refresh();
-            },
-          );
+        _refresh();
+      });
     } else {
       return null;
     }
   }
 
-  Future<List<BooruTag>> completeDirectoryNameTag(String str) {
+  Future<List<TagData>> completeDirectoryNameTag(String str) {
     final m = <String, void>{};
 
     return Future.value(
       api.source.backingStorage
-          .map(
-            (e) {
-              if (e.tag.isNotEmpty &&
-                  e.tag.contains(str) &&
-                  !m.containsKey(e.tag)) {
-                m[e.tag] = null;
-                return e.tag;
-              }
+          .map((e) {
+            if (e.tag.isNotEmpty &&
+                e.tag.contains(str) &&
+                !m.containsKey(e.tag)) {
+              m[e.tag] = null;
+              return e.tag;
+            }
 
-              if (e.name.startsWith(str) && !m.containsKey(e.name)) {
-                m[e.name] = null;
+            if (e.name.startsWith(str) && !m.containsKey(e.name)) {
+              m[e.name] = null;
 
-                return e.name;
-              } else {
-                return null;
-              }
-            },
-          )
+              return e.name;
+            } else {
+              return null;
+            }
+          })
           .where((e) => e != null)
           .take(15)
-          .map((e) => BooruTag(e!, -1))
+          .map(
+            (e) => TagData(tag: e!, type: TagType.normal, time: null, count: 0),
+          )
           .toList(),
     );
   }
@@ -341,9 +331,7 @@ class _DirectoryOnEmpty implements OnEmptyInterface {
 
   @override
   Widget build(BuildContext context) {
-    return EmptyWidgetBackground(
-      subtitle: context.l10n().emptyDevicePictures,
-    );
+    return EmptyWidgetBackground(subtitle: context.l10n().emptyDevicePictures);
   }
 
   @override

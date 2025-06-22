@@ -16,15 +16,15 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart"
     as booru_actions;
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
+import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 
 class FavoritePostsPage extends StatefulWidget {
@@ -45,11 +45,13 @@ class FavoritePostsPage extends StatefulWidget {
 }
 
 mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
-  final searchTextController = TextEditingController();
+  final searchTextController = SearchController();
 
   late final SafeModeState safeModeState;
   late final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
   final searchFocus = FocusNode();
+
+  String _currentText = "";
 
   @override
   void initState() {
@@ -212,6 +214,16 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
       initialSortingMode: SortingMode.none,
       filteringColors: FilteringColors.noColor,
     );
+
+    searchTextController.addListener(() {
+      final newText = searchTextController.text.trim();
+      if (newText == _currentText) {
+        return;
+      }
+      _currentText = newText;
+
+      filter.clearRefresh();
+    });
 
     filter.clearRefresh();
   }
@@ -394,24 +406,60 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       child: ShellScope(
         stackInjector: status,
         configWatcher: gridSettings.watch,
-        searchBottomWidget: PreferredSize(
-          preferredSize: const Size(double.infinity, 80),
-          child: _SearchBarWidget(
-            api: api,
-            filter: filter,
-            safeModeState: safeModeState,
-            searchTextController: searchTextController,
-            searchFocus: searchFocus,
-            settingsService: const SettingsService(),
-          ),
-        ),
-        appBar: TitleAppBarType(
-          title: l10n.favoritesLabel,
-          leading: IconButton(
-            onPressed: _openDrawer,
-            icon: const Icon(Icons.menu_rounded),
-          ),
-        ),
+        appBar: RawAppBarType((context, gridSettingsButton, _) {
+          final theme = Theme.of(context);
+
+          return SliverAppBar(
+            backgroundColor: theme.colorScheme.surface.withValues(alpha: 1),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            pinned: true,
+            centerTitle: true,
+            actionsPadding: EdgeInsets.zero,
+            titleSpacing: 0,
+            title: SearchBarAutocompleteWrapper2(
+              complete: const TagManagerService().pinned.search,
+              textEditingController: searchTextController,
+              focusNode: searchFocus,
+              child: SearchBar(
+                controller: searchTextController,
+                focusNode: searchFocus,
+                onTapOutside: (event) {
+                  if (searchFocus.hasFocus) {
+                    searchFocus.unfocus();
+                  }
+                },
+                elevation: const WidgetStatePropertyAll(0),
+                hintText: l10n.favoritesLabel,
+                backgroundColor: WidgetStatePropertyAll(
+                  theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 360,
+                  maxWidth: 460,
+                  minHeight: 34,
+                  maxHeight: 34,
+                ),
+                trailing: [
+                  ChainedFilterIcon(
+                    filter: filter,
+                    controller: searchTextController,
+                    complete: api.searchTag,
+                    focusNode: searchFocus,
+                    iconSize: 20,
+                  ),
+                  _ClearTextButton(textEditingController: searchTextController),
+                ],
+              ),
+            ),
+            leading: IconButton(
+              onPressed: _openDrawer,
+              icon: const Icon(Icons.menu_rounded),
+            ),
+            actions: [?gridSettingsButton],
+            automaticallyImplyLeading: false,
+          );
+        }),
         settingsButton: ShellSettingsButton.fromWatchable(
           gridSettings,
           header: SafeModeSegment(state: safeModeState),
@@ -419,15 +467,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
           localizeHideNames: (_) => "",
         ),
         elements: [
-          ElementPriority(
-            FavoritePostsPinnedTagsRow(
-              onTagPressed: (str) {
-                _onPressed(context, settings.selectedBooru, str, null);
-              },
-              onTagLongPressed: null,
-            ),
-            hideOnEmpty: false,
-          ),
           ElementPriority(
             ShellElement(
               state: status,
@@ -467,12 +506,130 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   }
 }
 
+class _ClearTextButton extends StatefulWidget {
+  const _ClearTextButton({super.key, required this.textEditingController});
+
+  final TextEditingController textEditingController;
+
+  @override
+  State<_ClearTextButton> createState() => __ClearTextButtonState();
+}
+
+class __ClearTextButtonState extends State<_ClearTextButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(
+      vsync: this,
+      duration: Durations.medium3,
+      reverseDuration: Durations.medium1,
+      value: 1,
+    );
+
+    widget.textEditingController.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    widget.textEditingController.removeListener(_listener);
+
+    super.dispose();
+  }
+
+  void _listener() {
+    if (widget.textEditingController.text.trim().isEmpty) {
+      controller.forward();
+    } else {
+      controller.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller.view,
+      builder: (context, child) => AnimatedSize(
+        duration: Durations.medium2,
+        curve: Easing.emphasizedDecelerate,
+        child: SlideTransition(
+          position: AlwaysStoppedAnimation(
+            Offset(Easing.emphasizedAccelerate.transform(controller.value), 0),
+          ),
+          child: Opacity(
+            opacity: 1 - controller.value,
+            child: controller.value == 1 ? const SizedBox.shrink() : child,
+          ),
+        ),
+      ),
+      child: IconButton(
+        iconSize: 20,
+        onPressed: widget.textEditingController.clear,
+        icon: const Icon(Icons.close_rounded),
+      ),
+    );
+  }
+}
+
+class _OpenSearchDialogButton extends StatefulWidget {
+  const _OpenSearchDialogButton({super.key, required this.controller});
+
+  final SearchController controller;
+
+  @override
+  State<_OpenSearchDialogButton> createState() =>
+      __OpenSearchDialogButtonState();
+}
+
+class __OpenSearchDialogButtonState extends State<_OpenSearchDialogButton> {
+  // ignore: use_setters_to_change_properties
+  void onTagPressed(String tag) {
+    widget.controller.text = tag;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SearchAnchor(
+      viewOnSubmitted: (value) {
+        onTagPressed(value);
+        widget.controller.closeView(null);
+      },
+      searchController: widget.controller,
+      isFullScreen: false,
+      viewConstraints: const BoxConstraints(
+        minWidth: 280,
+        maxWidth: 280,
+        maxHeight: 220,
+      ),
+      builder: (context, controller) => IconButton(
+        onPressed: controller.openView,
+        icon: const Icon(Icons.search_rounded),
+      ),
+      viewBuilder: (_) => FavoritePostsPinnedTagsRow(
+        onTagPressed: onTagPressed,
+        onTagLongPressed: null,
+        filterController: widget.controller,
+      ),
+      suggestionsBuilder: (context, controller) {
+        return const [];
+      },
+    );
+  }
+}
+
 class FavoritePostsPinnedTagsRow extends StatefulWidget {
   const FavoritePostsPinnedTagsRow({
     super.key,
     required this.onTagPressed,
     required this.onTagLongPressed,
+    this.filterController,
   });
+
+  final TextEditingController? filterController;
 
   final StringCallback onTagPressed;
   final StringCallback? onTagLongPressed;
@@ -485,207 +642,216 @@ class FavoritePostsPinnedTagsRow extends StatefulWidget {
 class _FavoritePostsPinnedTagsRowState
     extends State<FavoritePostsPinnedTagsRow> {
   final controller = ScrollController();
+  final _filteringEvents = StreamController<String>.broadcast();
 
-  late final StreamSubscription<int> _latestCountEvents;
-  int _latestCount = 0;
-  final List<String> _list = [];
+  // late final StreamSubscription<int> _latestCountEvents;
+  // int _latestCount = 0;
+  // final List<String> _list = [];
+  late final BooruAPI api;
+  late final Dio _apiClient;
 
   @override
   void initState() {
     super.initState();
 
-    _latestCountEvents = const TagManagerService().latest.events.listen((e) {
-      if (e == _latestCount) {
-        return;
-      }
+    // _latestCountEvents = const TagManagerService().latest.events.listen((e) {
+    //   if (e == _latestCount) {
+    //     return;
+    //   }
 
-      _latestCount = e;
-      _seekLastSearchedPinnedTags();
-      setState(() {});
-    });
+    //   _latestCount = e;
+    //   // _seekLastSearchedPinnedTags();
+    //   setState(() {});
+    // });
+
+    final booru = const SettingsService().current.selectedBooru;
+    _apiClient = BooruAPI.defaultClientForBooru(booru);
+    api = BooruAPI.fromEnum(booru, _apiClient);
+
+    widget.filterController?.addListener(_listener);
   }
 
   @override
   void dispose() {
+    _filteringEvents.close();
+    _apiClient.close(force: true);
     controller.dispose();
-    _latestCountEvents.cancel();
+    // _latestCountEvents.cancel();
+    widget.filterController?.removeListener(_listener);
 
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
 
-    _seekLastSearchedPinnedTags();
-  }
+  // _seekLastSearchedPinnedTags();
+  // }
 
-  void _seekLastSearchedPinnedTags() {
-    final pinnedTags = PinnedTagsProvider.of(context);
-
-    final tags = <String>{};
-
-    final latestTags = const TagManagerService().latest.get(25);
-    for (final tag in latestTags) {
-      if (pinnedTags.map.containsKey(tag.tag)) {
-        tags.add(tag.tag);
-      }
+  void _listener() {
+    // _seekLastSearchedPinnedTags();
+    if (widget.filterController != null) {
+      _filteringEvents.add(widget.filterController!.text.trim());
     }
 
-    tags.addAll(pinnedTags.map.keys);
-
-    _list.clear();
-    _list.addAll(tags);
+    setState(() {});
   }
+
+  // void _seekLastSearchedPinnedTags() {
+  //   final pinnedTags = PinnedTagsProvider.of(context);
+
+  //   final tags = <String>{};
+
+  //   final latestTags = const TagManagerService().latest.get(25);
+
+  //   final text = widget.filterController?.text.trim();
+
+  //   for (final tag in latestTags) {
+  //     if (pinnedTags.map.containsKey(tag.tag)) {
+  //       tags.add(tag.tag);
+  //     }
+  //   }
+
+  //   tags.addAll(pinnedTags.map.keys);
+
+  //   if (text != null && text.isNotEmpty) {
+  //     tags.removeWhere((e) => !e.startsWith(text));
+  //   }
+
+  //   _list.clear();
+  //   _list.addAll(tags);
+
+  //   if (controller.hasClients) {
+  //     controller.animateTo(
+  //       0,
+  //       duration: Durations.medium1,
+  //       curve: Easing.standard,
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     PinnedTagsProvider.of(context);
 
-    if (_list.isEmpty) {
-      return const SliverPadding(padding: EdgeInsets.zero);
-    }
-
-    return SliverToBoxAdapter(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 52),
-        child: ListView.builder(
-          controller: controller,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          scrollDirection: Axis.horizontal,
-          itemCount: _list.length,
-          itemBuilder: (context, index) {
-            final tag = _list[index];
-
-            return Padding(
-              padding: const EdgeInsets.all(4),
-              child: GestureDetector(
-                onLongPress: widget.onTagLongPressed == null
-                    ? null
-                    : () {
-                        widget.onTagLongPressed!(tag);
-                      },
-                child: ActionChip(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () {
-                    controller.animateTo(
-                      0,
-                      duration: Durations.medium3,
-                      curve: Easing.standard,
-                    );
-                    widget.onTagPressed(tag);
-                    const TagManagerService().latest.add(tag);
-                  },
-                  label: Text(tag),
-                  avatar: const Icon(Icons.push_pin_rounded),
-                ),
-              ),
-            );
-          },
-        ),
+    return SingleChildScrollView(
+      child: PinnedTagsPanel(
+        sliver: false,
+        filteringEvents: _filteringEvents.stream,
+        onTagPressed: (tag) {
+          controller.animateTo(
+            0,
+            duration: Durations.medium3,
+            curve: Easing.standard,
+          );
+          widget.onTagPressed(tag);
+          const TagManagerService().latest.add(tag);
+        },
+        api: api,
       ),
     );
   }
 }
 
-class _SearchBarWidget extends StatelessWidget {
-  const _SearchBarWidget({
-    // super.key,
-    required this.api,
-    required this.filter,
-    required this.safeModeState,
-    required this.searchTextController,
-    required this.searchFocus,
-    required this.settingsService,
-  });
+// class _SearchBarWidget extends StatelessWidget {
+//   const _SearchBarWidget({
+//     // super.key,
+//     required this.api,
+//     required this.filter,
+//     required this.safeModeState,
+//     required this.searchTextController,
+//     required this.searchFocus,
+//     required this.settingsService,
+//   });
 
-  final TextEditingController searchTextController;
-  final FocusNode searchFocus;
+//   final TextEditingController searchTextController;
+//   final FocusNode searchFocus;
 
-  final BooruAPI api;
+//   final BooruAPI api;
 
-  final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
-  final SafeModeState safeModeState;
+//   final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
+//   final SafeModeState safeModeState;
 
-  final SettingsService settingsService;
+//   final SettingsService settingsService;
 
-  void launchGrid(BuildContext context) {
-    if (searchTextController.text.isNotEmpty) {
-      context.openSafeModeDialog((safeMode) {
-        BooruRestoredPage.open(
-          context,
-          booru: api.booru,
-          tags: searchTextController.text.trim(),
-          overrideSafeMode: safeMode,
-          // wrapScaffold: true,
-        );
-      });
-    }
-  }
+//   void launchGrid(BuildContext context) {
+//     if (searchTextController.text.isNotEmpty) {
+//       context.openSafeModeDialog((safeMode) {
+//         BooruRestoredPage.open(
+//           context,
+//           booru: api.booru,
+//           tags: searchTextController.text.trim(),
+//           overrideSafeMode: safeMode,
+//           // wrapScaffold: true,
+//         );
+//       });
+//     }
+//   }
 
-  void clear() {
-    searchTextController.text = "";
-    filter.clearRefresh();
-    searchFocus.unfocus();
-  }
+//   void clear() {
+//     searchTextController.text = "";
+//     filter.clearRefresh();
+//     searchFocus.unfocus();
+//   }
 
-  void onChanged(String? _) {
-    filter.clearRefresh();
-  }
+//   void onChanged(String? _) {
+//     filter.clearRefresh();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n();
-    final theme = Theme.of(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     final l10n = context.l10n();
+//     final theme = Theme.of(context);
 
-    const padding = EdgeInsets.only(right: 16, left: 16, top: 4, bottom: 8);
+//     const padding = EdgeInsets.only(right: 16, left: 16, top: 4, bottom: 8);
 
-    return Center(
-      child: Padding(
-        padding: padding,
-        child: SearchBarAutocompleteWrapper(
-          search: SearchBarAppBarType(
-            onChanged: onChanged,
-            complete: api.searchTag,
-            textEditingController: searchTextController,
-          ),
-          searchFocus: searchFocus,
-          child: (context, controller, focus, onSubmitted) => SearchBar(
-            onSubmitted: (str) {
-              onSubmitted();
-              filter.clearRefresh();
-            },
-            backgroundColor: WidgetStatePropertyAll(
-              theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
-            ),
-            onTapOutside: (event) => focus.unfocus(),
-            elevation: const WidgetStatePropertyAll(0),
-            focusNode: focus,
-            controller: controller,
-            onChanged: onChanged,
-            hintText: l10n.filterHint,
-            leading: IconButton(
-              onPressed: () => launchGrid(context),
-              icon: Icon(
-                Icons.search_rounded,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            trailing: [
-              ChainedFilterIcon(
-                filter: filter,
-                controller: searchTextController,
-                complete: api.searchTag,
-                focusNode: searchFocus,
-              ),
-              IconButton(
-                onPressed: clear,
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+//     return Center(
+//       child: Padding(
+//         padding: padding,
+//         child: SearchBarAutocompleteWrapper(
+//           search: SearchBarAppBarType(
+//             onChanged: onChanged,
+//             complete: api.searchTag,
+//             textEditingController: searchTextController,
+//           ),
+//           searchFocus: searchFocus,
+//           child: (context, controller, focus, onSubmitted) => SearchBar(
+//             onSubmitted: (str) {
+//               onSubmitted();
+//               filter.clearRefresh();
+//             },
+//             backgroundColor: WidgetStatePropertyAll(
+//               theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
+//             ),
+//             onTapOutside: (event) => focus.unfocus(),
+//             elevation: const WidgetStatePropertyAll(0),
+//             focusNode: focus,
+//             controller: controller,
+//             onChanged: onChanged,
+//             hintText: l10n.filterHint,
+//             leading: IconButton(
+//               onPressed: () => launchGrid(context),
+//               icon: Icon(
+//                 Icons.search_rounded,
+//                 color: theme.colorScheme.primary,
+//               ),
+//             ),
+//             trailing: [
+//               ChainedFilterIcon(
+//                 filter: filter,
+//                 controller: searchTextController,
+//                 complete: api.searchTag,
+//                 focusNode: searchFocus,
+//               ),
+//               IconButton(
+//                 onPressed: clear,
+//                 icon: const Icon(Icons.close_rounded),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

@@ -65,50 +65,50 @@ Future<Services> init(AppInstanceType appType) async {
     );
   }
 
-  final db = IoServices._new(
-    switch (defaultTargetPlatform) {
-      TargetPlatform.android => AndroidPlatformImpl(
-          accentColor: Color(
-            (await AndroidPlatformImpl.appContext.invokeMethod("accentColor"))
-                as int,
-          ),
-          version: await AndroidPlatformImpl.activityContext
-              .invokeMethod("version")
-              .then((v) => v as String),
-          galleryImpl: initalizeAndroidGallery(),
-          notificationEvents: notificationsEvents.stream,
-        ),
-      TargetPlatform.linux => LinuxPlatformImpl(
-          accentColor: await () async {
-            try {
-              return (await DynamicColorPlugin.getAccentColor())!;
-            } catch (_) {
-              return const Color(0xff6d5e0f);
-            }
-          }(),
-          version: await () async {
-            try {
-              final exePath =
-                  await io.File("/proc/self/exe").resolveSymbolicLinks();
-              final appPath = path.dirname(exePath);
-              final assetPath = path.join(appPath, "data", "flutter_assets");
-              final versionPath = path.join(assetPath, "version.json");
-              // ignore: avoid_dynamic_calls
-              return jsonDecode(await io.File(versionPath).readAsString())[
-                      "version"] as String? ??
-                  "";
-            } catch (_) {
-              return "";
-            }
-          }(),
-        ),
-      TargetPlatform.fuchsia ||
-      TargetPlatform.iOS ||
-      TargetPlatform.macOS ||
-      TargetPlatform.windows =>
-        throw UnimplementedError(),
-    },
-  );
+  final db = IoServices._new(switch (defaultTargetPlatform) {
+    TargetPlatform.android => AndroidPlatformImpl(
+      accentColor: Color(
+        (await AndroidPlatformImpl.appContext.invokeMethod("accentColor"))
+            as int,
+      ),
+      version: await AndroidPlatformImpl.activityContext
+          .invokeMethod("version")
+          .then((v) => v as String),
+      galleryImpl: initalizeAndroidGallery(),
+      notificationEvents: notificationsEvents.stream,
+    ),
+    TargetPlatform.linux => LinuxPlatformImpl(
+      accentColor: await () async {
+        try {
+          return (await DynamicColorPlugin.getAccentColor())!;
+        } catch (_) {
+          return const Color(0xff6d5e0f);
+        }
+      }(),
+      version: await () async {
+        try {
+          final exePath = await io.File(
+            "/proc/self/exe",
+          ).resolveSymbolicLinks();
+          final appPath = path.dirname(exePath);
+          final assetPath = path.join(appPath, "data", "flutter_assets");
+          final versionPath = path.join(assetPath, "version.json");
+          // ignore: avoid_dynamic_calls
+          return jsonDecode(
+                    await io.File(versionPath).readAsString(),
+                  )["version"]
+                  as String? ??
+              "";
+        } catch (_) {
+          return "";
+        }
+      }(),
+    ),
+    TargetPlatform.fuchsia ||
+    TargetPlatform.iOS ||
+    TargetPlatform.macOS ||
+    TargetPlatform.windows => throw UnimplementedError(),
+  });
 
   await initalizeIsarDb(
     appType,
@@ -185,9 +185,9 @@ class IoFilesManagement implements FilesApi {
   }) async {
     try {
       await io.Directory(path.joinAll([rootDir, targetDir])).create();
-      await io.File(source).copy(
-        path.joinAll([rootDir, targetDir, path.basename(source)]),
-      );
+      await io.File(
+        source,
+      ).copy(path.joinAll([rootDir, targetDir, path.basename(source)]));
       await io.File(source).delete();
     } catch (e, trace) {
       _log.severe("moveSingle", e, trace);
@@ -256,12 +256,13 @@ class IoTasksService implements TasksService {
         _events.add(null);
       });
     } else {
-      map[Tag] = Future(() {
-        fn();
-      }).whenComplete(() {
-        map.remove(Tag);
-        _events.add(null);
-      });
+      map[Tag] =
+          Future(() {
+            fn();
+          }).whenComplete(() {
+            map.remove(Tag);
+            _events.add(null);
+          });
     }
 
     _events.add(null);
@@ -403,10 +404,7 @@ class IoServices implements Services {
 
   @override
   Widget injectWidgetEvents(Widget child) {
-    return _TasksEventsHolder(
-      services: this,
-      child: child,
-    );
+    return _TasksEventsHolder(services: this, child: child);
   }
 }
 
@@ -459,10 +457,7 @@ class __TasksEventsHolderState extends State<_TasksEventsHolder> {
 
   @override
   Widget build(BuildContext context) {
-    return _TasksEvents(
-      dummy: i,
-      child: widget.child,
-    );
+    return _TasksEvents(dummy: i, child: widget.child);
   }
 }
 
@@ -557,7 +552,8 @@ abstract class $TagData extends TagData {
   const factory $TagData({
     required String tag,
     required TagType type,
-    required DateTime time,
+    required DateTime? time,
+    required int count,
   }) = IsarTag.noId;
 }
 
@@ -751,8 +747,9 @@ class MemoryOnlyDownloadManager extends MapStorage<String, DownloadHandle>
   final String downloadDir;
 
   @override
-  final ClosableRefreshProgress progress =
-      ClosableRefreshProgress(canLoadMore: false);
+  final ClosableRefreshProgress progress = ClosableRefreshProgress(
+    canLoadMore: false,
+  );
 
   @override
   SourceStorage<String, DownloadHandle> get backingStorage => this;
@@ -781,8 +778,7 @@ class MemoryOnlyDownloadManager extends MapStorage<String, DownloadHandle>
   Future<String> ensureDownloadDirExists({
     required String dir,
     required String site,
-  }) =>
-      Future.value("");
+  }) => Future.value("");
 }
 
 abstract class DownloadManagerHasPersistence {
@@ -795,11 +791,8 @@ class PersistentDownloadManager extends MapStorage<String, DownloadHandle>
         DownloadManager,
         DownloadManagerHasPersistence,
         ResourceSource<String, DownloadHandle> {
-  PersistentDownloadManager(
-    this.db,
-    this.downloadDir,
-    this.files,
-  ) : super((e) => e.data.url) {
+  PersistentDownloadManager(this.db, this.downloadDir, this.files)
+    : super((e) => e.data.url) {
     _refresher = Stream<void>.periodic(1.seconds).listen((event) {
       if (inWork != 0) {
         StatisticsGeneralService.addTimeDownload(1.seconds.inMilliseconds);

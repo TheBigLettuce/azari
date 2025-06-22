@@ -5,7 +5,6 @@
 
 import "dart:async";
 
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/typedefs.dart";
@@ -21,12 +20,12 @@ sealed class ShellAppBarType {
   const ShellAppBarType({
     required this.leading,
     required this.trailingItems,
-    // this.bottomWidget,
+    this.transparent = false,
   });
 
+  final bool transparent;
   final Widget? leading;
   final List<Widget>? trailingItems;
-  // final PreferredSizeWidget? bottomWidget;
 }
 
 class TitleAppBarType extends ShellAppBarType {
@@ -34,7 +33,7 @@ class TitleAppBarType extends ShellAppBarType {
     required this.title,
     super.leading,
     super.trailingItems,
-    // super.bottomWidget,
+    super.transparent = false,
   });
 
   final String title;
@@ -55,6 +54,9 @@ class RawAppBarType implements ShellAppBarType {
     PreferredSizeWidget? bottomWidget,
   )
   sliver;
+
+  @override
+  bool get transparent => false;
 }
 
 class NoShellAppBar extends ShellAppBarType {
@@ -82,7 +84,7 @@ class SearchBarAppBarType extends ShellAppBarType {
     required TextEditingController textEditingController,
     required FocusNode focus,
     String? hintText,
-    Future<List<BooruTag>> Function(String string)? complete,
+    Future<List<TagData>> Function(String string)? complete,
     Widget? leading,
     List<Widget>? trailingItems,
     void Function(BuildContext context)? onPressed,
@@ -119,7 +121,7 @@ class SearchBarAppBarType extends ShellAppBarType {
   final ContextCallback? onPressed;
   final FocusNode? filterFocus;
 
-  final Future<List<BooruTag>> Function(String string)? complete;
+  final Future<List<TagData>> Function(String string)? complete;
   final void Function(String? str)? onChanged;
   final void Function(String? str)? onSubmitted;
 }
@@ -130,19 +132,20 @@ class ChainedFilterIcon extends StatelessWidget {
     required this.filter,
     required this.controller,
     required this.focusNode,
-    // this.onChange,
     this.complete,
+    this.iconSize = 24,
   });
 
   final ChainedFilterResourceSource<dynamic, dynamic> filter;
   final TextEditingController controller;
   final FocusNode focusNode;
-  final Future<List<BooruTag>> Function(String string)? complete;
-  // final void Function(String?)? onChange;
+  final Future<List<TagData>> Function(String string)? complete;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      iconSize: iconSize,
       onPressed: () {
         showModalBottomSheet<void>(
           useRootNavigator: true,
@@ -273,7 +276,7 @@ class _FilteringWidget extends StatefulWidget {
   final FilteringMode Function(FilteringMode) select;
   final void Function(FilteringColors)? selectColors;
   final void Function(SortingMode) selectSorting;
-  final Future<List<BooruTag>> Function(String string)? complete;
+  final Future<List<TagData>> Function(String string)? complete;
 
   @override
   State<_FilteringWidget> createState() => __FilteringWidgetState();

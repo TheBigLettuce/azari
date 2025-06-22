@@ -8,6 +8,7 @@ import "dart:async";
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:flutter/material.dart";
 
@@ -32,34 +33,25 @@ typedef ContextCallback = void Function(BuildContext context);
 
 typedef GetCellCallback<T> = T Function(int idx);
 
-typedef OnBooruTagPressedFunc = void Function(
-  BuildContext context,
-  Booru booru,
-  String tag,
-  SafeMode? overrideSafeMode,
-);
+typedef OnBooruTagPressedFunc =
+    void Function(
+      BuildContext context,
+      Booru booru,
+      String tag,
+      SafeMode? overrideSafeMode,
+    );
 
-typedef OpenSearchCallback = void Function(
-  BuildContext context,
-  String tag, [
-  SafeMode? safeMode,
-]);
+typedef OpenSearchCallback =
+    void Function(BuildContext context, String tag, [SafeMode? safeMode]);
 
 typedef BuilderCallback = Widget Function(BuildContext context);
 
 /// Progress callback which receives [c] values between 0.0 to 1.0.
 typedef PercentageCallback = void Function(double c);
 
-typedef DestinationCallback = void Function(
-  BuildContext context,
-  CurrentRoute route,
-);
+typedef DestinationCallback =
+    void Function(BuildContext context, CurrentRoute route);
 
-typedef CompleteBooruTagFunc = Future<List<BooruTag>> Function(String str);
+typedef CompleteBooruTagFunc = Future<List<TagData>> Function(String str);
 
 typedef StringCallback = void Function(String str);
-
-// typedef WatchTagsCallback = StreamSubscription<List<ImageTag>> Function(
-//   ContentWidgets content,
-//   void Function(List<ImageTag> l) f,
-// );

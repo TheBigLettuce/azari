@@ -191,7 +191,7 @@ mixin class LocalTagsService implements ServiceMarker {
   int get count => _instance!.count;
 
   List<String> get(String filename) => _instance!.get(filename);
-  List<BooruTag> mostFrequent(int count) => _instance!.mostFrequent(count);
+  List<TagData> mostFrequent(int count) => _instance!.mostFrequent(count);
 
   void add(String filename, List<String> tags) =>
       _instance!.add(filename, tags);
@@ -205,7 +205,7 @@ mixin class LocalTagsService implements ServiceMarker {
 
   void addFrequency(List<String> tags) => _instance!.addFrequency(tags);
 
-  Future<List<BooruTag>> complete(String string) => _instance!.complete(string);
+  Future<List<TagData>> complete(String string) => _instance!.complete(string);
 
   StreamSubscription<LocalTagsData> watch(
     String filename,
@@ -235,14 +235,16 @@ abstract class TagData implements CellBuilder {
   const factory TagData({
     required String tag,
     required TagType type,
-    required DateTime time,
+    required DateTime? time,
+    required int count,
   }) = $TagData;
 
   String get tag;
   TagType get type;
-  DateTime get time;
+  DateTime? get time;
+  int get count;
 
-  TagData copy({String? tag, TagType? type});
+  TagData copy({String? tag, TagType? type, int? count});
 }
 
 abstract class TagDataImpl
@@ -278,7 +280,8 @@ abstract class BooruTagging<T extends BooruTaggingType> {
 
   bool exists(String tag);
 
-  List<TagData> complete(String string);
+  Future<List<TagData>> complete(String string);
+  Future<List<TagData>> search(String string, [int limit = 15]);
 
   /// Get the current tags.
   /// Last added first.

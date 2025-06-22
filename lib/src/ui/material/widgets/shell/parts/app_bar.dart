@@ -80,6 +80,7 @@ class _AppBar extends StatelessWidget {
                 snap: true,
                 floating: true,
                 bottom: bottomWidget,
+                forceMaterialTransparency: searchWidget.transparent,
               )
             : SliverAppBar.medium(
                 backgroundColor: theme.colorScheme.surface.withValues(
@@ -173,6 +174,7 @@ class _AppBar extends StatelessWidget {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         bottom: bottomWidget,
+        forceMaterialTransparency: searchWidget.transparent,
       ),
       RawAppBarType() => search.sliver(context, settingsButton, bottomWidget),
       NoShellAppBar() => const SliverPadding(padding: EdgeInsets.zero),
@@ -247,6 +249,125 @@ class _AppBarDividerState extends State<AppBarDivider>
           ),
         ),
       ],
+    );
+  }
+}
+
+class SearchBarAutocompleteWrapper2 extends StatelessWidget {
+  const SearchBarAutocompleteWrapper2({
+    super.key,
+    this.complete,
+    required this.textEditingController,
+    required this.focusNode,
+    required this.child,
+  });
+
+  final CompleteBooruTagFunc? complete;
+
+  final TextEditingController textEditingController;
+  final FocusNode focusNode;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawAutocomplete<String>(
+      textEditingController: textEditingController,
+      focusNode: focusNode,
+      optionsBuilder: (textEditingValue) async {
+        if (complete == null) {
+          return [];
+        }
+        try {
+          return (await autocompleteTag(
+            textEditingValue.text,
+            complete!,
+          )).map((e) => e.tag);
+        } catch (e) {
+          return [];
+        }
+      },
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) =>
+              child,
+      optionsViewBuilder:
+          (
+            BuildContext context,
+            void Function(String) onSelected,
+            Iterable<String> options,
+          ) {
+            final theme = Theme.of(context);
+
+            final tiles = options
+                .map(
+                  (elem) => ListTile(
+                    visualDensity: VisualDensity.compact,
+
+                    onTap: () {
+                      final tags = List<String>.from(
+                        textEditingController.text.split(" "),
+                      );
+
+                      if (tags.isNotEmpty) {
+                        tags.removeLast();
+                        tags.remove(elem);
+                      }
+
+                      tags.add(elem);
+
+                      onSelected(tags.join(" "));
+                    },
+                    titleTextStyle: theme.textTheme.labelLarge,
+                    title: Text(elem),
+                  ),
+                )
+                .toList();
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Material(
+                  color: theme.colorScheme.surface,
+                  surfaceTintColor: theme.colorScheme.surfaceTint,
+                  clipBehavior: Clip.antiAlias,
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 2,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 200,
+                      maxWidth: 200,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: tiles.length,
+                      itemBuilder: (context, index) {
+                        return Builder(
+                          builder: (context) {
+                            final highlight =
+                                AutocompleteHighlightedOption.of(context) ==
+                                index;
+                            if (highlight) {
+                              WidgetsBinding.instance.scheduleFrameCallback((
+                                timeStamp,
+                              ) {
+                                Scrollable.ensureVisible(context);
+                              });
+                            }
+
+                            return Container(
+                              color: highlight ? theme.focusColor : null,
+                              child: tiles[index],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
     );
   }
 }

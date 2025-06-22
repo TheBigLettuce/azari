@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/logic/net/booru/booru.dart";
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:html_unescape/html_unescape_small.dart";
@@ -15,10 +14,7 @@ part "gelbooru.g.dart";
 
 @JsonSerializable()
 class GelbooruTagsRet {
-  const GelbooruTagsRet({
-    required this.attributes,
-    required this.posts,
-  });
+  const GelbooruTagsRet({required this.attributes, required this.posts});
 
   factory GelbooruTagsRet.fromJson(
     Map<String, dynamic> json,
@@ -29,7 +25,7 @@ class GelbooruTagsRet {
     if (onlyTypeZero) {
       ret = GelbooruTagsRet(
         attributes: ret.attributes,
-        posts: ret.posts.where((e) => e.type == 0).toList(),
+        posts: ret.posts.where((e) => e.typeInt == 0).toList(),
       );
     }
 
@@ -44,9 +40,9 @@ class GelbooruTagsRet {
 }
 
 @JsonSerializable()
-class _GelbooruTag implements BooruTag {
+class _GelbooruTag extends TagDataImpl implements TagData {
   const _GelbooruTag({
-    required this.type,
+    required this.typeInt,
     required this.count,
     required this.tag,
   });
@@ -64,15 +60,27 @@ class _GelbooruTag implements BooruTag {
   final String tag;
 
   @JsonKey(name: "type")
-  final int type;
+  final int typeInt;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  DateTime? get time => null;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  TagType get type => TagType.normal;
+
+  @override
+  TagData copy({String? tag, TagType? type, int? count}) => _GelbooruTag(
+    typeInt: typeInt,
+    count: count ?? this.count,
+    tag: tag ?? this.tag,
+  );
 }
 
 @JsonSerializable()
 class GelbooruPostRet {
-  const GelbooruPostRet({
-    required this.attributes,
-    required this.posts,
-  });
+  const GelbooruPostRet({required this.attributes, required this.posts});
 
   factory GelbooruPostRet.fromJson(Map<String, dynamic> json) =>
       _$GelbooruPostRetFromJson(json);
@@ -192,10 +200,9 @@ class GelbooruDateConventer implements JsonConverter<DateTime, String> {
   const GelbooruDateConventer();
 
   @override
-  DateTime fromJson(String json) =>
-      _GelbooruPost._dateFormatter.parse(json).copyWith(
-            year: int.tryParse(json.substring(json.length - 4)),
-          );
+  DateTime fromJson(String json) => _GelbooruPost._dateFormatter
+      .parse(json)
+      .copyWith(year: int.tryParse(json.substring(json.length - 4)));
 
   @override
   String toJson(DateTime object) => object.toIso8601String();

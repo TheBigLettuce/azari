@@ -14,10 +14,7 @@ import "package:dio/dio.dart";
 import "package:logging/logging.dart";
 
 class Danbooru implements BooruAPI {
-  const Danbooru(
-    this.client, {
-    this.booru = Booru.danbooru,
-  });
+  const Danbooru(this.client, {this.booru = Booru.danbooru});
 
   static final _log = Logger("Danbooru API");
 
@@ -56,7 +53,7 @@ class Danbooru implements BooruAPI {
   }
 
   @override
-  Future<List<BooruTag>> searchTag(
+  Future<List<TagData>> searchTag(
     String tag, [
     BooruTagSorting sorting = BooruTagSorting.count,
     int limit = 30,
@@ -72,9 +69,11 @@ class Danbooru implements BooruAPI {
 
     return resp.data!
         .map(
-          (e) => BooruTag(
-            (e as Map<String, dynamic>)["name"] as String,
-            e["post_count"] as int,
+          (e) => TagData(
+            tag: (e as Map<String, dynamic>)["name"] as String,
+            count: e["post_count"] as int,
+            type: TagType.normal,
+            time: null,
           ),
         )
         .toList();
@@ -113,17 +112,16 @@ class Danbooru implements BooruAPI {
       addTags.isNotEmpty && videosOnly
           ? "video $addTags"
           : "${order == RandomPostsOrder.random ? 'random:30' : ''}"
-                  "${videosOnly ? ' video' : ''}"
-                  " $addTags"
-              .trim(),
+                    "${videosOnly ? ' video' : ''}"
+                    " $addTags"
+                .trim(),
       safeMode,
       limit: 30,
       order: addTags.isNotEmpty && videosOnly
           ? BooruPostsOrder.latest
           : switch (order) {
               RandomPostsOrder.random ||
-              RandomPostsOrder.latest =>
-                BooruPostsOrder.latest,
+              RandomPostsOrder.latest => BooruPostsOrder.latest,
               RandomPostsOrder.rating => BooruPostsOrder.score,
             },
       pageSaver: PageSaver.noPersist(),
@@ -162,15 +160,14 @@ class Danbooru implements BooruAPI {
     int? limit,
     BooruPostsOrder order = BooruPostsOrder.latest,
     required PageSaver pageSaver,
-  }) =>
-      _commonPosts(
-        tags,
-        postid: postId,
-        safeMode: safeMode,
-        limit: limit,
-        order: order,
-        ignoreExcludedTags: false,
-      );
+  }) => _commonPosts(
+    tags,
+    postid: postId,
+    safeMode: safeMode,
+    limit: limit,
+    order: order,
+    ignoreExcludedTags: false,
+  );
 
   Future<(List<Post>, int?)> _commonPosts(
     String tags, {
@@ -187,15 +184,16 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
-    final excludedTags =
-        ignoreExcludedTags ? null : TagManagerService.safe()?.excluded;
+    final excludedTags = ignoreExcludedTags
+        ? null
+        : TagManagerService.safe()?.excluded;
 
     String safeModeS() => switch (safeMode) {
-          SafeMode.normal => "rating:g",
-          SafeMode.none => "",
-          SafeMode.relaxed => "rating:g,s",
-          SafeMode.explicit => "rating:q,e",
-        };
+      SafeMode.normal => "rating:g",
+      SafeMode.none => "",
+      SafeMode.relaxed => "rating:g,s",
+      SafeMode.explicit => "rating:q,e",
+    };
 
     final query = <String, dynamic>{
       "limit": limit?.toString() ?? refreshPostCountLimit().toString(),
@@ -265,12 +263,10 @@ class Danbooru implements BooruAPI {
 }
 
 class DanbooruCommunity implements BooruComunnityAPI {
-  DanbooruCommunity({
-    required this.booru,
-    required this.client,
-  })  : forum = _ForumAPI(client),
-        comments = _CommentsAPI(client),
-        pools = _PoolsAPI(client);
+  DanbooruCommunity({required this.booru, required this.client})
+    : forum = _ForumAPI(client),
+      comments = _CommentsAPI(client),
+      pools = _PoolsAPI(client);
 
   @override
   final Booru booru;
@@ -303,26 +299,22 @@ class _PoolsAPI implements BooruPoolsAPI {
     required PageSaver pageSaver,
   }) async {
     final resp = await client.getUriLog<List<dynamic>>(
-      Uri.https(
-        Booru.danbooru.url,
-        "/pools.json",
-        {
-          "search[order]": switch (order) {
-            BooruPoolsOrder.name => "name",
-            BooruPoolsOrder.latest => "updated_at",
-            BooruPoolsOrder.creationTime => "created_at",
-            BooruPoolsOrder.postCount => "post_count",
-          },
-          if (category != null)
-            "search[category]": switch (category) {
-              BooruPoolCategory.series => "series",
-              BooruPoolCategory.collection => "collection",
-            },
-          if (name != null) "search[name_matches]": "$name*",
-          "page": pageSaver.page.toString(),
-          if (limit != null) "limit": limit.toString(),
+      Uri.https(Booru.danbooru.url, "/pools.json", {
+        "search[order]": switch (order) {
+          BooruPoolsOrder.name => "name",
+          BooruPoolsOrder.latest => "updated_at",
+          BooruPoolsOrder.creationTime => "created_at",
+          BooruPoolsOrder.postCount => "post_count",
         },
-      ),
+        if (category != null)
+          "search[category]": switch (category) {
+            BooruPoolCategory.series => "series",
+            BooruPoolCategory.collection => "collection",
+          },
+        if (name != null) "search[name_matches]": "$name*",
+        "page": pageSaver.page.toString(),
+        if (limit != null) "limit": limit.toString(),
+      }),
       LogReq("search, name: $name", _log),
     );
 
@@ -386,15 +378,11 @@ class _CommentsAPI implements BooruCommentsAPI {
     required PageSaver pageSaver,
   }) async {
     final resp = await client.getUriLog<List<dynamic>>(
-      Uri.https(
-        Booru.danbooru.url,
-        "/comments.json",
-        {
-          "post_id": postId.toString(),
-          "group_by": "comment",
-          "only": "is_sticky,id,post_id,updated_at,score,body",
-        },
-      ),
+      Uri.https(Booru.danbooru.url, "/comments.json", {
+        "post_id": postId.toString(),
+        "group_by": "comment",
+        "only": "is_sticky,id,post_id,updated_at,score,body",
+      }),
       LogReq("forPostId, id: $postId", _log),
     );
 

@@ -24,7 +24,8 @@ class _LocalTagsPanel extends StatefulWidget {
     List<Directory> list, {
     required String tag,
     required FilteringMode? filteringMode,
-  }) joinedDirectories;
+  })
+  joinedDirectories;
 
   @override
   State<_LocalTagsPanel> createState() => __LocalTagsPanelState();
@@ -33,7 +34,7 @@ class _LocalTagsPanel extends StatefulWidget {
 class __LocalTagsPanelState extends State<_LocalTagsPanel>
     with LocalTagsService {
   String filteringValue = "";
-  late final GenericListSource<BooruTag> source = GenericListSource(
+  late final GenericListSource<TagData> source = GenericListSource(
     () => complete(filteringValue),
   );
 
@@ -104,11 +105,9 @@ class __LocalTagsPanelState extends State<_LocalTagsPanel>
             }
 
             if (booru.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.noBooruDirectories),
-                ),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.noBooruDirectories)));
 
               return;
             }

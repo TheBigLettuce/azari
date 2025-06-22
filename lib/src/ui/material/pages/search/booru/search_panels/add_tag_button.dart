@@ -15,6 +15,7 @@ class _AddTagButton extends StatefulWidget {
     required this.foregroundColor,
     required this.buildTitle,
     required this.onPressed,
+    this.sliver = true,
   });
 
   final TagManagerService tagManager;
@@ -28,6 +29,8 @@ class _AddTagButton extends StatefulWidget {
 
   final VoidCallback onPressed;
   final BuilderCallback buildTitle;
+
+  final bool sliver;
 
   @override
   State<_AddTagButton> createState() => __AddTagStateTagButton();
@@ -54,30 +57,30 @@ class __AddTagStateTagButton extends State<_AddTagButton> {
 
   @override
   Widget build(BuildContext context) {
+    final child = Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding:
+            _ChipsPanelBody.listPadding +
+            const EdgeInsets.only(top: 12, bottom: 8),
+        child: FilledButton.tonalIcon(
+          onPressed: widget.onPressed,
+          label: widget.buildTitle(context),
+          icon: Icon(Icons.tag_rounded, color: widget.foregroundColor),
+          style: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(widget.foregroundColor),
+            backgroundColor: WidgetStatePropertyAll(widget.backgroundColor),
+          ),
+        ),
+      ),
+    ).animate().fadeIn();
+
+    if (!widget.sliver) {
+      return widget.storage.count != 0 ? const SizedBox.shrink() : child;
+    }
+
     return widget.storage.count != 0
         ? const SliverPadding(padding: EdgeInsets.zero)
-        : SliverToBoxAdapter(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: _ChipsPanelBody.listPadding +
-                    const EdgeInsets.only(top: 12, bottom: 8),
-                child: FilledButton.tonalIcon(
-                  onPressed: widget.onPressed,
-                  label: widget.buildTitle(context),
-                  icon: Icon(
-                    Icons.tag_rounded,
-                    color: widget.foregroundColor,
-                  ),
-                  style: ButtonStyle(
-                    foregroundColor:
-                        WidgetStatePropertyAll(widget.foregroundColor),
-                    backgroundColor:
-                        WidgetStatePropertyAll(widget.backgroundColor),
-                  ),
-                ),
-              ),
-            ).animate().fadeIn(),
-          );
+        : SliverToBoxAdapter(child: child);
   }
 }

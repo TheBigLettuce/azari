@@ -128,110 +128,104 @@ class _PostCellState extends State<PostCell>
         ChainedFilterResourceSource.maybeOf(context)?.sortingMode ==
         SortingMode.color;
 
-    return Animate(
-      key: post.uniqueKey(),
-      effects: animate
-          ? const [
-              FadeEffect(
-                duration: Durations.long1,
-                curve: Easing.standard,
-                end: 1,
-              ),
-            ]
+    Widget child = WrapSelection(
+      onPressed: _open,
+      onDoubleTap: DownloadManager.available && LocalTagsService.available
+          ? _download
           : null,
-      child: WrapSelection(
-        onPressed: _open,
-        onDoubleTap: DownloadManager.available && LocalTagsService.available
-            ? _download
-            : null,
-        child: switch (widget.cellType) {
-          CellType.list => DefaultListTile(
-            uniqueKey: widget.post.uniqueKey(),
-            thumbnail: thumbnail,
-            title: name,
-          ),
-          CellType.cell => Builder(
-            builder: (context) => GestureDetector(
-              child: Card(
-                elevation: 0,
-                clipBehavior: Clip.antiAlias,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                ),
-                color: theme.cardColor.withValues(alpha: 0),
-                child: Stack(
-                  children: [
-                    DecoratedBox(
-                      position: DecorationPosition.foreground,
-                      decoration: sortingColor && post is FavoritePost
-                          ? BoxDecoration(
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(15),
+      child: switch (widget.cellType) {
+        CellType.list => DefaultListTile(
+          uniqueKey: widget.post.uniqueKey(),
+          thumbnail: thumbnail,
+          title: name,
+        ),
+        CellType.cell => Builder(
+          builder: (context) => GestureDetector(
+            child: Card(
+              elevation: 0,
+              clipBehavior: Clip.antiAlias,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(15)),
+              ),
+              color: theme.cardColor.withValues(alpha: 0),
+              child: Stack(
+                children: [
+                  DecoratedBox(
+                    position: DecorationPosition.foreground,
+                    decoration: sortingColor && post is FavoritePost
+                        ? BoxDecoration(
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(15),
+                            ),
+                            border: Border.fromBorderSide(
+                              BorderSide(
+                                color: (post as FavoritePost)
+                                    .filteringColors
+                                    .color
+                                    .harmonizeWith(theme.colorScheme.primary)
+                                    .withValues(alpha: 0.35),
+                                width: 1.5,
                               ),
-                              border: Border.fromBorderSide(
-                                BorderSide(
-                                  color: (post as FavoritePost)
-                                      .filteringColors
-                                      .color
-                                      .harmonizeWith(theme.colorScheme.primary)
-                                      .withValues(alpha: 0.35),
-                                  width: 1.5,
-                                ),
-                              ),
+                            ),
+                          )
+                        : const BoxDecoration(),
+                    child: GridCellImage(
+                      heroTag: post.uniqueKey(),
+                      imageAlign: Alignment.topCenter,
+                      thumbnail:
+                          post.type == PostContentType.gif &&
+                              post.size != 0 &&
+                              !post.size.isNegative &&
+                              post.size < 524288
+                          ? CachedNetworkImageProvider(
+                              post.sampleUrl.isEmpty
+                                  ? post.fileUrl
+                                  : post.sampleUrl,
                             )
-                          : const BoxDecoration(),
-                      child: GridCellImage(
-                        heroTag: post.uniqueKey(),
-                        imageAlign: Alignment.topCenter,
-                        thumbnail:
-                            post.type == PostContentType.gif &&
-                                post.size != 0 &&
-                                !post.size.isNegative &&
-                                post.size < 524288
-                            ? CachedNetworkImageProvider(
-                                post.sampleUrl.isEmpty
-                                    ? post.fileUrl
-                                    : post.sampleUrl,
-                              )
-                            : thumbnail,
-                        blur: false,
+                          : thumbnail,
+                      blur: false,
+                    ),
+                  ),
+                  if (FavoritePostSourceService.available &&
+                      widget.post is! FavoritePost)
+                    Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: FavoritePostButton(
+                        heroKey: (post.uniqueKey(), "favoritePost"),
+                        post: post,
                       ),
                     ),
-                    if (FavoritePostSourceService.available &&
-                        widget.post is! FavoritePost)
-                      Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: FavoritePostButton(
-                          heroKey: (post.uniqueKey(), "favoritePost"),
-                          post: post,
-                        ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
                       ),
+                      child: VideoOrGifIcon(
+                        uniqueKey: post.uniqueKey(),
+                        type: post.type,
+                      ),
+                    ),
+                  ),
+                  if (DownloadManager.available)
                     Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        child: VideoOrGifIcon(
-                          uniqueKey: post.uniqueKey(),
-                          type: post.type,
-                        ),
-                      ),
+                      alignment: Alignment.bottomCenter,
+                      child: LinearDownloadIndicator(post: post),
                     ),
-                    if (DownloadManager.available)
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: LinearDownloadIndicator(post: post),
-                      ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
-        },
-      ),
+        ),
+      },
     );
+
+    if (animate) {
+      child = child.animate(key: widget.post.uniqueKey()).fadeIn();
+    }
+
+    return child;
   }
 }
 
@@ -240,7 +234,7 @@ class CardAnimationChild extends StatelessWidget {
     super.key,
     required this.post,
     required this.animation,
-    required this.buttonsRow,
+    // required this.buttonsRow,
     required this.source,
   });
 
@@ -249,7 +243,7 @@ class CardAnimationChild extends StatelessWidget {
 
   final PostImpl post;
 
-  final Widget buttonsRow;
+  // final Widget buttonsRow;
 
   void _open(BuildContext context) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -285,81 +279,69 @@ class CardAnimationChild extends StatelessWidget {
           420 * (post.height / post.width),
         ).clamp(0, 460),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _open(context),
-              child: Stack(
-                children: [
-                  GridCellImage(
-                    backgroundColor: theme.colorScheme.surfaceContainerHigh
-                        .withValues(alpha: 1),
-                    heroTag: post.uniqueKey(),
-                    imageAlign: Alignment.topCenter,
-                    thumbnail:
-                        post.type == PostContentType.gif &&
-                            post.size != 0 &&
-                            !post.size.isNegative &&
-                            post.size < 524288
-                        ? CachedNetworkImageProvider(
-                            post.sampleUrl.isEmpty
-                                ? post.fileUrl
-                                : post.sampleUrl,
-                          )
-                        : thumbnail,
-                    blur: false,
-                  ),
-                  if (post.type == PostContentType.video)
-                    AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) =>
-                          Opacity(opacity: animation.value, child: child),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(15),
-                          ),
-                        ),
-                        child: SizedBox.expand(
-                          child: Center(
-                            child: Hero(
-                              tag: (post.uniqueKey(), "videoIcon"),
-                              child: const Icon(Icons.play_arrow_rounded),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (FavoritePostSourceService.available)
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, child) =>
-                            Opacity(opacity: animation.value, child: child),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: ColorCube(
-                            idBooru: (post.id, post.booru),
-                            source: source,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (post is FavoritePost)
-                    RefreshImageCube(
-                      post: post as FavoritePost,
-                      animation: animation,
-                    ),
-                ],
-              ),
+      child: GestureDetector(
+        onTap: () => _open(context),
+        child: Stack(
+          children: [
+            GridCellImage(
+              backgroundColor: theme.colorScheme.surfaceContainerHigh
+                  .withValues(alpha: 1),
+              heroTag: post.uniqueKey(),
+              imageAlign: Alignment.topCenter,
+              thumbnail:
+                  post.type == PostContentType.gif &&
+                      post.size != 0 &&
+                      !post.size.isNegative &&
+                      post.size < 524288
+                  ? CachedNetworkImageProvider(
+                      post.sampleUrl.isEmpty ? post.fileUrl : post.sampleUrl,
+                    )
+                  : thumbnail,
+              blur: false,
             ),
-          ),
-          buttonsRow,
-        ],
+            if (post.type == PostContentType.video)
+              AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) =>
+                    Opacity(opacity: animation.value, child: child),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    borderRadius: const BorderRadius.all(Radius.circular(15)),
+                  ),
+                  child: SizedBox.expand(
+                    child: Center(
+                      child: Hero(
+                        tag: (post.uniqueKey(), "videoIcon"),
+                        child: const Icon(Icons.play_arrow_rounded),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (FavoritePostSourceService.available)
+              Align(
+                alignment: Alignment.topRight,
+                child: AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) =>
+                      Opacity(opacity: animation.value, child: child),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ColorCube(
+                      idBooru: (post.id, post.booru),
+                      source: source,
+                    ),
+                  ),
+                ),
+              ),
+            if (post is FavoritePost)
+              RefreshImageCube(
+                post: post as FavoritePost,
+                animation: animation,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -584,27 +566,56 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
         alignment: Alignment.center,
         children: [
           if (idx != 0)
-            Opacity(
-              opacity: animValue != null && !animValue!.isNegative
-                  ? animValue?.abs() ?? 0
-                  : 0,
-              child: widget.addScale
-                  ? Transform.scale(
-                      alignment: Alignment.centerLeft,
-                      scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
-                      child:
-                          animValue != null &&
-                              animValue != 0 &&
-                              !animValue!.isNegative
-                          ? widget.child(context, idx - 1)
-                          : const SizedBox.shrink(),
-                    )
-                  : animValue != null &&
-                        animValue != 0 &&
-                        !animValue!.isNegative
-                  ? widget.child(context, idx - 1)
-                  : const SizedBox.shrink(),
-            ),
+            switch (widget.type) {
+              ReplaceAnimationType.vertical => Opacity(
+                opacity: animValue != null && !animValue!.isNegative
+                    ? animValue?.abs() ?? 0
+                    : 0,
+                child: SlideTransition(
+                  position: AlwaysStoppedAnimation(
+                    Offset(0, 1 - (animValue ?? 0)),
+                  ),
+                  child: widget.addScale
+                      ? Transform.scale(
+                          alignment: Alignment.centerLeft,
+                          scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
+                          child:
+                              animValue != null &&
+                                  animValue != 0 &&
+                                  !animValue!.isNegative
+                              ? widget.child(context, idx - 1)
+                              : const SizedBox.shrink(),
+                        )
+                      : animValue != null &&
+                            animValue != 0 &&
+                            !animValue!.isNegative
+                      ? widget.child(context, idx - 1)
+                      : const SizedBox.shrink(),
+                ),
+              ),
+
+              ReplaceAnimationType.horizontal => Opacity(
+                opacity: animValue != null && !animValue!.isNegative
+                    ? animValue?.abs() ?? 0
+                    : 0,
+                child: widget.addScale
+                    ? Transform.scale(
+                        alignment: Alignment.centerLeft,
+                        scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
+                        child:
+                            animValue != null &&
+                                animValue != 0 &&
+                                !animValue!.isNegative
+                            ? widget.child(context, idx - 1)
+                            : const SizedBox.shrink(),
+                      )
+                    : animValue != null &&
+                          animValue != 0 &&
+                          !animValue!.isNegative
+                    ? widget.child(context, idx - 1)
+                    : const SizedBox.shrink(),
+              ),
+            },
           Opacity(
             opacity: animValue == null ? 1 : 1 - (animValue!.abs()),
             child: SlideTransition(
@@ -693,25 +704,55 @@ class _ReplaceAnimationState extends State<ReplaceAnimation>
             ),
           ),
           if (widget.source.count > 1 && widget.source.count - 1 != idx)
-            Opacity(
-              opacity: animValue != null && animValue!.isNegative
-                  ? animValue?.abs() ?? 0
-                  : 0,
-              child: widget.addScale
-                  ? Transform.scale(
-                      alignment: Alignment.centerRight,
-                      scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
-                      child:
-                          animValue != null &&
-                              animValue != 0 &&
-                              animValue!.isNegative
-                          ? widget.child(context, idx + 1)
-                          : const SizedBox.shrink(),
-                    )
-                  : animValue != null && animValue != 0 && animValue!.isNegative
-                  ? widget.child(context, idx + 1)
-                  : const SizedBox.shrink(),
-            ),
+            switch (widget.type) {
+              ReplaceAnimationType.vertical => Opacity(
+                opacity: animValue != null && animValue!.isNegative
+                    ? animValue?.abs() ?? 0
+                    : 0,
+                child: SlideTransition(
+                  position: AlwaysStoppedAnimation(
+                    Offset(0, -1 - (animValue ?? 0)),
+                  ),
+                  child: widget.addScale
+                      ? Transform.scale(
+                          alignment: Alignment.centerRight,
+                          scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
+                          child:
+                              animValue != null &&
+                                  animValue != 0 &&
+                                  animValue!.isNegative
+                              ? widget.child(context, idx + 1)
+                              : const SizedBox.shrink(),
+                        )
+                      : animValue != null &&
+                            animValue != 0 &&
+                            animValue!.isNegative
+                      ? widget.child(context, idx + 1)
+                      : const SizedBox.shrink(),
+                ),
+              ),
+              ReplaceAnimationType.horizontal => Opacity(
+                opacity: animValue != null && animValue!.isNegative
+                    ? animValue?.abs() ?? 0
+                    : 0,
+                child: widget.addScale
+                    ? Transform.scale(
+                        alignment: Alignment.centerRight,
+                        scale: (animValue?.abs() ?? 0).clamp(0.5, 1),
+                        child:
+                            animValue != null &&
+                                animValue != 0 &&
+                                animValue!.isNegative
+                            ? widget.child(context, idx + 1)
+                            : const SizedBox.shrink(),
+                      )
+                    : animValue != null &&
+                          animValue != 0 &&
+                          animValue!.isNegative
+                    ? widget.child(context, idx + 1)
+                    : const SizedBox.shrink(),
+              ),
+            },
         ],
       ),
     );
@@ -806,18 +847,25 @@ class CardDialogStatic extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        child: CardAnimationChild(
-                          animation: animation,
-                          post: post,
-                          buttonsRow: ClipRRect(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              child: CardAnimationChild(
+                                animation: animation,
+                                post: post,
+                                source: null,
+                              ),
+                            ),
+                          ),
+                          ClipRRect(
                             child: CardDialogButtons(
                               animation: animation,
                               post: post,
                             ),
                           ),
-                          source: null,
-                        ),
+                        ],
                       ),
                       _TagsRowBorder(
                         animation: animation,
@@ -946,44 +994,51 @@ class _CardDialogState extends State<CardDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
               child: Column(
                 children: [
-                  ClipRRect(
-                    child: ReplaceAnimation(
-                      source: source,
-                      synchronizeSnd: syncr.sink,
-                      addScale: true,
-                      currentIndex: idx,
-                      child: (context, idx) {
-                        final post = source.forIdx(idx);
-                        if (post == null) {
-                          return const SizedBox.shrink();
-                        }
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          child: ReplaceAnimation(
+                            source: source,
+                            synchronizeSnd: syncr.sink,
+                            addScale: true,
+                            currentIndex: idx,
+                            child: (context, idx) {
+                              final post = source.forIdx(idx);
+                              if (post == null) {
+                                return const SizedBox.shrink();
+                              }
 
-                        return CardAnimationChild(
-                          post: post,
-                          animation: animation,
-                          buttonsRow: ClipRRect(
-                            child: ReplaceAnimation(
-                              source: source,
-                              synchronizeRecv: syncr.stream,
-                              currentIndex: idx,
-                              type: ReplaceAnimationType.vertical,
-                              child: (context, idx) {
-                                final post = source.forIdx(idx);
-                                if (post == null) {
-                                  return const SizedBox.shrink();
-                                }
-
-                                return CardDialogButtons(
-                                  animation: animation,
-                                  post: post,
-                                );
-                              },
-                            ),
+                              return CardAnimationChild(
+                                post: post,
+                                animation: animation,
+                                source: source,
+                              );
+                            },
                           ),
+                        ),
+                      ),
+                      ClipRRect(
+                        child: ReplaceAnimation(
                           source: source,
-                        );
-                      },
-                    ),
+                          synchronizeRecv: syncr.stream,
+                          currentIndex: idx,
+                          type: ReplaceAnimationType.vertical,
+                          child: (context, idx) {
+                            final post = source.forIdx(idx);
+                            if (post == null) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return CardDialogButtons(
+                              animation: animation,
+                              post: post,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   _TagsRow(
                     idx: idx,
@@ -1013,62 +1068,71 @@ class CardDialogButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 8,
-                    children: [
-                      if (DownloadManager.available &&
-                          LocalTagsService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) =>
-                              Opacity(opacity: animation.value, child: child),
-                          child: DownloadButton(
-                            post: post,
-                            secondVariant: true,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: clampDouble(
+          360 * (post.height / post.width),
+          240 * (post.height / post.width),
+          420 * (post.height / post.width),
+        ).clamp(0, 460),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 8,
+                      children: [
+                        if (DownloadManager.available &&
+                            LocalTagsService.available)
+                          AnimatedBuilder(
+                            animation: animation,
+                            builder: (context, child) =>
+                                Opacity(opacity: animation.value, child: child),
+                            child: DownloadButton(
+                              post: post,
+                              secondVariant: true,
+                            ),
                           ),
-                        ),
-                      if (FavoritePostSourceService.available &&
-                          post is! FavoritePost)
-                        FavoritePostButton(
-                          heroKey: (post.uniqueKey(), "favoritePost"),
-                          post: post,
-                          backgroundAlpha: 1,
-                        )
-                      else if (FavoritePostSourceService.available)
-                        AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) =>
-                              Opacity(opacity: animation.value, child: child),
-                          child: FavoritePostButton(
+                        if (FavoritePostSourceService.available &&
+                            post is! FavoritePost)
+                          FavoritePostButton(
+                            heroKey: (post.uniqueKey(), "favoritePost"),
                             post: post,
                             backgroundAlpha: 1,
+                          )
+                        else if (FavoritePostSourceService.available)
+                          AnimatedBuilder(
+                            animation: animation,
+                            builder: (context, child) =>
+                                Opacity(opacity: animation.value, child: child),
+                            child: FavoritePostButton(
+                              post: post,
+                              backgroundAlpha: 1,
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: AnimatedBuilder(
-                animation: animation,
-                builder: (context, child) =>
-                    Opacity(opacity: animation.value, child: child),
-                child: ShowPostInfoButton(post: post),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) =>
+                      Opacity(opacity: animation.value, child: child),
+                  child: ShowPostInfoButton(post: post),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

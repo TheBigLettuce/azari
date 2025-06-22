@@ -66,7 +66,7 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<BooruTag>> searchTag(
+  Future<List<TagData>> searchTag(
     String t, [
     BooruTagSorting sorting = BooruTagSorting.count,
     int limit = 30,

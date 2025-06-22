@@ -70,7 +70,7 @@ abstract class BooruAPI {
     required PageSaver pageSaver,
   });
 
-  Future<List<BooruTag>> searchTag(
+  Future<List<TagData>> searchTag(
     String tag, [
     BooruTagSorting sorting = BooruTagSorting.count,
     int limit = 30,
@@ -78,24 +78,21 @@ abstract class BooruAPI {
 
   /// Additional tag filters.
   static Map<String, void> get additionalSafetyTags => const {
-        "guro": null,
-        "loli": null,
-        "shota": null,
-        "bestiality": null,
-        "gore": null,
-        "ryona": null,
-        "scat": null,
-      };
+    "guro": null,
+    "loli": null,
+    "shota": null,
+    "bestiality": null,
+    "gore": null,
+    "ryona": null,
+    "scat": null,
+  };
 
   /// [fromSettings] returns a selected booru API from the DB.
   /// Some booru have no way to retreive posts down a certain post number,
   /// in such a case the implementation is likely to use paging,
   /// and should use provided [pageSaver] for this purpose.
   static BooruAPI fromSettings(SettingsService settingsService, Dio client) {
-    return BooruAPI.fromEnum(
-      settingsService.current.selectedBooru,
-      client,
-    );
+    return BooruAPI.fromEnum(settingsService.current.selectedBooru, client);
   }
 
   /// Constructs a default Dio client instance for [BooruAPI].
@@ -119,9 +116,9 @@ abstract interface class BooruComunnityAPI {
   Booru get booru;
 
   static BooruComunnityAPI fromEnum(Booru booru, Dio client) => switch (booru) {
-        Booru.gelbooru => GelbooruCommunity(booru: booru, client: client),
-        Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
-      };
+    Booru.gelbooru => GelbooruCommunity(booru: booru, client: client),
+    Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
+  };
 
   BooruCommentsAPI get comments;
   BooruPoolsAPI get pools;
@@ -186,16 +183,9 @@ abstract class BooruForumTopic {
   DateTime get updatedAt;
 }
 
-enum BooruForumTopicsOrder {
-  sticky,
-  postCount;
-}
+enum BooruForumTopicsOrder { sticky, postCount }
 
-enum BooruForumCategory {
-  general,
-  tags,
-  bugs;
-}
+enum BooruForumCategory { general, tags, bugs }
 
 enum BooruUserLevel {
   restricted,
@@ -205,7 +195,7 @@ enum BooruUserLevel {
   contributor,
   approver,
   moderator,
-  admin;
+  admin,
 }
 
 abstract interface class BooruArtistsAPI {
@@ -232,11 +222,7 @@ abstract class BooruArtist {
   DateTime get updatedAt;
 }
 
-enum BooruArtistsOrder {
-  name,
-  latest,
-  postCount;
-}
+enum BooruArtistsOrder { name, latest, postCount }
 
 abstract interface class BooruPoolsAPI {
   Future<List<BooruPool>> search({
@@ -265,17 +251,9 @@ abstract class BooruPool {
   DateTime get updatedAt;
 }
 
-enum BooruPoolsOrder {
-  name,
-  latest,
-  creationTime,
-  postCount;
-}
+enum BooruPoolsOrder { name, latest, creationTime, postCount }
 
-enum BooruPoolCategory {
-  series,
-  collection;
-}
+enum BooruPoolCategory { series, collection }
 
 abstract interface class BooruCommentsAPI {
   Future<List<BooruComments>> search({
@@ -292,10 +270,7 @@ abstract interface class BooruCommentsAPI {
   });
 }
 
-enum BooruCommentsOrder {
-  latest,
-  score;
-}
+enum BooruCommentsOrder { latest, score }
 
 abstract class BooruComments {
   bool get isSticky;
@@ -310,28 +285,11 @@ abstract class BooruComments {
   DateTime get updatedAt;
 }
 
-enum RandomPostsOrder {
-  random,
-  latest,
-  rating;
-}
+enum RandomPostsOrder { random, latest, rating }
 
-enum BooruTagSorting {
-  similarity,
-  count;
-}
+enum BooruTagSorting { similarity, count }
 
-enum BooruPostsOrder {
-  latest,
-  score;
-}
-
-class BooruTag {
-  const BooruTag(this.tag, this.count);
-
-  final String tag;
-  final int count;
-}
+enum BooruPostsOrder { latest, score }
 
 /// Paging helper for [BooruAPI] implementations.
 /// This class expects a some kind of persistence of it's implementors,
@@ -361,18 +319,18 @@ enum SafeMode {
   const SafeMode();
 
   bool inLevel(SafeMode to) => switch (this) {
-        SafeMode.normal => to == normal,
-        SafeMode.none => to == none || to == relaxed || to == normal,
-        SafeMode.relaxed => to == normal || to == relaxed,
-        SafeMode.explicit => to == explicit,
-      };
+    SafeMode.normal => to == normal,
+    SafeMode.none => to == none || to == relaxed || to == normal,
+    SafeMode.relaxed => to == normal || to == relaxed,
+    SafeMode.explicit => to == explicit,
+  };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        SafeMode.normal => l10n.enumSafeModeNormal,
-        SafeMode.none => l10n.enumSafeModeNone,
-        SafeMode.relaxed => l10n.enumSafeModeRelaxed,
-        SafeMode.explicit => l10n.enumSafeModeExplicit,
-      };
+    SafeMode.normal => l10n.enumSafeModeNormal,
+    SafeMode.none => l10n.enumSafeModeNone,
+    SafeMode.relaxed => l10n.enumSafeModeRelaxed,
+    SafeMode.explicit => l10n.enumSafeModeExplicit,
+  };
 }
 
 enum DisplayQuality {
@@ -382,7 +340,7 @@ enum DisplayQuality {
   const DisplayQuality();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        DisplayQuality.original => l10n.enumDisplayQualityOriginal,
-        DisplayQuality.sample => l10n.enumDisplayQualitySample,
-      };
+    DisplayQuality.original => l10n.enumDisplayQualityOriginal,
+    DisplayQuality.sample => l10n.enumDisplayQualitySample,
+  };
 }

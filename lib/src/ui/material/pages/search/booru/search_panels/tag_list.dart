@@ -102,14 +102,16 @@ class __TagListState extends State<_TagList> {
         else
           search.tags.isEmpty
               ? SliverPadding(
-                  padding: _ChipsPanelBody.listPadding +
+                  padding:
+                      _ChipsPanelBody.listPadding +
                       const EdgeInsets.only(left: 8),
                   sliver: SliverToBoxAdapter(
                     child: Text(
                       l10n.startInputingText,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ),
@@ -120,8 +122,9 @@ class __TagListState extends State<_TagList> {
                     final tag = search.tags[index];
 
                     return ListTile(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 18 + 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18 + 8,
+                      ),
                       leading: const Icon(Icons.tag_outlined),
                       title: Text(tag.tag),
                       onTap: () {
@@ -141,8 +144,9 @@ class __TagListState extends State<_TagList> {
                         );
 
                         widget.searchController.text = "$tagsString ";
-                        widget.filteringEvents
-                            .add(widget.searchController.text.trim());
+                        widget.filteringEvents.add(
+                          widget.searchController.text.trim(),
+                        );
                       },
                       trailing: Text(tag.count.toString()),
                     );
@@ -157,6 +161,6 @@ class _TagLoadingStatus {
   _TagLoadingStatus();
 
   Future<void>? f;
-  List<BooruTag> tags = const [];
+  List<TagData> tags = const [];
   String str = "";
 }

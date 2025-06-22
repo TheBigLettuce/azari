@@ -19,7 +19,7 @@ class _DirectoryNamesPanel extends StatefulWidget {
   final StreamController<String> filteringEvents;
   final TextEditingController searchController;
 
-  final Future<List<BooruTag>> Function(String str) directoryComplete;
+  final Future<List<TagData>> Function(String str) directoryComplete;
 
   @override
   State<_DirectoryNamesPanel> createState() => __DirectoryNamesPanelState();
@@ -27,7 +27,7 @@ class _DirectoryNamesPanel extends StatefulWidget {
 
 class __DirectoryNamesPanelState extends State<_DirectoryNamesPanel> {
   String filteringValue = "";
-  late final GenericListSource<BooruTag> source = GenericListSource(
+  late final GenericListSource<TagData> source = GenericListSource(
     () => Future.value(widget.directoryComplete(filteringValue)),
     watchCount: widget.api.source.backingStorage.watch,
   );

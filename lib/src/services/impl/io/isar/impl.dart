@@ -96,9 +96,13 @@ class IsarCurrentBooruSource extends GridPostSource
     required this.filters,
     required this.onNextCompleted,
     required this.onClearRefreshCompleted,
-  })  : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
-        updatesAvailable =
-            IsarUpdatesAvailableImpl(db, api, safeMode_, () => tags);
+  }) : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
+       updatesAvailable = IsarUpdatesAvailableImpl(
+         db,
+         api,
+         safeMode_,
+         () => tags,
+       );
 
   @override
   final void Function(GridPostSource)? onNextCompleted;
@@ -155,8 +159,9 @@ class IsarCurrentBooruSource extends GridPostSource
 
 class IsarUpdatesAvailableImpl implements UpdatesAvailable {
   IsarUpdatesAvailableImpl(this.db, this.api, this.safeMode_, this.tags_) {
-    _timeTicker =
-        Stream<void>.periodic(const Duration(minutes: 15)).listen((_) {
+    _timeTicker = Stream<void>.periodic(const Duration(minutes: 15)).listen((
+      _,
+    ) {
       tryRefreshIfNeeded(true);
     });
 
@@ -199,27 +204,31 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
     if (force || u.postCount == -1 || _isAfterNow(u.time)) {
       _events.add(const UpdatesAvailableStatus(false, true));
 
-      _future = api.totalPosts(tags_(), safeMode_()).then((count) {
-        if (db.isOpen) {
-          db.writeTxnSync(() {
-            db.isarUpdatesAvailables.putSync(
-              IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
-            );
-          });
-        }
+      _future = api
+          .totalPosts(tags_(), safeMode_())
+          .then((count) {
+            if (db.isOpen) {
+              db.writeTxnSync(() {
+                db.isarUpdatesAvailables.putSync(
+                  IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
+                );
+              });
+            }
 
-        return null;
-      }).onError((e, trace) {
-        Logger.root.warning("tryRefreshIfNeeded", e, trace);
-        return null;
-      }).whenComplete(() {
-        if (!_events.isClosed) {
-          _events.add(
-            UpdatesAvailableStatus(_current.postCount > u.postCount, false),
-          );
-        }
-        _future = null;
-      });
+            return null;
+          })
+          .onError((e, trace) {
+            Logger.root.warning("tryRefreshIfNeeded", e, trace);
+            return null;
+          })
+          .whenComplete(() {
+            if (!_events.isClosed) {
+              _events.add(
+                UpdatesAvailableStatus(_current.postCount > u.postCount, false),
+              );
+            }
+            _future = null;
+          });
 
       return true;
     } else {
@@ -239,8 +248,7 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
   @override
   StreamSubscription<UpdatesAvailableStatus> watch(
     void Function(UpdatesAvailableStatus) f,
-  ) =>
-      _events.stream.listen(f);
+  ) => _events.stream.listen(f);
 }
 
 class IsarCollectionIterator<T> implements Iterator<T> {
@@ -260,7 +268,8 @@ class IsarCollectionIterator<T> implements Iterator<T> {
     QueryBuilder<T, T, QWhere> q,
     int offset,
     int limit,
-  )? loader;
+  )?
+  loader;
 
   late final BufferedStorage<T> _storage;
 
@@ -271,14 +280,13 @@ class IsarCollectionIterator<T> implements Iterator<T> {
     QueryBuilder<T, T, QWhere> q,
     int offset,
     int limit,
-  ) =>
-      q.offset(offset).limit(limit);
+  ) => q.offset(offset).limit(limit);
 
   Iterable<T> _nextItems(int offset, int limit) => (loader ?? defaultLoader)(
-        collection.where(sort: reversed ? Sort.asc : Sort.desc),
-        offset,
-        limit,
-      ).findAllSync();
+    collection.where(sort: reversed ? Sort.asc : Sort.desc),
+    offset,
+    limit,
+  ).findAllSync();
 
   @override
   bool moveNext() => _storage.moveNext(_nextItems);
@@ -292,10 +300,7 @@ class IsarCollectionReverseIterable<V> extends Iterable<V> {
 }
 
 class _IsarPostsStorage extends SourceStorage<int, Post> {
-  _IsarPostsStorage(
-    this.db, {
-    required this.closeOnDestroy,
-  });
+  _IsarPostsStorage(this.db, {required this.closeOnDestroy});
 
   final Isar db;
   final bool closeOnDestroy;
@@ -304,8 +309,8 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
 
   @override
   Iterable<Post> get reversed => IsarCollectionReverseIterable(
-        IsarCollectionIterator<PostIsar>(_collection, reversed: true),
-      );
+    IsarCollectionIterator<PostIsar>(_collection, reversed: true),
+  );
 
   @override
   int get count => _collection.countSync();
@@ -316,10 +321,11 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
 
   @override
   void add(Post e, [bool silent = true]) => db.writeTxnSync(
-        () => _collection
-            .putByIdBooruSync(e is PostIsar ? e : PostIsar.copyTo([e])[0]),
-        silent: silent,
-      );
+    () => _collection.putByIdBooruSync(
+      e is PostIsar ? e : PostIsar.copyTo([e])[0],
+    ),
+    silent: silent,
+  );
 
   @override
   void addAll(Iterable<Post> l, [bool silent = false]) {
@@ -335,17 +341,12 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
       res = l is List<PostIsar> ? l : PostIsar.copyTo(l);
     }
 
-    db.writeTxnSync(
-      () => _collection.putAllByIdBooruSync(res),
-      silent: silent,
-    );
+    db.writeTxnSync(() => _collection.putAllByIdBooruSync(res), silent: silent);
   }
 
   @override
-  void clear([bool silent = false]) => db.writeTxnSync(
-        () => _collection.clearSync(),
-        silent: silent,
-      );
+  void clear([bool silent = false]) =>
+      db.writeTxnSync(() => _collection.clearSync(), silent: silent);
 
   @override
   Post? get(int idx) => _collection.getSync(idx + 1);
@@ -355,10 +356,7 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
     final k = idx.map((e) => e + 1).toList();
 
     final ret = _collection.getAllSync(k);
-    db.writeTxnSync(
-      () => _collection.deleteAllSync(k),
-      silent: silent,
-    );
+    db.writeTxnSync(() => _collection.deleteAllSync(k), silent: silent);
 
     return ret.map((e) => e != null).cast<Post>().toList();
   }
@@ -396,10 +394,10 @@ class IsarSourceStorage<K, V, CollectionType extends V>
 
   final Isar db;
   final void Function(IsarCollection<CollectionType> c, Iterable<V> values)
-      txPut;
+  txPut;
   final V? Function(IsarCollection<CollectionType> c, K key) txGet;
   final List<V> Function(IsarCollection<CollectionType> c, Iterable<K> keys)
-      txRemove;
+  txRemove;
 
   final IsarCollectionIterator<V> Function(SortingMode sort)? sortFnc;
 
@@ -408,8 +406,8 @@ class IsarSourceStorage<K, V, CollectionType extends V>
 
   @override
   Iterable<V> get reversed => IsarCollectionReverseIterable(
-        IsarCollectionIterator(_collection, reversed: true),
-      );
+    IsarCollectionIterator(_collection, reversed: true),
+  );
 
   @override
   int get count => _collection.countSync();
@@ -431,19 +429,15 @@ class IsarSourceStorage<K, V, CollectionType extends V>
       db.writeTxnSync(() => txPut(_collection, l), silent: silent);
 
   @override
-  void clear([bool silent = false]) => db.writeTxnSync(
-        () => _collection.clearSync(),
-        silent: silent,
-      );
+  void clear([bool silent = false]) =>
+      db.writeTxnSync(() => _collection.clearSync(), silent: silent);
 
   @override
   V? get(K idx) => txGet(_collection, idx);
 
   @override
-  List<V> removeAll(Iterable<K> idx, [bool silent = false]) => db.writeTxnSync(
-        () => txRemove(_collection, idx),
-        silent: silent,
-      );
+  List<V> removeAll(Iterable<K> idx, [bool silent = false]) =>
+      db.writeTxnSync(() => txRemove(_collection, idx), silent: silent);
 
   @override
   void destroy([bool delete = false]) => db.close(deleteFromDisk: delete);
@@ -477,16 +471,13 @@ class IsarVideoService implements VideoSettingsService {
 
   @override
   void add(VideoSettingsData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarVideoSettings),
-    );
+    db.writeTxnSync(() => collection.putSync(data as IsarVideoSettings));
   }
 
   @override
   StreamSubscription<VideoSettingsData> watch(
     void Function(VideoSettingsData p1) f,
-  ) =>
-      collection.watchLazy().map((_) => current).listen(f);
+  ) => collection.watchLazy().map((_) => current).listen(f);
 }
 
 // class IsarMiscSettingsService implements MiscSettingsService {
@@ -545,15 +536,13 @@ class IsarHiddenBooruPostService implements HiddenBooruPostsService {
       return;
     }
 
-    db.writeTxnSync(
-      () {
-        collection.putAllSync(booru.cast());
+    db.writeTxnSync(() {
+      collection.putAllSync(booru.cast());
 
-        for (final e in booru) {
-          cachedValues[(e.postId, e.booru)] = e.thumbUrl;
-        }
-      },
-    );
+      for (final e in booru) {
+        cachedValues[(e.postId, e.booru)] = e.thumbUrl;
+      }
+    });
   }
 
   @override
@@ -562,18 +551,16 @@ class IsarHiddenBooruPostService implements HiddenBooruPostsService {
       return;
     }
 
-    db.writeTxnSync(
-      () {
-        collection.deleteAllByPostIdBooruSync(
-          booru.map((e) => e.$1).toList(),
-          booru.map((e) => e.$2).toList(),
-        );
+    db.writeTxnSync(() {
+      collection.deleteAllByPostIdBooruSync(
+        booru.map((e) => e.$1).toList(),
+        booru.map((e) => e.$2).toList(),
+      );
 
-        for (final e in booru) {
-          cachedValues.remove(e);
-        }
-      },
-    );
+      for (final e in booru) {
+        cachedValues.remove(e);
+      }
+    });
   }
 
   @override
@@ -737,10 +724,7 @@ class _FavoritePostCache extends FavoritePostCache {
   bool isFavorite(int id, Booru booru) => _map.containsKey((id, booru));
 
   @override
-  StreamSubscription<int> watch(
-    void Function(int p1) f, [
-    bool fire = false,
-  ]) {
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) {
     if (fire) {
       _countEvents.add(count);
     }
@@ -829,16 +813,12 @@ class IsarDownloadFileService implements DownloadFileService {
 
   @override
   void saveAll(List<DownloadFileData> l) {
-    db.writeTxnSync(
-      () => collection.putAllSync(l.cast()),
-    );
+    db.writeTxnSync(() => collection.putAllSync(l.cast()));
   }
 
   @override
   void deleteAll(List<String> urls) {
-    db.writeTxnSync(
-      () => collection.deleteAllByUrlSync(urls),
-    );
+    db.writeTxnSync(() => collection.deleteAllByUrlSync(urls));
   }
 
   @override
@@ -897,20 +877,17 @@ class IsarStatisticsGeneralService implements StatisticsGeneralService {
 
   @override
   void add(StatisticsGeneralData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarStatisticsGeneral),
-    );
+    db.writeTxnSync(() => collection.putSync(data as IsarStatisticsGeneral));
   }
 
   @override
   StreamSubscription<StatisticsGeneralData> watch(
     void Function(StatisticsGeneralData d) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObjectLazy(0, fireImmediately: fire)
-          .map((e) => current)
-          .listen(f);
+  ]) => collection
+      .watchObjectLazy(0, fireImmediately: fire)
+      .map((e) => current)
+      .listen(f);
 }
 
 class IsarStatisticsGalleryService implements StatisticsGalleryService {
@@ -937,20 +914,17 @@ class IsarStatisticsGalleryService implements StatisticsGalleryService {
 
   @override
   void add(StatisticsGalleryData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarStatisticsGallery),
-    );
+    db.writeTxnSync(() => collection.putSync(data as IsarStatisticsGallery));
   }
 
   @override
   StreamSubscription<StatisticsGalleryData> watch(
     void Function(StatisticsGalleryData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObjectLazy(0, fireImmediately: fire)
-          .map((e) => current)
-          .listen(f);
+  ]) => collection
+      .watchObjectLazy(0, fireImmediately: fire)
+      .map((e) => current)
+      .listen(f);
 }
 
 class IsarStatisticsBooruService implements StatisticsBooruService {
@@ -972,20 +946,17 @@ class IsarStatisticsBooruService implements StatisticsBooruService {
 
   @override
   void add(StatisticsBooruData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarStatisticsBooru),
-    );
+    db.writeTxnSync(() => collection.putSync(data as IsarStatisticsBooru));
   }
 
   @override
   StreamSubscription<StatisticsBooruData> watch(
     void Function(StatisticsBooruData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObjectLazy(0, fireImmediately: fire)
-          .map((e) => current)
-          .listen(f);
+  ]) => collection
+      .watchObjectLazy(0, fireImmediately: fire)
+      .map((e) => current)
+      .listen(f);
 }
 
 class IsarDailyStatisticsService implements StatisticsDailyService {
@@ -1006,20 +977,17 @@ class IsarDailyStatisticsService implements StatisticsDailyService {
 
   @override
   void add(StatisticsDailyData data) {
-    db.writeTxnSync(
-      () => collection.putSync(data as IsarDailyStatistics),
-    );
+    db.writeTxnSync(() => collection.putSync(data as IsarDailyStatistics));
   }
 
   @override
   StreamSubscription<StatisticsDailyData> watch(
     void Function(StatisticsDailyData d) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObjectLazy(0, fireImmediately: fire)
-          .map((e) => current)
-          .listen(f);
+  ]) => collection
+      .watchObjectLazy(0, fireImmediately: fire)
+      .map((e) => current)
+      .listen(f);
 }
 
 class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
@@ -1030,8 +998,12 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
   IsarCollection<IsarDailyStatistics> get collection => db.isarDailyStatistics;
 
   @override
-  late final IsarSourceStorage<String, BlacklistedDirectoryData,
-      IsarBlacklistedDirectory> backingStorage = IsarSourceStorage(
+  late final IsarSourceStorage<
+    String,
+    BlacklistedDirectoryData,
+    IsarBlacklistedDirectory
+  >
+  backingStorage = IsarSourceStorage(
     db,
     txPut: (c, l) =>
         c.putAllByBucketIdSync(l.cast<IsarBlacklistedDirectory>().toList()),
@@ -1143,17 +1115,16 @@ class IsarDirectoryMetadataService implements DirectoryMetadataService {
       db.isarDirectoryMetadatas;
 
   @override
-  final IsarDirectoryMetadataCache cache =
-      IsarDirectoryMetadataCache((e) => e.categoryName);
+  final IsarDirectoryMetadataCache cache = IsarDirectoryMetadataCache(
+    (e) => e.categoryName,
+  );
 
   @override
   void addAll(List<DirectoryMetadata> data) {
-    db.writeTxnSync(
-      () {
-        collection.putAllByCategoryNameSync(data.cast());
-        cache.addAll(data);
-      },
-    );
+    db.writeTxnSync(() {
+      collection.putAllByCategoryNameSync(data.cast());
+      cache.addAll(data);
+    });
   }
 }
 
@@ -1236,22 +1207,17 @@ class IsarFilesGridSettingsData implements GridSettingsData<FilesData> {
 
   @override
   set current(ShellConfigurationData d) {
-    db.writeTxnSync(
-      () => collection.putSync(d as IsarGridSettingsFiles),
-    );
+    db.writeTxnSync(() => collection.putSync(d as IsarGridSettingsFiles));
   }
 
   @override
   StreamSubscription<ShellConfigurationData> watch(
     void Function(ShellConfigurationData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObject(0, fireImmediately: fire)
-          .map(
-            (event) => event ?? current,
-          )
-          .listen(f);
+  ]) => collection
+      .watchObject(0, fireImmediately: fire)
+      .map((event) => event ?? current)
+      .listen(f);
 }
 
 class IsarFavoritesGridSettingsData
@@ -1275,20 +1241,17 @@ class IsarFavoritesGridSettingsData
 
   @override
   set current(ShellConfigurationData d) {
-    db.writeTxnSync(
-      () => collection.putSync(d as IsarGridSettingsFavorites),
-    );
+    db.writeTxnSync(() => collection.putSync(d as IsarGridSettingsFavorites));
   }
 
   @override
   StreamSubscription<ShellConfigurationData> watch(
     void Function(ShellConfigurationData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObject(0, fireImmediately: fire)
-          .map((event) => event ?? current)
-          .listen(f);
+  ]) => collection
+      .watchObject(0, fireImmediately: fire)
+      .map((event) => event ?? current)
+      .listen(f);
 }
 
 class IsarDirectoriesGridSettingsData
@@ -1312,20 +1275,17 @@ class IsarDirectoriesGridSettingsData
 
   @override
   set current(ShellConfigurationData d) {
-    db.writeTxnSync(
-      () => collection.putSync(d as IsarGridSettingsDirectories),
-    );
+    db.writeTxnSync(() => collection.putSync(d as IsarGridSettingsDirectories));
   }
 
   @override
   StreamSubscription<ShellConfigurationData> watch(
     void Function(ShellConfigurationData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObject(0, fireImmediately: fire)
-          .map((event) => event ?? current)
-          .listen(f);
+  ]) => collection
+      .watchObject(0, fireImmediately: fire)
+      .map((event) => event ?? current)
+      .listen(f);
 }
 
 class IsarBooruGridSettingsData implements GridSettingsData<BooruData> {
@@ -1348,20 +1308,17 @@ class IsarBooruGridSettingsData implements GridSettingsData<BooruData> {
 
   @override
   set current(ShellConfigurationData d) {
-    db.writeTxnSync(
-      () => collection.putSync(d as IsarGridSettingsBooru),
-    );
+    db.writeTxnSync(() => collection.putSync(d as IsarGridSettingsBooru));
   }
 
   @override
   StreamSubscription<ShellConfigurationData> watch(
     void Function(ShellConfigurationData p1) f, [
     bool fire = false,
-  ]) =>
-      collection
-          .watchObject(0, fireImmediately: fire)
-          .map((event) => event ?? current)
-          .listen(f);
+  ]) => collection
+      .watchObject(0, fireImmediately: fire)
+      .map((event) => event ?? current)
+      .listen(f);
 }
 
 class IsarGridSettinsService implements GridSettingsService {
@@ -1392,21 +1349,35 @@ class IsarLocalTagsService implements LocalTagsService {
       db.isarLocalTagDictionarys;
 
   @override
-  List<BooruTag> mostFrequent(int count) => count.isNegative
+  List<TagData> mostFrequent(int count) => count.isNegative
       ? collectionDict
-          .where()
-          .sortByFrequencyDesc()
-          .limit(100)
-          .findAllSync()
-          .map((e) => BooruTag(e.tag, e.frequency))
-          .toList()
+            .where()
+            .sortByFrequencyDesc()
+            .limit(100)
+            .findAllSync()
+            .map(
+              (e) => TagData(
+                tag: e.tag,
+                count: e.frequency,
+                time: null,
+                type: TagType.normal,
+              ),
+            )
+            .toList()
       : collectionDict
-          .where()
-          .sortByFrequencyDesc()
-          .limit(count)
-          .findAllSync()
-          .map((e) => BooruTag(e.tag, e.frequency))
-          .toList();
+            .where()
+            .sortByFrequencyDesc()
+            .limit(count)
+            .findAllSync()
+            .map(
+              (e) => TagData(
+                tag: e.tag,
+                count: e.frequency,
+                time: null,
+                type: TagType.normal,
+              ),
+            )
+            .toList();
 
   @override
   void addFrequency(List<String> tags) {
@@ -1426,7 +1397,7 @@ class IsarLocalTagsService implements LocalTagsService {
   }
 
   @override
-  Future<List<BooruTag>> complete(String string) async {
+  Future<List<TagData>> complete(String string) async {
     final result = collectionDict
         .filter()
         .tagContains(string)
@@ -1434,7 +1405,16 @@ class IsarLocalTagsService implements LocalTagsService {
         .limit(10)
         .findAllSync();
 
-    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
+    return result
+        .map(
+          (e) => TagData(
+            tag: e.tag,
+            count: e.frequency,
+            type: TagType.normal,
+            time: null,
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -1448,21 +1428,17 @@ class IsarLocalTagsService implements LocalTagsService {
 
   @override
   void add(String filename, List<String> tags) {
-    db.writeTxnSync(
-      () {
-        collection.putByFilenameSync(
-          IsarLocalTags(filename: filename, tags: tags, isarId: null),
-        );
-      },
-    );
+    db.writeTxnSync(() {
+      collection.putByFilenameSync(
+        IsarLocalTags(filename: filename, tags: tags, isarId: null),
+      );
+    });
   }
 
   @override
   void addAll(List<LocalTagsData> tags) {
     db.writeTxnSync(() {
-      collection.putAllByFilenameSync(
-        tags.cast(),
-      );
+      collection.putAllByFilenameSync(tags.cast());
     });
   }
 
@@ -1488,20 +1464,16 @@ class IsarLocalTagsService implements LocalTagsService {
       return;
     }
 
-    return db.writeTxnSync(
-      () {
-        collection.putAllByFilenameSync(newTags);
-      },
-    );
+    return db.writeTxnSync(() {
+      collection.putAllByFilenameSync(newTags);
+    });
   }
 
   @override
   void delete(String filename) {
-    db.writeTxnSync(
-      () {
-        collection.deleteByFilenameSync(filename);
-      },
-    );
+    db.writeTxnSync(() {
+      collection.deleteByFilenameSync(filename);
+    });
   }
 
   @override
@@ -1524,24 +1496,21 @@ class IsarLocalTagsService implements LocalTagsService {
       );
     }
 
-    return db.writeTxnSync(
-      () {
-        collection.putAllByFilenameSync(newTags);
-      },
-    );
+    return db.writeTxnSync(() {
+      collection.putAllByFilenameSync(newTags);
+    });
   }
 
   @override
   StreamSubscription<LocalTagsData> watch(
     String filename,
     void Function(LocalTagsData) f,
-  ) =>
-      collection
-          .where()
-          .filenameEqualTo(filename)
-          .watch()
-          .map((e) => e.first)
-          .listen(f);
+  ) => collection
+      .where()
+      .filenameEqualTo(filename)
+      .watch()
+      .map((e) => e.first)
+      .listen(f);
 
   List<String> _addAndSort(List<String> tags, String addTag) {
     final l = tags.toList() + [addTag];
@@ -1599,9 +1568,7 @@ class IsarTagManager implements TagManagerService {
 }
 
 class IsarBooruTagging<T extends BooruTaggingType> implements BooruTagging<T> {
-  const IsarBooruTagging({
-    required this.mode,
-  });
+  const IsarBooruTagging({required this.mode});
 
   final TagType mode;
   Isar get tagDb => Dbs().localTags;
@@ -1628,28 +1595,45 @@ class IsarBooruTagging<T extends BooruTaggingType> implements BooruTagging<T> {
   }
 
   @override
-  List<TagData> complete(String string) => tagDb.isarTags
-      .filter()
-      .tagStartsWith(string)
-      .typeEqualTo(mode)
-      .sortByTimeDesc()
-      .limit(15)
-      .findAllSync();
+  Future<List<TagData>> complete(String string) => Future.value(
+    tagDb.isarTags
+        .filter()
+        .tagStartsWith(string)
+        .typeEqualTo(mode)
+        .sortByTimeDesc()
+        .limit(15)
+        .findAllSync(),
+  );
+
+  @override
+  Future<List<TagData>> search(String string, [int limit = 15]) => Future.value(
+    tagDb.isarTags
+        .filter()
+        .tagContains(string, caseSensitive: false)
+        .typeEqualTo(mode)
+        .sortByTimeDesc()
+        .limit(limit)
+        .findAllSync(),
+  );
 
   @override
   void add(String t) {
     tagDb.writeTxnSync(
       () => tagDb.isarTags.putByTagTypeSync(
-        IsarTag(time: DateTime.now(), tag: t.trim(), type: mode, isarId: null),
+        IsarTag(
+          time: DateTime.now(),
+          tag: t.trim(),
+          type: mode,
+          isarId: null,
+          count: 0,
+        ),
       ),
     );
   }
 
   @override
   void delete(String t) {
-    tagDb.writeTxnSync(
-      () => tagDb.isarTags.deleteByTagTypeSync(t, mode),
-    );
+    tagDb.writeTxnSync(() => tagDb.isarTags.deleteByTagTypeSync(t, mode));
   }
 
   @override
@@ -1660,9 +1644,9 @@ class IsarBooruTagging<T extends BooruTaggingType> implements BooruTagging<T> {
   }
 
   @override
-  Stream<int> get events => tagDb.isarTags
-      .watchLazy()
-      .map((_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync());
+  Stream<int> get events => tagDb.isarTags.watchLazy().map(
+    (_) => tagDb.isarTags.filter().typeEqualTo(mode).countSync(),
+  );
 
   @override
   int get count => tagDb.isarTags.filter().typeEqualTo(mode).countSync();
@@ -1757,9 +1741,7 @@ class IsarGridStateBooruService implements GridBookmarkService {
 
   @override
   void add(GridBookmark state) {
-    db.writeTxnSync(
-      () => collection.putByNameSync(state as IsarBookmark),
-    );
+    db.writeTxnSync(() => collection.putByNameSync(state as IsarBookmark));
   }
 
   @override
@@ -1794,11 +1776,7 @@ class IsarGridStateBooruService implements GridBookmarkService {
 
   @override
   void delete(String name) {
-    db.writeTxnSync(
-      () => collection.deleteByNameSync(
-        name,
-      ),
-    );
+    db.writeTxnSync(() => collection.deleteByNameSync(name));
   }
 
   @override
@@ -1824,11 +1802,7 @@ class IsarSecondaryGridService implements SecondaryGridHandle {
     final dbMain = Dbs().openPrimaryGrid(booru, DbPaths());
     final dbSecondary = Dbs().openSecondaryGridName(name, create, DbPaths());
 
-    return IsarSecondaryGridService._(
-      dbSecondary,
-      dbMain,
-      name,
-    );
+    return IsarSecondaryGridService._(dbSecondary, dbMain, name);
   }
 
   @override
@@ -1849,8 +1823,9 @@ class IsarSecondaryGridService implements SecondaryGridHandle {
 
   @override
   GridState get currentState {
-    GridState? state =
-        _mainGrid.isarGridStates.getByNameSync(_secondaryGrid.name);
+    GridState? state = _mainGrid.isarGridStates.getByNameSync(
+      _secondaryGrid.name,
+    );
     if (state == null) {
       state = IsarGridState(
         tags: "",
@@ -1888,32 +1863,30 @@ class IsarSecondaryGridService implements SecondaryGridHandle {
     String tags, {
     void Function(GridPostSource)? onNextCompleted,
     void Function(GridPostSource)? onClearRefreshCompleted,
-  }) =>
-      IsarCurrentBooruSource(
-        db: _secondaryGrid,
-        api: api,
-        entry: entry,
-        tags: tags,
-        onClearRefreshCompleted: onClearRefreshCompleted,
-        onNextCompleted: onNextCompleted,
-        safeMode_: () => currentState.safeMode,
-        filters: [
-          if (HiddenBooruPostsService.available)
-            (p) => !const HiddenBooruPostsService().isHidden(p.id, p.booru),
-        ],
-      );
+  }) => IsarCurrentBooruSource(
+    db: _secondaryGrid,
+    api: api,
+    entry: entry,
+    tags: tags,
+    onClearRefreshCompleted: onClearRefreshCompleted,
+    onNextCompleted: onNextCompleted,
+    safeMode_: () => currentState.safeMode,
+    filters: [
+      if (HiddenBooruPostsService.available)
+        (p) => !const HiddenBooruPostsService().isHidden(p.id, p.booru),
+    ],
+  );
 
   @override
   StreamSubscription<GridState> watch(
     void Function(GridState s) f, [
     bool fire = false,
-  ]) =>
-      _mainGrid.isarGridStates
-          .where()
-          .nameEqualTo(name)
-          .watchLazy(fireImmediately: fire)
-          .map((e) => currentState)
-          .listen(f);
+  ]) => _mainGrid.isarGridStates
+      .where()
+      .nameEqualTo(name)
+      .watchLazy(fireImmediately: fire)
+      .map((e) => currentState)
+      .listen(f);
 }
 
 class IsarMainGridService implements MainGridHandle {
@@ -1931,8 +1904,9 @@ class IsarMainGridService implements MainGridHandle {
       DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
-  set time(DateTime d) => _mainGrid
-      .writeTxnSync(() => _mainGrid.isarGridTimes.putSync(IsarGridTime(d)));
+  set time(DateTime d) => _mainGrid.writeTxnSync(
+    () => _mainGrid.isarGridTimes.putSync(IsarGridTime(d)),
+  );
 
   final Isar _mainGrid;
 
@@ -1979,20 +1953,19 @@ class IsarMainGridService implements MainGridHandle {
     PagingEntry entry, {
     void Function(GridPostSource)? onNextCompleted,
     void Function(GridPostSource)? onClearRefreshCompleted,
-  }) =>
-      IsarCurrentBooruSource(
-        db: _mainGrid,
-        api: api,
-        entry: entry,
-        tags: "",
-        safeMode_: () => const SettingsService().current.safeMode,
-        onClearRefreshCompleted: onClearRefreshCompleted,
-        onNextCompleted: onNextCompleted,
-        filters: [
-          if (HiddenBooruPostsService.available)
-            (p) => !const HiddenBooruPostsService().isHidden(p.id, p.booru),
-        ],
-      );
+  }) => IsarCurrentBooruSource(
+    db: _mainGrid,
+    api: api,
+    entry: entry,
+    tags: "",
+    safeMode_: () => const SettingsService().current.safeMode,
+    onClearRefreshCompleted: onClearRefreshCompleted,
+    onNextCompleted: onNextCompleted,
+    filters: [
+      if (HiddenBooruPostsService.available)
+        (p) => !const HiddenBooruPostsService().isHidden(p.id, p.booru),
+    ],
+  );
 }
 
 class IsarVisitedPostsService implements VisitedPostsService {
@@ -2026,8 +1999,10 @@ class IsarVisitedPostsService implements VisitedPostsService {
 
   @override
   void removeAll(List<VisitedPost> visitedPosts) {
-    final (ids, boorus) =
-        _foldTulpeListFnc(visitedPosts, (e) => (e.id, e.booru));
+    final (ids, boorus) = _foldTulpeListFnc(
+      visitedPosts,
+      (e) => (e.id, e.booru),
+    );
 
     db.writeTxnSync(() => collection.deleteAllByIdBooruSync(ids, boorus));
   }
@@ -2107,7 +2082,8 @@ class IsarColorsNamesService implements ColorsNamesService {
   IsarCollection<IsarColorsNamesData> get collection => db.isarColorsNamesDatas;
 
   @override
-  late IsarColorsNamesData current = collection.getSync(0) ??
+  late IsarColorsNamesData current =
+      collection.getSync(0) ??
       const IsarColorsNamesData(
         red: "",
         blue: "",

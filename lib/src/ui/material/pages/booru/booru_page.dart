@@ -915,7 +915,7 @@ Future<void> _loadHottestTags(BooruAPI api) async {
       random = math.Random(9538659403);
     }
 
-    final tags = (await api.searchTag("")).fold(<String, BooruTag>{}, (map, e) {
+    final tags = (await api.searchTag("")).fold(<String, TagData>{}, (map, e) {
       map[e.tag] = e;
 
       return map;
@@ -939,12 +939,8 @@ Future<void> _loadHottestTags(BooruAPI api) async {
             ? tags.values
                   .take(tags.length - localTags.length)
                   .followedBy(localTags)
-                  .followedBy(
-                    favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)),
-                  )
-            : tags.values.followedBy(
-                favoriteTags.take(5).map((e) => BooruTag(e.tag, 1)),
-              )) {
+                  .followedBy(favoriteTags.take(5))
+            : tags.values.followedBy(favoriteTags.take(5))) {
       final posts = await api.page(
         0,
         tag.tag,

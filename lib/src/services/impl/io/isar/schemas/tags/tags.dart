@@ -16,19 +16,21 @@ class IsarTag extends TagDataImpl implements $TagData {
     required this.tag,
     required this.type,
     required this.isarId,
+    required this.count,
   });
 
   const IsarTag.noId({
     required this.time,
     required this.tag,
     required this.type,
+    required this.count,
   }) : isarId = null;
 
   final Id? isarId;
 
   @override
   @Index()
-  final DateTime time;
+  final DateTime? time;
 
   @override
   @Index(unique: true, replace: true, composite: [CompositeIndex("type")])
@@ -39,10 +41,14 @@ class IsarTag extends TagDataImpl implements $TagData {
   final TagType type;
 
   @override
-  IsarTag copy({String? tag, TagType? type}) => IsarTag(
-        type: type ?? this.type,
-        tag: tag ?? this.tag,
-        time: DateTime.now(),
-        isarId: isarId,
-      );
+  final int count;
+
+  @override
+  IsarTag copy({String? tag, TagType? type, int? count}) => IsarTag(
+    type: type ?? this.type,
+    tag: tag ?? this.tag,
+    time: DateTime.now(),
+    count: count ?? this.count,
+    isarId: isarId,
+  );
 }
