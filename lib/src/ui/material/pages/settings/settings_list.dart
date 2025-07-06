@@ -164,15 +164,6 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
             ),
             subtitle: Text(settings.themeType.translatedString(l10n)),
           ),
-          // SwitchListTile(
-          //   tileColor: theme.colorScheme.surfaceContainerHigh,
-          //   value: _miscSettings.filesExtendedActions,
-          //   onChanged: (value) => MiscSettingsService.db()
-          //       .current
-          //       .copy(filesExtendedActions: value)
-          //       .save(),
-          //   title: Text(l10n.extendedFilesGridActions),
-          // ),
           FutureBuilder(
             future: thumbnailCount,
             builder: (context, data) {
@@ -258,19 +249,13 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
           subtitle: const Text("GPL-2.0-only"),
         ),
       ),
-      // ListTile(
-      //   title: Text(l10n.openWelcomePageSetting),
-      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      //   onTap: () => WelcomePage.open(
-      //     context,
-      //     popBackOnEnd: true,
-      //   ),
-      // ),
-      // ListTile(
-      //   title: Text(l10n.dashboardPage),
-      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      //   onTap: () => DashboardPage.open(context),
-      // ),
+      SwitchListTile(
+        title: const Text("Exception alerts"), // TODO: change
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        value: settings.exceptionAlerts,
+        onChanged: (_) =>
+            settings.copy(exceptionAlerts: !settings.exceptionAlerts).save(),
+      ),
     ];
 
     return SliverPadding(

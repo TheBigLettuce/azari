@@ -71,8 +71,9 @@ class AppApiDummy implements AppApi {
 void main() {
   late final IoServices services;
 
-  final dir =
-      io.Directory(io.Directory.systemTemp.path).createTempSync("azariDbTests");
+  final dir = io.Directory(
+    io.Directory.systemTemp.path,
+  ).createTempSync("azariDbTests");
 
   final tempDir = io.Directory(path.join(dir.path, "temp"))..createSync();
 
@@ -158,7 +159,9 @@ void _settingsServiceTests(IoServices services) {
 
       comparePathsAndEmpty(s.path, newPath, newPathDisplay);
 
-      final sCopy = s.copy(path: s.path.copy(path: "", pathDisplay: ""));
+      final sCopy = s.copy(
+        path: s.path.copy(path: "", pathDisplay: ""),
+      );
 
       comparePathsAndEmpty(sCopy.path, "", "");
 
@@ -245,15 +248,15 @@ void _settingsServiceTests(IoServices services) {
     {
       final s = services.settings.current;
 
-      expect(s.showWelcomePage, equals(true));
+      expect(s.exceptionAlerts, equals(true));
 
-      final sCopy = s.copy(showWelcomePage: false);
+      final sCopy = s.copy(exceptionAlerts: false);
 
-      expect(sCopy.showWelcomePage, equals(false));
+      expect(sCopy.exceptionAlerts, equals(false));
 
       sCopy.save();
 
-      expect(services.settings.current.showWelcomePage, equals(false));
+      expect(services.settings.current.exceptionAlerts, equals(false));
     }
   });
 }

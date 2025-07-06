@@ -51,6 +51,7 @@ import okio.use
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.name
+import androidx.core.net.toUri
 
 class AppContextChannel(
     val engine: FlutterEngine,
@@ -102,7 +103,7 @@ class AppContextChannel(
                         thumbnailer.add(
                             MoveOp(
                                 source,
-                                Uri.parse(rootUri),
+                                rootUri.toUri(),
                                 dir,
                                 ::notifyGallery
                             ),
@@ -141,6 +142,7 @@ class AppContextChannel(
                         call.argument<List<Long>>("ids")!!,
                         call.argument<Boolean>("fromPinned")!!
                     )
+                    result.success(Unit)
                 }
 
                 "preloadImage" -> {
@@ -149,6 +151,7 @@ class AppContextChannel(
 
                 "clearCachedThumbs" -> {
                     thumbnailer.clearCachedThumbs(call.arguments as Boolean)
+                    result.success(Unit)
                 }
 
                 "thumbCacheSize" -> {
@@ -697,13 +700,15 @@ class ActivityContextChannel(
                     if (!MediaStore.canManageMedia(context)) {
                         val intent =
                             Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
-                        intent.data = Uri.parse("package:${context.packageName}")
+                        intent.data = "package:${context.packageName}".toUri()
 
                         manageMediaCallback = {
                             result.success(it)
                         }
 
                         manageMedia.launch(context.packageName)
+                    } else {
+                        result.success(true)
                     }
                 }
             } catch (e: Exception) {

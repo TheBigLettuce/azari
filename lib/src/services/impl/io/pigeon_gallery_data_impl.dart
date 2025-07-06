@@ -9,6 +9,7 @@ import "dart:io";
 import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
@@ -293,30 +294,34 @@ class __ImageViewBodyPlatformViewState
       child: SizedBox(
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
-        child: PlatformViewLink(
-          viewType: "gallery",
-          surfaceFactory: (context, controller) {
-            return AndroidViewSurface(
-              controller: controller as AndroidViewController,
-              hitTestBehavior: PlatformViewHitTestBehavior.translucent,
-              gestureRecognizers: {
-                Factory<OneSequenceGestureRecognizer>(
-                  () => EagerGestureRecognizer(),
-                ),
-              },
-            );
-          },
-          onCreatePlatformView: (params) {
-            return PlatformViewsService.initExpensiveAndroidView(
-                id: params.id,
-                viewType: params.viewType,
-                creationParams: {"id": widget.startingCell},
-                creationParamsCodec: const StandardMessageCodec(),
-                layoutDirection: TextDirection.ltr,
-              )
-              ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-              ..create();
-          },
+        child: GestureDeadZones(
+          left: true,
+          right: true,
+          child: PlatformViewLink(
+            viewType: "gallery",
+            surfaceFactory: (context, controller) {
+              return AndroidViewSurface(
+                controller: controller as AndroidViewController,
+                hitTestBehavior: PlatformViewHitTestBehavior.translucent,
+                gestureRecognizers: {
+                  Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer(),
+                  ),
+                },
+              );
+            },
+            onCreatePlatformView: (params) {
+              return PlatformViewsService.initExpensiveAndroidView(
+                  id: params.id,
+                  viewType: params.viewType,
+                  creationParams: {"id": widget.startingCell},
+                  creationParamsCodec: const StandardMessageCodec(),
+                  layoutDirection: TextDirection.ltr,
+                )
+                ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+                ..create();
+            },
+          ),
         ),
       ),
     );

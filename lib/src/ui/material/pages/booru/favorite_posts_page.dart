@@ -16,10 +16,12 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/actions.dart"
     as booru_actions;
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
+import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
@@ -393,11 +395,23 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     Scaffold.of(context).openDrawer();
   }
 
+  void _openPressedDialog() {
+    context.openSafeModeDialog(
+      (e) => BooruRestoredPage.open(
+        context,
+        booru: api.booru,
+        tags: searchTextController.text.trim(),
+        overrideSafeMode: e,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n();
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
     final gridSettings = GridSettingsData<FavoritePostsData>();
+
+    final l10n = context.l10n();
 
     return GridPopScope(
       searchTextController: searchTextController,
@@ -406,60 +420,20 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       child: ShellScope(
         stackInjector: status,
         configWatcher: gridSettings.watch,
-        appBar: RawAppBarType((context, gridSettingsButton, _) {
-          final theme = Theme.of(context);
-
-          return SliverAppBar(
-            backgroundColor: theme.colorScheme.surface,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            pinned: true,
-            centerTitle: true,
-            actionsPadding: EdgeInsets.zero,
-            titleSpacing: 0,
-            title: SearchBarAutocompleteWrapper2(
-              complete: const TagManagerService().pinned.search,
-              textEditingController: searchTextController,
-              focusNode: searchFocus,
-              child: SearchBar(
-                controller: searchTextController,
-                focusNode: searchFocus,
-                onTapOutside: (event) {
-                  if (searchFocus.hasFocus) {
-                    searchFocus.unfocus();
-                  }
-                },
-                elevation: const WidgetStatePropertyAll(0),
-                hintText: l10n.favoritesLabel,
-                backgroundColor: WidgetStatePropertyAll(
-                  theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 360,
-                  maxWidth: 460,
-                  minHeight: 34,
-                  maxHeight: 34,
-                ),
-                trailing: [
-                  ChainedFilterIcon(
-                    filter: filter,
-                    controller: searchTextController,
-                    complete: api.searchTag,
-                    focusNode: searchFocus,
-                    iconSize: 20,
-                  ),
-                  _ClearTextButton(textEditingController: searchTextController),
-                ],
-              ),
-            ),
-            leading: IconButton(
+        appBar: RawAppBarType(
+          (context, gridSettingsButton, _) => FavoritePostsSearchSliver(
+            textEditingController: searchTextController,
+            searchFocus: searchFocus,
+            filter: filter,
+            hint: l10n.favoritesLabel,
+            onSearchTag: _openPressedDialog,
+            leadingButton: IconButton(
               onPressed: _openDrawer,
               icon: const Icon(Icons.menu_rounded),
             ),
-            actions: [?gridSettingsButton],
-            automaticallyImplyLeading: false,
-          );
-        }),
+            gridSettingsButton: gridSettingsButton,
+          ),
+        ),
         settingsButton: ShellSettingsButton.fromWatchable(
           gridSettings,
           header: SafeModeSegment(state: safeModeState),
@@ -506,18 +480,147 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   }
 }
 
-class _ClearTextButton extends StatefulWidget {
-  const _ClearTextButton({super.key, required this.textEditingController});
+class FavoritePostsSearchSliver extends StatelessWidget {
+  const FavoritePostsSearchSliver({
+    super.key,
+    required this.textEditingController,
+    required this.searchFocus,
+    required this.filter,
+    required this.leadingButton,
+    required this.onSearchTag,
+    this.trailing = const [],
+    this.complete = _pinnedTagsComplete,
+    this.gridSettingsButton,
+    required this.hint,
+  });
+
+  final ChainedFilterResourceSource<dynamic, dynamic> filter;
+
+  final String hint;
+
+  final VoidCallback onSearchTag;
+  final TextEditingController textEditingController;
+  final FocusNode searchFocus;
+  final CompleteTagFunc? complete;
+
+  final List<Widget> trailing;
+  final Widget? gridSettingsButton;
+  final Widget? leadingButton;
+
+  static Future<List<TagData>> _pinnedTagsComplete(String str) =>
+      const TagManagerService().pinned.search(str);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // final l10n = context.l10n();
+
+    return SliverAppBar(
+      backgroundColor: theme.colorScheme.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      pinned: true,
+      centerTitle: true,
+      actionsPadding: EdgeInsets.zero,
+      titleSpacing: 0,
+      title: IconButtonTheme(
+        data: const IconButtonThemeData(
+          style: ButtonStyle(visualDensity: VisualDensity.compact),
+        ),
+        child: SearchBarAutocompleteWrapper2(
+          complete: complete,
+          textEditingController: textEditingController,
+          focusNode: searchFocus,
+          child: SearchBar(
+            controller: textEditingController,
+            focusNode: searchFocus,
+            onTapOutside: (event) {
+              if (searchFocus.hasFocus) {
+                searchFocus.unfocus();
+              }
+            },
+            elevation: const WidgetStatePropertyAll(0),
+            hintText: hint,
+            backgroundColor: WidgetStatePropertyAll(
+              theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
+            ),
+            constraints: const BoxConstraints(
+              minWidth: 360,
+              maxWidth: 460,
+              minHeight: 34,
+              maxHeight: 34,
+            ),
+            leading: _SearchButton(
+              textEditingController: textEditingController,
+              onPressed: onSearchTag,
+            ),
+            trailing: [
+              ...trailing,
+              ChainedFilterIcon(
+                filter: filter,
+                controller: textEditingController,
+                focusNode: searchFocus,
+                iconSize: 20,
+              ),
+              _ClearTextButton(textEditingController: textEditingController),
+            ],
+          ),
+        ),
+      ),
+      leading: leadingButton,
+      actions: [?gridSettingsButton],
+      automaticallyImplyLeading: false,
+    );
+  }
+}
+
+class _SearchButton extends StatefulWidget {
+  const _SearchButton({
+    super.key,
+    required this.textEditingController,
+    required this.onPressed,
+  });
 
   final TextEditingController textEditingController;
 
+  final VoidCallback onPressed;
+
   @override
-  State<_ClearTextButton> createState() => __ClearTextButtonState();
+  State<_SearchButton> createState() => __SearchButtonState();
 }
 
-class __ClearTextButtonState extends State<_ClearTextButton>
-    with SingleTickerProviderStateMixin {
+class __SearchButtonState extends State<_SearchButton>
+    with SingleTickerProviderStateMixin, _SlidingAnimationSingle {
+  @override
+  TextEditingController get textEditingController =>
+      widget.textEditingController;
+
+  @override
+  bool get animateForward => true;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return buildAnimation(
+      context,
+      IconButton(
+        iconSize: 20,
+        onPressed: widget.onPressed,
+        color: theme.colorScheme.primary,
+        icon: const Icon(Icons.search_rounded),
+      ),
+    );
+  }
+}
+
+mixin _SlidingAnimationSingle<W extends StatefulWidget> on State<W>
+    implements SingleTickerProviderStateMixin<W> {
   late final AnimationController controller;
+
+  TextEditingController get textEditingController;
+
+  bool get animateForward => false;
 
   @override
   void initState() {
@@ -530,43 +633,72 @@ class __ClearTextButtonState extends State<_ClearTextButton>
       value: 1,
     );
 
-    widget.textEditingController.addListener(_listener);
+    textEditingController.addListener(_listener);
   }
 
   @override
   void dispose() {
     controller.dispose();
-    widget.textEditingController.removeListener(_listener);
+    textEditingController.removeListener(_listener);
 
     super.dispose();
   }
 
   void _listener() {
-    if (widget.textEditingController.text.trim().isEmpty) {
+    if (textEditingController.text.trim().isEmpty) {
       controller.forward();
     } else {
       controller.reverse();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller.view,
-      builder: (context, child) => AnimatedSize(
-        duration: Durations.medium2,
-        curve: Easing.emphasizedDecelerate,
-        child: SlideTransition(
-          position: AlwaysStoppedAnimation(
-            Offset(Easing.emphasizedAccelerate.transform(controller.value), 0),
-          ),
-          child: Opacity(
-            opacity: 1 - controller.value,
-            child: controller.value == 1 ? const SizedBox.shrink() : child,
-          ),
+  Widget buildAnimation(BuildContext context, Widget child) => AnimatedBuilder(
+    animation: controller.view,
+    builder: (context, child) => AnimatedSize(
+      duration: Durations.medium2,
+      curve: Easing.emphasizedDecelerate,
+      child: SlideTransition(
+        position: AlwaysStoppedAnimation(
+          animateForward
+              ? Offset(
+                  -Easing.emphasizedAccelerate.transform(controller.value),
+                  0,
+                )
+              : Offset(
+                  Easing.emphasizedAccelerate.transform(controller.value),
+                  0,
+                ),
+        ),
+        child: Opacity(
+          opacity: 1 - controller.value,
+          child: controller.value == 1 ? const SizedBox.shrink() : child,
         ),
       ),
-      child: IconButton(
+    ),
+    child: child,
+  );
+}
+
+class _ClearTextButton extends StatefulWidget {
+  const _ClearTextButton({super.key, required this.textEditingController});
+
+  final TextEditingController textEditingController;
+
+  @override
+  State<_ClearTextButton> createState() => __ClearTextButtonState();
+}
+
+class __ClearTextButtonState extends State<_ClearTextButton>
+    with SingleTickerProviderStateMixin, _SlidingAnimationSingle {
+  @override
+  TextEditingController get textEditingController =>
+      widget.textEditingController;
+
+  @override
+  Widget build(BuildContext context) {
+    return buildAnimation(
+      context,
+      IconButton(
         iconSize: 20,
         onPressed: widget.textEditingController.clear,
         icon: const Icon(Icons.close_rounded),

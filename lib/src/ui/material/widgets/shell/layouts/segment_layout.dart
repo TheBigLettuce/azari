@@ -619,7 +619,7 @@ class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
           final (cell, blur) = items[idx];
 
           return ThisIndex(
-            idx: idx,
+            idx: -1,
             selectFrom: null,
             child: cell.value.buildCell(
               l10n,
@@ -682,8 +682,6 @@ class _SegRowHIdx<T extends CellBuilder> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final toBlur = val.modifiers.contains(SegmentModifier.blur);
-
     return SegmentCard(
       selection: selection,
       columns: config.columns,

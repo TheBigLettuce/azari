@@ -12,7 +12,7 @@ const int _sticky = 0x0001;
 const int _blur = 0x0002;
 const int _requireAuth = 0x0004;
 
-@collection
+@Collection(ignore: {"requireAuth", "sticky", "blur"})
 class IsarDirectoryMetadata implements $DirectoryMetadata {
   const IsarDirectoryMetadata({
     required this.isarId,
@@ -24,8 +24,8 @@ class IsarDirectoryMetadata implements $DirectoryMetadata {
   const IsarDirectoryMetadata.noIdFlags({
     required this.categoryName,
     required this.time,
-  })  : isarId = null,
-        flags = 0;
+  }) : isarId = null,
+       flags = 0;
 
   static int makeFlags({
     required bool requireAuth,
@@ -50,15 +50,12 @@ class IsarDirectoryMetadata implements $DirectoryMetadata {
   }
 
   @override
-  @ignore
   bool get requireAuth => (flags & _requireAuth) == _requireAuth;
 
   @override
-  @ignore
   bool get sticky => (flags & _sticky) == _sticky;
 
   @override
-  @ignore
   bool get blur => (flags & _blur) == _blur;
 
   final Id? isarId;
@@ -80,13 +77,15 @@ class IsarDirectoryMetadata implements $DirectoryMetadata {
     bool? sticky,
     bool? requireAuth,
   }) {
-    final blurValue =
-        (blur != null && blur) || (blur == null && this.blur) ? _blur : 0;
+    final blurValue = (blur != null && blur) || (blur == null && this.blur)
+        ? _blur
+        : 0;
     final stickyValue =
         (sticky != null && sticky) || (sticky == null && this.sticky)
-            ? _sticky
-            : 0;
-    final requireValue = (requireAuth != null && requireAuth) ||
+        ? _sticky
+        : 0;
+    final requireValue =
+        (requireAuth != null && requireAuth) ||
             (requireAuth == null && this.requireAuth)
         ? _requireAuth
         : 0;

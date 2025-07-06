@@ -52,6 +52,6 @@ typedef PercentageCallback = void Function(double c);
 typedef DestinationCallback =
     void Function(BuildContext context, CurrentRoute route);
 
-typedef CompleteBooruTagFunc = Future<List<TagData>> Function(String str);
+typedef CompleteTagFunc = Future<List<TagData>> Function(String str);
 
 typedef StringCallback = void Function(String str);

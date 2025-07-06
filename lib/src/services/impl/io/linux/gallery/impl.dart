@@ -55,8 +55,10 @@ class _Directories implements Directories {
   @override
   late final TrashCell? trashCell = trash != null ? TrashCell(trash!) : null;
 
-  @override
   Files? bindFiles;
+
+  @override
+  bool get isHostingFiles => bindFiles != null;
 
   @override
   Files files(
@@ -186,8 +188,9 @@ class _Files implements Files {
   final String bucketId;
 
   @override
-  late final SortingResourceSource<int, File> source =
-      _LinuxFilesSource(directories);
+  late final SortingResourceSource<int, File> source = _LinuxFilesSource(
+    directories,
+  );
 
   @override
   MapFilesSourceTags sourceTags = MapFilesSourceTags();

@@ -208,6 +208,9 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                       alpha: 0.95,
                     ),
                   ),
+                  backgroundColor: theme.colorScheme.surface,
+                  scrolledUnderElevation: 0,
+                  pinned: true,
                   bottom:
                       bottomWidget ??
                       const PreferredSize(
@@ -240,7 +243,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
               scrollingState: ScrollingStateSinkProvider.maybeOf(context),
               scrollUpOn: navBarEvents == null
                   ? const []
-                  : [(navBarEvents, () => api.bindFiles == null)],
+                  : [(navBarEvents, () => !api.isHostingFiles)],
               registerNotifiers: (child) => DirectoriesDataNotifier(
                 api: api,
                 callback: widget.callback,

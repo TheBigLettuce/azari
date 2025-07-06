@@ -8,8 +8,10 @@ part of "android_gallery.dart";
 class _AndroidGallery implements Directories {
   _AndroidGallery() {
     _eventsNotify = const GalleryApi().events.notify?.listen((target) {
-      if (target == null || target == bindFiles?.target) {
-        bindFiles?.source.clearRefresh();
+      for (final bindFiles in _activeFiles) {
+        if (target == null || target == bindFiles.target) {
+          bindFiles.source.clearRefresh();
+        }
       }
 
       source.clearRefresh();
@@ -24,8 +26,10 @@ class _AndroidGallery implements Directories {
 
   bool isThumbsLoading = false;
 
+  List<_AndroidGalleryFiles> _activeFiles = [];
+
   @override
-  _AndroidGalleryFiles? bindFiles;
+  bool get isHostingFiles => _activeFiles.isNotEmpty;
 
   @override
   TrashCell? get trashCell => source.trashCell;
@@ -40,7 +44,10 @@ class _AndroidGallery implements Directories {
     _eventsNotify?.cancel();
     source.destroy();
     trashCell?.dispose();
-    bindFiles = null;
+    for (final e in _activeFiles) {
+      e.close();
+    }
+    _activeFiles.clear();
   }
 
   @override
@@ -50,18 +57,9 @@ class _AndroidGallery implements Directories {
     required String bucketId,
     required String name,
   }) {
-    if (bindFiles != null) {
-      throw "already hosting files";
-    }
-
     final sourceTags = MapFilesSourceTags();
-
-    return bindFiles = _AndroidGalleryFiles(
-      source: _AndroidFileSourceJoined(
-        [directory],
-        type,
-        sourceTags,
-      ),
+    final files = _AndroidGalleryFiles(
+      source: _AndroidFileSourceJoined([directory], type, sourceTags),
       sourceTags: sourceTags,
       directories: [directory],
       target: name,
@@ -69,17 +67,15 @@ class _AndroidGallery implements Directories {
       parent: this,
       bucketId: bucketId,
     );
+    _activeFiles.add(files);
+
+    return files;
   }
 
   @override
   Files joinedFiles(List<Directory> directories) {
-    if (bindFiles != null) {
-      throw "already hosting files";
-    }
-
     final sourceTags = MapFilesSourceTags();
-
-    return bindFiles = _JoinedDirectories(
+    final files = _JoinedDirectories(
       source: _AndroidFileSourceJoined(
         directories,
         GalleryFilesPageType.normal,
@@ -89,6 +85,9 @@ class _AndroidGallery implements Directories {
       directories: directories,
       parent: this,
     );
+    _activeFiles.add(files);
+
+    return files;
   }
 }
 
@@ -126,8 +125,10 @@ class _AndroidSource implements ResourceSource<int, Directory> {
           break;
         }
 
-        final blacklisted = BlacklistedDirectoryService.safe()
-                ?.getAll(e.keys.map((e) => e).toList()) ??
+        final blacklisted =
+            BlacklistedDirectoryService.safe()?.getAll(
+              e.keys.map((e) => e).toList(),
+            ) ??
             const [];
         for (final b in blacklisted) {
           e.remove(b.bucketId);

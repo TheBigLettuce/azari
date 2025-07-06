@@ -491,6 +491,7 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
           },
           child: Stack(
             alignment: Alignment.bottomCenter,
+            fit: StackFit.passthrough,
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -620,36 +621,36 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.secondary.withValues(
-                                  alpha: 0.9,
-                                ),
-                                letterSpacing: -0.4,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.secondary.withValues(
+                                alpha: 0.9,
                               ),
+                              letterSpacing: -0.4,
                             ),
-                            Text(
-                              widget.subtitle,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withValues(
-                                  alpha: 0.8,
-                                ),
-                                letterSpacing: 0.8,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            widget.subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.8,
                               ),
+                              letterSpacing: 0.8,
                             ),
-                          ],
-                        ),
-                      ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

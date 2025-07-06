@@ -14,13 +14,11 @@ const int _safeFilters = 0x0001;
 const int _sampleThumbnails = 0x0002;
 const int _welcomePage = 0x0004;
 const int _filesExtendedActions = 0x0008;
+const int _exceptionAlerts = 0x0010;
 
 @embedded
 class IsarSettingsPath implements SettingsPath {
-  const IsarSettingsPath({
-    this.path = "",
-    this.pathDisplay = "",
-  });
+  const IsarSettingsPath({this.path = "", this.pathDisplay = ""});
 
   @override
   final String path;
@@ -29,12 +27,19 @@ class IsarSettingsPath implements SettingsPath {
 
   @override
   SettingsPath copy({String? path, String? pathDisplay}) => IsarSettingsPath(
-        path: path ?? this.path,
-        pathDisplay: pathDisplay ?? this.pathDisplay,
-      );
+    path: path ?? this.path,
+    pathDisplay: pathDisplay ?? this.pathDisplay,
+  );
 }
 
-@collection
+@Collection(
+  ignore: {
+    "extraSafeFilters",
+    "sampleThumbnails",
+    "exceptionAlerts",
+    "filesExtendedActions",
+  },
+)
 class IsarSettings extends SettingsData {
   const IsarSettings({
     required this.flags,
@@ -48,31 +53,27 @@ class IsarSettings extends SettingsData {
   });
 
   const IsarSettings.empty()
-      : flags = _safeFilters | _welcomePage,
-        path = const IsarSettingsPath(),
-        selectedBooru = Booru.gelbooru,
-        quality = DisplayQuality.sample,
-        safeMode = SafeMode.normal,
-        randomVideosAddTags = "",
-        randomVideosOrder = RandomPostsOrder.latest,
-        themeType = ThemeType.systemAccent;
+    : flags = _safeFilters | _welcomePage,
+      path = const IsarSettingsPath(),
+      selectedBooru = Booru.gelbooru,
+      quality = DisplayQuality.sample,
+      safeMode = SafeMode.normal,
+      randomVideosAddTags = "",
+      randomVideosOrder = RandomPostsOrder.latest,
+      themeType = ThemeType.systemAccent;
 
   Id get id => 0;
 
   @override
-  @ignore
   bool get extraSafeFilters => (flags & _safeFilters) == _safeFilters;
 
   @override
-  @ignore
   bool get sampleThumbnails => (flags & _sampleThumbnails) == _sampleThumbnails;
 
   @override
-  @ignore
-  bool get showWelcomePage => (flags & _welcomePage) == _welcomePage;
+  bool get exceptionAlerts => (flags & _exceptionAlerts) == _exceptionAlerts;
 
   @override
-  @ignore
   bool get filesExtendedActions =>
       (flags & _filesExtendedActions) == _filesExtendedActions;
 
@@ -111,33 +112,37 @@ class IsarSettings extends SettingsData {
     Booru? selectedBooru,
     DisplayQuality? quality,
     SafeMode? safeMode,
-    bool? showWelcomePage,
+    bool? exceptionAlerts,
     bool? sampleThumbnails,
     bool? filesExtendedActions,
     ThemeType? themeType,
     String? randomVideosAddTags,
     RandomPostsOrder? randomVideosOrder,
   }) {
-    final safeFiltersValue = (extraSafeFilters != null && extraSafeFilters) ||
+    final safeFiltersValue =
+        (extraSafeFilters != null && extraSafeFilters) ||
             (extraSafeFilters == null && this.extraSafeFilters)
         ? _safeFilters
         : 0;
-    final welcomePageValue = (showWelcomePage != null && showWelcomePage) ||
-            (showWelcomePage == null && this.showWelcomePage)
-        ? _welcomePage
+    final welcomePageValue =
+        (exceptionAlerts != null && exceptionAlerts) ||
+            (exceptionAlerts == null && this.exceptionAlerts)
+        ? _exceptionAlerts
         : 0;
-    final sampleValue = (sampleThumbnails != null && sampleThumbnails) ||
+    final sampleValue =
+        (sampleThumbnails != null && sampleThumbnails) ||
             (sampleThumbnails == null && this.sampleThumbnails)
         ? _sampleThumbnails
         : 0;
     final filesExtendedActionsValue =
         (filesExtendedActions != null && filesExtendedActions) ||
-                (filesExtendedActions == null && this.filesExtendedActions)
-            ? _filesExtendedActions
-            : 0;
+            (filesExtendedActions == null && this.filesExtendedActions)
+        ? _filesExtendedActions
+        : 0;
 
     return IsarSettings(
-      flags: safeFiltersValue |
+      flags:
+          safeFiltersValue |
           welcomePageValue |
           sampleValue |
           filesExtendedActionsValue,

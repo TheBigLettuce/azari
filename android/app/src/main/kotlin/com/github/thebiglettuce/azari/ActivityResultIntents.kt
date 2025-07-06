@@ -46,12 +46,8 @@ class ActivityResultIntents(
     val manageMedia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         context.registerForActivityResult(ManageMedia()) { data ->
             val engineBindings = getActivityContextChannel()
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
-            } else {
-                engineBindings.manageMediaCallback!!(false);
-            }
+            
+            engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
             engineBindings.manageMediaCallback = null
             engineBindings.manageMediaMux.unlock()
         }

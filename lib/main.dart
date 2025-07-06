@@ -24,6 +24,7 @@ import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 
@@ -38,7 +39,9 @@ void main() async {
       runApp(const AppAdaptive());
     },
     (error, stackTrace) {
-      AlertService.safe()?.add(_ExcMessage(error, stackTrace));
+      if (kDebugMode || const SettingsService().current.exceptionAlerts) {
+        AlertService.safe()?.add(_ExcMessage(error, stackTrace));
+      }
     },
   );
 }

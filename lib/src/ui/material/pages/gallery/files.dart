@@ -22,6 +22,7 @@ import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
+import "package:azari/src/ui/material/pages/booru/favorite_posts_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
@@ -200,6 +201,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
   AppLifecycleListener? _listener;
   StreamSubscription<void>? _subscription;
+
+  String _currentText = "";
 
   late final ChainedFilterResourceSource<int, File> filter;
 
@@ -512,6 +515,17 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
     api.source.clearRefreshSilent();
 
+    searchTextController.addListener(() {
+      final newText = searchTextController.text.trim();
+      if (newText == _currentText) {
+        return;
+      }
+      _currentText = newText;
+
+      filter.filteringMode = FilteringMode.tag;
+      // filter.clearRefresh();
+    });
+
     platform.FlutterGalleryData.setUp(impl);
     platform.GalleryVideoEvents.setUp(impl);
   }
@@ -591,9 +605,17 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
     return null;
   }
 
+  void _openPressedDialog() => context.openSafeModeDialog(
+    (e) => _onBooruTagPressed(
+      context,
+      settings.selectedBooru,
+      searchTextController.text.trim(),
+      e,
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n();
     final gridSettings = GridSettingsData<FilesData>();
 
@@ -627,54 +649,65 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                 Navigator.pop(context);
               },
             ),
-            appBar: SearchBarAppBarType.fromFilter(
-              filter,
-              hintText: widget.dirName,
-              textEditingController: searchTextController,
-              focus: searchFocus,
-              complete: LocalTagsService.safe()?.complete,
-              trailingItems: [
-                if (widget.callback == null && api.type.isTrash())
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        DialogRoute<void>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(l10n.emptyTrashTitle),
-                              content: Text(
-                                l10n.thisIsPermanent,
-                                style: TextStyle(
-                                  color: Colors.red.harmonizeWith(
-                                    theme.colorScheme.primary,
+            appBar: RawAppBarType((context, gridSettingsButton, _) {
+              final theme = Theme.of(context);
+
+              return FavoritePostsSearchSliver(
+                textEditingController: searchTextController,
+                searchFocus: searchFocus,
+                filter: filter,
+                hint: widget.dirName,
+                complete: LocalTagsService.safe()?.complete,
+                onSearchTag: _openPressedDialog,
+                leadingButton: IconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
+                trailing: [
+                  if (widget.callback == null && api.type.isTrash())
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).push(
+                          DialogRoute<void>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(l10n.emptyTrashTitle),
+                                content: Text(
+                                  l10n.thisIsPermanent,
+                                  style: TextStyle(
+                                    color: Colors.red.harmonizeWith(
+                                      theme.colorScheme.primary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    const GalleryService().trash.empty();
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(l10n.yes),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(l10n.no),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_sweep_outlined),
-                  ),
-              ],
-            ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      const GalleryService().trash.empty();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(l10n.yes),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(l10n.no),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.delete_sweep_outlined),
+                    ),
+                ],
+                gridSettingsButton: gridSettingsButton,
+              );
+            }),
+
             elements: [
               ElementPriority(
                 SliverPadding(

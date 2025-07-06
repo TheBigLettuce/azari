@@ -60,7 +60,7 @@ class AutocompleteWidget extends StatelessWidget {
   final StringCallback highlightChanged;
   final StringCallback onSubmit;
 
-  final CompleteBooruTagFunc complF;
+  final CompleteTagFunc complF;
 
   @override
   Widget build(BuildContext context) {

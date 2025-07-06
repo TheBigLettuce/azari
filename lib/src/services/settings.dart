@@ -75,10 +75,7 @@ abstract class SettingsPath {
   String get path;
   String get pathDisplay;
 
-  SettingsPath copy({
-    String? path,
-    String? pathDisplay,
-  });
+  SettingsPath copy({String? path, String? pathDisplay});
 }
 
 enum ThemeType {
@@ -89,10 +86,10 @@ enum ThemeType {
   const ThemeType();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        ThemeType.main => l10n.enumThemeTypeMain,
-        ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
-        ThemeType.pink => l10n.enumThemeTypePink,
-      };
+    ThemeType.main => l10n.enumThemeTypeMain,
+    ThemeType.systemAccent => l10n.enumThemeTypeSystemAccent,
+    ThemeType.pink => l10n.enumThemeTypePink,
+  };
 }
 
 @immutable
@@ -103,7 +100,7 @@ abstract class SettingsData {
   Booru get selectedBooru;
   DisplayQuality get quality;
   SafeMode get safeMode;
-  bool get showWelcomePage;
+  bool get exceptionAlerts;
   bool get extraSafeFilters;
   bool get sampleThumbnails;
   bool get filesExtendedActions;
@@ -121,7 +118,7 @@ abstract class SettingsData {
     Booru? selectedBooru,
     DisplayQuality? quality,
     SafeMode? safeMode,
-    bool? showWelcomePage,
+    bool? exceptionAlerts,
     bool? sampleThumbnails,
   });
 }

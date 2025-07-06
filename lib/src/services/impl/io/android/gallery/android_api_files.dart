@@ -12,10 +12,10 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
     required super.source,
     required super.sourceTags,
   }) : super(
-          type: GalleryFilesPageType.normal,
-          target: "joinedDir",
-          bucketId: "joinedDir",
-        );
+         type: GalleryFilesPageType.normal,
+         target: "joinedDir",
+         bucketId: "joinedDir",
+       );
 
   @override
   bool isBucketId(String dirId) {
@@ -39,7 +39,6 @@ class _AndroidGalleryFiles implements Files {
     required this.parent,
     required this.target,
   }) : startTime = DateTime.now().millisecondsSinceEpoch;
-
   @override
   final GalleryFilesPageType type;
 
@@ -58,7 +57,7 @@ class _AndroidGalleryFiles implements Files {
 
   @override
   void close() {
-    parent.bindFiles = null;
+    parent._activeFiles.removeWhere((e) => e == this);
     source.destroy();
     sourceTags.dispose();
   }
@@ -74,20 +73,10 @@ class _AndroidGalleryFiles implements Files {
 }
 
 class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
-  _AndroidFileSourceJoined(
-    this.directories,
-    this.type,
-    this.sourceTags,
-  ) {
-    // _favoritesWatcher =
-    //     FavoritePostSourceService.safe()?.cache.countEvents.listen((_) {
-    //   backingStorage.addAll([]);
-    // });
-  }
+  _AndroidFileSourceJoined(this.directories, this.type, this.sourceTags);
 
   final List<Directory> directories;
   final GalleryFilesPageType type;
-  // late final StreamSubscription<int>? _favoritesWatcher;
   final MapFilesSourceTags sourceTags;
 
   final cursorApi = platform.FilesCursor();
@@ -127,8 +116,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
       directories: directories.map((e) => e.bucketId).toList(),
       type: switch (type) {
         GalleryFilesPageType.normal ||
-        GalleryFilesPageType.favorites =>
-          platform.FilesCursorType.normal,
+        GalleryFilesPageType.favorites => platform.FilesCursorType.normal,
         GalleryFilesPageType.trash => platform.FilesCursorType.trashed,
       },
       sortingMode: switch (sortingMode) {
@@ -164,11 +152,7 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
         );
       }
     } catch (e, trace) {
-      Logger.root.severe(
-        "_AndroidFileSourceJoined",
-        e,
-        trace,
-      );
+      Logger.root.severe("_AndroidFileSourceJoined", e, trace);
     } finally {
       await cursorApi.destroy(cursor);
     }
@@ -182,10 +166,10 @@ class _AndroidFileSourceJoined implements SortingResourceSource<int, File> {
 
         final e1FavoriteStars =
             const FavoritePostSourceService().cache.get(e1.res!)?.stars ??
-                FavoriteStars.zero;
+            FavoriteStars.zero;
         final e2FavoriteStars =
             const FavoritePostSourceService().cache.get(e2.res!)?.stars ??
-                FavoriteStars.zero;
+            FavoriteStars.zero;
 
         return e2FavoriteStars.index.compareTo(e1FavoriteStars.index);
       });

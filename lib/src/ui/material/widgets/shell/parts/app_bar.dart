@@ -264,7 +264,7 @@ class SearchBarAutocompleteWrapper2 extends StatelessWidget {
     required this.child,
   });
 
-  final CompleteBooruTagFunc? complete;
+  final CompleteTagFunc? complete;
 
   final TextEditingController textEditingController;
   final FocusNode focusNode;

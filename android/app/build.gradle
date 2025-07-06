@@ -88,10 +88,10 @@ android {
             applicationIdSuffix '.debug'
             manifestPlaceholders = [applicationLabel: "Azari Debug"]
         }
-        // profile {
-        //     applicationIdSuffix '.profile'
-        //     manifestPlaceholders = [applicationLabel: "Azari Profile"]
-        // }
+        profile {
+            // applicationIdSuffix '.profile'
+            manifestPlaceholders = [applicationLabel: "Azari Profile"]
+        }
     }
     buildFeatures {
         viewBinding true

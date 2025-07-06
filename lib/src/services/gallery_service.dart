@@ -95,7 +95,9 @@ abstract class Directories {
   ResourceSource<int, Directory> get source;
   TrashCell? get trashCell;
 
-  Files? get bindFiles;
+  // Files? get bindFiles;
+
+  bool get isHostingFiles;
 
   Files files(
     Directory directory,
@@ -173,9 +175,7 @@ class MapFilesSourceTags implements FilesSourceTags {
     }
 
     final entries = _map.entries
-        .where(
-          (e) => e.value != (1 + (_map.length * 0.02)),
-        )
+        .where((e) => e.value != (1 + (_map.length * 0.02)))
         .take(1000)
         .toList();
 

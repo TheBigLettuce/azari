@@ -23,6 +23,12 @@ Future<void> initMain(AppInstanceType appType) async {
 
   await initServices(appType);
 
+  for (final e in const AppApi().requiredPermissions) {
+    if (await e.enabled) {
+      await e.request();
+    }
+  }
+
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }
 

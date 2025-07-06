@@ -1004,7 +1004,13 @@ class _NavigationDrawerTile extends StatelessWidget {
               const Padding(padding: EdgeInsets.only(left: 12)),
               Icon(icon, color: theme.colorScheme.onSurfaceVariant),
               const Padding(padding: EdgeInsets.only(right: 12)),
-              Text(label, style: textStyle),
+              Expanded(
+                child: Text(
+                  label,
+                  style: textStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),

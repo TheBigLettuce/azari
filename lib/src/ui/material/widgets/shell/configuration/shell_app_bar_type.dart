@@ -11,7 +11,6 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
-import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -132,14 +131,14 @@ class ChainedFilterIcon extends StatelessWidget {
     required this.filter,
     required this.controller,
     required this.focusNode,
-    this.complete,
+    // this.complete,
     this.iconSize = 24,
   });
 
   final ChainedFilterResourceSource<dynamic, dynamic> filter;
   final TextEditingController controller;
   final FocusNode focusNode;
-  final Future<List<TagData>> Function(String string)? complete;
+  // final Future<List<TagData>> Function(String string)? complete;
   final double iconSize;
 
   @override
@@ -155,7 +154,7 @@ class ChainedFilterIcon extends StatelessWidget {
           builder: (context) {
             return SafeArea(
               child: _FilteringWidget(
-                complete: complete,
+                // complete: complete,
                 selectSorting: (e) => filter.sortingMode = e,
                 currentSorting: filter.sortingMode,
                 enabledSorting: filter.allowedSortingModes,
@@ -163,7 +162,7 @@ class ChainedFilterIcon extends StatelessWidget {
                 currentFilter: filter.filteringMode,
                 enabledModes: filter.allowedFilteringModes,
                 // onChange: onChange,
-                onChange: null,
+                // onChange: null,
                 controller: controller,
                 focusNode: focusNode,
                 selectColors: filter.setColors,
@@ -257,15 +256,15 @@ class _FilteringWidget extends StatefulWidget {
     required this.currentSorting,
     required this.enabledSorting,
     required this.selectSorting,
-    required this.onChange,
+    // required this.onChange,
     required this.controller,
-    required this.complete,
+    // required this.complete,
     required this.focusNode,
     required this.selectColors,
     required this.currentColors,
   });
 
-  final void Function(String?)? onChange;
+  // final void Function(String?)? onChange;
   final TextEditingController controller;
   final FocusNode focusNode;
   final FilteringMode currentFilter;
@@ -276,7 +275,7 @@ class _FilteringWidget extends StatefulWidget {
   final FilteringMode Function(FilteringMode) select;
   final void Function(FilteringColors)? selectColors;
   final void Function(SortingMode) selectSorting;
-  final Future<List<TagData>> Function(String string)? complete;
+  // final Future<List<TagData>> Function(String string)? complete;
 
   @override
   State<_FilteringWidget> createState() => __FilteringWidgetState();
@@ -322,6 +321,61 @@ class __FilteringWidgetState extends State<_FilteringWidget>
     setState(() {});
   }
 
+  // if (widget.onChange != null)
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(
+  //             vertical: 8,
+  //             horizontal: 8,
+  //           ),
+  //           child: widget.complete != null
+  //               ? SearchBarAutocompleteWrapper(
+  //                   search: SearchBarAppBarType(
+  //                     onChanged: widget.onChange,
+  //                     complete: widget.complete,
+  //                     textEditingController: widget.controller,
+  //                   ),
+  //                   searchFocus: widget.focusNode,
+  //                   child: (context, controller, focus, onSubmitted) =>
+  //                       SearchBar(
+  //                         onSubmitted: (str) {
+  //                           onSubmitted();
+  //                           widget.onChange?.call(str);
+  //                         },
+  //                         elevation: const WidgetStatePropertyAll(0),
+  //                         focusNode: focus,
+  //                         controller: controller,
+  //                         onChanged: widget.onChange,
+  //                         hintText: l10n.filterHint,
+  //                         leading: const Icon(Icons.search_rounded),
+  //                         trailing: [
+  //                           IconButton(
+  //                             onPressed: () {
+  //                               controller.text = "";
+  //                               widget.onChange?.call("");
+  //                             },
+  //                             icon: const Icon(Icons.close_rounded),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                 )
+  //               : SearchBar(
+  //                   elevation: const WidgetStatePropertyAll(0),
+  //                   controller: widget.controller,
+  //                   onChanged: widget.onChange,
+  //                   hintText: l10n.filterHint,
+  //                   leading: const Icon(Icons.search_rounded),
+  //                   trailing: [
+  //                     IconButton(
+  //                       onPressed: () {
+  //                         widget.controller.text = "";
+  //                         widget.onChange?.call("");
+  //                       },
+  //                       icon: const Icon(Icons.close_rounded),
+  //                     ),
+  //                   ],
+  //                 ),
+  //         ),
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
@@ -339,60 +393,6 @@ class __FilteringWidgetState extends State<_FilteringWidget>
                 l10n.filteringLabel,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              if (widget.onChange != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 8,
-                  ),
-                  child: widget.complete != null
-                      ? SearchBarAutocompleteWrapper(
-                          search: SearchBarAppBarType(
-                            onChanged: widget.onChange,
-                            complete: widget.complete,
-                            textEditingController: widget.controller,
-                          ),
-                          searchFocus: widget.focusNode,
-                          child: (context, controller, focus, onSubmitted) =>
-                              SearchBar(
-                                onSubmitted: (str) {
-                                  onSubmitted();
-                                  widget.onChange?.call(str);
-                                },
-                                elevation: const WidgetStatePropertyAll(0),
-                                focusNode: focus,
-                                controller: controller,
-                                onChanged: widget.onChange,
-                                hintText: l10n.filterHint,
-                                leading: const Icon(Icons.search_rounded),
-                                trailing: [
-                                  IconButton(
-                                    onPressed: () {
-                                      controller.text = "";
-                                      widget.onChange?.call("");
-                                    },
-                                    icon: const Icon(Icons.close_rounded),
-                                  ),
-                                ],
-                              ),
-                        )
-                      : SearchBar(
-                          elevation: const WidgetStatePropertyAll(0),
-                          controller: widget.controller,
-                          onChanged: widget.onChange,
-                          hintText: l10n.filterHint,
-                          leading: const Icon(Icons.search_rounded),
-                          trailing: [
-                            IconButton(
-                              onPressed: () {
-                                widget.controller.text = "";
-                                widget.onChange?.call("");
-                              },
-                              icon: const Icon(Icons.close_rounded),
-                            ),
-                          ],
-                        ),
-                ),
               if (widget.selectColors != null)
                 SegmentedButtonGroup<FilteringColors>(
                   variant: SegmentedButtonVariant.chip,

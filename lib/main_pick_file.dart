@@ -123,12 +123,7 @@ class _GalleryPageHolder extends StatefulWidget {
 
 class __GalleryPageHolderState extends State<_GalleryPageHolder>
     with CurrentGalleryPageMixin {
-  late final SelectionActions _actions;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  final _actions = SelectionActions();
 
   @override
   void dispose() {

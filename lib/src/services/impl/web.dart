@@ -298,7 +298,7 @@ class MemorySettingsService implements SettingsService {
     selectedBooru: Booru.danbooru,
     quality: DisplayQuality.sample,
     safeMode: SafeMode.normal,
-    showWelcomePage: false,
+    exceptionAlerts: false,
     extraSafeFilters: false,
     filesExtendedActions: false,
     themeType: ThemeType.systemAccent,
@@ -445,7 +445,7 @@ class $SettingsData extends SettingsData {
     required this.selectedBooru,
     required this.quality,
     required this.safeMode,
-    required this.showWelcomePage,
+    required this.exceptionAlerts,
     required this.extraSafeFilters,
   });
 
@@ -462,7 +462,7 @@ class $SettingsData extends SettingsData {
   final Booru selectedBooru;
 
   @override
-  final bool showWelcomePage;
+  final bool exceptionAlerts;
 
   @override
   final bool sampleThumbnails;
@@ -489,7 +489,7 @@ class $SettingsData extends SettingsData {
     Booru? selectedBooru,
     DisplayQuality? quality,
     SafeMode? safeMode,
-    bool? showWelcomePage,
+    bool? exceptionAlerts,
     bool? sampleThumbnails,
     bool? filesExtendedActions,
     ThemeType? themeType,
@@ -499,7 +499,7 @@ class $SettingsData extends SettingsData {
     selectedBooru: selectedBooru ?? this.selectedBooru,
     quality: quality ?? this.quality,
     safeMode: safeMode ?? this.safeMode,
-    showWelcomePage: showWelcomePage ?? this.showWelcomePage,
+    exceptionAlerts: exceptionAlerts ?? this.exceptionAlerts,
     path: this.path,
     extraSafeFilters: extraSafeFilters ?? this.extraSafeFilters,
     sampleThumbnails: sampleThumbnails ?? this.sampleThumbnails,

@@ -23,8 +23,6 @@ class WrapSelection extends StatelessWidget {
   final bool limitedSize;
   final bool ignoreSwipeSelectGesture;
 
-  // final List<int>? selectFrom;
-
   final ShapeBorder shape;
 
   final VoidCallback? onPressed;
@@ -207,6 +205,10 @@ class __WrappedSelectionCoreState extends State<_WrappedSelectionCore>
             ? null
             : widget.onPressed,
         child: widget.child,
+      );
+    } else if (thisIndx.isNegative && selection.isNotEmpty) {
+      return IgnorePointer(
+        child: InkWell(customBorder: widget.shape, child: widget.child),
       );
     }
 
