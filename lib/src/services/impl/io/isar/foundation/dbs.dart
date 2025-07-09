@@ -199,8 +199,8 @@ class Dbs {
       thumbnailDb.writeTxnSync(() {
         thumbnailDb!.isarThumbnails
             .where()
-            .differenceHashEqualTo(0)
-            .or()
+            // .differenceHashEqualTo(0)
+            // .or()
             .pathEqualTo("")
             .deleteAllSync();
       });

@@ -34,10 +34,7 @@ extension ResourceSourceExt<K, V> on ResourceSource<K, V> {
   int get count => backingStorage.count;
 
   Widget inject(Widget child) {
-    return _ResourceSourceNotifier(
-      source: this,
-      child: child,
-    );
+    return _ResourceSourceNotifier(source: this, child: child);
   }
 }
 
@@ -59,15 +56,40 @@ abstract class FilteringResourceSource<K, V> implements ResourceSource<K, V> {
   List<FilterFnc<V>> get filters;
 
   Iterable<V> filter(Iterable<V> l) => l.where((element) {
-        for (final e in filters) {
-          final res = e(element);
-          if (!res) {
-            return false;
-          }
-        }
+    for (final e in filters) {
+      final res = e(element);
+      if (!res) {
+        return false;
+      }
+    }
 
-        return true;
-      });
+    return true;
+  });
+}
+
+mixin ResourceSourceWatcher<W extends StatefulWidget> on State<W> {
+  ResourceSource<dynamic, dynamic>? get source;
+
+  late final StreamSubscription<int>? _resourceSourceEvents;
+
+  void onResourceEvent() {}
+
+  @override
+  void initState() {
+    super.initState();
+
+    _resourceSourceEvents = source?.backingStorage.watch((_) {
+      onResourceEvent();
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _resourceSourceEvents?.cancel();
+
+    super.dispose();
+  }
 }
 
 /// A generic way of loading data into [SourceStorage].
@@ -123,8 +145,8 @@ class _ExternalResourceSource<K, V> implements ResourceSource<K, V> {
     ReadOnlyStorage<K, V> backingStorage_, {
     Iterable<V> Function(SortingMode sort)? trySorted,
   }) : backingStorage = backingStorage_ is SourceStorage<K, V>
-            ? backingStorage_
-            : _WrappedReadOnlyStorage(backingStorage_, trySorted);
+           ? backingStorage_
+           : _WrappedReadOnlyStorage(backingStorage_, trySorted);
 
   @override
   final SourceStorage<K, V> backingStorage;

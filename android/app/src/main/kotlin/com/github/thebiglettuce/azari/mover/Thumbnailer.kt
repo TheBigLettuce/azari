@@ -215,8 +215,9 @@ class Thumbnailer(private val context: Context) {
 
     fun getCachedThumbnail(thumb: Long, result: MethodChannel.Result) {
         scope.launch {
-            if (locker.exist(thumb)) {
-                result.success(mapOf<String, Any>(Pair("path", ""), Pair("hash", 0)))
+            val dir = locker.exist(thumb)
+            if (dir != null) {
+                result.success(mapOf<String, Any>(Pair("path", dir), Pair("hash", 0)))
             } else {
                 thumbnailsChannel.send(ThumbOp(thumb) { path, hash ->
                     result.success(mapOf<String, Any>(Pair("path", path), Pair("hash", hash)))
@@ -348,8 +349,9 @@ class Thumbnailer(private val context: Context) {
         network: Boolean,
         saveToPinned: Boolean,
     ): Pair<String, Long> {
-        if (locker.exist(id)) {
-            return Pair("", 0)
+        val dir = locker.exist(id)
+        if (dir != null) {
+            return Pair(dir, 0)
         }
 
 

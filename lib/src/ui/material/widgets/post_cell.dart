@@ -15,6 +15,7 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
@@ -34,6 +35,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:photo_view/photo_view.dart";
+import "package:photo_view/photo_view_gallery.dart";
 
 class PostCell extends StatefulWidget {
   const PostCell({
@@ -234,16 +236,18 @@ class CardAnimationChild extends StatelessWidget {
     super.key,
     required this.post,
     required this.animation,
-    // required this.buttonsRow,
     required this.source,
+    required this.thisIdx,
+    required this.tryScrollTo,
   });
 
   final Animation<double> animation;
   final ResourceSource<int, PostImpl>? source;
 
+  final int thisIdx;
   final PostImpl post;
 
-  // final Widget buttonsRow;
+  final void Function(int)? tryScrollTo;
 
   void _open(BuildContext context) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -256,7 +260,12 @@ class CardAnimationChild extends StatelessWidget {
             fullscreenDialog: true,
             barrierColor: Colors.black.withValues(alpha: 1),
             pageBuilder: (context, animation, animationSecond) {
-              return CardDialogContent(post: post);
+              return CardDialogContent(
+                source: source,
+                startingIdx: thisIdx,
+                tryScrollTo: tryScrollTo,
+                post: source == null ? post : null,
+              );
             },
           ),
         )
@@ -450,10 +459,10 @@ class ReplaceAnimation extends StatefulWidget {
   final Widget Function(BuildContext, int) child;
 
   @override
-  State<ReplaceAnimation> createState() => _ReplaceAnimationState();
+  State<ReplaceAnimation> createState() => ReplaceAnimationState();
 }
 
-class _ReplaceAnimationState extends State<ReplaceAnimation>
+class ReplaceAnimationState extends State<ReplaceAnimation>
     with SingleTickerProviderStateMixin {
   late final StreamSubscription<(int, double?)>? syncEvents;
   late final StreamSubscription<int> _countEvents;
@@ -855,6 +864,8 @@ class CardDialogStatic extends StatelessWidget {
                               child: CardAnimationChild(
                                 animation: animation,
                                 post: post,
+                                thisIdx: 0,
+                                tryScrollTo: null,
                                 source: null,
                               ),
                             ),
@@ -908,6 +919,8 @@ class CardDialog extends StatefulWidget {
 
 class _CardDialogState extends State<CardDialog> {
   Animation<double> get animation => widget.animation;
+
+  final _mainKey = GlobalKey<ReplaceAnimationState>();
 
   int get idx => widget.idx;
   ResourceSource<int, PostImpl> get source => widget.source;
@@ -1000,6 +1013,7 @@ class _CardDialogState extends State<CardDialog> {
                       Expanded(
                         child: ClipRRect(
                           child: ReplaceAnimation(
+                            key: _mainKey,
                             source: source,
                             synchronizeSnd: syncr.sink,
                             addScale: true,
@@ -1013,6 +1027,11 @@ class _CardDialogState extends State<CardDialog> {
                               return CardAnimationChild(
                                 post: post,
                                 animation: animation,
+                                thisIdx: idx,
+                                tryScrollTo: (idx) {
+                                  _mainKey.currentState?.idx = idx;
+                                  _mainKey.currentState?.setState(() {});
+                                },
                                 source: source,
                               );
                             },
@@ -1596,71 +1615,280 @@ class TagsRowChild extends StatelessWidget {
   }
 }
 
-class CardDialogContent extends StatelessWidget {
-  const CardDialogContent({super.key, required this.post});
+class CardDialogContent extends StatefulWidget {
+  const CardDialogContent({
+    super.key,
+    required this.source,
+    required this.startingIdx,
+    required this.post,
+    required this.tryScrollTo,
+  });
 
-  final PostImpl post;
+  final ResourceSource<int, PostImpl>? source;
+  final int startingIdx;
+
+  final void Function(int)? tryScrollTo;
+
+  final PostImpl? post;
+
+  @override
+  State<CardDialogContent> createState() => _CardDialogContentState();
+}
+
+class _CardDialogContentState extends State<CardDialogContent>
+    with ResourceSourceWatcher {
+  late final controller = PageController(initialPage: widget.startingIdx);
+
+  @override
+  ResourceSource<int, PostImpl>? get source => widget.source;
+
+  int _page = 0;
+
+  @override
+  void onResourceEvent() {
+    if (widget.source == null) {
+      return;
+    }
+
+    if (source?.count == 0) {
+      Navigator.pop(context);
+      return;
+    }
+
+    if (source?.count != 1) {
+      _page = _page.clamp(0, source!.count - 1);
+    }
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _page = widget.startingIdx;
+
+    controller.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  void _listener() {
+    final newPage = controller.page!.round();
+    if (newPage != _page) {
+      if (newPage >= widget.source!.count - 4 &&
+          !source!.progress.inRefreshing &&
+          source!.hasNext) {
+        source!.next();
+      }
+
+      _page = newPage;
+      widget.tryScrollTo?.call(newPage);
+      setState(() {});
+    }
+  }
+
+  Widget _itemBuilder(BuildContext context, PostImpl post, EdgeInsets padding) {
+    final theme = Theme.of(context);
+
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        switch (post.type) {
+          PostContentType.none => const SizedBox.shrink(),
+          PostContentType.video => Material(
+            child: _ExpandedVideo(
+              post: post,
+              child: PhotoGalleryPageVideo(
+                url: post.videoUrl(),
+                networkThumb: post.thumbnail(),
+                localVideo: false,
+              ),
+            ),
+          ),
+          PostContentType.gif || PostContentType.image => PhotoView(
+            heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
+            maxScale: PhotoViewComputedScale.contained * 1.8,
+            minScale: PhotoViewComputedScale.contained * 0.8,
+            filterQuality: FilterQuality.high,
+            backgroundDecoration: BoxDecoration(
+              color: theme.colorScheme.surface.withValues(alpha: 0),
+            ),
+            loadingBuilder: (context, event) {
+              final theme = Theme.of(context);
+
+              final t = post.thumbnail();
+
+              final expectedBytes = event?.expectedTotalBytes;
+              final loadedBytes = event?.cumulativeBytesLoaded;
+              final value = loadedBytes != null && expectedBytes != null
+                  ? loadedBytes / expectedBytes
+                  : null;
+
+              return Stack(
+                fit: StackFit.expand,
+                alignment: Alignment.center,
+                children: [
+                  Image(
+                    image: t,
+                    filterQuality: FilterQuality.high,
+                    fit: BoxFit.contain,
+                  ),
+                  Center(
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      backgroundColor: theme.colorScheme.surfaceContainer
+                          .withValues(alpha: 0.4),
+                      value: value ?? 0,
+                    ),
+                  ),
+                ],
+              );
+            },
+            imageProvider: post.imageContent(),
+          ),
+        },
+        Opacity(
+          opacity: 0.65,
+          child: Padding(
+            padding:
+                const EdgeInsets.all(12) +
+                EdgeInsets.only(right: padding.right * 0.2),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FavoritePostButton(key: post.uniqueKey(), post: post),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final padding = MediaQuery.systemGestureInsetsOf(context);
+
+    if (source == null) {
+      if (widget.post == null) {
+        return const SizedBox.shrink();
+      }
+
+      return _itemBuilder(context, widget.post!, padding);
+    }
+
     final theme = Theme.of(context);
 
-    final Widget child = switch (post.type) {
-      PostContentType.none => const SizedBox.shrink(),
-      PostContentType.video => Material(
-        child: _ExpandedVideo(
-          post: post,
-          child: PhotoGalleryPageVideo(
-            url: post.videoUrl(),
-            networkThumb: post.thumbnail(),
-            localVideo: false,
-          ),
-        ),
-      ),
-      PostContentType.gif || PostContentType.image => PhotoView(
-        heroAttributes: PhotoViewHeroAttributes(tag: post.uniqueKey()),
-        maxScale: PhotoViewComputedScale.contained * 1.8,
-        minScale: PhotoViewComputedScale.contained * 0.8,
-        filterQuality: FilterQuality.high,
-        loadingBuilder: (context, event) {
-          final theme = Theme.of(context);
+    return GestureDeadZones(
+      right: true,
+      left: true,
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          PhotoViewGalleryIdx.builder(
+            pageController: controller,
+            backgroundDecoration: BoxDecoration(
+              color: theme.colorScheme.surface.withValues(alpha: 0),
+            ),
+            onPageChanged: null,
+            scrollDirection: Axis.vertical,
+            itemCount: source!.count,
+            loadingBuilder: (context, event, idx) {
+              final theme = Theme.of(context);
 
-          final t = post.thumbnail();
+              final t = widget.source!.forIdxUnsafe(idx).thumbnail();
 
-          final expectedBytes = event?.expectedTotalBytes;
-          final loadedBytes = event?.cumulativeBytesLoaded;
-          final value = loadedBytes != null && expectedBytes != null
-              ? loadedBytes / expectedBytes
-              : null;
+              final expectedBytes = event?.expectedTotalBytes;
+              final loadedBytes = event?.cumulativeBytesLoaded;
+              final value = loadedBytes != null && expectedBytes != null
+                  ? loadedBytes / expectedBytes
+                  : null;
 
-          return Stack(
-            fit: StackFit.expand,
-            alignment: Alignment.center,
-            children: [
-              Image(
-                image: t,
-                filterQuality: FilterQuality.high,
-                fit: BoxFit.contain,
-              ),
-              Center(
-                child: CircularProgressIndicator(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  backgroundColor: theme.colorScheme.surfaceContainer
-                      .withValues(alpha: 0.4),
-                  value: value ?? 0,
+              return Stack(
+                fit: StackFit.expand,
+                alignment: Alignment.center,
+                children: [
+                  Image(
+                    image: t,
+                    filterQuality: FilterQuality.high,
+                    fit: BoxFit.contain,
+                  ),
+                  Center(
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      backgroundColor: theme.colorScheme.surfaceContainer
+                          .withValues(alpha: 0.4),
+                      value: value ?? 0,
+                    ),
+                  ),
+                ],
+              );
+            },
+            builder: (context, index) {
+              final post = widget.source!.forIdxUnsafe(index);
+
+              return switch (post.type) {
+                PostContentType.none => PhotoViewGalleryPageOptions.customChild(
+                  child: const SizedBox.shrink(),
                 ),
-              ),
-            ],
-          );
-        },
-        backgroundDecoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0),
-        ),
-        imageProvider: post.imageContent(),
-      ),
-    };
+                PostContentType.video =>
+                  PhotoViewGalleryPageOptions.customChild(
+                    child: Material(
+                      child: _ExpandedVideo(
+                        post: post,
+                        child: PhotoGalleryPageVideo(
+                          url: post.videoUrl(),
+                          networkThumb: post.thumbnail(),
+                          localVideo: false,
+                        ),
+                      ),
+                    ),
+                  ),
+                PostContentType.gif ||
+                PostContentType.image => PhotoViewGalleryPageOptions(
+                  heroAttributes: PhotoViewHeroAttributes(
+                    tag: post.uniqueKey(),
+                  ),
+                  maxScale: PhotoViewComputedScale.contained * 1.8,
+                  minScale: PhotoViewComputedScale.contained * 0.8,
+                  filterQuality: FilterQuality.high,
 
-    return child;
+                  imageProvider: post.imageContent(),
+                ),
+              };
+            },
+          ),
+          Builder(
+            builder: (context) {
+              final post = widget.source?.forIdxUnsafe(_page);
+              if (post == null) {
+                return const SizedBox.shrink();
+              }
+
+              return Opacity(
+                opacity: 0.65,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(12) +
+                      EdgeInsets.only(right: padding.right * 0.2),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FavoritePostButton(
+                      key: post.uniqueKey(),
+                      post: post,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 

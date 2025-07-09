@@ -44,7 +44,8 @@ class _AndroidGallery implements Directories {
     _eventsNotify?.cancel();
     source.destroy();
     trashCell?.dispose();
-    for (final e in _activeFiles) {
+    // e.close() removes from _activeFiles
+    for (final e in _activeFiles.toList()) {
       e.close();
     }
     _activeFiles.clear();

@@ -102,13 +102,12 @@ class _TrackingIndexHolderState extends State<TrackingIndexHolder> {
     final newI = TrackedIndex.of(context);
 
     if (newI == widget.idx) {
-      WidgetsBinding.instance.scheduleFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           Scrollable.ensureVisible(
             context,
             duration: Durations.medium3,
             curve: Easing.standard,
-            // alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
           );
         }
       });

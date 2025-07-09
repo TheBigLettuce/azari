@@ -78,7 +78,7 @@ class _PhotoViewGalleryBodyState extends State<PhotoViewGalleryBody> {
       child: GestureDetector(
         onLongPress: widget.onLongPress,
         onTap: widget.onTap,
-        child: _PhotoViewGallery.builder(
+        child: PhotoViewGalleryIdx.builder(
           loadingBuilder: widget.loadingBuilder,
           enableRotation: true,
           backgroundDecoration: BoxDecoration(
@@ -94,9 +94,9 @@ class _PhotoViewGalleryBodyState extends State<PhotoViewGalleryBody> {
   }
 }
 
-class _PhotoViewGallery extends StatefulWidget {
-  const _PhotoViewGallery.builder({
-    // super.key,
+class PhotoViewGalleryIdx extends StatefulWidget {
+  const PhotoViewGalleryIdx.builder({
+    super.key,
     required this.itemCount,
     required this.builder,
     required this.pageController,
@@ -116,11 +116,8 @@ class _PhotoViewGallery extends StatefulWidget {
 
   final PhotoViewGalleryBuilder builder;
 
-  final Widget Function(
-    BuildContext context,
-    ImageChunkEvent? event,
-    int idx,
-  ) loadingBuilder;
+  final Widget Function(BuildContext context, ImageChunkEvent? event, int idx)
+  loadingBuilder;
 
   final BoxDecoration? backgroundDecoration;
 
@@ -143,10 +140,10 @@ class _PhotoViewGallery extends StatefulWidget {
   final bool pageSnapping;
 
   @override
-  State<_PhotoViewGallery> createState() => _PhotoViewGalleryState();
+  State<PhotoViewGalleryIdx> createState() => _PhotoViewGalleryIdxState();
 }
 
-class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
+class _PhotoViewGalleryIdxState extends State<PhotoViewGalleryIdx> {
   PageController get _controller => widget.pageController;
 
   int get actualPage {
@@ -186,11 +183,8 @@ class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
         : PhotoView(
             key: ObjectKey(index),
             imageProvider: pageOption.imageProvider,
-            loadingBuilder: (context, chunk) => widget.loadingBuilder(
-              context,
-              chunk,
-              index,
-            ),
+            loadingBuilder: (context, chunk) =>
+                widget.loadingBuilder(context, chunk, index),
             backgroundDecoration: widget.backgroundDecoration,
             wantKeepAlive: widget.wantKeepAlive,
             controller: pageOption.controller,
@@ -214,9 +208,7 @@ class _PhotoViewGalleryState extends State<_PhotoViewGallery> {
             errorBuilder: pageOption.errorBuilder,
           );
 
-    return ClipRect(
-      child: photoView,
-    );
+    return ClipRect(child: photoView);
   }
 
   @override

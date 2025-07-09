@@ -51,8 +51,13 @@ internal class CacheLocker(private val context: Context) {
         mux.unlock()
     }
 
-    fun exist(id: Long): Boolean {
-        return directoryFile().resolve(id.toString()).exists()
+    fun exist(id: Long): String? {
+        val dir = directoryFile().resolve(id.toString())
+        if (!dir.exists()) {
+            return null
+        }
+
+        return dir.absolutePath
     }
 
     suspend fun clear(fromPinned: Boolean) {

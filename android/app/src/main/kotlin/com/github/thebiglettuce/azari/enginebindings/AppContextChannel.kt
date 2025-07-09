@@ -142,7 +142,7 @@ class AppContextChannel(
                         call.argument<List<Long>>("ids")!!,
                         call.argument<Boolean>("fromPinned")!!
                     )
-                    result.success(Unit)
+                    result.success(null)
                 }
 
                 "preloadImage" -> {
@@ -151,7 +151,7 @@ class AppContextChannel(
 
                 "clearCachedThumbs" -> {
                     thumbnailer.clearCachedThumbs(call.arguments as Boolean)
-                    result.success(Unit)
+                    result.success(null)
                 }
 
                 "thumbCacheSize" -> {

@@ -99,14 +99,11 @@ class GenericListSource<V> implements ResourceSource<int, V> {
 }
 
 class MapStorage<K, V> extends SourceStorage<K, V> {
-  MapStorage(
-    this.getKey, {
-    Map<K, V>? providedMap,
-    this.sortFnc,
-  }) : map_ = providedMap ?? {};
+  MapStorage(this.getKey, {Map<K, V>? providedMap, this.sortFnc})
+    : map_ = providedMap ?? {};
 
   final Iterable<V> Function(MapStorage<K, V> instance, SortingMode sort)?
-      sortFnc;
+  sortFnc;
 
   @override
   Iterable<V> trySorted(SortingMode sort) =>
@@ -197,38 +194,40 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
 
   @override
   StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
-      _events.stream.transform<int>(
-        StreamTransformer((input, cancelOnError) {
-          final controller = StreamController<int>(sync: true);
-          controller.onListen = () {
-            final subscription = input.listen(
-              controller.add,
-              onError: controller.addError,
-              onDone: controller.close,
-              cancelOnError: cancelOnError,
-            );
-            controller
-              ..onPause = subscription.pause
-              ..onResume = subscription.resume
-              ..onCancel = subscription.cancel;
-          };
+      _events.stream
+          .transform<int>(
+            StreamTransformer((input, cancelOnError) {
+              final controller = StreamController<int>(sync: true);
+              controller.onListen = () {
+                final subscription = input.listen(
+                  controller.add,
+                  onError: controller.addError,
+                  onDone: controller.close,
+                  cancelOnError: cancelOnError,
+                );
+                controller
+                  ..onPause = subscription.pause
+                  ..onResume = subscription.resume
+                  ..onCancel = subscription.cancel;
+              };
 
-          if (fire) {
-            Timer.run(() {
-              controller.add(count);
-            });
-          }
+              if (fire) {
+                Timer.run(() {
+                  controller.add(count);
+                });
+              }
 
-          return controller.stream.listen(null);
-        }),
-      ).listen(f);
+              return controller.stream.listen(null);
+            }),
+          )
+          .listen(f);
 }
 
 class ListStorage<V> extends SourceStorage<int, V> {
   ListStorage({this.sortFnc, this.reverse = false});
 
   final Iterable<V> Function(ListStorage<V> instance, SortingMode sort)?
-      sortFnc;
+  sortFnc;
 
   final StreamController<int> _events = StreamController.broadcast();
 
@@ -278,7 +277,7 @@ class ListStorage<V> extends SourceStorage<int, V> {
   void clear([bool silent = false]) {
     list.clear();
 
-    if (!silent) {
+    if (!silent && !_events.isClosed) {
       _events.add(count);
     }
   }
@@ -315,37 +314,37 @@ class ListStorage<V> extends SourceStorage<int, V> {
 
   @override
   StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
-      _events.stream.transform<int>(
-        StreamTransformer((input, cancelOnError) {
-          final controller = StreamController<int>(sync: true);
-          controller.onListen = () {
-            final subscription = input.listen(
-              controller.add,
-              onError: controller.addError,
-              onDone: controller.close,
-              cancelOnError: cancelOnError,
-            );
-            controller
-              ..onPause = subscription.pause
-              ..onResume = subscription.resume
-              ..onCancel = subscription.cancel;
-          };
+      _events.stream
+          .transform<int>(
+            StreamTransformer((input, cancelOnError) {
+              final controller = StreamController<int>(sync: true);
+              controller.onListen = () {
+                final subscription = input.listen(
+                  controller.add,
+                  onError: controller.addError,
+                  onDone: controller.close,
+                  cancelOnError: cancelOnError,
+                );
+                controller
+                  ..onPause = subscription.pause
+                  ..onResume = subscription.resume
+                  ..onCancel = subscription.cancel;
+              };
 
-          if (fire) {
-            Timer.run(() {
-              controller.add(count);
-            });
-          }
+              if (fire) {
+                Timer.run(() {
+                  controller.add(count);
+                });
+              }
 
-          return controller.stream.listen(null);
-        }),
-      ).listen(f);
+              return controller.stream.listen(null);
+            }),
+          )
+          .listen(f);
 }
 
 class ClosableRefreshProgress implements RefreshingProgress {
-  ClosableRefreshProgress({
-    this.canLoadMore = true,
-  });
+  ClosableRefreshProgress({this.canLoadMore = true});
 
   final _events = StreamController<bool>.broadcast();
 
