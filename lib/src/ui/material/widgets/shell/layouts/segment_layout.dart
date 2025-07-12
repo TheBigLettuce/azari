@@ -624,6 +624,7 @@ class __SegRowHCellState<T extends CellBuilder> extends State<_SegRowHCell<T>> {
             child: cell.value.buildCell(
               l10n,
               hideName: false,
+              blur: blur,
               cellType: CellType.cell,
               imageAlign: Alignment.topCenter,
             ),
@@ -674,6 +675,7 @@ class _SegRowHIdx<T extends CellBuilder> extends StatelessWidget {
           l10n,
           hideName: config.hideName,
           cellType: cellType,
+          blur: val.modifiers.contains(SegmentModifier.blur),
           imageAlign: Alignment.topCenter,
         ),
       ),

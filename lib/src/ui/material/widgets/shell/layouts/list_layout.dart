@@ -3,9 +3,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:ui";
+
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
+import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
@@ -100,6 +103,7 @@ class DefaultListTile extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.dismiss,
+    this.blur = false,
   });
 
   final Key uniqueKey;
@@ -109,6 +113,8 @@ class DefaultListTile extends StatelessWidget {
 
   final Widget? trailing;
   final ImageProvider? thumbnail;
+
+  final bool blur;
 
   final TileDismiss? dismiss;
 
@@ -145,12 +151,25 @@ class DefaultListTile extends StatelessWidget {
           leading: thumbnail != null
               ? Hero(
                   tag: uniqueKey,
-                  child: CircleAvatar(
-                    backgroundColor: theme.colorScheme.surface.withValues(
-                      alpha: 0,
-                    ),
-                    backgroundImage: thumbnail,
-                  ),
+                  child: thumbnail != null
+                      ? SizedBox.square(
+                          dimension: 40,
+                          child: ClipPath(
+                            clipper: const ShapeBorderClipper(
+                              shape: CircleBorder(),
+                            ),
+                            child: GridCellImage(
+                              blur: blur,
+                              imageAlign: Alignment.center,
+                              thumbnail: thumbnail!,
+                            ),
+                          ),
+                        )
+                      : CircleAvatar(
+                          backgroundColor: theme.colorScheme.surface.withValues(
+                            alpha: 0,
+                          ),
+                        ),
                 )
               : null,
           subtitle: subtitle == null || subtitle!.isEmpty

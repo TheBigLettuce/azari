@@ -55,7 +55,7 @@ class IsarSettings extends SettingsData {
   const IsarSettings.empty()
     : flags = _safeFilters | _welcomePage,
       path = const IsarSettingsPath(),
-      selectedBooru = Booru.gelbooru,
+      selectedBooru = Booru.danbooru,
       quality = DisplayQuality.sample,
       safeMode = SafeMode.normal,
       randomVideosAddTags = "",

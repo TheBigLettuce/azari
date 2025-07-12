@@ -16,6 +16,7 @@ mixin DefaultBuildCell implements CellBuilder {
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
   }) {
     return switch (cellType) {
@@ -24,12 +25,14 @@ mixin DefaultBuildCell implements CellBuilder {
         title: title(l10n),
         subtitle: subtitle(l10n),
         thumbnail: thumbnail(),
+        blur: blur,
         dismiss: dismiss(),
       ),
       CellType.cell => GridCell(
         uniqueKey: uniqueKey(),
         thumbnail: thumbnail(),
         titleLines: titleLines(),
+        blur: blur,
         title: hideName ? null : title(l10n),
         subtitle: hideName ? null : subtitle(l10n),
         imageAlign: imageAlign,
@@ -50,6 +53,7 @@ abstract interface class CellBuilder extends CellBuilderData {
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
   });
 }

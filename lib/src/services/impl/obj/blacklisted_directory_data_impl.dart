@@ -31,6 +31,7 @@ abstract class BlacklistedDirectoryDataImpl
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
   }) {
     return Builder(

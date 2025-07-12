@@ -30,7 +30,6 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:azari/src/ui/material/widgets/wrap_future_restartable.dart";
 import "package:cached_network_image/cached_network_image.dart";
-import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -42,9 +41,11 @@ class PostCell extends StatefulWidget {
     required super.key,
     required this.cellType,
     required this.post,
+    required this.toBlur,
   });
 
   final CellType cellType;
+  final bool toBlur;
   final PostImpl post;
 
   @override
@@ -152,49 +153,32 @@ class _PostCellState extends State<PostCell>
               color: theme.cardColor.withValues(alpha: 0),
               child: Stack(
                 children: [
-                  DecoratedBox(
-                    position: DecorationPosition.foreground,
-                    decoration: sortingColor && post is FavoritePost
-                        ? BoxDecoration(
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(15),
-                            ),
-                            border: Border.fromBorderSide(
-                              BorderSide(
-                                color: (post as FavoritePost)
-                                    .filteringColors
-                                    .color
-                                    .harmonizeWith(theme.colorScheme.primary)
-                                    .withValues(alpha: 0.35),
-                                width: 1.5,
-                              ),
-                            ),
+                  GridCellImage(
+                    heroTag: post.uniqueKey(),
+                    imageAlign: Alignment.topCenter,
+                    thumbnail:
+                        post.type == PostContentType.gif &&
+                            post.size != 0 &&
+                            !post.size.isNegative &&
+                            post.size < 524288
+                        ? CachedNetworkImageProvider(
+                            post.sampleUrl.isEmpty
+                                ? post.fileUrl
+                                : post.sampleUrl,
                           )
-                        : const BoxDecoration(),
-                    child: GridCellImage(
-                      heroTag: post.uniqueKey(),
-                      imageAlign: Alignment.topCenter,
-                      thumbnail:
-                          post.type == PostContentType.gif &&
-                              post.size != 0 &&
-                              !post.size.isNegative &&
-                              post.size < 524288
-                          ? CachedNetworkImageProvider(
-                              post.sampleUrl.isEmpty
-                                  ? post.fileUrl
-                                  : post.sampleUrl,
-                            )
-                          : thumbnail,
-                      blur: false,
-                    ),
+                        : thumbnail,
+                    blur: widget.toBlur,
                   ),
                   if (FavoritePostSourceService.available &&
                       widget.post is! FavoritePost)
-                    Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: FavoritePostButton(
-                        heroKey: (post.uniqueKey(), "favoritePost"),
-                        post: post,
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: FavoritePostButton(
+                          heroKey: (post.uniqueKey(), "favoritePost"),
+                          post: post,
+                        ),
                       ),
                     ),
                   Align(
@@ -204,9 +188,26 @@ class _PostCellState extends State<PostCell>
                         horizontal: 6,
                         vertical: 4,
                       ),
-                      child: VideoOrGifIcon(
-                        uniqueKey: post.uniqueKey(),
-                        type: post.type,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (sortingColor && post is FavoritePost)
+                            Builder(
+                              builder: (context) {
+                                return ColorCube(
+                                  idBooru: (post.id, post.booru),
+                                  source:
+                                      ResourceSource.maybeOf<int, FavoritePost>(
+                                        context,
+                                      ),
+                                );
+                              },
+                            ),
+                          VideoOrGifIcon(
+                            uniqueKey: post.uniqueKey(),
+                            type: post.type,
+                          ),
+                        ],
                       ),
                     ),
                   ),

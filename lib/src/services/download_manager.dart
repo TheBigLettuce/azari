@@ -388,6 +388,7 @@ class DownloadHandle
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
   }) => WrapSelection(
     onPressed: null,

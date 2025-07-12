@@ -37,6 +37,8 @@ abstract class DirectoryImpl
     AppLocalizations l10n, {
     required bool hideName,
     required CellType cellType,
+    bool blur = false,
+
     Alignment imageAlign = Alignment.center,
   }) => DirectoryImplCell(
     cellType: cellType,
@@ -47,6 +49,7 @@ abstract class DirectoryImpl
       l10n,
       cellType: cellType,
       imageAlign: imageAlign,
+      blur: blur,
       hideName: hideName,
     ),
   );

@@ -81,6 +81,7 @@ abstract class FileImpl
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
   }) => FileCell(
     key: uniqueKey(),

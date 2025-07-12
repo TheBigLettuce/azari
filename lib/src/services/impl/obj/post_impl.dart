@@ -140,8 +140,10 @@ abstract class PostImpl with CellBuilderData implements PostBase, CellBuilder {
     AppLocalizations l10n, {
     required CellType cellType,
     required bool hideName,
+    bool blur = false,
     Alignment imageAlign = Alignment.center,
-  }) => PostCell(key: uniqueKey(), post: this, cellType: cellType);
+  }) =>
+      PostCell(key: uniqueKey(), post: this, cellType: cellType, toBlur: blur);
 }
 
 Future<void> openPostAsync(
