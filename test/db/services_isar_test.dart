@@ -66,6 +66,12 @@ class AppApiDummy implements AppApi {
 
   @override
   String get version => "";
+
+  @override
+  bool get canOpenBy => false;
+
+  @override
+  Future<void> openSettingsOpenBy() => Future.value();
 }
 
 void main() {

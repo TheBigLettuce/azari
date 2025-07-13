@@ -262,6 +262,14 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
         onChanged: (_) =>
             settings.copy(exceptionAlerts: !settings.exceptionAlerts).save(),
       ),
+      if (const AppApi().canOpenBy)
+        ListTile(
+          title: const Text("Set up links"), // TODO: change
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          onTap: () => const AppApi().openSettingsOpenBy(),
+        ),
     ];
 
     return SliverPadding(

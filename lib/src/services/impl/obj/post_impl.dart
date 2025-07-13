@@ -158,7 +158,14 @@ Future<void> openPostAsync(
     return Future.value();
   }
 
-  final fnc = OnBooruTagPressed.of(context);
+  void doNothing(
+    BuildContext context,
+    Booru booru,
+    String tags,
+    SafeMode? safeMode,
+  ) {}
+
+  final fnc = OnBooruTagPressed.maybeOf(context);
 
   return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder(
@@ -168,7 +175,7 @@ Future<void> openPostAsync(
       barrierColor: Colors.black.withValues(alpha: 0.2),
       pageBuilder: (context, animation, secondaryAnimation) {
         return OnBooruTagPressed(
-          onPressed: fnc,
+          onPressed: fnc ?? doNothing,
           child: CardDialogStatic(
             animation: animation,
             getPost: () async {

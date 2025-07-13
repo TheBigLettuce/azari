@@ -131,6 +131,19 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter
+                android:autoVerify="false"
+                android:label="Links">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "example://gizmos” -->
+                <data android:scheme="https" />
+
+                <data android:host="gelbooru.com" />
+                <data android:host="danbooru.donmai.us" />
+            </intent-filter>
         </activity>
         <!--
  Don't delete the meta-data below.

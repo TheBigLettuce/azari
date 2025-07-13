@@ -8,10 +8,8 @@ import "package:azari/src/services/services.dart";
 import "package:flutter/services.dart";
 
 class LinuxPlatformImpl implements PlatformApi {
-  LinuxPlatformImpl({
-    required Color accentColor,
-    required String version,
-  }) : app = _AppApi(accentColor, version);
+  LinuxPlatformImpl({required Color accentColor, required String version})
+    : app = _AppApi(accentColor, version);
 
   static const _channel = MethodChannel("com.github.thebiglettuce.azari");
 
@@ -77,6 +75,9 @@ class _AppApi implements AppApi {
   bool get canAuthBiometric => false;
 
   @override
+  bool get canOpenBy => false;
+
+  @override
   List<PermissionController> get requiredPermissions => const [];
 
   @override
@@ -88,6 +89,9 @@ class _AppApi implements AppApi {
 
   @override
   void close([Object? returnValue]) {}
+
+  @override
+  Future<void> openSettingsOpenBy() => Future.value();
 
   @override
   Stream<NotificationRouteEvent> get notificationEvents => const Stream.empty();

@@ -11,6 +11,7 @@ import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/app.dart";
 import "package:azari/src/ui/material/pages/booru/bookmark_page.dart";
 import "package:azari/src/ui/material/pages/booru/booru_page.dart";
 import "package:azari/src/ui/material/pages/booru/downloads.dart";
@@ -59,7 +60,8 @@ class _HomeState extends State<Home>
         ChangePageMixin,
         AnimatedIconsMixin,
         CurrentGalleryPageMixin,
-        _BeforeYouContinueDialogMixin {
+        _BeforeYouContinueDialogMixin,
+        WebLinksImplMixin {
   late final SettingsData settings;
 
   late final StreamSubscription<NotificationRouteEvent> notificationEvents;
@@ -71,6 +73,8 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
+
+    Events.procWebLinks();
 
     settings = const SettingsService().current;
 

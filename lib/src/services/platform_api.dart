@@ -30,10 +30,14 @@ mixin class AppApi {
 
   bool get canAuthBiometric =>
       PlatformApi._instance?.app.canAuthBiometric ?? false;
+  bool get canOpenBy => PlatformApi._instance?.app.canOpenBy ?? false;
   String get version => PlatformApi._instance?.app.version ?? "";
 
   Stream<platform.NotificationRouteEvent> get notificationEvents =>
       PlatformApi._instance?.app.notificationEvents ?? const Stream.empty();
+
+  Future<void> openSettingsOpenBy() =>
+      PlatformApi._instance?.app.openSettingsOpenBy() ?? Future.value();
 
   Future<void> shareMedia(String originalUri, {bool url = false}) =>
       PlatformApi._instance?.app.shareMedia(originalUri, url: url) ??
@@ -169,6 +173,17 @@ abstract class Events {
   Stream<void>? get tapDown;
   Stream<platform.GalleryPageChangeEvent>? get pageChange;
   Stream<String?>? get notify;
+  Stream<String>? get webLinks;
+
+  static void procWebLinks() {
+    if (_webLinksProc) {
+      return;
+    }
+
+    _webLinksProc = false;
+
+    eventsProcTarget();
+  }
 }
 
 mixin class ThumbsApi {
@@ -255,8 +270,10 @@ mixin class FilesApi {
     AppLocalizations l10n, {
     bool temporary = false,
   }) =>
-      PlatformApi._instance?.files
-          ?.chooseDirectory(l10n, temporary: temporary) ??
+      PlatformApi._instance?.files?.chooseDirectory(
+        l10n,
+        temporary: temporary,
+      ) ??
       Future.value();
 }
 
@@ -287,16 +304,16 @@ extension DrainCursorsExt on String {
 
 extension FileToDirectoryFileExt on File {
   platform.DirectoryFile toDirectoryFile() => platform.DirectoryFile(
-        id: id,
-        bucketId: bucketId,
-        bucketName: name,
-        name: name,
-        originalUri: originalUri,
-        lastModified: lastModified,
-        height: height,
-        width: width,
-        size: size,
-        isVideo: isVideo,
-        isGif: isGif,
-      );
+    id: id,
+    bucketId: bucketId,
+    bucketName: name,
+    name: name,
+    originalUri: originalUri,
+    lastModified: lastModified,
+    height: height,
+    width: width,
+    size: size,
+    isVideo: isVideo,
+    isGif: isGif,
+  );
 }

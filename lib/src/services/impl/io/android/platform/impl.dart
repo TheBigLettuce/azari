@@ -8,6 +8,7 @@ import "dart:io" as io;
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/generated/platform/platform_api.g.dart" as platform;
+import "package:azari/src/services/impl/io.dart";
 import "package:azari/src/services/impl/io/android/gallery/android_gallery.dart";
 import "package:azari/src/services/impl/io/android/notifications/notifications.dart";
 import "package:azari/src/services/services.dart";
@@ -15,6 +16,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:permission_handler/permission_handler.dart";
+import "package:stream_transform/stream_transform.dart";
 
 _PlatformGalleryImpl initalizeAndroidGallery() {
   final ret = _PlatformGalleryImpl();
@@ -27,9 +29,10 @@ class AndroidPlatformImpl implements PlatformApi {
   AndroidPlatformImpl({
     required Color accentColor,
     required String version,
+    required bool canOpenBy,
     required _PlatformGalleryImpl galleryImpl,
     required Stream<platform.NotificationRouteEvent> notificationEvents,
-  }) : app = _AppApi(accentColor, version, notificationEvents),
+  }) : app = _AppApi(accentColor, version, notificationEvents, canOpenBy),
        network = _NetworkStatusApi(galleryImpl),
        gallery = _GalleryApi(galleryImpl);
 
@@ -398,7 +401,12 @@ class _ThumbsApiImpl implements ThumbsApi {
 }
 
 class _AppApi implements AppApi {
-  const _AppApi(this.accentColor, this.version, this.notificationEvents);
+  const _AppApi(
+    this.accentColor,
+    this.version,
+    this.notificationEvents,
+    this.canOpenBy,
+  );
 
   @override
   final Stream<platform.NotificationRouteEvent> notificationEvents;
@@ -420,6 +428,9 @@ class _AppApi implements AppApi {
 
   @override
   final String version;
+
+  @override
+  final bool canOpenBy;
 
   @override
   Future<void> setWallpaper(int id) {
@@ -451,6 +462,10 @@ class _AppApi implements AppApi {
   void returnUri(String originalUri) {
     AndroidPlatformImpl.activityContext.invokeMethod("returnUri", originalUri);
   }
+
+  @override
+  Future<void> openSettingsOpenBy() =>
+      AndroidPlatformImpl.activityContext.invokeMethod("openSettingsOpenBy");
 }
 
 class _Events implements Events {
@@ -467,6 +482,9 @@ class _Events implements Events {
 
   @override
   Stream<String?>? get notify => galleryImpl._events.stream;
+
+  @override
+  Stream<String>? get webLinks => galleryImpl._webLinkEventsMain.stream;
 }
 
 class _GalleryApi implements GalleryApi {
@@ -554,9 +572,25 @@ class _NetworkStatusApi implements NetworkStatusApi {
 }
 
 class _PlatformGalleryImpl implements platform.PlatformGalleryApi {
-  _PlatformGalleryImpl();
+  _PlatformGalleryImpl() {
+    _webLinkEventsMain = StreamController<String>.broadcast();
+    _webLinkEventsBuffer = StreamController<String>.broadcast();
+    _webLinkEventsBuffered = _webLinkEventsBuffer.stream.buffer(
+      eventsTarget.stream,
+    );
+    _webLinkEventsBuffered.listen((e) {
+      for (final link in e) {
+        _webLinkEventsMain.add(link);
+      }
+    });
+  }
 
   final _events = StreamController<String?>.broadcast();
+  late final StreamController<String> _webLinkEventsMain;
+  late final StreamController<String> _webLinkEventsBuffer;
+
+  late final Stream<List<String>> _webLinkEventsBuffered;
+
   final _networkStatus = StreamController<bool>.broadcast();
 
   final StreamController<void> _tapDown = StreamController.broadcast();
@@ -575,4 +609,10 @@ class _PlatformGalleryImpl implements platform.PlatformGalleryApi {
   @override
   void galleryPageChangeEvent(platform.GalleryPageChangeEvent e) =>
       _pageChange.add(e);
+
+  @override
+  void webLinkEvent(String link) {
+    _webLinkEventsMain.add(link);
+    _webLinkEventsBuffer.add(link);
+  }
 }

@@ -32,6 +32,8 @@ Future<Services> init(AppInstanceType appType) {
   return Future.value(WebServices());
 }
 
+void eventsProcTarget() {}
+
 class WebServices implements Services {
   factory WebServices() {
     if (_instance != null) {

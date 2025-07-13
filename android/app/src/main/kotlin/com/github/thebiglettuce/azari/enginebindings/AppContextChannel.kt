@@ -8,11 +8,14 @@ package com.github.thebiglettuce.azari.enginebindings
 //noinspection SuspiciousImport
 import android.R
 import android.app.Activity
+import android.app.PendingIntent
 import android.app.WallpaperManager
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -117,6 +120,10 @@ class AppContextChannel(
                 }
 
                 "manageMediaSupported" -> {
+                    result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                }
+
+                "openBySupported" -> {
                     result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 }
 
@@ -297,6 +304,14 @@ class ActivityContextChannel(
                     }
                 }
 
+                "openSettingsOpenBy" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        openLinks(context)
+                    }
+
+                    result.success(null)
+                }
+
                 "returnUri" -> {
                     returnUri(context, call, result)
                 }
@@ -409,6 +424,17 @@ class ActivityContextChannel(
                     }
                 }
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun openLinks(context: Context) {
+        val intent =
+            Intent(Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS)
+        intent.data = "package:${context.packageName}".toUri()
+
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
         }
     }
 
@@ -698,10 +724,6 @@ class ActivityContextChannel(
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (!MediaStore.canManageMedia(context)) {
-                        val intent =
-                            Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
-                        intent.data = "package:${context.packageName}".toUri()
-
                         manageMediaCallback = {
                             result.success(it)
                         }

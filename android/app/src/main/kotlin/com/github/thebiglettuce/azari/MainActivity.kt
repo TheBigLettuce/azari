@@ -7,7 +7,9 @@ package com.github.thebiglettuce.azari
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
@@ -108,6 +110,30 @@ class MainActivity : FlutterFragmentActivity() {
                 notificationsHolder
             ),
         )
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        val data: Uri? = intent.data
+        if (data != null) {
+            PlatformGalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger).webLinkEvent(
+                data.toString()
+            ) {}
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        val data: Uri? = intent?.data
+        if (data != null) {
+            PlatformGalleryApi(appContextChannel.engine.dartExecutor.binaryMessenger).webLinkEvent(
+                data.toString()
+            ) {}
+        }
+
+        intent = null
     }
 
     override fun getCachedEngineId(): String? = null

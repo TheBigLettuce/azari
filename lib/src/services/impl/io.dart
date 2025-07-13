@@ -46,6 +46,8 @@ import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 import "package:path_provider/path_provider.dart";
 
+final eventsTarget = StreamController<void>.broadcast();
+
 class _OnNotificationPressed implements platform.OnNotificationPressed {
   const _OnNotificationPressed(this.sink);
 
@@ -67,6 +69,9 @@ Future<Services> init(AppInstanceType appType) async {
 
   final db = IoServices._new(switch (defaultTargetPlatform) {
     TargetPlatform.android => AndroidPlatformImpl(
+      canOpenBy:
+          (await AndroidPlatformImpl.appContext.invokeMethod("openBySupported"))
+              as bool,
       accentColor: Color(
         (await AndroidPlatformImpl.appContext.invokeMethod("accentColor"))
             as int,
@@ -119,6 +124,8 @@ Future<Services> init(AppInstanceType appType) async {
 
   return db;
 }
+
+void eventsProcTarget() => eventsTarget.add(null);
 
 class AndroidNotificationChannelId implements NotificationChannelId {
   const AndroidNotificationChannelId(this.id);

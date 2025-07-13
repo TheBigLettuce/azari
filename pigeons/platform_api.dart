@@ -114,15 +114,9 @@ abstract class DirectoriesCursor {
   void destroy(String token);
 }
 
-enum FilesCursorType {
-  trashed,
-  normal;
-}
+enum FilesCursorType { trashed, normal }
 
-enum FilesSortingMode {
-  none,
-  size;
-}
+enum FilesSortingMode { none, size }
 
 @HostApi()
 abstract class FilesCursor {
@@ -155,6 +149,8 @@ abstract class PlatformGalleryApi {
   void galleryTapDownEvent();
 
   void galleryPageChangeEvent(GalleryPageChangeEvent e);
+
+  void webLinkEvent(String link);
 }
 
 @FlutterApi()
@@ -166,11 +162,7 @@ abstract class GalleryVideoEvents {
   void loopingEvent(bool looping);
 }
 
-enum VideoPlaybackState {
-  stopped,
-  playing,
-  buffering;
-}
+enum VideoPlaybackState { stopped, playing, buffering }
 
 @FlutterApi()
 abstract class FlutterGalleryData {
@@ -198,18 +190,13 @@ abstract class PlatformGalleryEvents {
 }
 
 class GalleryMetadata {
-  const GalleryMetadata({
-    required this.count,
-  });
+  const GalleryMetadata({required this.count});
 
   final int count;
 }
 
 class CopyOp {
-  const CopyOp({
-    required this.from,
-    required this.to,
-  });
+  const CopyOp({required this.from, required this.to});
 
   final String from;
   final String to;
@@ -254,21 +241,10 @@ abstract class OnNotificationPressed {
   void onPressed(NotificationRouteEvent r);
 }
 
-enum NotificationGroup {
-  downloader,
-  misc;
-}
+enum NotificationGroup { downloader, misc }
 
-enum NotificationChannel {
-  downloader,
-  misc;
-}
+enum NotificationChannel { downloader, misc }
 
-enum NotificationRouteEvent {
-  downloads;
-}
+enum NotificationRouteEvent { downloads }
 
-enum GalleryPageChangeEvent {
-  left,
-  right;
-}
+enum GalleryPageChangeEvent { left, right }

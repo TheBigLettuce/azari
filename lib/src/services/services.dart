@@ -114,6 +114,7 @@ mixin class GridDbService implements ServiceMarker {
 }
 
 bool _isInit = false;
+bool _webLinksProc = false;
 late final Services _dbInstance;
 
 extension PostBaseToVisitedPostExt on PostBase {
