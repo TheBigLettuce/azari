@@ -26,6 +26,16 @@ class Danbooru implements BooruAPI {
   @override
   bool get wouldBecomeStale => false;
 
+  Map<String, String> get loginApiKey {
+    final data = const AccountsService().current;
+
+    if (data.danbooruApiKey.isEmpty && data.danbooruUsername.isEmpty) {
+      return const {};
+    }
+
+    return {"login": data.danbooruUsername, "api_key": data.danbooruApiKey};
+  }
+
   @override
   Future<int> totalPosts(String tags, SafeMode safeMode) async {
     final resp = await _commonPosts(
@@ -44,6 +54,7 @@ class Danbooru implements BooruAPI {
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/notes.json", {
+        ...loginApiKey,
         "search[post_id]": postId.toString(),
       }),
       LogReq(LogReq.notes(postId), _log),
@@ -60,6 +71,7 @@ class Danbooru implements BooruAPI {
   ]) async {
     final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(booru.url, "/tags.json", {
+        ...loginApiKey,
         "search[name_matches]": "$tag*",
         "search[order]": sorting == BooruTagSorting.count ? "count" : "name",
         "limit": limit.toString(),
@@ -82,7 +94,7 @@ class Danbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     final resp = await client.getUriLog<dynamic>(
-      Uri.https(booru.url, "/posts/$id.json"),
+      Uri.https(booru.url, "/posts/$id.json", loginApiKey),
       LogReq(LogReq.singlePost(id, tags: "", safeMode: SafeMode.none), _log),
     );
 
@@ -196,6 +208,7 @@ class Danbooru implements BooruAPI {
     };
 
     final query = <String, dynamic>{
+      ...loginApiKey,
       "limit": limit?.toString() ?? refreshPostCountLimit().toString(),
       "format": "json",
 

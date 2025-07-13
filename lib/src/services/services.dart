@@ -672,6 +672,72 @@ class _AlertData implements AlertData {
   String title() => title_;
 }
 
+extension AccountsServiceExt on AccountsData {
+  void maybeSave() => _dbInstance.get<AccountsService>()?.add(this);
+}
+
+mixin AccountsServiceWatcherMixin<S extends StatefulWidget> on State<S> {
+  StreamSubscription<AccountsData>? _accountsEvents;
+
+  late AccountsData accountsData;
+
+  void onNewAccountsData() {}
+
+  @override
+  void initState() {
+    super.initState();
+
+    accountsData = const AccountsService().current;
+
+    _accountsEvents?.cancel();
+    _accountsEvents = const AccountsService().events.listen((newData) {
+      onNewAccountsData();
+
+      setState(() {
+        accountsData = newData;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _accountsEvents?.cancel();
+
+    super.dispose();
+  }
+}
+
+mixin class AccountsService implements ServiceMarker {
+  const AccountsService();
+
+  static bool get available => _instance != null;
+  static AccountsService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<AccountsService>();
+
+  AccountsData get current => _instance!.current;
+
+  Stream<AccountsData> get events => _instance!.events;
+
+  void add(AccountsData data) => _instance!.add(data);
+}
+
+abstract class AccountsData {
+  const AccountsData();
+
+  String get danbooruUsername;
+  String get danbooruApiKey;
+  String get gelbooruUserId;
+  String get gelbooruApiKey;
+
+  AccountsData copy({
+    String? danbooruUsername,
+    String? danbooruApiKey,
+    String? gelbooruUserId,
+    String? gelbooruApiKey,
+  });
+}
+
 mixin class AlertService implements ServiceMarker {
   static bool get available => _instance != null;
   static AlertService? safe() => _instance;

@@ -99,6 +99,12 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
               },
               title: l10n.selectedBooruSetting,
             ),
+            trailing: IconButton(
+              icon: const Icon(Icons.settings_rounded),
+              onPressed: AccountsService.available
+                  ? () => AccountsDialog.open(context)
+                  : null,
+            ),
           ),
           ListTile(
             tileColor: theme.colorScheme.surfaceContainerHigh,
@@ -261,6 +267,408 @@ class _SettingsListState extends State<SettingsList> with SettingsWatcherMixin {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       sliver: SliverList.list(children: list),
+    );
+  }
+}
+
+class AccountsDialog extends StatefulWidget {
+  const AccountsDialog({super.key});
+
+  static void open(BuildContext context) =>
+      Navigator.of(context, rootNavigator: true).push<void>(
+        DialogRoute(
+          context: context,
+          useSafeArea: false,
+          builder: (context) => const AccountsDialog(),
+        ),
+      );
+
+  @override
+  State<AccountsDialog> createState() => _AccountsDialogState();
+}
+
+class _AccountsDialogState extends State<AccountsDialog>
+    with AccountsServiceWatcherMixin {
+  bool danbooruExpanded = false;
+  bool gelbooruExpanded = false;
+
+  bool get gelbooruSetUp =>
+      accountsData.gelbooruApiKey.isNotEmpty &&
+      accountsData.gelbooruUserId.isNotEmpty;
+
+  bool get danbooruSetUp =>
+      accountsData.danbooruApiKey.isNotEmpty &&
+      accountsData.danbooruUsername.isNotEmpty;
+
+  void _flipDanbooru() {
+    danbooruExpanded = !danbooruExpanded;
+    gelbooruExpanded = false;
+    setState(() {});
+  }
+
+  void _flipGellboru() {
+    gelbooruExpanded = !gelbooruExpanded;
+    danbooruExpanded = false;
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 12) +
+              const EdgeInsets.only(bottom: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Accounts", style: theme.textTheme.headlineSmall),
+              const Padding(padding: EdgeInsets.only(top: 10)),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 20,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedCrossFade(
+                      firstCurve: Easing.standard,
+                      secondCurve: Easing.standard,
+                      sizeCurve: Easing.standard,
+                      duration: Durations.medium3,
+                      reverseDuration: Durations.medium1,
+                      firstChild: ListBody(
+                        children: [
+                          ListTile(
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(25),
+                                topRight: Radius.circular(25),
+                              ),
+                            ),
+                            tileColor: theme.colorScheme.surfaceContainerLow,
+                            title: Text(Booru.danbooru.string),
+                            subtitle: danbooruSetUp
+                                ? Text(
+                                    "${accountsData.danbooruUsername}:"
+                                        .padRight(
+                                          accountsData.danbooruApiKey.length +
+                                              accountsData
+                                                  .danbooruUsername
+                                                  .length +
+                                              1,
+                                          "*",
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                : const Text("Tap to set up"),
+                            trailing: danbooruSetUp
+                                ? const Icon(Icons.mode_edit_rounded)
+                                : const Icon(Icons.login_rounded),
+                            onTap: () {
+                              setState(() {
+                                danbooruExpanded = true;
+                                gelbooruExpanded = false;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      secondChild: DanbooruAccountSettings(
+                        returnBack: _flipDanbooru,
+                      ),
+                      crossFadeState: danbooruExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                    ),
+                    AnimatedCrossFade(
+                      firstCurve: Easing.standard,
+                      secondCurve: Easing.standard,
+                      sizeCurve: Easing.standard,
+                      duration: Durations.medium3,
+                      reverseDuration: Durations.medium1,
+                      firstChild: ListBody(
+                        children: [
+                          ListTile(
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(25),
+                                bottomRight: Radius.circular(25),
+                              ),
+                            ),
+                            tileColor: theme.colorScheme.surfaceContainerLow,
+                            title: Text(Booru.gelbooru.string),
+                            subtitle: gelbooruSetUp
+                                ? Text(
+                                    "${accountsData.gelbooruUserId}:".padRight(
+                                      accountsData.gelbooruApiKey.length +
+                                          accountsData.gelbooruUserId.length +
+                                          1,
+                                      "*",
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                : const Text("Tap to set up"),
+                            trailing: gelbooruSetUp
+                                ? const Icon(Icons.mode_edit_rounded)
+                                : const Icon(Icons.login_rounded),
+                            onTap: () {
+                              setState(() {
+                                gelbooruExpanded = true;
+                                danbooruExpanded = false;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      secondChild: GelbooruAccountSettings(
+                        returnBack: _flipGellboru,
+                      ),
+                      crossFadeState: gelbooruExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DanbooruAccountSettings extends StatefulWidget {
+  const DanbooruAccountSettings({super.key, required this.returnBack});
+
+  final VoidCallback returnBack;
+
+  @override
+  State<DanbooruAccountSettings> createState() =>
+      _DanbooruAccountSettingsState();
+}
+
+class _DanbooruAccountSettingsState extends State<DanbooruAccountSettings>
+    with AccountsServiceWatcherMixin {
+  @override
+  Widget build(BuildContext context) {
+    return _Form(
+      loginHint: "Username",
+      apiKeyHint: "Api key",
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(25),
+        topRight: Radius.circular(25),
+      ),
+      dividerAtTop: false,
+      returnBack: widget.returnBack,
+      onSubmit: (login, apiKey) => accountsData
+          .copy(danbooruUsername: login, danbooruApiKey: apiKey)
+          .maybeSave(),
+      loginData: accountsData.danbooruUsername,
+      apiKeyData: accountsData.danbooruApiKey,
+    );
+  }
+}
+
+class GelbooruAccountSettings extends StatefulWidget {
+  const GelbooruAccountSettings({super.key, required this.returnBack});
+
+  final VoidCallback returnBack;
+
+  @override
+  State<GelbooruAccountSettings> createState() =>
+      _GelbooruAccountSettingsState();
+}
+
+class _GelbooruAccountSettingsState extends State<GelbooruAccountSettings>
+    with AccountsServiceWatcherMixin {
+  @override
+  Widget build(BuildContext context) {
+    return _Form(
+      loginHint: "Login ID",
+      apiKeyHint: "Api key",
+      returnBack: widget.returnBack,
+      dividerAtTop: true,
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(25),
+        bottomRight: Radius.circular(25),
+      ),
+      onSubmit: (login, apiKey) => accountsData
+          .copy(gelbooruUserId: login, gelbooruApiKey: apiKey)
+          .maybeSave(),
+      loginData: accountsData.gelbooruUserId,
+      apiKeyData: accountsData.gelbooruApiKey,
+    );
+  }
+}
+
+class _Form extends StatefulWidget {
+  const _Form({
+    super.key,
+    required this.loginHint,
+    required this.apiKeyHint,
+    required this.onSubmit,
+    required this.returnBack,
+    required this.borderRadius,
+    required this.dividerAtTop,
+    required this.loginData,
+    required this.apiKeyData,
+  });
+
+  final bool dividerAtTop;
+
+  final String loginHint;
+  final String apiKeyHint;
+
+  final String loginData;
+  final String apiKeyData;
+
+  final BorderRadiusGeometry borderRadius;
+
+  final VoidCallback returnBack;
+  final void Function(String login, String apiKey) onSubmit;
+
+  @override
+  State<_Form> createState() => __FormState();
+}
+
+class __FormState extends State<_Form> {
+  late final loginController = TextEditingController(text: widget.loginData);
+  late final apiKeyController = TextEditingController(text: widget.apiKeyData);
+
+  bool get canCommit =>
+      loginController.text.isNotEmpty && apiKeyController.text.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+
+    loginController.addListener(_listener);
+    apiKeyController.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    loginController.dispose();
+    apiKeyController.dispose();
+
+    super.dispose();
+  }
+
+  void _listener() {
+    setState(() {});
+  }
+
+  void _commit() {
+    widget.onSubmit(loginController.text.trim(), apiKeyController.text.trim());
+    widget.returnBack();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: widget.borderRadius,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.dividerAtTop)
+            const Padding(
+              padding: EdgeInsets.only(top: 1),
+              child: Divider(indent: 0, endIndent: 0, height: 0, thickness: 1),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainer,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: loginController,
+                        decoration: InputDecoration(
+                          icon: const Icon(Icons.mode_edit_outline, size: 18),
+                          hint: Text(widget.loginHint),
+                          suffix: IconButton(
+                            onPressed: loginController.clear,
+                            icon: const Icon(Icons.clear_rounded),
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                      TextField(
+                        controller: apiKeyController,
+                        decoration: InputDecoration(
+                          icon: const Icon(Icons.mode_edit_outline, size: 18),
+                          hint: Text(widget.apiKeyHint),
+                          suffix: IconButton(
+                            onPressed: apiKeyController.clear,
+                            icon: const Icon(Icons.clear_rounded),
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12) +
+                const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton.icon(
+                  onPressed: widget.returnBack,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  label: const Text("Back"),
+                ),
+                if (loginController.text.isEmpty &&
+                    apiKeyController.text.isEmpty &&
+                    widget.apiKeyData.isNotEmpty &&
+                    widget.loginData.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: _commit,
+                    icon: const Icon(Icons.close_rounded),
+                    label: const Text("Remove"),
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: canCommit ? _commit : null,
+                    icon: const Icon(Icons.check_rounded),
+                    label: const Text("Save"),
+                  ),
+              ],
+            ),
+          ),
+          if (!widget.dividerAtTop)
+            const Divider(indent: 0, endIndent: 0, height: 0),
+        ],
+      ),
     );
   }
 }

@@ -2013,60 +2013,71 @@ class _DownloadButtonState extends State<DownloadButton> with DownloadManager {
       DownloadStatus.inProgress => const Icon(Icons.downloading_rounded),
     };
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        IconButton(
-          onPressed:
-              downloadStatus == DownloadStatus.onHold ||
-                  downloadStatus == DownloadStatus.inProgress
-              ? null
-              : () {
-                  if (downloadStatus == DownloadStatus.failed) {
-                    restartAll([status!]);
-                  } else {
-                    widget.post.download();
-                    WrapperSelectionAnimation.tryPlayOf(context);
-                  }
-                },
-          style: widget.secondVariant
-              ? ButtonStyle(
-                  foregroundColor: WidgetStateProperty.fromMap({
-                    WidgetState.disabled: theme.disabledColor,
-                    WidgetState.any: theme.colorScheme.surface,
-                  }),
-                  backgroundColor: WidgetStateProperty.fromMap({
-                    WidgetState.disabled:
-                        theme.colorScheme.surfaceContainerHigh,
-                    WidgetState.any: theme.colorScheme.onSurfaceVariant,
-                  }),
-                )
-              : ButtonStyle(
-                  shape: WidgetStatePropertyAll(
-                    downloadStatus == DownloadStatus.inProgress ||
-                            downloadStatus == DownloadStatus.onHold
-                        ? const CircleBorder()
-                        : const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(15)),
-                          ),
+    return GestureDetector(
+      onTap: downloadStatus == DownloadStatus.inProgress
+          ? () {
+              status?.cancel();
+            }
+          : null,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          IconButton(
+            onPressed:
+                downloadStatus == DownloadStatus.onHold ||
+                    downloadStatus == DownloadStatus.inProgress
+                ? null
+                : () {
+                    if (downloadStatus == DownloadStatus.failed) {
+                      restartAll([status!]);
+                    } else {
+                      widget.post.download();
+                      WrapperSelectionAnimation.tryPlayOf(context);
+                    }
+                  },
+            style: widget.secondVariant
+                ? ButtonStyle(
+                    foregroundColor: WidgetStateProperty.fromMap({
+                      WidgetState.disabled: theme.disabledColor,
+                      WidgetState.any: theme.colorScheme.surface,
+                    }),
+                    backgroundColor: WidgetStateProperty.fromMap({
+                      WidgetState.disabled:
+                          theme.colorScheme.surfaceContainerHigh,
+                      WidgetState.any: theme.colorScheme.onSurfaceVariant,
+                    }),
+                  )
+                : ButtonStyle(
+                    shape: WidgetStatePropertyAll(
+                      downloadStatus == DownloadStatus.inProgress ||
+                              downloadStatus == DownloadStatus.onHold
+                          ? const CircleBorder()
+                          : const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(15),
+                              ),
+                            ),
+                    ),
+                    foregroundColor: WidgetStateProperty.fromMap({
+                      WidgetState.disabled: theme.disabledColor,
+                      WidgetState.any: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.9),
+                    }),
+                    backgroundColor: WidgetStateProperty.fromMap({
+                      WidgetState.disabled: theme
+                          .colorScheme
+                          .surfaceContainerHigh
+                          .withValues(alpha: 0.8),
+                      WidgetState.any: theme.colorScheme.surfaceContainer
+                          .withValues(alpha: 0.8),
+                    }),
                   ),
-                  foregroundColor: WidgetStateProperty.fromMap({
-                    WidgetState.disabled: theme.disabledColor,
-                    WidgetState.any: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.9),
-                  }),
-                  backgroundColor: WidgetStateProperty.fromMap({
-                    WidgetState.disabled: theme.colorScheme.surfaceContainerHigh
-                        .withValues(alpha: 0.8),
-                    WidgetState.any: theme.colorScheme.surfaceContainer
-                        .withValues(alpha: 0.8),
-                  }),
-                ),
-          icon: icon,
-        ),
-        if (status != null && downloadStatus == DownloadStatus.inProgress)
-          _Progress(handle: status!),
-      ],
+            icon: icon,
+          ),
+          if (status != null && downloadStatus == DownloadStatus.inProgress)
+            _Progress(handle: status!),
+        ],
+      ),
     );
   }
 }

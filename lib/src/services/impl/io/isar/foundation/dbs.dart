@@ -23,6 +23,7 @@ import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pa
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/updates_available.dart";
+import "package:azari/src/services/impl/io/isar/schemas/settings/accounts.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/colors_names.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/hidden_booru_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/settings.dart";
@@ -49,6 +50,7 @@ const primaryGridSchemas = [
 ];
 
 const mainSchemas = [
+  IsarAccountsSchema,
   IsarColorsNamesDataSchema,
   IsarVisitedPostSchema,
   IsarSettingsSchema,

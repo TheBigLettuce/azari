@@ -35,6 +35,7 @@ import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pa
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/updates_available.dart";
+import "package:azari/src/services/impl/io/isar/schemas/settings/accounts.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/colors_names.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/hidden_booru_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/settings/settings.dart";
@@ -642,6 +643,31 @@ class IsarFavoritePostService implements FavoritePostSourceService {
   void dispose() {
     cache.destroy();
   }
+}
+
+class IsarAccountsService implements AccountsService {
+  const IsarAccountsService();
+
+  Isar get db => Dbs().main;
+
+  IsarCollection<IsarAccounts> get collection => db.isarAccounts;
+
+  @override
+  AccountsData get current =>
+      collection.getSync(0) ??
+      const IsarAccounts(
+        danbooruApiKey: "",
+        danbooruUsername: "",
+        gelbooruApiKey: "",
+        gelbooruUserId: "",
+      );
+
+  @override
+  Stream<AccountsData> get events => collection.watchLazy().map((_) => current);
+
+  @override
+  void add(AccountsData data) =>
+      db.writeTxnSync(() => collection.putSync(data as IsarAccounts));
 }
 
 class _FavoritePostCache extends FavoritePostCache {

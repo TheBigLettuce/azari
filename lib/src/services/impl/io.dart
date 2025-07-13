@@ -322,6 +322,8 @@ class IoServices implements Services {
       return tagManager as T;
     } else if (T == GridDbService) {
       return gridDbs as T;
+    } else if (T == AccountsService) {
+      return accountsService as T;
     } else if (T == FavoritePostSourceService) {
       return favoritePosts as T;
     } else if (T == DownloadFileService) {
@@ -361,6 +363,8 @@ class IoServices implements Services {
 
     throw "Unimplemented: $T";
   }
+
+  IsarAccountsService get accountsService => const IsarAccountsService();
 
   final IsarColorsNamesService colorsNames = IsarColorsNamesService();
   final IoMessageService message = IoMessageService();
