@@ -133,12 +133,8 @@ class IsarCurrentBooruSource extends GridPostSource
   final IsarUpdatesAvailableImpl updatesAvailable;
 
   @override
-  List<Post> get lastFive => backingStorage._collection
-      .where()
-      .ratingEqualTo(PostRating.general)
-      .sortById()
-      .limit(5)
-      .findAllSync();
+  List<Post> get lastFive =>
+      backingStorage._collection.where().sortById().limit(5).findAllSync();
 
   @override
   Post? get currentlyLast =>

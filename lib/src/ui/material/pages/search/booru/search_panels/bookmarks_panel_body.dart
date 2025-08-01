@@ -131,13 +131,16 @@ class _MiniBookmark extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final thumb = bookmark.thumbnails.firstOrNull;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: onPressed == null ? null : () => onPressed!(bookmark),
-        onLongPress:
-            onLongPressed == null ? null : () => onLongPressed!(bookmark),
+        onLongPress: onLongPressed == null
+            ? null
+            : () => onLongPressed!(bookmark),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -155,11 +158,17 @@ class _MiniBookmark extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: SizedBox.expand(
-                  child: Image(
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                    image: CachedNetworkImageProvider(
-                      bookmark.thumbnails.first.url,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    enabled:
+                        thumb?.rating == PostRating.explicit ||
+                        thumb?.rating == PostRating.questionable,
+                    child: Image(
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      image: thumb == null
+                          ? MemoryImage(kTransparentImage)
+                          : CachedNetworkImageProvider(thumb.url),
                     ),
                   ),
                 ),

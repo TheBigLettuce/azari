@@ -26,7 +26,7 @@ class _AndroidGallery implements Directories {
 
   bool isThumbsLoading = false;
 
-  List<_AndroidGalleryFiles> _activeFiles = [];
+  final List<_AndroidGalleryFiles> _activeFiles = [];
 
   @override
   bool get isHostingFiles => _activeFiles.isNotEmpty;

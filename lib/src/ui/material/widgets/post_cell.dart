@@ -172,7 +172,7 @@ class _PostCellState extends State<PostCell>
                   if (FavoritePostSourceService.available &&
                       widget.post is! FavoritePost)
                     Align(
-                      alignment: Alignment.topRight,
+                      alignment: Alignment.topLeft,
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: FavoritePostButton(

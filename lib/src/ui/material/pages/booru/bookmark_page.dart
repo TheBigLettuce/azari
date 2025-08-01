@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:ui";
 
 import "package:azari/src/logic/cancellable_grid_settings_data.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
@@ -265,7 +266,7 @@ class _ClusteredSource {
         wrapRefresh: null,
         onEmpty: SourceOnEmptyInterface(
           source,
-          (context) => "No ${booru.string} bookmarks.",
+          (context) => "No ${booru.string} bookmarks.", // TODO: change
         ),
       ),
     );
@@ -524,27 +525,37 @@ class __BookmarkListTileStateCarousel extends State<_BookmarkListTileCarousel>
                               (index) {
                                 final e = widget.state.thumbnails[index];
 
-                                return Image(
-                                  frameBuilder:
-                                      (
-                                        context,
-                                        child,
-                                        frame,
-                                        wasSynchronouslyLoaded,
-                                      ) {
-                                        if (wasSynchronouslyLoaded) {
-                                          return child;
-                                        }
+                                return ImageFiltered(
+                                  imageFilter: ImageFilter.blur(
+                                    sigmaX: 5,
+                                    sigmaY: 5,
+                                  ),
+                                  enabled:
+                                      e.rating == PostRating.explicit ||
+                                      e.rating == PostRating.questionable,
+                                  child: Image(
+                                    frameBuilder:
+                                        (
+                                          context,
+                                          child,
+                                          frame,
+                                          wasSynchronouslyLoaded,
+                                        ) {
+                                          if (wasSynchronouslyLoaded) {
+                                            return child;
+                                          }
 
-                                        return frame == null
-                                            ? const ShimmerLoadingIndicator()
-                                            : child.animate().fadeIn();
-                                      },
-                                  colorBlendMode: BlendMode.color,
-                                  color: colorScheme.primaryContainer
-                                      .withValues(alpha: 0.4),
-                                  image: CachedNetworkImageProvider(e.url),
-                                  fit: BoxFit.cover,
+                                          return frame == null
+                                              ? const ShimmerLoadingIndicator()
+                                              : child.animate().fadeIn();
+                                        },
+
+                                    colorBlendMode: BlendMode.color,
+                                    color: colorScheme.primaryContainer
+                                        .withValues(alpha: 0.4),
+                                    image: CachedNetworkImageProvider(e.url),
+                                    fit: BoxFit.cover,
+                                  ),
                                 );
                               },
                             ),

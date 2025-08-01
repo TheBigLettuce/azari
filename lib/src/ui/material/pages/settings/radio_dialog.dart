@@ -49,25 +49,27 @@ void radioDialog<T>(
           ],
           title: Text(title),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: values
-                  .map(
-                    (e) => RadioListTile(
-                      shape: const BeveledRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5)),
+            child: RadioGroup(
+              onChanged: (value) {
+                Navigator.pop(context);
+                onChanged(allowSingle ? value ?? groupValue : value);
+              },
+              groupValue: groupValue,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: values
+                    .map(
+                      (e) => RadioListTile(
+                        shape: const BeveledRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
+                        ),
+                        value: e.$1,
+                        title: Text(e.$2),
+                        toggleable: allowSingle,
                       ),
-                      value: e.$1,
-                      title: Text(e.$2),
-                      groupValue: groupValue,
-                      toggleable: allowSingle,
-                      onChanged: (value) {
-                        Navigator.pop(context);
-                        onChanged(allowSingle ? value ?? groupValue : value);
-                      },
-                    ),
-                  )
-                  .toList(),
+                    )
+                    .toList(),
+              ),
             ),
           ),
         );

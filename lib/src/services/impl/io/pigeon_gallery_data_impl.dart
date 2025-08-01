@@ -31,10 +31,24 @@ class PlatformImageViewStateImpl
     required this.onTagPressed,
     required this.onTagLongPressed,
   }) {
-    _events = source.backingStorage.watch((_) {
+    _events = source.backingStorage.watch((newCount) {
       if (Platform.isAndroid) {
         platform.PlatformGalleryEvents().metadataChanged();
       }
+
+      if (newCount == 0 || newCount == 1) {
+        if (currentIndex != 0) {
+          currentIndex = 0;
+          _indexChanges.add(currentIndex);
+        }
+
+        return;
+      }
+
+      if (currentIndex > newCount - 1) {
+        currentIndex = currentIndex.clamp(0, newCount - 1);
+      }
+
       _indexChanges.add(currentIndex);
     });
   }
@@ -44,6 +58,7 @@ class PlatformImageViewStateImpl
   final void Function(BuildContext, String)? onTagLongPressed;
 
   late final StreamSubscription<void> _events;
+
   final _indexChanges = StreamController<int>.broadcast();
   final _videoChanges = StreamController<_VideoPlayerEvent>.broadcast();
 
@@ -58,7 +73,7 @@ class PlatformImageViewStateImpl
   Stream<int> get countEvents => source.backingStorage.countEvents;
 
   @override
-  ImageViewWidgets? get(int i) => source.forIdxUnsafe(i);
+  ImageViewWidgets? get(int i) => source.forIdx(i);
 
   @override
   int get index => currentIndex;
@@ -71,7 +86,10 @@ class PlatformImageViewStateImpl
 
   @override
   List<ImageTag> tagsFor(int i) {
-    final filename = source.forIdxUnsafe(i).name;
+    final filename = source.forIdx(i)?.name;
+    if (filename == null) {
+      return const [];
+    }
     final postTags = const LocalTagsService().get(filename);
     if (postTags.isEmpty) {
       return const [];
@@ -101,8 +119,8 @@ class PlatformImageViewStateImpl
   Stream<void> tagsEventsFor(int i) => const TagManagerService().pinned.events;
 
   @override
-  Future<platform.DirectoryFile> atIndex(int index) =>
-      Future.value(source.forIdxUnsafe(index).toDirectoryFile());
+  Future<platform.DirectoryFile?> atIndex(int index) =>
+      Future.value(source.forIdx(index)?.toDirectoryFile());
 
   @override
   Future<platform.GalleryMetadata> metadata() =>

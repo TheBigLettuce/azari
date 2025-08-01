@@ -275,7 +275,7 @@ class Danbooru implements BooruAPI {
   return (posts, currentSkipped);
 }
 
-class DanbooruCommunity implements BooruComunnityAPI {
+class DanbooruCommunity implements BooruCommunityAPI {
   DanbooruCommunity({required this.booru, required this.client})
     : forum = _ForumAPI(client),
       comments = _CommentsAPI(client),

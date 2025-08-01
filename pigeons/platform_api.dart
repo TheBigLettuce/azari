@@ -173,7 +173,7 @@ abstract class FlutterGalleryData {
   double? initialVolume();
 
   @async
-  DirectoryFile atIndex(int index);
+  DirectoryFile? atIndex(int index);
 
   void setCurrentIndex(int index);
 }

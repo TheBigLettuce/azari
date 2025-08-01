@@ -4,7 +4,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
-import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -24,11 +23,11 @@ abstract class GridBookmarkImpl
 
   @override
   ImageProvider<Object>? thumbnail() {
-    final e = thumbnails.indexWhere(
-      (e) => e.rating.asSafeMode.inLevel(SafeMode.normal),
-    );
+    if (thumbnails.isEmpty) {
+      return null;
+    }
 
-    return CachedNetworkImageProvider(thumbnails[e].url);
+    return CachedNetworkImageProvider(thumbnails.first.url);
   }
 
   @override

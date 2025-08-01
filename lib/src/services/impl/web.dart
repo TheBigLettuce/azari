@@ -266,13 +266,10 @@ class EmptyUpdatesAvailable implements UpdatesAvailable {
   const EmptyUpdatesAvailable();
 
   @override
-  void setCount(int count) {
-    // TODO: implement setCount
-  }
+  void setCount(int count) {}
 
   @override
   bool tryRefreshIfNeeded() {
-    // TODO: implement tryRefreshIfNeeded
     return false;
   }
 

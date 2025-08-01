@@ -11,16 +11,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.OptIn
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Metadata
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
@@ -28,11 +25,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView.LayoutParams
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
 import coil3.load
-import com.github.panpf.zoomimage.CoilZoomImageView
 import com.github.panpf.zoomimage.ZoomImageView
 import com.github.thebiglettuce.azari.R
 import com.github.thebiglettuce.azari.generated.DirectoryFile
@@ -42,7 +37,6 @@ import com.github.thebiglettuce.azari.generated.GalleryVideoEvents
 import com.github.thebiglettuce.azari.generated.PlatformGalleryApi
 import com.github.thebiglettuce.azari.generated.PlatformGalleryEvents
 import com.github.thebiglettuce.azari.generated.VideoPlaybackState
-import io.flutter.Log
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
@@ -58,12 +52,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import androidx.core.net.toUri
 
 // Based on Lineage OS's Glimpse
 
@@ -372,7 +362,7 @@ class MediaPlayerAdapter(
 
     override fun onBindViewHolder(holder: MediaPictureViewHolder, position: Int) {
         data.atIndex(position.toLong()) {
-            holder.bind(it.getOrNull()!!)
+            holder.bind(it.getOrNull())
         }
     }
 
@@ -450,8 +440,12 @@ class MediaPlayerAdapter(
         }
 
 
-        fun bind(file: DirectoryFile) {
+        fun bind(file: DirectoryFile?) {
             this.pageDataFlow.value = file
+
+            if (file == null) {
+                return
+            }
 
             imageView.load(file.originalUri) {
                 memoryCacheKey("full_${file.id}")

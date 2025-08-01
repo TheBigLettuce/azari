@@ -517,21 +517,6 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
   }
 }
 
-// AnimatedBuilder(
-//       animation: scrollingAnimation,
-//       builder: (context, child) {
-//         return SlideTransition(
-//           position: CurvedAnimation(
-//             parent: scrollingAnimation.view,
-//             curve: Easing.emphasizedDecelerate,
-//             reverseCurve: Easing.emphasizedAccelerate,
-//           ).drive<Offset>(Tween(begin: const Offset(0, 1), end: Offset.zero)),
-//           child: child,
-//         );
-//       },
-//       child: ,
-//     )
-
 class HomeDrawer extends StatefulWidget {
   const HomeDrawer({
     super.key,

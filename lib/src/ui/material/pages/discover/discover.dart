@@ -15,15 +15,27 @@ import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 
+class BooruCommunityService {}
+
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
+
+  static bool hasServicesRequired() {
+    if (!BooruCommunityAPI.supported(
+      const SettingsService().current.selectedBooru,
+    )) {
+      return false;
+    }
+
+    return true;
+  }
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
 }
 
 class _DiscoverPageState extends State<DiscoverPage> with SettingsWatcherMixin {
-  late final BooruComunnityAPI api;
+  late final BooruCommunityAPI api;
   late final Dio client;
 
   @override
@@ -31,7 +43,7 @@ class _DiscoverPageState extends State<DiscoverPage> with SettingsWatcherMixin {
     super.initState();
 
     client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-    api = BooruComunnityAPI.fromEnum(settings.selectedBooru, client);
+    api = BooruCommunityAPI.fromEnum(settings.selectedBooru, client)!;
   }
 
   @override

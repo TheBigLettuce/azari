@@ -112,12 +112,18 @@ abstract class BooruAPI {
   }
 }
 
-abstract interface class BooruComunnityAPI {
+abstract interface class BooruCommunityAPI {
   Booru get booru;
 
-  static BooruComunnityAPI fromEnum(Booru booru, Dio client) => switch (booru) {
-    Booru.gelbooru => GelbooruCommunity(booru: booru, client: client),
-    Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
+  static BooruCommunityAPI? fromEnum(Booru booru, Dio client) =>
+      switch (booru) {
+        Booru.gelbooru => null,
+        Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
+      };
+
+  static bool supported(Booru booru) => switch (booru) {
+    Booru.gelbooru => false,
+    Booru.danbooru => true,
   };
 
   BooruCommentsAPI get comments;

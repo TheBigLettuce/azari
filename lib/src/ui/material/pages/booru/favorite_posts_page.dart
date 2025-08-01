@@ -776,25 +776,12 @@ class _FavoritePostsPinnedTagsRowState
   final controller = ScrollController();
   final _filteringEvents = StreamController<String>.broadcast();
 
-  // late final StreamSubscription<int> _latestCountEvents;
-  // int _latestCount = 0;
-  // final List<String> _list = [];
   late final BooruAPI api;
   late final Dio _apiClient;
 
   @override
   void initState() {
     super.initState();
-
-    // _latestCountEvents = const TagManagerService().latest.events.listen((e) {
-    //   if (e == _latestCount) {
-    //     return;
-    //   }
-
-    //   _latestCount = e;
-    //   // _seekLastSearchedPinnedTags();
-    //   setState(() {});
-    // });
 
     final booru = const SettingsService().current.selectedBooru;
     _apiClient = BooruAPI.defaultClientForBooru(booru);
@@ -808,60 +795,18 @@ class _FavoritePostsPinnedTagsRowState
     _filteringEvents.close();
     _apiClient.close(force: true);
     controller.dispose();
-    // _latestCountEvents.cancel();
     widget.filterController?.removeListener(_listener);
 
     super.dispose();
   }
 
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-
-  // _seekLastSearchedPinnedTags();
-  // }
-
   void _listener() {
-    // _seekLastSearchedPinnedTags();
     if (widget.filterController != null) {
       _filteringEvents.add(widget.filterController!.text.trim());
     }
 
     setState(() {});
   }
-
-  // void _seekLastSearchedPinnedTags() {
-  //   final pinnedTags = PinnedTagsProvider.of(context);
-
-  //   final tags = <String>{};
-
-  //   final latestTags = const TagManagerService().latest.get(25);
-
-  //   final text = widget.filterController?.text.trim();
-
-  //   for (final tag in latestTags) {
-  //     if (pinnedTags.map.containsKey(tag.tag)) {
-  //       tags.add(tag.tag);
-  //     }
-  //   }
-
-  //   tags.addAll(pinnedTags.map.keys);
-
-  //   if (text != null && text.isNotEmpty) {
-  //     tags.removeWhere((e) => !e.startsWith(text));
-  //   }
-
-  //   _list.clear();
-  //   _list.addAll(tags);
-
-  //   if (controller.hasClients) {
-  //     controller.animateTo(
-  //       0,
-  //       duration: Durations.medium1,
-  //       curve: Easing.standard,
-  //     );
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -885,105 +830,3 @@ class _FavoritePostsPinnedTagsRowState
     );
   }
 }
-
-// class _SearchBarWidget extends StatelessWidget {
-//   const _SearchBarWidget({
-//     // super.key,
-//     required this.api,
-//     required this.filter,
-//     required this.safeModeState,
-//     required this.searchTextController,
-//     required this.searchFocus,
-//     required this.settingsService,
-//   });
-
-//   final TextEditingController searchTextController;
-//   final FocusNode searchFocus;
-
-//   final BooruAPI api;
-
-//   final ChainedFilterResourceSource<(int, Booru), FavoritePost> filter;
-//   final SafeModeState safeModeState;
-
-//   final SettingsService settingsService;
-
-//   void launchGrid(BuildContext context) {
-//     if (searchTextController.text.isNotEmpty) {
-//       context.openSafeModeDialog((safeMode) {
-//         BooruRestoredPage.open(
-//           context,
-//           booru: api.booru,
-//           tags: searchTextController.text.trim(),
-//           overrideSafeMode: safeMode,
-//           // wrapScaffold: true,
-//         );
-//       });
-//     }
-//   }
-
-//   void clear() {
-//     searchTextController.text = "";
-//     filter.clearRefresh();
-//     searchFocus.unfocus();
-//   }
-
-//   void onChanged(String? _) {
-//     filter.clearRefresh();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final l10n = context.l10n();
-//     final theme = Theme.of(context);
-
-//     const padding = EdgeInsets.only(right: 16, left: 16, top: 4, bottom: 8);
-
-//     return Center(
-//       child: Padding(
-//         padding: padding,
-//         child: SearchBarAutocompleteWrapper(
-//           search: SearchBarAppBarType(
-//             onChanged: onChanged,
-//             complete: api.searchTag,
-//             textEditingController: searchTextController,
-//           ),
-//           searchFocus: searchFocus,
-//           child: (context, controller, focus, onSubmitted) => SearchBar(
-//             onSubmitted: (str) {
-//               onSubmitted();
-//               filter.clearRefresh();
-//             },
-//             backgroundColor: WidgetStatePropertyAll(
-//               theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
-//             ),
-//             onTapOutside: (event) => focus.unfocus(),
-//             elevation: const WidgetStatePropertyAll(0),
-//             focusNode: focus,
-//             controller: controller,
-//             onChanged: onChanged,
-//             hintText: l10n.filterHint,
-//             leading: IconButton(
-//               onPressed: () => launchGrid(context),
-//               icon: Icon(
-//                 Icons.search_rounded,
-//                 color: theme.colorScheme.primary,
-//               ),
-//             ),
-//             trailing: [
-//               ChainedFilterIcon(
-//                 filter: filter,
-//                 controller: searchTextController,
-//                 complete: api.searchTag,
-//                 focusNode: searchFocus,
-//               ),
-//               IconButton(
-//                 onPressed: clear,
-//                 icon: const Icon(Icons.close_rounded),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

@@ -262,7 +262,7 @@ class Gelbooru implements BooruAPI {
   }
 }
 
-class GelbooruCommunity implements BooruComunnityAPI {
+class GelbooruCommunity implements BooruCommunityAPI {
   GelbooruCommunity({required this.booru, required this.client})
     : forum = _ForumAPI(client),
       comments = _CommentsAPI(client),

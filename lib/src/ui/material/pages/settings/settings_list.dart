@@ -470,7 +470,7 @@ class _DanbooruAccountSettingsState extends State<DanbooruAccountSettings>
     with AccountsServiceWatcherMixin {
   @override
   Widget build(BuildContext context) {
-    return _Form(
+    return AccountsForm(
       loginHint: "Username",
       apiKeyHint: "Api key",
       borderRadius: const BorderRadius.only(
@@ -502,7 +502,7 @@ class _GelbooruAccountSettingsState extends State<GelbooruAccountSettings>
     with AccountsServiceWatcherMixin {
   @override
   Widget build(BuildContext context) {
-    return _Form(
+    return AccountsForm(
       loginHint: "Login ID",
       apiKeyHint: "Api key",
       returnBack: widget.returnBack,
@@ -520,8 +520,8 @@ class _GelbooruAccountSettingsState extends State<GelbooruAccountSettings>
   }
 }
 
-class _Form extends StatefulWidget {
-  const _Form({
+class AccountsForm extends StatefulWidget {
+  const AccountsForm({
     super.key,
     required this.loginHint,
     required this.apiKeyHint,
@@ -547,10 +547,10 @@ class _Form extends StatefulWidget {
   final void Function(String login, String apiKey) onSubmit;
 
   @override
-  State<_Form> createState() => __FormState();
+  State<AccountsForm> createState() => _AccountsFormState();
 }
 
-class __FormState extends State<_Form> {
+class _AccountsFormState extends State<AccountsForm> {
   late final loginController = TextEditingController(text: widget.loginData);
   late final apiKeyController = TextEditingController(text: widget.apiKeyData);
 

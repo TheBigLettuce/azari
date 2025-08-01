@@ -11,35 +11,28 @@ enum CurrentRoute {
   gallery;
 
   factory CurrentRoute.fromIndex(int i) => switch (i) {
-        0 => home,
-        1 => discover,
-        2 => gallery,
-        int() => throw "no route",
-      };
+    0 => home,
+    1 => discover,
+    2 => gallery,
+    int() => throw "no route",
+  };
 
   bool hasServices() => switch (this) {
-        CurrentRoute.home => BooruPage.hasServicesRequired(),
-        CurrentRoute.discover => false,
-        CurrentRoute.gallery => DirectoriesPage.hasServicesRequired(),
-      };
+    CurrentRoute.home => BooruPage.hasServicesRequired(),
+    CurrentRoute.discover => DiscoverPage.hasServicesRequired(),
+    CurrentRoute.gallery => DirectoriesPage.hasServicesRequired(),
+  };
 
   Widget icon(AnimatedIconsMixin mixin) => switch (this) {
-        home => HomeDestinationIcon(
-            controller: mixin.homeIconController,
-          ),
-        discover => DiscoverDestinationIcon(
-            controller: mixin.discoverIconController,
-          ),
-        gallery => GalleryDestinationIcon(
-            controller: mixin.galleryIconController,
-          ),
-      };
+    home => HomeDestinationIcon(controller: mixin.homeIconController),
+    discover => DiscoverDestinationIcon(
+      controller: mixin.discoverIconController,
+    ),
+    gallery => GalleryDestinationIcon(controller: mixin.galleryIconController),
+  };
 
   static Widget wrap(ValueNotifier<CurrentRoute> notifier, Widget child) =>
-      _SelectedRoute(
-        notifier: notifier,
-        child: child,
-      );
+      _SelectedRoute(notifier: notifier, child: child);
 
   String label(BuildContext context, AppLocalizations l10n, Booru booru) =>
       switch (this) {
@@ -56,8 +49,8 @@ enum CurrentRoute {
   }
 
   static void selectOf(BuildContext context, CurrentRoute route) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedRoute>()!;
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectedRoute>()!;
 
     widget.notifier!.value = route;
   }
@@ -76,10 +69,7 @@ String _booruDestinationLabel(
 }
 
 enum BooruSubPage {
-  booru(
-    icon: Icons.home_outlined,
-    selectedIcon: Icons.home_rounded,
-  ),
+  booru(icon: Icons.home_outlined, selectedIcon: Icons.home_rounded),
   favorites(
     icon: Icons.favorite_outline_rounded,
     selectedIcon: Icons.favorite_rounded,
@@ -96,53 +86,47 @@ enum BooruSubPage {
     icon: Icons.download_outlined,
     selectedIcon: Icons.download_rounded,
   ),
-  visited(
-    icon: Icons.schedule_outlined,
-    selectedIcon: Icons.schedule_rounded,
-  );
+  visited(icon: Icons.schedule_outlined, selectedIcon: Icons.schedule_rounded);
 
-  const BooruSubPage({
-    required this.icon,
-    required this.selectedIcon,
-  });
+  const BooruSubPage({required this.icon, required this.selectedIcon});
 
   factory BooruSubPage.fromIdx(int idx) => switch (idx) {
-        0 => booru,
-        1 => favorites,
-        2 => bookmarks,
-        3 => hiddenPosts,
-        4 => downloads,
-        5 => visited,
-        int() => booru,
-      };
+    0 => booru,
+    1 => favorites,
+    2 => bookmarks,
+    3 => hiddenPosts,
+    4 => downloads,
+    5 => visited,
+    int() => booru,
+  };
 
   final IconData icon;
   final IconData selectedIcon;
 
   bool hasServices() => switch (this) {
-        BooruSubPage.booru => BooruPage.hasServicesRequired(),
-        BooruSubPage.favorites => FavoritePostsPage.hasServicesRequired(),
-        BooruSubPage.bookmarks => BookmarkPage.hasServicesRequired(),
-        BooruSubPage.hiddenPosts => HiddenPostsPage.hasServicesRequired(),
-        BooruSubPage.downloads => DownloadsPage.hasServicesRequired(),
-        BooruSubPage.visited => VisitedPostsPage.hasServicesRequired(),
-      };
+    BooruSubPage.booru => BooruPage.hasServicesRequired(),
+    BooruSubPage.favorites => FavoritePostsPage.hasServicesRequired(),
+    BooruSubPage.bookmarks => BookmarkPage.hasServicesRequired(),
+    BooruSubPage.hiddenPosts => HiddenPostsPage.hasServicesRequired(),
+    BooruSubPage.downloads => DownloadsPage.hasServicesRequired(),
+    BooruSubPage.visited => VisitedPostsPage.hasServicesRequired(),
+  };
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        booru => l10n.booruLabel,
-        favorites => l10n.favoritesLabel,
-        bookmarks => l10n.bookmarksPageName,
-        hiddenPosts => l10n.hiddenPostsPageName,
-        downloads => l10n.downloadsPageName,
-        visited => l10n.visitedPage,
-      };
+    booru => l10n.booruLabel,
+    favorites => l10n.favoritesLabel,
+    bookmarks => l10n.bookmarksPageName,
+    hiddenPosts => l10n.hiddenPostsPageName,
+    downloads => l10n.downloadsPageName,
+    visited => l10n.visitedPage,
+  };
 
   static Widget wrap(ValueNotifier<BooruSubPage> notifier, Widget child) =>
       _SelectedBooruPage(notifier: notifier, child: child);
 
   static BooruSubPage of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
 
     return widget!.notifier!.value;
   }
@@ -150,8 +134,8 @@ enum BooruSubPage {
   static void selectOf(BuildContext context, BooruSubPage page) {
     SelectionActions.controllerOf(context).setCount(0);
 
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectedBooruPage>();
 
     widget!.notifier!.value = page;
   }
@@ -167,24 +151,21 @@ enum GallerySubPage {
     selectedIcon: Icons.folder_off_rounded,
   );
 
-  const GallerySubPage({
-    required this.icon,
-    required this.selectedIcon,
-  });
+  const GallerySubPage({required this.icon, required this.selectedIcon});
 
   factory GallerySubPage.fromIdx(int idx) => switch (idx) {
-        0 => gallery,
-        1 => blacklisted,
-        int() => gallery,
-      };
+    0 => gallery,
+    1 => blacklisted,
+    int() => gallery,
+  };
 
   final IconData icon;
   final IconData selectedIcon;
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        GallerySubPage.gallery => l10n.galleryLabel,
-        GallerySubPage.blacklisted => l10n.blacklistedFoldersPage,
-      };
+    GallerySubPage.gallery => l10n.galleryLabel,
+    GallerySubPage.blacklisted => l10n.blacklistedFoldersPage,
+  };
 
   static Widget wrap(ValueNotifier<GallerySubPage> notifier, Widget child) =>
       _SelectedGalleryPage(notifier: notifier, child: child);
@@ -192,8 +173,8 @@ enum GallerySubPage {
   static GallerySubPage of(BuildContext context) => maybeOf(context)!;
 
   static GallerySubPage? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
 
     return widget?.notifier!.value;
   }
@@ -201,8 +182,8 @@ enum GallerySubPage {
   static void selectOf(BuildContext context, GallerySubPage page) {
     SelectionActions.controllerOf(context).setCount(0);
 
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_SelectedGalleryPage>();
 
     widget!.notifier!.value = page;
   }
@@ -235,15 +216,15 @@ mixin ChangePageMixin on State<Home> {
 
   Future<void> animateIcons(AnimatedIconsMixin icons) {
     return switch (_routeNotifier.value) {
-      CurrentRoute.home => icons.homeIconController
-          .reverse()
-          .then((value) => icons.homeIconController.forward()),
-      CurrentRoute.gallery => icons.galleryIconController
-          .reverse()
-          .then((value) => icons.galleryIconController.forward()),
-      CurrentRoute.discover => icons.discoverIconController
-          .reverse()
-          .then((value) => icons.discoverIconController.forward()),
+      CurrentRoute.home => icons.homeIconController.reverse().then(
+        (value) => icons.homeIconController.forward(),
+      ),
+      CurrentRoute.gallery => icons.galleryIconController.reverse().then(
+        (value) => icons.galleryIconController.forward(),
+      ),
+      CurrentRoute.discover => icons.discoverIconController.reverse().then(
+        (value) => icons.discoverIconController.forward(),
+      ),
     };
   }
 
@@ -350,31 +331,31 @@ class _CurrentPageWidget extends StatelessWidget {
       ],
       controller: icons.pageFadeAnimation,
       child: switch (changePage._routeNotifier.value) {
-        CurrentRoute.home => !GridDbService.available
-            ? const SizedBox.shrink()
-            : _NavigatorShell(
-                navigatorKey: changePage.mainKey,
-                child: BooruPage(
-                  pagingRegistry: changePage.pagingRegistry,
-                  procPop: (pop) => changePage._procPopA(booruPage, icons, pop),
-                  selectionController: SelectionActions.controllerOf(context),
-                ),
-              ),
-        CurrentRoute.gallery => !GridDbService.available ||
-                !GridSettingsService.available ||
-                !GalleryService.available
-            ? const SizedBox.shrink()
-            : _NavigatorShell(
-                navigatorKey: changePage.galleryKey,
-                child: DirectoriesPage(
-                  procPop: (pop) => changePage._procPop(
-                    galleryPageNotifier,
-                    icons,
-                    pop,
+        CurrentRoute.home =>
+          !GridDbService.available
+              ? const SizedBox.shrink()
+              : _NavigatorShell(
+                  navigatorKey: changePage.mainKey,
+                  child: BooruPage(
+                    pagingRegistry: changePage.pagingRegistry,
+                    procPop: (pop) =>
+                        changePage._procPopA(booruPage, icons, pop),
+                    selectionController: SelectionActions.controllerOf(context),
                   ),
-                  selectionController: SelectionActions.controllerOf(context),
                 ),
-              ),
+        CurrentRoute.gallery =>
+          !GridDbService.available ||
+                  !GridSettingsService.available ||
+                  !GalleryService.available
+              ? const SizedBox.shrink()
+              : _NavigatorShell(
+                  navigatorKey: changePage.galleryKey,
+                  child: DirectoriesPage(
+                    procPop: (pop) =>
+                        changePage._procPop(galleryPageNotifier, icons, pop),
+                    selectionController: SelectionActions.controllerOf(context),
+                  ),
+                ),
         CurrentRoute.discover => const DiscoverPage(),
       },
     );
@@ -408,24 +389,19 @@ class PagingStateRegistry {
     _map.clear();
   }
 
-  Widget inject(Widget child) => _PagingStateProvider(
-        registry: this,
-        child: child,
-      );
+  Widget inject(Widget child) =>
+      _PagingStateProvider(registry: this, child: child);
 
   static PagingStateRegistry of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_PagingStateProvider>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_PagingStateProvider>();
 
     return widget!.registry;
   }
 }
 
 class _PagingStateProvider extends InheritedWidget {
-  const _PagingStateProvider({
-    required this.registry,
-    required super.child,
-  });
+  const _PagingStateProvider({required this.registry, required super.child});
 
   final PagingStateRegistry registry;
 

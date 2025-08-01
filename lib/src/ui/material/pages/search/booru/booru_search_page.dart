@@ -4,6 +4,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "dart:async";
+import "dart:ui";
 
 import "package:azari/src/logic/booru_search_mixin.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
@@ -23,6 +24,7 @@ import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
+import "package:transparent_image/transparent_image.dart";
 
 part "search_panels/add_tag_button.dart";
 part "search_panels/bookmarks.dart";

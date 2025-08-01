@@ -44,46 +44,40 @@ extension DirectoryFileToAndroidFile on platform.DirectoryFile {
 class AndroidGalleryApi implements GalleryService {
   const AndroidGalleryApi();
 
-  static const appContext =
-      MethodChannel("com.github.thebiglettuce.azari.app_context");
+  static const appContext = MethodChannel(
+    "com.github.thebiglettuce.azari.app_context",
+  );
 
-  static const activityContext =
-      MethodChannel("com.github.thebiglettuce.azari.activity_context");
+  static const activityContext = MethodChannel(
+    "com.github.thebiglettuce.azari.activity_context",
+  );
 
   @override
   Directories open() => _AndroidGallery();
 
   @override
   GalleryTrash get trash => const _TrashImpl();
-
-  // @override
-  // ThumbsApi get thumbs => const AndroidCachedThumbs();
-
-  // @override
-  // FilesApi get files => const AndroidFilesManagement();
-
-  // @override
-  // Search get search => AndroidSearch(localTagsService);
 }
 
 class _TrashImpl implements GalleryTrash {
   const _TrashImpl();
 
   @override
-  Future<Directory?> get thumb =>
-      AndroidGalleryApi.appContext.invokeMethod("trashThumbId").then(
-            (e) => e == null
-                ? null
-                : Directory(
-                    bucketId: "trash",
-                    name: "Trash", // TODO: localize this somehow
-                    tag: "",
-                    volumeName: "",
-                    relativeLoc: "",
-                    lastModified: 0,
-                    thumbFileId: e as int,
-                  ),
-          );
+  Future<Directory?> get thumb => AndroidGalleryApi.appContext
+      .invokeMethod("trashThumbId")
+      .then(
+        (e) => e == null
+            ? null
+            : Directory(
+                bucketId: "trash",
+                name: "Trash", // TODO: localize this somehow
+                tag: "",
+                volumeName: "",
+                relativeLoc: "",
+                lastModified: 0,
+                thumbFileId: e as int,
+              ),
+      );
 
   @override
   void addAll(List<String> uris) =>
