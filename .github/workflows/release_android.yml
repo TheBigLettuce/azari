@@ -20,6 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install gcc-multilib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+
       - name: Install latest Rust Nightly
         uses: dtolnay/rust-toolchain@stable
         with:
