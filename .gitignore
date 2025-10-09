@@ -51,7 +51,7 @@ app.*.map.json
 /lib/src/generated/l10n/*.dart
 /lib/src/generated/platform/**/*.g.dart
 
-/test/test_api.g.dart
+/test/*.g.dart
 
 /.vscode/settings
 # GNU/Linux packaging
