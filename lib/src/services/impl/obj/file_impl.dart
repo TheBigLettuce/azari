@@ -16,14 +16,14 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/impl/io/platform_thumbnail_provider.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
 import "package:azari/src/ui/material/widgets/file_cell.dart";
 import "package:azari/src/ui/material/widgets/file_info.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
@@ -260,8 +260,7 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
               }
 
               const TasksService().add<FavoritePostSourceService>(() async {
-                final client = BooruAPI.defaultClientForBooru(res!.$2);
-                final api = BooruAPI.fromEnum(res!.$2, client);
+                final api = BooruAPI.fromEnum(res!.$2);
 
                 try {
                   final ret = await api.singlePost(res!.$1);
@@ -290,7 +289,7 @@ mixin FileImageViewWidgets implements ImageViewWidgets, FileBase {
                 } catch (e, trace) {
                   Logger.root.warning("favoritePostButton", e, trace);
                 } finally {
-                  client.close(force: true);
+                  api.destroy();
                 }
               });
             }

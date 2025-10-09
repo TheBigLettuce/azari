@@ -24,10 +24,6 @@ class SelectionBar extends StatefulWidget {
 class _SelectionBarState extends State<SelectionBar>
     with DefaultSelectionEventsMixin {
   @override
-  SelectionAreaSize get selectionSizes =>
-      const SelectionAreaSize(base: 0, expanded: 80);
-
-  @override
   Widget build(BuildContext context) {
     return Animate(
       autoPlay: false,
@@ -397,11 +393,9 @@ class SelectionBarAction {
 abstract class SelectionActions {
   factory SelectionActions() => _DefaultSelectionActions();
 
-  SelectionAreaSize get size;
-
   SelectionController get controller;
 
-  Stream<List<SelectionButton> Function()?> connect(SelectionAreaSize size);
+  Stream<List<SelectionButton> Function()?> connect();
 
   Widget inject(Widget child);
 
@@ -464,8 +458,6 @@ class SelectionButton {
 }
 
 mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
-  SelectionAreaSize get selectionSizes;
-
   late final StreamSubscription<List<SelectionButton> Function()?>
   _actionEvents;
 
@@ -487,9 +479,7 @@ mixin DefaultSelectionEventsMixin<S extends StatefulWidget> on State<S> {
 
     if (_selectionActions == null) {
       _selectionActions = SelectionActions.of(context);
-      _actionEvents = _selectionActions!.connect(selectionSizes).listen((
-        newActions,
-      ) {
+      _actionEvents = _selectionActions!.connect().listen((newActions) {
         if (_prevFunc == newActions) {
           return;
         } else if (newActions == null) {
@@ -597,12 +587,7 @@ class _DefaultSelectionActions implements SelectionActions {
   late final _DefaultSelectionController controller;
 
   @override
-  SelectionAreaSize size = const SelectionAreaSize(base: 0, expanded: 0);
-
-  @override
-  Stream<List<SelectionButton> Function()?> connect(SelectionAreaSize size_) {
-    size = size_;
-
+  Stream<List<SelectionButton> Function()?> connect() {
     return _events.stream;
   }
 

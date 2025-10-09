@@ -22,7 +22,7 @@ import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/impl/obj/visited_post.dart";
 import "package:azari/src/services/impl/web/impl.dart" as web;
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:flutter/widgets.dart";
 

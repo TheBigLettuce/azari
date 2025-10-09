@@ -5,12 +5,6 @@
 
 part of "services.dart";
 
-typedef ShellConfigurationWatcher = StreamSubscription<ShellConfigurationData>
-    Function(
-  void Function(ShellConfigurationData) f, [
-  bool fire,
-]);
-
 abstract interface class GridSettingsService implements ServiceMarker {
   const GridSettingsService();
 
@@ -66,10 +60,10 @@ enum GridLayoutType {
   const GridLayoutType();
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
-        GridLayoutType.list => l10n.enumGridLayoutTypeList,
-        GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
-      };
+    GridLayoutType.grid => l10n.enumGridLayoutTypeGrid,
+    GridLayoutType.list => l10n.enumGridLayoutTypeList,
+    GridLayoutType.gridQuilted => l10n.enumGridLayoutTypeGridQuilted,
+  };
 }
 
 @immutable

@@ -6,6 +6,7 @@
 import "package:azari/src/logic/blacklisted_directories_mixin.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
@@ -13,17 +14,14 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class BlacklistedDirectoriesPage extends StatefulWidget {
-  const BlacklistedDirectoriesPage({
-    super.key,
-    required this.popScope,
-    required this.selectionController,
-    required this.footer,
-  });
+  const BlacklistedDirectoriesPage({super.key});
 
-  final void Function(bool) popScope;
-  final SelectionController selectionController;
-
-  final PreferredSizeWidget? footer;
+  static void open(BuildContext context) =>
+      Navigator.of(context, rootNavigator: true).push<void>(
+        MaterialPageRoute(
+          builder: (context) => const BlacklistedDirectoriesPage(),
+        ),
+      );
 
   @override
   State<BlacklistedDirectoriesPage> createState() =>
@@ -36,39 +34,50 @@ class _BlacklistedDirectoriesPageState extends State<BlacklistedDirectoriesPage>
         BlacklistedDirectoriesMixin,
         BlacklistedDirectoryService {
   @override
-  SelectionController get selectionController => widget.selectionController;
+  SelectionController get selectionController => selectionActions.controller;
+
+  final selectionActions = SelectionActions();
+
+  @override
+  void dispose() {
+    selectionActions.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return ShellScope(
-      stackInjector: status,
-      configWatcher: gridConfiguration.watch,
-      footer: widget.footer,
-      appBar: TitleAppBarType(
-        title: l10n.blacklistedFoldersPage,
-        leading: IconButton(
-          onPressed: () => widget.popScope(false),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      elements: [
-        ElementPriority(
-          ShellElement(
-            animationsOnSourceWatch: false,
-            state: status,
-            slivers: [
-              ListLayout<BlacklistedDirectoryData>(
-                hideThumbnails: false,
-                source: filter.backingStorage,
-                progress: filter.progress,
-                selection: status.selection,
-              ),
-            ],
+    return ScaffoldWithSelectionBar(
+      actions: selectionActions,
+      child: ShellScope(
+        stackInjector: status,
+        appBar: TitleAppBarType(
+          title: l10n.blacklistedFoldersPage,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back),
           ),
         ),
-      ],
+        elements: [
+          ElementPriority(
+            ShellElement(
+              gridSettings: gridSettings,
+              animationsOnSourceWatch: false,
+              state: status,
+              slivers: [
+                ListLayout<BlacklistedDirectoryData>(
+                  hideThumbnails: false,
+                  source: filter.backingStorage,
+                  progress: filter.progress,
+                  selection: status.selection,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -19,12 +19,12 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
   SelectionController get selectionController;
 
   late final ChainedFilterResourceSource<String, BlacklistedDirectoryData>
-      filter;
+  filter;
   final searchTextController = TextEditingController();
 
-  late final SourceShellElementState<BlacklistedDirectoryData> status;
+  late final SourceShellScopeElementState<BlacklistedDirectoryData> status;
 
-  final gridConfiguration = CancellableGridSettingsData.noPersist(
+  final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
     aspectRatio: GridAspectRatio.one,
     columns: GridColumn.three,
@@ -40,7 +40,7 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
       ListStorage(),
       filter: (cells, filteringMode, sortingMode, colors, end, data) => (
         cells.where((e) => e.name.contains(searchTextController.text)),
-        null
+        null,
       ),
       allowedFilteringModes: const {},
       allowedSortingModes: const {},
@@ -48,8 +48,9 @@ mixin BlacklistedDirectoriesMixin<W extends StatefulWidget> on State<W> {
       initialSortingMode: SortingMode.none,
     );
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: filter,
+      gridSettings: gridSettings,
       onEmpty: SourceOnEmptyInterface(
         filter,
         (context) => context.l10n().emptyHiddenDirectories,

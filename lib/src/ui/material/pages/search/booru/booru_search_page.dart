@@ -13,11 +13,11 @@ import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/search/fading_panel.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
@@ -51,8 +51,11 @@ class BooruSearchPage extends StatefulWidget {
     }
 
     Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        builder: (context) => BooruSearchPage(procPop: procPop),
+      PageRouteBuilder(
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            Opacity(opacity: animation.value, child: child),
+        pageBuilder: (context, animation, _) =>
+            BooruSearchPage(procPop: procPop),
       ),
     );
   }
@@ -119,12 +122,15 @@ class _BooruSearchPageState extends State<BooruSearchPage>
               toolbarHeight: 78,
               title: SizedBox(
                 height: 48,
-                child: SearchPageSearchBar(
-                  complete: null,
-                  onSubmit: search,
-                  sink: filteringEvents.sink,
-                  searchTextController: searchController,
-                  searchFocus: focusNode,
+                child: Hero(
+                  tag: "searchBarAnchor",
+                  child: SearchPageSearchBar(
+                    complete: null,
+                    onSubmit: search,
+                    sink: filteringEvents.sink,
+                    searchTextController: searchController,
+                    searchFocus: focusNode,
+                  ),
                 ),
               ),
             ),
@@ -221,6 +227,11 @@ class SearchPageSearchBar extends StatelessWidget {
         onTapOutside: (event) => focus.unfocus(),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(horizontal: 16),
+        ),
+        shape: const WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+          ),
         ),
         onChanged: onChanged,
         hintText: l10n.searchHint,

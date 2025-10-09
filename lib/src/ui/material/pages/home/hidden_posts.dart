@@ -7,6 +7,7 @@ import "package:azari/src/logic/cancellable_grid_settings_data.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -16,11 +17,15 @@ import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
 class HiddenPostsPage extends StatefulWidget {
-  const HiddenPostsPage({super.key, required this.selectionController});
-
-  final SelectionController selectionController;
+  const HiddenPostsPage({super.key});
 
   static bool hasServicesRequired() => HiddenBooruPostsService.available;
+
+  static void open(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute(builder: (context) => const HiddenPostsPage()),
+    );
+  }
 
   @override
   State<HiddenPostsPage> createState() => HiddenPostsPageState();
@@ -28,6 +33,8 @@ class HiddenPostsPage extends StatefulWidget {
 
 class HiddenPostsPageState extends State<HiddenPostsPage>
     with SettingsWatcherMixin, HiddenBooruPostsService {
+  final actions = SelectionActions();
+
   late final source = GenericListSource<HiddenBooruPostData>(
     () => Future.value(
       cachedValues.entries
@@ -43,7 +50,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
     watchCount: const HiddenBooruPostsService().watch,
   );
 
-  late final SourceShellElementState<HiddenBooruPostData> status;
+  late final SourceShellScopeElementState<HiddenBooruPostData> status;
 
   final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
@@ -56,13 +63,14 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
   void initState() {
     super.initState();
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: source,
+      gridSettings: gridSettings,
       onEmpty: SourceOnEmptyInterface(
         source,
         (context) => context.l10n().emptyHiddenPosts,
       ),
-      selectionController: widget.selectionController,
+      selectionController: actions.controller,
       actions: const [],
       wrapRefresh: null,
     );
@@ -70,6 +78,7 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
 
   @override
   void dispose() {
+    actions.dispose();
     status.destroy();
     gridSettings.cancel();
     source.destroy();
@@ -81,33 +90,28 @@ class HiddenPostsPageState extends State<HiddenPostsPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n();
 
-    return ShellScope(
-      stackInjector: status,
-      configWatcher: gridSettings.watch,
-      appBar: TitleAppBarType(
-        title: l10n.hiddenPostsPageName,
-        leading: IconButton(
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-          icon: const Icon(Icons.menu_rounded),
-        ),
-      ),
-      elements: [
-        ElementPriority(
-          ShellElement(
-            state: status,
-            slivers: [
-              ListLayout<HiddenBooruPostData>(
-                hideThumbnails: false,
-                source: source.backingStorage,
-                progress: source.progress,
-                selection: status.selection,
-              ),
-            ],
+    return ScaffoldWithSelectionBar(
+      actions: actions,
+      child: ShellScope(
+        stackInjector: status,
+        appBar: TitleAppBarType(title: l10n.hiddenPostsPageName),
+        elements: [
+          ElementPriority(
+            ShellElement(
+              state: status,
+              gridSettings: gridSettings,
+              slivers: [
+                ListLayout<HiddenBooruPostData>(
+                  hideThumbnails: false,
+                  source: source.backingStorage,
+                  progress: source.progress,
+                  selection: status.selection,
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

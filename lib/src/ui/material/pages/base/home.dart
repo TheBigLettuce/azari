@@ -12,20 +12,16 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/app.dart";
-import "package:azari/src/ui/material/pages/booru/bookmark_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/downloads.dart";
-import "package:azari/src/ui/material/pages/booru/favorite_posts_page.dart";
-import "package:azari/src/ui/material/pages/booru/hidden_posts.dart";
-import "package:azari/src/ui/material/pages/booru/visited_posts.dart";
+import "package:azari/src/ui/material/pages/base/home_skeleton.dart";
 import "package:azari/src/ui/material/pages/discover/discover.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
-import "package:azari/src/ui/material/pages/home/home_skeleton.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/downloads.dart";
+import "package:azari/src/ui/material/pages/home/favorite_posts_page.dart";
 import "package:azari/src/ui/material/pages/settings/settings_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:logging/logging.dart";
 
 part "animated_icons_mixin.dart";
 part "before_you_continue_dialog_mixin.dart";
@@ -33,8 +29,6 @@ part "change_page_mixin.dart";
 part "icons/discover.dart";
 part "icons/gallery.dart";
 part "icons/home.dart";
-part "icons/search.dart";
-part "navigator_shell.dart";
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -43,23 +37,11 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-mixin CurrentGalleryPageMixin<W extends StatefulWidget> on State<W> {
-  final galleryPage = ValueNotifier<GallerySubPage>(GallerySubPage.gallery);
-
-  @override
-  void dispose() {
-    galleryPage.dispose();
-
-    super.dispose();
-  }
-}
-
 class _HomeState extends State<Home>
     with
         TickerProviderStateMixin<Home>,
         ChangePageMixin,
         AnimatedIconsMixin,
-        CurrentGalleryPageMixin,
         _BeforeYouContinueDialogMixin,
         WebLinksImplMixin {
   late final SettingsData settings;
@@ -95,8 +77,8 @@ class _HomeState extends State<Home>
       maybeBeforeYouContinueDialog(context, settings, const GalleryService());
     }
 
-    if (isRestart) {
-      restartOver();
+    if (SettingsPage.isRestart) {
+      SettingsPage.restartOver();
     }
   }
 
@@ -132,10 +114,6 @@ class _HomeState extends State<Home>
         }
       }
 
-      galleryPage.value = galleryPage.value == GallerySubPage.gallery
-          ? GallerySubPage.blacklisted
-          : GallerySubPage.gallery;
-
       animateIcons(this);
     } else {
       switchPage(this, route);
@@ -145,7 +123,7 @@ class _HomeState extends State<Home>
   }
 
   void onPop(bool didPop, Object? _) {
-    _procPopAll(galleryPage, this, didPop);
+    _procPopAll(this, didPop);
   }
 
   @override
@@ -156,31 +134,29 @@ class _HomeState extends State<Home>
         events: navBarEvents.stream,
         child: CurrentRoute.wrap(
           _routeNotifier,
-          GallerySubPage.wrap(
-            galleryPage,
-            BooruSubPage.wrap(
-              _booruPageNotifier,
-              PopScope(
-                canPop: false,
-                onPopInvokedWithResult: onPop,
-                child: HomeSkeleton(
+          BooruSubPage.wrap(
+            _booruPageNotifier,
+            PopScope(
+              canPop: false,
+              onPopInvokedWithResult: onPop,
+              child: HomeSkeleton(
+                animatedIcons: this,
+                onDestinationSelected: onDestinationSelected,
+                booru: settings.selectedBooru,
+                scrollingState: scrollingState,
+                drawer: HomeDrawer(
+                  changePage: this,
                   animatedIcons: this,
-                  onDestinationSelected: onDestinationSelected,
-                  booru: settings.selectedBooru,
-                  scrollingState: scrollingState,
-                  drawer: HomeDrawer(
-                    changePage: this,
-                    animatedIcons: this,
-                    settingsService: const SettingsService(),
-                    gridBookmarks: GridBookmarkService.safe(),
-                    favoritePosts: FavoritePostSourceService.safe(),
-                  ),
-                  child: _CurrentPageWidget(
-                    icons: this,
-                    changePage: this,
-                    galleryPageNotifier: galleryPage,
-                    settingsService: const SettingsService(),
-                  ),
+                  switchToHome: () =>
+                      onDestinationSelected(context, CurrentRoute.home),
+                  settingsService: const SettingsService(),
+                  gridBookmarks: GridBookmarkService.safe(),
+                  favoritePosts: FavoritePostSourceService.safe(),
+                ),
+                child: _CurrentPageWidget(
+                  icons: this,
+                  changePage: this,
+                  settingsService: const SettingsService(),
                 ),
               ),
             ),

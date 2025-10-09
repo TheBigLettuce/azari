@@ -34,8 +34,9 @@ import "package:azari/src/services/impl/obj/blacklisted_directory_data_impl.dart
 import "package:azari/src/services/impl/obj/directory_impl.dart";
 import "package:azari/src/services/impl/obj/file_impl.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/theme.dart";
+import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
@@ -163,7 +164,8 @@ mixin class VisitedPostsService implements ServiceMarker {
 
   void clear() => _instance!.clear();
 
-  StreamSubscription<void> watch(void Function(void) f) => _instance!.watch(f);
+  StreamSubscription<int> watch(void Function(int) f, [bool fire = false]) =>
+      _instance!.watch(f, fire);
 }
 
 sealed class ServiceMarker extends Object {}
@@ -1190,4 +1192,100 @@ mixin class ColorsNamesService implements ServiceMarker {
   ColorsNamesData get current => _instance!.current;
 
   void add(ColorsNamesData data) => _instance!.add(data);
+}
+
+abstract class BooruPool implements CellBuilder {
+  const factory BooruPool({
+    required bool isDeleted,
+    required int id,
+    required Booru booru,
+    required String name,
+    required String description,
+    required String thumbUrl,
+    required List<int> postIds,
+    required BooruPoolCategory category,
+    required DateTime updatedAt,
+  }) = $BooruPool;
+
+  bool get isDeleted;
+
+  int get id;
+  Booru get booru;
+
+  String get name;
+  String get description;
+  String get thumbUrl;
+
+  List<int> get postIds;
+
+  BooruPoolCategory get category;
+
+  DateTime get updatedAt;
+
+  BooruPool copy({
+    bool? isDeleted,
+    int? id,
+    Booru? booru,
+    String? name,
+    String? description,
+    String? thumbUrl,
+    List<int>? postIds,
+    BooruPoolCategory? category,
+    DateTime? updatedAt,
+  });
+}
+
+mixin class BooruPoolService implements ServiceMarker {
+  const BooruPoolService();
+
+  static bool get available => _instance != null;
+  static BooruPoolService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<BooruPoolService>();
+
+  BooruPoolsServiceHandle open(BooruPoolsAPI api) => _instance!.open(api);
+}
+
+mixin class FavoritePoolsService implements ServiceMarker {
+  const FavoritePoolsService();
+
+  static bool get available => _instance != null;
+  static FavoritePoolsService? safe() => _instance;
+
+  static late final _instance = _dbInstance.get<FavoritePoolsService>();
+
+  FavoritePoolServiceHandle open(Booru booru) => _instance!.open(booru);
+}
+
+abstract class FavoritePoolServiceHandle {
+  List<BooruPool> get all;
+  Stream<int> get events;
+
+  bool contains(BooruPool pool);
+
+  void add(BooruPool pool);
+  void remove(BooruPool pool);
+
+  void destroy();
+}
+
+abstract class BooruPoolsServiceHandle
+    implements ResourceSource<int, BooruPool>, PagingEntry {
+  Stream<void> get settingsEvents;
+
+  String? get name;
+  set name(String? s);
+
+  BooruPoolCategory? get category;
+  set category(BooruPoolCategory? c);
+
+  BooruPoolsOrder get order;
+  set order(BooruPoolsOrder o);
+
+  GridPostSource openPosts(
+    BooruPool pool,
+    PagingEntry entry, {
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
+  });
 }

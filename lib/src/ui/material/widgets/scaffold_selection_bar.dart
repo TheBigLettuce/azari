@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:async";
+
 import "package:azari/src/init_main/build_theme.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
@@ -28,6 +30,24 @@ class ScaffoldWithSelectionBar extends StatefulWidget {
 }
 
 class _ScaffoldWithSelectionBarState extends State<ScaffoldWithSelectionBar> {
+  late final StreamSubscription<void>? _events;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _events = widget.actions?.controller.expandedEvents.listen((e) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events?.cancel();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -55,7 +75,13 @@ class _ScaffoldWithSelectionBarState extends State<ScaffoldWithSelectionBar> {
                     data: data.copyWith(
                       viewPadding:
                           data.viewPadding +
-                          EdgeInsets.only(bottom: bottomPadding),
+                          EdgeInsets.only(
+                            bottom:
+                                bottomPadding +
+                                (widget.actions!.controller.isExpanded
+                                    ? widget.navBarHeight
+                                    : 0),
+                          ),
                     ),
                     child: widget.child,
                   );

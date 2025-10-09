@@ -12,9 +12,8 @@ import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
@@ -23,6 +22,7 @@ import "package:azari/src/ui/material/widgets/image_view/image_view_skeleton.dar
 import "package:azari/src/ui/material/widgets/image_view/video/photo_gallery_page_video.dart";
 import "package:azari/src/ui/material/widgets/image_view/video/player_widget_controller.dart";
 import "package:azari/src/ui/material/widgets/post_info.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/placeholders.dart";
@@ -368,8 +368,7 @@ class RefreshImageCube extends StatelessWidget {
   final Animation<double> animation;
 
   Future<void> _fetchUpdate() async {
-    final client = BooruAPI.defaultClientForBooru(post.booru);
-    final api = BooruAPI.fromEnum(post.booru, client);
+    final api = BooruAPI.fromEnum(post.booru);
 
     try {
       final newPost = await api.singlePost(post.id);
@@ -379,7 +378,7 @@ class RefreshImageCube extends StatelessWidget {
         AlertData("_RefreshImageCube", stack.toString(), null),
       );
     } finally {
-      client.close(force: true);
+      api.destroy();
     }
   }
 
@@ -533,6 +532,24 @@ class ReplaceAnimationState extends State<ReplaceAnimation>
     setState(() {
       animValue = controller.value;
     });
+  }
+
+  void next() {
+    if (widget.source.count == 0 ||
+        widget.source.count == 1 ||
+        idx + 1 >= widget.source.count) {
+      return;
+    }
+
+    commitForward();
+  }
+
+  void prev() {
+    if (widget.source.count == 0 || widget.source.count == 1 || idx == 0) {
+      return;
+    }
+
+    commitBackward();
   }
 
   void commitForward([double? overrideFrom]) {
@@ -895,6 +912,32 @@ class CardDialogStatic extends StatelessWidget {
   }
 }
 
+class GoForwardIntent extends Intent {
+  const GoForwardIntent();
+}
+
+class GoBackwardIntent extends Intent {
+  const GoBackwardIntent();
+}
+
+class GoForwardAction extends Action<GoForwardIntent> {
+  GoForwardAction(this.forward);
+
+  final VoidCallback forward;
+
+  @override
+  void invoke(GoForwardIntent intent) => forward();
+}
+
+class GoBackwardAction extends Action<GoBackwardIntent> {
+  GoBackwardAction(this.backward);
+
+  final VoidCallback backward;
+
+  @override
+  void invoke(GoBackwardIntent intent) => backward();
+}
+
 class CardDialog extends StatefulWidget {
   const CardDialog({
     super.key,
@@ -931,6 +974,11 @@ class _CardDialogState extends State<CardDialog> {
   int _oldIdx = 0;
 
   final syncr = StreamController<(int, double?)>.broadcast();
+
+  late final _actions = <Type, Action<Intent>>{
+    GoForwardIntent: GoForwardAction(() => _mainKey.currentState?.next()),
+    GoBackwardIntent: GoBackwardAction(() => _mainKey.currentState?.prev()),
+  };
 
   @override
   void initState() {
@@ -998,75 +1046,90 @@ class _CardDialogState extends State<CardDialog> {
       return const SizedBox.shrink();
     }
 
-    return ExitOnPressRoute(
-      exit: _exit,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 400.0.clamp(0, size.width)),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
+    return Shortcuts(
+      shortcuts: const <SingleActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.arrowRight): GoForwardIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowLeft): GoBackwardIntent(),
+      },
+      child: ExitOnPressRoute(
+        exit: _exit,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 400.0.clamp(0, size.width)),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 24,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            child: Actions(
+                              actions: _actions,
+                              child: Focus(
+                                autofocus: true,
+                                child: ReplaceAnimation(
+                                  key: _mainKey,
+                                  source: source,
+                                  synchronizeSnd: syncr.sink,
+                                  addScale: true,
+                                  currentIndex: idx,
+                                  child: (context, idx) {
+                                    final post = source.forIdx(idx);
+                                    if (post == null) {
+                                      return const SizedBox.shrink();
+                                    }
+
+                                    return CardAnimationChild(
+                                      post: post,
+                                      animation: animation,
+                                      thisIdx: idx,
+                                      tryScrollTo: (idx) {
+                                        _mainKey.currentState?.idx = idx;
+                                        _mainKey.currentState?.setState(() {});
+                                      },
+                                      source: source,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        ClipRRect(
                           child: ReplaceAnimation(
-                            key: _mainKey,
                             source: source,
-                            synchronizeSnd: syncr.sink,
-                            addScale: true,
+                            synchronizeRecv: syncr.stream,
                             currentIndex: idx,
+                            type: ReplaceAnimationType.vertical,
                             child: (context, idx) {
                               final post = source.forIdx(idx);
                               if (post == null) {
                                 return const SizedBox.shrink();
                               }
 
-                              return CardAnimationChild(
-                                post: post,
+                              return CardDialogButtons(
                                 animation: animation,
-                                thisIdx: idx,
-                                tryScrollTo: (idx) {
-                                  _mainKey.currentState?.idx = idx;
-                                  _mainKey.currentState?.setState(() {});
-                                },
-                                source: source,
+                                post: post,
                               );
                             },
                           ),
                         ),
-                      ),
-                      ClipRRect(
-                        child: ReplaceAnimation(
-                          source: source,
-                          synchronizeRecv: syncr.stream,
-                          currentIndex: idx,
-                          type: ReplaceAnimationType.vertical,
-                          child: (context, idx) {
-                            final post = source.forIdx(idx);
-                            if (post == null) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return CardDialogButtons(
-                              animation: animation,
-                              post: post,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  _TagsRow(
-                    idx: idx,
-                    syncr: syncr,
-                    animation: animation,
-                    source: source,
-                  ),
-                ],
+                      ],
+                    ),
+                    _TagsRow(
+                      idx: idx,
+                      syncr: syncr,
+                      animation: animation,
+                      source: source,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1230,6 +1293,7 @@ class _ShowPostInfoButtonState extends State<ShowPostInfoButton>
             ),
             icon: const Icon(Icons.info_outline),
           ),
+
           if (stars != null && stars! != FavoriteStars.zero)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -1257,6 +1321,40 @@ class _ShowPostInfoButtonState extends State<ShowPostInfoButton>
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          if (widget.post.score >= 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: PhysicalModel(
+                color: Colors.black87.withValues(alpha: 0.25),
+                elevation: 4,
+                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(
+                          Icons.thumb_up_alt_rounded,
+                          size: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      Text(
+                        widget.post.score.toString(),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1569,15 +1667,33 @@ class _TagsRowState extends State<_TagsRow> with _MultipleSortedTagArray {
   }
 }
 
-class TagsRowChild extends StatelessWidget {
+class TagsRowChild extends StatefulWidget {
   const TagsRowChild({super.key, required this.post, required this.tags});
 
   final PostImpl post;
   final List<({bool pinned, String tag})> tags;
 
   @override
+  State<TagsRowChild> createState() => _TagsRowChildState();
+}
+
+class _TagsRowChildState extends State<TagsRowChild> {
+  PostImpl get post => widget.post;
+  List<({bool pinned, String tag})> get tags => widget.tags;
+
+  final controller = ScrollController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      controller: controller,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.antiAlias,
@@ -1593,6 +1709,11 @@ class TagsRowChild extends StatelessWidget {
             onDoublePressed: e.pinned || !TagManagerService.available
                 ? null
                 : () {
+                    controller.animateTo(
+                      0,
+                      duration: Durations.medium1,
+                      curve: Easing.standardDecelerate,
+                    );
                     const TagManagerService().pinned.add(e.tag);
                   },
             onLongPressed: post is FavoritePost

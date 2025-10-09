@@ -11,7 +11,7 @@ import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
 import "package:azari/src/ui/material/widgets/post_cell.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:cached_network_image/cached_network_image.dart";
@@ -179,8 +179,7 @@ Future<void> openPostAsync(
           child: CardDialogStatic(
             animation: animation,
             getPost: () async {
-              final dio = BooruAPI.defaultClientForBooru(booru);
-              final api = BooruAPI.fromEnum(booru, dio);
+              final api = BooruAPI.fromEnum(booru);
 
               final Post post;
               try {
@@ -188,7 +187,7 @@ Future<void> openPostAsync(
               } catch (e) {
                 rethrow;
               } finally {
-                dio.close(force: true);
+                api.destroy();
               }
 
               const VisitedPostsService().addAll([

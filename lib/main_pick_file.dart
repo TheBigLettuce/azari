@@ -13,12 +13,14 @@ Future<void> mainPickfile() async {
 
   final accentColor = const AppApi().accentColor;
 
+  final actions = SelectionActions();
+
   runApp(
     injectWidgetEvents(
       PinnedTagsHolder(
         pinnedTags: TagManagerService.safe()?.pinned,
-        child: _GalleryPageHolder(
-          child: MaterialApp(
+        child: actions.inject(
+          MaterialApp(
             title: "Azari",
             themeAnimationCurve: Easing.standard,
             themeAnimationDuration: const Duration(milliseconds: 300),
@@ -106,34 +108,5 @@ class _ScaffoldSelectionBarInherited extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _GalleryPageHolder extends StatefulWidget {
-  const _GalleryPageHolder({
-    // super.key,
-    required this.child,
-  });
-
-  final Widget child;
-
-  @override
-  State<_GalleryPageHolder> createState() => __GalleryPageHolderState();
-}
-
-class __GalleryPageHolderState extends State<_GalleryPageHolder>
-    with CurrentGalleryPageMixin {
-  final _actions = SelectionActions();
-
-  @override
-  void dispose() {
-    _actions.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GallerySubPage.wrap(galleryPage, _actions.inject(widget.child));
   }
 }

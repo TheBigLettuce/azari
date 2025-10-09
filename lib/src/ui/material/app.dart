@@ -11,8 +11,9 @@ import "package:azari/src/init_main/restart_widget.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
+import "package:azari/src/ui/material/widgets/adaptive_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
 
@@ -46,18 +47,20 @@ class _AppMaterialState extends State<AppMaterial> {
       navigatorKey: navigatorKey,
       child: selectionEvents.inject(
         TimeTickerStatistics(
-          child: MaterialApp(
-            navigatorKey: navigatorKey,
-            color: accentColor,
-            themeAnimationCurve: Easing.standard,
-            themeAnimationDuration: const Duration(milliseconds: 300),
-            darkTheme: d,
-            theme: l,
-            home: const Home(),
-            debugShowCheckedModeBanner: false,
-            onGenerateTitle: (context) => "Azari",
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
+          child: AdaptivePage(
+            child: MaterialApp(
+              navigatorKey: navigatorKey,
+              color: accentColor,
+              themeAnimationCurve: Easing.standard,
+              themeAnimationDuration: const Duration(milliseconds: 300),
+              darkTheme: d,
+              theme: l,
+              home: const Home(),
+              debugShowCheckedModeBanner: false,
+              onGenerateTitle: (context) => "Azari",
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+            ),
           ),
         ),
       ),

@@ -16,11 +16,13 @@ import "package:xml/xml.dart";
 const Duration _defaultTimeout = Duration(seconds: 30);
 
 class Gelbooru implements BooruAPI {
-  const Gelbooru(this.client, {this.booru = Booru.gelbooru});
+  Gelbooru(this.client, this._token, {this.booru = Booru.gelbooru});
 
   static final _log = Logger("Gelbooru API");
 
   final Dio client;
+
+  CancelToken _token;
 
   @override
   final Booru booru;
@@ -67,6 +69,7 @@ class Gelbooru implements BooruAPI {
         receiveTimeout: _defaultTimeout,
         responseType: ResponseType.plain,
       ),
+      cancelToken: _token,
     );
 
     final doc = XmlDocument.parse(resp.data!);
@@ -100,6 +103,7 @@ class Gelbooru implements BooruAPI {
         responseType: ResponseType.json,
       ),
       LogReq(LogReq.completeTag(t), _log),
+      cancelToken: _token,
     );
 
     final tags = GelbooruTagsRet.fromJson(
@@ -179,6 +183,7 @@ class Gelbooru implements BooruAPI {
         responseType: ResponseType.json,
       ),
       LogReq(LogReq.page(p, tags: tags, safeMode: safeMode), _log),
+      cancelToken: _token,
     );
 
     return resp.data!["post"] == null
@@ -202,6 +207,7 @@ class Gelbooru implements BooruAPI {
         responseType: ResponseType.json,
       ),
       LogReq(LogReq.singlePost(id, tags: "", safeMode: SafeMode.none), _log),
+      cancelToken: _token,
     );
 
     final ret = GelbooruPostRet.fromJson(resp.data!);
@@ -260,39 +266,70 @@ class Gelbooru implements BooruAPI {
       return Future.value(value);
     });
   }
+
+  @override
+  Future<void> cancelRequests() async {
+    _token.cancel();
+    await _token.whenCancel;
+    _token = CancelToken();
+
+    return;
+  }
+
+  @override
+  void destroy() => client.close(force: true);
 }
 
 class GelbooruCommunity implements BooruCommunityAPI {
-  GelbooruCommunity({required this.booru, required this.client})
-    : forum = _ForumAPI(client),
-      comments = _CommentsAPI(client),
-      pools = _PoolsAPI(client);
+  GelbooruCommunity({required this.booru, required this.client}) {
+    forum = _ForumAPI(client, _token);
+    comments = _CommentsAPI(client, _token);
+    pools = _PoolsAPI(client, _token);
+    artists = const _ArtistsAPI();
+  }
 
   @override
   final Booru booru;
 
   final Dio client;
 
-  @override
-  final BooruCommentsAPI comments;
+  final _token = CancelToken();
 
   @override
-  final BooruForumAPI forum;
+  late final BooruCommentsAPI comments;
 
   @override
-  final BooruPoolsAPI pools;
+  late final BooruForumAPI forum;
+
+  @override
+  late final BooruPoolsAPI pools;
+
+  @override
+  late final BooruArtistsAPI artists;
+
+  @override
+  Future<void> cancelRequests() {
+    _token.cancel();
+    return _token.whenCancel;
+  }
+
+  @override
+  void destroy() => client.close(force: true);
 
   // @override
   // final BooruWikiAPI wiki;
 }
 
 class _PoolsAPI implements BooruPoolsAPI {
-  const _PoolsAPI(this.client);
+  const _PoolsAPI(this.client, this.token);
 
   final Dio client;
 
+  final CancelToken token;
+
   @override
   Future<List<BooruPool>> search({
+    required int page,
     int? limit,
     String? name,
     BooruPoolCategory? category,
@@ -303,15 +340,34 @@ class _PoolsAPI implements BooruPoolsAPI {
   }
 
   @override
-  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools) {
+  Future<List<Post>> posts({
+    required int page,
+    required BooruPool pool,
+    required PageSaver pageSaver,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Booru get booru => throw UnimplementedError();
+
+  @override
+  Future<int> postsCount(BooruPool pool) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<BooruPool> single(BooruPool pool) {
     throw UnimplementedError();
   }
 }
 
 class _CommentsAPI implements BooruCommentsAPI {
-  const _CommentsAPI(this.client);
+  const _CommentsAPI(this.client, this.token);
 
   final Dio client;
+
+  final CancelToken token;
 
   @override
   Future<List<BooruComments>> forPostId({
@@ -331,9 +387,11 @@ class _CommentsAPI implements BooruCommentsAPI {
 }
 
 class _ForumAPI implements BooruForumAPI {
-  const _ForumAPI(this.client);
+  const _ForumAPI(this.client, this.token);
 
   final Dio client;
+
+  final CancelToken token;
 
   @override
   Future<List<BooruForumPost>> postsForId({
@@ -351,6 +409,22 @@ class _ForumAPI implements BooruForumAPI {
     String? title,
     BooruForumCategory? category,
     BooruForumTopicsOrder order = BooruForumTopicsOrder.postCount,
+    required PageSaver pageSaver,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+class _ArtistsAPI implements BooruArtistsAPI {
+  const _ArtistsAPI();
+
+  @override
+  Future<List<BooruArtist>> search({
+    required int page,
+    int limit = 30,
+    String? name,
+    String? otherName,
+    BooruArtistsOrder order = BooruArtistsOrder.postCount,
     required PageSaver pageSaver,
   }) {
     throw UnimplementedError();

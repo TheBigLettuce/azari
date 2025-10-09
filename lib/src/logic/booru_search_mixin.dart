@@ -9,13 +9,11 @@ import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:dio/dio.dart";
 import "package:flutter/widgets.dart";
 
 mixin BooruSearchMixin<W extends StatefulWidget> on State<W> {
   AppLocalizations? l10n;
 
-  late final Dio client;
   late final BooruAPI api;
 
   final searchController = TextEditingController();
@@ -29,13 +27,12 @@ mixin BooruSearchMixin<W extends StatefulWidget> on State<W> {
 
     final settings = const SettingsService().current;
 
-    client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
-    api = BooruAPI.fromEnum(settings.selectedBooru, client);
+    api = BooruAPI.fromEnum(settings.selectedBooru);
   }
 
   @override
   void dispose() {
-    client.close(force: true);
+    api.destroy();
     filteringEvents.close();
 
     focusNode.dispose();

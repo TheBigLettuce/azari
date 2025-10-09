@@ -10,13 +10,13 @@ import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/gallery/blacklisted_directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
 import "package:azari/src/ui/material/pages/search/gallery/gallery_search_page.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
+import "package:azari/src/ui/material/widgets/scaling_right_menu.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
@@ -28,6 +28,17 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:local_auth/local_auth.dart";
 import "package:logging/logging.dart";
+
+extension GalleryReturnTypeCheckersExt on GalleryReturnCallback {
+  bool get isDirectory => this is ReturnDirectoryCallback;
+  bool get isFile => this is ReturnFileCallback;
+
+  ReturnDirectoryCallback get toDirectory => this as ReturnDirectoryCallback;
+  ReturnFileCallback get toFile => this as ReturnFileCallback;
+
+  ReturnFileCallback? get toFileOrNull =>
+      this is ReturnFileCallback ? this as ReturnFileCallback : null;
+}
 
 class DirectoriesPage extends StatefulWidget {
   const DirectoriesPage({
@@ -143,7 +154,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
       rootNavigatorPop: widget.procPop,
       child: ShellScope(
         stackInjector: status,
-        configWatcher: gridSettings.watch,
         footer: widget.callback?.preview,
         fab: widget.callback == null
             ? const NoShellFab()
@@ -180,16 +190,6 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                             }
                           }),
                       icon: const Icon(Icons.create_new_folder_outlined),
-                    )
-                  else
-                    IconButton(
-                      onPressed: () {
-                        GallerySubPage.selectOf(
-                          context,
-                          GallerySubPage.blacklisted,
-                        );
-                      },
-                      icon: const Icon(Icons.folder_off_outlined),
                     ),
                 ],
               )
@@ -217,19 +217,36 @@ class _DirectoriesPageState extends State<DirectoriesPage>
                         preferredSize: Size.zero,
                         child: SizedBox.shrink(),
                       ),
-                  title: const AppLogoTitle(),
+                  leading: IconButton(
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    icon: const Icon(Icons.menu_rounded),
+                  ),
+                  title: Center(
+                    child: GestureDetector(
+                      onTap: () => GallerySearchPage.open(context),
+                      child: AbsorbPointer(
+                        child: Hero(
+                          tag: "searchBarAnchor",
+                          child: SearchBar(
+                            leading: const AppLogoIcon(),
+                            elevation: const WidgetStatePropertyAll(0),
+                            hintText: l10n.searchHintDirectories,
+                            constraints: const BoxConstraints(
+                              minWidth: 360,
+                              maxWidth: 460,
+                              minHeight: 34,
+                              maxHeight: 34,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   actions: [
                     IconButton(
-                      onPressed: () => GallerySearchPage.open(context),
-                      icon: const Icon(Icons.search_rounded),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        GallerySubPage.selectOf(
-                          context,
-                          GallerySubPage.blacklisted,
-                        );
-                      },
+                      onPressed: () => BlacklistedDirectoriesPage.open(context),
                       icon: const Icon(Icons.folder_off_outlined),
                     ),
                     if (settingsButton != null) settingsButton,
@@ -240,6 +257,7 @@ class _DirectoriesPageState extends State<DirectoriesPage>
           ElementPriority(
             ShellElement(
               state: status,
+              gridSettings: gridSettings,
               scrollingState: ScrollingStateSinkProvider.maybeOf(context),
               scrollUpOn: navBarEvents == null
                   ? const []
@@ -272,46 +290,40 @@ class _DirectoriesPageState extends State<DirectoriesPage>
 
   @override
   Widget build(BuildContext context) {
-    final subpage = GallerySubPage.maybeOf(context);
-    if (subpage == null) {
-      return widget.wrapGridPage || widget.callback != null
-          ? ScaffoldWithSelectionBar(
-              actions: selectionActions,
-              child: Builder(builder: child),
-            )
-          : child(context);
-    }
-
-    return switch (subpage) {
-      GallerySubPage.gallery =>
-        widget.wrapGridPage || widget.callback != null
-            ? ScaffoldWithSelectionBar(child: Builder(builder: child))
-            : child(context),
-      GallerySubPage.blacklisted =>
-        BlacklistedDirectoryService.available
-            ? DirectoriesDataNotifier(
-                api: api,
-                callback: widget.callback,
-                segmentFnc: segmentCell,
-                child: GridPopScope(
-                  searchTextController: null,
-                  filter: null,
-                  rootNavigatorPop: widget.procPop,
-                  child: BlacklistedDirectoriesPage(
-                    footer: widget.callback?.preview,
-                    popScope:
-                        widget.procPop ??
-                        (_) => GallerySubPage.selectOf(
-                          context,
-                          GallerySubPage.gallery,
-                        ),
-                    selectionController: selectionController,
-                  ),
-                ),
-              )
-            : const SizedBox.shrink(),
-    };
+    return widget.wrapGridPage || widget.callback != null
+        ? ScaffoldWithSelectionBar(child: Builder(builder: child))
+        : child(context);
   }
+}
+
+abstract class GalleryReturnCallback {
+  const GalleryReturnCallback({required this.preview});
+
+  final PreferredSizeWidget preview;
+}
+
+class ReturnDirectoryCallback extends GalleryReturnCallback {
+  const ReturnDirectoryCallback({
+    required super.preview,
+    required this.joinable,
+    required this.suggestFor,
+    required this.choose,
+  });
+
+  final Future<void> Function(
+    ({String path, String volumeName, String bucketId}) e,
+    bool newDir,
+  )
+  choose;
+
+  final bool joinable;
+
+  final List<String> suggestFor;
+
+  Future<void> call(
+    ({String path, String volumeName, String bucketId}) e,
+    bool newDir,
+  ) => choose(e, newDir);
 }
 
 class GridPopScope extends StatefulWidget {
@@ -455,6 +467,14 @@ mixin ShellPopScopeMixin<W extends StatefulWidget> on State<W> {
         filter!.allowedFilteringModes.contains(FilteringMode.noFilter) &&
         filter!.filteringMode != FilteringMode.noFilter) {
       filter!.filteringMode = FilteringMode.noFilter;
+    }
+
+    final menu = ScalingRightMenu.maybeOf(context);
+    if (menu != null) {
+      if (menu.isOpenned) {
+        menu.close();
+        return;
+      }
     }
 
     rootNavigatorPop?.call(didPop);

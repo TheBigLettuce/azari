@@ -16,14 +16,14 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
 import "package:azari/src/ui/material/pages/search/fading_panel.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -55,8 +55,11 @@ class GallerySearchPage extends StatefulWidget {
     }
 
     return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => GallerySearchPage(procPop: procPop),
+      PageRouteBuilder(
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            Opacity(opacity: animation.value, child: child),
+        pageBuilder: (context, animation, _) =>
+            GallerySearchPage(procPop: procPop),
       ),
     );
   }
@@ -73,19 +76,11 @@ class _GallerySearchPageState extends State<GallerySearchPage>
   final _filteringEvents = StreamController<String>.broadcast();
   late final Directories api;
 
-  // late final Map<String, bool> blurMap;
-
   @override
   void initState() {
     super.initState();
 
     api = open();
-
-    // blurMap = (directoryMetadata?.toBlurAll ?? []).fold({}, (map, e) {
-    //   map[e.categoryName] = e.blur;
-
-    //   return map;
-    // });
 
     api.source.clearRefresh();
   }
@@ -101,10 +96,6 @@ class _GallerySearchPageState extends State<GallerySearchPage>
 
     super.dispose();
   }
-
-  // void _search(String str) {
-  //   _filteringEvents.add(str.trim());
-  // }
 
   void _onDirectoryPressed(Directory directory) {
     final l10n = context.l10n();
@@ -231,12 +222,15 @@ class _GallerySearchPageState extends State<GallerySearchPage>
               toolbarHeight: 78,
               title: SizedBox(
                 height: 48,
-                child: SearchPageSearchBar(
-                  complete: _completeDirectoryNameTag,
-                  onSubmit: search,
-                  sink: _filteringEvents.sink,
-                  searchTextController: searchController,
-                  searchFocus: focusNode,
+                child: Hero(
+                  tag: "searchBarAnchor",
+                  child: SearchPageSearchBar(
+                    complete: _completeDirectoryNameTag,
+                    onSubmit: search,
+                    sink: _filteringEvents.sink,
+                    searchTextController: searchController,
+                    searchFocus: focusNode,
+                  ),
                 ),
               ),
             ),

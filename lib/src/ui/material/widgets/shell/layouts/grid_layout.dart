@@ -19,14 +19,21 @@ class GridLayout<T extends CellBuilder> extends StatefulWidget {
     this.buildEmpty,
     required this.progress,
     required this.selection,
+    this.findChildIndexCallback,
+    this.tight = true,
+    this.spacing = 6,
   });
 
   final ShellSelectionHolder? selection;
 
   final ReadOnlyStorage<int, T> source;
   final RefreshingProgress progress;
+  final bool tight;
+  final double spacing;
 
   final Widget Function(Object? error)? buildEmpty;
+
+  final int? Function(Key)? findChildIndexCallback;
 
   @override
   State<GridLayout<T>> createState() => _GridLayoutState();
@@ -54,12 +61,18 @@ class _GridLayoutState<T extends CellBuilder> extends State<GridLayout<T>>
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             childAspectRatio: config.aspectRatio.value,
             crossAxisCount: config.columns.number,
+            mainAxisSpacing: widget.tight ? 0 : widget.spacing,
+            crossAxisSpacing: widget.tight ? 0 : widget.spacing,
           ),
+          findChildIndexCallback: widget.findChildIndexCallback,
           itemCount: source.count,
           itemBuilder: (context, idx) {
             final cell = widget.source[idx];
 
             return TrackingIndexHolder(
+              key: widget.findChildIndexCallback != null
+                  ? cell.uniqueKey()
+                  : null,
               idx: idx,
               child: ThisIndex(
                 idx: idx,

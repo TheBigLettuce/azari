@@ -25,6 +25,7 @@ mixin class DownloadManager implements ServiceMarker {
   void addLocalTags(Iterable<DownloadEntryTags> downloads) =>
       _instance!.addLocalTags(downloads);
 
+  void stopAll(Iterable<DownloadHandle> d) => _instance!.stopAll(d);
   void restartAll(Iterable<DownloadHandle> d) => _instance!.restartAll(d);
   void putAll(Iterable<DownloadEntry> downloads) =>
       _instance!.putAll(downloads);
@@ -56,6 +57,16 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
       (this as DownloadManagerHasPersistence).db.clear();
     }
     super.clear(silent);
+  }
+
+  @override
+  Iterable<DownloadHandle> trySorted(SortingMode sortingMode) {
+    final newList = map_.values.toList();
+    newList.sort(
+      (e1, e2) => e2.data.status.index.compareTo(e1.data.status.index),
+    );
+
+    return newList;
   }
 
   @override
@@ -96,6 +107,23 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
     }
 
     putAll(downloads);
+  }
+
+  @override
+  void stopAll(Iterable<DownloadHandle> handles) {
+    if (const SettingsService().current.path.isEmpty) {
+      return;
+    }
+
+    for (final handle in handles) {
+      final liveHandle = map_[handle.key];
+      if (liveHandle != null &&
+          liveHandle.data.status == DownloadStatus.inProgress) {
+        liveHandle.cancel();
+      }
+    }
+
+    addAll([]);
   }
 
   @override
@@ -212,18 +240,18 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
 
   void _downloadProgress(
     String url,
-    NotificationHandle notif,
+    NotificationHandle? notif,
     DownloadHandle handle, {
     required int count,
     required int total,
   }) {
     if (count == total || !map_.containsKey(url)) {
-      notif.done();
+      notif?.done();
       return;
     }
 
-    notif.setTotal(total);
-    notif.update(count);
+    notif?.setTotal(total);
+    notif?.update(count);
     if (count != 0 && total.isFinite) {
       handle._downloadProgress = count / total;
       handle.watcher?.add(handle._downloadProgress);
@@ -301,15 +329,8 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
         entry.data.url,
         filePath,
         cancelToken: entry.token,
-        onReceiveProgress: progress != null
-            ? (count, total) => _downloadProgress(
-                url,
-                progress,
-                entry,
-                count: count,
-                total: total,
-              )
-            : null,
+        onReceiveProgress: (count, total) =>
+            _downloadProgress(url, progress, entry, count: count, total: total),
       );
 
       await _moveDownloadedFile(entry, filePath: filePath);
@@ -360,9 +381,7 @@ mixin DefaultDownloadManagerImpl on MapStorage<String, DownloadHandle>
   });
 }
 
-class DownloadHandle
-    with DefaultBuildCell, CellBuilderData
-    implements CellBuilder {
+class DownloadHandle with CellBuilderData implements CellBuilder {
   DownloadHandle({required this.data, required this.token, this.watcher});
 
   StreamController<double>? watcher;
@@ -390,15 +409,7 @@ class DownloadHandle
     required bool hideName,
     bool blur = false,
     Alignment imageAlign = Alignment.center,
-  }) => WrapSelection(
-    onPressed: null,
-    child: super.buildCell(
-      l10n,
-      cellType: cellType,
-      hideName: hideName,
-      imageAlign: imageAlign,
-    ),
-  );
+  }) => DownloadHandleCell(handle: this, blur: blur, imageAlign: imageAlign);
 
   @override
   ImageProvider<Object> thumbnail() =>
@@ -414,6 +425,122 @@ class DownloadHandle
     watcher ??= StreamController.broadcast();
 
     return watcher!.stream.listen(f);
+  }
+}
+
+class DownloadHandleCell extends StatefulWidget {
+  const DownloadHandleCell({
+    super.key,
+    required this.handle,
+    required this.blur,
+    required this.imageAlign,
+  });
+
+  final bool blur;
+  final Alignment imageAlign;
+
+  final DownloadHandle handle;
+
+  @override
+  State<DownloadHandleCell> createState() => _DownloadHandleCellState();
+}
+
+class _DownloadHandleCellState extends State<DownloadHandleCell>
+    with AutomaticKeepAliveClientMixin {
+  DownloadHandle get handle => widget.handle;
+
+  late final StreamSubscription<double> _events;
+
+  double percent = 0;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    percent = handle.downloadProgress;
+
+    _events = handle.watchProgress((percent) {
+      this.percent = percent;
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  void _onPressed() {
+    switch (handle.data.status) {
+      case DownloadStatus.onHold:
+      case DownloadStatus.failed:
+        const DownloadManager().restartAll([handle]);
+      case DownloadStatus.inProgress:
+        const DownloadManager().stopAll([handle]);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final theme = Theme.of(context);
+
+    final shape = switch (handle.data.status) {
+      DownloadStatus.onHold => const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(15)),
+      ),
+      DownloadStatus.failed => const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(15)),
+      ),
+      DownloadStatus.inProgress => const CircleBorder(),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedContainer(
+            duration: Durations.extralong1,
+            curve: Easing.emphasizedDecelerate,
+            clipBehavior: Clip.antiAlias,
+            decoration: ShapeDecoration(shape: shape),
+            foregroundDecoration: switch (handle.data.status) {
+              DownloadStatus.onHold => const BoxDecoration(),
+              DownloadStatus.failed => BoxDecoration(
+                color: theme.colorScheme.surface.withValues(alpha: 0.4),
+              ),
+              DownloadStatus.inProgress => BoxDecoration(
+                color: theme.colorScheme.surface.withValues(alpha: 0.2),
+              ),
+            },
+            child: WrapSelection(
+              onPressed: _onPressed,
+              shape: shape,
+              child: GridCellImage(
+                blur: widget.blur,
+                imageAlign: Alignment.topCenter,
+                thumbnail: handle.thumbnail(),
+              ),
+            ),
+          ),
+          if (handle.data.status == DownloadStatus.inProgress)
+            IgnorePointer(
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                value: percent,
+                padding: EdgeInsets.zero,
+              ),
+            ).animate().fadeIn(duration: Durations.medium3),
+        ],
+      ),
+    );
   }
 }
 

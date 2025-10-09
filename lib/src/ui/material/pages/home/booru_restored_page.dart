@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/src/logic/booru_page_mixin.dart";
 import "package:azari/src/logic/cancellable_grid_settings_data.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
@@ -12,11 +13,10 @@ import "package:azari/src/logic/posts_source.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
@@ -27,7 +27,6 @@ import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 
@@ -127,13 +126,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
       tags,
       secondary,
       addToBookmarks,
-      [
-        if (DownloadManager.available && LocalTagsService.available)
-          actions.downloadPost(context, widget.booru, widget.thenMoveTo),
-        if (FavoritePostSourceService.available)
-          actions.favorites(context, showDeleteSnackbar: true),
-        if (HiddenBooruPostsService.available) actions.hide(context),
-      ],
+      makePostActions(context, widget.booru),
+      gridSettings,
     );
   }
 
@@ -243,9 +237,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                     ? const DefaultShellFab()
                     : const NoShellFab(),
                 stackInjector: pagingState.status,
-                configWatcher: gridSettings.watch,
                 settingsButton: ShellSettingsButton.onlyHeader(
-                  SafeModeButton(secondaryGrid: pagingState.secondaryGrid),
+                  SafeModeButtonSettings(
+                    secondaryGrid: pagingState.secondaryGrid,
+                  ),
                 ),
                 appBar: RawAppBarType((context, settingsButton, bottomWidget) {
                   return SliverAppBar(
@@ -284,8 +279,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                 elements: [
                   ElementPriority(
                     ShellElement(
-                      // key: gridKey,
                       state: pagingState.status,
+                      gridSettings: gridSettings,
                       initialScrollPosition: pagingState.offset,
                       animationsOnSourceWatch: false,
                       scrollUpOn: navigationButtonEvents == null
@@ -350,10 +345,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage>
                             );
                           },
                         ),
-                        GridFooter<void>(
-                          storage: source.backingStorage,
-                          name: source.tags,
-                        ),
                       ],
                     ),
                   ),
@@ -374,9 +365,9 @@ class RestoredBooruPageState implements PagingEntry {
     this.secondaryGrid,
     this.addToBookmarks,
     this.actions,
-    // this.selectionController,
-  ) : client = BooruAPI.defaultClientForBooru(booru) {
-    api = BooruAPI.fromEnum(booru, client);
+    GridSettingsData gridSettings,
+  ) {
+    api = BooruAPI.fromEnum(booru);
 
     void saveThumbnails(GridPostSource instance) {
       const GridBookmarkService()
@@ -402,8 +393,9 @@ class RestoredBooruPageState implements PagingEntry {
       onClearRefreshCompleted: saveThumbnails,
     );
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: source,
+      gridSettings: gridSettings,
       onEmpty: SourceOnEmptyInterface(
         source,
         (context) => context.l10n().emptyNoPosts,
@@ -422,12 +414,11 @@ class RestoredBooruPageState implements PagingEntry {
       .copy(time: DateTime.now())
       .maybeSave();
 
-  final Dio client;
   late final BooruAPI api;
 
   final SecondaryGridHandle secondaryGrid;
   late final GridPostSource source;
-  late final SourceShellElementState<Post> status;
+  late final SourceShellScopeElementState<Post> status;
   final List<SelectionBarAction> actions;
   final selectionActions = SelectionActions();
 
@@ -439,7 +430,7 @@ class RestoredBooruPageState implements PagingEntry {
   @override
   Future<void> dispose([bool closeGrid = true]) {
     status.destroy();
-    client.close();
+    api.destroy();
     source.destroy();
 
     if (closeGrid) {

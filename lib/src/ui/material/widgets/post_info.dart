@@ -13,9 +13,8 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/widgets/shimmer_placeholders.dart";
-import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -413,20 +412,21 @@ class TranslationNotes extends StatefulWidget {
 }
 
 class _TranslationNotesState extends State<TranslationNotes> {
-  late final Dio dio;
   late Future<Iterable<String>> f;
+  late final BooruAPI api;
 
   @override
   void initState() {
     super.initState();
 
-    dio = BooruAPI.defaultClientForBooru(widget.booru);
-    f = BooruAPI.fromEnum(widget.booru, dio).notes(widget.postId);
+    api = BooruAPI.fromEnum(widget.booru);
+    f = api.notes(widget.postId);
   }
 
   @override
   void dispose() {
-    dio.close(force: true);
+    f.ignore();
+    api.destroy();
 
     super.dispose();
   }

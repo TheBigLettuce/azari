@@ -14,11 +14,16 @@ import "package:dio/dio.dart";
 import "package:logging/logging.dart";
 
 class Danbooru implements BooruAPI {
-  const Danbooru(this.client, {this.booru = Booru.danbooru});
+  Danbooru(this.client, this._token, {this.booru = Booru.danbooru});
+
+  static const String postsReqOnly =
+      "id,tag_string,md5,image_width,image_height,file_url,preview_file_url,large_file_url,source,rating,score,file_size,created_at,media_asset[variants[type,url]]";
 
   static final _log = Logger("Danbooru API");
 
   final Dio client;
+
+  CancelToken _token;
 
   @override
   final Booru booru;
@@ -58,6 +63,7 @@ class Danbooru implements BooruAPI {
         "search[post_id]": postId.toString(),
       }),
       LogReq(LogReq.notes(postId), _log),
+      cancelToken: _token,
     );
 
     return (resp.data!).map((e) => stripHtml((e as Map)["body"] as String));
@@ -77,6 +83,7 @@ class Danbooru implements BooruAPI {
         "limit": limit.toString(),
       }),
       LogReq(LogReq.completeTag(tag), _log),
+      cancelToken: _token,
     );
 
     return resp.data!
@@ -96,6 +103,7 @@ class Danbooru implements BooruAPI {
     final resp = await client.getUriLog<dynamic>(
       Uri.https(booru.url, "/posts/$id.json", loginApiKey),
       LogReq(LogReq.singlePost(id, tags: "", safeMode: SafeMode.none), _log),
+      cancelToken: _token,
     );
 
     if (resp.data == null) {
@@ -219,8 +227,7 @@ class Danbooru implements BooruAPI {
       if (postid != null) "page": "b$postid",
       if (page != null) "page": (page + 1).toString(),
 
-      "only":
-          "id,tag_string,md5,image_width,image_height,file_url,preview_file_url,large_file_url,source,rating,score,file_size,created_at,media_asset[variants[type,url]]",
+      "only": postsReqOnly,
     };
 
     try {
@@ -232,6 +239,7 @@ class Danbooru implements BooruAPI {
               : LogReq.page(page!, tags: tags, safeMode: safeMode),
           _log,
         ),
+        cancelToken: _token,
       );
 
       return excludedTags == null
@@ -247,6 +255,18 @@ class Danbooru implements BooruAPI {
       return Future.error(e);
     }
   }
+
+  @override
+  Future<void> cancelRequests() async {
+    _token.cancel();
+    await _token.whenCancel;
+    _token = CancelToken();
+
+    return;
+  }
+
+  @override
+  void destroy() => client.close(force: true);
 }
 
 (List<Post>, int?) _skipExcluded(
@@ -279,7 +299,8 @@ class DanbooruCommunity implements BooruCommunityAPI {
   DanbooruCommunity({required this.booru, required this.client})
     : forum = _ForumAPI(client),
       comments = _CommentsAPI(client),
-      pools = _PoolsAPI(client);
+      pools = _PoolsAPI(client),
+      artists = _ArtistsAPI(client);
 
   @override
   final Booru booru;
@@ -287,28 +308,83 @@ class DanbooruCommunity implements BooruCommunityAPI {
   final Dio client;
 
   @override
-  final BooruCommentsAPI comments;
+  final _CommentsAPI comments;
 
   @override
-  final BooruForumAPI forum;
+  final _ForumAPI forum;
 
   @override
-  final BooruPoolsAPI pools;
+  final _PoolsAPI pools;
+
+  @override
+  final _ArtistsAPI artists;
+
+  @override
+  Future<void> cancelRequests() async {
+    await forum.cancel();
+    await comments.cancel();
+    await pools.cancel();
+    await artists.cancel();
+  }
+
+  @override
+  void destroy() => client.close(force: true);
 }
 
 class _PoolsAPI implements BooruPoolsAPI {
-  const _PoolsAPI(this.client);
+  _PoolsAPI(this.client);
 
   static final _log = Logger("Danbooru Pools API");
 
   final Dio client;
 
+  CancelToken _token = CancelToken();
+
+  Future<void> cancel() async {
+    _token.cancel();
+    await _token.whenCancel;
+    _token = CancelToken();
+
+    return;
+  }
+
+  @override
+  Booru get booru => Booru.danbooru;
+
+  @override
+  Future<int> postsCount(BooruPool pool) => Future.value(pool.postIds.length); // TODO: change later
+
+  @override
+  Future<BooruPool> single(BooruPool pool) async {
+    final resp = await client.getUriLog<Map<dynamic, dynamic>>(
+      Uri.https(Booru.danbooru.url, "/pools/${pool.id}.json"),
+      LogReq("single: ${pool.id}", _log),
+      cancelToken: _token,
+    );
+
+    final ret = fromListPools([
+      resp.data,
+    ]).map((e) => e.copy(name: e.name.replaceAll(RegExp("_"), " "))).toList();
+
+    final map = await thumbnails(ret);
+
+    for (final e in ret.indexed) {
+      final url = map[e.$2.id];
+      if (url != null) {
+        ret[e.$1] = e.$2.copy(thumbUrl: url);
+      }
+    }
+
+    return ret.first;
+  }
+
   @override
   Future<List<BooruPool>> search({
-    int? limit,
+    required int page,
+    int limit = 30,
     String? name,
     BooruPoolCategory? category,
-    BooruPoolsOrder order = BooruPoolsOrder.creationTime,
+    BooruPoolsOrder order = BooruPoolsOrder.latest,
     required PageSaver pageSaver,
   }) async {
     final resp = await client.getUriLog<List<dynamic>>(
@@ -325,17 +401,72 @@ class _PoolsAPI implements BooruPoolsAPI {
             BooruPoolCategory.collection => "collection",
           },
         if (name != null) "search[name_matches]": "$name*",
-        "page": pageSaver.page.toString(),
-        if (limit != null) "limit": limit.toString(),
+        "page": (page + 1).toString(),
+        "limit": limit.toString(),
+        "is_deleted": "false",
       }),
       LogReq("search, name: $name", _log),
+      cancelToken: _token,
     );
 
-    return fromListPools(resp.data!);
+    pageSaver.page = page;
+
+    final ret = fromListPools(
+      resp.data!,
+    ).map((e) => e.copy(name: e.name.replaceAll(RegExp("_"), " "))).toList();
+
+    final map = await thumbnails(ret);
+
+    for (final e in ret.indexed) {
+      final url = map[e.$2.id];
+      if (url != null) {
+        ret[e.$1] = e.$2.copy(thumbUrl: url);
+      }
+    }
+
+    return ret;
+  }
+
+  List<int> estimatePosts(BooruPool pool, int page) {
+    if (pool.postIds.isEmpty) {
+      return const [];
+    }
+
+    final skip = page * 100;
+    return pool.postIds.skip(skip).take(100).toList();
   }
 
   @override
-  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools) async {
+  Future<List<Post>> posts({
+    required int page,
+    required BooruPool pool,
+    required PageSaver pageSaver,
+  }) async {
+    final ids = estimatePosts(pool, page);
+    if (ids.isEmpty) {
+      return const [];
+    }
+
+    final stringBuffer = StringBuffer("id:")
+      ..writeAll(ids.map((e) => e.toString()), ",");
+
+    final resp = await client.getUriLog<List<dynamic>>(
+      Uri.https(Booru.danbooru.url, "/posts.json", {
+        "post[tags]": "$stringBuffer order:custom",
+        "only": Danbooru.postsReqOnly,
+        "format": "json",
+        "limit": "100",
+      }),
+      LogReq("poolPosts", _log),
+      cancelToken: _token,
+    );
+
+    pageSaver.page = page;
+
+    return fromList(resp.data!);
+  }
+
+  Future<Map<int, String>> thumbnails(List<BooruPool> pools) async {
     if (pools.isEmpty) {
       return const {};
     }
@@ -358,19 +489,28 @@ class _PoolsAPI implements BooruPoolsAPI {
     final resp = await client.getUriLog<List<dynamic>>(
       Uri.https(Booru.danbooru.url, "/posts.json", {
         "post[tags]": stringBuffer.toString(),
-        "only": "id,preview_file_url,large_file_url",
+        "only": "id,preview_file_url,media_asset[variants[type,url]]",
+        "limit": pools.length.toString(),
       }),
       LogReq("poolThumbnails", _log),
+      cancelToken: _token,
     );
 
     return resp.data!.fold<Map<int, String>>({}, (map, e) {
-      final preview = (e as Map)["preview_file_url"] as String?;
-      // final large = e["large_file_url"] as String?;
+      final smallThumb = (e as Map)["media_asset"];
+      final String thumb;
+      if (smallThumb is Map) {
+        thumb =
+            const DanbooruMediaAsset720Converter().fromJson(smallThumb) ??
+            (e["preview_file_url"] as String? ?? "");
+      } else {
+        thumb = e["preview_file_url"] as String? ?? "";
+      }
 
       final id = idToPoolMap[e["id"] as int];
 
-      if (preview != null && id != null) {
-        map[id] = preview;
+      if (id != null) {
+        map[id] = thumb;
       }
       return map;
     });
@@ -378,11 +518,21 @@ class _PoolsAPI implements BooruPoolsAPI {
 }
 
 class _CommentsAPI implements BooruCommentsAPI {
-  const _CommentsAPI(this.client);
+  _CommentsAPI(this.client);
 
   final Dio client;
 
+  CancelToken _token = CancelToken();
+
   static final _log = Logger("Danbooru Comments API");
+
+  Future<void> cancel() async {
+    _token.cancel();
+    await _token.whenCancel;
+    _token = CancelToken();
+
+    return;
+  }
 
   @override
   Future<List<BooruComments>> forPostId({
@@ -397,6 +547,7 @@ class _CommentsAPI implements BooruCommentsAPI {
         "only": "is_sticky,id,post_id,updated_at,score,body",
       }),
       LogReq("forPostId, id: $postId", _log),
+      cancelToken: _token,
     );
 
     return fromListComments(resp.data!);
@@ -417,6 +568,14 @@ class _ForumAPI implements BooruForumAPI {
 
   final Dio client;
 
+  Future<void> cancel() async {
+    // _token.cancel();
+    // await _token.whenCancel;
+    // _token = CancelToken();
+
+    return;
+  }
+
   @override
   Future<List<BooruForumPost>> postsForId({
     required int id,
@@ -436,5 +595,55 @@ class _ForumAPI implements BooruForumAPI {
     required PageSaver pageSaver,
   }) {
     throw UnimplementedError();
+  }
+}
+
+class _ArtistsAPI implements BooruArtistsAPI {
+  _ArtistsAPI(this.client);
+
+  final Dio client;
+
+  CancelToken _token = CancelToken();
+
+  static final _log = Logger("Danbooru Artists API");
+
+  Future<void> cancel() async {
+    _token.cancel();
+    await _token.whenCancel;
+    _token = CancelToken();
+
+    return;
+  }
+
+  @override
+  Future<List<BooruArtist>> search({
+    required int page,
+    int limit = 30,
+    String? name,
+    String? otherName,
+    BooruArtistsOrder order = BooruArtistsOrder.postCount,
+    required PageSaver pageSaver,
+  }) async {
+    final resp = await client.getUriLog<List<dynamic>>(
+      Uri.https(Booru.danbooru.url, "/artists.json", {
+        "search[order]": switch (order) {
+          BooruArtistsOrder.name => "name",
+          BooruArtistsOrder.latest => "updated_at",
+          BooruArtistsOrder.postCount => "post_count",
+        },
+        if (name != null) "search[any_name_matches]": "$name*",
+        "page": (page + 1).toString(),
+        "limit": limit.toString(),
+        "only":
+            "id,name,group_name,other_names,updated_at,is_banned,is_deleted", //,tag[name]
+        "is_deleted": "false",
+      }),
+      LogReq("search, name: $name", _log),
+      cancelToken: _token,
+    );
+
+    pageSaver.page = page;
+
+    return fromListArtists(resp.data!);
   }
 }

@@ -175,6 +175,10 @@ class _WrappedReadOnlyStorage<K, V> extends SourceStorage<K, V> {
   final ReadOnlyStorage<K, V> backingStorage;
 
   @override
+  int indexWhere(bool Function(V element) test, [int start = 0]) =>
+      backingStorage.indexWhere(test, start);
+
+  @override
   V operator [](K index) => backingStorage[index];
 
   @override

@@ -20,17 +20,16 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/io/pigeon_gallery_data_impl.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/booru/favorite_posts_page.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
+import "package:azari/src/ui/material/pages/home/favorite_posts_page.dart";
 import "package:azari/src/ui/material/widgets/file_info.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view_notifiers.dart";
 import "package:azari/src/ui/material/widgets/menu_wrapper.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
@@ -42,7 +41,6 @@ import "package:azari/src/ui/material/widgets/shell/layouts/quilted_grid.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_configuration.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -218,7 +216,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
 
   late final PlatformImageViewStateImpl impl;
 
-  late final SourceShellElementState<File> status;
+  late final SourceShellScopeElementState<File> status;
 
   Iterable<File> filterColors(Iterable<File> cell, FilteringColors? colors) {
     return cell.where((e) {
@@ -238,6 +236,8 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       return favorite.filteringColors == colors;
     });
   }
+
+  final gridSettings = GridSettingsData<FilesData>();
 
   @override
   void initState() {
@@ -436,8 +436,9 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       ),
     );
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: filter,
+      gridSettings: gridSettings,
       selectionController:
           selectionActions?.controller ?? widget.selectionController,
       onEmpty: SourceOnEmptyInterface(
@@ -617,7 +618,6 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
-    final gridSettings = GridSettingsData<FilesData>();
 
     return FlutterGalleryDataNotifier(
       galleryDataImpl: impl,
@@ -633,7 +633,6 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                 ? const NoShellFab()
                 : const DefaultShellFab(),
             // pageName: widget.dirName,
-            configWatcher: gridSettings.watch,
             settingsButton: ShellSettingsButton.fromWatchable(
               gridSettings,
               header: const ShowAdditionalButtonsTile(),
@@ -844,6 +843,7 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
                 Builder(
                   builder: (context) => ShellElement(
                     key: ValueKey(settings.filesExtendedActions),
+                    gridSettings: gridSettings,
                     state: status,
                     scrollingState: widget.scrollingState,
                     scrollUpOn: widget.navBarEvents == null
@@ -881,6 +881,20 @@ class _FilesPageState extends State<FilesPage> with SettingsWatcherMixin {
       ),
     );
   }
+}
+
+class ReturnFileCallback extends GalleryReturnCallback {
+  const ReturnFileCallback({
+    this.returnBack = false,
+    required super.preview,
+    required this.choose,
+  });
+
+  final Future<void> Function(File file) choose;
+
+  final bool returnBack;
+
+  Future<void> call(File file) => choose(file);
 }
 
 class ShowAdditionalButtonsTile extends StatefulWidget {
@@ -1447,101 +1461,6 @@ class ReturnFileCallbackNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(ReturnFileCallbackNotifier oldWidget) =>
       callback != oldWidget.callback;
-}
-
-class GridFooter<T> extends StatefulWidget {
-  const GridFooter({
-    super.key,
-    required this.storage,
-    this.name,
-    this.statistics,
-  });
-
-  final String? name;
-
-  final ReadOnlyStorage<dynamic, dynamic> storage;
-
-  final (List<Widget> Function(T), WatchFire<T>)? statistics;
-
-  @override
-  State<GridFooter<T>> createState() => _GridFooterState();
-}
-
-class _GridFooterState<T> extends State<GridFooter<T>> {
-  late final StreamSubscription<int> watcher;
-
-  @override
-  void initState() {
-    super.initState();
-
-    watcher = widget.storage.watch((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    watcher.cancel();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n();
-
-    if (widget.storage.isEmpty) {
-      return const SliverPadding(padding: EdgeInsets.zero);
-    }
-
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      sliver: SliverToBoxAdapter(
-        child: Center(
-          child: Column(
-            children: [
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  children: [
-                    if (widget.name != null)
-                      TextSpan(
-                        text: "${widget.name}\n",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                    TextSpan(
-                      text:
-                          "${widget.storage.count} ${widget.storage.count == 1 ? l10n.elementSingular : l10n.elementPlural}",
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.statistics != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    "~",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ),
-              if (widget.statistics != null)
-                _StatisticsPanel<T>(statistics: widget.statistics!),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _StatisticsPanel<T> extends StatefulWidget {
@@ -2276,7 +2195,7 @@ Future<void> redownloadFiles(AppLocalizations l10n, List<File> files) async {
     return Future.value();
   }
 
-  final clients = <Booru, Dio>{};
+  // final clients = <Booru, Dio>{};
   final apis = <Booru, BooruAPI>{};
 
   final progress = await const NotificationApi().show(
@@ -2301,13 +2220,9 @@ Future<void> redownloadFiles(AppLocalizations l10n, List<File> files) async {
         continue;
       }
 
-      final dio = clients.putIfAbsent(
-        res.booru,
-        () => BooruAPI.defaultClientForBooru(res.booru),
-      );
       final api = apis.putIfAbsent(
         res.booru,
-        () => BooruAPI.fromEnum(res.booru, dio),
+        () => BooruAPI.fromEnum(res.booru),
       );
 
       try {
@@ -2333,8 +2248,8 @@ Future<void> redownloadFiles(AppLocalizations l10n, List<File> files) async {
       )),
     );
   } finally {
-    for (final client in clients.values) {
-      client.close();
+    for (final client in apis.values) {
+      client.destroy();
     }
 
     progress?.done();

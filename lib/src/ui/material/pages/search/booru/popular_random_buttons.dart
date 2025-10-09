@@ -6,6 +6,7 @@
 import "dart:async";
 
 import "package:azari/src/generated/l10n/app_localizations.dart";
+import "package:azari/src/logic/booru_page_mixin.dart";
 import "package:azari/src/logic/cancellable_grid_settings_data.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
@@ -13,12 +14,11 @@ import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
@@ -136,7 +136,7 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
     layoutType: GridLayoutType.gridQuilted,
   );
 
-  late final SourceShellElementState gridStatus;
+  late final SourceShellScopeElementState gridStatus;
 
   final selectionActions = SelectionActions();
 
@@ -173,20 +173,15 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
   void initState() {
     super.initState();
 
-    gridStatus = SourceShellElementState(
+    gridStatus = SourceShellScopeElementState(
       source: source,
+      gridSettings: gridSettings,
       selectionController: selectionActions.controller,
       onEmpty: SourceOnEmptyInterface(
         source,
         (context) => context.l10n().emptyNoPosts,
       ),
-      actions: <SelectionBarAction>[
-        if (DownloadManager.available && LocalTagsService.available)
-          actions.downloadPost(context, widget.api.booru, null),
-        if (FavoritePostSourceService.available)
-          actions.favorites(context, showDeleteSnackbar: true),
-        if (HiddenBooruPostsService.available) actions.hide(context),
-      ],
+      actions: makePostActions(context, widget.api.booru),
     );
   }
 
@@ -225,7 +220,6 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
         filter: null,
         child: ShellScope(
           stackInjector: gridStatus,
-          configWatcher: gridSettings.watch,
           appBar: RawAppBarType(
             (context, settingsButton, bottomWidget) => SliverAppBar(
               floating: true,
@@ -257,7 +251,7 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
                     _onBooruTagPressed(context, booru, value, safeMode);
                   },
                   child: ShellElement(
-                    // key: gridKey,
+                    gridSettings: gridSettings,
                     state: gridStatus,
                     animationsOnSourceWatch: false,
                     registerNotifiers: (child) => OnBooruTagPressed(
@@ -280,7 +274,6 @@ class _PopularPageState extends State<PopularPage> with SettingsWatcherMixin {
                         progress: source.progress,
                         // randomNumber: gridSeed,
                       ),
-                      GridFooter<void>(storage: source.backingStorage),
                     ],
                   ),
                 ),
@@ -297,6 +290,7 @@ class PostsShellElement extends StatelessWidget {
   const PostsShellElement({
     super.key,
     required this.status,
+    required this.gridSettings,
     this.overrideSlivers,
     this.updateScrollPosition,
     this.initialScrollPosition = 0,
@@ -307,6 +301,8 @@ class PostsShellElement extends StatelessWidget {
   final ScrollOffsetFn? updateScrollPosition;
   final double initialScrollPosition;
 
+  final GridSettingsData gridSettings;
+
   @override
   Widget build(BuildContext context) {
     const gridSeed = 1;
@@ -316,6 +312,7 @@ class PostsShellElement extends StatelessWidget {
       ShellElement(
         animationsOnSourceWatch: false,
         state: status,
+        gridSettings: gridSettings,
         scrollUpOn: navBarEvents != null ? [(navBarEvents, null)] : const [],
         updateScrollPosition: updateScrollPosition,
         initialScrollPosition: initialScrollPosition,
@@ -337,17 +334,8 @@ class PostsShellElement extends StatelessWidget {
                       progress: status.source.progress,
                       gridSeed: gridSeed,
                       selection: status.selection,
-                      buildEmpty: (e) => EmptyWidget(
-                        error: e.toString(),
-                        gridSeed: gridSeed,
-                        // buttonText: l10n.openInBrowser,
-                        // onPressed: () {
-                        //   url.launchUrl(
-                        //     Uri.https(api.booru.url),
-                        //     mode: url.LaunchMode.externalApplication,
-                        //   );
-                        // },
-                      ),
+                      buildEmpty: (e) =>
+                          EmptyWidget(error: e.toString(), gridSeed: gridSeed),
                     ),
                   );
                 },
@@ -368,7 +356,6 @@ class PostsShellElement extends StatelessWidget {
                   );
                 },
               ),
-              GridFooter<void>(storage: status.source.backingStorage),
             ],
       ),
     );

@@ -3,6 +3,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import "dart:math" as math;
+
 import "package:azari/src/logic/typedefs.dart";
 import "package:dio/dio.dart";
 import "package:flutter/gestures.dart";
@@ -50,6 +52,7 @@ class _EmptyWidgetState extends State<EmptyWidget> {
   late final TapGestureRecognizer gestureRecognizer;
 
   String? get error => widget.error;
+  bool get hasError => error != null;
 
   @override
   void initState() {
@@ -89,58 +92,14 @@ class _EmptyWidgetState extends State<EmptyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    if (hasError) {
+      return ErrorWidgetBackground(error: error!);
+    }
+
     final l10n = context.l10n();
 
-    final emptySpan = TextSpan(
-      text: error != null ? "(ﾟヘﾟ)？" "\n" : l10n.emptyWidgetNotice,
-      style: TextStyle(
-        fontSize: error == null ? 24 : 14 * 2,
-        color: error == null
-            ? colorScheme.secondary.withValues(alpha: 0.8)
-            : colorScheme.error,
-      ),
-    );
-
-    final bodySpan = TextSpan(
-      text:
-          "${widget.overrideEmpty ?? (error == null ? l10n.emptyValue : "${l10n.error} ")}${error == null ? '\n' : ''}",
-      children: error == null
-          ? null
-          : [
-              TextSpan(
-                text: l10n.more.toLowerCase(),
-                style: TextStyle(
-                  fontSize: 24,
-                  decorationColor: colorScheme.error,
-                  decoration: TextDecoration.underline,
-                  // decorationStyle: TextDecorationStyle.wavy,
-                ),
-                recognizer: gestureRecognizer,
-              ),
-            ],
-      style: TextStyle(
-        overflow: TextOverflow.ellipsis,
-        color: error == null
-            ? colorScheme.secondary.withValues(alpha: 0.5)
-            : colorScheme.error.withValues(alpha: 0.6),
-        fontSize: 14 * 2,
-      ),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            if (error == null) bodySpan else emptySpan,
-            if (error == null) emptySpan else bodySpan,
-          ],
-        ),
-        maxLines: error != null ? 4 : 2,
-        textAlign: TextAlign.center,
-        style: const TextStyle(overflow: TextOverflow.ellipsis),
-      ),
+    return EmptyWidgetBackground(
+      subtitle: widget.overrideEmpty ?? l10n.emptyWidgetPlaceholder,
     );
   }
 }
@@ -170,11 +129,7 @@ class EmptyWidgetWithButton extends StatelessWidget {
         EmptyWidget(
           gridSeed: 0,
           overrideEmpty: overrideText,
-          error: error == null
-              ? null
-              : EmptyWidget.unwrapDioError(
-                  error,
-                ),
+          error: error == null ? null : EmptyWidget.unwrapDioError(error),
         ),
         const Padding(padding: EdgeInsets.only(top: 4)),
         FilledButton.tonal(onPressed: onPressed, child: Text(buttonText)),
@@ -184,10 +139,7 @@ class EmptyWidgetWithButton extends StatelessWidget {
 }
 
 class EmptyWidgetBackground extends StatelessWidget {
-  const EmptyWidgetBackground({
-    super.key,
-    required this.subtitle,
-  });
+  const EmptyWidgetBackground({super.key, required this.subtitle});
 
   final String subtitle;
 
@@ -209,15 +161,59 @@ class EmptyWidgetBackground extends StatelessWidget {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
               ),
             ),
-            Text(
-              l10n.emptyValue,
-              style: theme.textTheme.headlineMedium,
-            ),
+            Text(l10n.emptyValue, style: theme.textTheme.headlineMedium),
             const Padding(padding: EdgeInsets.only(bottom: 12)),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorWidgetBackground extends StatelessWidget {
+  const ErrorWidgetBackground({super.key, required this.error});
+
+  final String error;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n();
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.rotate(
+              angle: math.pi / 6.0,
+              child: Text(
+                "?",
+                style: TextStyle(
+                  fontSize: 120,
+                  color: theme.colorScheme.error.withValues(alpha: 0.9),
+                ),
+              ),
+            ),
+            Text(
+              l10n.error,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: theme.colorScheme.error.withValues(alpha: 0.8),
+              ),
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 12)),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),

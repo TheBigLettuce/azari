@@ -16,7 +16,7 @@
     "@searchHint": {
         "description": "Text field hint, on tag search text field"
     },
-    "goPostHint": "Go to a post",
+    "goPostHint": "Go to the post",
     "@goPostHint": {
         "description": "Text field hint, on go to a single post search field"
     },
@@ -37,10 +37,6 @@
     "@settingsLabel": {
         "description": "Arbitrary settings"
     },
-    "booruGridPageName": "Booru grid",
-    "@booruGridPageName": {
-        "description": "Booru grid page name"
-    },
     "downloadsPageName": "Downloads",
     "@downloadsPageName": {
         "description": "Downloads page name"
@@ -52,10 +48,6 @@
     "no": "no",
     "@no": {
         "description": "Dialog button, to dismiss the dialog"
-    },
-    "imageViewPageName": "Image view",
-    "@imageViewPageName": {
-        "description": "Image view page name"
     },
     "tagDeleteDialogTitle": "Do you want to delete",
     "@tagDeleteDialogTitle": {
@@ -228,11 +220,11 @@
     "@blacklistedFoldersPage": {
         "description": "Blacklisted directories page"
     },
-    "currentTagTitle": "Current tag",
+    "currentTagTitle": "Tag",
     "@currentTagTitle": {
         "description": "Dialog title when editing a directory tag"
     },
-    "enterNewTagTitle": "Enter new tag",
+    "enterNewTagTitle": "Change the tag",
     "@enterNewTagTitle": {
         "description": "Dialog title when changing a directory tag"
     },
@@ -365,7 +357,7 @@
     "@later": {
         "description": "Later button in the download directory dialog"
     },
-    "needChooseDirectory": "You need to choose a download directory. Without it downloads will fail without error.",
+    "needChooseDirectory": "You can skip that, but downloads will fail.",
     "@needChooseDirectory": {
         "description": "Download directory dialog body"
     },
@@ -373,7 +365,7 @@
     "@beforeYouContinueTitle": {
         "description": "Download directory dialog title"
     },
-    "deletedFromFavorites": "Deleted from favorites",
+    "deletedFromFavorites": "Removed from favorites",
     "@deletedFromFavorites": {
         "description": "Showed when an booru image gets deleted from favorites"
     },
@@ -409,11 +401,7 @@
     "@loadingPlaceholder": {
         "description": "Settings, thumbnail cache size placeholder"
     },
-    "pinnedThumbnailsSize": "Pinned thumbnails size",
-    "@pinnedThumbnailsSize": {
-        "description": "Settings, pinned thumbnails size tile"
-    },
-    "extendedFilesGridActions": "Show extended files grid actions",
+    "extendedFilesGridActions": "Show more selection actions",
     "@extendedFilesGridActions": {
         "description": "Settings, additional buttons in the files page of the gallery"
     },
@@ -598,7 +586,7 @@
     },
     "noBooruTags": "No tags",
     "@noBooruTags": {
-        "description": "Displayed in booru search page when no booru tags have been found, either latest tags or excluded"
+        "description": "Displayed in booru search page when no booru tags have been found, either recent tags or excluded"
     },
     "megabytes": "{number} MB",
     "@megabytes": {
@@ -625,7 +613,7 @@
     "@showExcludedTags": {
         "description": "Button label to show the excluded booru tags"
     },
-    "searchSinglePost": "Search single post",
+    "searchSinglePost": "Open the post by id",
     "@searchSinglePost": {
         "description": "Dialog title to search for a single booru post"
     },
@@ -729,7 +717,7 @@
     "@enumFilteringModeUntagged": {
         "description": "FilteringMode.untagged"
     },
-    "enumFilteringModeTagReversed": "Tag reversed",
+    "enumFilteringModeTagReversed": "No tag",
     "@enumFilteringModeTagReversed": {
         "description": "FilteringMode.tagReversed"
     },
@@ -865,7 +853,7 @@
     "@netThumbnailLoader": {
         "description": "Notifications, loading thumbnail from net"
     },
-    "loadingThumbnail": "Loading thumbnail",
+    "loadingThumbnail": "Loading the thumbnail",
     "@loadingThumbnail": {
         "description": "Notifications, loading thumbnail from net"
     },
@@ -877,13 +865,9 @@
     "@chooseValidDirectory": {
         "description": "Picking directory error"
     },
-    "pickDirectory": "Pick a directory for downloads",
+    "pickDirectory": "Pick the download directory",
     "@pickDirectory": {
         "description": "Picking directory label"
-    },
-    "openWelcomePageSetting": "Open welcome page",
-    "@openWelcomePageSetting": {
-        "description": "Settings, open welcome page"
     },
     "tagsLabel": "Tags",
     "@tagsLabel": {
@@ -892,6 +876,10 @@
     "bookmarksPageName": "Bookmarks",
     "@bookmarksPageName": {
         "description": "Bookmarks page name"
+    },
+    "morePageName": "More",
+    "@morePageName": {
+        "description": "More page name"
     },
     "welcomePermissions": "Permissions",
     "@welcomePermissions": {
@@ -917,38 +905,6 @@
     "@permissionsMediaLocation": {
         "description": "Welcome page, permissions label"
     },
-    "welcomeNextLabel": "Next",
-    "@welcomeNextLabel": {
-        "description": "Welcome page. next screen button label"
-    },
-    "welcomeWelcome": "Welcome",
-    "@welcomeWelcome": {
-        "description": "Welcome page, first page title"
-    },
-    "welcomeSomeSettings": "Some settings before you continue... 🛠️",
-    "@welcomeSomeSettings": {
-        "description": "Welcome page, first page body text"
-    },
-    "welcomeFinishLabel": "Finish",
-    "@welcomeFinishLabel": {
-        "description": "Welcome page, finish button label"
-    },
-    "welcomeFinishBody": "Enjoy using Azari 🥳",
-    "@welcomeFinishBody": {
-        "description": "Welcome page, finish page body text"
-    },
-    "welcomeDone": "Done",
-    "@welcomeDone": {
-        "description": "Welcome page, done page title"
-    },
-    "welcomeInitalSettings": "Inital settings",
-    "@welcomeInitalSettings": {
-        "description": "Welcome page. inital settings page title"
-    },
-    "welcomeInitalSettingsExplanation": "Download directory is used for multiple purposes",
-    "@welcomeInitalSettingsExplanation": {
-        "description": "Welcome page, inital page inital page explanation"
-    },
     "usingApi": "Using {apiName}",
     "@usingApi": {
         "description": "Shown as the name of API used when searching",
@@ -966,15 +922,15 @@
     "@valueTooShort": {
         "description": "Value validation error"
     },
-    "tagValidationError": "Only characters allowed are A-Z, a-z, 0-9, _, (, ), and ' .",
+    "tagValidationError": "Allowed characters are A-Z, a-z, 0-9, _, (, ), and ' .",
     "@tagValidationError": {
         "description": "Tag validation error"
     },
-    "unstickyStickyDirectory": "Unsticky/sticky directory",
+    "unstickyStickyDirectory": "Unsticky/sticky the directory",
     "@unstickyStickyDirectory": {
         "description": "Gallery auth reasons"
     },
-    "unblurDirectory": "Unblur directory",
+    "unblurDirectory": "Unblur the directory",
     "@unblurDirectory": {
         "description": "Gallery auth reasons"
     },
@@ -986,7 +942,7 @@
     "@unblur": {
         "description": "Group modifiers labels"
     },
-    "lockDirectory": "Lock directory group",
+    "lockDirectory": "Lock the directory's group",
     "@lockDirectory": {
         "description": "Gallery auth reasons"
     },
@@ -998,7 +954,7 @@
     "@notRequireAuth": {
         "description": "Group modifiers labels"
     },
-    "openDirectory": "Open directory",
+    "openDirectory": "Open the directory",
     "@openDirectory": {
         "description": "Gallery auth reasons"
     },
@@ -1006,7 +962,7 @@
     "@redownloadLabel": {
         "description": "Redownload file button label"
     },
-    "enumDownloadStatusOnHold": "On hold",
+    "enumDownloadStatusOnHold": "Next",
     "@enumDownloadStatusOnHold": {
         "description": "DownloadStatus.onHold"
     },
@@ -1014,7 +970,7 @@
     "@enumDownloadStatusFailed": {
         "description": "DownloadStatus.failed"
     },
-    "enumDownloadStatusInProgress": "In progress",
+    "enumDownloadStatusInProgress": "Downloading",
     "@enumDownloadStatusInProgress": {
         "description": "DownloadStatus.inProgress"
     },
@@ -1030,7 +986,7 @@
     "@authLabel": {
         "description": "Auth for changes of the locked directories button label"
     },
-    "changeGroupReason": "Change group on directories",
+    "changeGroupReason": "Change the group on directories",
     "@changeGroupReason": {
         "description": "Auth reasons"
     },
@@ -1042,7 +998,7 @@
     "@joinDirectoriesReason": {
         "description": "Auth reasons"
     },
-    "someFilesShownNotice": "Some files can't be shown",
+    "someFilesShownNotice": "Some files couldn't be shown",
     "@someFilesShownNotice": {
         "description": "Gallery favorites page notice when some files have been filtered"
     },
@@ -1067,7 +1023,7 @@
             }
         }
     },
-    "latestBookmarks": "Latest bookmarks",
+    "latestBookmarks": "Recent bookmarks",
     "@latestBookmarks": {
         "description": "Latest bookmark label in the booru drawer"
     },
@@ -1145,11 +1101,11 @@
     "@imageDimensions": {
         "description": "Image dimensions"
     },
-    "startInputingText": "Start inputing text...",
+    "startInputingText": "Start typing text...",
     "@startInputingText": {
         "description": "Panel body text on empty"
     },
-    "recentlySearched": "Recently Searched",
+    "recentlySearched": "Recent tags",
     "@recentlySearched": {
         "description": "Panel title of recently searched tags"
     },
@@ -1205,11 +1161,11 @@
             }
         }
     },
-    "nameInEverywhere": "'{tag}' everywhere",
+    "nameInEverywhere": "'{name}' everywhere",
     "@nameInEverywhere": {
         "description": "Search page button label to search every directory",
         "placeholders": {
-            "tag": {
+            "name": {
                 "type": "String"
             }
         }
@@ -1227,7 +1183,7 @@
             }
         }
     },
-    "addTagToExcluded": "Add #{tag} to excluded",
+    "addTagToExcluded": "Exclude #{tag}",
     "@addTagToExcluded": {
         "description": "Search panel button label to add tag to excluded",
         "placeholders": {
@@ -1236,7 +1192,7 @@
             }
         }
     },
-    "addExcludedTag": "Add excluded tag",
+    "addExcludedTag": "Exclude tag",
     "@addExcludedTag": {
         "description": "Search panel button label to add tag to excluded"
     },
@@ -1244,7 +1200,7 @@
     "@pinnedTags": {
         "description": "Search panel label of pinned tags"
     },
-    "addTagToPinned": "Add #{tag} to pinned",
+    "addTagToPinned": "Pin #{tag}",
     "@addTagToPinned": {
         "description": "Search panel button label to add tag to pinned",
         "placeholders": {
@@ -1253,11 +1209,11 @@
             }
         }
     },
-    "addPinnedTag": "Add pinned tag",
+    "addPinnedTag": "Pin a tag",
     "@addPinnedTag": {
         "description": "Search panel button label to add tag to pinned"
     },
-    "emptyBookmarkedSearches": "Bookmarked searches will appear here...",
+    "emptyBookmarkedSearches": "Bookmarks will appear here...",
     "@emptyBookmarkedSearches": {
         "description": "Empty widget body text"
     },
@@ -1269,7 +1225,7 @@
     "@emptyHiddenPosts": {
         "description": "Empty widget body text"
     },
-    "emptyNoPosts": "No posts found...",
+    "emptyNoPosts": "No posts...",
     "@emptyNoPosts": {
         "description": "Empty widget body text"
     },
@@ -1293,7 +1249,7 @@
     "@emptyNoMedia": {
         "description": "Empty widget body text"
     },
-    "emptyDownloadProgress": "Download progress will appear here...",
+    "emptyDownloadProgress": "Downloads will appear here...",
     "@emptyDownloadProgress": {
         "description": "Empty widget body text"
     },
@@ -1322,7 +1278,7 @@
     "@shareLabel": {
         "description": "Chip button label to shere content"
     },
-    "latestLabel": "Latest",
+    "latestLabel": "Recent",
     "@latestLabel": {
         "description": "Chip button label to switch pages on booru screen"
     },
@@ -1391,5 +1347,102 @@
     "enumFilteringColorsBlack": "Black",
     "@enumFilteringColorsBlack": {
         "description": "FilteringColors.black"
+    },
+    "enumBooruPoolsOrderName": "Name",
+    "@enumBooruPoolsOrderName": {
+        "description": "BooruPoolsOrder.name"
+    },
+    "enumBooruPoolsOrderLatest": "Latest",
+    "@enumBooruPoolsOrderLatest": {
+        "description": "BooruPoolsOrder.latest"
+    },
+    "enumBooruPoolsOrderCreationTime": "Time",
+    "@enumBooruPoolsOrderCreationTime": {
+        "description": "BooruPoolsOrder.time"
+    },
+    "enumBooruPoolsOrderPostCount": "Count",
+    "@enumBooruPoolsOrderPostCount": {
+        "description": "BooruPoolsOrder.count"
+    },
+    "enumBooruPoolCategorySeries": "Series",
+    "@enumBooruPoolCategorySeries": {
+        "description": "BooruPoolCategory.Series"
+    },
+    "enumBooruPoolCategoryCollection": "Collection",
+    "@enumBooruPoolCategoryCollection": {
+        "description": "BooruPoolCategory.collection"
+    },
+    "emptyWidgetPlaceholder": "Something should be here...",
+    "@emptyWidgetPlaceholder": {
+        "description": "Empty widget body text"
+    },
+    "searchHintDiscover": "Search for pools, ....",
+    "@searchHintDiscover": {
+        "description": "Discover page search bar hint text"
+    },
+    "categoryLabel": "Category",
+    "@categoryLabel": {
+        "description": "Category label shown for a booru pool"
+    },
+    "orderLabel": "Order",
+    "@orderLabel": {
+        "description": "Order label shown for a booru pool"
+    },
+    "searchHintDirectories": "Search for media, directories, tags, ...",
+    "@searchHintDirectories": {
+        "description": "Directories page search bar hint text"
+    },
+    "exceptionAlertTitle": "Exception alerts",
+    "@exceptionAlertTitle": {
+        "description": "Settings page, switch list tile title for exception alerts"
+    },
+    "setUpLinksTitle": "Set up links",
+    "@setUpLinksTitle": {
+        "description": "Settings page, switch list tile title for set up links"
+    },
+    "accountsLabel": "Accounts",
+    "@accountsLabel": {
+        "description": "Booru accounts label"
+    },
+    "tapToSetUp": "Tap to seet up",
+    "@tapToSetUp": {
+        "description": "Booru accounts button label to set up the account"
+    },
+    "usernameHint": "Username",
+    "@usernameHint": {
+        "description": "Accounts form username field hint"
+    },
+    "loginIdHint": "Login ID",
+    "@loginIdHint": {
+        "description": "Accounts form login ID field hint"
+    },
+    "apiKeyHint": "Api key",
+    "@apiKeyHint": {
+        "description": "Accounts form api key field hint"
+    },
+    "removeLabel": "Remove",
+    "@removeLabel": {
+        "description": "Accounts form remove the account data"
+    },
+    "saveLabel": "Save",
+    "@saveLabel": {
+        "description": "Accounts form save the account data"
+    },
+    "poolsLabel": "Pools",
+    "@poolsLabel": {
+        "description": "Booru pool list tile label"
+    },
+    "searchHintBooru": "Search for tags, bookmarks, ...",
+    "@searchHintBooru": {
+        "description": "Booru page search bar hint text"
+    },
+    "noBooruBookmarks": "No {booru} bookmarks",
+    "@noBooruBookmarks": {
+        "description": "Empty widget text body for bookmarks",
+        "placeholders": {
+            "booru": {
+                "type": "String"
+            }
+        }
     }
 }

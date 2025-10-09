@@ -7,7 +7,6 @@ import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/list_layout.dart";
 import "package:flutter/material.dart";

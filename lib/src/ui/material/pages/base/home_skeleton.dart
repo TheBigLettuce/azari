@@ -5,15 +5,15 @@
 
 import "dart:async";
 
-import "package:animations/animations.dart";
 import "package:azari/src/init_main/build_theme.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
 import "package:azari/src/ui/material/pages/settings/settings_page.dart";
+import "package:azari/src/ui/material/widgets/adaptive_page.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/material.dart";
@@ -51,6 +51,8 @@ class _HomeSkeletonState extends State<HomeSkeleton>
     with NetworkStatusApi, NetworkStatusWatcher {
   bool showRail = false;
 
+  final _ribbonKey = GlobalKey();
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -60,7 +62,8 @@ class _HomeSkeletonState extends State<HomeSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+    final viewPadding = MediaQuery.viewPaddingOf(context);
+    final bottomPadding = viewPadding.bottom;
     final theme = Theme.of(context);
 
     final bottomNavigationBar = showRail
@@ -83,6 +86,14 @@ class _HomeSkeletonState extends State<HomeSkeleton>
             child: widget.child,
           ),
           if (!hasInternet) const NoNetworkIndicator(),
+          Padding(
+            padding: EdgeInsets.only(
+              bottom:
+                  viewPadding.bottom +
+                  (showRail ? 0 : HomeNavigationBar.height),
+            ),
+            child: SelectionRibbon(key: _ribbonKey),
+          ),
         ],
       ),
     );
@@ -108,7 +119,14 @@ class _HomeSkeletonState extends State<HomeSkeleton>
               Expanded(child: body),
             ],
           ),
-          false => body,
+          false => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              viewPadding: viewPadding.copyWith(
+                bottom: viewPadding.bottom + HomeNavigationBar.height,
+              ),
+            ),
+            child: body,
+          ),
         },
       ),
     );
@@ -232,10 +250,6 @@ class _NavigationRail extends StatefulWidget {
 class __NavigationRailState extends State<_NavigationRail>
     with DefaultSelectionEventsMixin {
   @override
-  SelectionAreaSize get selectionSizes =>
-      const SelectionAreaSize(base: 0, expanded: 0);
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n();
     final isExpanded = selectionActions.controller.isExpanded;
@@ -293,6 +307,8 @@ class HomeNavigationBar extends StatefulWidget {
   final List<Widget> desitinations;
   final ScrollingStateSink scrollingState;
 
+  static const double height = 80;
+
   final void Function(BuildContext, CurrentRoute) onDestinationSelected;
 
   @override
@@ -305,15 +321,9 @@ abstract class IsExpandedConnector {
 }
 
 class _HomeNavigationBarState extends State<HomeNavigationBar>
-    with DefaultSelectionEventsMixin, TickerProviderStateMixin
+    with TickerProviderStateMixin
     implements IsExpandedConnector {
   late final AnimationController scrollingAnimation;
-
-  @override
-  SelectionAreaSize get selectionSizes =>
-      const SelectionAreaSize(base: 80.5, expanded: 80.5);
-
-  SelectionController get controller => selectionActions.controller;
 
   late final StreamSubscription<bool> events;
 
@@ -362,13 +372,6 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
     super.dispose();
   }
 
-  @override
-  void animateNavBar(bool show) {
-    if (show) {
-      scrollingAnimation.forward();
-    }
-  }
-
   final heightTween = Tween<double>(begin: 48, end: 72);
   final widthTween = Tween<double>(begin: 220, end: 280);
   final labelSizeTween = Tween<double>(begin: 4, end: 0);
@@ -382,137 +385,120 @@ class _HomeNavigationBarState extends State<HomeNavigationBar>
 
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
-    return AnimatedSwitcher(
-      switchInCurve: Easing.standard,
-      switchOutCurve: Easing.standard,
-      duration: Durations.medium3,
-      transitionBuilder: (child, animation) {
-        return FadeScaleTransition(animation: animation, child: child);
-      },
-      child: switch (controller.isExpanded) {
-        true => SelectionBarBase(
-          actions: actions,
-          selectionActions: selectionActions,
-        ),
-        false => Stack(
-          alignment: Alignment.bottomCenter,
-          fit: StackFit.passthrough,
-          children: [
-            IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      theme.colorScheme.surface.withValues(alpha: 0.8),
-                      theme.colorScheme.surface.withValues(alpha: 0.6),
-                      theme.colorScheme.surface.withValues(alpha: 0.4),
-                      theme.colorScheme.surface.withValues(alpha: 0.2),
-                      theme.colorScheme.surface.withValues(alpha: 0.1),
-                      theme.colorScheme.surface.withValues(alpha: 0),
-                    ],
-                  ),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: bottomPadding + 80,
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        fit: StackFit.passthrough,
+        children: [
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    theme.colorScheme.surface.withValues(alpha: 0.8),
+                    theme.colorScheme.surface.withValues(alpha: 0.6),
+                    theme.colorScheme.surface.withValues(alpha: 0.4),
+                    theme.colorScheme.surface.withValues(alpha: 0.2),
+                    theme.colorScheme.surface.withValues(alpha: 0.1),
+                    theme.colorScheme.surface.withValues(alpha: 0),
+                  ],
                 ),
               ),
+              child: SizedBox(
+                width: double.infinity,
+                height: bottomPadding + 80,
+              ),
             ),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 80 + bottomPadding),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12) +
-                    EdgeInsets.only(bottom: bottomPadding + 8),
-                child: DecoratedBox(
-                  position: DecorationPosition.foreground,
-                  decoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        width: 0.2,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.15,
-                        ),
+          ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: HomeNavigationBar.height + bottomPadding,
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12) +
+                  EdgeInsets.only(bottom: bottomPadding + 8),
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: ShapeDecoration(
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      width: 0.2,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.15,
                       ),
-                      borderRadius: const BorderRadius.all(Radius.circular(22)),
                     ),
-                  ),
-                  child: ClipRRect(
                     borderRadius: const BorderRadius.all(Radius.circular(22)),
-                    child: MediaQuery.removeViewPadding(
-                      removeBottom: true,
-                      context: context,
-                      child: AnimatedBuilder(
-                        animation: scrollingAnimation.view,
-                        builder: (context, child) {
-                          return SizedBox(
-                            width: widthTween.transform(
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(22)),
+                  child: MediaQuery.removeViewPadding(
+                    removeBottom: true,
+                    context: context,
+                    child: AnimatedBuilder(
+                      animation: scrollingAnimation.view,
+                      builder: (context, child) {
+                        return SizedBox(
+                          width: widthTween.transform(
+                            Easing.standard.transform(scrollingAnimation.value),
+                          ),
+                          child: NavigationBar(
+                            height: heightTween.transform(
                               Easing.standard.transform(
                                 scrollingAnimation.value,
                               ),
                             ),
-                            child: NavigationBar(
-                              height: heightTween.transform(
-                                Easing.standard.transform(
-                                  scrollingAnimation.value,
-                                ),
-                              ),
-                              onDestinationSelected: (value) {
-                                widget.onDestinationSelected(
-                                  context,
-                                  CurrentRoute.fromIndex(value),
-                                );
-                              },
-                              indicatorColor: colorScheme.surfaceContainerLow
-                                  .withValues(alpha: 0),
-                              labelTextStyle: WidgetStateMapper({
-                                WidgetState.disabled: theme
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant
-                                          .withValues(alpha: 0.38),
-                                    ),
-                                WidgetState.selected: theme
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                WidgetState.any: theme.textTheme.labelMedium
-                                    ?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                              }),
-
-                              labelBehavior: scrollingAnimation.value >= 0.5
-                                  ? NavigationDestinationLabelBehavior
-                                        .alwaysShow
-                                  : NavigationDestinationLabelBehavior
-                                        .alwaysHide,
-                              backgroundColor: colorScheme.surfaceContainerLow
-                                  .withValues(
-                                    alpha: backgroundAlphaTween.transform(
-                                      scrollingAnimation.value,
-                                    ),
+                            onDestinationSelected: (value) {
+                              widget.onDestinationSelected(
+                                context,
+                                CurrentRoute.fromIndex(value),
+                              );
+                            },
+                            indicatorColor: colorScheme.surfaceContainerLow
+                                .withValues(alpha: 0),
+                            labelTextStyle: WidgetStateMapper({
+                              WidgetState.disabled: theme.textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.38),
                                   ),
-                              selectedIndex: currentRoute.index,
-                              destinations: widget.desitinations,
-                            ),
-                          );
-                        },
-                      ),
+                              WidgetState.selected: theme.textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                              WidgetState.any: theme.textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                            }),
+
+                            labelBehavior: scrollingAnimation.value >= 0.5
+                                ? NavigationDestinationLabelBehavior.alwaysShow
+                                : NavigationDestinationLabelBehavior.alwaysHide,
+                            backgroundColor: colorScheme.surfaceContainerLow
+                                .withValues(
+                                  alpha: backgroundAlphaTween.transform(
+                                    scrollingAnimation.value,
+                                  ),
+                                ),
+                            selectedIndex: currentRoute.index,
+                            destinations: widget.desitinations,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-      },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -525,6 +511,7 @@ class HomeDrawer extends StatefulWidget {
     required this.animatedIcons,
     required this.gridBookmarks,
     required this.favoritePosts,
+    required this.switchToHome,
   });
 
   final ChangePageMixin changePage;
@@ -532,6 +519,8 @@ class HomeDrawer extends StatefulWidget {
 
   final GridBookmarkService? gridBookmarks;
   final FavoritePostSourceService? favoritePosts;
+
+  final VoidCallback switchToHome;
 
   final SettingsService settingsService;
 
@@ -576,6 +565,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
         nav.pop();
       }
     }
+
+    widget.switchToHome();
 
     BooruSubPage.selectOf(context, BooruSubPage.fromIdx(value));
     Scaffold.of(context).closeDrawer();
@@ -631,10 +622,6 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 if (e == BooruSubPage.favorites && favoritePosts != null)
                   _DrawerNavigationBadgeStyle(
                     child: _FavoritePostsCount(favoritePosts: favoritePosts!),
-                  )
-                else if (e == BooruSubPage.bookmarks && gridBookmarks != null)
-                  _DrawerNavigationBadgeStyle(
-                    child: _BookmarksCount(gridBookmarks: gridBookmarks!),
                   ),
               ],
             ),
@@ -997,6 +984,143 @@ class _NavigationDrawerTile extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SelectionRibbon extends StatefulWidget {
+  const SelectionRibbon({super.key});
+
+  @override
+  State<SelectionRibbon> createState() => _SelectionRibbonState();
+}
+
+class _SelectionRibbonState extends State<SelectionRibbon>
+    with DefaultSelectionEventsMixin, SingleTickerProviderStateMixin {
+  late final AnimationController animationController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    animationController = AnimationController(
+      vsync: this,
+      duration: Durations.medium4,
+      reverseDuration: Durations.medium1,
+    );
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  void animateNavBar(bool show) {
+    if (show) {
+      animationController.forward();
+    } else {
+      animationController.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedBuilder(
+      animation: animationController.view,
+      builder: (context, child) => Opacity(
+        opacity: animationController.value,
+        child: IgnorePointer(
+          ignoring: animationController.value == 0,
+          child: child,
+        ),
+      ),
+      child: Align(
+        alignment: switch (AdaptivePageSize.of(context)) {
+          AdaptivePageSize.extraSmall ||
+          AdaptivePageSize.small => Alignment.centerRight,
+          AdaptivePageSize.medium ||
+          AdaptivePageSize.large ||
+          AdaptivePageSize.extraLarge => Alignment.bottomRight,
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shadows: kElevationToShadow[2],
+              color: theme.colorScheme.secondaryContainer.withValues(
+                alpha: 0.95,
+              ),
+              shape: const StadiumBorder(),
+            ),
+            child: IconButtonTheme(
+              data: IconButtonThemeData(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    theme.colorScheme.secondary,
+                  ),
+                  iconColor: WidgetStatePropertyAll(
+                    theme.colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8) +
+                        const EdgeInsets.only(left: 12),
+                    child: IconButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(
+                          theme.colorScheme.primary,
+                        ),
+                        iconColor: WidgetStatePropertyAll(
+                          theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                      onPressed: () {
+                        selectionActions.controller.setCount(0);
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
+                  ),
+                  const Padding(padding: EdgeInsetsGeometry.only(right: 12)),
+
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8) +
+                        const EdgeInsets.only(right: 12),
+                    child: AnimatedSize(
+                      alignment: Alignment.centerRight,
+                      curve: Easing.emphasizedDecelerate,
+                      reverseDuration: Durations.short3,
+                      duration: Durations.medium2,
+                      child: Row(
+                        spacing: 4,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ...actions.map(
+                            (e) => IconButton(
+                              onPressed: e.consume,
+                              icon: Icon(e.icon),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

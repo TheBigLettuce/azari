@@ -5,6 +5,7 @@
 
 import "dart:async";
 
+import "package:azari/src/logic/booru_page_mixin.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
@@ -13,20 +14,16 @@ import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/actions.dart"
-    as booru_actions;
-import "package:azari/src/ui/material/pages/booru/booru_page.dart";
-import "package:azari/src/ui/material/pages/booru/booru_restored_page.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
-import "package:azari/src/ui/material/pages/search/booru/booru_search_page.dart";
-import "package:azari/src/ui/material/pages/settings/radio_dialog.dart";
+import "package:azari/src/ui/material/pages/home/booru_page.dart";
+import "package:azari/src/ui/material/pages/home/booru_restored_page.dart";
+import "package:azari/src/ui/material/widgets/radio_dialog.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/parts/shell_settings_button.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 
 class FavoritePostsPage extends StatefulWidget {
@@ -101,7 +98,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
             _filterTag(
               cells.where(
                 (e) =>
-                    _matchSafeMode(e.rating) &&
+                    safeModeState.current.inLevelPostRating(e.rating) &&
                     e.stars != FavoriteStars.zero &&
                     e.stars.isHalf &&
                     (colors == FilteringColors.noColor ||
@@ -114,7 +111,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
             _filterTag(
               cells.where(
                 (e) =>
-                    _matchSafeMode(e.rating) &&
+                    safeModeState.current.inLevelPostRating(e.rating) &&
                     e.stars != FavoriteStars.zero &&
                     !e.stars.isHalf &&
                     (colors == FilteringColors.noColor ||
@@ -142,7 +139,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
             _filterTag(
               cells.where(
                 (e) =>
-                    _matchSafeMode(e.rating) &&
+                    safeModeState.current.inLevelPostRating(e.rating) &&
                     (colors == FilteringColors.noColor ||
                         e.filteringColors == colors),
               ),
@@ -154,7 +151,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
               cells.where(
                 (element) =>
                     element.type == PostContentType.gif &&
-                    _matchSafeMode(element.rating) &&
+                    safeModeState.current.inLevelPostRating(element.rating) &&
                     (colors == FilteringColors.noColor ||
                         element.filteringColors == colors),
               ),
@@ -166,7 +163,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
               cells.where(
                 (element) =>
                     element.type == PostContentType.video &&
-                    _matchSafeMode(element.rating) &&
+                    safeModeState.current.inLevelPostRating(element.rating) &&
                     (colors == FilteringColors.noColor ||
                         element.filteringColors == colors),
               ),
@@ -177,7 +174,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
             _filterTag(
               cells.where(
                 (e) =>
-                    _matchSafeMode(e.rating) &&
+                    safeModeState.current.inLevelPostRating(e.rating) &&
                     (colors == FilteringColors.noColor ||
                         e.filteringColors == colors),
               ),
@@ -265,15 +262,6 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
     });
   }
 
-  bool _matchSafeMode(PostRating rating) => switch (safeModeState.current) {
-    SafeMode.normal => rating == PostRating.general,
-    SafeMode.relaxed =>
-      rating == PostRating.sensitive || rating == PostRating.general,
-    SafeMode.explicit =>
-      rating == PostRating.questionable || rating == PostRating.explicit,
-    SafeMode.none => true,
-  };
-
   Iterable<FavoritePost> _filterStars(
     Iterable<FavoritePost> cells,
     FilteringMode mode,
@@ -281,7 +269,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
   ) {
     return cells.where(
       (e) =>
-          _matchSafeMode(e.rating) &&
+          safeModeState.current.inLevelPostRating(e.rating) &&
           (mode.toStars == e.stars) &&
           (colors == FilteringColors.noColor || e.filteringColors == colors),
     );
@@ -308,7 +296,7 @@ mixin FavoritePostsPageLogic<W extends StatefulWidget> on State<W> {
 
     T? prevCell;
     for (final e in cells) {
-      if (!_matchSafeMode(e.rating)) {
+      if (!safeModeState.current.inLevelPostRating(e.rating)) {
         continue;
       }
 
@@ -335,29 +323,31 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
     with SettingsWatcherMixin, FavoritePostsPageLogic {
   late final StreamSubscription<void> _safeModeWatcher;
 
-  late final client = BooruAPI.defaultClientForBooru(settings.selectedBooru);
   late final BooruAPI api;
 
-  late final SourceShellElementState<FavoritePost> status;
+  late final SourceShellScopeElementState<FavoritePost> status;
+
+  final gridSettings = GridSettingsData<FavoritePostsData>();
 
   @override
   void initState() {
     super.initState();
 
-    api = BooruAPI.fromEnum(settings.selectedBooru, client);
+    api = BooruAPI.fromEnum(settings.selectedBooru);
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: filter,
+      gridSettings: gridSettings,
       onEmpty: SourceOnEmptyInterface(
         filter,
         (context) => context.l10n().emptyFavoritedPosts,
       ),
       selectionController: widget.selectionController,
-      actions: <SelectionBarAction>[
-        if (DownloadManager.available && LocalTagsService.available)
-          booru_actions.downloadPost(context, settings.selectedBooru, null),
-        booru_actions.favorites(context, showDeleteSnackbar: true),
-      ],
+      actions: makePostActions(
+        context,
+        settings.selectedBooru,
+        showHideButton: false,
+      ),
       wrapRefresh: null,
     );
 
@@ -369,7 +359,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   @override
   void dispose() {
     status.destroy();
-    client.close(force: true);
+    api.destroy();
     _safeModeWatcher.cancel();
 
     super.dispose();
@@ -409,7 +399,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
   @override
   Widget build(BuildContext context) {
     final navBarEvents = NavigationButtonEvents.maybeOf(context);
-    final gridSettings = GridSettingsData<FavoritePostsData>();
 
     final l10n = context.l10n();
 
@@ -419,7 +408,6 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
       rootNavigatorPop: widget.rootNavigatorPop,
       child: ShellScope(
         stackInjector: status,
-        configWatcher: gridSettings.watch,
         appBar: RawAppBarType(
           (context, gridSettingsButton, _) => FavoritePostsSearchSliver(
             textEditingController: searchTextController,
@@ -444,6 +432,7 @@ class _FavoritePostsPageState extends State<FavoritePostsPage>
           ElementPriority(
             ShellElement(
               state: status,
+              gridSettings: gridSettings,
               scrollUpOn: navBarEvents != null
                   ? [(navBarEvents, null)]
                   : const [],
@@ -562,7 +551,7 @@ class FavoritePostsSearchSliver extends StatelessWidget {
                 focusNode: searchFocus,
                 iconSize: 20,
               ),
-              _ClearTextButton(textEditingController: textEditingController),
+              ClearTextButton(textEditingController: textEditingController),
             ],
           ),
         ),
@@ -576,7 +565,7 @@ class FavoritePostsSearchSliver extends StatelessWidget {
 
 class _SearchButton extends StatefulWidget {
   const _SearchButton({
-    super.key,
+    // super.key,
     required this.textEditingController,
     required this.onPressed,
   });
@@ -679,16 +668,16 @@ mixin _SlidingAnimationSingle<W extends StatefulWidget> on State<W>
   );
 }
 
-class _ClearTextButton extends StatefulWidget {
-  const _ClearTextButton({super.key, required this.textEditingController});
+class ClearTextButton extends StatefulWidget {
+  const ClearTextButton({super.key, required this.textEditingController});
 
   final TextEditingController textEditingController;
 
   @override
-  State<_ClearTextButton> createState() => __ClearTextButtonState();
+  State<ClearTextButton> createState() => _ClearTextButtonState();
 }
 
-class __ClearTextButtonState extends State<_ClearTextButton>
+class _ClearTextButtonState extends State<ClearTextButton>
     with SingleTickerProviderStateMixin, _SlidingAnimationSingle {
   @override
   TextEditingController get textEditingController =>
@@ -702,130 +691,6 @@ class __ClearTextButtonState extends State<_ClearTextButton>
         iconSize: 20,
         onPressed: widget.textEditingController.clear,
         icon: const Icon(Icons.close_rounded),
-      ),
-    );
-  }
-}
-
-class _OpenSearchDialogButton extends StatefulWidget {
-  const _OpenSearchDialogButton({super.key, required this.controller});
-
-  final SearchController controller;
-
-  @override
-  State<_OpenSearchDialogButton> createState() =>
-      __OpenSearchDialogButtonState();
-}
-
-class __OpenSearchDialogButtonState extends State<_OpenSearchDialogButton> {
-  // ignore: use_setters_to_change_properties
-  void onTagPressed(String tag) {
-    widget.controller.text = tag;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SearchAnchor(
-      viewOnSubmitted: (value) {
-        onTagPressed(value);
-        widget.controller.closeView(null);
-      },
-      searchController: widget.controller,
-      isFullScreen: false,
-      viewConstraints: const BoxConstraints(
-        minWidth: 280,
-        maxWidth: 280,
-        maxHeight: 220,
-      ),
-      builder: (context, controller) => IconButton(
-        onPressed: controller.openView,
-        icon: const Icon(Icons.search_rounded),
-      ),
-      viewBuilder: (_) => FavoritePostsPinnedTagsRow(
-        onTagPressed: onTagPressed,
-        onTagLongPressed: null,
-        filterController: widget.controller,
-      ),
-      suggestionsBuilder: (context, controller) {
-        return const [];
-      },
-    );
-  }
-}
-
-class FavoritePostsPinnedTagsRow extends StatefulWidget {
-  const FavoritePostsPinnedTagsRow({
-    super.key,
-    required this.onTagPressed,
-    required this.onTagLongPressed,
-    this.filterController,
-  });
-
-  final TextEditingController? filterController;
-
-  final StringCallback onTagPressed;
-  final StringCallback? onTagLongPressed;
-
-  @override
-  State<FavoritePostsPinnedTagsRow> createState() =>
-      _FavoritePostsPinnedTagsRowState();
-}
-
-class _FavoritePostsPinnedTagsRowState
-    extends State<FavoritePostsPinnedTagsRow> {
-  final controller = ScrollController();
-  final _filteringEvents = StreamController<String>.broadcast();
-
-  late final BooruAPI api;
-  late final Dio _apiClient;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final booru = const SettingsService().current.selectedBooru;
-    _apiClient = BooruAPI.defaultClientForBooru(booru);
-    api = BooruAPI.fromEnum(booru, _apiClient);
-
-    widget.filterController?.addListener(_listener);
-  }
-
-  @override
-  void dispose() {
-    _filteringEvents.close();
-    _apiClient.close(force: true);
-    controller.dispose();
-    widget.filterController?.removeListener(_listener);
-
-    super.dispose();
-  }
-
-  void _listener() {
-    if (widget.filterController != null) {
-      _filteringEvents.add(widget.filterController!.text.trim());
-    }
-
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    PinnedTagsProvider.of(context);
-
-    return SingleChildScrollView(
-      child: PinnedTagsPanel(
-        sliver: false,
-        filteringEvents: _filteringEvents.stream,
-        onTagPressed: (tag) {
-          controller.animateTo(
-            0,
-            duration: Durations.medium3,
-            curve: Easing.standard,
-          );
-          widget.onTagPressed(tag);
-          const TagManagerService().latest.add(tag);
-        },
-        api: api,
       ),
     );
   }

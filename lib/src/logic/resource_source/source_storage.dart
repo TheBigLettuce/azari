@@ -36,6 +36,8 @@ abstract class ReadOnlyStorage<K, V> with Iterable<V> {
 
   int get count;
 
+  int indexWhere(bool Function(V element) test, [int start = 0]);
+
   Stream<int> get countEvents;
 
   V? get(K idx);

@@ -130,6 +130,9 @@ class MapStorage<K, V> extends SourceStorage<K, V> {
   V? get(K idx) => map_[idx];
 
   @override
+  int indexWhere(bool Function(V element) test, [int start = 0]) => -1;
+
+  @override
   void add(V e, [bool silent = false]) {
     map_[getKey(e)] = e;
 
@@ -246,6 +249,10 @@ class ListStorage<V> extends SourceStorage<int, V> {
 
   @override
   Iterable<V> get reversed => list.reversed;
+
+  @override
+  int indexWhere(bool Function(V element) test, [int start = 0]) =>
+      list.indexWhere(test, start);
 
   @override
   Iterable<V> trySorted(SortingMode sort) =>

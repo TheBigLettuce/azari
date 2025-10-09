@@ -7,14 +7,11 @@ import "dart:async";
 
 import "package:azari/src/init_main/build_theme.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:flutter/material.dart";
 
 class RestartWidget extends StatefulWidget {
-  const RestartWidget({
-    super.key,
-    required this.child,
-  });
+  const RestartWidget({super.key, required this.child});
 
   final Widget child;
 
@@ -85,16 +82,16 @@ class _RestartWidgetState extends State<RestartWidget>
             builder: (context, child) => Opacity(
               opacity: controller.value,
               child: FractionalTranslation(
-                translation: _tween.evaluate(
-                  switch (controller.status) {
-                    AnimationStatus.completed ||
-                    AnimationStatus.dismissed ||
-                    AnimationStatus.forward =>
-                      _decelTween.animate(controller.view),
-                    AnimationStatus.reverse =>
-                      _accelTween.animate(controller.view),
-                  },
-                ),
+                translation: _tween.evaluate(switch (controller.status) {
+                  AnimationStatus.completed ||
+                  AnimationStatus.dismissed ||
+                  AnimationStatus.forward => _decelTween.animate(
+                    controller.view,
+                  ),
+                  AnimationStatus.reverse => _accelTween.animate(
+                    controller.view,
+                  ),
+                }),
                 child: child,
               ),
             ),
@@ -107,10 +104,7 @@ class _RestartWidgetState extends State<RestartWidget>
 }
 
 class TimeTickerStatistics extends StatefulWidget {
-  const TimeTickerStatistics({
-    super.key,
-    required this.child,
-  });
+  const TimeTickerStatistics({super.key, required this.child});
 
   final Widget child;
 
@@ -148,8 +142,9 @@ class _TimeTickereStatisticsState extends State<TimeTickerStatistics> {
 
       currentDuration = Duration(milliseconds: sts.durationMillis);
 
-      timeTicker =
-          Stream<void>.periodic(const Duration(seconds: 1)).listen((event) {
+      timeTicker = Stream<void>.periodic(const Duration(seconds: 1)).listen((
+        event,
+      ) {
         if (!inBackground) {
           bool switchDate = false;
 
@@ -280,8 +275,8 @@ class TimeSpentNotifier extends InheritedWidget {
   final DateTime _time;
 
   static (Duration, Stream<Duration>) streamOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TimeSpentNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<TimeSpentNotifier>();
 
     return (widget!.current(), widget.ticker);
   }
@@ -326,21 +321,19 @@ class _PinnedTagsHolderState extends State<PinnedTagsHolder> {
       return map;
     });
 
-    countEvents = widget.pinnedTags?.events.listen(
-      (newCount) {
-        if (newCount != count) {
-          count = newCount;
+    countEvents = widget.pinnedTags?.events.listen((newCount) {
+      if (newCount != count) {
+        count = newCount;
 
-          pinnedTags = (widget.pinnedTags?.get(-1) ?? []).fold({}, (map, e) {
-            map[e.tag] = null;
+        pinnedTags = (widget.pinnedTags?.get(-1) ?? []).fold({}, (map, e) {
+          map[e.tag] = null;
 
-            return map;
-          });
+          return map;
+        });
 
-          setState(() {});
-        }
-      },
-    );
+        setState(() {});
+      }
+    });
   }
 
   @override

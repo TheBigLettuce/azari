@@ -6,6 +6,7 @@
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/net/booru/impl/conventers/gelbooru.dart";
+import "package:azari/src/services/impl/obj/booru_pool_impl.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
 import "package:json_annotation/json_annotation.dart";
@@ -45,6 +46,16 @@ List<BooruComments> fromListComments(List<dynamic> l) {
 
   for (final e in l) {
     ret.add(_DanbooruComments.fromJson(e as Map<String, dynamic>));
+  }
+
+  return ret;
+}
+
+List<BooruArtist> fromListArtists(List<dynamic> l) {
+  final ret = <BooruArtist>[];
+
+  for (final e in l) {
+    ret.add(_DanbooruArtist.fromJson(e as Map<String, dynamic>));
   }
 
   return ret;
@@ -134,7 +145,7 @@ class _DanbooruPost extends PostImpl implements Post {
   @JsonKey(includeFromJson: false, includeToJson: false)
   PostContentType get type => Post.makeType(this);
 
-  @_DanbooruMediaAsset720Converter()
+  @DanbooruMediaAsset720Converter()
   @JsonKey(name: "media_asset")
   final String? previewUrl720;
 
@@ -143,9 +154,9 @@ class _DanbooruPost extends PostImpl implements Post {
   String get previewUrl => previewUrl720 ?? smallPreviewUrl;
 }
 
-class _DanbooruMediaAsset720Converter
+class DanbooruMediaAsset720Converter
     implements JsonConverter<String?, Map<dynamic, dynamic>?> {
-  const _DanbooruMediaAsset720Converter();
+  const DanbooruMediaAsset720Converter();
 
   @override
   String? fromJson(Map<dynamic, dynamic>? json) {
@@ -153,7 +164,11 @@ class _DanbooruMediaAsset720Converter
       return null;
     }
 
-    final variants = json["variants"] as List<dynamic>;
+    final variants = json["variants"];
+    if (variants is! List<dynamic>) {
+      return null;
+    }
+
     for (final e in variants) {
       final type = (e as Map)["type"];
       if (type == "720x720") {
@@ -215,7 +230,7 @@ class DanbooruPoolCategoryConventer
 }
 
 @JsonSerializable()
-class _DanbooruPool implements BooruPool {
+class _DanbooruPool extends BooruPoolImpl implements BooruPool {
   const _DanbooruPool({
     required this.category,
     required this.description,
@@ -224,6 +239,8 @@ class _DanbooruPool implements BooruPool {
     required this.name,
     required this.postIds,
     required this.updatedAt,
+    this.thumbUrl = "",
+    this.booru = Booru.danbooru,
   });
 
   factory _DanbooruPool.fromJson(Map<String, dynamic> json) =>
@@ -256,6 +273,81 @@ class _DanbooruPool implements BooruPool {
 
   @override
   @DanbooruDateConventer()
+  @JsonKey(name: "updated_at")
+  final DateTime updatedAt;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String thumbUrl;
+
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final Booru booru;
+
+  @override
+  BooruPool copy({
+    bool? isDeleted,
+    int? id,
+    Booru? booru,
+    String? name,
+    String? description,
+    String? thumbUrl,
+    List<int>? postIds,
+    BooruPoolCategory? category,
+    DateTime? updatedAt,
+  }) => _DanbooruPool(
+    category: category ?? this.category,
+    description: description ?? this.description,
+    id: id ?? this.id,
+    booru: booru ?? this.booru,
+    isDeleted: isDeleted ?? this.isDeleted,
+    name: name ?? this.name,
+    postIds: postIds ?? this.postIds,
+    updatedAt: updatedAt ?? this.updatedAt,
+    thumbUrl: thumbUrl ?? this.thumbUrl,
+  );
+}
+
+@JsonSerializable()
+class _DanbooruArtist extends BooruArtistImpl implements BooruArtist {
+  const _DanbooruArtist({
+    required this.id,
+    required this.name,
+    required this.groupName,
+    required this.otherNames,
+    required this.isBanned,
+    required this.isDeleted,
+    required this.updatedAt,
+  });
+
+  factory _DanbooruArtist.fromJson(Map<String, dynamic> json) =>
+      _$DanbooruArtistFromJson(json);
+
+  @override
+  @JsonKey(name: "id")
+  final int id;
+
+  @override
+  @JsonKey(name: "name")
+  final String name;
+
+  @override
+  @JsonKey(name: "group_name")
+  final String groupName;
+
+  @override
+  @JsonKey(name: "other_names")
+  final List<String> otherNames;
+
+  @override
+  @JsonKey(name: "is_banned")
+  final bool isBanned;
+
+  @override
+  @JsonKey(name: "is_deleted")
+  final bool isDeleted;
+
+  @override
   @JsonKey(name: "updated_at")
   final DateTime updatedAt;
 }

@@ -8,15 +8,13 @@ import "package:azari/src/logic/booru_page_mixin.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/widgets/grid_cell_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:flutter/cupertino.dart";
 
 class AppCupertino extends StatefulWidget {
-  const AppCupertino({
-    super.key,
-  });
+  const AppCupertino({super.key});
 
   @override
   State<AppCupertino> createState() => _AppCupertinoState();
@@ -34,9 +32,7 @@ class _AppCupertinoState extends State<AppCupertino> {
 }
 
 class Home extends StatefulWidget {
-  const Home({
-    super.key,
-  });
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -88,9 +84,9 @@ class _HomeState extends State<Home> {
             builder: (context) => CupertinoPageScaffold(
               child: switch (index) {
                 0 => BooruPage(
-                    pagingRegistry: pagingRegistry,
-                    selectionController: SelectionActions.controllerOf(context),
-                  ),
+                  pagingRegistry: pagingRegistry,
+                  selectionController: SelectionActions.controllerOf(context),
+                ),
                 int() => const Placeholder(),
               },
             ),
@@ -129,8 +125,9 @@ class _BooruPageState extends State<BooruPage>
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+      ),
       itemCount: source.count,
       itemBuilder: (context, index) {
         final data = source.forIdxUnsafe(index);

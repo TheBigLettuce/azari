@@ -18,6 +18,7 @@ import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/services/impl/io/android/gallery/android_gallery.dart";
 import "package:azari/src/services/impl/io/android/platform/impl.dart";
 import "package:azari/src/services/impl/io/isar/impl.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/booru_pool.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/favorite_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/visited_post.dart";
@@ -353,6 +354,10 @@ class IoServices implements Services {
       return message as T;
     } else if (T == ColorsNamesService) {
       return colorsNames as T;
+    } else if (T == BooruPoolService) {
+      return booruCommunity as T;
+    } else if (T == FavoritePoolsService) {
+      return favoritePools as T;
     } else if (T == PlatformApi) {
       return platformApi as T;
     }
@@ -372,6 +377,10 @@ class IoServices implements Services {
   }
 
   IsarAccountsService get accountsService => const IsarAccountsService();
+
+  final IsarBooruPoolService booruCommunity = const IsarBooruPoolService();
+
+  final IsarFavoritePoolService favoritePools = const IsarFavoritePoolService();
 
   final IsarColorsNamesService colorsNames = IsarColorsNamesService();
   final IoMessageService message = IoMessageService();
@@ -886,6 +895,20 @@ class PersistentDownloadManager extends MapStorage<String, DownloadHandle>
 
     return dirpath;
   }
+}
+
+abstract class $BooruPool implements BooruPool {
+  const factory $BooruPool({
+    required bool isDeleted,
+    required int id,
+    required Booru booru,
+    required String name,
+    required String description,
+    required String thumbUrl,
+    required List<int> postIds,
+    required BooruPoolCategory category,
+    required DateTime updatedAt,
+  }) = IsarBooruPool.noId;
 }
 
 abstract class $ColorsNamesData implements ColorsNamesData {

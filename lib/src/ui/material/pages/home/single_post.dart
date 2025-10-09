@@ -9,17 +9,13 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:logging/logging.dart";
 
 class SinglePost extends StatefulWidget {
-  const SinglePost({
-    super.key,
-    this.overrideLeading,
-  });
+  const SinglePost({super.key, this.overrideLeading});
 
   final Widget? overrideLeading;
 
@@ -28,7 +24,6 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  late final Dio client;
   late final BooruAPI booruApi;
 
   final controller = TextEditingController();
@@ -44,15 +39,14 @@ class _SinglePostState extends State<SinglePost> {
     super.initState();
 
     final booru = const SettingsService().current.selectedBooru;
-    client = BooruAPI.defaultClientForBooru(booru);
-    booruApi = BooruAPI.fromEnum(booru, client);
+    booruApi = BooruAPI.fromEnum(booru);
   }
 
   @override
   void dispose() {
     arrowSpinningController = null;
     controller.dispose();
-    client.close(force: true);
+    booruApi.destroy();
 
     super.dispose();
   }

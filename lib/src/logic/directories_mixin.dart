@@ -18,7 +18,7 @@ import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart"
     as actions;
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
+import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
@@ -39,7 +39,7 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
   late final AppLifecycleListener? _lifecycleListener;
 
   late final ChainedFilterResourceSource<int, Directory> filter;
-  late final SourceShellElementState<Directory> status;
+  late final SourceShellScopeElementState<Directory> status;
 
   late final TextEditingController searchTextController;
   late final FocusNode searchFocus;
@@ -103,8 +103,9 @@ mixin DirectoriesMixin<W extends StatefulWidget> on State<W> {
       initialSortingMode: SortingMode.none,
     );
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: filter,
+      gridSettings: gridSettings,
       selectionController: selectionController,
       actions: callback != null
           ? <SelectionBarAction>[

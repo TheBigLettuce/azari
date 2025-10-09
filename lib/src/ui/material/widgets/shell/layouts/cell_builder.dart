@@ -36,6 +36,7 @@ mixin DefaultBuildCell implements CellBuilder {
         title: hideName ? null : title(l10n),
         subtitle: hideName ? null : subtitle(l10n),
         imageAlign: imageAlign,
+        tightMode: tightMode(),
       ),
     };
   }
@@ -71,6 +72,8 @@ abstract mixin class CellBuilderData {
   ImageProvider? thumbnail() => null;
 
   TileDismiss? dismiss() => null;
+
+  bool tightMode() => false;
 }
 
 enum CellType { list, cell }

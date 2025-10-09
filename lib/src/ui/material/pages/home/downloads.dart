@@ -3,19 +3,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/cancellable_grid_settings_data.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/chained_filter.dart";
 import "package:azari/src/logic/resource_source/filtering_mode.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/adaptive_page.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
-import "package:azari/src/ui/material/widgets/shell/layouts/segment_layout.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/grid_layout.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
 import "package:flutter/material.dart";
 
@@ -36,7 +36,7 @@ class _DownloadsPageState extends State<DownloadsPage>
 
   final searchTextController = TextEditingController();
 
-  late final SourceShellElementState<DownloadHandle> status;
+  late final SourceShellScopeElementState<DownloadHandle> status;
 
   final gridSettings = CancellableGridSettingsData.noPersist(
     hideName: false,
@@ -64,10 +64,12 @@ class _DownloadsPageState extends State<DownloadsPage>
       allowedSortingModes: const {},
       initialFilteringMode: FilteringMode.noFilter,
       initialSortingMode: SortingMode.none,
+      alwaysSort: true,
     );
 
-    status = SourceShellElementState(
+    status = SourceShellScopeElementState(
       source: filter,
+      gridSettings: gridSettings,
       onEmpty: SourceOnEmptyInterface(
         filter,
         (context) => context.l10n().emptyDownloadProgress,
@@ -89,23 +91,28 @@ class _DownloadsPageState extends State<DownloadsPage>
     status.destroy();
     gridSettings.cancel();
     filter.destroy();
+    filter.backingStorage.destroy();
 
     searchTextController.dispose();
 
     super.dispose();
   }
 
-  Segments<DownloadHandle> _makeSegments(
-    BuildContext context,
-    AppLocalizations l10n,
-  ) => Segments(
-    l10n.unknownSegmentsPlaceholder,
-    hidePinnedIcon: true,
-    limitLabelChildren: 6,
-    injectedLabel: "",
-    segment: (e) => e.data.status.translatedString(l10n),
-    caps: const SegmentCapability.alwaysPinned(),
-  );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newColumnCount = switch (AdaptivePage.size(context)) {
+      AdaptivePageSize.extraSmall || AdaptivePageSize.small => GridColumn.three,
+      AdaptivePageSize.medium => GridColumn.four,
+      AdaptivePageSize.large => GridColumn.five,
+      AdaptivePageSize.extraLarge => GridColumn.six,
+    };
+
+    if (gridSettings.current.columns != newColumnCount) {
+      gridSettings.current = gridSettings.current.copy(columns: newColumnCount);
+    }
+  }
 
   SelectionBarAction delete(BuildContext context) {
     return SelectionBarAction(Icons.remove, (selected) {
@@ -124,7 +131,6 @@ class _DownloadsPageState extends State<DownloadsPage>
     return ScaffoldWithSelectionBar(
       child: ShellScope(
         stackInjector: status,
-        configWatcher: gridSettings.watch,
         appBar: TitleAppBarType(
           title: l10n.downloadsPageName,
           leading: IconButton(
@@ -143,17 +149,24 @@ class _DownloadsPageState extends State<DownloadsPage>
         elements: [
           ElementPriority(
             ShellElement(
-              // key: gridKey,
               state: status,
+              gridSettings: gridSettings,
               slivers: [
-                SegmentLayout<DownloadHandle>(
-                  segments: _makeSegments(context, l10n),
-                  l10n: l10n,
-                  suggestionPrefix: const [],
+                GridLayout(
+                  source: filter.backingStorage,
                   progress: filter.progress,
-                  // gridSeed: gridSeed,
-                  storage: filter.backingStorage,
                   selection: status.selection,
+                  findChildIndexCallback: (key) {
+                    final index = filter.backingStorage.indexWhere(
+                      (e) => e.uniqueKey() == key,
+                    );
+
+                    if (index == -1) {
+                      return null;
+                    }
+
+                    return index;
+                  },
                 ),
               ],
             ),

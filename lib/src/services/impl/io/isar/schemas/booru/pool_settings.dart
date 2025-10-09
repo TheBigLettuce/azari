@@ -3,31 +3,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of "settings_page.dart";
+import "package:azari/src/logic/net/booru/booru_api.dart";
+import "package:isar/isar.dart";
 
-bool _themeChange = false;
-bool get themeIsChanging => _themeChange;
+part "pool_settings.g.dart";
 
-void themeChangeOver() {
-  _themeChange = false;
-}
+@collection
+class IsarPoolSettings {
+  const IsarPoolSettings({
+    required this.category,
+    required this.name,
+    required this.order,
+  });
 
-void themeChangeStart() {
-  _themeChange = true;
-}
+  Id get isarId => 0;
 
-void selectTheme(
-  BuildContext context,
-  SettingsData miscSettings,
-  ThemeType value,
-) {
-  if (miscSettings.themeType == value) {
-    return;
-  }
+  @Enumerated(EnumType.ordinal32)
+  final BooruPoolCategory? category;
 
-  _themeChange = true;
+  final String? name;
 
-  miscSettings.copy(themeType: value).save();
-
-  RestartWidget.restartApp(context);
+  @enumerated
+  final BooruPoolsOrder order;
 }

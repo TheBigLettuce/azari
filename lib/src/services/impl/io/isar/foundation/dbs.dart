@@ -7,6 +7,9 @@ import "dart:io" as io;
 
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/services/impl/io/isar/foundation/favorite_posts_isolate.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/booru_pool.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/favorite_pool.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/pool_settings.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/downloader/download_file.dart";
@@ -20,6 +23,9 @@ import "package:azari/src/services/impl/io/isar/schemas/grid_settings/favorites.
 import "package:azari/src/services/impl/io/isar/schemas/grid_settings/files.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/bookmark.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_paging.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_paging.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_state.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/updates_available.dart";
@@ -37,16 +43,23 @@ import "package:azari/src/services/impl/io/isar/schemas/tags/hottest_tag_refresh
 import "package:azari/src/services/impl/io/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/tags.dart";
+import "package:azari/src/services/services.dart";
 import "package:isar/isar.dart";
 import "package:logging/logging.dart";
 import "package:path/path.dart" as path;
 
 const primaryGridSchemas = [
+  IsarPoolSettingsSchema,
+  IsarFavoritePoolSchema,
   IsarUpdatesAvailableSchema,
   IsarGridTimeSchema,
   IsarGridStateSchema,
   PostIsarSchema,
+  IsarBooruPoolSchema,
   IsarGridBooruPagingSchema,
+  IsarBooruPoolGridTimeSchema,
+  IsarGridBooruPoolStateSchema,
+  IsarGridBooruPoolPagingSchema,
 ];
 
 const mainSchemas = [
@@ -246,6 +259,23 @@ class Dbs {
       directory: paths.rootDirectory,
       inspector: false,
       name: booru.string,
+    );
+  }
+
+  Isar openSecondaryPoolPosts(BooruPool pool, DbPaths paths) {
+    final time = DateTime.now().millisecondsSinceEpoch;
+
+    final name = "${pool.booru.string}_${pool.id}_$time";
+
+    return Isar.openSync(
+      const [
+        PostIsarSchema,
+        IsarGridBooruPagingSchema,
+        IsarUpdatesAvailableSchema,
+      ],
+      directory: paths.temporaryDir,
+      inspector: false,
+      name: name,
     );
   }
 

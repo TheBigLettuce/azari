@@ -8,7 +8,9 @@ import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/impl/danbooru.dart";
 import "package:azari/src/logic/net/booru/impl/gelbooru.dart";
 import "package:azari/src/services/services.dart";
+import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
 import "package:dio/dio.dart";
+import "package:flutter/material.dart";
 
 int refreshPostCountLimit() => 100;
 
@@ -76,6 +78,10 @@ abstract class BooruAPI {
     int limit = 30,
   ]);
 
+  Future<void> cancelRequests();
+
+  void destroy();
+
   /// Additional tag filters.
   static Map<String, void> get additionalSafetyTags => const {
     "guro": null,
@@ -91,23 +97,19 @@ abstract class BooruAPI {
   /// Some booru have no way to retreive posts down a certain post number,
   /// in such a case the implementation is likely to use paging,
   /// and should use provided [pageSaver] for this purpose.
-  static BooruAPI fromSettings(SettingsService settingsService, Dio client) {
-    return BooruAPI.fromEnum(settingsService.current.selectedBooru, client);
-  }
-
-  /// Constructs a default Dio client instance for [BooruAPI].
-  static Dio defaultClientForBooru(Booru booru) {
-    final Dio dio = Dio();
-
-    return dio;
+  static BooruAPI fromSettings(SettingsService settingsService) {
+    return BooruAPI.fromEnum(settingsService.current.selectedBooru);
   }
 
   /// Sometimes, it is needed to constuct [BooruAPI] instance which isn't the
   /// current selected/used one.
-  static BooruAPI fromEnum(Booru booru, Dio client) {
+  static BooruAPI fromEnum(Booru booru) {
+    final Dio dio = Dio();
+    final token = CancelToken();
+
     return switch (booru) {
-      Booru.danbooru => Danbooru(client),
-      Booru.gelbooru => Gelbooru(client),
+      Booru.danbooru => Danbooru(dio, token),
+      Booru.gelbooru => Gelbooru(dio, token),
     };
   }
 }
@@ -115,11 +117,10 @@ abstract class BooruAPI {
 abstract interface class BooruCommunityAPI {
   Booru get booru;
 
-  static BooruCommunityAPI? fromEnum(Booru booru, Dio client) =>
-      switch (booru) {
-        Booru.gelbooru => null,
-        Booru.danbooru => DanbooruCommunity(booru: booru, client: client),
-      };
+  static BooruCommunityAPI? fromEnum(Booru booru) => switch (booru) {
+    Booru.gelbooru => null,
+    Booru.danbooru => DanbooruCommunity(booru: booru, client: Dio()),
+  };
 
   static bool supported(Booru booru) => switch (booru) {
     Booru.gelbooru => false,
@@ -131,6 +132,11 @@ abstract interface class BooruCommunityAPI {
 
   BooruForumAPI get forum;
   // BooruWikiAPI get wiki;
+  BooruArtistsAPI get artists;
+
+  Future<void> cancelRequests();
+
+  void destroy();
 }
 
 abstract interface class BooruWikiAPI {
@@ -206,15 +212,16 @@ enum BooruUserLevel {
 
 abstract interface class BooruArtistsAPI {
   Future<List<BooruArtist>> search({
-    int? limit,
-    String? otherName,
+    required int page,
+    int limit = 30,
     String? name,
+    String? otherName,
     BooruArtistsOrder order = BooruArtistsOrder.postCount,
     required PageSaver pageSaver,
   });
 }
 
-abstract class BooruArtist {
+abstract class BooruArtist implements CellBuilder {
   bool get isBanned;
   bool get isDeleted;
 
@@ -228,38 +235,73 @@ abstract class BooruArtist {
   DateTime get updatedAt;
 }
 
+abstract class BooruArtistImpl
+    with DefaultBuildCell, CellBuilderData
+    implements CellBuilder, BooruArtist {
+  const BooruArtistImpl();
+
+  @override
+  Key uniqueKey() => ValueKey(id);
+
+  @override
+  String title(AppLocalizations l10n) => name;
+}
+
 enum BooruArtistsOrder { name, latest, postCount }
 
 abstract interface class BooruPoolsAPI {
+  Booru get booru;
+
+  Future<int> postsCount(BooruPool pool);
+
+  Future<BooruPool> single(BooruPool pool);
+
   Future<List<BooruPool>> search({
-    int? limit,
+    required int page,
+    int limit = 30,
     String? name,
     BooruPoolCategory? category,
-    BooruPoolsOrder order = BooruPoolsOrder.creationTime,
+    BooruPoolsOrder order = BooruPoolsOrder.latest,
     required PageSaver pageSaver,
   });
 
-  Future<Map<int, String>> poolThumbnails(List<BooruPool> pools);
+  Future<List<Post>> posts({
+    required int page,
+    required BooruPool pool,
+    required PageSaver pageSaver,
+  });
 }
 
-abstract class BooruPool {
-  bool get isDeleted;
+enum BooruPoolsOrder {
+  name,
+  latest,
+  creationTime,
+  postCount;
 
-  int get id;
+  String translatedString(AppLocalizations l10n) => switch (this) {
+    BooruPoolsOrder.name => l10n.enumBooruPoolsOrderName,
+    BooruPoolsOrder.latest => l10n.enumBooruPoolsOrderLatest,
+    BooruPoolsOrder.creationTime => l10n.enumBooruPoolsOrderCreationTime,
+    BooruPoolsOrder.postCount => l10n.enumBooruPoolsOrderPostCount,
+  };
 
-  String get name;
-  String get description;
-
-  List<int> get postIds;
-
-  BooruPoolCategory get category;
-
-  DateTime get updatedAt;
+  IconData icon() => switch (this) {
+    BooruPoolsOrder.name => Icons.sort_by_alpha_rounded,
+    BooruPoolsOrder.latest => Icons.new_releases_rounded,
+    BooruPoolsOrder.creationTime => Icons.access_time_rounded,
+    BooruPoolsOrder.postCount => Icons.onetwothree_rounded,
+  };
 }
 
-enum BooruPoolsOrder { name, latest, creationTime, postCount }
+enum BooruPoolCategory {
+  series,
+  collection;
 
-enum BooruPoolCategory { series, collection }
+  String translatedString(AppLocalizations l10n) => switch (this) {
+    BooruPoolCategory.series => l10n.enumBooruPoolCategorySeries,
+    BooruPoolCategory.collection => l10n.enumBooruPoolCategoryCollection,
+  };
+}
 
 abstract interface class BooruCommentsAPI {
   Future<List<BooruComments>> search({
@@ -331,11 +373,27 @@ enum SafeMode {
     SafeMode.explicit => to == explicit,
   };
 
+  bool inLevelPostRating(PostRating rating) => switch (this) {
+    SafeMode.normal => rating == PostRating.general,
+    SafeMode.relaxed =>
+      rating == PostRating.sensitive || rating == PostRating.general,
+    SafeMode.explicit =>
+      rating == PostRating.questionable || rating == PostRating.explicit,
+    SafeMode.none => true,
+  };
+
   String translatedString(AppLocalizations l10n) => switch (this) {
     SafeMode.normal => l10n.enumSafeModeNormal,
     SafeMode.none => l10n.enumSafeModeNone,
     SafeMode.relaxed => l10n.enumSafeModeRelaxed,
     SafeMode.explicit => l10n.enumSafeModeExplicit,
+  };
+
+  IconData icon() => switch (this) {
+    SafeMode.normal => Icons.no_adult_content_outlined,
+    SafeMode.relaxed => Icons.visibility_outlined,
+    SafeMode.none => Icons.explicit_outlined,
+    SafeMode.explicit => Icons.eighteen_up_rating_outlined,
   };
 }
 

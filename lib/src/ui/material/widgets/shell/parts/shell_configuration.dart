@@ -11,14 +11,14 @@ import "package:flutter/material.dart";
 class ShellConfiguration extends StatefulWidget {
   const ShellConfiguration({
     super.key,
-    required this.watch,
+    required this.gridSettings,
     this.sliver = false,
     required this.child,
   });
 
   final bool sliver;
 
-  final ShellConfigurationWatcher watch;
+  final GridSettingsData gridSettings;
 
   final Widget child;
 
@@ -28,15 +28,12 @@ class ShellConfiguration extends StatefulWidget {
     final widget = context
         .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>();
 
-    return widget?.config;
+    return widget?.data;
   }
 
-  static ShellConfigurationWatcher watcherOf(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<
-        _GridConfigurationWatcherNotifier>();
-
-    return widget!.watcher;
-  }
+  static GridSettingsData gridSettingsOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<_GridConfigurationNotifier>()!
+      .settings;
 
   @override
   State<ShellConfiguration> createState() => _ShellConfigurationState();
@@ -51,14 +48,13 @@ class _ShellConfigurationState extends State<ShellConfiguration> {
   void initState() {
     super.initState();
 
-    _watcher = widget.watch(
-      (d) {
-        config = d;
+    config = widget.gridSettings.current;
 
-        setState(() {});
-      },
-      true,
-    );
+    _watcher = widget.gridSettings.watch((d) {
+      config = d;
+
+      setState(() {});
+    });
   }
 
   @override
@@ -76,40 +72,26 @@ class _ShellConfigurationState extends State<ShellConfiguration> {
           : const SizedBox.shrink();
     }
 
-    return _GridConfigurationWatcherNotifier(
-      watcher: widget.watch,
-      child: _GridConfigurationNotifier(
-        config: config!,
-        child: widget.child,
-      ),
+    return _GridConfigurationNotifier(
+      settings: widget.gridSettings,
+      data: config!,
+      child: widget.child,
     );
   }
-}
-
-class _GridConfigurationWatcherNotifier extends InheritedWidget {
-  const _GridConfigurationWatcherNotifier({
-    // super.key,
-    required this.watcher,
-    required super.child,
-  });
-
-  final ShellConfigurationWatcher watcher;
-
-  @override
-  bool updateShouldNotify(_GridConfigurationWatcherNotifier oldWidget) =>
-      watcher != oldWidget.watcher;
 }
 
 class _GridConfigurationNotifier extends InheritedWidget {
   const _GridConfigurationNotifier({
     // super.key,
-    required this.config,
+    required this.settings,
+    required this.data,
     required super.child,
   });
 
-  final ShellConfigurationData config;
+  final GridSettingsData settings;
+  final ShellConfigurationData data;
 
   @override
   bool updateShouldNotify(_GridConfigurationNotifier oldWidget) =>
-      config != oldWidget.config;
+      settings != oldWidget.settings || data != oldWidget.data;
 }

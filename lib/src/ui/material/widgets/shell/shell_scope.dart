@@ -11,11 +11,10 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/logic/typedefs.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/widgets/autocomplete_widget.dart";
 import "package:azari/src/ui/material/widgets/empty_widget.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
-import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_app_bar_type.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/shell_fab_type.dart";
 import "package:azari/src/ui/material/widgets/shell/layouts/cell_builder.dart";
@@ -37,25 +36,14 @@ typedef WatchFire<T> =
 typedef NotifiersFn = InheritedWidget Function(Widget child);
 typedef ScrollOffsetFn = void Function(double pos);
 typedef ScrollUpEvents = (Stream<void> stream, bool Function()? conditional);
-typedef ScrollSizeCalculator =
-    double Function(
-      double contentSize,
-      int idx,
-      GridLayoutType layoutType,
-      GridColumn columns,
-    );
+typedef ScrollSizeCalculator = double Function(double contentSize, int idx);
 
 abstract class ShellScopeOverlayInjector {
   Widget wrapChild(Widget child);
 
   OnEmptyInterface get onEmpty;
 
-  double tryCalculateScrollSizeToItem(
-    double contentSize,
-    int idx,
-    GridLayoutType layoutType,
-    GridColumn columns,
-  );
+  double tryCalculateScrollSizeToItem(double contentSize, int idx);
 
   List<Widget> injectStack(BuildContext context);
 }
@@ -110,16 +98,16 @@ class SourceOnEmptyInterface implements OnEmptyInterface {
 }
 
 mixin DefaultInjectStack implements ShellScopeOverlayInjector {
-  ResourceSource<dynamic, dynamic>? get source;
+  RefreshingProgress? get sourceProgress;
   UpdatesAvailable? get updatesAvailable;
 
   @override
   List<Widget> injectStack(BuildContext context) {
     return [
-      if (updatesAvailable != null && source != null)
+      if (updatesAvailable != null && sourceProgress != null)
         _UpdatesAvailableWidget(
           updatesAvailable: updatesAvailable!,
-          progress: source!.progress,
+          progress: sourceProgress!,
         ),
     ];
   }
@@ -160,7 +148,6 @@ class ShellScope extends StatefulWidget {
   const ShellScope({
     super.key,
     required this.stackInjector,
-    required this.configWatcher,
     required this.elements,
     this.addGesturesPadding = false,
     this.appBar = const NoShellAppBar(),
@@ -181,7 +168,6 @@ class ShellScope extends StatefulWidget {
   final Widget? settingsButton;
   final AppBarBackButtonBehaviour backButton;
   final ShellFabType fab;
-  final ShellConfigurationWatcher configWatcher;
 
   final Axis scrollDirection;
   final bool showScrollbar;
@@ -207,39 +193,35 @@ class _ShellScopeState extends State<ShellScope> with _ShellScrollStatusMixin {
 
   @override
   Widget build(BuildContext context) {
-    return ShellConfiguration(
-      watch: widget.configWatcher,
-      child: ShellCapabilityQuery(
-        data: ShellCapabilityData(fab: widget.fab),
-        child: FocusNotifier(
-          notifier: focusNode,
-          child: ShellScrollNotifier(
-            saveScrollNotifier: _saveOffNotifier,
-            fabNotifier: _fabNotifier,
-            controller: controller,
-            scrollSizeCalculator:
-                widget.stackInjector.tryCalculateScrollSizeToItem,
-            child: widget.stackInjector.wrapChild(
-              _StaticBottomPadding(
-                actions: SelectionActions.of(context),
-                child: _Stack(
+    return ShellCapabilityQuery(
+      data: ShellCapabilityData(fab: widget.fab),
+      child: FocusNotifier(
+        notifier: focusNode,
+        child: ShellScrollNotifier(
+          saveScrollNotifier: _saveOffNotifier,
+          fabNotifier: _fabNotifier,
+          controller: controller,
+          scrollSizeCalculator:
+              widget.stackInjector.tryCalculateScrollSizeToItem,
+          child: widget.stackInjector.wrapChild(
+            _StaticBottomPadding(
+              child: _Stack(
+                footer: widget.footer,
+                fab: widget.fab,
+                stackInjector: widget.stackInjector,
+                child: _MainBody(
+                  showScrollbar: widget.showScrollbar,
+                  backButton: widget.backButton,
+                  slivers: widget.elements,
+                  addGesturesPadding: widget.addGesturesPadding,
+                  searchWidget: widget.appBar,
                   footer: widget.footer,
-                  fab: widget.fab,
-                  stackInjector: widget.stackInjector,
-                  child: _MainBody(
-                    showScrollbar: widget.showScrollbar,
-                    backButton: widget.backButton,
-                    slivers: widget.elements,
-                    addGesturesPadding: widget.addGesturesPadding,
-                    searchWidget: widget.appBar,
-                    footer: widget.footer,
-                    onEmpty: widget.stackInjector.onEmpty,
-                    bottomWidget: widget.searchBottomWidget,
-                    settingsButton: widget.settingsButton,
-                    controller: controller,
-                    saveScrollOffsNotifier: _saveOffNotifier,
-                    scrollDirection: widget.scrollDirection,
-                  ),
+                  onEmpty: widget.stackInjector.onEmpty,
+                  bottomWidget: widget.searchBottomWidget,
+                  settingsButton: widget.settingsButton,
+                  controller: controller,
+                  saveScrollOffsNotifier: _saveOffNotifier,
+                  scrollDirection: widget.scrollDirection,
                 ),
               ),
             ),
@@ -930,22 +912,15 @@ class __UpdatesAvailableWidgetState extends State<_UpdatesAvailableWidget>
 class _StaticBottomPadding extends StatelessWidget {
   const _StaticBottomPadding({
     // super.key,
-    required this.actions,
     required this.child,
   });
-
-  final SelectionActions actions;
 
   final Widget child;
 
   double _bottomPadding(BuildContext context) {
     final paddingBottom = MediaQuery.viewPaddingOf(context).bottom;
-    final actions = SelectionActions.of(context);
 
-    return paddingBottom +
-        (actions.controller.isExpanded
-            ? actions.size.expanded
-            : actions.size.base);
+    return paddingBottom;
   }
 
   @override
@@ -1101,7 +1076,7 @@ class ShellScrollNotifier extends InheritedWidget {
     final controller = notifier.controller;
 
     // final extra = _GridExtrasNotifier.of(context);
-    final config = ShellConfiguration.of(context);
+    // final config = ShellConfiguration.of(context);
 
     if (controller.position.maxScrollExtent.isInfinite) {
       return;
@@ -1112,12 +1087,7 @@ class ShellScrollNotifier extends InheritedWidget {
         controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
-    final double target = notifier.scrollSizeCalculator(
-      contentSize,
-      i,
-      config.layoutType,
-      config.columns,
-    );
+    final double target = notifier.scrollSizeCalculator(contentSize, i);
 
     if (target < controller.position.minScrollExtent ||
         target > controller.position.maxScrollExtent) {

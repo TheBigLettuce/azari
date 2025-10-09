@@ -37,34 +37,19 @@ class SourceShellRefreshIndicator extends StatelessWidget {
 }
 
 class SourceShellElementState<T extends CellBuilder>
-    with DefaultInjectStack
-    implements ShellScopeOverlayInjector, ShellElementState {
+    implements ShellElementState {
   SourceShellElementState({
     required this.source,
     required this.selectionController,
     required this.actions,
-    required this.onEmpty,
     this.topPaddingHeight = 80,
-    this.wrapRefresh = defaultRefreshIndicator,
-    this.updatesAvailable,
+    required this.gridSettings,
   });
 
   final double topPaddingHeight;
 
   final SelectionController selectionController;
   final List<SelectionBarAction> actions;
-
-  final Widget Function(SourceShellElementState state, Widget child)?
-  wrapRefresh;
-
-  static Widget defaultRefreshIndicator(
-    SourceShellElementState state,
-    Widget child,
-  ) => SourceShellRefreshIndicator(
-    selection: state.selection,
-    source: state.source,
-    child: child,
-  );
 
   double _cachedScrollOffset = 0;
 
@@ -75,14 +60,9 @@ class SourceShellElementState<T extends CellBuilder>
     _cachedScrollOffset = d;
   }
 
-  @override
-  final OnEmptyInterface onEmpty;
-
-  @override
   final ResourceSource<int, T> source;
 
-  @override
-  final UpdatesAvailable? updatesAvailable;
+  final GridSettingsData gridSettings;
 
   @override
   late ShellSelectionHolder selection = ShellSelectionHolder.source(
@@ -114,16 +94,6 @@ class SourceShellElementState<T extends CellBuilder>
   }
 
   @override
-  Widget wrapChild(Widget child) {
-    return ShellSelectionCountHolder(
-      key: null,
-      selection: selection,
-      controller: selectionController,
-      child: wrapRefresh != null ? wrapRefresh!(this, child) : child,
-    );
-  }
-
-  @override
   void clearRefreshIfNeeded() {
     if (source.count == 0) {
       clearRefresh();
@@ -140,18 +110,13 @@ class SourceShellElementState<T extends CellBuilder>
   }
 
   @override
-  double tryCalculateScrollSizeToItem(
-    double contentSize,
-    int idx,
-    GridLayoutType layoutType,
-    GridColumn columns,
-  ) {
-    if (layoutType == GridLayoutType.list) {
+  double tryCalculateScrollSizeToItem(double contentSize, int idx) {
+    if (gridSettings.current.layoutType == GridLayoutType.list) {
       return (contentSize - topPaddingHeight) * idx / source.count;
     } else {
       return (contentSize - topPaddingHeight) *
-          (idx / columns.number - 1) /
-          (source.count / columns.number);
+          (idx / gridSettings.current.columns.number - 1) /
+          (source.count / gridSettings.current.columns.number);
     }
   }
 
@@ -165,21 +130,68 @@ class SourceShellElementState<T extends CellBuilder>
   }
 }
 
-abstract class ShellElementState {
-  bool get isEmpty;
-  bool get isNotEmpty => !isEmpty;
+class SourceShellScopeElementState<T extends CellBuilder>
+    extends SourceShellElementState<T>
+    with DefaultInjectStack
+    implements ShellScopeOverlayInjector {
+  SourceShellScopeElementState({
+    required super.source,
+    required super.selectionController,
+    required super.actions,
+    required this.onEmpty,
+    required super.gridSettings,
+    super.topPaddingHeight = 80,
+    this.wrapRefresh = defaultRefreshIndicator,
+    this.updatesAvailable,
+  });
+
+  final Widget Function(SourceShellScopeElementState state, Widget child)?
+  wrapRefresh;
+
+  static Widget defaultRefreshIndicator(
+    SourceShellScopeElementState state,
+    Widget child,
+  ) => SourceShellRefreshIndicator(
+    selection: state.selection,
+    source: state.source,
+    child: child,
+  );
+
+  @override
+  final OnEmptyInterface onEmpty;
+
+  @override
+  RefreshingProgress get sourceProgress => source.progress;
+
+  @override
+  final UpdatesAvailable? updatesAvailable;
+
+  @override
+  Widget wrapChild(Widget child) {
+    return ShellSelectionCountHolder(
+      key: null,
+      selection: selection,
+      controller: selectionController,
+      child: wrapRefresh != null ? wrapRefresh!(this, child) : child,
+    );
+  }
+}
+
+abstract class ShellElementProgress {
+  const ShellElementProgress();
+
   bool get hasNext;
   bool get canLoadMore;
   bool get isRefreshing;
+}
+
+abstract class ShellElementState extends ShellElementProgress {
+  bool get isEmpty;
+  bool get isNotEmpty => !isEmpty;
 
   ShellSelectionHolder get selection;
 
-  double tryCalculateScrollSizeToItem(
-    double contentSize,
-    int idx,
-    GridLayoutType layoutType,
-    GridColumn columns,
-  );
+  double tryCalculateScrollSizeToItem(double contentSize, int idx);
 
   void clearRefreshIfNeeded();
 
@@ -202,6 +214,7 @@ class ShellElement extends StatefulWidget {
     this.updateScrollPosition,
     this.scrollUpOn = const [],
     this.scrollingState,
+    required this.gridSettings,
   });
 
   final bool animationsOnSourceWatch;
@@ -218,6 +231,8 @@ class ShellElement extends StatefulWidget {
   final List<WatchFire<dynamic>> playAnimationOn;
   final List<ScrollUpEvents> scrollUpOn;
   final ScrollingStateSink? scrollingState;
+
+  final GridSettingsData gridSettings;
 
   final List<Widget> slivers;
 
@@ -275,36 +290,38 @@ class _ShellElementState extends State<ShellElement> {
 
   @override
   Widget build(BuildContext context) {
-    final gridSettingsWatcher = ShellConfiguration.watcherOf(context);
+    return ShellConfiguration(
+      gridSettings: widget.gridSettings,
+      child: PlayAnimations(
+        key: _animationsKey,
+        playAnimationsOn: widget.playAnimationOn + [widget.gridSettings.watch],
+        child: state.selection.inject(
+          Builder(
+            builder: (context) {
+              final saveScroll = ShellScrollNotifier.saveScrollNotifierOf(
+                context,
+              );
 
-    return PlayAnimations(
-      key: _animationsKey,
-      playAnimationsOn: widget.playAnimationOn + [gridSettingsWatcher],
-      child: state.selection.inject(
-        Builder(
-          builder: (context) {
-            final saveScroll = ShellScrollNotifier.saveScrollNotifierOf(
-              context,
-            );
-
-            return ShellScrollingLogicHolder(
-              offsetSaveNotifier: saveScroll,
-              initalScrollPosition: widget.initialScrollPosition,
-              controller: ShellScrollNotifier.of(context),
-              state: state,
-              scrollingState: widget.scrollingState,
-              scrollUpOn: widget.scrollUpOn,
-              updateScrollPosition: widget.updateScrollPosition,
-              child: FocusNotifier(
-                notifier: searchFocus,
-                child: widget.registerNotifiers != null
-                    ? widget.registerNotifiers!(
-                        SliverMainAxisGroup(slivers: widget.slivers),
-                      )
-                    : SliverMainAxisGroup(slivers: widget.slivers),
-              ),
-            );
-          },
+              return ShellScrollingLogicHolder(
+                offsetSaveNotifier: saveScroll,
+                initalScrollPosition: widget.initialScrollPosition,
+                controller: ShellScrollNotifier.of(context),
+                state: state,
+                next: state.next,
+                scrollingState: widget.scrollingState,
+                scrollUpOn: widget.scrollUpOn,
+                updateScrollPosition: widget.updateScrollPosition,
+                child: FocusNotifier(
+                  notifier: searchFocus,
+                  child: widget.registerNotifiers != null
+                      ? widget.registerNotifiers!(
+                          SliverMainAxisGroup(slivers: widget.slivers),
+                        )
+                      : SliverMainAxisGroup(slivers: widget.slivers),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -417,15 +434,17 @@ class ShellScrollingLogicHolder extends StatefulWidget {
     required this.offsetSaveNotifier,
     required this.scrollUpOn,
     required this.updateScrollPosition,
+    required this.next,
     required this.child,
   });
 
   final double initalScrollPosition;
 
-  final ShellElementState state;
+  final ShellElementProgress state;
   final ScrollingStateSink? scrollingState;
   final List<ScrollUpEvents> scrollUpOn;
   final ScrollOffsetFn? updateScrollPosition;
+  final Future<void> Function() next;
 
   final ValueNotifier<bool> offsetSaveNotifier;
   final ScrollController controller;
@@ -439,7 +458,7 @@ class ShellScrollingLogicHolder extends StatefulWidget {
 class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
   ScrollController get controller => widget.controller;
 
-  ShellElementState get state => widget.state;
+  ShellElementProgress get state => widget.state;
   ScrollingStateSink? get scrollingState => widget.scrollingState;
 
   final List<StreamSubscription<void>> _scrollUpEvents = [];
@@ -475,7 +494,8 @@ class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
       );
     }
 
-    if (widget.initalScrollPosition != controller.offset) {
+    if (widget.initalScrollPosition !=
+        (controller.positions.firstOrNull?.pixels ?? 0)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.jumpTo(widget.initalScrollPosition);
       });
@@ -571,7 +591,7 @@ class _ShellScrollingLogicHolderState extends State<ShellScrollingLogicHolder> {
       if (!state.isRefreshing &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
               1 - (height / controller.positions.first.maxScrollExtent)) {
-        state.next();
+        widget.next();
       }
     }
   }

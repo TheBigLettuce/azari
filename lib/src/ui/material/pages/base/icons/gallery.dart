@@ -6,10 +6,7 @@
 part of "../home.dart";
 
 class GalleryDestinationIcon extends StatelessWidget {
-  const GalleryDestinationIcon({
-    super.key,
-    required this.controller,
-  });
+  const GalleryDestinationIcon({super.key, required this.controller});
 
   final AnimationController controller;
 
@@ -19,17 +16,13 @@ class GalleryDestinationIcon extends StatelessWidget {
 
     final isSelected = CurrentRoute.of(context) == CurrentRoute.gallery;
 
-    final selectedGalleryPage = GallerySubPage.of(context);
-
     return Animate(
       autoPlay: false,
       target: 1,
       controller: controller,
       effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
       child: Icon(
-        isSelected
-            ? selectedGalleryPage.selectedIcon
-            : selectedGalleryPage.icon,
+        isSelected ? Icons.collections_rounded : Icons.collections_outlined,
         color: isSelected ? theme.colorScheme.primary : null,
       ),
     );

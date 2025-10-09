@@ -70,7 +70,7 @@ class _AppBar extends StatelessWidget {
                   alpha: 0.95,
                 ),
                 scrolledUnderElevation: 0,
-                title: Text(search.title),
+                title: Text(search.title, maxLines: 1),
                 leading: search.leading ?? b,
                 actions: [
                   ...?search.trailingItems,
@@ -88,7 +88,7 @@ class _AppBar extends StatelessWidget {
                   alpha: 0.95,
                 ),
                 scrolledUnderElevation: 0,
-                title: Text(search.title),
+                title: Text(search.title, maxLines: 1),
                 leading: search.leading ?? b,
                 actions: [
                   ...?search.trailingItems,

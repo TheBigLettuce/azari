@@ -11,17 +11,17 @@ import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/logic/posts_source.dart";
 import "package:azari/src/logic/resource_source/basic.dart";
 import "package:azari/src/logic/resource_source/resource_source.dart";
+import "package:azari/src/services/impl/obj/post_impl.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/booru/actions.dart" as actions;
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/pages/search/booru/popular_random_buttons.dart";
 import "package:azari/src/ui/material/pages/settings/settings_page.dart";
+import "package:azari/src/ui/material/widgets/adaptive_page.dart";
 import "package:azari/src/ui/material/widgets/selection_bar.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:azari/src/ui/material/widgets/shell/shell_scope.dart";
-import "package:dio/dio.dart";
-import "package:flutter/widgets.dart";
+import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 
 mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
@@ -69,14 +69,9 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
         return _MainGridPagingState.prototype(
           settings.selectedBooru,
           mainGrid,
+          gridSettings: gridSettings,
           selectionController: selectionController,
-          actions: [
-            if (DownloadManager.available && LocalTagsService.available)
-              actions.downloadPost(context, settings.selectedBooru, null),
-            if (FavoritePostSourceService.available)
-              actions.favorites(context, showDeleteSnackbar: true),
-            if (HiddenBooruPostsService.available) actions.hide(context),
-          ],
+          actions: makePostActions(context, settings.selectedBooru),
         );
       },
     );
@@ -145,7 +140,7 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
     favoritesWatcher?.cancel();
     hiddenPostWatcher?.cancel();
 
-    if (!isRestart) {
+    if (!SettingsPage.isRestart) {
       pagingState.restoreSecondaryGrid = null;
     }
 
@@ -156,24 +151,91 @@ mixin BooruPageMixin<W extends StatefulWidget> on State<W> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final newColumnCount = switch (AdaptivePage.size(context)) {
+      AdaptivePageSize.extraSmall || AdaptivePageSize.small => GridColumn.two,
+      AdaptivePageSize.medium => GridColumn.three,
+      AdaptivePageSize.large => GridColumn.four,
+      AdaptivePageSize.extraLarge => GridColumn.five,
+    };
+
+    if (gridSettings.current.columns != newColumnCount) {
+      gridSettings.current = gridSettings.current.copy(columns: newColumnCount);
+    }
+  }
+
   // ignore: use_setters_to_change_properties
   void setSecondaryName(String? name) {
     pagingState.restoreSecondaryGrid = name;
   }
 }
 
+List<SelectionBarAction> makePostActions(
+  BuildContext context,
+  Booru booru, {
+  bool showHideButton = true,
+}) => [
+  if (HiddenBooruPostsService.available && showHideButton)
+    SelectionBarAction(Icons.hide_image_rounded, (selected) {
+      if (selected.isEmpty || !HiddenBooruPostsService.available) {
+        return;
+      }
+
+      final toDelete = <(int, Booru)>[];
+      final toAdd = <HiddenBooruPostData>[];
+
+      final booru = (selected.first as PostImpl).booru;
+
+      for (final (cell as PostImpl) in selected) {
+        if (const HiddenBooruPostsService().isHidden(cell.id, booru)) {
+          toDelete.add((cell.id, booru));
+        } else {
+          toAdd.add(
+            HiddenBooruPostData(
+              thumbUrl: cell.previewUrl,
+              postId: cell.id,
+              booru: booru,
+            ),
+          );
+        }
+      }
+
+      const HiddenBooruPostsService()
+        ..addAll(toAdd)
+        ..removeAll(toDelete);
+    }, true),
+  if (DownloadManager.available && LocalTagsService.available)
+    SelectionBarAction(
+      Icons.download,
+      (selected) => selected.cast<PostImpl>().downloadAll(),
+      true,
+      animate: true,
+    ),
+  if (FavoritePostSourceService.available)
+    SelectionBarAction(
+      Icons.favorite_border_rounded,
+      (selected) =>
+          FavoritePostSourceService.safe()?.addRemove(selected.cast()),
+      true,
+    ),
+];
+
 class _MainGridPagingState implements PagingEntry {
   _MainGridPagingState(
+    this.gridSettings,
     this.booru,
     this.mainGrid,
     this.actions,
     this.selectionController,
-  ) : client = BooruAPI.defaultClientForBooru(booru) {
+  ) {
     source = mainGrid.makeSource(api, this);
 
     status = SourceShellElementState(
-      onEmpty: const OnEmptyInterface.empty(),
       source: source,
+      gridSettings: gridSettings,
       selectionController: selectionController,
       actions: actions,
     );
@@ -186,28 +248,37 @@ class _MainGridPagingState implements PagingEntry {
       popularStatus,
       randomStatus,
       selectionController,
+      gridSettings,
     );
   }
 
   factory _MainGridPagingState.prototype(
     Booru booru,
     MainGridHandle mainGrid, {
+    required GridSettingsData gridSettings,
     required SelectionController selectionController,
     required List<SelectionBarAction> actions,
-  }) => _MainGridPagingState(booru, mainGrid, actions, selectionController);
+  }) => _MainGridPagingState(
+    gridSettings,
+    booru,
+    mainGrid,
+    actions,
+    selectionController,
+  );
 
   final Booru booru;
 
   @override
   bool reachedEnd = false;
 
-  late final BooruAPI api = BooruAPI.fromEnum(booru, client);
-  final Dio client;
+  late final BooruAPI api = BooruAPI.fromEnum(booru);
   late final GridPostSource source;
   final MainGridHandle mainGrid;
   final SelectionController selectionController;
   final List<SelectionBarAction> actions;
   late final BooruStackInjector stackInjector;
+
+  final GridSettingsData gridSettings;
 
   final popularPageSaver = PageSaver.noPersist();
   final videosPageSaver = PageSaver.noPersist();
@@ -223,7 +294,7 @@ class _MainGridPagingState implements PagingEntry {
   late final SourceShellElementState<Post> status;
 
   late final popularStatus = SourceShellElementState<Post>(
-    onEmpty: const OnEmptyInterface.empty(),
+    gridSettings: gridSettings,
     source: GenericListSource<Post>(
       () async {
         popularPageSaver.page = 0;
@@ -255,7 +326,7 @@ class _MainGridPagingState implements PagingEntry {
   );
 
   late final videosStatus = SourceShellElementState<Post>(
-    onEmpty: const OnEmptyInterface.empty(),
+    gridSettings: gridSettings,
     source: GenericListSource<Post>(
       () async {
         videosPageSaver.page = 0;
@@ -289,7 +360,7 @@ class _MainGridPagingState implements PagingEntry {
   );
 
   late final randomStatus = SourceShellElementState<Post>(
-    onEmpty: const OnEmptyInterface.empty(),
+    gridSettings: gridSettings,
     source: GenericListSource<Post>(
       () async {
         randomPageSaver.page = 0;
@@ -342,7 +413,7 @@ class _MainGridPagingState implements PagingEntry {
 
   @override
   void dispose() {
-    client.close();
+    api.destroy();
     source.destroy();
     status.destroy();
 
@@ -368,6 +439,7 @@ class BooruStackInjector implements ShellScopeOverlayInjector {
     this.popular,
     this.random,
     this.selectionController,
+    this.gridSettings,
   );
 
   final SelectionController selectionController;
@@ -382,6 +454,8 @@ class BooruStackInjector implements ShellScopeOverlayInjector {
     _chipsState = c;
     _stream.sink.add(c);
   }
+
+  final GridSettingsData gridSettings;
 
   final SourceShellElementState<Post> latest;
   final SourceShellElementState<Post> video;
@@ -415,12 +489,7 @@ class BooruStackInjector implements ShellScopeOverlayInjector {
   }
 
   @override
-  double tryCalculateScrollSizeToItem(
-    double contentSize,
-    int idx,
-    GridLayoutType layoutType,
-    GridColumn columns,
-  ) {
+  double tryCalculateScrollSizeToItem(double contentSize, int idx) {
     final source = switch (chipsState) {
       BooruChipsState.latest => latest.source,
       BooruChipsState.popular => popular.source,
@@ -428,12 +497,14 @@ class BooruStackInjector implements ShellScopeOverlayInjector {
       BooruChipsState.videos => video.source,
     };
 
-    if (layoutType == GridLayoutType.list) {
+    final conf = gridSettings.current;
+
+    if (conf.layoutType == GridLayoutType.list) {
       return contentSize * idx / source.count;
     } else {
       return contentSize *
-          (idx / columns.number - 1) /
-          (source.count / columns.number);
+          (idx / conf.columns.number - 1) /
+          (source.count / conf.columns.number);
     }
   }
 }

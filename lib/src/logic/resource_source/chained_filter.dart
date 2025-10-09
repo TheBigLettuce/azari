@@ -11,14 +11,15 @@ import "package:azari/src/logic/resource_source/resource_source.dart";
 import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:flutter/widgets.dart";
 
-typedef ChainedFilterFnc<V> = (Iterable<V>, dynamic) Function(
-  Iterable<V> e,
-  FilteringMode filteringMode,
-  SortingMode sortingMode,
-  FilteringColors? filteringColors,
-  bool end,
-  dynamic data,
-);
+typedef ChainedFilterFnc<V> =
+    (Iterable<V>, dynamic) Function(
+      Iterable<V> e,
+      FilteringMode filteringMode,
+      SortingMode sortingMode,
+      FilteringColors? filteringColors,
+      bool end,
+      dynamic data,
+    );
 
 typedef ChainedFilter<K, V> = ChainedFilterResourceSource<K, V>;
 
@@ -35,18 +36,19 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     required this.allowedSortingModes,
     required FilteringMode initialFilteringMode,
     required SortingMode initialSortingMode,
-  })  : _colors = filteringColors,
-        enableColors = filteringColors != null,
-        assert(
-          allowedFilteringModes.isEmpty ||
-              allowedFilteringModes.contains(initialFilteringMode),
-        ),
-        assert(
-          allowedSortingModes.isEmpty ||
-              allowedSortingModes.contains(initialSortingMode),
-        ),
-        _mode = initialFilteringMode,
-        _sorting = initialSortingMode {
+    this.alwaysSort = false,
+  }) : _colors = filteringColors,
+       enableColors = filteringColors != null,
+       assert(
+         allowedFilteringModes.isEmpty ||
+             allowedFilteringModes.contains(initialFilteringMode),
+       ),
+       assert(
+         allowedSortingModes.isEmpty ||
+             allowedSortingModes.contains(initialSortingMode),
+       ),
+       _mode = initialFilteringMode,
+       _sorting = initialSortingMode {
     _originalSubscr = _original.backingStorage.watch((c) {
       clearRefresh();
     });
@@ -56,22 +58,21 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     ResourceSource<K, V> original,
     SourceStorage<int, V> filterStorage, {
     required ChainedFilterFnc<V> filter,
-  }) =>
-      ChainedFilterResourceSource(
-        original,
-        filterStorage,
-        filter: filter,
-        allowedFilteringModes: const {},
-        allowedSortingModes: const {},
-        initialFilteringMode: FilteringMode.noFilter,
-        initialSortingMode: SortingMode.none,
-      );
+  }) => ChainedFilterResourceSource(
+    original,
+    filterStorage,
+    filter: filter,
+    allowedFilteringModes: const {},
+    allowedSortingModes: const {},
+    initialFilteringMode: FilteringMode.noFilter,
+    initialSortingMode: SortingMode.none,
+  );
 
   static void _doNothing() {}
 
   static FilteringData? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<_FilteringDataNotifier>();
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_FilteringDataNotifier>();
 
     return widget?.data;
   }
@@ -90,6 +91,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
   final VoidCallback prefilter;
   final VoidCallback onCompletelyEmpty;
 
+  final bool alwaysSort;
   final bool enableColors;
 
   FilteringMode _mode;
@@ -193,16 +195,23 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     final buffer = <V>[];
 
     try {
-      for (final e in _original is SortingResourceSource<K, V> ||
-              sortingMode == SortingMode.none
-          ? _original.backingStorage
-          : _original.backingStorage.trySorted(sortingMode)) {
+      for (final e
+          in _original is SortingResourceSource<K, V> ||
+                  (sortingMode == SortingMode.none && !alwaysSort)
+              ? _original.backingStorage
+              : _original.backingStorage.trySorted(sortingMode)) {
         buffer.add(e);
 
         if (buffer.length == 40) {
           final Iterable<V> filtered;
-          (filtered, data) =
-              filter(buffer, filteringMode, sortingMode, _colors, false, data);
+          (filtered, data) = filter(
+            buffer,
+            filteringMode,
+            sortingMode,
+            _colors,
+            false,
+            data,
+          );
 
           backingStorage.addAll(filtered, true);
           buffer.clear();
@@ -210,7 +219,11 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
       }
 
       backingStorage.addAll(
-          filter(buffer, filteringMode, sortingMode, _colors, true, data).$1);
+        filter(buffer, filteringMode, sortingMode, _colors, true, data).$1,
+        true,
+      );
+
+      backingStorage.addAll(const []);
     } catch (e) {
       progress.error = e;
     } finally {
@@ -229,10 +242,8 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
     return Future.value(count);
   }
 
-  Widget inject(Widget child) => _FilteringDataHolder(
-        instance: this,
-        child: child,
-      );
+  Widget inject(Widget child) =>
+      _FilteringDataHolder(instance: this, child: child);
 
   @override
   void destroy() {
@@ -244,8 +255,7 @@ class ChainedFilterResourceSource<K, V> implements ResourceSource<int, V> {
 
   StreamSubscription<FilteringData> watchFilter(
     void Function(FilteringData) f,
-  ) =>
-      _filterEvents.stream.listen(f);
+  ) => _filterEvents.stream.listen(f);
 
   Stream<FilteringData> get filterEvents => _filterEvents.stream;
 }
@@ -337,9 +347,6 @@ class __FilteringDataHolderState extends State<_FilteringDataHolder> {
 
   @override
   Widget build(BuildContext context) {
-    return _FilteringDataNotifier(
-      data: data,
-      child: widget.child,
-    );
+    return _FilteringDataNotifier(data: data, child: widget.child);
   }
 }

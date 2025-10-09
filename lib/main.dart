@@ -18,8 +18,6 @@ import "package:azari/src/services/services.dart";
 import "package:azari/src/ui/app_adaptive.dart";
 import "package:azari/src/ui/material/pages/gallery/directories.dart";
 import "package:azari/src/ui/material/pages/gallery/files.dart";
-import "package:azari/src/ui/material/pages/gallery/gallery_return_callback.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
 import "package:azari/src/ui/material/widgets/gesture_dead_zones.dart";
 import "package:azari/src/ui/material/widgets/image_view/image_view.dart";
 import "package:azari/src/ui/material/widgets/scaffold_selection_bar.dart";

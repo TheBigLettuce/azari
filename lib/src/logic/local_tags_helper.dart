@@ -30,8 +30,7 @@ extension LocalTagsHelperExt on LocalTagsService {
     String filename,
     (int, Booru) res,
   ) async {
-    final client = BooruAPI.defaultClientForBooru(res.$2);
-    final api = BooruAPI.fromEnum(res.$2, client);
+    final api = BooruAPI.fromEnum(res.$2);
 
     try {
       final post = await api.singlePost(res.$1);
@@ -47,15 +46,13 @@ extension LocalTagsHelperExt on LocalTagsService {
       Logger.root.severe("loadFromDissassemble", e, trace);
       return [];
     } finally {
-      client.close();
+      api.destroy();
     }
   }
 
   /// Disassembles the [filename] and load tags online from the booru.
   /// Resolves to an empty list in case of any error.
-  Future<List<String>> getOnlineAndSaveTags(
-    String filename,
-  ) async {
+  Future<List<String>> getOnlineAndSaveTags(String filename) async {
     final dissassembled = ParsedFilenameResult.fromFilename(filename);
     if (dissassembled.hasError) {
       return const [];
@@ -63,19 +60,12 @@ extension LocalTagsHelperExt on LocalTagsService {
 
     final val = dissassembled.asValue();
 
-    return loadFromDissassemble(
-      filename,
-      (val.id, val.booru),
-    );
+    return loadFromDissassemble(filename, (val.id, val.booru));
   }
 
   /// Adds tags to the db.
   /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
-  void addTagsPost(
-    String filename,
-    List<String> tags,
-    bool noDisassemble,
-  ) {
+  void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
     if (!noDisassemble &&
         ParsedFilenameResult.fromFilename(filename).hasError) {
       return;
@@ -91,9 +81,7 @@ extension LocalTagsHelperExt on LocalTagsService {
     LocalTagsService localTags,
   ) {
     tags.map((e) => localTags.addFrequency(e.$2));
-    addAll(
-      tags.map((e) => LocalTagsData(filename: e.$1, tags: e.$2)).toList(),
-    );
+    addAll(tags.map((e) => LocalTagsData(filename: e.$1, tags: e.$2)).toList());
   }
 
   /// Returns true if tags for the [filename] includes all the [tags].
@@ -127,20 +115,18 @@ enum DisassembleResultError {
   hashIsnt32;
 
   String translatedString(AppLocalizations l10n) => switch (this) {
-        DisassembleResultError.extensionInvalid =>
-          l10n.disassembleExtensionInvalid,
-        DisassembleResultError.noPrefix => l10n.disassembleNoPrefix,
-        DisassembleResultError.numbersAndHash => l10n.disassembleNumbersAndHash,
-        DisassembleResultError.prefixNotRegistred =>
-          l10n.disassemblePrefixNotRegistred,
-        DisassembleResultError.invalidPostNumber =>
-          l10n.disassembleInvalidPostNumber,
-        DisassembleResultError.noExtension => l10n.disassembleNoExtension,
-        DisassembleResultError.hashIsInvalid => l10n.disassembleHashIsInvalid,
-        DisassembleResultError.extensionTooLong =>
-          l10n.disassembleExtensionTooLong,
-        DisassembleResultError.hashIsnt32 => l10n.disassembleHashIsnt32,
-      };
+    DisassembleResultError.extensionInvalid => l10n.disassembleExtensionInvalid,
+    DisassembleResultError.noPrefix => l10n.disassembleNoPrefix,
+    DisassembleResultError.numbersAndHash => l10n.disassembleNumbersAndHash,
+    DisassembleResultError.prefixNotRegistred =>
+      l10n.disassemblePrefixNotRegistred,
+    DisassembleResultError.invalidPostNumber =>
+      l10n.disassembleInvalidPostNumber,
+    DisassembleResultError.noExtension => l10n.disassembleNoExtension,
+    DisassembleResultError.hashIsInvalid => l10n.disassembleHashIsInvalid,
+    DisassembleResultError.extensionTooLong => l10n.disassembleExtensionTooLong,
+    DisassembleResultError.hashIsnt32 => l10n.disassembleHashIsnt32,
+  };
 }
 
 /// Result of disassembling of the filename in the format.
@@ -286,11 +272,9 @@ class ParsedFilenameResult {
 
 class ErrorOr<T> {
   const ErrorOr.error(String Function(AppLocalizations l10n) error)
-      : _error = error,
-        _data = null;
-  const ErrorOr.value(T result)
-      : _data = result,
-        _error = null;
+    : _error = error,
+      _data = null;
+  const ErrorOr.value(T result) : _data = result, _error = null;
 
   final T? _data;
   final String Function(AppLocalizations l10n)? _error;

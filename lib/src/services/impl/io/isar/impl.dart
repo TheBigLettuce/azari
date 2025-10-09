@@ -18,7 +18,10 @@ import "package:azari/src/logic/resource_source/source_storage.dart";
 import "package:azari/src/services/impl/io.dart";
 import "package:azari/src/services/impl/io/isar/foundation/dbs.dart";
 import "package:azari/src/services/impl/io/isar/foundation/favorite_posts_isolate.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/booru_pool.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/favorite_pool.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/favorite_post.dart";
+import "package:azari/src/services/impl/io/isar/schemas/booru/pool_settings.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/booru/visited_post.dart";
 import "package:azari/src/services/impl/io/isar/schemas/downloader/download_file.dart";
@@ -32,6 +35,9 @@ import "package:azari/src/services/impl/io/isar/schemas/grid_settings/favorites.
 import "package:azari/src/services/impl/io/isar/schemas/grid_settings/files.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/bookmark.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_paging.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_paging.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_state.dart";
+import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_booru_pool_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_state.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/grid_time.dart";
 import "package:azari/src/services/impl/io/isar/schemas/grid_state/updates_available.dart";
@@ -50,7 +56,7 @@ import "package:azari/src/services/impl/io/isar/schemas/tags/local_tag_dictionar
 import "package:azari/src/services/impl/io/isar/schemas/tags/local_tags.dart";
 import "package:azari/src/services/impl/io/isar/schemas/tags/tags.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_aspect_ratio.dart";
 import "package:azari/src/ui/material/widgets/shell/configuration/grid_column.dart";
 import "package:flutter/foundation.dart";
@@ -84,6 +90,69 @@ abstract class IsarGridSettingsData implements ShellConfigurationData {
   @override
   @enumerated
   final GridLayoutType layoutType;
+}
+
+class IsarBooruPoolSource extends GridPostSource
+    with GridPostSourcePoolRefreshNext {
+  IsarBooruPoolSource({
+    required this.api,
+    required Isar db,
+    required this.pool,
+    required this.entry,
+    required this.onClearRefreshCompleted,
+    required this.onNextCompleted,
+    required this.deleteOnDestroy,
+  }) : backingStorage = _IsarPostsStorage(db, closeOnDestroy: false),
+       updatesAvailable = IsarPoolUpdatesAvailableImpl(db, api, pool);
+
+  @override
+  String get tags => "";
+  @override
+  set tags(String _) {}
+
+  @override
+  final BooruPoolsAPI api;
+
+  @override
+  final BooruPool pool;
+
+  final bool deleteOnDestroy;
+
+  @override
+  final _IsarPostsStorage backingStorage;
+
+  @override
+  final IsarPoolUpdatesAvailableImpl updatesAvailable;
+
+  @override
+  final PagingEntry entry;
+
+  @override
+  final void Function(GridPostSource)? onClearRefreshCompleted;
+
+  @override
+  final void Function(GridPostSource)? onNextCompleted;
+
+  @override
+  bool get extraSafeFilters => const SettingsService().current.extraSafeFilters;
+
+  @override
+  List<FilterFnc<Post>> get filters => const [];
+
+  @override
+  List<Post> get lastFive =>
+      backingStorage._collection.where().sortById().limit(5).findAllSync();
+
+  @override
+  Post? get currentlyLast =>
+      backingStorage._collection.where().sortById().limit(1).findFirstSync();
+
+  @override
+  void destroy() {
+    updatesAvailable.dispose();
+    backingStorage.destroy(deleteOnDestroy);
+    progress.close();
+  }
 }
 
 class IsarCurrentBooruSource extends GridPostSource
@@ -141,9 +210,6 @@ class IsarCurrentBooruSource extends GridPostSource
       backingStorage._collection.where().sortById().limit(1).findFirstSync();
 
   @override
-  bool get hasNext => true;
-
-  @override
   String tags;
 
   @override
@@ -154,6 +220,95 @@ class IsarCurrentBooruSource extends GridPostSource
   }
 }
 
+class IsarPoolUpdatesAvailableImpl implements UpdatesAvailable {
+  IsarPoolUpdatesAvailableImpl(this.db, this.api, this.pool) {
+    _timeTicker = Stream<void>.periodic(const Duration(minutes: 15)).listen((
+      _,
+    ) {
+      tryRefreshIfNeeded(true);
+    });
+  }
+
+  final Isar db;
+  final BooruPool pool;
+  final BooruPoolsAPI api;
+
+  final _events = StreamController<UpdatesAvailableStatus>.broadcast();
+  late final StreamSubscription<void> _timeTicker;
+
+  Future<void>? _future;
+
+  void dispose() {
+    _events.close();
+    _future?.ignore();
+    _timeTicker.cancel();
+  }
+
+  IsarUpdatesAvailable get _current =>
+      db.isarUpdatesAvailables.getSync(0) ??
+      IsarUpdatesAvailable(postCount: -1, time: DateTime.now());
+
+  bool _isAfterNow(DateTime time) =>
+      DateTime.now().isAfter(time.add(const Duration(minutes: 5)));
+
+  @override
+  bool tryRefreshIfNeeded([bool force = false]) {
+    if (_future != null) {
+      return true;
+    }
+
+    final u = _current;
+
+    if (force || u.postCount == -1 || _isAfterNow(u.time)) {
+      _events.add(const UpdatesAvailableStatus(false, true));
+
+      _future = api
+          .postsCount(pool)
+          .then((count) {
+            if (db.isOpen) {
+              db.writeTxnSync(() {
+                db.isarUpdatesAvailables.putSync(
+                  IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
+                );
+              });
+            }
+
+            return null;
+          })
+          .onError((e, trace) {
+            Logger.root.warning("tryRefreshIfNeeded", e, trace);
+            return null;
+          })
+          .whenComplete(() {
+            if (!_events.isClosed) {
+              _events.add(
+                UpdatesAvailableStatus(_current.postCount > u.postCount, false),
+              );
+            }
+            _future = null;
+          });
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  void setCount(int count) {
+    db.writeTxnSync(() {
+      db.isarUpdatesAvailables.putSync(
+        IsarUpdatesAvailable(postCount: count, time: DateTime.now()),
+      );
+    });
+  }
+
+  @override
+  StreamSubscription<UpdatesAvailableStatus> watch(
+    void Function(UpdatesAvailableStatus) f,
+  ) => _events.stream.listen(f);
+}
+
 class IsarUpdatesAvailableImpl implements UpdatesAvailable {
   IsarUpdatesAvailableImpl(this.db, this.api, this.safeMode_, this.tags_) {
     _timeTicker = Stream<void>.periodic(const Duration(minutes: 15)).listen((
@@ -161,10 +316,6 @@ class IsarUpdatesAvailableImpl implements UpdatesAvailable {
     ) {
       tryRefreshIfNeeded(true);
     });
-
-    // if (_isAfterNow(_current.time)) {
-    //   tryRefreshIfNeeded();
-    // }
   }
 
   final Isar db;
@@ -296,6 +447,139 @@ class IsarCollectionReverseIterable<V> extends Iterable<V> {
   final Iterator<V> iterator;
 }
 
+class _IsarBooruPoolStorage extends _IsarCollectionStorage<BooruPool> {
+  _IsarBooruPoolStorage(super.db, {required super.closeOnDestroy});
+
+  @override
+  IsarCollection<IsarBooruPool> get collection => db.isarBooruPools;
+
+  @override
+  Iterable<BooruPool> get reversed => IsarCollectionReverseIterable(
+    IsarCollectionIterator<IsarBooruPool>(collection, reversed: true),
+  );
+
+  @override
+  int indexWhere(bool Function(BooruPool element) test, [int start = 0]) {
+    for (final e in this) {
+      final ret = test(e);
+      if (ret) {
+        return (e as IsarBooruPool).isarId!;
+      }
+    }
+
+    return -1;
+  }
+
+  @override
+  void add(BooruPool e, [bool silent = true]) => db.writeTxnSync(
+    () => collection.putByIdBooruSync(
+      e is IsarBooruPool
+          ? e
+          : IsarBooruPool.noId(
+              thumbUrl: e.thumbUrl,
+              id: e.id,
+              booru: e.booru,
+              category: e.category,
+              description: e.description,
+              isDeleted: e.isDeleted,
+              name: e.name,
+              postIds: e.postIds,
+              updatedAt: e.updatedAt,
+            ),
+    ),
+    silent: silent,
+  );
+
+  @override
+  void addAll(Iterable<BooruPool> l, [bool silent = false]) {
+    final List<IsarBooruPool> res;
+    if (!silent && l.isEmpty) {
+      final first = collection.where().limit(1).findFirstSync();
+      if (first != null) {
+        res = [first];
+      } else {
+        res = [];
+      }
+    } else {
+      res = l is List<IsarBooruPool>
+          ? l
+          : l
+                .map(
+                  (e) => IsarBooruPool.noId(
+                    thumbUrl: e.thumbUrl,
+                    id: e.id,
+                    booru: e.booru,
+                    category: e.category,
+                    description: e.description,
+                    isDeleted: e.isDeleted,
+                    name: e.name,
+                    postIds: e.postIds,
+                    updatedAt: e.updatedAt,
+                  ),
+                )
+                .toList();
+    }
+
+    db.writeTxnSync(() => collection.putAllByIdBooruSync(res), silent: silent);
+  }
+}
+
+abstract class _IsarCollectionStorage<T> extends SourceStorage<int, T> {
+  _IsarCollectionStorage(this.db, {required this.closeOnDestroy});
+
+  final Isar db;
+  final bool closeOnDestroy;
+
+  IsarCollection<T> get collection;
+
+  @override
+  Iterable<T> get reversed;
+
+  @override
+  int get count => collection.countSync();
+
+  @override
+  Iterator<T> get iterator =>
+      IsarCollectionIterator<T>(collection, reversed: false);
+
+  @override
+  void clear([bool silent = false]) =>
+      db.writeTxnSync(() => collection.clearSync(), silent: silent);
+
+  @override
+  T? get(int idx) => collection.getSync(idx + 1);
+
+  @override
+  List<T> removeAll(Iterable<int> idx, [bool silent = false]) {
+    final k = idx.map((e) => e + 1).toList();
+
+    final ret = collection.getAllSync(k);
+    db.writeTxnSync(() => collection.deleteAllSync(k), silent: silent);
+
+    return ret.map((e) => e != null).cast<T>().toList();
+  }
+
+  @override
+  void destroy([bool delete = false]) =>
+      closeOnDestroy ? db.close(deleteFromDisk: delete) : null;
+
+  @override
+  T operator [](int index) => get(index)!;
+
+  @override
+  void operator []=(int index, T value) => addAll([value]);
+
+  @override
+  StreamSubscription<int> watch(void Function(int p1) f, [bool fire = false]) =>
+      collection.watchLazy(fireImmediately: fire).map((_) => count).listen(f);
+
+  @override
+  Stream<int> get countEvents => collection.watchLazy().map((_) => count);
+
+  @override
+  Iterable<T> trySorted(SortingMode sort) => this;
+}
+
 class _IsarPostsStorage extends SourceStorage<int, Post> {
   _IsarPostsStorage(this.db, {required this.closeOnDestroy});
 
@@ -311,6 +595,18 @@ class _IsarPostsStorage extends SourceStorage<int, Post> {
 
   @override
   int get count => _collection.countSync();
+
+  @override
+  int indexWhere(bool Function(Post element) test, [int start = 0]) {
+    for (final e in this) {
+      final ret = test(e);
+      if (ret) {
+        return (e as PostIsar).isarId!;
+      }
+    }
+
+    return -1;
+  }
 
   @override
   Iterator<Post> get iterator =>
@@ -387,6 +683,7 @@ class IsarSourceStorage<K, V, CollectionType extends V>
     required this.txPut,
     required this.txGet,
     required this.txRemove,
+    required this.indexWhere_,
   });
 
   final Isar db;
@@ -397,6 +694,17 @@ class IsarSourceStorage<K, V, CollectionType extends V>
   txRemove;
 
   final IsarCollectionIterator<V> Function(SortingMode sort)? sortFnc;
+
+  final int Function(
+    IsarSourceStorage<K, V, CollectionType> instance,
+    bool Function(V element) test, [
+    int start,
+  ])
+  indexWhere_;
+
+  @override
+  int indexWhere(bool Function(V element) test, [int start = 0]) =>
+      indexWhere_(this, test, start);
 
   IsarCollection<CollectionType> get _collection =>
       db.collection<CollectionType>();
@@ -701,6 +1009,18 @@ class _FavoritePostCache extends FavoritePostCache {
 
   @override
   Stream<int> get countEvents => _countEvents.stream;
+
+  @override
+  int indexWhere(bool Function(FavoritePost element) test, [int start = 0]) {
+    for (final e in this) {
+      final ret = test(e);
+      if (ret) {
+        return (e as IsarFavoritePost).isarId!;
+      }
+    }
+
+    return -1;
+  }
 
   @override
   FavoritePost operator []((int, Booru) index) => _map[index]!;
@@ -1042,6 +1362,16 @@ class IsarBlacklistedDirectoryService implements BlacklistedDirectoryService {
           .toList();
     },
     sortFnc: null,
+    indexWhere_: (instance, test, [start = 0]) {
+      for (final e in instance) {
+        final ret = test(e);
+        if (ret) {
+          return (e as IsarBooruPool).isarId!;
+        }
+      }
+
+      return -1;
+    },
   );
 
   @override
@@ -2033,8 +2363,11 @@ class IsarVisitedPostsService implements VisitedPostsService {
   void clear() => db.writeTxnSync(() => collection.clearSync());
 
   @override
-  StreamSubscription<void> watch(void Function(void p1) f) =>
-      collection.watchLazy().listen(f);
+  StreamSubscription<int> watch(void Function(int i) f, [bool fire = false]) =>
+      collection
+          .watchLazy(fireImmediately: fire)
+          .map((e) => collection.countSync())
+          .listen(f);
 }
 
 // (List<A>, List<B>) _foldTulpeList<A, B>(Iterable<(A, B)> t) {
@@ -2096,6 +2429,50 @@ class IsarHottestTagsService implements HottestTagsService {
       collection.where().booruEqualTo(booru).watchLazy().listen(f);
 }
 
+class IsarFavoritePoolService implements FavoritePoolsService {
+  const IsarFavoritePoolService();
+
+  @override
+  FavoritePoolServiceHandle open(Booru booru) =>
+      IsarFavoritePoolServiceHandle(booru);
+}
+
+class IsarFavoritePoolServiceHandle implements FavoritePoolServiceHandle {
+  IsarFavoritePoolServiceHandle(Booru booru) {
+    db = Dbs().openPrimaryGrid(booru, DbPaths());
+  }
+
+  late final Isar db;
+
+  IsarCollection<IsarFavoritePool> get collection => db.isarFavoritePools;
+
+  @override
+  List<BooruPool> get all => collection.where().findAllSync();
+
+  @override
+  Stream<int> get events =>
+      collection.watchLazy().map((_) => collection.where().countSync());
+
+  @override
+  bool contains(BooruPool pool) =>
+      collection.getByIdBooruSync(pool.id, pool.booru) != null;
+
+  @override
+  void add(BooruPool pool) => db.writeTxnSync(
+    () => collection.putByIdBooruSync(
+      pool is IsarFavoritePool ? pool : IsarFavoritePool.fromPool(pool),
+    ),
+  );
+
+  @override
+  void remove(BooruPool pool) => db.writeTxnSync(
+    () => collection.deleteByIdBooruSync(pool.id, pool.booru),
+  );
+
+  @override
+  void destroy() {}
+}
+
 class IsarColorsNamesService implements ColorsNamesService {
   IsarColorsNamesService();
 
@@ -2131,4 +2508,165 @@ class IsarColorsNamesService implements ColorsNamesService {
       collection.putSync(data);
     });
   }
+}
+
+class IsarBooruPoolService implements BooruPoolService {
+  const IsarBooruPoolService();
+
+  @override
+  BooruPoolsServiceHandle open(BooruPoolsAPI api) =>
+      IsarBooruPoolServiceHandle(api);
+}
+
+class IsarBooruPoolServiceHandle
+    with BooruPoolsServiceRefreshNext
+    implements BooruPoolsServiceHandle, PagingEntry {
+  IsarBooruPoolServiceHandle(this.api) {
+    db = Dbs().openPrimaryGrid(api.booru, DbPaths());
+  }
+
+  late IsarPoolSettings _settings =
+      db.isarPoolSettings.getSync(0) ??
+      const IsarPoolSettings(
+        category: null,
+        name: null,
+        order: BooruPoolsOrder.latest,
+      );
+
+  @override
+  Stream<void> get settingsEvents => db.isarPoolSettings.watchLazy();
+
+  @override
+  BooruPoolCategory? get category => _settings.category;
+
+  @override
+  set category(BooruPoolCategory? c) {
+    final settings = IsarPoolSettings(
+      category: c,
+      name: _settings.name,
+      order: _settings.order,
+    );
+
+    db.writeTxnSync(() {
+      db.isarPoolSettings.putSync(settings);
+
+      _settings = settings;
+    });
+  }
+
+  @override
+  String? get name => _settings.name;
+
+  @override
+  set name(String? n) {
+    final settings = IsarPoolSettings(
+      category: _settings.category,
+      name: name,
+      order: _settings.order,
+    );
+
+    db.writeTxnSync(() {
+      db.isarPoolSettings.putSync(settings);
+
+      _settings = settings;
+    });
+  }
+
+  @override
+  BooruPoolsOrder get order => _settings.order;
+
+  @override
+  set order(BooruPoolsOrder o) {
+    final settings = IsarPoolSettings(
+      category: _settings.category,
+      name: _settings.name,
+      order: o,
+    );
+
+    db.writeTxnSync(() {
+      db.isarPoolSettings.putSync(settings);
+
+      _settings = settings;
+    });
+  }
+
+  @override
+  bool reachedEnd = false;
+
+  @override
+  int get page => db.isarGridBooruPoolPagings.getSync(0)?.page ?? 0;
+
+  @override
+  set page(int p) {
+    db.writeTxnSync(() {
+      db.isarGridBooruPoolPagings.putSync(IsarGridBooruPoolPaging(p));
+    });
+  }
+
+  @override
+  double get offset => db.isarGridBooruPoolStates.getSync(0)?.offset ?? 0;
+
+  @override
+  void setOffset(double o) {
+    db.writeTxnSync(() {
+      db.isarGridBooruPoolStates.putSync(IsarGridBooruPoolState(offset: o));
+    });
+  }
+
+  @override
+  void updateTime() {
+    db.writeTxnSync(() {
+      db.isarBooruPoolGridTimes.putSync(IsarBooruPoolGridTime(DateTime.now()));
+    });
+  }
+
+  @override
+  PagingEntry get entry => this;
+
+  @override
+  void Function(BooruPoolsServiceHandle)? get onClearRefreshCompleted => null;
+
+  @override
+  void Function(BooruPoolsServiceHandle)? get onNextCompleted => null;
+
+  late final Isar db;
+
+  @override
+  final BooruPoolsAPI api;
+
+  @override
+  late final _IsarBooruPoolStorage backingStorage = _IsarBooruPoolStorage(
+    db,
+    closeOnDestroy: false,
+  );
+
+  @override
+  final ClosableRefreshProgress progress = ClosableRefreshProgress();
+
+  @override
+  GridPostSource openPosts(
+    BooruPool pool,
+    PagingEntry entry, {
+    void Function(GridPostSource)? onNextCompleted,
+    void Function(GridPostSource)? onClearRefreshCompleted,
+  }) {
+    return IsarBooruPoolSource(
+      db: Dbs().openSecondaryPoolPosts(pool, DbPaths()),
+      api: api,
+      pool: pool,
+      entry: entry,
+      onClearRefreshCompleted: onClearRefreshCompleted,
+      onNextCompleted: onNextCompleted,
+      deleteOnDestroy: true,
+    );
+  }
+
+  @override
+  void destroy() {
+    progress.close();
+    backingStorage.destroy();
+  }
+
+  @override
+  void dispose() => destroy();
 }

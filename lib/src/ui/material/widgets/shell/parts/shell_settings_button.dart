@@ -528,18 +528,21 @@ class _SafeModeSegmentState extends State<SafeModeSegment> {
   }
 }
 
-class SafeModeButton extends StatefulWidget {
-  const SafeModeButton({super.key, this.settingsWatcher, this.secondaryGrid})
-    : assert(settingsWatcher == null || secondaryGrid == null);
+class SafeModeButtonSettings extends StatefulWidget {
+  const SafeModeButtonSettings({
+    super.key,
+    this.settingsWatcher,
+    this.secondaryGrid,
+  }) : assert(settingsWatcher == null || secondaryGrid == null);
 
   final WatchFire<SettingsData?>? settingsWatcher;
   final SecondaryGridHandle? secondaryGrid;
 
   @override
-  State<SafeModeButton> createState() => _SafeModeButtonState();
+  State<SafeModeButtonSettings> createState() => _SafeModeButtonSettingsState();
 }
 
-class _SafeModeButtonState extends State<SafeModeButton> {
+class _SafeModeButtonSettingsState extends State<SafeModeButtonSettings> {
   late final StreamSubscription<SettingsData?>? settingsWatcher;
   late final StreamSubscription<GridState>? stateWatcher;
 
@@ -583,19 +586,53 @@ class _SafeModeButtonState extends State<SafeModeButton> {
       selected: _settings?.safeMode ?? _stateSettings?.safeMode,
       reorder: false,
       values: SafeMode.values.map(
-        (e) => SegmentedButtonValue(
-          e,
-          e.translatedString(l10n),
-          icon: switch (e) {
-            SafeMode.normal => Icons.no_adult_content_outlined,
-            SafeMode.relaxed => Icons.visibility_outlined,
-            SafeMode.none => Icons.explicit_outlined,
-            SafeMode.explicit => Icons.eighteen_up_rating_outlined,
-          },
-        ),
+        (e) =>
+            SegmentedButtonValue(e, e.translatedString(l10n), icon: e.icon()),
       ),
       title: l10n.safeModeSetting,
       variant: SegmentedButtonVariant.chip,
+    );
+  }
+}
+
+class SafeModeButton extends StatefulWidget {
+  const SafeModeButton({super.key, required this.safeMode});
+
+  final SafeModeState safeMode;
+
+  @override
+  State<SafeModeButton> createState() => _SafeModeButtonState();
+}
+
+class _SafeModeButtonState extends State<SafeModeButton> {
+  late final StreamSubscription<void> _events;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _events = widget.safeMode.events.listen((e) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _events.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.filledTonal(
+      onPressed: () => switch (widget.safeMode.current) {
+        SafeMode.normal => widget.safeMode.setCurrent(SafeMode.relaxed),
+        SafeMode.relaxed => widget.safeMode.setCurrent(SafeMode.explicit),
+        SafeMode.explicit => widget.safeMode.setCurrent(SafeMode.none),
+        SafeMode.none => widget.safeMode.setCurrent(SafeMode.normal),
+      },
+      icon: Icon(widget.safeMode.current.icon()),
     );
   }
 }

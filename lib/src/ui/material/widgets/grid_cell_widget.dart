@@ -117,6 +117,7 @@ class GridCellImage extends StatefulWidget {
     this.boxFit = BoxFit.cover,
     this.heroTag,
     this.backgroundColor,
+    this.borderRadius = const BorderRadius.all(Radius.circular(15)),
   });
 
   final bool blur;
@@ -128,6 +129,8 @@ class GridCellImage extends StatefulWidget {
 
   final Color? backgroundColor;
   final Object? heroTag;
+
+  final BorderRadius borderRadius;
 
   @override
   State<GridCellImage> createState() => _GridCellImageState();
@@ -141,7 +144,7 @@ class _GridCellImageState extends State<GridCellImage> {
     final theme = Theme.of(context);
 
     Widget child = ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(15)),
+      borderRadius: widget.borderRadius,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final blurSigma = constraints.biggest.longestSide * 0.069;
@@ -208,7 +211,7 @@ class _GridCellImageState extends State<GridCellImage> {
   }
 }
 
-enum TitleMode { normal, long, topLeft, atBottom }
+enum TitleMode { normal, long, topLeft, atBottom, center }
 
 /// The cell of [ShellElement].
 class GridCell extends StatelessWidget {
@@ -225,6 +228,8 @@ class GridCell extends StatelessWidget {
     this.tightMode = false,
     this.titleLines = 1,
     this.circle = false,
+    this.borderRadius = const BorderRadius.all(Radius.circular(15)),
+    this.tightModeMargin = 0.5,
   });
 
   final Key uniqueKey;
@@ -244,6 +249,9 @@ class GridCell extends StatelessWidget {
   final String? subtitle;
   final List<Sticker> stickers;
 
+  final BorderRadius borderRadius;
+  final double tightModeMargin;
+
   @override
   Widget build(BuildContext context) {
     final animate = PlayAnimations.maybeOf(context) ?? false;
@@ -251,22 +259,24 @@ class GridCell extends StatelessWidget {
     final theme = Theme.of(context);
 
     Widget card = Card(
-      margin: tightMode ? const EdgeInsets.all(0.5) : null,
+      margin: tightMode ? EdgeInsets.all(tightModeMargin) : null,
       elevation: 0,
       color: theme.cardColor.withValues(alpha: 0),
       child: ClipPath(
         clipper: ShapeBorderClipper(
           shape: circle
               ? const CircleBorder()
-              : RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              : RoundedRectangleBorder(borderRadius: borderRadius),
         ),
         child: Stack(
+          fit: StackFit.expand,
           children: [
             if (thumbnail != null)
               GridCellImage(
                 imageAlign: imageAlign,
                 thumbnail: thumbnail!,
                 blur: blur,
+                borderRadius: borderRadius,
               ),
             if (stickers.isNotEmpty)
               Align(
@@ -282,14 +292,36 @@ class GridCell extends StatelessWidget {
                   ),
                 ),
               ),
-            if ((title == null ||
-                    title!.isNotEmpty && !(titleMode == TitleMode.atBottom)) ||
-                subtitle != null)
+            if (titleMode != TitleMode.atBottom &&
+                ((title == null || title!.isNotEmpty) || subtitle != null))
               titleMode == TitleMode.topLeft
                   ? _TopAlias(
                       title: title ?? "",
                       secondaryTitle: subtitle,
                       lines: titleLines,
+                    )
+                  : titleMode == TitleMode.center
+                  ? DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          radius: 0.8,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.black.withValues(alpha: 0.2),
+                            Colors.black.withValues(alpha: 0.2),
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          title ?? "",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
                     )
                   : GridCellName(title: title ?? "", lines: titleLines),
           ],
@@ -300,7 +332,7 @@ class GridCell extends StatelessWidget {
       card = card.animate(key: uniqueKey).fadeIn();
     }
 
-    if (!(titleMode == TitleMode.atBottom) || title == null || title!.isEmpty) {
+    if (titleMode != TitleMode.atBottom || title == null || title!.isEmpty) {
       return card;
     }
 
@@ -334,22 +366,29 @@ class GridCellPlaceholder extends StatelessWidget {
     super.key,
     required this.circle,
     required this.tightMode,
+    this.tightModeMargin = 0.5,
+    this.borderRadius = const BorderRadius.all(Radius.circular(15)),
   });
 
   final bool circle;
   final bool tightMode;
+  final double tightModeMargin;
+
+  final BorderRadius borderRadius;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: tightMode ? const EdgeInsets.all(0.5) : const EdgeInsets.all(4),
+      padding: tightMode
+          ? EdgeInsets.all(tightModeMargin)
+          : const EdgeInsets.all(4),
       child: circle
           ? const ClipPath(
               clipper: ShapeBorderClipper(shape: CircleBorder()),
               child: ShimmerLoadingIndicator(reverse: true),
             )
           : ClipRRect(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: borderRadius,
               child: const ShimmerLoadingIndicator(reverse: true),
             ),
     );

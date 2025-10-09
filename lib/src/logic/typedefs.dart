@@ -9,7 +9,7 @@ import "package:azari/src/generated/l10n/app_localizations.dart";
 import "package:azari/src/logic/net/booru/booru.dart";
 import "package:azari/src/logic/net/booru/booru_api.dart";
 import "package:azari/src/services/services.dart";
-import "package:azari/src/ui/material/pages/home/home.dart";
+import "package:azari/src/ui/material/pages/base/home.dart";
 import "package:flutter/material.dart";
 
 extension OpenLicensePageExt on LicensePage {

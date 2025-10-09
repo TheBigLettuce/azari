@@ -127,15 +127,12 @@ class GridQuiltedLayoutPlaceholder extends StatelessWidget {
 class GridLayoutPlaceholder extends StatelessWidget {
   const GridLayoutPlaceholder({
     super.key,
-    required this.description,
-    required this.circle,
-    required this.tightMode,
+    this.circle = false,
+    this.tightMode = false,
   });
 
   final bool circle;
   final bool tightMode;
-
-  final CellBuilderData description;
 
   @override
   Widget build(BuildContext context) {
