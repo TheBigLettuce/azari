@@ -25,6 +25,10 @@ android {
         jvmTarget = '17'
     }
 
+    dexOptions {
+        javaMaxHeapSize "2g"
+    }
+
     kotlin { jvmToolchain(17) }
 
     sourceSets {
