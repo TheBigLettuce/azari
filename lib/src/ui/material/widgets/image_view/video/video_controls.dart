@@ -78,6 +78,13 @@ class _VideoControlsState extends State<VideoControls>
 
     if (!widget.forceShow) {
       final newContent = ImageViewWidgetsNotifier.of(context);
+      if (newContent == null) {
+        if (animationController.value != 0) {
+          animationController.reverse();
+        }
+        return;
+      }
+
       if (newContent.videoContent()) {
         animationController.forward();
       } else {

@@ -221,6 +221,10 @@ class ImageViewAppBarButtons extends StatelessWidget {
     final theme = Theme.of(context);
     final widgets = ImageViewWidgetsNotifier.of(context);
 
+    if (widgets == null) {
+      return const SizedBox.shrink();
+    }
+
     return IconButtonTheme(
       data: IconButtonThemeData(
         style: ButtonStyle(
@@ -584,7 +588,7 @@ class _BottomIcons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final openInfo = ImageViewWidgetsNotifier.of(context).openInfo();
+    final openInfo = ImageViewWidgetsNotifier.of(context)?.openInfo();
 
     return Animate(
       value: 1,
@@ -669,6 +673,10 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widgets = ImageViewWidgetsNotifier.of(context);
+    if (widgets == null) {
+      return const SizedBox.shrink();
+    }
+
     final actions = widgets.actions(context);
 
     return SizedBox(
@@ -713,6 +721,10 @@ class _Stickers extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final widgets = ImageViewWidgetsNotifier.of(context);
+    if (widgets == null) {
+      return const SizedBox.shrink();
+    }
+
     final stickers = widgets.stickers(context);
 
     return Padding(

@@ -177,7 +177,7 @@ class _ImageViewWidgetsHolderState extends State<ImageViewWidgetsHolder>
   @override
   Widget build(BuildContext context) {
     return ImageViewWidgetsNotifier(
-      widgets: loader.get(loader.index)!,
+      widgets: loader.get(loader.index),
       child: widget.child,
     );
   }
@@ -536,13 +536,13 @@ class ImageViewWidgetsNotifier extends InheritedWidget {
     required super.child,
   });
 
-  final ImageViewWidgets widgets;
+  final ImageViewWidgets? widgets;
 
-  static ImageViewWidgets of(BuildContext context) {
+  static ImageViewWidgets? of(BuildContext context) {
     final widget = context
         .dependOnInheritedWidgetOfExactType<ImageViewWidgetsNotifier>();
 
-    return widget!.widgets;
+    return widget?.widgets;
   }
 
   @override
