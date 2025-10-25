@@ -885,13 +885,19 @@ class IsarHiddenBooruPostService implements HiddenBooruPostsService {
 }
 
 class IsarFavoritePostService implements FavoritePostSourceService {
-  IsarFavoritePostService();
+  IsarFavoritePostService(this.type);
+
+  final AppInstanceType type;
 
   @override
   late final _FavoritePostCache cache = _FavoritePostCache();
 
   @override
   void addRemove(List<PostBase> posts) {
+    if (type != AppInstanceType.full) {
+      return;
+    }
+
     final toAdd = <IsarFavoritePost>[];
     final toRemove = <(int, Booru)>[];
 
@@ -936,11 +942,19 @@ class IsarFavoritePostService implements FavoritePostSourceService {
 
   @override
   void addAll(List<FavoritePost> posts) {
+    if (type != AppInstanceType.full) {
+      return;
+    }
+
     Dbs().favorites.add(posts);
   }
 
   @override
   void removeAll(List<(int, Booru)> idxs) {
+    if (type != AppInstanceType.full) {
+      return;
+    }
+
     Dbs().favorites.remove(idxs);
   }
 

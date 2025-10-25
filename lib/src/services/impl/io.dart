@@ -114,7 +114,7 @@ Future<Services> init(AppInstanceType appType) async {
     TargetPlatform.iOS ||
     TargetPlatform.macOS ||
     TargetPlatform.windows => throw UnimplementedError(),
-  });
+  }, appType);
 
   await initalizeIsarDb(
     appType,
@@ -288,12 +288,13 @@ class IoTasksService implements TasksService {
 }
 
 class IoServices implements Services {
-  IoServices._new(this.platformApi);
+  IoServices._new(this.platformApi, this.type);
 
   @visibleForTesting
-  IoServices.newTests(this.platformApi);
+  IoServices.newTests(this.platformApi) : type = AppInstanceType.full;
 
   DownloadManager? downloadManager;
+  final AppInstanceType type;
 
   @override
   T? get<T extends ServiceMarker>() {
@@ -390,7 +391,9 @@ class IoServices implements Services {
   HiddenBooruPostsService get hiddenBooruPosts =>
       const IsarHiddenBooruPostService();
   DownloadFileService get downloads => const IsarDownloadFileService();
-  final FavoritePostSourceService favoritePosts = IsarFavoritePostService();
+  late final FavoritePostSourceService favoritePosts = IsarFavoritePostService(
+    type,
+  );
   StatisticsGeneralService get statisticsGeneral =>
       const IsarStatisticsGeneralService();
   StatisticsGalleryService get statisticsGallery =>
