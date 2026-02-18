@@ -36,6 +36,8 @@ abstract class BooruAPI {
   /// Booru enum of this API. All the supported boorus should be added to this enum.
   Booru get booru;
 
+  Map<String, String> get loginAndKey;
+
   /// Get a single post by it's id.
   Future<Post> singlePost(int id);
 
@@ -111,6 +113,35 @@ abstract class BooruAPI {
       Booru.danbooru => Danbooru(dio, token),
       Booru.gelbooru => Gelbooru(dio, token),
     };
+  }
+
+  static Map<String, String> imageHeaders(Booru booru) => switch (booru) {
+    Booru.gelbooru => const {"Referer": "https://gelbooru.com/"},
+    Booru.danbooru => const {},
+  };
+
+  static Map<String, String> credentials(Booru booru) {
+    final data = const AccountsService().current;
+
+    switch (booru) {
+      case Booru.danbooru:
+        if (data.danbooruApiKey.isEmpty && data.danbooruUsername.isEmpty) {
+          return const {};
+        }
+
+        return {"login": data.danbooruUsername, "api_key": data.danbooruApiKey};
+      case Booru.gelbooru:
+        {
+          if (data.gelbooruApiKey.isEmpty && data.gelbooruUserId.isEmpty) {
+            return const {};
+          }
+
+          return {
+            "api_key": data.gelbooruApiKey,
+            "user_id": data.gelbooruUserId,
+          };
+        }
+    }
   }
 }
 

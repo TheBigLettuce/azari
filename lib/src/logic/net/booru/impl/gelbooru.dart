@@ -30,15 +30,8 @@ class Gelbooru implements BooruAPI {
   @override
   bool get wouldBecomeStale => true;
 
-  Map<String, String> get loginApiKey {
-    final data = const AccountsService().current;
-
-    if (data.gelbooruApiKey.isEmpty && data.gelbooruUserId.isEmpty) {
-      return const {};
-    }
-
-    return {"api_key": data.gelbooruApiKey, "user_id": data.gelbooruUserId};
-  }
+  @override
+  Map<String, String> get loginAndKey => BooruAPI.credentials(booru);
 
   @override
   Future<int> totalPosts(String tags, SafeMode safeMode) async {
@@ -58,7 +51,7 @@ class Gelbooru implements BooruAPI {
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog<String>(
       Uri.https(booru.url, "/index.php", {
-        ...loginApiKey,
+        ...loginAndKey,
         "page": "dapi",
         "s": "note",
         "q": "index",
@@ -87,7 +80,7 @@ class Gelbooru implements BooruAPI {
   ]) async {
     final resp = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(booru.url, "/index.php", {
-        ...loginApiKey,
+        ...loginAndKey,
         "page": "dapi",
         "s": "tag",
         "q": "index",
@@ -165,7 +158,7 @@ class Gelbooru implements BooruAPI {
     };
 
     final query = <String, dynamic>{
-      ...loginApiKey,
+      ...loginAndKey,
       "page": "dapi",
       "s": "post",
       "q": "index",
@@ -195,7 +188,7 @@ class Gelbooru implements BooruAPI {
   Future<Post> singlePost(int id) async {
     final resp = await client.getUriLog<Map<String, dynamic>>(
       Uri.https(booru.url, "/index.php", {
-        ...loginApiKey,
+        ...loginAndKey,
         "page": "dapi",
         "s": "post",
         "q": "index",

@@ -92,12 +92,18 @@ abstract class PostImpl with CellBuilderData implements PostBase, CellBuilder {
     final sampleThumbnails = settings.sampleThumbnails;
     final isOriginal = settings.quality == DisplayQuality.original;
 
+    final headers = {
+      // BooruAPI.credentials(booru),
+      /// gelbooru needs a referer now
+      ...BooruAPI.imageHeaders(booru),
+    };
+
     if (type == PostContentType.gif) {
-      return NetworkImage(url);
+      return NetworkImage(url, headers: headers);
     } else if (type == PostContentType.image) {
       return thumb || (sampleThumbnails && !isOriginal)
-          ? CachedNetworkImageProvider(url)
-          : NetworkImage(url);
+          ? CachedNetworkImageProvider(url, headers: headers)
+          : NetworkImage(url, headers: headers);
     }
 
     throw "Not image or gif: $this";
